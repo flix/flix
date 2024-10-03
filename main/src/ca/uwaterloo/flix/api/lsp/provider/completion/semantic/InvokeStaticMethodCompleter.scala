@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
+package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
-import ca.uwaterloo.flix.language.ast.shared.Doc
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
+import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.JvmUtils
 
-object FormatDoc {
+object InvokeStaticMethodCompleter {
 
-  /**
-    * Returns a markdown string for the given documentation `doc`.
-    */
-  def asMarkDown(doc: Doc): String = doc.lines.mkString("\n")
+  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
+    JvmUtils.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
+  }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
+package ca.uwaterloo.flix.api.lsp.provider.completion.syntactic
 
-import ca.uwaterloo.flix.language.ast.shared.Doc
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 
-object FormatDoc {
+object ExprSnippetCompleter {
 
-  /**
-    * Returns a markdown string for the given documentation `doc`.
-    */
-  def asMarkDown(doc: Doc): String = doc.lines.mkString("\n")
+  def getCompletions(): Iterable[Completion] = List(
+    // NB: Please keep the list alphabetically sorted.
+    Completion.SnippetCompletion("main",
+      "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
+      "snippet for Hello World Program"),
+  )
 
 }

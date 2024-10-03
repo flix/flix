@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
@@ -90,10 +90,10 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
-      case Expr.ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
+      case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
-        Expr.ApplyDef(symUse, es, ct, tpe, purity, loc)
+        Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
@@ -228,11 +228,12 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Enum(_, targs) => taskList.enqueueAll(targs)
           case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)

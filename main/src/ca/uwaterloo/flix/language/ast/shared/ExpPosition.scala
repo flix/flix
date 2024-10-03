@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
-import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Jvm
 
-object InvokeStaticMethodCompleter {
+/**
+  * A common super-type that represents an expression position (tail position or not).
+  */
+sealed trait ExpPosition
 
-  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): Iterable[MethodCompletion] = {
-    Jvm.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
-  }
+object ExpPosition {
+  /**
+    * Represents an expression in tail position.
+    */
+  case object Tail extends ExpPosition
 
+  /**
+    * Represents an expression in non-tail position.
+    */
+  case object NonTail extends ExpPosition
 }

@@ -300,14 +300,6 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Def(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.defSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
     case Expr.Sig(sym, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.sig.contains(sym)) {
@@ -1036,6 +1028,7 @@ object Redundancy {
     */
   private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
   /**

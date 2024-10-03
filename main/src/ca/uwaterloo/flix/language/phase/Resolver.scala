@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -694,7 +694,7 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
-            val doc = Ast.Doc(Nil, loc)
+            val doc = Doc(Nil, loc)
             val mod = Ast.Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ
@@ -798,7 +798,7 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             // We have a static field access.
             val fieldName = qname.ident
-            Jvm.getField(clazz, fieldName.name, static = true) match {
+            JvmUtils.getField(clazz, fieldName.name, static = true) match {
               case Some(field) =>
                 // Returns out of resolveExp
                 return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
@@ -1042,14 +1042,16 @@ object Resolver {
               mapN(tagVal) {
                 case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
               }
+            case NamedAst.RestrictableChoosePattern.Error(loc) => Validation.success(ResolvedAst.RestrictableChoosePattern.Error(loc))
           }
           val env = pat0 match {
-            case RestrictableChoosePattern.Tag(qname, pat, loc) =>
+            case NamedAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
               pat.foldLeft(env0) {
                 case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
                 case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
                 case (acc, NamedAst.RestrictableChoosePattern.Error(_)) => acc
               }
+            case NamedAst.RestrictableChoosePattern.Error(_) => env0
           }
 
           val eVal = resolveExp(exp0, env)
@@ -3423,7 +3425,7 @@ object Resolver {
       val method = clazz.getMethod(methodName, signature *)
 
       // Check if the method should be and is static.
-      if (static != Jvm.isStatic(method)) {
+      if (static != JvmUtils.isStatic(method)) {
         throw new NoSuchMethodException()
       } else {
         // Check that the return type of the method matches the declared type.
@@ -3451,7 +3453,7 @@ object Resolver {
       }
     } catch {
       case ex: NoSuchMethodException =>
-        val candidateMethods = Jvm.getMethods(clazz).filter(_.getName == methodName)
+        val candidateMethods = JvmUtils.getMethods(clazz).filter(_.getName == methodName)
         Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
       // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
@@ -3469,7 +3471,7 @@ object Resolver {
           val field = clazz.getField(fieldName)
 
           // Check if the field should be and is static.
-          if (static == Jvm.isStatic(field))
+          if (static == JvmUtils.isStatic(field))
             Result.Ok((clazz, field))
           else
             throw new NoSuchFieldException()

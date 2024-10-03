@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -85,7 +85,7 @@ object LambdaLift {
       val freshSymbol = Symbol.freshDefnSym(sym0)
 
       // Construct annotations and modifiers for the fresh definition.
-      val ann = Ast.Annotations.Empty
+      val ann = Annotations.Empty
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
@@ -114,17 +114,17 @@ object LambdaLift {
       LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
     case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
-      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
+    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -200,8 +200,6 @@ object LambdaLift {
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case SimplifiedAst.Expr.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
