@@ -116,14 +116,14 @@ object ClosureConv {
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
 
-      // Step 4: Replace every old symbol by its new symbol in the body of the function.
+      // Step 3: Replace every old symbol by its new symbol in the body of the function.
       val e11 = applySubst(exp1, subst)
 
-      // Step 5: Rewrite every ApplyLocalDef node (recursive call) to apply to the free vars and then the parameters.
+      // Step 4: Rewrite every ApplyLocalDef node (recursive call) to apply to the free vars and then the parameters.
       val freshVars = localDefFreeVars + (sym -> cloParams.map(cp => FreeVar(cp.sym, cp.tpe)))
       val e1 = visitExp(e11)(freshVars, flix)
 
-      // Step 3: Update the mapping from the function to its free vars
+      // Step 5: Update the mapping from the function to its free vars
       val updatedLocalDefFreeVars = localDefFreeVars + (sym -> fvs)
 
       // Step 6: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
