@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -694,7 +694,7 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
-            val doc = Ast.Doc(Nil, loc)
+            val doc = Doc(Nil, loc)
             val mod = Ast.Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ

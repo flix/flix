@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -626,10 +626,10 @@ object Weeder2 {
       }
     }
 
-    private def pickDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
+    private def pickDocumentation(tree: Tree): Validation[Doc, CompilationMessage] = {
       val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree).flatMap(tryPick(TreeKind.CommentList, _))
       docTree match {
-        case None => Validation.success(Ast.Doc(List.empty, tree.loc))
+        case None => Validation.success(Doc(List.empty, tree.loc))
         case Some(tree) =>
           // strip prefixing `///` and trim
           var lines = text(tree).map(_.stripPrefix("///").trim)
@@ -640,7 +640,7 @@ object Weeder2 {
           if (lines.lastOption.exists(_.isEmpty)) {
             lines = lines.dropRight(1)
           }
-          Validation.success(Ast.Doc(lines, tree.loc))
+          Validation.success(Doc(lines, tree.loc))
       }
     }
 
