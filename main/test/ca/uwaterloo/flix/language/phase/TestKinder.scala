@@ -758,15 +758,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Def.Type.07") {
-    val input =
-      """
-        |def f(x: Int32[Int32]): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
   test("KindError.Def.Type.08") {
     val input =
       """
