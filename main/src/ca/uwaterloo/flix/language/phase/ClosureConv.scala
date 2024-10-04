@@ -105,25 +105,7 @@ object ClosureConv {
     case Expr.LetRec(sym, e1, e2, tpe, purity, loc) =>
       Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-      // Step 1: Compute the free variables in the body expression.
-      //         (Remove the variables bound by the function itself).
-      val bound = sym :: fparams.map(_.sym)
-      val fvs = filterBoundVars(freeVars(exp1), bound).toList
-
-      // Step 2: Convert the free variables into a new parameter list and substitution.
-      val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
-
-      // Step 3: Rewrite every recursive call to include free vars and then replace
-      //         every occurrence of the free vars with their substitution.
-      val e1 = visitExp(applySubst(rewriteApplyLocalDef(exp1, sym, fvs), subst))
-
-      // Step 4: Rewrite every ApplyLocalDef node to include free vars.
-      val e2 = visitExp(rewriteApplyLocalDef(exp2, sym, fvs))
-
-      // Step 5: Update the definition to include the new parameter list
-      val fps = cloParams ++ fparams
-      Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
+    case e: Expr.LocalDef => visitLocalDef(e)
 
     case Expr.Scope(sym, e, tpe, purity, loc) =>
       Expr.Scope(sym, visitExp(e), tpe, purity, loc)
@@ -452,6 +434,67 @@ object ClosureConv {
   }
 
   /**
+    * Performs closure conversion on a [[Expr.LocalDef]].
+    * Adds any captured variables to the list of formal parameters and rewrites any
+    * [[Expr.ApplyLocalDef]] to include the captured variables or, in the case of a recursive call,
+    * the list of new formal parameters.
+    *
+    * E.g.,
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(l) = if (l == 4) a + b + c + l else g(4);
+    *       g(4)
+    *   }
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
+    *       g(a, b, c, 10)
+    *   }
+    * }}}
+    */
+  private def visitLocalDef(expr0: Expr.LocalDef)(implicit flix: Flix): Expr.LocalDef = expr0 match {
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+      // Step 1: Compute the free variables in the body expression.
+      //         (Remove the variables bound by the function itself).
+      val bound = sym :: fparams.map(_.sym)
+      val fvs = filterBoundVars(freeVars(exp1), bound).toList
+
+      // Step 2: Convert the free variables into a new parameter list and substitution.
+      val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
+
+      // Step 3: Rewrite every recursive call to include free vars and then replace
+      //         every occurrence of the free vars with their substitution.
+      //         (This is equivalent to applying the substitution first and then
+      //          rewriting after with the variables in `cloParams` but conceptually,
+      //          this is simpler, since we first rewrite the AST with the same variables
+      //          that already exist, and then afterwards perform renaming, replacing
+      //          all occurrences at once.
+      //          E.g., `def f(x) = f(x + y)` becomes `def f(q, x) = f(q, x + q)`.
+      //                 Substitute first, then rewrite (with `cloParams`): `f(x + y)` --> `f(x + q)`    --> `f(q, x + q)`.
+      //                 Rewrite first, then substitute                   : `f(x + y)` --> `f(y, x + y)` --> `f(q, x + q)`.
+      //          So the result is the same.)
+      val e1 = visitExp(applySubst(rewriteApplyLocalDef(exp1, sym, fvs), subst))
+
+      // Step 4: Rewrite every ApplyLocalDef node to include free vars.
+      val e2 = visitExp(rewriteApplyLocalDef(exp2, sym, fvs))
+
+      // Step 5: Update the definition to include the new parameter list
+      val fps = cloParams ++ fparams
+      Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
+  }
+
+  /**
     * Rewrites any [[Expr.ApplyLocalDef]] node related to `sym0` to also apply with the captured variables in `freeVars`.
     *
     * Note that it is up to the caller to provide the correct variables, e.g., in the example below
@@ -461,6 +504,8 @@ object ClosureConv {
     * If this function is called from [[visitExp]] then it is highly likely you want to call this before calling [[visitExp]]
     * recursively on some subexpression. This is because any lambda that captures a local def will then automatically pick
     * up the new free variables added to an `ApplyLocalDef` node and will then handle capturing them correctly.
+    *
+    * E.g.,
     *
     * {{{
     *   def f(): Int32 = {
