@@ -878,32 +878,32 @@ object SetFormula {
     * Returns the most-general unifier of the equation `f ~ empty` where `fvs` is the free
     * variables in `f`. If there is no unifier then [[NoSolutionException]] is thrown.
     *
-    * Eliminates variables one-by-one from the given list `fvs` recursively.
+    * Eliminates variables recursively from `fvs`.
     *
-    * If the recursively building formula is ever larger than `recSizeThreshold` then
+    * If the formula that is recursively built is ever larger than `recSizeThreshold` then
     * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
     * checking.
     */
   def successiveVariableElimination(f: SetFormula, fvs: List[Int], recSizeThreshold: Int): SetSubstitution = fvs match {
     case Nil =>
-      // `emptyEquivalent` now treats the remaining constants as variables and goes through all
-      // assignments of those.
-      if (emptyEquivalent(f)) SetSubstitution.empty
+      // `fvs` is empty so `f` has no variables.
+      // Return the empty substitution if `f` is equivalent to `empty`.
+      if (isEmptyEquivalent(f)) SetSubstitution.empty
       else throw NoSolutionException()
 
     case x :: xs =>
-      val fEmpty = SetSubstitution.singleton(x, Empty)(f)
-      val fUniv = SetSubstitution.singleton(x, Univ)(f)
-      val intersection = propagation(mkInter(fEmpty, fUniv))
+      val f0 = SetSubstitution.singleton(x, Empty)(f)
+      val f1 = SetSubstitution.singleton(x, Univ)(f)
+      val recFormula = propagation(mkInter(f0, f1))
       if (recSizeThreshold > 0) {
-        val intersectionSize = intersection.size
-        if (intersectionSize > recSizeThreshold) throw ComplexException(
-          s"SetFormula size ($intersectionSize) is over recursive SVE threshold ($recSizeThreshold)",
+        val recFormulaSize = recFormula.size
+        if (recFormulaSize > recSizeThreshold) throw ComplexException(
+          s"SetFormula size ($recFormulaSize) is over recursive SVE threshold ($recSizeThreshold)",
           SourceLocation.Unknown
         )
       }
-      val se = successiveVariableElimination(intersection, xs, recSizeThreshold)
-      val xFormula = propagation(mkUnion(se(fEmpty), mkDifference(Var(x), se(fUniv))))
+      val se = successiveVariableElimination(recFormula, xs, recSizeThreshold)
+      val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
       // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
       // each variable of `fvs` once (which is assumed to have no duplicates).
       // `se`, `x`, and `xFormula` therefore have disjoint variables.
@@ -914,7 +914,7 @@ object SetFormula {
     * Returns `true` if `f` is equivalent to [[Empty]].
     * Exponential time in the number of unknowns.
     */
-  def emptyEquivalent(f: SetFormula): Boolean = f match {
+  def isEmptyEquivalent(f: SetFormula): Boolean = f match {
     case Univ => false
     case Cst(_) => false
     case Var(_) => false
@@ -925,16 +925,17 @@ object SetFormula {
       cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
       varsNeg.nonEmpty => false
     case _ =>
-      // Try all instantiations of constants and variables and check that those formulas are
-      // `empty`.
-      emptyEquivalentExhaustive(f)
+      isEmptyEquivalentExhaustive(f)
   }
 
   /**
+    * Helper function of [[isEmptyEquivalent]], should not be called directly since
+    * [[isEmptyEquivalent]] can be faster.
+    *
     * Returns `true` if `f` is equivalent to [[Empty]].
     * Exponential time in the number of unknowns.
     */
-  private def emptyEquivalentExhaustive(f: SetFormula): Boolean = {
+  private def isEmptyEquivalentExhaustive(f: SetFormula): Boolean = {
     /**
       * Checks that all possible instantiations of unknowns result in [[Empty]].
       * The unknowns not present in either set is implicitly instantiated to [[Empty]].
