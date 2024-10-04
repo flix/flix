@@ -249,6 +249,10 @@ object LambdaLift {
   private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)], liftedLocalDefs: ConcurrentLinkedQueue[(Symbol.VarSym, Symbol.DefnSym)])
 
   private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
     def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 
