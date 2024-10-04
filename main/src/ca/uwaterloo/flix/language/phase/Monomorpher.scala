@@ -471,7 +471,7 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc2)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, _, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(visitExp(_, env0, subst))
       val t = subst(tpe)
