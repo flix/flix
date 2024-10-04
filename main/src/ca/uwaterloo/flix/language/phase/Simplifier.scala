@@ -321,8 +321,8 @@ object Simplifier {
           case TypeConstructor.RegionToStar => MonoType.Region
 
           case TypeConstructor.Tuple(_) =>
-            val elms = tpe.typeArguments
-            MonoType.Tuple(elms.map(visitType))
+            val targs = tpe.typeArguments
+            MonoType.Tuple(targs.map(visitType))
 
           case TypeConstructor.Arrow(_) =>
             // arrow type arguments are ordered (effect, args.., result type)
