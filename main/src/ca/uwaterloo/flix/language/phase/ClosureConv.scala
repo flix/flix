@@ -118,10 +118,10 @@ object ClosureConv {
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)
       val fp = FormalParam(freshSym, Ast.Modifiers.Empty, MonoType.Unit, expLoc)
-      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
+      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), exp.tpe, exp.purity), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe, body.purity)
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
@@ -134,7 +134,7 @@ object ClosureConv {
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
+          val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe, purity)
           val clo = mkLambdaClosure(fparams, exp, cloType, loc)
           JvmMethod(ident, fparams, clo, retTpe, purity, loc)
       }

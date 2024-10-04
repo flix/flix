@@ -179,12 +179,12 @@ object BackendType {
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
       case MonoType.Null => BackendObjType.Native(JvmName.ofClass(classOf[Object])).toTpe
-      case MonoType.Array(tpe) => Array(toBackendType(tpe))
+      case MonoType.Array(tpe, _) => Array(toBackendType(tpe))
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
       case MonoType.Struct(_, elms, _) => BackendObjType.Struct(elms.map(toBackendType)).toTpe
-      case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case MonoType.Arrow(args, result, _) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
@@ -219,10 +219,10 @@ object BackendType {
     case MonoType.Float32 => BackendType.Float32
     case MonoType.Float64 => BackendType.Float64
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
-         MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) |
-         MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Region | MonoType.Null =>
+         MonoType.String | MonoType.Regex | MonoType.Array(_, _) | MonoType.Lazy(_) |
+         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) |
+         MonoType.Arrow(_, _, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.Native(_) | MonoType.Region | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }
 
@@ -237,10 +237,10 @@ object BackendType {
     case MonoType.Float64 => BackendType.Float64
     case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
-         MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) |
-         MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Region | MonoType.Null =>
+         MonoType.String | MonoType.Regex | MonoType.Array(_, _) | MonoType.Lazy(_) |
+         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) |
+         MonoType.Arrow(_, _, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.Native(_) | MonoType.Region | MonoType.Null =>
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
@@ -259,14 +259,14 @@ object BackendType {
     case MonoType.Int64 => BackendType.Int64
     case MonoType.Float32 => BackendType.Float32
     case MonoType.Float64 => BackendType.Float64
-    case MonoType.Array(t) => BackendType.Array(toFlixErasedBackendType(t))
+    case MonoType.Array(t, _) => BackendType.Array(toFlixErasedBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
     case MonoType.String => BackendObjType.String.toTpe
     case MonoType.Regex => BackendObjType.Regex.toTpe
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Tuple(_) |
-         MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.Arrow(_, _, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }

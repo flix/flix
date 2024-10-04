@@ -198,12 +198,12 @@ object Eraser {
       case Regex => Regex
       case Region => Region
       case Null => Null
-      case Array(tpe) => Array(visitType(tpe))
+      case Array(tpe, purity) => Array(visitType(tpe), purity)
       case Lazy(tpe) => Lazy(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym, targs) => MonoType.Enum(sym, targs.map(erase))
       case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
-      case Arrow(args, result) => Arrow(args.map(visitType), box(result))
+      case Arrow(args, result, purity) => Arrow(args.map(visitType), box(result), purity)
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
       case Native(clazz) => Native(clazz)
@@ -222,8 +222,9 @@ object Eraser {
       case Int32 => Int32
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | MonoType.Enum(_, _) |
-           MonoType.Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           Region | Array(_, _) | Lazy(_) | Tuple(_) | MonoType.Enum(_, _) |
+           MonoType.Struct(_, _, _) | Arrow(_, _, _) | RecordEmpty |
+           RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }

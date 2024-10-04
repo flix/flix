@@ -42,7 +42,7 @@ object ReducedAst {
     */
   case class Def(ann: Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, unboxedType: UnboxedType, loc: SourceLocation) {
     var method: Method = _
-    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
+    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe, expr.purity)
   }
 
   /** Remember the unboxed return type for test function generation. */

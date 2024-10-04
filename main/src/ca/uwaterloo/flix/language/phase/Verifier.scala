@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
 import scala.annotation.tailrec
 
 /**
@@ -70,7 +71,7 @@ object Verifier {
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -240,7 +241,7 @@ object Verifier {
         case AtomicOp.ArrayLength =>
           val List(t1) = ts
           t1 match {
-            case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
+            case MonoType.Array(_, _) => check(expected = MonoType.Int32)(actual = tpe, loc)
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
@@ -271,14 +272,16 @@ object Verifier {
 
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
-          val arrType = MonoType.Array(t1)
-          checkEq(arrType, tpe, loc)
+          tpe match {
+            case MonoType.Array(elm, _) => checkEq(elm, t1, loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
+          }
           check(expected = MonoType.Int32)(actual = t2, loc)
           tpe
 
         case AtomicOp.ArrayLit =>
           tpe match {
-            case MonoType.Array(elmt) =>
+            case MonoType.Array(elmt, _) =>
               ts.foreach(t => checkEq(elmt, t, loc))
               tpe
             case _ => failMismatchedShape(tpe, "Array", loc)
@@ -287,7 +290,7 @@ object Verifier {
         case AtomicOp.ArrayLoad =>
           val List(t1, t2) = ts
           t1 match {
-            case MonoType.Array(elmt) =>
+            case MonoType.Array(elmt, _) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, tpe, loc)
             case _ => failMismatchedShape(t1, "Array", loc)
@@ -296,7 +299,7 @@ object Verifier {
         case AtomicOp.ArrayStore =>
           val List(t1, t2, t3) = ts
           t1 match {
-            case MonoType.Array(elmt) =>
+            case MonoType.Array(elmt, _) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, t3, loc)
               check(expected = MonoType.Unit)(actual = tpe, loc)
@@ -307,7 +310,7 @@ object Verifier {
           val List(t1) = ts
           tpe match {
             case MonoType.Lazy(elmt) =>
-              val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
+              val fun = MonoType.Arrow(List(MonoType.Unit), elmt, Purity.Pure)
               checkEq(t1, fun, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Lazy", loc)
@@ -369,10 +372,10 @@ object Verifier {
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
-          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe, defn.expr.purity)
 
-          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
-          val actual = MonoType.Arrow(ts, tpe)
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature, Purity.Pure)
+          val actual = MonoType.Arrow(ts, tpe, purity)
 
           checkEq(decl, actual, loc)
           tpe
@@ -395,7 +398,7 @@ object Verifier {
         case AtomicOp.Spawn =>
           val List(t1, t2) = ts
           t1 match {
-            case MonoType.Arrow(List(MonoType.Unit), _) => ()
+            case MonoType.Arrow(List(MonoType.Unit), _, _) => ()
             case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
           }
 
@@ -448,22 +451,27 @@ object Verifier {
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
-      checkEq(lamType1, lamType2, loc)
+      lamType1 match {
+        case MonoType.Arrow(args, res, _) =>
+          if (args.length != exps.length) failMismatchedShape(lamType1, s"Arrow(${args.length})", loc)
+          exps.zip(args).foreach { case (e, t) => checkEq(e.tpe, t, e.loc) }
+          checkEq(res, tpe, loc)
+        case _ => failMismatchedShape(lamType1, "Arrow", loc)
+      }
       tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
-      check(expected = declared)(actual = actual, loc)
+      if (exps.length != defn.fparams.length) failMismatchedArity(actual = exps.length, expected = defn.fparams.length, loc)
+      exps.zip(defn.fparams).foreach{case (e, fp) => check(expected = fp.tpe)(e.tpe, e.loc)}
+      check(expected = defn.tpe)(tpe, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
-      check(expected = declared)(actual = actual, loc)
+      if (actuals.length != defn.fparams.length) failMismatchedArity(actual = actuals.length, expected = defn.fparams.length, loc)
+      actuals.zip(defn.fparams).foreach { case (e, fp) => check(expected = fp.tpe)(e.tpe, e.loc) }
+      check(expected = defn.tpe)(tpe, loc)
       tpe
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
@@ -517,7 +525,7 @@ object Verifier {
 
     case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val exptype = visitExpr(exp) match {
-        case MonoType.Arrow(List(MonoType.Unit), t) => t
+        case MonoType.Arrow(List(MonoType.Unit), t, _) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
       }
 
@@ -531,10 +539,19 @@ object Verifier {
           throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
 
         val params = op.fparams.map(_.tpe)
-        val resumptionType = MonoType.Arrow(List(op.tpe), exptype)
-        val signature = MonoType.Arrow(params :+ resumptionType, exptype)
-
-        checkEq(ruletype, signature, rule.exp.loc)
+        val ruleLoc = rule.exp.loc
+        val (args, res) = ruletype match {
+          case MonoType.Arrow(args, res, _) => (args, res)
+          case _ => failMismatchedShape(ruletype, "Arrow", ruleLoc)
+        }
+        if (args.length != params.length + 1) failMismatchedArity(actual = args.length, expected = params.length + 1, ruleLoc)
+        val (opArgs, List(cont)) = args.splitAt(params.length)
+        opArgs.zip(params).foreach { case (opA, p) => check(expected = p)(opA, ruleLoc) }
+        cont match {
+          case MonoType.Arrow(List(op.tpe), contRes, _) => checkEq(exptype, contRes, ruleLoc)
+          case _ => failMismatchedShape(cont, s"Arrow(List(${op.tpe}), _)", ruleLoc)
+        }
+        checkEq(res, exptype, ruleLoc)
       }
 
       checkEq(tpe, exptype, loc)
@@ -551,19 +568,21 @@ object Verifier {
         case t => t
       }
 
-      val sig = MonoType.Arrow(ts, tpe)
-      val opsig = MonoType.Arrow(
-        op.fparams.map(_.tpe), oprestype
-      )
-
-      checkEq(sig, opsig, loc)
+      if (ts.length != op.fparams.length) failMismatchedArity(actual = ts.length, expected = op.fparams.length, loc)
+      ts.zip(op.fparams).foreach{case (t, fp) => check(expected = fp.tpe)(t, loc)}
+      check(expected = oprestype)(tpe, loc)
       tpe
 
     case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
-        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
-        checkEq(signature, exptype, m.loc)
+        exptype match {
+          case MonoType.Arrow(args, res, _) =>
+            if (args.length != m.fparams.length) failMismatchedArity(actual = args.length, expected = m.fparams.length, m.loc)
+            args.zip(m.fparams).foreach{case (t, fp) => check(expected = fp.tpe)(t, m.loc)}
+            check(expected = m.tpe)(res, m.loc)
+          case _ => failMismatchedShape(exptype, s"Arrow", m.loc)
+        }
       }
       checkEq(tpe, MonoType.Native(clazz), loc)
 
@@ -614,7 +633,7 @@ object Verifier {
     */
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[?], loc: SourceLocation): MonoType = {
     tpe match {
-      case MonoType.Array(elmt) if klazz.isArray =>
+      case MonoType.Array(elmt, _) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
         tpe
 
@@ -636,23 +655,23 @@ object Verifier {
       case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
       case MonoType.BigDecimal if klazz.isAssignableFrom(classOf[java.math.BigDecimal]) => tpe
       case MonoType.Regex if klazz.isAssignableFrom(classOf[java.util.regex.Pattern]) => tpe
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32, _) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64, _) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
 
-      case MonoType.Array(_) => tpe // TODO: Array subtyping
+      case MonoType.Array(_, _) => tpe // TODO: Array subtyping
 
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
@@ -687,6 +706,14 @@ object Verifier {
     case MonoType.RecordEmpty => None
     case _ => failMismatchedShape(rec, "Record", loc)
   }
+
+  /**
+    * Throw `InternalCompilerException` because of a wrong function call arity.
+    */
+  private def failMismatchedArity(actual: Int, expected: Int, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Expected $expected arguments, not $actual", loc
+    )
 
   /**
     * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`.

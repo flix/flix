@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
@@ -88,7 +88,7 @@ object GenEffectClasses {
   private def genFieldAndMethod(visitor: ClassWriter, effectType: JvmType.Reference, op: Op): Unit = {
     // Field
     val writtenOpArgsMono = op.fparams.map(_.tpe)
-    val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object)
+    val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object, Purity.ControlImpure)
 
     val resumption = JvmType.Reference(BackendObjType.Resumption.jvmName)
     val writtenOpArgs = writtenOpArgsMono.map(JvmOps.getErasedJvmType)
@@ -157,7 +157,7 @@ object GenEffectClasses {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val writtenOpArgs = op.fparams.map(_.tpe)
-    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object))
+    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object, Purity.ControlImpure))
   }
 
 }

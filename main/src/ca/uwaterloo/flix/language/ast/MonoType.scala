@@ -69,7 +69,7 @@ object MonoType {
   // Compound Types.
   //
 
-  case class Array(tpe: MonoType) extends MonoType
+  case class Array(tpe: MonoType, purity: Purity) extends MonoType
 
   case class Lazy(tpe: MonoType) extends MonoType
 
@@ -79,7 +79,7 @@ object MonoType {
 
   case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
 
-  case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
+  case class Arrow(args: List[MonoType], result: MonoType, purity: Purity) extends MonoType
 
   case object RecordEmpty extends MonoType
 
