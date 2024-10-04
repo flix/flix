@@ -89,4 +89,26 @@ object MonoType {
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 
+  //
+  // Functions.
+  //
+
+  /** Returns `tpe` if it's a primitive type and returns [[MonoType.Object]] otherwise. */
+  def erase(tpe: MonoType): MonoType = {
+    tpe match {
+      case Bool => Bool
+      case Char => Char
+      case Float32 => Float32
+      case Float64 => Float64
+      case Int8 => Int8
+      case Int16 => Int16
+      case Int32 => Int32
+      case Int64 => Int64
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
+           RecordExtend(_, _, _) | Native(_) | Null =>
+        MonoType.Object
+    }
+  }
+
 }

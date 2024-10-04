@@ -71,7 +71,9 @@ object JvmOps {
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_, _) => JvmType.Object
-    case MonoType.Struct(_, targs) => JvmType.Reference(BackendObjType.Struct(targs.map(BackendType.toErasedBackendType)).jvmName)
+    case MonoType.Struct(sym, targs) =>
+      val elms = instantiateStruct(root.structs(sym), targs.map(MonoType.erase))
+      JvmType.Reference(BackendObjType.Struct(elms).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }

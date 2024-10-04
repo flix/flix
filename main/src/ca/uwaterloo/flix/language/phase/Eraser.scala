@@ -41,10 +41,15 @@ object Eraser {
   }
 
   private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
-      val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
+    case Def(ann, mod, sym, cparams0, fparams0, lparams0, pcPoints, exp0, tpe0, originalTpe, loc) =>
+      val cparams = cparams0.map(visitParam)
+      val fparams = fparams0.map(visitParam)
+      val lparams = lparams0.map(visitLocalParam)
+      val exp = visitExp(exp0)
+      val tpe = box(tpe0)
+      val expBox = Expr.ApplyAtomic(AtomicOp.Box, List(exp), tpe, exp.purity, loc)
+      val unboxedTpe = UnboxedType(MonoType.erase(originalTpe.tpe))
+      Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, expBox, tpe, unboxedTpe, loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
@@ -65,7 +70,7 @@ object Eraser {
 
   private def visitEnumTag(caze: Case): Case = caze match {
     case Case(sym, tpe, loc) =>
-      Case(sym, erase(tpe), loc)
+      Case(sym, eraseType(tpe), loc)
   }
 
   private def visitStruct(struct: Struct): Struct = struct match {
@@ -76,7 +81,7 @@ object Eraser {
 
   private def visitStructField(field: StructField): StructField = field match {
     case StructField(sym, tpe, loc) =>
-      StructField(sym, erase(tpe), loc)
+      StructField(sym, eraseType(tpe), loc)
   }
 
   private def visitBranch(branch: (Symbol.LabelSym, Expr)): (Symbol.LabelSym, Expr) = branch match {
@@ -117,11 +122,11 @@ object Eraser {
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Index(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, MonoType.erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordEmpty => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, MonoType.erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
@@ -130,7 +135,7 @@ object Eraser {
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, MonoType.erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
@@ -147,17 +152,17 @@ object Eraser {
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, MonoType.erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
       }
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
-      castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ac, MonoType.erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
-      castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ad, MonoType.erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -178,7 +183,7 @@ object Eraser {
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
     case TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
-      castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(tw, MonoType.erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
@@ -200,7 +205,7 @@ object Eraser {
 
   private def visitOp(op: Op): Op = op match {
     case Op(sym, ann, mod, fparams, tpe, purity, loc) =>
-      Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
+      Op(sym, ann, mod, fparams.map(visitParam), MonoType.erase(tpe), purity, loc)
   }
 
   private def visitType(tpe: MonoType): MonoType = {
@@ -235,25 +240,7 @@ object Eraser {
     }
   }
 
-  private def erase(tpe: MonoType): MonoType = {
-    import MonoType.*
-    tpe match {
-      case Bool => Bool
-      case Char => Char
-      case Float32 => Float32
-      case Float64 => Float64
-      case Int8 => Int8
-      case Int16 => Int16
-      case Int32 => Int32
-      case Int64 => Int64
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
-        MonoType.Object
-    }
-  }
-
-  private def erase(tpe: Type): Type = tpe match {
+  private def eraseType(tpe: Type): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Bool => c
