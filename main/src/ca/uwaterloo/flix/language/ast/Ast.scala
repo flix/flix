@@ -272,7 +272,9 @@ object Ast {
   /**
     * Represents a use of a LocalDef sym.
     */
-  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation)
+  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation) {
+    if (sym.boundBy != BoundBy.LocalDef) throw ca.uwaterloo.flix.util.InternalCompilerException(s"$sym is not a local def", loc)
+  }
 
   /**
     * Represents a use of a class sym.
