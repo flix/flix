@@ -270,6 +270,11 @@ object Ast {
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a LocalDef sym.
+    */
+  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a class sym.
     */
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)

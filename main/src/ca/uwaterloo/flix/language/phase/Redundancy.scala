@@ -359,7 +359,7 @@ object Redundancy {
       }
       visitExps(exps, env0, rc)
 
-    case Expr.ApplyLocalDef(sym, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
         visitExps(exps, env0, rc)
       } else {

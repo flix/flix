@@ -376,12 +376,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
       KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
-    case ResolvedAst.Expr.ApplyLocalDef(sym, exps0, loc) =>
+    case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val arrowTvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ApplyLocalDef(sym, exps, arrowTvar, tvar, evar, loc)
+      KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
