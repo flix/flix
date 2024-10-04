@@ -412,14 +412,12 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LocalDef(_, sym, fparams, dtvar, devar, exp1, exp2, loc) =>
+      case Expr.LocalDef(_, sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         val defEff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff1 else Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
         val defTpe = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
-        c.unifyType(dtvar, tpe1, sym.loc)
-        c.unifyType(devar, eff1, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = eff2

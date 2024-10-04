@@ -85,8 +85,8 @@ object Regions {
     case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.LocalDef(_, _, _, declaredType, _, exp1, exp2, tpe, _, loc) =>
-      checkType(declaredType, loc) ++ visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+    case Expr.LocalDef(_, _, _, exp1, exp2, tpe, _, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.Region(_, _) =>
       Nil
@@ -160,7 +160,7 @@ object Regions {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
 
     case Expr.StructGet(e, _, tpe, _, loc) =>
       visitExp(e) ++ checkType(tpe, loc)

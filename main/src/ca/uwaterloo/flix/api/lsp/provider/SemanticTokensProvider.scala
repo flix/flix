@@ -379,13 +379,11 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(_, sym, fparams, declaredType, declaredEff, exp1, exp2, _, _, loc) =>
+    case Expr.LocalDef(_, sym, fparams, exp1, exp2, _, _, loc) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
         visitFormalParams(fparams),
-        visitType(declaredType),
-        visitType(declaredEff),
         visitExp(exp1),
         visitExp(exp2)
       )

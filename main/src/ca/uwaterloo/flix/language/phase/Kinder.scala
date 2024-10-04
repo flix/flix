@@ -427,12 +427,10 @@ object Kinder {
     case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv0, taenv, root))
       val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, taenv, root))
-      val dtvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val devar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       val kenv1 = kenv0 ++ KindEnv.merge(fparamKenvs)
       val exp1 = visitExp(exp10, kenv1, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.LocalDef(ann, sym, fparams, dtvar, devar, exp1, exp2, loc)
+      KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc)
 
     case ResolvedAst.Expr.Region(tpe, loc) =>
       KindedAst.Expr.Region(tpe, loc)

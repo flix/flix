@@ -156,10 +156,10 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
 
-    case Expr.LocalDef(ann, sym, fparams, declaredType, declaredEff, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ann, sym, fparams, declaredType, declaredEff, e1, e2, tpe, eff, loc)
+      Expr.LocalDef(ann, sym, fparams, e1, e2, tpe, eff, loc)
 
     case Expr.Region(_, _) => exp0
 

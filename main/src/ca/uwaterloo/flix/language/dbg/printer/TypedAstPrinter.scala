@@ -41,7 +41,7 @@ object TypedAstPrinter {
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(_, sym, _, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
+    case Expr.LocalDef(_, sym, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -62,7 +62,7 @@ object TypedAstPrinter {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
     case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
-    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map {case (k, v) => (k.sym, print(v))}, print(region))
+    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, print(region))
     case Expr.StructGet(exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
     case Expr.StructPut(exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
