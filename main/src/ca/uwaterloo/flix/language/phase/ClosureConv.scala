@@ -453,34 +453,122 @@ object ClosureConv {
 
   private def rewriteApplyLocalDef(expr00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
     def visit(expr0: Expr): Expr = expr0 match {
-      case Expr.Cst(cst, tpe, loc) => Expr.Cst(cst, tpe, loc)
-      case Expr.Var(sym, tpe, loc) => Expr.Var(sym, tpe, loc)
-      case Expr.Lambda(fparams, exp, tpe, loc) => Expr.Lambda(fparams, visit(exp), tpe, loc)
-      case Expr.Apply(exp, args, tpe, purity, loc) => Expr.Apply(visit(exp), args.map(visit), tpe, purity, loc)
-      case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) => Expr.LambdaClosure(cparams, fparams, freeVars, visit(exp), tpe, loc)
-      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => Expr.ApplyAtomic(op, exps.map(visit), tpe, purity, loc)
-      case Expr.ApplyClo(exp, exps, tpe, purity, loc) => Expr.ApplyClo(visit(exp), exps.map(visit), tpe, purity, loc)
-      case Expr.ApplyDef(sym, exps, tpe, purity, loc) => Expr.ApplyDef(sym, exps.map(visit), tpe, purity, loc)
-      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      case Expr.Cst(_, _, _) => expr0
+
+      case Expr.Var(_, _, _) => expr0
+
+      case Expr.Lambda(fparams, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expr.Lambda(fparams, e, tpe, loc)
+
+      case Expr.Apply(exp, exps, tpe, purity, loc) =>
+        val e = visit(exp)
         val es = exps.map(visit)
+        Expr.Apply(e, es, tpe, purity, loc)
+
+      case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
+
+      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyAtomic(op, es, tpe, purity, loc)
+
+      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
+        val e = visit(exp)
+        val es = exps.map(visit)
+        Expr.ApplyClo(e, es, tpe, purity, loc)
+
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+        // Step 1: Rewrite recursively
+        val es = exps.map(visit)
+
+        // Step 2: If we are at an application of sym0 which we want
+        //         to rewrite, then do the rewrite.
         if (sym == sym0) {
+          // This is the important rewrite!
+          // Add all the free vars of the local def at `sym0`
+          // as arguments to the function call.
           val all = freeVars.map(fv => Expr.Var(fv.sym, fv.tpe, loc.asSynthetic)) ++ es
           Expr.ApplyLocalDef(sym, all, tpe, purity, loc)
         } else {
+          // Otherwise, we are not interested in rewriting this node,
+          // so just use the recursively rewritten arguments `es`.
           Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
         }
-      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => Expr.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, purity, loc)
-      case Expr.Stm(exp1, exp2, tpe, purity, loc) => Expr.Stm(visit(exp1), visit(exp2), tpe, purity, loc)
-      case Expr.Branch(exp, branches, tpe, purity, loc) => Expr.Branch(visit(exp), branches.map { case (s, e) => s -> visit(e) }, tpe, purity, loc)
-      case Expr.JumpTo(sym, tpe, purity, loc) => Expr.JumpTo(sym, tpe, purity, loc)
-      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) => Expr.Let(sym, visit(exp1), visit(exp2), tpe, purity, loc)
-      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) => Expr.LetRec(sym, visit(exp1), visit(exp2), tpe, purity, loc)
-      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => Expr.LocalDef(sym, fparams, visit(exp1), visit(exp2), tpe, purity, loc)
-      case Expr.Scope(sym, exp, tpe, purity, loc) => Expr.Scope(sym, visit(exp), tpe, purity, loc)
-      case Expr.TryCatch(exp, rules, tpe, purity, loc) => Expr.TryCatch(visit(exp), rules.map { case CatchRule(sym, clazz, exp) => CatchRule(sym, clazz, visit(exp)) }, tpe, purity, loc)
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) => Expr.TryWith(visit(exp), effUse, rules.map { case HandlerRule(op, fparams, exp) => HandlerRule(op, fparams, visit(exp)) }, tpe, purity, loc)
-      case Expr.Do(op, exps, tpe, purity, loc) => Expr.Do(op, exps.map(visit), tpe, purity, loc)
-      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => Expr.NewObject(name, clazz, tpe, purity, methods.map { case JvmMethod(ident, fparams, exp, retTpe, purity, loc) => JvmMethod(ident, fparams, visit(exp), retTpe, purity, loc) }, loc)
+
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+      case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.Stm(e1, e2, tpe, purity, loc)
+
+      case Expr.Branch(exp, branches, tpe, purity, loc) =>
+        val e = visit(exp)
+        val bs = branches.map {
+          case (s, e1) => s -> visit(e1)
+        }
+        Expr.Branch(e, bs, tpe, purity, loc)
+
+      case Expr.JumpTo(_, _, _, _) => expr0
+
+      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.Let(sym, e1, e2, tpe, purity, loc)
+
+      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.LetRec(sym, e1, e2, tpe, purity, loc)
+
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.LocalDef(sym, fparams, e1, e2, tpe, purity, loc)
+
+      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+        val e = visit(exp)
+        Expr.Scope(sym, e, tpe, purity, loc)
+
+      case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case CatchRule(sym, clazz, exp1) =>
+            val e1 = visit(exp1)
+            CatchRule(sym, clazz, e1)
+        }
+        Expr.TryCatch(e, rs, tpe, purity, loc)
+
+      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case HandlerRule(op, fparams, exp1) =>
+            val e1 = visit(exp1)
+            HandlerRule(op, fparams, e1)
+        }
+        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+      case Expr.Do(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.Do(op, es, tpe, purity, loc)
+
+      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+        val ms = methods.map {
+          case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+            val e = visit(exp)
+            JvmMethod(ident, fparams, e, retTpe, purity, loc)
+        }
+        Expr.NewObject(name, clazz, tpe, purity, ms, loc)
     }
 
     visit(expr00)
