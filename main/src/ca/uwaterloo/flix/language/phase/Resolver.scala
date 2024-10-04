@@ -1821,7 +1821,7 @@ object Resolver {
   private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc) // TODO: Add Ast.LocalDefSymUse?
+        val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc)
         visitApplyFull(base, arity, es, outerLoc)
     }
   }
