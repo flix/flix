@@ -347,12 +347,11 @@ object ClosureConv {
         Expr.ApplyDef(sym, es, tpe, purity, loc)
 
       case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+        // We do not substitute any local def symbol
+        // since the will be lifted to top level in LambdaLift
+        // so it is okay to capture a local def symbol.
         val es = exps.map(visitExp)
-        val sym1 = subst.get(sym) match {
-          case None => sym
-          case Some(newSym) => newSym
-        }
-        Expr.ApplyLocalDef(sym1, es, tpe, purity, loc)
+        Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
       case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
