@@ -887,6 +887,7 @@ object SetFormula {
   def successiveVariableElimination(f: SetFormula, fvs: List[Int], recSizeThreshold: Int): SetSubstitution = fvs match {
     case Nil =>
       // `fvs` is empty so `f` has no variables.
+      // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
       // Return the empty substitution if `f` is equivalent to `empty`.
       if (isEmptyEquivalent(f)) SetSubstitution.empty
       else throw NoSolutionException()
