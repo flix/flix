@@ -311,7 +311,7 @@ object Simplifier {
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
           case TypeConstructor.Array =>
-            val List(elm) = tpe.typeArguments
+            val List(elm, reg) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
           case TypeConstructor.Vector =>
