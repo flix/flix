@@ -112,11 +112,11 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
 
   /** Applies `this` to both sides of `eq`. */
   def apply(eq: Equation): Equation = {
-    val Equation(t1, t2, loc) = eq
+    val Equation(t1, t2, status, loc) = eq
     val app1 = apply(t1)
     val app2 = apply(t2)
     // Maintain and exploit reference equality for performance.
-    if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc)
+    if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc, status)
   }
 
   /** Applies `this` to each [[Equation]] in `eqs`. */

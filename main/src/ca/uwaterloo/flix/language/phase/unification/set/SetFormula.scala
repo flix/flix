@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
 
 import scala.annotation.nowarn
-import scala.collection.immutable.{SortedSet, SortedMap}
+import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
 /**
@@ -54,6 +54,20 @@ sealed trait SetFormula {
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
     case Union(_, _, varsPos, _, _, varsNeg, other) =>
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
+  }
+
+  /** Faster alternative to `this.variables.contains(v)`. */
+  final def contains(v: Var): Boolean = this match {
+    case Univ => false
+    case Empty => false
+    case Cst(_) => false
+    case Var(x) => x == v.x
+    case ElemSet(_) => false
+    case Compl(f) => f.contains(v)
+    case Inter(_, _, varsPos, _, _, varsNeg, other) =>
+      varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
+    case Union(_, _, varsPos, _, _, varsNeg, other) =>
+      varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
   }
 
   /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
@@ -282,6 +296,11 @@ object SetFormula {
       // There is always at least two subformulas.
       assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.size == 2, message = this.toString)
     }
+
+    /** Applies `f` to the subformulas of `this`. */
+    def mapSubformulas[T](f: SetFormula => T): List[T] = {
+      subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).map(f).toList
+    }
   }
 
   /**
@@ -324,6 +343,11 @@ object SetFormula {
       assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
       // There is always at least two subformulas.
       assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
+    }
+
+    /** Applies `f` to the subformulas of `this`. */
+    def mapSubformulas[T](f: SetFormula => T): List[T] = {
+      subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).map(f).toList
     }
   }
 
@@ -651,6 +675,13 @@ object SetFormula {
   def mkDifference(f1: SetFormula, f2: SetFormula): SetFormula =
     mkInter(f1, mkCompl(f2))
 
+  /** Returns a formula that is equivalent to [[Empty]] if `f1` is equivalent to `f2`. */
+  def mkEquivalenceTestToEmpty(f1: SetFormula, f2: SetFormula): SetFormula = {
+    if (f1 == Empty) f2
+    else if (f2 == Empty) f1
+    else mkXor(f1, f2)
+  }
+
   //
   // Other Functions
   //
@@ -899,8 +930,7 @@ object SetFormula {
       if (recSizeThreshold > 0) {
         val recFormulaSize = recFormula.size
         if (recFormulaSize > recSizeThreshold) throw ComplexException(
-          s"SetFormula size ($recFormulaSize) is over recursive SVE threshold ($recSizeThreshold)",
-          SourceLocation.Unknown
+          s"SetFormula size ($recFormulaSize) is over recursive SVE threshold ($recSizeThreshold)"
         )
       }
       val se = successiveVariableElimination(recFormula, xs, recSizeThreshold)
@@ -928,6 +958,13 @@ object SetFormula {
     case _ =>
       isEmptyEquivalentExhaustive(f)
   }
+
+  /**
+    * Returns `true` if `f1` and `f2` are equivalent.
+    * Exponential time in the number of unknowns.
+    */
+  def isEquivalent(f1: SetFormula, f2: SetFormula): Boolean =
+    isEmptyEquivalent(mkEquivalenceTestToEmpty(f1, f2))
 
   /**
     * Helper function of [[isEmptyEquivalent]], should not be called directly since
@@ -1014,6 +1051,6 @@ object SetFormula {
     * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
     * big.
     */
-  case class ComplexException(msg: String, loc: SourceLocation) extends RuntimeException
+  case class ComplexException(msg: String) extends RuntimeException
 
 }
