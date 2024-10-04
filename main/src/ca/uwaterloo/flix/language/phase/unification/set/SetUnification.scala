@@ -212,13 +212,18 @@ object SetUnification {
       }
     }
 
-    /** Solves equations using successive-variable-elimination, i.e. exhaustive instantiation. */
-    def setUnifyOne(recSizeThreshold: Int)(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+    /**
+      * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
+      *
+      * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
+      * [[Equation.Status.Timeout]].
+      */
+    def sve(recSizeThreshold: Int)(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       p.progress()
-      val query = SetFormula.mkEquivalenceTestToEmpty(eq.f1, eq.f2)
+      val query = mkEquivalenceTestToEmpty(eq.f1, eq.f2)
       val fvs = query.variables.toList
       try {
-        val subst = SetFormula.successiveVariableElimination(query, fvs, recSizeThreshold)
+        val subst = successiveVariableElimination(query, fvs, recSizeThreshold)
         (Nil, subst)
       } catch {
         case NoSolutionException() => (List(eq.toUnsolvable), SetSubstitution.empty)
