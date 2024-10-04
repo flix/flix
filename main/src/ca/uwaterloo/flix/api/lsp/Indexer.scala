@@ -261,7 +261,7 @@ object Indexer {
         traverse(fparams)(visitFormalParam),
         visitType(declaredType),
         visitType(declaredEff),
-        Index.occurrenceOf(sym, exp1.tpe),
+        Index.occurrenceOf(sym, declaredType),
         visitExp(exp1),
         visitExp(exp2),
         Index.occurrenceOf(exp0)
