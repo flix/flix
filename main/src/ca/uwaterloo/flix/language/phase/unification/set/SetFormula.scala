@@ -903,9 +903,9 @@ object SetFormula {
       }
       val se = successiveVariableElimination(intersection, xs, recSizeThreshold)
       val xFormula = propagation(mkUnion(se(fEmpty), mkDifference(Var(x), se(fUniv))))
-      // We can unsafely extend because `xFormula` contains no variables and we only add each
-      // variable of `fvs` once (which is assumed to have no duplicates).
-      // Therefore `se`, `x`, and `xFormula` have disjoint variables.
+      // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
+      // each variable of `fvs` once (which is assumed to have no duplicates).
+      // `se`, `x`, and `xFormula` therefore have disjoint variables.
       se.unsafeExtend(x, xFormula)
   }
 
