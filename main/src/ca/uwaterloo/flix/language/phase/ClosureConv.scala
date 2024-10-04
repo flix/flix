@@ -70,9 +70,9 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-    case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+    case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyLocalDef(sym, es, itpe, tpe, purity, loc)
+      Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -180,13 +180,13 @@ object ClosureConv {
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => Expr.ApplyAtomic(op, exps.map(visit), tpe, purity, loc)
       case Expr.ApplyClo(exp, exps, tpe, purity, loc) => Expr.ApplyClo(visit(exp), exps.map(visit), tpe, purity, loc)
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) => Expr.ApplyDef(sym, exps.map(visit), tpe, purity, loc)
-      case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
         if (sym == sym0) {
           val all = freeVars.map(fv => Expr.Var(fv.sym, fv.tpe, loc.asSynthetic)) ++ es
-          Expr.ApplyLocalDef(sym, all, itpe, tpe, purity, loc)
+          Expr.ApplyLocalDef(sym, all, tpe, purity, loc)
         } else {
-          Expr.ApplyLocalDef(sym, es, itpe, tpe, purity, loc)
+          Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
         }
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => Expr.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, purity, loc)
       case Expr.Stm(exp1, exp2, tpe, purity, loc) => Expr.Stm(visit(exp1), visit(exp2), tpe, purity, loc)
@@ -260,7 +260,7 @@ object ClosureConv {
     case Expr.ApplyDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
@@ -381,13 +381,13 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-      case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
         val sym1 = subst.get(sym) match {
           case None => sym
           case Some(newSym) => newSym
         }
-        Expr.ApplyLocalDef(sym1, es, itpe, tpe, purity, loc)
+        Expr.ApplyLocalDef(sym1, es, tpe, purity, loc)
 
       case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)

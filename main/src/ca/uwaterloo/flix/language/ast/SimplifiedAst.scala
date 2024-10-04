@@ -74,7 +74,7 @@ object SimplifiedAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], itpe: MonoType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

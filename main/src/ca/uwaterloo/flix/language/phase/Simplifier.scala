@@ -85,11 +85,10 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, eff, loc) =>
-      val ft = visitType(itpe) // consider dropping this
+    case MonoAst.Expr.ApplyLocalDef(sym, exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyLocalDef(sym, es, ft, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
