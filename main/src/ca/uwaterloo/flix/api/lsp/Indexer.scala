@@ -257,10 +257,9 @@ object Indexer {
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
-      val arrowType = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
       Index.all(
         traverse(fparams)(visitFormalParam),
-        Index.occurrenceOf(sym, arrowType),
+        Index.occurrenceOf(sym, sym.tvar),
         visitExp(exp1),
         visitExp(exp2),
         Index.occurrenceOf(exp0)
