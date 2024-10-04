@@ -1300,15 +1300,15 @@ object Weeder2 {
       }
 
       mapN(
-        annVal,
+        annVal, // Even though the annotation is unused, we still need to map over it to collect possible errors.
         exprs,
         Decls.pickFormalParameters(tree, Presence.Optional),
         pickNameIdent(tree),
         Types.tryPickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        case (ann, (exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
-          Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
+        case (_, (exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
+          Expr.LocalDef(ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
 

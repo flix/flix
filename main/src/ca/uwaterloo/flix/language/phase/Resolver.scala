@@ -982,7 +982,7 @@ object Resolver {
         case (e1, e2) => ResolvedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
       }
 
-    case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, loc) =>
+    case NamedAst.Expr.LocalDef(sym, fparams0, exp1, exp2, loc) =>
       val fparamsVal = traverse(fparams0)(resolveFormalParam(_, env0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         fparams =>
@@ -991,7 +991,7 @@ object Resolver {
           val env2 = env0 ++ mkLocalDefEnv(sym, fparams)
           val exp2Val = resolveExp(exp2, env2)
           mapN(exp1Val, exp2Val) {
-            case (e1, e2) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, loc)
+            case (e1, e2) => ResolvedAst.Expr.LocalDef(sym, fparams, e1, e2, loc)
           }
       }
 
