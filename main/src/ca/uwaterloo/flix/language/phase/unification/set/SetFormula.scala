@@ -49,7 +49,7 @@ sealed trait SetFormula {
     case Cst(_) => SortedSet.empty
     case Var(x) => SortedSet(x)
     case ElemSet(_) => SortedSet.empty
-    case Compl(t) => t.variables
+    case Compl(f) => f.variables
     case Inter(_, _, varsPos, _, _, varsNeg, other) =>
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
     case Union(_, _, varsPos, _, _, varsNeg, other) =>
@@ -63,7 +63,7 @@ sealed trait SetFormula {
     case Cst(_) => false
     case Var(_) => false
     case ElemSet(_) => true
-    case Compl(t) => t.isGround
+    case Compl(f) => f.isGround
     case Inter(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
       cstsPos.isEmpty &&
         varsPos.isEmpty &&
@@ -89,7 +89,7 @@ sealed trait SetFormula {
     case Cst(c) => SortedSet(c)
     case ElemSet(_) => SortedSet.empty
     case Var(x) => SortedSet(x)
-    case Compl(t) => t.unknowns
+    case Compl(f) => f.unknowns
     case Inter(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
       SortedSet.from(
         cstsPos.iterator.map(_.c) ++
@@ -139,17 +139,17 @@ sealed trait SetFormula {
     }
 
     while (workList.nonEmpty) {
-      val t :: next = workList
+      val f0 :: next = workList
       workList = next
-      t match {
+      f0 match {
         case Univ => ()
         case Empty => ()
         case Cst(_) => ()
         case Var(_) => ()
         case ElemSet(_) => ()
-        case Compl(t) =>
+        case Compl(f) =>
           counter += 1
-          workList = t :: workList
+          workList = f :: workList
         case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
           countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
         case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
@@ -431,9 +431,9 @@ object SetFormula {
 
     var workList = fs
     while (workList.nonEmpty) {
-      val t :: next = workList
+      val f0 :: next = workList
       workList = next
-      t match {
+      f0 match {
         case Univ =>
           ()
         case Empty =>
@@ -559,9 +559,9 @@ object SetFormula {
 
     var workList = ts
     while (workList.nonEmpty) {
-      val t :: next = workList
+      val f0 :: next = workList
       workList = next
-      t match {
+      f0 match {
         case Empty =>
           ()
         case Univ =>
@@ -666,7 +666,7 @@ object SetFormula {
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
-  def propagation(t: SetFormula): SetFormula = propagationWithInsts(t, SortedMap.empty)
+  def propagation(f: SetFormula): SetFormula = propagationWithInsts(f, SortedMap.empty)
 
   /**
     * Applies set propagation to `f` where `insts` keep track of running instantiations for
@@ -871,5 +871,144 @@ object SetFormula {
       case _ => SortedMap.empty[Int, T]
     }
   }
+
+  /**
+    * The Successive Variable Elimination algorithm.
+    *
+    * Returns the most-general unifier of the equation `f ~ empty` where `fvs` is the free
+    * variables in `f`. If there is no unifier then [[NoSolutionException]] is thrown.
+    *
+    * Eliminates variables one-by-one from the given list `fvs` recursively.
+    *
+    * If the recursively building term is ever larger than `recSizeThreshold` then
+    * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
+    * checking.
+    */
+  def successiveVariableElimination(f: SetFormula, fvs: List[Int], recSizeThreshold: Int): SetSubstitution = fvs match {
+    case Nil =>
+      // emptyEquivalent now treats the remaining constants as variables and
+      // goes through all assignments of those.
+      if (emptyEquivalent(f)) SetSubstitution.empty
+      else throw NoSolutionException()
+
+    case x :: xs =>
+      val fEmpty = SetSubstitution.singleton(x, Empty)(f)
+      val fUniv = SetSubstitution.singleton(x, Univ)(f)
+      val intersection = propagation(mkInter(fEmpty, fUniv))
+      if (recSizeThreshold > 0) {
+        val recTermSize = intersection.size
+        if (recTermSize > recSizeThreshold) throw ComplexException(
+          s"SetFormula size ($recTermSize) is over recursive SVE threshold ($recSizeThreshold)", SourceLocation.Unknown
+        )
+      }
+      val se = successiveVariableElimination(intersection, xs, recSizeThreshold)
+      val xFormula = propagation(mkUnion(se(fEmpty), mkDifference(Var(x), se(fUniv))))
+      // We can unsafely extend because `xFormula` contains no variables and we only add each
+      // variable of `fvs` once (which is assumed to have no duplicates).
+      // Therefore `se`, `x`, and `xFormula` have disjoint variables.
+      se.unsafeExtend(x, xFormula)
+  }
+
+  /**
+    * Returns `true` if `f` is equivalent to [[Empty]].
+    * Exponential time in the number of unknowns.
+    */
+  def emptyEquivalent(f: SetFormula): Boolean = f match {
+    case Univ => false
+    case Cst(_) => false
+    case Var(_) => false
+    case ElemSet(_) => false
+    case Empty => true
+    // If there are unknowns in a union, then it will clearly be non-empty for some instantiation.
+    case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, _) if elemPos.nonEmpty ||
+      cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
+      varsNeg.nonEmpty => false
+    case _ =>
+      // Try all instantiations of constants and variables and check that those formulas are `empty`
+      emptyEquivalentExhaustive(f)
+  }
+
+  /**
+    * Returns `true` if `f` is equivalent to [[Empty]].
+    * Exponential time in the number of unknowns.
+    */
+  private def emptyEquivalentExhaustive(f: SetFormula): Boolean = {
+    /**
+      * Checks that all possible instantiations of unknowns result in [[Empty]].
+      * The unknowns not present in either set is implicitly instantiated to [[Empty]].
+      *
+      * @param unknowns     the unknowns in `f` that has not yet been instantiated
+      * @param univUnknowns the unknowns that are instantiated to [[Univ]]
+      */
+    def loop(unknowns: List[Int], univUnknowns: SortedSet[Int]): Boolean = unknowns match {
+      case Nil =>
+        // All unknowns are bound. Compute the truth value.
+        evaluate(f, univUnknowns).isEmpty
+      case x :: xs =>
+        // `f` is empty equivalent if and only if
+        // both `f[x -> univ]` and `f[x -> empty]` are empty equivalent.
+        loop(xs, univUnknowns + x) && loop(xs, univUnknowns)
+    }
+
+    loop(f.unknowns.toList, SortedSet.empty)
+  }
+
+  /**
+    * Returns the [[CofiniteIntSet]] evaluation of `f`, interpreting unknowns in `univUnknowns` as
+    * [[Univ]] and the rest as [[Empty]].
+    */
+  private def evaluate(t: SetFormula, univUnknowns: SortedSet[Int]): CofiniteIntSet = {
+    import ca.uwaterloo.flix.util.CofiniteIntSet as CISet
+    t match {
+      case Univ => CISet.universe
+      case Empty => CISet.empty
+      case Cst(c) => if (univUnknowns.contains(c)) CISet.universe else CISet.empty
+      case ElemSet(s) => CISet.mkSet(s)
+      case Var(x) => if (univUnknowns.contains(x)) CISet.universe else CISet.empty
+      case Compl(t) => CISet.complement(evaluate(t, univUnknowns))
+
+      case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
+        // Evaluate the sub-terms, exiting early in case the running set is `empty`
+        var running = CISet.universe
+        for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
+          running = CISet.intersection(running, evaluate(t, univUnknowns))
+          if (running.isEmpty) return CISet.empty
+        }
+        for (t <- elemNeg.iterator ++ cstsNeg.iterator ++ varsNeg.iterator) {
+          running = CISet.intersection(running, CISet.complement(evaluate(t, univUnknowns)))
+          if (running.isEmpty) return CISet.empty
+        }
+        for (t <- rest) {
+          running = CISet.intersection(running, evaluate(t, univUnknowns))
+          if (running.isEmpty) return CISet.empty
+        }
+        running
+
+      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
+        // Evaluate the sub-terms, exiting early in case the running set is `univ`
+        var running = CISet.empty
+        for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
+          running = CISet.union(running, evaluate(t, univUnknowns))
+          if (running.isUniverse) return CISet.universe
+        }
+        for (t <- elemNeg.iterator ++ cstsNeg.iterator ++ varsNeg.iterator) {
+          running = CISet.union(running, CISet.complement(evaluate(t, univUnknowns)))
+          if (running.isUniverse) return CISet.universe
+        }
+        for (t <- rest) {
+          running = CISet.union(running, evaluate(t, univUnknowns))
+          if (running.isUniverse) return CISet.universe
+        }
+        running
+    }
+  }
+
+  /** Thrown by [[successiveVariableElimination]] to indicate no solution */
+  case class NoSolutionException() extends RuntimeException
+
+  /**
+    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too big.
+    */
+  case class ComplexException(msg: String, loc: SourceLocation) extends RuntimeException
 
 }

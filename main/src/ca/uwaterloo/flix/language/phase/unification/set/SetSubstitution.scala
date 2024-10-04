@@ -143,6 +143,14 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
     }
   }
 
+  /**
+    * Adds the disjoint binding `[x -> f]` to `this`.
+    *
+    * OBS: The [[SetFormula.Var]] of `this`, `x`, and `f` must not overlap.
+    */
+  def unsafeExtend(x: Int, f: SetFormula): SetSubstitution =
+    SetSubstitution(m + (x -> f))
+
   /** Returns a multi-line, string representation of `this`. */
   override def toString: String = {
     val indentation = 4
