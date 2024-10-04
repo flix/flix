@@ -451,6 +451,40 @@ object ClosureConv {
     visitExp(e0)
   }
 
+  /**
+    * Rewrites any [[Expr.ApplyLocalDef]] node related to `sym0` to also apply with the captured variables in `freeVars`.
+    *
+    * Note that it is up to the caller to provide the correct variables, e.g., in the example below
+    * it is the caller's responsibility to provide `x, y, z` at the recursive call site and `a, b, c` at the outer call site.
+    * This function only performs the rewrite.
+    *
+    * If this function is called from [[visitExp]] then it is highly likely you want to call this before calling [[visitExp]]
+    * recursively on some subexpression. This is because any lambda that captures a local def will then automatically pick
+    * up the new free variables added to an `ApplyLocalDef` node and will then handle capturing them correctly.
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(l) = if (l == 4) a + b + c + l else g(4);
+    *       g(4)
+    *   }
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
+    *       g(a, b, c, 10)
+    *   }
+    * }}}
+    *
+    */
   private def rewriteApplyLocalDef(expr00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
     def visit(expr0: Expr): Expr = expr0 match {
       case Expr.Cst(_, _, _) => expr0
