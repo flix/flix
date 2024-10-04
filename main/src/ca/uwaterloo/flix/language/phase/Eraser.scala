@@ -240,6 +240,18 @@ object Eraser {
     }
   }
 
+  /**
+    * Erases the polymorphic `tpe`.
+    *
+    *   - `eraseType(var) = var`
+    *   - `eraseType(Int32) = Int32`
+    *   - `eraseType(String) = Object`
+    *   - `eraseType(Option[a]) = Object`
+    *   - `eraseType(a[Int32]) = Object`
+    *
+    * We do not have aliases, associated types, and the like, so any [[Type.Apply]] will be
+    * *building* a larger type, and can therefore not be a primitive type.
+    */
   private def eraseType(tpe: Type): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(tc, loc) => tc match {
@@ -251,9 +263,11 @@ object Eraser {
       case TypeConstructor.Int16 => c
       case TypeConstructor.Int32 => c
       case TypeConstructor.Int64 => c
+      // All primitive types are covered, so the rest can only be erased to Object.
       case _ => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
     }
     case Type.Apply(_, _, loc) => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
+
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)

@@ -272,7 +272,7 @@ object Monomorpher {
     * Returns a sorted record, assuming that `rest` is sorted.
     * Sorting is stable on duplicate fields.
     *
-    * Assumes that rest does not contain [[Type.AssocType]] or [[Type.Alias]].
+    * Assumes that rest does not contain [[Type.AssocType]], [[Type.Alias]], or JVM types.
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -293,7 +293,7 @@ object Monomorpher {
     * Returns a sorted schema, assuming that `rest` is sorted.
     * Sorting is stable on duplicate predicates.
     *
-    * Assumes that rest does not contain aliases or associated types.
+    * Assumes that rest does not contain [[Type.AssocType]], [[Type.Alias]], or JVM types.
     */
   private def mkSchemaExtendSorted(label: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -392,6 +392,8 @@ object Monomorpher {
   def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
+        // Declarations are polymorphic and recursive in nature, so we keep them polymorphic while
+        // still simplifying the type.
         MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv), loc)
     }
   }
@@ -399,6 +401,8 @@ object Monomorpher {
   def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
       case LoweredAst.Case(sym, tpe, _, loc) =>
+        // Declarations are polymorphic and recursive in nature, so we keep them polymorphic while
+        // still simplifying the type.
         MonoAst.Case(sym, simplify(tpe, root.eqEnv), loc)
     }
   }

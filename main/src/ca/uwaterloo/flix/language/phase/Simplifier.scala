@@ -302,6 +302,7 @@ object Simplifier {
           case TypeConstructor.Struct(sym, _) => MonoType.Struct(sym, args)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
+            // Simplify restrictable enums into regular enums.
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym, args)
 
@@ -418,15 +419,16 @@ object Simplifier {
 
           case TypeConstructor.Lazy => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
 
-          case TypeConstructor.Enum(sym, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+          case TypeConstructor.Enum(_, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
 
-          case TypeConstructor.Struct(sym, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+          case TypeConstructor.Struct(_, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
+            // Simplify restrictable enums into regular enums.
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             Type.mkEnum(enumSym, args, tpe.loc)
 
-          case TypeConstructor.Native(clazz) => Type.Cst(tc, tpe.loc)
+          case TypeConstructor.Native(_) => Type.Cst(tc, tpe.loc)
 
           case TypeConstructor.Array =>
             // remove region

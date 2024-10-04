@@ -111,4 +111,9 @@ object MonoType {
     }
   }
 
+  /** A list of the seven erased JVM types */
+  val erasedTypes: Set[MonoType] = Set(
+    Bool, Char, Float32, Float64, Int8, Int16, Int32, Int64, MonoType.Object
+  )
+
 }

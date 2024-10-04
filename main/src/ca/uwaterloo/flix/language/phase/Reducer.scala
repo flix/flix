@@ -43,8 +43,8 @@ object Reducer {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val defTypes = ctx.defTypes.keys.asScala.toSet
     // This is an over approximation of the types in enums and structs since they are erased.
-    val enumTypes = Set(MonoType.Bool, MonoType.Char, MonoType.Int8, MonoType.Int16, MonoType.Int32, MonoType.Int64, MonoType.Float32, MonoType.Float64, MonoType.Object)
-    val structTypes = enumTypes
+    val enumTypes = MonoType.erasedTypes
+    val structTypes = MonoType.erasedTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
     val types = nestedTypesOf(Set.empty, Queue.from(effectTypes ++ structTypes ++ enumTypes ++ defTypes))
