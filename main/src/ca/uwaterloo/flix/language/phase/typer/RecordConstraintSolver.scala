@@ -15,7 +15,7 @@ object RecordConstraintSolver {
     //
     // ------------
     // {} ~ {} => ∅
-    case (Type.Cst(Type.RecordRowEmpty, _), Type.Cst(Type.RecordRowEmpty, _)) =>
+    case (Type.RecordRowEmpty, Type.RecordRowEmpty) =>
       ResolutionResult.elimination
 
     //    α ∉ fv(ρ)
