@@ -41,18 +41,18 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   override final def toString: String = s"$f1 ~ $f2"
 
   /** Returns a copy of `this` with the new `status` */
-  def copyWithStatus(status: Equation.Status): Equation = {
+  final def copyWithStatus(status: Equation.Status): Equation = {
     if (status == this.status) this
     else Equation(f1, f2, status, loc)
   }
 
   /** Returns a copy of `this` with status [[Equation.Status.Unsolvable]]. */
   @inline
-  def toUnsolvable: Equation = copyWithStatus(Equation.Status.Unsolvable)
+  final def toUnsolvable: Equation = copyWithStatus(Equation.Status.Unsolvable)
 
   /** Returns a copy of `this` with status [[Equation.Status.Timeout]]. */
   @inline
-  def toTimeout(msg: String): Equation = copyWithStatus(Equation.Status.Timeout(msg))
+  final def toTimeout(msg: String): Equation = copyWithStatus(Equation.Status.Timeout(msg))
 
 }
 

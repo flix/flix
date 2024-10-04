@@ -52,39 +52,39 @@ object SetUnification {
       val Equation(t1, t2, _, _) = eq
 
       @inline
-      def error: (List[Equation], SetSubstitution) = {
+      def error(): (List[Equation], SetSubstitution) = {
         p.progress()
         (List(eq.toUnsolvable), SetSubstitution.empty)
       }
 
       @inline
-      def success: (List[Equation], SetSubstitution) = {
+      def success(): (List[Equation], SetSubstitution) = {
         p.progress()
         (Nil, SetSubstitution.empty)
       }
 
       (t1, t2) match {
         // Equations that are solved.
-        case (Univ, Univ) => success
-        case (Empty, Empty) => success
-        case (Cst(c1), Cst(c2)) if c1 == c2 => success
-        case (Var(x1), Var(x2)) if x1 == x2 => success
-        case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success
+        case (Univ, Univ) => success()
+        case (Empty, Empty) => success()
+        case (Cst(c1), Cst(c2)) if c1 == c2 => success()
+        case (Var(x1), Var(x2)) if x1 == x2 => success()
+        case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success()
         // Equations that are Unsolvable.
-        case (Univ, Empty) => error
-        case (Univ, ElemSet(_)) => error
-        case (Univ, Cst(_)) => error
-        case (Empty, Univ) => error
-        case (Empty, ElemSet(_)) => error
-        case (Empty, Cst(_)) => error
-        case (ElemSet(_), Univ) => error
-        case (ElemSet(e), Empty) if e.nonEmpty => error
-        case (ElemSet(i1), ElemSet(i2)) if i1 != i2 => error
-        case (ElemSet(_), Cst(_)) => error
-        case (Cst(_), Univ) => error
-        case (Cst(_), Empty) => error
-        case (Cst(_), ElemSet(_)) => error
-        case (Cst(c1), Cst(c2)) if c1 != c2 => error
+        case (Univ, Empty) => error()
+        case (Univ, ElemSet(_)) => error()
+        case (Univ, Cst(_)) => error()
+        case (Empty, Univ) => error()
+        case (Empty, ElemSet(_)) => error()
+        case (Empty, Cst(_)) => error()
+        case (ElemSet(_), Univ) => error()
+        case (ElemSet(e), Empty) if e.nonEmpty => error()
+        case (ElemSet(i1), ElemSet(i2)) if i1 != i2 => error()
+        case (ElemSet(_), Cst(_)) => error()
+        case (Cst(_), Univ) => error()
+        case (Cst(_), Empty) => error()
+        case (Cst(_), ElemSet(_)) => error()
+        case (Cst(c1), Cst(c2)) if c1 != c2 => error()
         // Equations that are not trivial.
         case _ => (List(eq), SetSubstitution.empty) // Can't do anything.
       }
