@@ -178,7 +178,7 @@ object TypedAstOps {
 
     case Expr.LocalDef(_, sym, fparams, _, _, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.sym)
-      (freeVars(exp1) -- bound) ++ freeVars(exp2)
+      (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
     case Expr.Region(_, _) =>
       Map.empty
