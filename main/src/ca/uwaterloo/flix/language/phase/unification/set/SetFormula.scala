@@ -898,7 +898,8 @@ object SetFormula {
       if (recSizeThreshold > 0) {
         val intersectionSize = intersection.size
         if (intersectionSize > recSizeThreshold) throw ComplexException(
-          s"SetFormula size ($intersectionSize) is over recursive SVE threshold ($recSizeThreshold)", SourceLocation.Unknown
+          s"SetFormula size ($intersectionSize) is over recursive SVE threshold ($recSizeThreshold)",
+          SourceLocation.Unknown
         )
       }
       val se = successiveVariableElimination(intersection, xs, recSizeThreshold)
@@ -924,7 +925,8 @@ object SetFormula {
       cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
       varsNeg.nonEmpty => false
     case _ =>
-      // Try all instantiations of constants and variables and check that those formulas are `empty`.
+      // Try all instantiations of constants and variables and check that those formulas are
+      // `empty`.
       emptyEquivalentExhaustive(f)
   }
 
