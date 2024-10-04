@@ -160,12 +160,10 @@ object ConstraintGen {
 
       case Expr.ApplyLocalDef(sym, exps, arrowTvar, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
-        val defResTpe = Type.freshVar(Kind.Star, loc.asSynthetic)
         val defEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
-        val actualDefTpe = Type.mkCurriedArrowWithEffect(tpes, defEff, defResTpe, loc)
+        val actualDefTpe = Type.mkCurriedArrowWithEffect(tpes, defEff, tvar, loc)
         c.unifyType(actualDefTpe, arrowTvar, loc)
         c.expectType(sym.tvar, actualDefTpe, loc)
-        c.unifyType(tvar, defResTpe, loc)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
