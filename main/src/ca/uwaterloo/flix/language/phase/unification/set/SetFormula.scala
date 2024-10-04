@@ -886,8 +886,8 @@ object SetFormula {
     */
   def successiveVariableElimination(f: SetFormula, fvs: List[Int], recSizeThreshold: Int): SetSubstitution = fvs match {
     case Nil =>
-      // emptyEquivalent now treats the remaining constants as variables and
-      // goes through all assignments of those.
+      // `emptyEquivalent` now treats the remaining constants as variables and goes through all
+      // assignments of those.
       if (emptyEquivalent(f)) SetSubstitution.empty
       else throw NoSolutionException()
 
@@ -924,7 +924,7 @@ object SetFormula {
       cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
       varsNeg.nonEmpty => false
     case _ =>
-      // Try all instantiations of constants and variables and check that those formulas are `empty`
+      // Try all instantiations of constants and variables and check that those formulas are `empty`.
       emptyEquivalentExhaustive(f)
   }
 
@@ -942,11 +942,11 @@ object SetFormula {
       */
     def loop(unknowns: List[Int], univUnknowns: SortedSet[Int]): Boolean = unknowns match {
       case Nil =>
-        // All unknowns are bound. Compute the truth value.
+        // All unknowns are bound. Evaluate the set and check.
         evaluate(f, univUnknowns).isEmpty
       case x :: xs =>
-        // `f` is empty equivalent if and only if
-        // both `f[x -> univ]` and `f[x -> empty]` are empty equivalent.
+        // `f` is equivalent to `empty` if and only if both `f[x -> univ]` and `f[x -> empty]` are
+        // equivalent to `empty`.
         loop(xs, univUnknowns + x) && loop(xs, univUnknowns)
     }
 
@@ -1003,11 +1003,12 @@ object SetFormula {
     }
   }
 
-  /** Thrown by [[successiveVariableElimination]] to indicate no solution */
+  /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
   case class NoSolutionException() extends RuntimeException
 
   /**
-    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too big.
+    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
+    * big.
     */
   case class ComplexException(msg: String, loc: SourceLocation) extends RuntimeException
 
