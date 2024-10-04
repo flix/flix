@@ -498,6 +498,8 @@ object Ast {
 
     case object WithClause extends SyntacticContext
 
+    case object WithHandler extends SyntacticContext
+
     case object Unknown extends SyntacticContext
 
   }

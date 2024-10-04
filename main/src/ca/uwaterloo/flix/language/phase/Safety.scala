@@ -435,8 +435,8 @@ object Safety {
         val res = visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
-        if (effUse.sym == Symbol.IO) {
-          IOEffectInTryWith(effUse.loc) :: res
+        if (Symbol.isBaseEff(effUse.sym)) {
+          BaseEffectInTryWith(effUse.sym, effUse.loc) :: res
         } else {
           res
         }
