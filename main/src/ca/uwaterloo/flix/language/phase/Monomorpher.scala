@@ -471,10 +471,13 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc2)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, eff, loc) =>
-      val it = subst(itpe)
+    case LoweredAst.Expr.ApplyLocalDef(sym, exps, arrowTpe, tpe, eff, loc) =>
+      val newSym = env0(sym)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyLocalDef(env0(sym), es, it, subst(tpe), subst(eff), loc)
+      val at = subst(arrowTpe)
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.ApplyLocalDef(newSym, es, at, t, ef, loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
@@ -499,7 +502,9 @@ object Monomorpher {
       val (fps, env2) = specializeFormalParams(fparams, subst)
       val e1 = visitExp(exp1, env1 ++ env2, subst)
       val e2 = visitExp(exp2, env1, subst)
-      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
