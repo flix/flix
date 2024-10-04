@@ -392,11 +392,12 @@ object ClosureConv {
         Expr.LetRec(newSym, e1, e2, tpe, purity, loc)
 
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-        val newSym = subst.getOrElse(sym, sym)
+        // We never substitute a LocalDef symbol, since it is never free
+        // and it will be lifted to top level later.
         val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expr.LocalDef(newSym, fps, e1, e2, tpe, purity, loc)
+        Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
       case Expr.Scope(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
