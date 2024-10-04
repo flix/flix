@@ -880,7 +880,7 @@ object SetFormula {
     *
     * Eliminates variables one-by-one from the given list `fvs` recursively.
     *
-    * If the recursively building term is ever larger than `recSizeThreshold` then
+    * If the recursively building formula is ever larger than `recSizeThreshold` then
     * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
     * checking.
     */
@@ -896,9 +896,9 @@ object SetFormula {
       val fUniv = SetSubstitution.singleton(x, Univ)(f)
       val intersection = propagation(mkInter(fEmpty, fUniv))
       if (recSizeThreshold > 0) {
-        val recTermSize = intersection.size
-        if (recTermSize > recSizeThreshold) throw ComplexException(
-          s"SetFormula size ($recTermSize) is over recursive SVE threshold ($recSizeThreshold)", SourceLocation.Unknown
+        val intersectionSize = intersection.size
+        if (intersectionSize > recSizeThreshold) throw ComplexException(
+          s"SetFormula size ($intersectionSize) is over recursive SVE threshold ($recSizeThreshold)", SourceLocation.Unknown
         )
       }
       val se = successiveVariableElimination(intersection, xs, recSizeThreshold)
@@ -968,7 +968,7 @@ object SetFormula {
       case Compl(t) => CISet.complement(evaluate(t, univUnknowns))
 
       case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
-        // Evaluate the sub-terms, exiting early in case the running set is `empty`
+        // Evaluate the subformulas, exiting early in case the running set is `empty`.
         var running = CISet.universe
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
           running = CISet.intersection(running, evaluate(t, univUnknowns))
@@ -985,7 +985,7 @@ object SetFormula {
         running
 
       case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
-        // Evaluate the sub-terms, exiting early in case the running set is `univ`
+        // Evaluate the subformulas, exiting early in case the running set is `univ`.
         var running = CISet.empty
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
           running = CISet.union(running, evaluate(t, univUnknowns))
