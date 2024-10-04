@@ -63,9 +63,9 @@ object Eraser {
   }
 
   private def visitEnum(enm: Enum): Enum = enm match {
-    case Enum(doc, ann, mod, sym, tparams, cases0, loc) =>
+    case Enum(ann, mod, sym, tparams, cases0, loc) =>
       val cases = MapOps.mapValues(cases0)(visitEnumTag)
-      Enum(doc, ann, mod, sym, tparams, cases, loc)
+      Enum(ann, mod, sym, tparams, cases, loc)
   }
 
   private def visitEnumTag(caze: Case): Case = caze match {
@@ -74,9 +74,9 @@ object Eraser {
   }
 
   private def visitStruct(struct: Struct): Struct = struct match {
-    case Struct(doc, ann, mod, sym, tparams, fields0, loc) =>
+    case Struct(ann, mod, sym, tparams, fields0, loc) =>
       val fields = fields0.map(visitStructField)
-      Struct(doc, ann, mod, sym, tparams, fields, loc)
+      Struct(ann, mod, sym, tparams, fields, loc)
   }
 
   private def visitStructField(field: StructField): StructField = field match {

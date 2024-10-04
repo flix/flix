@@ -56,10 +56,10 @@ object Simplifier {
   }
 
   private def visitEnum(enm: MonoAst.Enum): SimplifiedAst.Enum = enm match {
-    case MonoAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+    case MonoAst.Enum(_, ann, mod, sym, tparams0, cases0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
       val cases = MapOps.mapValues(cases0)(visitEnumCase)
-      SimplifiedAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+      SimplifiedAst.Enum(ann, mod, sym, tparams, cases, loc)
   }
 
   private def visitEnumCase(caze: MonoAst.Case): SimplifiedAst.Case = caze match {
@@ -67,10 +67,10 @@ object Simplifier {
   }
 
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
-    case MonoAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+    case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
       val fields = fields0.map(visitStructField)
-      SimplifiedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
   private def visitStructField(field: MonoAst.StructField): SimplifiedAst.StructField = field match {

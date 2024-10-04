@@ -87,10 +87,10 @@ object Inliner {
   }
 
   private def visitEnum(enm: OccurrenceAst.Enum): LiftedAst.Enum = enm match {
-    case OccurrenceAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+    case OccurrenceAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
       val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
       val cases = MapOps.mapValues(cases0)(visitEnumCase)
-      LiftedAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+      LiftedAst.Enum(ann, mod, sym, tparams, cases, loc)
   }
 
   private def visitEnumCase(caze: OccurrenceAst.Case): LiftedAst.Case = caze match {
@@ -98,10 +98,10 @@ object Inliner {
   }
 
   private def visitStruct(struct: OccurrenceAst.Struct): LiftedAst.Struct = struct match {
-    case OccurrenceAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+    case OccurrenceAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
       val fields = fields0.map(visitStructField)
-      LiftedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      LiftedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
   private def visitStructField(field: OccurrenceAst.StructField): LiftedAst.StructField = field match {

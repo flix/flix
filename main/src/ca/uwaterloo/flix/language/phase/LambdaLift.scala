@@ -59,10 +59,10 @@ object LambdaLift {
   }
 
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
-    case SimplifiedAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+    case SimplifiedAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
       val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
       val cases = MapOps.mapValues(cases0)(visitEnumCase)
-      LiftedAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+      LiftedAst.Enum(ann, mod, sym, tparams, cases, loc)
   }
 
   private def visitEnumCase(caze: SimplifiedAst.Case): LiftedAst.Case = caze match {
@@ -70,10 +70,10 @@ object LambdaLift {
   }
 
   private def visitStruct(struct0: SimplifiedAst.Struct): LiftedAst.Struct = struct0 match {
-    case SimplifiedAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+    case SimplifiedAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
       val fields = fields0.map(visitStructField)
-      LiftedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      LiftedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
   private def visitStructField(field: SimplifiedAst.StructField): LiftedAst.StructField = field match {
