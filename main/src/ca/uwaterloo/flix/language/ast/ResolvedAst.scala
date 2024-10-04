@@ -123,7 +123,7 @@ object ResolvedAst {
 
     case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: List[FormalParam], declaredTpe: Option[UnkindedType], declaredEff: Option[UnkindedType], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     // MATT why was this a full type
     case class Region(tpe: Type, loc: SourceLocation) extends Expr

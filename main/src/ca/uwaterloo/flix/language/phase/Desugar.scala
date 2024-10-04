@@ -560,8 +560,9 @@ object Desugar {
       val t = dtpe.map(visitType)
       val ef = deff.map(visitType)
       val e1 = visitExp(exp1)
+      val e11 = Expr.Ascribe(e1, t, ef, e1.loc)
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ann, ident, fps, t, ef, e1, e2, loc)
+      Expr.LocalDef(ann, ident, fps, e11, e2, loc)
 
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
