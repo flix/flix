@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: List[AnonClass])(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,7 +49,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: AnonClass)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface)
@@ -96,10 +96,10 @@ object GenAnonymousClasses {
     *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
-  private def getDescriptorHacked(tpe: MonoType): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
+  private def getDescriptorHacked(tpe: MonoType)(implicit root: Root): String = tpe match {
+    case MonoType.Array(t) => s"[${JvmOps.getJvmType(root, t).toDescriptor}"
     case MonoType.Unit => JvmType.Void.toDescriptor
-    case _ => JvmOps.getJvmType(tpe).toDescriptor
+    case _ => JvmOps.getJvmType(root, tpe).toDescriptor
   }
 
   /**
@@ -107,7 +107,7 @@ object GenAnonymousClasses {
     *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
-  private def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType): String = {
+  private def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType)(implicit root: Root): String = {
     val resultDescriptor = getDescriptorHacked(retType)
     val argumentDescriptor = paramTypes.map(getDescriptorHacked).mkString
     s"($argumentDescriptor)$resultDescriptor"
@@ -116,7 +116,7 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass)(implicit root: Root): Unit = method match {
     case JvmMethod(ident, fparams, _, tpe, _, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
@@ -142,7 +142,7 @@ object GenAnonymousClasses {
       var offset = 0
       fparams.zipWithIndex.foreach { case (arg, i) =>
         methodVisitor.visitInsn(DUP)
-        val argType = JvmOps.getJvmType(arg.tpe)
+        val argType = JvmOps.getJvmType(root, arg.tpe)
         methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
         offset += AsmOps.getStackSize(argType)
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
@@ -154,13 +154,13 @@ object GenAnonymousClasses {
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
-        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
+        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(root, tpe))
       }
 
       val returnInstruction = tpe match {
         case MonoType.Unit => RETURN
         case MonoType.Array(_) => ARETURN
-        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
+        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(root, tpe))
       }
       methodVisitor.visitInsn(returnInstruction)
 

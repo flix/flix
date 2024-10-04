@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, Rig
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -272,7 +272,7 @@ object Monomorpher {
     * Returns a sorted record, assuming that `rest` is sorted.
     * Sorting is stable on duplicate fields.
     *
-    * Assumes that rest does not contain [[Type.AssocType]] or [[Type.Alias]].
+    * Assumes that rest does not contain [[Type.AssocType]], [[Type.Alias]], or JVM types.
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -293,7 +293,7 @@ object Monomorpher {
     * Returns a sorted schema, assuming that `rest` is sorted.
     * Sorting is stable on duplicate predicates.
     *
-    * Assumes that rest does not contain variables, aliases, or associated types.
+    * Assumes that rest does not contain [[Type.AssocType]], [[Type.Alias]], or JVM types.
     */
   private def mkSchemaExtendSorted(label: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -363,16 +363,24 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val enums = ParOps.parMapValues(root.enums) {
+      case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
+        val newCases = MapOps.mapValues(cases)(visitEnumCase)
+        val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
+        MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
+    }
+
     val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
         val newFields = fields.map(visitStructField)
-        val tparams = tparams0.map(_.sym)
+        val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      enums,
       structs,
       effects,
       root.entryPoint,
@@ -381,10 +389,21 @@ object Monomorpher {
     )
   }
 
-  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+  def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, tpe, loc)
+        // Declarations are polymorphic and recursive in nature, so we keep them polymorphic while
+        // still simplifying the type.
+        MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv), loc)
+    }
+  }
+
+  def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
+    caze match {
+      case LoweredAst.Case(sym, tpe, _, loc) =>
+        // Declarations are polymorphic and recursive in nature, so we keep them polymorphic while
+        // still simplifying the type.
+        MonoAst.Case(sym, simplify(tpe, root.eqEnv), loc)
     }
   }
 
