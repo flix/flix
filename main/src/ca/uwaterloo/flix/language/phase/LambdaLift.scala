@@ -126,7 +126,7 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, _, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       val newDefnSym = ctx.liftedLocalDefs.asScala.toMap.get(sym)
       newDefnSym match {
