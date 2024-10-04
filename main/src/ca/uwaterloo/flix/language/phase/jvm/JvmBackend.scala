@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -48,15 +48,15 @@ object JvmBackend {
 
       // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
       val requiredTypes = Set(
-        MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
-        MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Bool), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Char), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int8), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int16), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int32), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int64), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float32), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float64), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Object), MonoType.Object, Purity.ControlImpure), // by resumptionWrappers
       )
       // Retrieve all the types in the program.
       val types = root.types ++ requiredTypes

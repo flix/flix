@@ -97,7 +97,7 @@ object GenAnonymousClasses {
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   private def getDescriptorHacked(tpe: MonoType): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
+    case MonoType.Array(t, _) => s"[${JvmOps.getJvmType(t).toDescriptor}"
     case MonoType.Unit => JvmType.Void.toDescriptor
     case _ => JvmOps.getJvmType(tpe).toDescriptor
   }
@@ -117,10 +117,10 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
-    case JvmMethod(ident, fparams, _, tpe, _, loc) =>
+    case JvmMethod(ident, fparams, _, tpe, purity, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
-      val arrowType = MonoType.Arrow(args, boxedResult)
+      val arrowType = MonoType.Arrow(args, boxedResult, purity)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(arrowType)
       val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
 
@@ -153,13 +153,13 @@ object GenAnonymousClasses {
       BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc)(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
-        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
+        case MonoType.Array(_, _) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
         case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
       }
 
       val returnInstruction = tpe match {
         case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
+        case MonoType.Array(_, _) => ARETURN
         case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
       }
       methodVisitor.visitInsn(returnInstruction)

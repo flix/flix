@@ -1630,12 +1630,12 @@ object GenExpression {
       } else {
         arg.tpe match {
           // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => mv.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => mv.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => mv.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => mv.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => mv.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => mv.visitTypeInsn(CHECKCAST, "[J")
+          case MonoType.Array(MonoType.Float32, _) => mv.visitTypeInsn(CHECKCAST, "[F")
+          case MonoType.Array(MonoType.Float64, _) => mv.visitTypeInsn(CHECKCAST, "[D")
+          case MonoType.Array(MonoType.Int8, _) => mv.visitTypeInsn(CHECKCAST, "[B")
+          case MonoType.Array(MonoType.Int16, _) => mv.visitTypeInsn(CHECKCAST, "[S")
+          case MonoType.Array(MonoType.Int32, _) => mv.visitTypeInsn(CHECKCAST, "[I")
+          case MonoType.Array(MonoType.Int64, _) => mv.visitTypeInsn(CHECKCAST, "[J")
           case _ => // nop
         }
       }
