@@ -109,6 +109,11 @@ object CompletionProvider {
         TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
 
       //
+      // Try-with handler.
+      //
+      case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
+
+      //
       // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
       //
       case SyntacticContext.Unknown =>

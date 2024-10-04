@@ -27,24 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * Documentation.
-    *
-    * @param lines the lines of the comments.
-    * @param loc   the source location of the text.
-    */
-  case class Doc(lines: List[String], loc: SourceLocation) {
-    def text: String = lines.
-      dropWhile(_.trim.isEmpty).
-      map(_.trim).
-      mkString("\n")
-
-    /**
-      * Returns a string representation that hides the internals.
-      */
-    override def toString: String = "Doc(...)"
-  }
-
-  /**
     * Companion object of [[Modifiers]].
     */
   object Modifiers {
@@ -511,6 +493,8 @@ object Ast {
     case object Use extends SyntacticContext
 
     case object WithClause extends SyntacticContext
+
+    case object WithHandler extends SyntacticContext
 
     case object Unknown extends SyntacticContext
 

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -118,7 +118,7 @@ object Deriver {
       val tconstrs = getTraitConstraintsForTypeParams(tparams, eqTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(eqTraitSym, loc),
@@ -158,7 +158,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
@@ -268,7 +268,7 @@ object Deriver {
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, orderTraitSym, loc)
       Validation.success(KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(orderTraitSym, loc),
@@ -351,7 +351,7 @@ object Deriver {
       val comparisonEnumSym = PredefinedTraits.lookupEnumSym("Comparison", root)
 
       KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
@@ -483,7 +483,7 @@ object Deriver {
       val tconstrs = getTraitConstraintsForTypeParams(tparams, toStringTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(toStringTraitSym, loc),
@@ -519,7 +519,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
@@ -618,7 +618,7 @@ object Deriver {
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, hashTraitSym, loc)
       Validation.success(KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(hashTraitSym, loc),
@@ -656,7 +656,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
@@ -741,7 +741,7 @@ object Deriver {
       val tconstrs = getTraitConstraintsForTypeParams(tparams, sendableTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(sendableTraitSym, loc),
@@ -786,7 +786,7 @@ object Deriver {
         val outSym = new Symbol.AssocTypeSym(coerceTraitSym, "Out", loc)
         val outTpe = caze.tpe
         val out = KindedAst.AssocTypeDef(
-          Ast.Doc(Nil, loc),
+          Doc(Nil, loc),
           Ast.Modifiers.Empty,
           Ast.AssocTypeSymUse(outSym, loc),
           tpe,
@@ -801,7 +801,7 @@ object Deriver {
         val defn = KindedAst.Def(coerceDefSym, spec, exp)
 
         Validation.success(Some(KindedAst.Instance(
-          doc = Ast.Doc(Nil, loc),
+          doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Ast.Modifiers.Empty,
           trt = Ast.TraitSymUse(coerceTraitSym, loc),
@@ -841,7 +841,7 @@ object Deriver {
       val (_, caze) = cases.head
       val retTpe = caze.tpe
       KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
+        doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
