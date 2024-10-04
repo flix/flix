@@ -13,9 +13,9 @@ object RecordConstraintSolver {
   def solve(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): ResolutionResult = (tpe1, tpe2) match {
 
     //
-    // ------------
-    // {} ~ {} => ∅
-    case (Type.RecordRowEmpty, Type.RecordRowEmpty) =>
+    // ----------
+    // ρ ~ ρ => ∅
+    case (t1, t2) if t1 == t2 =>
       ResolutionResult.elimination
 
     //    α ∉ fv(ρ)
