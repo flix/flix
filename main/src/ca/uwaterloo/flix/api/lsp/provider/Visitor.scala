@@ -28,8 +28,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   StructField,
   Case,
   Instance,
-  RestrictableEnum,
-  RestrictableCase,
   Sig,
   Spec,
   Struct,
@@ -82,8 +80,6 @@ object Visitor {
     def consumeInstance(ins: Instance): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumePat(pat: Pattern): Unit = ()
-    def consumeResEnum(enm: RestrictableEnum): Unit = ()
-    def consumeResCase(cse: RestrictableCase): Unit = ()
     def consumeRoot(root: Root): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
@@ -151,8 +147,6 @@ object Visitor {
 
     // root.modules.map { case (_, v) => visitModule(v, ???, ???) }
 
-    root.restrictableEnums.foreach{ case (_, enm) => visitResEnum(enm) } // experimental, maybe should be removed? 
-
     root.sigs.foreach{ case (_, sig) => visitSig(sig) }
 
     root.structs.foreach{ case (_, struct) => visitStruct(struct) }
@@ -215,24 +209,6 @@ object Visitor {
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(cse.loc)) { return }
     c.consumeCase(cse)
-    // TODO visit scheme?
-  }
-
-  private def visitResEnum(enm: RestrictableEnum)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(enm.loc)) { return }
-    
-    c.consumeResEnum(enm)
-
-    visitAnnotations(enm.ann)
-    visitTypeParam(enm.index)
-    enm.tparams.foreach(visitTypeParam)
-    visitDeriveList(enm.derives)
-    enm.cases.map(_._2).foreach(visitResCase)
-  }
-
-  private def visitResCase(cse: RestrictableCase)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(cse.loc)) { return }
-    c.consumeResCase(cse)
     // TODO visit scheme?
   }
 
