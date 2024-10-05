@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 
 object OccurrenceAst {
 
@@ -27,11 +27,11 @@ object OccurrenceAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)
 
-  case class Effect(ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -87,7 +87,7 @@ object OccurrenceAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
 
   sealed trait Occur
 

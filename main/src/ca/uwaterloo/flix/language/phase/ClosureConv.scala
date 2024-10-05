@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -117,7 +117,7 @@ object ClosureConv {
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Ast.Modifiers.Empty, MonoType.Unit, expLoc)
+      val fp = FormalParam(freshSym, Modifiers.Empty, MonoType.Unit, expLoc)
       val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
@@ -175,7 +175,7 @@ object ClosureConv {
       case FreeVar(oldSym, ptpe) =>
         val newSym = Symbol.freshVarSym(oldSym)
         subst += (oldSym -> newSym)
-        FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
+        FormalParam(newSym, Modifiers.Empty, ptpe, loc)
     }
     (fparams, subst.toMap)
   }

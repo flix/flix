@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 import java.util.Objects
@@ -25,81 +25,6 @@ import java.util.Objects
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Documentation.
-    *
-    * @param lines the lines of the comments.
-    * @param loc   the source location of the text.
-    */
-  case class Doc(lines: List[String], loc: SourceLocation) {
-    def text: String = lines.
-      dropWhile(_.trim.isEmpty).
-      map(_.trim).
-      mkString("\n")
-
-    /**
-      * Returns a string representation that hides the internals.
-      */
-    override def toString: String = "Doc(...)"
-  }
-
-  /**
-    * Companion object of [[Modifiers]].
-    */
-  object Modifiers {
-    /**
-      * The empty sequence of modifiers.
-      */
-    val Empty: Modifiers = Modifiers(Nil)
-  }
-
-  /**
-    * A sequence of modifiers.
-    */
-  case class Modifiers(mod: List[Modifier]) {
-
-    /**
-      * Returns a new modifier sequence with `pub` added.
-      */
-    def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
-
-    /**
-      * Returns `true` if these modifiers contain the lawful modifier.
-      */
-    def isLawful: Boolean = mod contains Modifier.Lawful
-
-   /**
-     * Returns `true` if these modifiers contain the mutable modifier.
-     */
-    def isMutable: Boolean = mod contains Modifier.Mutable
-
-    /**
-      * Returns `true` if these modifiers contain the override modifier.
-      */
-    def isOverride: Boolean = mod contains Modifier.Override
-
-    /**
-      * Returns `true` if these modifiers contain the public modifier.
-      */
-    def isPublic: Boolean = mod contains Modifier.Public
-
-    /**
-      * Returns `true` if these modifiers contain the sealed modifier.
-      */
-    def isSealed: Boolean = mod contains Modifier.Sealed
-
-    /**
-      * Returns `true` if these modifiers contain the synthetic modifier.
-      */
-    def isSynthetic: Boolean = mod contains Modifier.Synthetic
-
-    /**
-      * Returns a string representation that hides the internals.
-      */
-    override def toString: String = "Modifiers(...)"
-
-  }
 
   /**
     * A common super-type for modifiers.
@@ -511,6 +436,8 @@ object Ast {
     case object Use extends SyntacticContext
 
     case object WithClause extends SyntacticContext
+
+    case object WithHandler extends SyntacticContext
 
     case object Unknown extends SyntacticContext
 
