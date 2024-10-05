@@ -47,6 +47,7 @@ import ca.uwaterloo.flix.language.ast.shared.{
 import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.Ast.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Kind
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Scheme
@@ -61,11 +62,13 @@ import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.Op
 import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeSig
+import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 
 object Visitor {
 
   trait Consumer {
     def consumeAnns(anns: Annotations): Unit = ()
+    def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
     def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
     def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
@@ -77,6 +80,7 @@ object Visitor {
     def consumeDeriveList(deriveList: Derivations): Unit = ()
     def consumeEff(eff: Effect): Unit = ()
     def consumeEnum(enm: Enum): Unit = ()
+    def consumeEqConstraint(ec: EqualityConstraint): Unit = ()
     def consumeExpr(exp: Expr): Unit = ()
     def consumeFParam(fparam: FormalParam): Unit = ()
     def consumeFrag(frag: ParYieldFragment): Unit = ()
@@ -342,7 +346,33 @@ object Visitor {
   }
 
   private def visitSpec(spec: Spec)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    if (!a.accept(spec.loc)) { return }
+
+    c.consumeSpec(spec)
+
+    visitAnnotations(spec.ann)
+    spec.tparams.foreach(visitTypeParam)
+    spec.fparams.foreach(visitFormalParam)
+    // TODO visit scheme
+    visitType(spec.retTpe)
+    visitType(spec.eff)
+    spec.tconstrs.foreach(visitTraitConstraint)
+    spec.econstrs.foreach(visitEqualityConstraint)
+  }
+
+  private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(ec.loc)) { return }
+
+    c.consumeEqConstraint(ec)
+
+    visitAssocTypeConstructor(ec.cst)
+    visitType(ec.tpe1)
+    visitType(ec.tpe2)
+  }
+
+  private def visitAssocTypeConstructor(tcst: AssocTypeConstructor)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(tcst.loc)) { return }
+    c.consumeAssocTypeConstructor(tcst)
   }
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -388,7 +418,7 @@ object Visitor {
       }
 
       case Expr.Lambda(fparam, exp, tpe, loc) => {
-        visitFParam(fparam)
+        visitFormalParam(fparam)
         visitExpr(exp) 
       }
 
@@ -635,7 +665,7 @@ object Visitor {
     // TODO
   }
 
-  private def visitFParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
+  private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
