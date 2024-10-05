@@ -97,6 +97,14 @@ mod Test.Exp.LetRec {
         };
         g()(5)() == 7
 
+    @test
+    def testLetRecCapture10(): Bool =
+        foo(42, _ -> -1)() == 1
+
+    def foo(x: Int32, r: Unit -> Int32): Unit -> Int32 =
+        def local() = x;
+        if (x == 0) r else foo(x - 1, _ -> local())
+
     ///
     /// Nested Let Recs.
     ///
