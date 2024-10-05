@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Modifiers, Scope, Source}
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
@@ -1331,7 +1331,7 @@ object Namer {
     *
     * Adds the `pub` modifier if in the root namespace.
     */
-  private def visitModifiers(mod: Ast.Modifiers, ns0: Name.NName): Ast.Modifiers = {
+  private def visitModifiers(mod: Modifiers, ns0: Name.NName): Modifiers = {
     if (ns0.isRoot) {
       mod.asPublic
     } else {
