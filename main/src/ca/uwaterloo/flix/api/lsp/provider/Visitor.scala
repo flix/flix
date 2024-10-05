@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   ConstraintParam,
   Pattern, 
   Predicate,
+  SelectChannelRule,
   StructField,
   Case,
   Instance,
@@ -112,6 +113,7 @@ object Visitor {
     def consumePredicate(p: Predicate): Unit = ()
     def consumeRecLabelPat(pat: Pattern.Record.RecordLabelPattern): Unit = ()
     def consumeRoot(root: Root): Unit = ()
+    def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
@@ -221,7 +223,6 @@ object Visitor {
 
     c.consumeEnum(enm)
 
-    // TODO visit symbols?
     visitAnnotations(enm.ann)
     // TODO visit modifiers?
     enm.tparams.foreach(visitTypeParam)
@@ -316,7 +317,6 @@ object Visitor {
     c.consumeTrait(t)
 
     visitAnnotations(t.ann)
-    // TODO visit sym
     visitTypeParam(t.tparam)
     t.superTraits.foreach(visitTraitConstraint)
     t.assocs.foreach(visitAssocTypeSig)
@@ -328,8 +328,6 @@ object Visitor {
     if (!a.accept(assoc.loc)) { return }
 
     c.consumeAssocTypeSig(assoc)
-
-    // TODO visit sym
 
     visitTypeParam(assoc.tparam)
     visitKind(assoc.kind)
@@ -346,9 +344,6 @@ object Visitor {
     c.consumeEff(eff)
 
     visitAnnotations(eff.ann)
-
-    // TODO visit sym
-
     eff.ops.foreach(visitOp)
   }
 
@@ -456,11 +451,11 @@ object Visitor {
 
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
         visitExpr(exp) 
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
       }
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
         visitExpr(exp) 
@@ -498,11 +493,11 @@ object Visitor {
 
       case Expr.Match(exp, rules, tpe, eff, loc) =>
         visitExpr(exp) 
-        rules.foreach(rule => visitMatchRule(rule))
+        rules.foreach(visitMatchRule)
 
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
         visitExpr(exp) 
-        rules.foreach(rule => visitTypeMatchRule(rule))
+        rules.foreach(visitTypeMatchRule)
 
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
         // Does nothing because feature is experimental
@@ -514,7 +509,7 @@ object Visitor {
         visitExpr(exp) 
 
       case Expr.Tuple(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.RecordEmpty(tpe, loc) => ()
 
@@ -530,7 +525,7 @@ object Visitor {
 
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
         visitExpr(exp) 
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
         visitExpr(exp1) 
@@ -550,13 +545,8 @@ object Visitor {
         visitExpr(exp3)
 
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-        fields.foreach{ case (_, e) => { 
-          visitExpr(e)  
-        }}
-
+        fields.map(_._2).foreach(visitExpr)
         visitExpr(region)
-
-        visitExpr(region) 
 
       case Expr.StructGet(exp, sym, tpe, eff, loc) =>
         visitExpr(exp) 
@@ -566,7 +556,7 @@ object Visitor {
         visitExpr(exp2) 
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         visitExpr(exp1) 
@@ -587,8 +577,8 @@ object Visitor {
 
       case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
         visitExpr(exp)
-        declaredType.foreach(t => visitType(t))
-        declaredEff.foreach(t => visitType(t))
+        declaredType.foreach(visitType)
+        declaredEff.foreach(visitType)
 
       case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
         visitExpr(exp)
@@ -598,27 +588,27 @@ object Visitor {
 
       case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         visitExpr(exp)
-        rules.foreach(rule => visitCatchRule(rule))
+        rules.foreach(visitCatchRule)
 
       case Expr.Throw(exp, tpe, eff, loc) =>
         visitExpr(exp)
 
       case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
         visitExpr(exp)
-        rules.foreach(rule => visitHandlerRule(rule))
+        rules.foreach(visitHandlerRule)
 
       case Expr.Do(op, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
         visitExpr(exp)
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e))
+        exps.foreach(visitExpr)
 
       case Expr.GetField(field, exp, tpe, eff, loc) =>
         visitExpr(exp)
@@ -646,12 +636,8 @@ object Visitor {
         visitExpr(exp2) 
 
       case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
-        rules.foreach(rule => {
-          visitExpr(rule.chan)
-          visitExpr(rule.exp)
-        })
-
-        default.foreach(e => visitExpr(e))
+        rules.foreach(visitSelectChannelRule)
+        default.foreach(visitExpr)
 
       case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
         visitExpr(exp1) 
@@ -659,7 +645,7 @@ object Visitor {
 
       case Expr.ParYield(frags, exp, tpe, eff, loc) =>
         visitExpr(exp)
-        frags.foreach(frag => visitParYieldFrag(frag))
+        frags.foreach(visitParYieldFrag)
 
       case Expr.Lazy(exp, tpe, loc) =>
         visitExpr(exp)
@@ -668,7 +654,7 @@ object Visitor {
         visitExpr(exp)
 
       case Expr.FixpointConstraintSet(cs, tpe, loc) =>
-        cs.foreach(con => visitConstraint(con))
+        cs.foreach(visitConstraint)
 
       case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
         visitExpr(exp)
@@ -691,6 +677,17 @@ object Visitor {
 
       case Expr.Error(m, tpe, eff) => ()
     }
+  }
+
+  private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
+    // TODO `insideRule` is hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
+    val insideRule = a.accept(rule.chan.loc) || a.accept(rule.exp.loc)
+    if (!insideRule) { return }
+
+    c.consumeSelectChannelRule(rule)
+
+    visitExpr(rule.chan)
+    visitExpr(rule.exp)
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
