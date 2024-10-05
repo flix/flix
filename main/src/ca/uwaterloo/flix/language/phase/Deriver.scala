@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -120,7 +120,7 @@ object Deriver {
       Validation.success(KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         trt = Ast.TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
@@ -160,11 +160,11 @@ object Deriver {
       KindedAst.Spec(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),
@@ -270,7 +270,7 @@ object Deriver {
       Validation.success(KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         trt = Ast.TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
@@ -295,7 +295,7 @@ object Deriver {
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamVarSym, Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
         loc
       )
@@ -339,7 +339,7 @@ object Deriver {
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaVarSym, Ast.Modifiers.Empty, lambda, matchExp, loc)
+      KindedAst.Expr.Let(lambdaVarSym, Modifiers.Empty, lambda, matchExp, loc)
   }
 
   /**
@@ -353,11 +353,11 @@ object Deriver {
       KindedAst.Spec(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),
@@ -485,7 +485,7 @@ object Deriver {
       Validation.success(KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         trt = Ast.TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
@@ -521,9 +521,9 @@ object Deriver {
       KindedAst.Spec(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
@@ -620,7 +620,7 @@ object Deriver {
       Validation.success(KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         trt = Ast.TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
@@ -658,9 +658,9 @@ object Deriver {
       KindedAst.Spec(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TraitConstraint(Ast.TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
@@ -743,7 +743,7 @@ object Deriver {
       Validation.success(KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         trt = Ast.TraitSymUse(sendableTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
@@ -787,7 +787,7 @@ object Deriver {
         val outTpe = caze.tpe
         val out = KindedAst.AssocTypeDef(
           Doc(Nil, loc),
-          Ast.Modifiers.Empty,
+          Modifiers.Empty,
           Ast.AssocTypeSymUse(outSym, loc),
           tpe,
           outTpe,
@@ -803,7 +803,7 @@ object Deriver {
         Validation.success(Some(KindedAst.Instance(
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
-          mod = Ast.Modifiers.Empty,
+          mod = Modifiers.Empty,
           trt = Ast.TraitSymUse(coerceTraitSym, loc),
           tpe = tpe,
           tconstrs = Nil,
@@ -843,9 +843,9 @@ object Deriver {
       KindedAst.Spec(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
+        mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TraitConstraint(Ast.TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
