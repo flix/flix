@@ -24,7 +24,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   Enum,
   FormalParam,
   Constraint, 
+  ConstraintParam,
   Pattern, 
+  Predicate,
   StructField,
   Case,
   Instance,
@@ -42,10 +44,13 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
 }
 
 import ca.uwaterloo.flix.language.ast.shared.{
-  Annotations
+  Annotations,
+  Annotation
 }
 import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.Ast.OpSymUse
+import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Ast.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Kind
@@ -63,18 +68,32 @@ import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.Op
 import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeSig
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.Atom
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Atom
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Functional
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Guard
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Wild
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Var
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Cst
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Tag
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Tuple
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.RecordEmpty
 
 object Visitor {
 
   trait Consumer {
+    def consumeAnn(ann: Annotation): Unit = ()
     def consumeAnns(anns: Annotations): Unit = ()
     def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
     def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
     def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
     def consumeCase(cse: Case): Unit = ()
+    def consumeCaseSymUse(sym: CaseSymUse): Unit = ()
     def consumeCatchRule(rule: CatchRule): Unit = ()
     def consumeConstraint(c: Constraint): Unit = ()
+    def consumeConstraintParam(cparam: ConstraintParam): Unit = ()
     def consumeDef(defn: Def): Unit = ()
     def consumeDerive(derive: Derivation): Unit = ()
     def consumeDeriveList(deriveList: Derivations): Unit = ()
@@ -88,7 +107,10 @@ object Visitor {
     def consumeInstance(ins: Instance): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumeOp(op: Op): Unit = ()
+    def consumeOpSymUse(sym: OpSymUse): Unit = ()
     def consumePat(pat: Pattern): Unit = ()
+    def consumePredicate(p: Predicate): Unit = ()
+    def consumeRecLabelPat(pat: Pattern.Record.RecordLabelPattern): Unit = ()
     def consumeRoot(root: Root): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
@@ -420,10 +442,8 @@ object Visitor {
         visitExpr(exp) 
       }
 
-      case Expr.OpenAs(symUse, exp, tpe, loc) => {
-        visitResEnumSymUse(symUse)
-        visitExpr(exp) 
-      }
+      // we do nothing here, because open as is a restrictable enum feature and thus experimental
+      case Expr.OpenAs(symUse, exp, tpe, loc) => ()
 
       case Expr.Use(sym, alias, exp, loc) => {
         visitExpr(exp) 
@@ -673,47 +693,152 @@ object Visitor {
     }
   }
 
-  private def visitResEnumSymUse(symUse: RestrictableEnumSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-  }
-
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    if (!a.accept(fparam.loc)) { return }
+    c.consumeFParam(fparam)
+    visitType(fparam.tpe)
   }
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    // TODO `insideRule` is hack, should be removed eventually. Necessary for now since HandlerRules don't have locations
+    val insideRule = a.accept(rule.op.loc) || rule.fparams.map(_.loc).exists(a.accept) || a.accept(rule.exp.loc)
+    if (!insideRule) { return }
+
+    c.consumeHandlerRule(rule)
+
+    visitOpSymUse(rule.op)
+    rule.fparams.foreach(visitFormalParam)
+    visitExpr(rule.exp)
+  }
+
+  private def visitOpSymUse(sym: OpSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(sym.loc)) { return }
+    c.consumeOpSymUse(sym)
   }
 
   private def visitParYieldFrag(frag: ParYieldFragment)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    if (!a.accept(frag.loc)) { return }
+
+    c.consumeFrag(frag)
+
+    visitPattern(frag.pat)
+    visitExpr(frag.exp)
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    // TODO `insideRule` is hack, should be removed eventually. Necessary for now since MatchRules don't have locations
+    val insideRule = a.accept(rule.pat.loc) || rule.guard.map(_.loc).exists(a.accept) || a.accept(rule.exp.loc)
+    if (!insideRule) { return }
+
+    c.consumeMatchRule(rule)
+
+    visitPattern(rule.pat)
+    rule.guard.foreach(visitExpr)
+    visitExpr(rule.exp)
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    // TODO `insideRule` is hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
+    val insideRule = a.accept(rule.sym.loc) || a.accept(rule.tpe.loc) || a.accept(rule.exp.loc) 
+    if (!insideRule) { return }
+
+    c.consumeTMatchRule(rule)
+
+    visitType(rule.tpe)
+    visitExpr(rule.exp)
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    if (!a.accept(tpe.loc)) { return }
+    c.consumeType(tpe)
   }
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    val ls = anns match {
+      case Annotations(ls) => ls
+    }
+
+    // TODO `insideAnns` is hack, should be removed eventually. Necessary for now since Annotations (not to be confused with Annotation) don't have locations
+    val insideAnns = ls.map(_.loc).exists(a.accept)
+    if (!insideAnns) { return }
+
+    c.consumeAnns(anns)
+
+    ls.foreach(visitAnnotation)
+  }
+
+  private def visitAnnotation(ann: Annotation)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(ann.loc)) { return }
+    c.consumeAnn(ann)
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    val insideRule = a.accept(rule.sym.loc) || a.accept(rule.exp.loc)
+    if (!insideRule) { return }
+
+    c.consumeCatchRule(rule)
+
+    visitExpr(rule.exp)
   }
 
-  private def visitConstraint(con: Constraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+  private def visitConstraint(cst: Constraint)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(cst.loc)) { return }
+
+    c.consumeConstraint(cst)
+
+    cst.cparams.foreach(visitConstraintParam)
+    visitPredicate(cst.head)
+    cst.body.foreach(visitPredicate)
+  }
+
+  private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(cparam.loc)) { return }
+    c.consumeConstraintParam(cparam)
+  }
+
+  private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(p.loc)) { return }
+
+    c.consumePredicate(p)
+
+    p match {
+    	case Predicate.Head.Atom(pred, den, terms, tpe, loc) => terms.foreach(visitExpr)
+    	case Predicate.Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => terms.foreach(visitPattern)
+    	case Predicate.Body.Functional(outVars, exp, loc) => visitExpr(exp)
+    	case Predicate.Body.Guard(exp, loc) => visitExpr(exp)
+    }
   }
 
   private def visitPattern(pat: Pattern)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
+    if (!a.accept(pat.loc)) { return }
+
+    c.consumePat(pat)
+
+    pat match {
+    	case Wild(tpe, loc) => ()
+    	case Var(sym, tpe, loc) => ()
+    	case Cst(cst, tpe, loc) => ()
+    	case Tag(sym, pat, tpe, loc) =>
+    	  visitCaseSymUse(sym)
+        visitPattern(pat)
+    	case Tuple(pats, tpe, loc) =>
+    	  pats.foreach(visitPattern)
+    	case Record(pats, pat, tpe, loc) =>
+    	  pats.foreach(visitRecordLabelPattern)
+    	  visitPattern(pat)
+    	case RecordEmpty(tpe, loc) =>
+    	case Pattern.Error(tpe, loc) =>
+    }
+  }
+
+  private def visitRecordLabelPattern(pat: Pattern.Record.RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(pat.loc)) { return }
+    c.consumeRecLabelPat(pat)
+    visitPattern(pat.pat)
+  }
+
+  private def visitCaseSymUse(sym: CaseSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(sym.loc)) { return }
+    c.consumeCaseSymUse(sym)
   }
 }
