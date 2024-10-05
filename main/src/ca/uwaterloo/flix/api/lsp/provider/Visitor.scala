@@ -309,6 +309,7 @@ object Visitor {
   private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(field.loc)) { return }
     c.consumeStructField(field)
+    visitType(field.tpe)
   }
 
   private def visitTrait(t: Trait)(implicit a: Acceptor, c: Consumer): Unit = {
