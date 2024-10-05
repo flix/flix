@@ -255,17 +255,12 @@ object Visitor {
   }
 
   private def visitSig(sig: Sig)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(sig)
-    // if (accept(sig.spec.loc)) {
-    //   ??? // TODO
-    // }
+    // TODO fix hack. This hack is necessary because a signature currently does not have a location.
+    val insideSig = a.accept(sig.spec.loc) || sig.exp.exists(e => a.accept(e.loc))
+    if (!insideSig) { return }
 
-    // sig.exp.foreach(exp =>
-    //   if (accept(exp.loc)) {
-    //     visitExpr(exp, ???, accept)
-    //   }
-    // )
+    c.consumeSig(sig)
+    sig.exp.foreach(visitExpr)
   }
 
   private def visitStruct(struct: Struct)(implicit a: Acceptor, c: Consumer): Unit = {
