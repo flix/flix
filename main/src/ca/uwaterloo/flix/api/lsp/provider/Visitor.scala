@@ -89,6 +89,7 @@ object Visitor {
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
+    def consumeStructField(field: StructField): Unit = ()
     def consumeTMatchRule(rule: TypeMatchRule): Unit = ()
     def consumeTrait(traitt: Trait): Unit = ()
     def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
@@ -267,25 +268,21 @@ object Visitor {
   }
 
   private def visitStruct(struct: Struct)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(struct)
-    // struct.fields.foreach{case (_, field) => {
-    //   if (accept(field.loc) ) { 
-    //     visitStructField(field, ???, accept) 
-    //   }
-    // }}
+    if (!a.accept(struct.loc)) { return }
+    c.consumeStruct(struct)
+
+    visitAnnotations(struct.ann)
+    struct.tparams.foreach(visitTypeParam)
+    // TODO visit scheme?
+    struct.fields.map(_._2).foreach(visitStructField)
   }
 
   private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(field)
+    if (!a.accept(field.loc)) { return }
+    c.consumeStructField(field)
   }
 
   private def visitTrait(t: Trait)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(t)
-    // t.laws.foreach(law => visitDef(law, ???, accept))
-    // t.sigs.foreach(sig => visitSig(sig, ???, accept))
     if (!a.accept(t.loc)) { return }
 
     c.consumeTrait(t)
