@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Instance, Root, Sig}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.eraseTopAliases
 import ca.uwaterloo.flix.language.ast.shared.Scope
@@ -40,11 +40,10 @@ object EffectVerifier {
     * Verifies the effects in the given root.
     */
   def run(root: Root)(implicit flix: Flix): Unit = {
-    if (flix.options.xverifyeffects) {
-      // TODO visit sigs and instances
-      ParOps.parMapValues(root.defs) {
-        case defn => visitDef(defn)(root.eqEnv, flix)
-      }
+    if (!flix.options.xverifyeffects) {
+      ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
+      ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
+      ParOps.parMapValues(root.instances)(ins => ins.foreach(visitInstance(_)(root.eqEnv, flix)))
     }
   }
 
@@ -53,8 +52,25 @@ object EffectVerifier {
     */
   def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     visitExp(defn.exp)
-    expectType(defn.spec.eff, defn.exp.eff, defn.exp.loc)
+    expectType(expected = defn.spec.eff, defn.exp.eff, defn.exp.loc)
   }
+
+  /**
+    * Verifies the effects in the given signature.
+    */
+  def visitSig(sig: Sig)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit =
+    sig.exp match {
+      case Some(exp) =>
+        visitExp(exp)
+        expectType(expected = sig.spec.eff, exp.eff, exp.loc)
+      case None => ()
+    }
+
+  /**
+    * Verifies the effects in the given instance.
+    */
+  def visitInstance(ins: Instance)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit =
+    ins.defs.foreach(visitDef)
 
   /**
     * Verifies the effects in the given expression
