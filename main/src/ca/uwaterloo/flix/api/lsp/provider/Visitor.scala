@@ -47,6 +47,7 @@ import ca.uwaterloo.flix.language.ast.shared.{
 import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.Kind
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Scheme
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
@@ -59,12 +60,14 @@ import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeDef
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.Op
+import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeSig
 
 object Visitor {
 
   trait Consumer {
     def consumeAnns(anns: Annotations): Unit = ()
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
+    def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
     def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
     def consumeCase(cse: Case): Unit = ()
     def consumeCatchRule(rule: CatchRule): Unit = ()
@@ -283,6 +286,34 @@ object Visitor {
     // visit(t)
     // t.laws.foreach(law => visitDef(law, ???, accept))
     // t.sigs.foreach(sig => visitSig(sig, ???, accept))
+    if (!a.accept(t.loc)) { return }
+
+    c.consumeTrait(t)
+
+    visitAnnotations(t.ann)
+    // TODO visit sym
+    visitTypeParam(t.tparam)
+    t.superTraits.foreach(visitTraitConstraint)
+    t.assocs.foreach(visitAssocTypeSig)
+    t.sigs.foreach(visitSig)
+    t.laws.foreach(visitDef)
+  }
+
+  private def visitAssocTypeSig(assoc: AssocTypeSig)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(assoc.loc)) { return }
+
+    c.consumeAssocTypeSig(assoc)
+
+    // TODO visit sym
+
+    visitTypeParam(assoc.tparam)
+    visitKind(assoc.kind)
+    assoc.tpe.foreach(visitType)
+    
+  }
+
+  private def visitKind(kind: Kind)(implicit a: Acceptor, c: Consumer): Unit = {
+    // TODO it doesn't have a location, so does this even make sense?
   }
   
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
