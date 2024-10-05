@@ -101,6 +101,8 @@ object Visitor {
     def consumeTraitSymUse(symUse: TraitSymUse): Unit= ()
     def consumeType(tpe: Type): Unit = ()
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
+    def consumeTypeParam(tparam: TypeParam): Unit = ()
+    def consumeUseOrImport(use: UseOrImport): Unit = ()
   }
 
   trait Acceptor {
@@ -376,19 +378,29 @@ object Visitor {
   }
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(alias)
-    // alias.tparams.map(tp => if (accept(tp.loc)) { visitTypeParam(tp, ???, accept) })
+    if (!a.accept(alias.loc)) { return }
+
+    c.consumeTypeAlias(alias)
+
+    visitAnnotations(alias.ann)
+    alias.tparams.foreach(visitTypeParam)
+    visitType(alias.tpe)
   }
 
   private def visitTypeParam(tparam: TypeParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(tparam)
+    if (!a.accept(tparam.loc)) { return }
+    c.consumeTypeParam(tparam)
   }
 
   private def visitUse(use: UseOrImport)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(use)
+    val loc = use match {
+      case UseOrImport.Use(_, _, loc) => loc
+      case UseOrImport.Import(_, _, loc) => loc
+    }
+
+    if (!a.accept(loc)) { return }
+
+    c.consumeUseOrImport(use)
   }
 
   private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
