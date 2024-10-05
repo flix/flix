@@ -36,13 +36,17 @@ object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
     val defErrors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
+    val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
     val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
 
-    Validation.toSuccessOrSoftFailure((), defErrors ++ instanceErrors)
+    Validation.toSuccessOrSoftFailure((), defErrors ++ sigErrors ++ instanceErrors)
   }(DebugValidation()(DebugNoOp()))
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
+
+  private def visitSig(sig: Sig)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
+    sig.exp.map(visitExp(_)(Nil, flix)).getOrElse(Nil)
 
   private def visitInstance(ins: Instance)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     ins.defs.flatMap(visitDef)
