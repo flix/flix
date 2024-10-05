@@ -52,6 +52,7 @@ import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Ast.OpSymUse
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
+import ca.uwaterloo.flix.language.ast.Ast.DefSymUse
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Ast.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Kind
@@ -96,6 +97,7 @@ object Visitor {
     def consumeConstraint(c: Constraint): Unit = ()
     def consumeConstraintParam(cparam: ConstraintParam): Unit = ()
     def consumeDef(defn: Def): Unit = ()
+    def consumeDefSymUse(sym: DefSymUse): Unit = ()
     def consumeDerive(derive: Derivation): Unit = ()
     def consumeDeriveList(deriveList: Derivations): Unit = ()
     def consumeEff(eff: Effect): Unit = ()
@@ -456,6 +458,7 @@ object Visitor {
       }
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+        visitDefSymUse(sym)
         exps.foreach(visitExpr)
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
@@ -678,6 +681,11 @@ object Visitor {
 
       case Expr.Error(m, tpe, eff) => ()
     }
+  }
+
+  private def visitDefSymUse(sym: DefSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    if(!a.accept(sym.loc)) { return }
+    c.consumeDefSymUse(sym)
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
