@@ -40,7 +40,7 @@ object EffectVerifier {
     * Verifies the effects in the given root.
     */
   def run(root: Root)(implicit flix: Flix): Unit = {
-    if (!flix.options.xverifyeffects) {
+    if (flix.options.xverifyeffects) {
       ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.instances)(ins => ins.foreach(visitInstance(_)(root.eqEnv, flix)))
