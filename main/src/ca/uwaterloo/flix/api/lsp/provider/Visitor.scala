@@ -58,7 +58,7 @@ import ca.uwaterloo.flix.language.ast.Ast.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Kind
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Scheme
-import ca.uwaterloo.flix.language.ast.Ast.Modifiers
+import ca.uwaterloo.flix.language.ast.Ast.Modifier
 import ca.uwaterloo.flix.language.ast.Ast.Derivations
 import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.Ast.Derivation
