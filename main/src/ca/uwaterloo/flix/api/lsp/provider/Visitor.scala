@@ -58,6 +58,7 @@ import ca.uwaterloo.flix.language.ast.Ast.TraitSymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeDef
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
+import ca.uwaterloo.flix.language.ast.TypedAst.Op
 
 object Visitor {
 
@@ -79,6 +80,7 @@ object Visitor {
     def consumeHandlerRule(rule: HandlerRule): Unit = ()
     def consumeInstance(ins: Instance): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
+    def consumeOp(op: Op): Unit = ()
     def consumePat(pat: Pattern): Unit = ()
     def consumeRoot(root: Root): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
@@ -290,9 +292,20 @@ object Visitor {
   
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!(a.accept(eff.loc))) { return }
-    // TODO
-    // visit(eff)
-    // ???
+    c.consumeEff(eff)
+
+    visitAnnotations(eff.ann)
+
+    // TODO visit sym
+
+    eff.ops.foreach(visitOp)
+  }
+
+  private def visitOp(op: Op)(implicit a: Acceptor, c: Consumer): Unit = {
+    // TODO: hack that should eventually be fixed. Really it should be `op.loc`, but since op decls don't have locations, this hack is necessary for now
+    if (!a.accept(op.spec.loc)) { return }
+    c.consumeOp(op)
+    visitSpec(op.spec)
   }
 
   private def visitDef(defn: Def)(implicit a: Acceptor, c: Consumer): Unit = {
