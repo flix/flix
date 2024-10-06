@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
@@ -38,29 +38,29 @@ object NamedAst {
 
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Trait(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Doc, ann: Annotations, mod: Ast.Modifiers, trt: Name.QName, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: List[String], loc: SourceLocation) extends Declaration
+    case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Name.QName, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: List[String], loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr]) extends Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
 
-    case class Enum(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indicesAndLocs: Map[Name.Label, (Int, SourceLocation)], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indicesAndLocs: Map[Name.Label, (Int, SourceLocation)], loc: SourceLocation) extends Declaration
 
-    case class StructField(mod: Ast.Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
+    case class StructField(mod: Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
+    case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation) extends Declaration
+    case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation) extends Declaration
 
-    case class AssocTypeDef(doc: Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation) extends Declaration
+    case class AssocTypeDef(doc: Doc, mod: Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class Effect(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
+    case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
 
@@ -69,7 +69,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
   }
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
   sealed trait UseOrImport {
     def alias: Name.Ident
@@ -118,9 +118,9 @@ object NamedAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
@@ -392,7 +392,7 @@ object NamedAst {
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Option[Type], loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 

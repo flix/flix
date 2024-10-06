@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Denotation, Doc, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 
 object MonoAst {
@@ -33,13 +33,13 @@ object MonoAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec)
 
-  case class Struct(doc: Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: List[StructField], loc: SourceLocation)
+  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: List[StructField], loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type
@@ -80,9 +80,9 @@ object MonoAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, mod: Modifiers, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LetRec(sym: Symbol.VarSym, mod: Modifiers, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -201,7 +201,7 @@ object MonoAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 

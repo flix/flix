@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -711,9 +711,9 @@ object Weeder2 {
       TokenKind.KeywordMut,
       TokenKind.KeywordInline)
 
-    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false): Validation[Ast.Modifiers, CompilationMessage] = {
+    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false): Validation[Modifiers, CompilationMessage] = {
       tryPick(TreeKind.ModifierList, tree) match {
-        case None => Validation.success(Ast.Modifiers(List.empty))
+        case None => Validation.success(Modifiers(List.empty))
         case Some(modTree) =>
           var errors: List[CompilationMessage] = List.empty
           val tokens = pickAllTokens(modTree)
@@ -733,7 +733,7 @@ object Weeder2 {
 
           val mods = traverse(tokens)(visitModifier(_, allowed))
             .withSoftFailures(errors)
-          mapN(mods)(Ast.Modifiers(_))
+          mapN(mods)(Modifiers(_))
       }
     }
 
@@ -756,7 +756,7 @@ object Weeder2 {
 
     def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
       Name.Ident("_unit", SourceLocation.Unknown),
-      Ast.Modifiers(List.empty),
+      Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
     )
@@ -1535,7 +1535,7 @@ object Weeder2 {
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), e.loc)
               Validation.success((e, Expr.Error(error)))
           }
-          mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+          mapN(exprs)(exprs => Expr.LetMatch(pattern, Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
     }
 
