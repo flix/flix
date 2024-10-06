@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -694,8 +694,8 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
-            val doc = Ast.Doc(Nil, loc)
-            val mod = Ast.Modifiers.Empty
+            val doc = Doc(Nil, loc)
+            val mod = Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ
             val tpe = UnkindedType.Error(loc)
@@ -1618,7 +1618,7 @@ object Resolver {
     val varSyms = (0 until arity).map(i => freshVarSym("arg" + i, BoundBy.FormalParam, loc)).toList
 
     // Introduce a formal parameter for each variable symbol.
-    varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, None, loc))
+    varSyms.map(sym => ResolvedAst.FormalParam(sym, Modifiers.Empty, None, loc))
   }
 
   /**
@@ -1638,7 +1638,7 @@ object Resolver {
       val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
 
       // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
+      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
 
       // Construct a variable expression for the fresh symbol.
       val varExp = ResolvedAst.Expr.Var(freshVar, loc)
@@ -1668,7 +1668,7 @@ object Resolver {
       val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
 
       // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
+      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
 
       // Construct a variable expression for the fresh symbol.
       val varExp = ResolvedAst.Expr.Var(freshVar, loc)

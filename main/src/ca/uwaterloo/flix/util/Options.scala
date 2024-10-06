@@ -56,7 +56,7 @@ object Options {
     xsubeffecting = SubEffectLevel.Nothing,
     XPerfN = None,
     XPerfFrontend = false,
-    xiterations = 1000
+    xiterations = 5000
   )
 
   /**

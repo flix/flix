@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -106,7 +106,7 @@ object Simplifier {
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
           val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e1.tpe)
-          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
@@ -115,7 +115,7 @@ object Simplifier {
           // Wrap the expression in a closure: () -> tpe \ Pure
           val e = es.head
           val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e.tpe)
-          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
@@ -224,8 +224,6 @@ object Simplifier {
 
   private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
     val base = tpe.typeConstructor
-    val args = tpe.typeArguments.map(visitType)
-
     base match {
       case None => tpe match {
         case _ => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
@@ -271,17 +269,22 @@ object Simplifier {
 
           case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
 
-          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+          case TypeConstructor.Lazy =>
+            val List(elm) = tpe.typeArguments
+            MonoType.Lazy(visitType(elm))
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+          case TypeConstructor.Enum(sym, _) =>
+            val targs = tpe.typeArguments
+            MonoType.Enum(sym, targs.map(visitType))
 
           case TypeConstructor.Struct(sym, _) =>
+            val targs = tpe.typeArguments
             // We must do this here because the `MonoTypes` requires the individual types of each element
             // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
             // at this point we would know `v` but we would need the type of `a`. We also erase to avoid infinitely
             // expanding recursive types
             val struct = root.structs(sym)
-            val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
+            val subst = Substitution(struct.tparams.zip(targs).toMap)
             val substitutedStructFieldTypes = struct.fields.map { f =>
               subst(f.tpe).typeConstructor match {
                 case Some(value) => value match {
@@ -298,27 +301,43 @@ object Simplifier {
                 case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
               }
             }
-            MonoType.Struct(sym, substitutedStructFieldTypes, args)
+            MonoType.Struct(sym, substitutedStructFieldTypes, targs.map(visitType))
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
+            val targs = tpe.typeArguments
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            MonoType.Enum(enumSym, args)
+            MonoType.Enum(enumSym, targs.map(visitType))
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.Array => MonoType.Array(args.head)
+          case TypeConstructor.Array =>
+            val List(elm, reg) = tpe.typeArguments
+            MonoType.Array(visitType(elm))
 
-          case TypeConstructor.Vector => MonoType.Array(args.head)
+          case TypeConstructor.Vector =>
+            val List(elm) = tpe.typeArguments
+            MonoType.Array(visitType(elm))
 
           case TypeConstructor.RegionToStar => MonoType.Region
 
-          case TypeConstructor.Tuple(_) => MonoType.Tuple(args)
+          case TypeConstructor.Tuple(_) =>
+            val targs = tpe.typeArguments
+            MonoType.Tuple(targs.map(visitType))
 
-          case TypeConstructor.Arrow(_) => MonoType.Arrow(args.drop(1).init, args.last) // Erase the purity
+          case TypeConstructor.Arrow(_) =>
+            // arrow type arguments are ordered (effect, args.., result type)
+            val eff :: targs = tpe.typeArguments
+            val (args, List(res)) = targs.splitAt(targs.length - 1)
+            MonoType.Arrow(args.map(visitType), visitType(res))
 
-          case TypeConstructor.RecordRowExtend(label) => MonoType.RecordExtend(label.name, args.head, args(1))
+          case TypeConstructor.RecordRowExtend(label) =>
+            val List(labelType, restType) = tpe.typeArguments
+            MonoType.RecordExtend(label.name, visitType(labelType), visitType(restType))
 
-          case TypeConstructor.Record => args.head
+          case TypeConstructor.Record =>
+            val List(elm) = tpe.typeArguments
+            // The row types themselves return monotype records, so we do nothing here.
+            visitType(elm)
 
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit

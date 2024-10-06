@@ -333,28 +333,10 @@ object ConstraintSolver {
 
 
     case (Kind.RecordRow, Kind.RecordRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
-          }
-      } yield res
+      Result.Ok(RecordConstraintSolver.solve(t1, t2, prov, renv))
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        res0 <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
-          }
-      } yield res
+      Result.Ok(SchemaConstraintSolver.solve(t1, t2, prov, renv))
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       for {
