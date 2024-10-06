@@ -690,16 +690,16 @@ object Weeder2 {
         traverse(constraintTrees)(visitEqualityConstraint)
       })
 
-      mapN(constraints)(_.getOrElse(List.empty))
+      mapN(constraints)(_.getOrElse(List.empty).filter(_.isDefined).map(_.get))
     }
 
-    private def visitEqualityConstraint(tree: Tree): Validation[EqualityConstraint, CompilationMessage] = {
+    private def visitEqualityConstraint(tree: Tree): Validation[Option[EqualityConstraint], CompilationMessage] = {
       flatMapN(traverse(pickAll(TreeKind.Type.Type, tree))(Types.visitType)) {
         case t1 :: t2 :: Nil => t1 match {
-          case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(EqualityConstraint(qname, t11, t2, tree.loc))
-          case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+          case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(Some(EqualityConstraint(qname, t11, t2, tree.loc)))
+          case _ => Validation.toSoftFailure(None, IllegalEqualityConstraint(tree.loc))
         }
-        case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+        case _ => Validation.toSoftFailure(None, IllegalEqualityConstraint(tree.loc))
       }
     }
 
