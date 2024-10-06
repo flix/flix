@@ -49,7 +49,7 @@ object ResolvedAstPrinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
-    case Expr.Let(sym, _, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
+    case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.LetRec(sym, _, _, exp1, exp2, _) => DocAst.Expr.LetRec(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))

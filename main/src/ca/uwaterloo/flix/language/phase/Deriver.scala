@@ -334,12 +334,12 @@ object Deriver {
       // Wrap the cases in a match expression
       val matchExp = KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        matchRules.toList :+ defaultMatchRule,
+        matchRules :+ defaultMatchRule,
         loc
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaVarSym, Modifiers.Empty, lambda, matchExp, loc)
+      KindedAst.Expr.Let(lambdaVarSym, lambda, matchExp, loc)
   }
 
   /**
