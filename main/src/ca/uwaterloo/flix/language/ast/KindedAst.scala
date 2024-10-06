@@ -89,6 +89,8 @@ object KindedAst {
 
     case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class ApplySig(symUse: Ast.SigSymUse, exps: List[Expr], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
@@ -101,7 +103,7 @@ object KindedAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 

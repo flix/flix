@@ -77,13 +77,16 @@ object Regions {
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
+    case Expr.ApplySig(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.Binary(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.Let(_, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.Let(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>

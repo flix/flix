@@ -105,13 +105,18 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>

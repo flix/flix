@@ -238,7 +238,11 @@ object Indexer {
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
-      visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ visitExps(exps)
+
+    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -246,7 +250,7 @@ object Indexer {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>

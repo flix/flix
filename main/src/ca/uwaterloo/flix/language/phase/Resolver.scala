@@ -963,12 +963,12 @@ object Resolver {
         case e => ResolvedAst.Expr.Discard(e, loc)
       }
 
-    case NamedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
+    case NamedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1Val = resolveExp(exp1, env0)
       val env = env0 ++ mkVarEnv(sym)
       val e2Val = resolveExp(exp2, env)
       mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.Let(sym, mod, e1, e2, loc)
+        case (e1, e2) => ResolvedAst.Expr.Let(sym, e1, e2, loc)
       }
 
     case NamedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
@@ -1760,7 +1760,7 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, loc), es, loc.asSynthetic)
     visitApplyToplevelFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1776,7 +1776,7 @@ object Resolver {
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, innerLoc), args, outerLoc)
         visitApplyToplevelFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }

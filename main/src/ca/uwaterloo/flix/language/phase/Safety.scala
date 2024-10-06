@@ -259,13 +259,16 @@ object Safety {
       case Expr.ApplyDef(_, exps, _, _, _, _) =>
         exps.flatMap(visit)
 
+      case Expr.ApplySig(_, exps, _, _, _, _) =>
+        exps.flatMap(visit)
+
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp)
 
       case Expr.Binary(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+      case Expr.Let(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 
 object TypedAstOps {
 
@@ -46,9 +46,10 @@ object TypedAstOps {
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Apply(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
@@ -70,7 +71,7 @@ object TypedAstOps {
     case Expr.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expr.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expr.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expr.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap {case (_, v) => sigSymsOf(v)}
+    case Expr.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap { case (_, v) => sigSymsOf(v) }
     case Expr.StructGet(e, _, _, _, _) => sigSymsOf(e)
     case Expr.StructPut(e1, _, e2, _, _, _) => sigSymsOf(e1) ++ sigSymsOf(e2)
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -157,13 +158,18 @@ object TypedAstOps {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       freeVars(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
@@ -242,7 +248,7 @@ object TypedAstOps {
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      freeVars(region) ++ fields.flatMap {case (k, v) => freeVars(v)}
+      freeVars(region) ++ fields.flatMap { case (k, v) => freeVars(v) }
 
     case Expr.StructGet(e, _, _, _, _) =>
       freeVars(e)

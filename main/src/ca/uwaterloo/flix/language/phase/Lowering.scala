@@ -389,6 +389,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
 
+    case TypedAst.Expr.ApplySig(Ast.SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val it = visitType(itpe)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplySig(sym, es, it, t, eff, loc)
+
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -400,11 +406,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.Let(sym, mod, e1, e2, t, eff, loc)
+      LoweredAst.Expr.Let(sym, e1, e2, t, eff, loc)
 
     case TypedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -710,7 +716,7 @@ object Lowering {
       val matchExp = LoweredAst.Expr.Match(selectExp, cases ++ defaultCase, t, eff, loc)
 
       channels.foldRight[LoweredAst.Expr](matchExp) {
-        case ((sym, c), e) => LoweredAst.Expr.Let(sym, Modifiers.Empty, c, e, t, eff, loc)
+        case ((sym, c), e) => LoweredAst.Expr.Let(sym, c, e, t, eff, loc)
       }
 
     case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
@@ -1491,7 +1497,7 @@ object Lowering {
         val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
         val args = List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc))
         val getExp = LoweredAst.Expr.ApplyDef(Defs.ChannelUnsafeGetAndUnlock, args, itpe, getTpe, eff, loc)
-        val e = LoweredAst.Expr.Let(sym, Modifiers.Empty, getExp, exp, exp.tpe, eff, loc)
+        val e = LoweredAst.Expr.Let(sym, getExp, exp, exp.tpe, eff, loc)
         LoweredAst.MatchRule(pat, None, e)
     }
   }
@@ -1716,7 +1722,7 @@ object Lowering {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val chan = mkNewChannel(LoweredAst.Expr.Cst(Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.IO, loc) // The channel exp `chan 1`
-        LoweredAst.Expr.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
+        LoweredAst.Expr.Let(sym, chan, acc, acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
 
@@ -1866,15 +1872,19 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
+    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expr.ApplySig(sym, es, itpe, tpe, eff, loc)
+
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
-    case LoweredAst.Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expr.Let(s, mod, e1, e2, tpe, eff, loc)
+      LoweredAst.Expr.Let(s, e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)

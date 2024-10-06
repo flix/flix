@@ -100,6 +100,11 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ApplySig(_, exps, itpe, _, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
@@ -111,7 +116,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)

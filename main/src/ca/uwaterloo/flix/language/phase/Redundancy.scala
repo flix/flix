@@ -359,6 +359,13 @@ object Redundancy {
       }
       visitExps(exps, env0, rc)
 
+    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.sigSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -367,7 +374,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 

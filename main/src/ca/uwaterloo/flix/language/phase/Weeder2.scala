@@ -1544,7 +1544,7 @@ object Weeder2 {
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), e.loc)
               Validation.success((e, Expr.Error(error)))
           }
-          mapN(exprs)(exprs => Expr.LetMatch(pattern, Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+          mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
       }
     }
 
