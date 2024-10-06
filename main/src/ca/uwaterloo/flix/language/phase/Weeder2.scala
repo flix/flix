@@ -684,8 +684,8 @@ object Weeder2 {
     }
 
     private def pickEqualityConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
-      val maybeContraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
-      val constraints = traverseOpt(maybeContraintList)(t => {
+      val maybeConstraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
+      val constraints = traverseOpt(maybeConstraintList)(t => {
         val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t)
         traverse(constraintTrees)(visitEqualityConstraint)
       })
