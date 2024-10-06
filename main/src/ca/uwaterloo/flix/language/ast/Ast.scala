@@ -213,6 +213,11 @@ object Ast {
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a sig sym.
+    */
+  case class SigSymUse(sym: Symbol.SigSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a class sym.
     */
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)

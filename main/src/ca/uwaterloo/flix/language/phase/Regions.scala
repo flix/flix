@@ -77,6 +77,9 @@ object Regions {
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
+    case Expr.ApplySig(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 

@@ -84,61 +84,16 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Apply(exp, exps, tvar, evar, loc) =>
-        //
-        // Determine if there is a direct call to a Def or Sig.
-        // By treating these as special cases, we can:
-        // - have better error messages (knowing the precise types of the arguments, etc)
-        // - have better performance (we don't generate unnecessary type variables)
-        //
-        val knownTarget = exp match {
-          case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
-            // Case 2: Lookup the sym and instantiate its scheme.
-            val sig = root.traits(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar1, constrs1, econstrs1, declaredType))
-
-          case _ =>
-            // Case 3: Unknown target.
-            None
-        }
-
-
-        knownTarget match {
-          case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
-            //
-            // Special Case: We are applying a Def or Sig and we break apart its declared type.
-            //
-            val declaredEff = declaredType.arrowEffectType
-            val declaredArgumentTypes = declaredType.arrowArgTypes
-            val declaredResultType = declaredType.arrowResultType
-
-            val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-            c.addClassConstraints(constrs1, loc)
-            econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-            c.unifyType(tvar1, declaredType, loc)
-            c.unifyType(tvar, declaredResultType, loc)
-            c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-            val resTpe = tvar
-            val resEff = evar
-            (resTpe, resEff)
-
-          case None =>
-            //
-            // Default Case: Apply.
-            //
-            val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-            val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
-            val (tpe, eff) = visitExp(exp)
-            val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
-            c.unifyType(tvar, lambdaBodyType, loc)
-            c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
-            val resTpe = tvar
-            val resEff = evar
-            (resTpe, resEff)
-        }
+        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
+        val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
+        val (tpe, eff) = visitExp(exp)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+        c.unifyType(tvar, lambdaBodyType, loc)
+        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
@@ -152,6 +107,24 @@ object ConstraintGen {
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
         econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+        val sig = root.traits(sym.trt).sigs(sym)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
