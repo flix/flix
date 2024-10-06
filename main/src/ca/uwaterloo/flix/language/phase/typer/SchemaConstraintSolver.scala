@@ -69,6 +69,8 @@ object SchemaConstraintSolver {
 
         case None =>
           ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
+
+        case Some((t, _)) => throw InternalCompilerException("unexpected result from pivot: " + t, t.loc)
       }
 
     // If nothing matches, we give up and return the constraints as we got them.
