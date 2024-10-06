@@ -545,11 +545,6 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Discard(e, loc)
 
-    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Let(ident, e1, e2, loc)
-
     case WeededAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
