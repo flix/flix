@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object SchemaConstraintSolver {
 
   /**
-    * Unifies the two given schema types.
+    * Unifies the two given schema row types.
     */
   def solve(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): ResolutionResult = (tpe1, tpe2) match {
 
@@ -50,14 +50,14 @@ object SchemaConstraintSolver {
     case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
       ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
 
-    // If labels match, then we compare the label types and rest of the record.
+    // If labels match, then we compare the label types and rest of the row.
     //
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       ResolutionResult.constraints(List(Equality(t1, t2, prov), Equality(rest1, rest2, prov)), progress = true)
 
-    // If labels do not match, then we pivot the right record to make them match.
+    // If labels do not match, then we pivot the right row to make them match.
     //
     //        ρ₂ ~~{ℓ : τ₁}~~> { ℓ : τ₃ | ρ₃ } ; S
     // -------------------------------------------------
@@ -84,7 +84,7 @@ object SchemaConstraintSolver {
     */
   private def pivot(row: Type, hdLabel: Name.Pred, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym], renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Substitution)] = row match {
 
-    // If head labels match, then there is nothing to do. We return the same record.
+    // If head labels match, then there is nothing to do. We return the same row.
     //
     // -------------------------------------------
     // { ℓ : τ₁ | ρ } ~~{ℓ : τ₂}~~> { ℓ : τ₁ | ρ }
@@ -104,10 +104,10 @@ object SchemaConstraintSolver {
           val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), loc), tpe, loc), rest, loc), loc)
           (newRow, subst)
 
-        case _ => throw InternalCompilerException("unexpected non-record", loc)
+        case _ => throw InternalCompilerException("unexpected non-row", loc)
       }
 
-    // If we have a variable, then we can map it to a fresh record type with the selected label at the head.
+    // If we have a variable, then we can map it to a fresh row type with the selected label at the head.
     //
     //     β fresh, α ∉ fv(ρ)
     // ----------------------------------------------------
@@ -118,7 +118,7 @@ object SchemaConstraintSolver {
       val subst = Substitution.singleton(sym, newRow)
       Some((newRow, subst))
 
-    // If no rule matches, then we cannot pivot this record type.
+    // If no rule matches, then we cannot pivot this row type.
     case _ => None
   }
 }
