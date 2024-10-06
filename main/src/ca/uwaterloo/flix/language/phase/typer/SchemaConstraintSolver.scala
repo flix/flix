@@ -64,8 +64,12 @@ object SchemaConstraintSolver {
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
     case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), t1, _), rest1, _), r2) =>
       pivot(r2, label, t1, r1.typeVars.map(_.sym), renv) match {
+        // ideally we should return these constraints, but for efficiency reasons we recurse to solve the whole row
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
-          ResolutionResult(subst, List(Equality(t1, t3, prov), Equality(rest1, rest3, prov)), progress = true)
+          solve(subst(rest1), subst(rest3), prov, renv) match {
+            case ResolutionResult(restSubst, restConstrs, _) =>
+              ResolutionResult(restSubst @@ subst, Equality(t1, t3, prov) :: restConstrs, progress = true)
+          }
 
         case None =>
           ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
