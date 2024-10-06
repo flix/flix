@@ -115,8 +115,6 @@ object WeededAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(ident: Name.Ident, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class LetRec(ident: Name.Ident, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
