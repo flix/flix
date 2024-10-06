@@ -59,13 +59,15 @@ object RecordConstraintSolver {
     //        ρ₂ ~~{ℓ : τ₁}~~> { ℓ : τ₃ | ρ₃ } ; S
     // -------------------------------------------------
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
-    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), _, _), r2) =>
+    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), rest1, _), r2) =>
       pivot(r2, label, t1, r1.typeVars.map(_.sym), renv) match {
-        case Some((newRow, subst)) =>
-          ResolutionResult(subst, List(Equality(r1, newRow, prov)), progress = true)
+        case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
+          ResolutionResult(subst, List(Equality(t1, t3, prov), Equality(rest1, rest3, prov)), progress = true)
 
         case None =>
           ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
+
+        case Some((t, _)) => throw InternalCompilerException("unexpected result from pivot: " + t, t.loc)
       }
 
     // If nothing matches, we give up and return the constraints as we got them.
