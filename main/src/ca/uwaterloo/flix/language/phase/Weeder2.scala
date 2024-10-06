@@ -690,7 +690,12 @@ object Weeder2 {
         traverse(constraintTrees)(visitEqualityConstraint)
       })
 
-      mapN(constraints)(_.getOrElse(List.empty).filter(_.isDefined).map(_.get))
+      mapN(constraints) {
+        case optListOpt =>
+          optListOpt.getOrElse(List.empty)
+            .filter(_.isDefined)
+            .map(_.get)
+      }
     }
 
     private def visitEqualityConstraint(tree: Tree): Validation[Option[EqualityConstraint], CompilationMessage] = {
