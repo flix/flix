@@ -146,10 +146,10 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      Expr.Let(sym, e1, e2, tpe, eff, loc)
 
     case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)

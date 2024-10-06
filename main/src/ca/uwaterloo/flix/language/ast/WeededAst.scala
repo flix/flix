@@ -135,7 +135,7 @@ object WeededAst {
 
     case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class LetMatch(pat: Pattern, mod: Modifiers, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetMatch(pat: Pattern, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 

@@ -162,12 +162,12 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.Discard(e, e.eff, loc)
 
-    case KindedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

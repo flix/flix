@@ -121,7 +121,7 @@ object TreeShaker1 {
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>

@@ -414,10 +414,10 @@ object Kinder {
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Discard(exp, loc)
 
-    case ResolvedAst.Expr.Let(sym, mod, exp10, exp20, loc) =>
+    case ResolvedAst.Expr.Let(sym, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
+      KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
     case ResolvedAst.Expr.LetRec(sym, ann, mod, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
