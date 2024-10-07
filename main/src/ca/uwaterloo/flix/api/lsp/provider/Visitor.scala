@@ -25,8 +25,8 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 object Visitor {
 
   trait Consumer {
-    def consumeAnn(ann: Annotation): Unit = ()
-    def consumeAnns(anns: Annotations): Unit = ()
+    def consumeAnnotation(ann: Annotation): Unit = ()
+    def consumeAnnotations(anns: Annotations): Unit = ()
     def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
     def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
@@ -38,29 +38,29 @@ object Visitor {
     def consumeConstraintParam(cparam: ConstraintParam): Unit = ()
     def consumeDef(defn: Def): Unit = ()
     def consumeDefSymUse(sym: DefSymUse): Unit = ()
-    def consumeDerive(derive: Derivation): Unit = ()
-    def consumeDeriveList(deriveList: Derivations): Unit = ()
+    def consumeDerivation(derive: Derivation): Unit = ()
+    def consumeDerivations(derives: Derivations): Unit = ()
     def consumeEff(eff: Effect): Unit = ()
     def consumeEnum(enm: Enum): Unit = ()
     def consumeEqConstraint(ec: EqualityConstraint): Unit = ()
     def consumeExpr(exp: Expr): Unit = ()
-    def consumeFParam(fparam: FormalParam): Unit = ()
-    def consumeFrag(frag: ParYieldFragment): Unit = ()
+    def consumeFormalParam(fparam: FormalParam): Unit = ()
+    def consumeParYieldFragment(frag: ParYieldFragment): Unit = ()
     def consumeHandlerRule(rule: HandlerRule): Unit = ()
     def consumeInstance(ins: Instance): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumeOp(op: Op): Unit = ()
     def consumeOpSymUse(sym: OpSymUse): Unit = ()
-    def consumePat(pat: Pattern): Unit = ()
+    def consumePattern(pat: Pattern): Unit = ()
     def consumePredicate(p: Predicate): Unit = ()
-    def consumeRecLabelPat(pat: Pattern.Record.RecordLabelPattern): Unit = ()
+    def consumeRecordLabelPattern(pat: Pattern.Record.RecordLabelPattern): Unit = ()
     def consumeRoot(root: Root): Unit = ()
     def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
     def consumeStructField(field: StructField): Unit = ()
-    def consumeTMatchRule(rule: TypeMatchRule): Unit = ()
+    def consumeTypeMatchRule(rule: TypeMatchRule): Unit = ()
     def consumeTrait(traitt: Trait): Unit = ()
     def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
     def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = ()
@@ -166,13 +166,13 @@ object Visitor {
 
   private def visitDeriveList(deriveList: Derivations)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(deriveList.loc)) { return }
-    c.consumeDeriveList(deriveList)
+    c.consumeDerivations(deriveList)
     deriveList.traits.foreach(visitDerive)
   }
 
   private def visitDerive(derive: Derivation)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(derive.loc)) { return }
-    c.consumeDerive(derive)
+    c.consumeDerivation(derive)
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -633,7 +633,7 @@ object Visitor {
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(fparam.loc)) { return }
-    c.consumeFParam(fparam)
+    c.consumeFormalParam(fparam)
     visitType(fparam.tpe)
   }
 
@@ -657,7 +657,7 @@ object Visitor {
   private def visitParYieldFrag(frag: ParYieldFragment)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(frag.loc)) { return }
 
-    c.consumeFrag(frag)
+    c.consumeParYieldFragment(frag)
 
     visitPattern(frag.pat)
     visitExpr(frag.exp)
@@ -680,7 +680,7 @@ object Visitor {
     val insideRule = a.accept(rule.sym.loc) || a.accept(rule.tpe.loc) || a.accept(rule.exp.loc)
     if (!insideRule) { return }
 
-    c.consumeTMatchRule(rule)
+    c.consumeTypeMatchRule(rule)
 
     visitType(rule.tpe)
     visitExpr(rule.exp)
@@ -700,14 +700,14 @@ object Visitor {
     val insideAnns = ls.map(_.loc).exists(a.accept)
     if (!insideAnns) { return }
 
-    c.consumeAnns(anns)
+    c.consumeAnnotations(anns)
 
     ls.foreach(visitAnnotation)
   }
 
   private def visitAnnotation(ann: Annotation)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(ann.loc)) { return }
-    c.consumeAnn(ann)
+    c.consumeAnnotation(ann)
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -750,7 +750,7 @@ object Visitor {
   private def visitPattern(pat: Pattern)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(pat.loc)) { return }
 
-    c.consumePat(pat)
+    c.consumePattern(pat)
 
     pat match {
     	case Wild(tpe, loc) => ()
@@ -771,7 +771,7 @@ object Visitor {
 
   private def visitRecordLabelPattern(pat: Pattern.Record.RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(pat.loc)) { return }
-    c.consumeRecLabelPat(pat)
+    c.consumeRecordLabelPattern(pat)
     visitPattern(pat.pat)
   }
 

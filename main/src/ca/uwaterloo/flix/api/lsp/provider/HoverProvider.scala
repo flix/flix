@@ -52,10 +52,10 @@ object HoverProvider {
       override def consumeDef(defn: Def): Unit = stack = defn :: stack
       override def consumeType(tpe: Type): Unit = stack = tpe :: stack
       override def consumeSpec(spec: Spec): Unit = stack = spec :: stack
-      override def consumeFParam(fparam: FormalParam): Unit = stack = fparam :: stack
+      override def consumeFormalParam(fparam: FormalParam): Unit = stack = fparam :: stack
       override def consumeCase(cse: Case): Unit = stack = cse :: stack
       override def consumeStructField(field: StructField): Unit = stack = field :: stack
-      override def consumePat(pat: Pattern): Unit = stack = pat :: stack
+      override def consumePattern(pat: Pattern): Unit = stack = pat :: stack
       override def consumePredicate(p: Predicate): Unit = stack = p :: stack
       override def consumeDefSymUse(sym: DefSymUse): Unit = stack = sym :: stack
     }
