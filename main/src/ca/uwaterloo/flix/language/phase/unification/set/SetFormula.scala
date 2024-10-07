@@ -693,7 +693,7 @@ object SetFormula {
     *   - `x ∪ f == x ∪ f[x -> Empty]`
     *   - `!x ∪ f == !x ∪ f[x -> Univ]`
     *
-    * where `x` is [[Cst]], [[Var]], or [ElemSet]].
+    * where `x` is [[Cst]], [[Var]], or [[ElemSet]].
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
