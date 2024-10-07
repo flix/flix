@@ -96,9 +96,23 @@ object SetUnification {
       *   - `!x ~ f` where [[SetFormula.isGround]] on `f` becomes `({}, [x -> !f])`
       *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
       *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
+      *
+      * All of these are applied to their symmetric equations.
       */
     def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-      val Equation(f1, f2, _, loc) = eq
+      val Equation(f01, f02, _, loc) = eq
+
+      // Reorder formulas to avoid symmetric matches below.
+      //   - `x` and `!x` to the left
+      //   - `empty` and `univ` to the right
+      val (f1, f2) = (f01, f02) match {
+        case (_, Var(_)) => (f02, f01)
+        case (_, Compl(Var(_))) => (f02, f01)
+        case (Empty, _) => (f02, f01)
+        case (Univ, _) => (f02, f01)
+        case _ => (f01, f02)
+      }
+
       (f1, f2) match {
         // x ~ f, where f is ground
         // ---
@@ -125,9 +139,9 @@ object SetUnification {
           val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
           (eqs, SetSubstitution.empty)
 
-        // f1 ∪ f2 ∪ ... ~ empty
+        // f1 ∪ f2 ∪ .. ~ empty
         // ---
-        // [f1 ~ empty, f2 ~ empty, ...],
+        // [f1 ~ empty, f2 ~ empty, ..],
         // {}
         case (union@Union(_, _, _, _, _, _, _), Empty) =>
           p.markProgress()
