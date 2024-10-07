@@ -21,17 +21,16 @@ import SetFormula.*
 object SetUnification {
 
   /** A class to track progress during set unification. */
-  class Progress private(var somethingHappened: Boolean = false) {
+  private class Progress() {
+
+    /** Is `true` if [[markProgress]] has been called. */
+    private var hasMadeProgress: Boolean = false
+
     /** Mark that progress has been made. */
-    def progress(): Unit = somethingHappened = true
+    def markProgress(): Unit = hasMadeProgress = true
 
-    /** Returns `true` if there has been progress. */
-    def hasProgressed: Boolean = somethingHappened
-  }
-
-  object Progress {
-    /** Make a new [[Progress]] object with progress set to `false`. */
-    def apply(): Progress = new Progress()
+    /** Returns `true` if [[markProgress]] has been called. */
+    def hasProgressed: Boolean = hasMadeProgress
   }
 
   /** A collection of rules that can be used to solve individual [[Equation]]. */
@@ -53,13 +52,13 @@ object SetUnification {
 
       @inline
       def error(): (List[Equation], SetSubstitution) = {
-        p.progress()
+        p.markProgress()
         (List(eq.toUnsolvable), SetSubstitution.empty)
       }
 
       @inline
       def success(): (List[Equation], SetSubstitution) = {
-        p.progress()
+        p.markProgress()
         (Nil, SetSubstitution.empty)
       }
 
@@ -106,7 +105,7 @@ object SetUnification {
         // {},
         // [x -> t]
         case (Var(x), f) if f.isGround =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, f))
 
         // !x ~ t, where t is ground
@@ -114,7 +113,7 @@ object SetUnification {
         // {},
         // [x -> !t]
         case (Compl(Var(x)), f) if f.isGround =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
         // f1 ∩ f2 ∩ .. ~ univ
@@ -122,7 +121,7 @@ object SetUnification {
         // {f1 ~ univ, f2 ~ univ, ..},
         // []
         case (inter@Inter(_, _, _, _, _, _, _), Univ) =>
-          p.progress()
+          p.markProgress()
           val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
           (eqs, SetSubstitution.empty)
 
@@ -131,7 +130,7 @@ object SetUnification {
         // [f1 ~ empty, f2 ~ empty, ...],
         // {}
         case (union@Union(_, _, _, _, _, _, _), Empty) =>
-          p.progress()
+          p.markProgress()
           val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
           (eqs, SetSubstitution.empty)
 
@@ -140,7 +139,7 @@ object SetUnification {
         // [], {} if solved
         // [f1 !~ f2], {} if unsolvable
         case (f1, f2) if f1.isGround && f2.isGround =>
-          p.progress()
+          p.markProgress()
           if (isEquivalent(f1, f2)) (Nil, SetSubstitution.empty)
           else (List(eq.toUnsolvable), SetSubstitution.empty)
 
@@ -164,7 +163,7 @@ object SetUnification {
         // {},
         // [x1 -> x2]
         case (Var(x), y@Var(_)) =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, y))
 
         // !x1 ~ !x2
@@ -172,7 +171,7 @@ object SetUnification {
         // {},
         // [x1 -> x2]
         case (Compl(Var(x)), Compl(y@Var(_))) =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, y))
 
         case _ =>
@@ -195,7 +194,7 @@ object SetUnification {
         // {},
         // [x -> f]
         case (v@Var(x), f) if !f.contains(v) =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, f))
 
         // !x ~ f, where f does not contain x
@@ -203,7 +202,7 @@ object SetUnification {
         // {},
         // [x -> !f]
         case (Compl(v@Var(x)), f) if !f.contains(v) =>
-          p.progress()
+          p.markProgress()
           (Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
         case _ =>
@@ -219,7 +218,7 @@ object SetUnification {
       * [[Equation.Status.Timeout]].
       */
     def sve(recSizeThreshold: Int)(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-      p.progress()
+      p.markProgress()
       val query = mkEquivalenceTestToEmpty(eq.f1, eq.f2)
       val fvs = query.variables.toList
       try {
