@@ -143,8 +143,7 @@ object Visitor {
     val posLine = x + 1
     val posCol = y + 1
 
-    // sp1 and sp2, by invariant, has the same source, so we can use either
-    (uri == loc.sp1.source.name) &&
+    (uri == loc.source.name) &&
     (posLine >= loc.beginLine) &&
     (posLine <= loc.endLine) &&
     (!(posLine == loc.beginLine && posCol < loc.beginCol)) &&
