@@ -116,25 +116,17 @@ object Visitor {
 
     root.effects.foreach{ case (_, eff) => visitEffect(eff) }
 
-    // root.entryPoint.map{ case v => visitEntryPoint(visit, accept)(v) }
-
     root.enums.foreach{ case (_, e) => visitEnum(e) }
 
     root.instances.foreach{ case (_, l) => l.foreach(visitInstance) }
-
-    // root.modules.map { case (_, v) => visitModule(v, ???, ???) }
 
     root.sigs.foreach{ case (_, sig) => visitSig(sig) }
 
     root.structs.foreach{ case (_, struct) => visitStruct(struct) }
 
-    // root.traitEnv.map{ case (_, v) => visitTraitEnv(???, ???)(v) };
-
     root.traits.foreach{ case (_, traitt) => visitTrait(traitt) }
 
     root.typeAliases.foreach{ case (_, alias) => visitTypeAlias(alias) }
-
-    // root.uses
   }
 
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
