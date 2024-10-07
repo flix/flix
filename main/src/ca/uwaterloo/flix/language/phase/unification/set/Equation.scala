@@ -24,8 +24,8 @@ import scala.annotation.nowarn
 /**
   * Represents an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`).
   *
-  * Equations can be marked as [[Equation.Status.Unsolvable]] during unification, in which case its
-  * written `f1 !~ f2`.
+  * Equations can be marked as [[Equation.Status.Unsolvable]] or [[Equation.Status.Timeout]] during
+  * unification, in which case its written `f1 !~ f2`.
   *
   * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy` method
   * is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still
@@ -58,28 +58,17 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
 
 object Equation {
 
-  /**
-    * Returns an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`).
-    *
-    * The smart constructor performs normalization:
-    *   - Move single [[Univ]], [[Empty]], [[ElemSet]], and [[Cst]] to the right (in that priority).
-    *   - Move single [[Var]] to the left.
-    *
-    * Examples:
-    *   -    `mk(univ, x7) = x7 ~ univ`
-    *   - `mk(x3 ∩ x7, x4) = x4 ~ c3 ∩ x7`
-    *   - `mk(c2, x3 ∩ x7) = x3 ∩ x7 ~ c2`
-    *   -    `mk(univ, c2) = c2 ~ univ`
-    *
-    * TODO: decide on Equation ordering method.
-    */
-  def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Unknown): Equation = (f1, f2) match {
-    case (Univ, _) => Equation(f2, f1, status, loc)
-    case (Empty, _) => Equation(f2, f1, status, loc)
-    case (ElemSet(_), _) => Equation(f2, f1, status, loc)
-    case (Cst(_), _) => Equation(f2, f1, status, loc)
-    case (_, Var(_)) => Equation(f2, f1, status, loc)
-    case _ => Equation(f1, f2, status, loc)
+  /** Returns an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`). */
+  def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Unknown): Equation = {
+    // This reordering is not part of the interface and should not be relied on.
+    (f1, f2) match {
+      case (Univ, _) => Equation(f2, f1, status, loc)
+      case (Empty, _) => Equation(f2, f1, status, loc)
+      case (ElemSet(_), _) => Equation(f2, f1, status, loc)
+      case (Cst(_), _) => Equation(f2, f1, status, loc)
+      case (_, Var(_)) => Equation(f2, f1, status, loc)
+      case _ => Equation(f1, f2, status, loc)
+    }
   }
 
   sealed trait Status

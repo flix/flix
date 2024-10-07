@@ -60,8 +60,6 @@ object SetUnification {
         (Nil, SetSubstitution.empty)
       }
 
-      // TODO: decide on Equation ordering method.
-
       (t1, t2) match {
         // Equations that are solved.
         case (Univ, Univ) => success()
@@ -97,11 +95,10 @@ object SetUnification {
       *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
       *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
       *
-      * All of these are applied to their symmetric equations.
+      * This also applies to the symmetric equations.
       */
     def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(f01, f02, _, loc) = eq
-      // TODO: decide on Equation ordering method.
 
       // Reorder formulas to avoid symmetric matches below.
       //   - `x` and `!x` to the left
@@ -171,6 +168,9 @@ object SetUnification {
       *   - `x1 ~ x2` becomes `({}, [x1 -> x2])`
       *   - `!x1 ~ !x1` becomes `({}, [])`
       *   - `!x1 ~ !x2` becomes `({}, [x1 -> x2])`
+      *
+      * There is a binding-bias towards lower variables, such that `x1 ~ x2` and `x2 ~ x1` both
+      * become `({}, [x1 -> x2])`.
       */
     def variableAlias(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
@@ -187,11 +187,11 @@ object SetUnification {
         // ---
         // {},
         // [x1 -> x2]
-        case (Var(x), y@Var(_)) =>
+        case (x0@Var(_), y0@Var(_)) =>
           p.markProgress()
-          // TODO: decide on Equation ordering method.
-          //       how to bias this symmetric equation
-          (Nil, SetSubstitution.singleton(x, y))
+          // Make this rule stable on symmetric equations.
+          val (x, y) = if (x0.x < y0) (x0, y0) else (y0, x0)
+          (Nil, SetSubstitution.singleton(x.x, y))
 
         // !x1 ~ !x1
         // ---
@@ -205,11 +205,11 @@ object SetUnification {
         // ---
         // {},
         // [x1 -> x2]
-        case (Compl(Var(x)), Compl(y@Var(_))) =>
+        case (Compl(x0@Var(_)), Compl(y0@Var(_))) =>
           p.markProgress()
-          // TODO: decide on Equation ordering method.
-          //       how to bias this symmetric equation
-          (Nil, SetSubstitution.singleton(x, y))
+          // Make this rule stable on symmetric equations.
+          val (x, y) = if (x0.x < y0) (x0, y0) else (y0, x0)
+          (Nil, SetSubstitution.singleton(x.x, y))
 
         case _ =>
           // Cannot do anything.
@@ -222,10 +222,20 @@ object SetUnification {
       *
       *   - `x ~ f` where `f` does not contain `x` becomes `({}, [x -> f])`
       *   - `!x ~ f` where `f` does not contain `x` becomes `({}, [x -> !f])`
+      *
+      * This also applies to the symmetric equations.
       */
     def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-      val Equation(t1, t2, _, _) = eq
-      // TODO: decide on Equation ordering method.
+      val Equation(t01, t02, _, _) = eq
+
+      // Reorder formulas to avoid symmetric matches below.
+      //   - `x` and `!x` to the left
+      val (t1, t2) = (t01, t02) match {
+        case (_, Var(_)) => (t02, t01)
+        case (_, Compl(Var(_))) => (t02, t01)
+        case _ => (t01, t02)
+      }
+
       (t1, t2) match {
         // x ~ f, where f does not contain x
         // ---
