@@ -368,7 +368,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Illegal equality constraint."
 
     override def message(formatter: Formatter): String = {
