@@ -42,10 +42,10 @@ object SetUnification {
       *
       * Otherwise returns `eq` directly.
       *
-      *   - `univ ~ univ` becomes `{}`
-      *   - `univ ~ empty` becomes `{univ !~ empty}`
-      *   - `x1 ~ x1` becomes `{}`
-      *   - `x2 ~ univ` becomes `{x2 ~ univ}`
+      *   - `univ ~ univ` becomes `({}, [])`
+      *   - `univ ~ empty` becomes `({univ !~ empty}, [])`
+      *   - `x1 ~ x1` becomes `({}, [])`
+      *   - `x2 ~ univ` becomes `({x2 ~ univ}, [])`
       */
     def trivial(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
@@ -141,8 +141,8 @@ object SetUnification {
 
         // f1 ∪ f2 ∪ .. ~ empty
         // ---
-        // [f1 ~ empty, f2 ~ empty, ..],
-        // {}
+        // {f1 ~ empty, f2 ~ empty, ..},
+        // []
         case (union@Union(_, _, _, _, _, _, _), Empty) =>
           p.markProgress()
           val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
@@ -150,8 +150,8 @@ object SetUnification {
 
         // f1 ~ f2, where f1 and f2 are ground
         // ---
-        // [], {} if solved
-        // [f1 !~ f2], {} if unsolvable
+        // {}, [] if solved
+        // {f1 !~ f2}, [] if unsolvable
         case (f1, f2) if f1.isGround && f2.isGround =>
           p.markProgress()
           if (isEquivalent(f1, f2)) (Nil, SetSubstitution.empty)
@@ -215,8 +215,8 @@ object SetUnification {
     /**
       * Solves non-recursive variable assignments (e.g. `x1 ~ x2 ∪ c4`).
       *
-      *   - `x ~ f` where `f` does not contain `x` becomes `([], {x -> f})`
-      *   - `!x ~ f` where `f` does not contain `x` becomes `([], {x -> !f})`
+      *   - `x ~ f` where `f` does not contain `x` becomes `({}, [x -> f])`
+      *   - `!x ~ f` where `f` does not contain `x` becomes `({}, [x -> !f])`
       */
     def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
