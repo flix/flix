@@ -94,7 +94,7 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, _) =>

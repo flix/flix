@@ -61,7 +61,7 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, purity, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       Expr.ApplyClo(e, es, tpe, purity, loc)
@@ -142,8 +142,6 @@ object ClosureConv {
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
   }
 
   /**
@@ -195,7 +193,7 @@ object ClosureConv {
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
-    case Expr.Apply(exp, args, _, _, _) =>
+    case Expr.ApplyClo(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
     case Expr.ApplyDef(_, exps, _, _, _) =>
@@ -244,8 +242,6 @@ object ClosureConv {
       }
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
-    case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
   }
 
@@ -307,11 +303,6 @@ object ClosureConv {
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
         Expr.ApplyDef(sym, es, tpe, purity, loc)
-
-      case Expr.Apply(exp, exps, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.Apply(e, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
