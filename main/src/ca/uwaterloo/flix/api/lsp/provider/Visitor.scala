@@ -182,6 +182,15 @@ object Visitor {
     root.typeAliases.values.foreach(visitTypeAlias)
   }
 
+  /**
+    * Returns `true` if the position `pos` within the file given by path `uri` is contained within the `SourceLocation` `loc`.
+    * Returns `false` otherwise.
+    *
+    * @param uri  the path of the file that `pos` is within.
+    * @param pos  the position that we want to know whether is within `loc`.
+    * @param loc  the `SourceLocation` that want to know if `pos` is within.
+    * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
+    */
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
     val (x, y) = pos.toZeroIndexed
 
