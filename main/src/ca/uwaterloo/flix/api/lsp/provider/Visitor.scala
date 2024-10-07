@@ -139,11 +139,18 @@ object Visitor {
     val posLine = x + 1
     val posCol = y + 1
 
-    (uri == loc.source.name) &&
-    (posLine >= loc.beginLine) &&
-    (posLine <= loc.endLine) &&
-    (!(posLine == loc.beginLine && posCol < loc.beginCol)) &&
-    (!(posLine == loc.endLine && posCol >= loc.endCol)) // geq because end column is exclusive
+    val sameSource = uri == loc.source.name
+    val posWithinLocLines = (loc.beginLine <= posLine) && (posLine <= loc.endLine)
+
+    val beginSameLine = posLine == loc.beginLine
+    val endSameLine = posLine == loc.endLine
+    val beginSameLineImpliesPosColGeq = !beginSameLine || loc.beginCol <= posCol
+    val endSameLineImpliesPosColLess = !endSameLine || posCol < loc.endCol // pos column must be *strictly* less than since location range is exclusive with regard to columns
+
+    sameSource &&
+      posWithinLocLines &&
+      beginSameLineImpliesPosColGeq &&
+      endSameLineImpliesPosColLess
   }
 
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
