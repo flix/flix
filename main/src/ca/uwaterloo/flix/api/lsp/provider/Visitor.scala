@@ -25,6 +25,28 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 object Visitor {
 
+  /**
+    * Defines how each AST node type is handled when it's visited.
+    *
+    * Each consume function `consumeX` takes a value of type `X` and returns nothing.
+    * Thus, anything it does is through effects.
+    *
+    * Implementations need only implement the consume functions that they care about,
+    * Any consume function not implemented falls back on the default of doing nothing
+    * upon consuming the the corresponding AST node.
+    *
+    * Example
+    * {{{
+    * object ExprListConsumer extends Consumer {
+    *   var stack: List[Expr] = Nil
+    *   override consumeExpr(exp: Expr): Unit = {
+    *     stack = exp :: stack
+    *   }
+    * }
+    * }}}
+    *
+    * This consumer only cares `Expr`s and simply collects all expressions visited.
+    */
   trait Consumer {
     def consumeAnnotation(ann: Annotation): Unit = ()
     def consumeAnnotations(anns: Annotations): Unit = ()
@@ -74,19 +96,37 @@ object Visitor {
     def consumeTypeParam(tparam: TypeParam): Unit = ()
   }
 
+  /**
+    * Defines whether AST nodes are visited.
+    */
   trait Acceptor {
+    /**
+      * Defines whether an AST node is visited based on its `SourceLocation`
+      *
+      * @param loc  `SourceLocation` of the AST node
+      * @return     `true` if the AST node should be visited, `false` otherwise
+      */
     def accept(loc: SourceLocation): Boolean;
   }
 
-  case object allAcceptor extends Acceptor {
+  case object AllAcceptor extends Acceptor {
     def accept(loc: SourceLocation): Boolean = true
   }
 
-  case class fileAcceptor(uri: String) extends Acceptor {
+  case class FileAcceptor(uri: String) extends Acceptor {
     def accept(loc: SourceLocation): Boolean = uri == loc.source.name
   }
 
-  case class insideAcceptor(uri: String, pos: Position) extends Acceptor {
+  /**
+    * Acceptor that accepts an AST node if it contains a given position.
+    *
+    * `InsideAcceptor` accepts an AST if it's `SourceLocation` is within the file given by `uri`
+    * and the position `pos` is within the `SourceLocation` of the AST.
+    *
+    * @param uri  the path to the file that the AST node `SourceLocation` must be in to be accepted.
+    * @param pos  the position that must be within the AST node `SourceLocation` for the node to be accepted.
+    */
+  case class InsideAcceptor(uri: String, pos: Position) extends Acceptor {
     def accept(loc: SourceLocation): Boolean = inside(uri, pos)(loc)
   }
 

@@ -60,7 +60,7 @@ object HoverProvider {
       override def consumeDefSymUse(sym: DefSymUse): Unit = stack = sym :: stack
     }
 
-    Visitor.visitRoot(root, hoverConsumer, Visitor.insideAcceptor(uri, pos))
+    Visitor.visitRoot(root, hoverConsumer, Visitor.InsideAcceptor(uri, pos))
 
     stack.headOption match {
       case None => mkNotFound(uri, pos)
