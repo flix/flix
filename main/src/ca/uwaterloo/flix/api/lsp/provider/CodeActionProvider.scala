@@ -187,7 +187,7 @@ object CodeActionProvider {
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
-              Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the use.
+              Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the use.
               s"use $sym;\n"
             )))
           )),
@@ -309,7 +309,7 @@ object CodeActionProvider {
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the new enum.
+        Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the new enum.
         s"""
            |enum $name {
            |
