@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 
 import scala.annotation.nowarn
@@ -38,7 +39,11 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   final def size: Int = f1.size + f2.size
 
   /** Returns a human-readable string of `this`. */
-  override final def toString: String = s"$f1 ~ $f2"
+  override final def toString: String = status match {
+    case Status.Unknown => s"$f1 ~ $f2"
+    case Status.Unsolvable => s"$f1 ~error $f2"
+    case Status.Timeout(_) => s"$f1 ~timeout $f2"
+  }
 
   /** Returns a copy of `this` with the new `status` */
   final def copyWithStatus(status: Equation.Status): Equation = {
