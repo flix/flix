@@ -362,7 +362,7 @@ object Kinder {
     case ResolvedAst.Expr.Cst(cst, loc) =>
       KindedAst.Expr.Cst(cst, loc)
 
-    case ResolvedAst.Expr.Apply(exp0, exps0, loc) =>
+    case ResolvedAst.Expr.ApplyClo(exp0, exps0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
