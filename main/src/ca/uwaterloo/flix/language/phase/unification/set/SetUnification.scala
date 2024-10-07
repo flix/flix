@@ -164,14 +164,24 @@ object SetUnification {
     }
 
     /**
-      * Solves equations variable alias equations (e.g. `x1 ~ x2`).
+      * Solves variable alias equations (e.g. `x1 ~ x2`).
       *
+      *   - `x1 ~ x1` becomes `({}, [])`
       *   - `x1 ~ x2` becomes `({}, [x1 -> x2])`
+      *   - `!x1 ~ !x1` becomes `({}, [])`
       *   - `!x1 ~ !x2` becomes `({}, [x1 -> x2])`
       */
     def variableAlias(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
       (t1, t2) match {
+        // x1 ~ x1
+        // ---
+        // {},
+        // []
+        case (Var(x), Var(y)) if x == y =>
+          p.markProgress()
+          (Nil, SetSubstitution.empty)
+
         // x1 ~ x2
         // ---
         // {},
@@ -179,6 +189,14 @@ object SetUnification {
         case (Var(x), y@Var(_)) =>
           p.markProgress()
           (Nil, SetSubstitution.singleton(x, y))
+
+        // !x1 ~ !x1
+        // ---
+        // {},
+        // []
+        case (Compl(Var(x)), Compl(Var(y))) if x == y =>
+          p.markProgress()
+          (Nil, SetSubstitution.empty)
 
         // !x1 ~ !x2
         // ---
