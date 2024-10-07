@@ -284,13 +284,7 @@ object Visitor {
     c.consumeAssocTypeSig(assoc)
 
     visitTypeParam(tparam)
-    visitKind(kind)
     tpe.foreach(visitType)
-
-  }
-
-  private def visitKind(kind: Kind)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO it doesn't have a location, so does this even make sense?
   }
 
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
