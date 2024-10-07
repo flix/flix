@@ -110,8 +110,8 @@ object Visitor {
     */
   def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
-    implicit val c = consumer
-    implicit val a = acceptor
+    implicit val c: Consumer = consumer
+    implicit val a: Acceptor = acceptor
 
     root.defs.foreach{ case (_, defn) => visitDef(defn) }
 
@@ -150,14 +150,6 @@ object Visitor {
     (posLine <= loc.endLine) &&
     (!(posLine == loc.beginLine && posCol < loc.beginCol)) &&
     (!(posLine == loc.endLine && posCol >= loc.endCol)) // geq because end column is exclusive
-  }
-
-  def inside(loc1: SourceLocation, loc2: SourceLocation): Boolean = {
-    loc1.source == loc2.source &&
-    (loc1.beginLine >= loc2.beginLine) &&
-    (loc1.endLine <= loc2.endLine) &&
-    !(loc2.beginLine == loc1.beginLine && loc2.beginCol > loc1.beginCol) &&
-    !(loc1.endLine == loc2.endLine && loc1.endCol > loc2.endCol)
   }
 
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
