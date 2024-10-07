@@ -1917,7 +1917,8 @@ object Weeder2 {
           Validation.success(SelectChannelRule(ident, channel, body))
         case _ =>
           val err = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.HardFailure(Chain(err))
+          val ident = Name.Ident("error", tree.loc.asSynthetic)
+          Validation.toSoftFailure(SelectChannelRule(ident, Expr.Error(err), Expr.Error(err)), err)
       }
     }
 
