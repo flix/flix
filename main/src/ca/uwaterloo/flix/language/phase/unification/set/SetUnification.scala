@@ -85,33 +85,33 @@ object SetUnification {
         case (Cst(_), ElemSet(_)) => error()
         case (Cst(c1), Cst(c2)) if c1 != c2 => error()
         // Equations that are not trivial.
-        case _ => (List(eq), SetSubstitution.empty) // Can't do anything.
+        case _ => (List(eq), SetSubstitution.empty) // Cannot do anything.
       }
     }
 
     /**
       * Solves equations of ground assignments to variables (e.g. `x ~ c1 ∪ e2`).
       *
-      *   - `x ~ t` where [[SetFormula.isGround]] on `t` becomes `({}, [x -> t])`
-      *   - `!x ~ t` where [[SetFormula.isGround]] on `t` becomes `({}, [x -> !t])`
+      *   - `x ~ f` where [[SetFormula.isGround]] on `f` becomes `({}, [x -> f])`
+      *   - `!x ~ f` where [[SetFormula.isGround]] on `f` becomes `({}, [x -> !f])`
       *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
       *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
       */
     def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(f1, f2, _, loc) = eq
       (f1, f2) match {
-        // x ~ t, where t is ground
+        // x ~ f, where f is ground
         // ---
         // {},
-        // [x -> t]
+        // [x -> f]
         case (Var(x), f) if f.isGround =>
           p.markProgress()
           (Nil, SetSubstitution.singleton(x, f))
 
-        // !x ~ t, where t is ground
+        // !x ~ f, where f is ground
         // ---
         // {},
-        // [x -> !t]
+        // [x -> !f]
         case (Compl(Var(x)), f) if f.isGround =>
           p.markProgress()
           (Nil, SetSubstitution.singleton(x, mkCompl(f)))
@@ -144,7 +144,7 @@ object SetUnification {
           else (List(eq.toUnsolvable), SetSubstitution.empty)
 
         case _ =>
-          // Can't do anything.
+          // Cannot do anything.
           (List(eq), SetSubstitution.empty)
       }
     }
@@ -175,7 +175,7 @@ object SetUnification {
           (Nil, SetSubstitution.singleton(x, y))
 
         case _ =>
-          // Can't do anything.
+          // Cannot do anything.
           (List(eq), SetSubstitution.empty)
       }
     }
@@ -206,7 +206,7 @@ object SetUnification {
           (Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
         case _ =>
-          // Can't do anything.
+          // Cannot do anything.
           (List(eq), SetSubstitution.empty)
       }
     }
