@@ -78,7 +78,7 @@ object Simplifier {
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.ApplyClo(e, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
