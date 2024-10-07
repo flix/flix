@@ -95,7 +95,7 @@ object SetUnification {
       *   - `x ~ t` where [[SetFormula.isGround]] on `t` becomes `({}, [x -> t])`
       *   - `!x ~ t` where [[SetFormula.isGround]] on `t` becomes `({}, [x -> !t])`
       *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
-      *   - `t1 ∪ t2 ∪ .. ~ univ` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
+      *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
       */
     def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(f1, f2, _, loc) = eq
