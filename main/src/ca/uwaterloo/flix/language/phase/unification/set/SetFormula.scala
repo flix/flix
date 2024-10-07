@@ -675,8 +675,10 @@ object SetFormula {
   def mkDifference(f1: SetFormula, f2: SetFormula): SetFormula =
     mkInter(f1, mkCompl(f2))
 
-  /** Returns a formula that is equivalent to [[Empty]] if `f1` is equivalent to `f2`. */
-  def mkEquivalenceTestToEmpty(f1: SetFormula, f2: SetFormula): SetFormula = {
+  /**
+    * Returns a formula that is equivalent to [[Empty]] if `f1` is equivalent to `f2`.
+    */
+  def mkEmptyQuery(f1: SetFormula, f2: SetFormula): SetFormula = {
     if (f1 == Empty) f2
     else if (f2 == Empty) f1
     else mkXor(f1, f2)
@@ -964,7 +966,7 @@ object SetFormula {
     * Exponential time in the number of unknowns.
     */
   def isEquivalent(f1: SetFormula, f2: SetFormula): Boolean =
-    isEmptyEquivalent(mkEquivalenceTestToEmpty(f1, f2))
+    isEmptyEquivalent(mkEmptyQuery(f1, f2))
 
   /**
     * Helper function of [[isEmptyEquivalent]], should not be called directly since

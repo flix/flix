@@ -267,7 +267,7 @@ object SetUnification {
       */
     def sve(recSizeThreshold: Int)(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       p.markProgress()
-      val query = mkEquivalenceTestToEmpty(eq.f1, eq.f2)
+      val query = mkEmptyQuery(eq.f1, eq.f2)
       val fvs = query.variables.toList
       try {
         val subst = successiveVariableElimination(query, fvs, recSizeThreshold)
