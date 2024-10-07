@@ -188,7 +188,7 @@ object SetUnification {
       case (x0@Var(_), y0@Var(_)) =>
         p.markProgress()
         // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0) (x0, y0) else (y0, x0)
+        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
         (Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
@@ -206,7 +206,7 @@ object SetUnification {
       case (Compl(x0@Var(_)), Compl(y0@Var(_))) =>
         p.markProgress()
         // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0) (x0, y0) else (y0, x0)
+        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
         (Nil, SetSubstitution.singleton(x.x, y))
 
       case _ =>
