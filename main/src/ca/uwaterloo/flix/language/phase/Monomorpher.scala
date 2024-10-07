@@ -456,7 +456,7 @@ object Monomorpher {
       val e = visitExp(exp, env0 ++ env1, subst)
       MonoAst.Expr.Lambda(p, e, subst(tpe), loc)
 
-    case LoweredAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
       e match {
