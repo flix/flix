@@ -157,7 +157,6 @@ object Visitor {
     c.consumeEnum(enm)
 
     visitAnnotations(ann)
-    // TODO visit modifiers?
     tparams.foreach(visitTypeParam)
     visitDeriveList(derives)
     cases.values.foreach(visitCase)
