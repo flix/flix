@@ -26,19 +26,67 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
 import scala.annotation.tailrec
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Def, FormalParam, Case, Spec, StructField, Pattern, Predicate}
+import ca.uwaterloo.flix.util.Result.ToErr
+import ca.uwaterloo.flix.language.ast.SourcePosition
+import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.Ast.DefSymUse
+import ca.uwaterloo.flix.language.ast.TypedAst
+import scala.collection.immutable
 
 object HoverProvider {
+  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+    hover(uri, pos)
+  }
 
-  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    index.query(uri, pos) match {
+
+  def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+    var stack: List[AnyRef] = Nil
+
+    def push(x: AnyRef): Unit = {
+      stack = x :: stack
+    }
+
+    case object hoverConsumer extends Visitor.Consumer {
+      override def consumeExpr(exp: Expr): Unit = stack = exp :: stack
+      override def consumeDef(defn: Def): Unit = stack = defn :: stack
+      override def consumeType(tpe: Type): Unit = stack = tpe :: stack
+      override def consumeSpec(spec: Spec): Unit = stack = spec :: stack
+      override def consumeFormalParam(fparam: FormalParam): Unit = stack = fparam :: stack
+      override def consumeCase(cse: Case): Unit = stack = cse :: stack
+      override def consumeStructField(field: StructField): Unit = stack = field :: stack
+      override def consumePattern(pat: Pattern): Unit = stack = pat :: stack
+      override def consumePredicate(p: Predicate): Unit = stack = p :: stack
+      override def consumeDefSymUse(sym: DefSymUse): Unit = stack = sym :: stack
+    }
+
+    Visitor.visitRoot(root, hoverConsumer, Visitor.InsideAcceptor(uri, pos))
+
+    stack.headOption match {
       case None => mkNotFound(uri, pos)
-
-      case Some(entity) => hoverEntity(entity, uri, pos)
+      case Some(node) => hoverAny(node, uri, pos)
     }
   }
 
+  private def hoverAny(node: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = node match {
+    case Case(_, tpe, _, loc) => hoverType(tpe, loc)
+    case StructField(_, tpe, loc) => hoverType(tpe, loc)
+    case Expr.Sig(sym, tpe, loc) => hoverSig(sym, loc)
+    case Expr.Var(sym, tpe, loc) => hoverType(tpe, loc)
+    case Expr.ApplyDef(symUse, _, _, tpe, eff, loc) => hoverTypeAndEff(tpe, eff, loc)
+    case hole: Expr.Hole => hoverTypeAndEff(hole.tpe, hole.eff, hole.loc)
+    case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
+    case tpe: Type => hoverKind(tpe)
+    case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
+    case pat: Pattern => hoverType(pat.tpe, pat.loc)
+    case pred: Predicate.Head.Atom => hoverType(pred.tpe, pred.loc)
+    case pred: Predicate.Body.Atom => hoverType(pred.tpe, pred.loc)
+    case DefSymUse(sym, loc) => hoverDef(sym, loc)
+    case _ => mkNotFound(uri, pos)
+  }
+
   @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
+  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = entity match {
 
     case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
 
