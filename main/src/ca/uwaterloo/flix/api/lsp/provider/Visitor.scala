@@ -371,8 +371,6 @@ object Visitor {
   }
 
   private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO: handle mutually recursive calls to other visit functions
-
     if (!(a.accept(expr.loc))) { return }
 
     c.consumeExpr(expr)
