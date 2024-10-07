@@ -377,11 +377,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.Apply(e, es, t, eff, loc)
+      LoweredAst.Expr.ApplyClo(e, es, t, eff, loc)
 
     case TypedAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -1863,10 +1863,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Lambda(p, e, tpe, loc)
 
-    case LoweredAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.Apply(e, es, tpe, eff, loc)
+      LoweredAst.Expr.ApplyClo(e, es, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

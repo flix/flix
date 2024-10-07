@@ -113,10 +113,10 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.Apply(exp, exps, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
-      TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyClo(e, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)

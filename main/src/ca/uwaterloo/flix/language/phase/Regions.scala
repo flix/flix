@@ -71,7 +71,7 @@ object Regions {
     case Expr.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>

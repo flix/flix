@@ -114,7 +114,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Apply(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

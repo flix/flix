@@ -109,7 +109,7 @@ object TreeShaker1 {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
