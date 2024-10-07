@@ -94,7 +94,7 @@ object PredDeps {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       val init = visitExp(exp)
       exps.foldLeft(init) {
         case (acc, exp) => acc + visitExp(exp)

@@ -377,7 +377,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
