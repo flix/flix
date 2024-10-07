@@ -158,7 +158,7 @@ object Visitor {
     *
     * @param root      The AST root node.
     * @param consumer  A consumer which defines what to do when visiting different types of AST nodes.
-    * @param acceptor  An acceptor which defines the the criteria for whether an AST node should be visited.
+    * @param acceptor  An acceptor which defines the criteria for whether an AST node should be visited.
     */
   def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
