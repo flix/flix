@@ -184,8 +184,6 @@ object Visitor {
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
-
-    // TODO visit scheme?
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -262,7 +260,6 @@ object Visitor {
 
     visitAnnotations(ann)
     tparams.foreach(visitTypeParam)
-    // TODO visit scheme?
     fields.values.foreach(visitStructField)
   }
 
@@ -346,7 +343,6 @@ object Visitor {
     visitAnnotations(ann)
     tparams.foreach(visitTypeParam)
     fparams.foreach(visitFormalParam)
-    // TODO visit scheme
     visitType(retTpe)
     visitType(eff)
     tconstrs.foreach(visitTraitConstraint)
