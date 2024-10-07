@@ -15,72 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.Entity
-import ca.uwaterloo.flix.language.ast.TypedAst.{
-  Root, 
-  Def, 
-  Expr, 
-  Effect, 
-  Enum,
-  FormalParam,
-  Constraint, 
-  ConstraintParam,
-  Pattern, 
-  Predicate,
-  SelectChannelRule,
-  StructField,
-  Case,
-  Instance,
-  Sig,
-  Spec,
-  Struct,
-  Trait,
-  TypeAlias,
-  TypeParam,
-  MatchRule,
-  TypeMatchRule,
-  CatchRule,
-  HandlerRule,
-  ParYieldFragment
-}
-
-import ca.uwaterloo.flix.language.ast.shared.{
-  Annotations,
-  Annotation
-}
-import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.Ast.OpSymUse
-import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
-import ca.uwaterloo.flix.language.ast.Ast.DefSymUse
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.Ast.EqualityConstraint
-import ca.uwaterloo.flix.language.ast.Kind
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Scheme
-import ca.uwaterloo.flix.language.ast.Ast.Modifier
-import ca.uwaterloo.flix.language.ast.Ast.Derivations
 import ca.uwaterloo.flix.api.lsp.Position
-import ca.uwaterloo.flix.language.ast.Ast.Derivation
-import ca.uwaterloo.flix.language.ast.Ast.TraitConstraint
-import ca.uwaterloo.flix.language.ast.Ast.TraitSymUse
-import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeDef
-import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
-import ca.uwaterloo.flix.language.ast.TypedAst.Op
-import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeSig
-import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.Atom
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Atom
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Functional
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.Guard
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Wild
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Var
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Cst
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Tag
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Tuple
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.RecordEmpty
+import ca.uwaterloo.flix.language.ast.Ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
+import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 
 object Visitor {
 
@@ -154,7 +94,7 @@ object Visitor {
     *
     * By "consuming" what is meant is that the node is used
     * as the input to a function of the consumer associated with
-    * the AST node type. Such consumer funcitons have no output, 
+    * the AST node type. Such consumer funcitons have no output,
     * but can have effects. For instance, the consumer can be defined such that each
     * expression containing a specific variable is collected in a list, via
     * mutation a variable.
@@ -335,13 +275,13 @@ object Visitor {
     visitTypeParam(assoc.tparam)
     visitKind(assoc.kind)
     assoc.tpe.foreach(visitType)
-    
+
   }
 
   private def visitKind(kind: Kind)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO it doesn't have a location, so does this even make sense?
   }
-  
+
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!(a.accept(eff.loc))) { return }
     c.consumeEff(eff)
@@ -437,23 +377,23 @@ object Visitor {
       case Expr.Hole(sym, tpe, eff, loc) => ()
 
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
-        visitExpr(exp) 
+        visitExpr(exp)
       }
 
       // we do nothing here, because open as is a restrictable enum feature and thus experimental
       case Expr.OpenAs(symUse, exp, tpe, loc) => ()
 
       case Expr.Use(sym, alias, exp, loc) => {
-        visitExpr(exp) 
+        visitExpr(exp)
       }
 
       case Expr.Lambda(fparam, exp, tpe, loc) => {
         visitFormalParam(fparam)
-        visitExpr(exp) 
+        visitExpr(exp)
       }
 
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
-        visitExpr(exp) 
+        visitExpr(exp)
         exps.foreach(visitExpr)
       }
 
@@ -462,55 +402,55 @@ object Visitor {
         exps.foreach(visitExpr)
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
-        visitExpr(exp) 
+        visitExpr(exp)
       }
 
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
         visitAnnotations(ann)
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Region(tpe, loc) => ()
 
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
-        visitExpr(exp3) 
+        visitExpr(exp1)
+        visitExpr(exp2)
+        visitExpr(exp3)
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Discard(exp, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.Match(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
         rules.foreach(visitMatchRule)
 
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
         rules.foreach(visitTypeMatchRule)
 
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
         // Does nothing because feature is experimental
 
       case Expr.Tag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.Tuple(exps, tpe, eff, loc) =>
         exps.foreach(visitExpr)
@@ -518,34 +458,34 @@ object Visitor {
       case Expr.RecordEmpty(tpe, loc) => ()
 
       case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
         exps.foreach(visitExpr)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
-        visitExpr(exp3) 
+        visitExpr(exp1)
+        visitExpr(exp2)
+        visitExpr(exp3)
 
       case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.ArrayLength(exp, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
         visitExpr(exp3)
 
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
@@ -553,18 +493,18 @@ object Visitor {
         visitExpr(region)
 
       case Expr.StructGet(exp, sym, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         exps.foreach(visitExpr)
 
       case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.VectorLength(exp, loc) =>
         visitExpr(exp)
@@ -618,34 +558,34 @@ object Visitor {
         visitExpr(exp)
 
       case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.GetStaticField(field, tpe, eff, loc) => ()
 
       case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-        visitExpr(exp) 
+        visitExpr(exp)
 
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ()
 
       case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.GetChannel(exp, tpe, eff, loc) =>
         visitExpr(exp)
 
       case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
         rules.foreach(visitSelectChannelRule)
         default.foreach(visitExpr)
 
       case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.ParYield(frags, exp, tpe, eff, loc) =>
         visitExpr(exp)
@@ -664,8 +604,8 @@ object Visitor {
         visitExpr(exp)
 
       case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1) 
-        visitExpr(exp2) 
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.FixpointSolve(exp, tpe, eff, loc) =>
         visitExpr(exp)
@@ -745,7 +685,7 @@ object Visitor {
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO `insideRule` is hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(rule.sym.loc) || a.accept(rule.tpe.loc) || a.accept(rule.exp.loc) 
+    val insideRule = a.accept(rule.sym.loc) || a.accept(rule.tpe.loc) || a.accept(rule.exp.loc)
     if (!insideRule) { return }
 
     c.consumeTMatchRule(rule)
