@@ -83,7 +83,7 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Apply(exp, exps, tvar, evar, loc) =>
+      case Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star, loc)
         val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)

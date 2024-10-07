@@ -56,7 +56,7 @@ object LoweredAstPrinter {
     case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
     case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Sig(sym)
     case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.Apply(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
+    case Expr.ApplyClo(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplySig(sym, exps, _, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Sig(sym), exps.map(print), None)
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))

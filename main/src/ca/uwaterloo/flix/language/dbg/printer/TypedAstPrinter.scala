@@ -34,7 +34,7 @@ object TypedAstPrinter {
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.Apply(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
+    case Expr.ApplyClo(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
     case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))

@@ -89,7 +89,7 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       visitExp(exp)
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(exp.tpe).arrowEffectType :: exp.eff :: exps.map(_.eff), loc)
