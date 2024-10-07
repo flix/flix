@@ -70,6 +70,8 @@ object Equation {
     *   - `mk(x3 ∩ x7, x4) = x4 ~ c3 ∩ x7`
     *   - `mk(c2, x3 ∩ x7) = x3 ∩ x7 ~ c2`
     *   -    `mk(univ, c2) = c2 ~ univ`
+    *
+    * TODO: decide on Equation ordering method.
     */
   def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Unknown): Equation = (f1, f2) match {
     case (Univ, _) => Equation(f2, f1, status, loc)

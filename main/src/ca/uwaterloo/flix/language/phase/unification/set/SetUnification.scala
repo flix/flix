@@ -62,6 +62,8 @@ object SetUnification {
         (Nil, SetSubstitution.empty)
       }
 
+      // TODO: decide on Equation ordering method.
+
       (t1, t2) match {
         // Equations that are solved.
         case (Univ, Univ) => success()
@@ -101,6 +103,7 @@ object SetUnification {
       */
     def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(f01, f02, _, loc) = eq
+      // TODO: decide on Equation ordering method.
 
       // Reorder formulas to avoid symmetric matches below.
       //   - `x` and `!x` to the left
@@ -188,6 +191,8 @@ object SetUnification {
         // [x1 -> x2]
         case (Var(x), y@Var(_)) =>
           p.markProgress()
+          // TODO: decide on Equation ordering method.
+          //       how to bias this symmetric equation
           (Nil, SetSubstitution.singleton(x, y))
 
         // !x1 ~ !x1
@@ -204,6 +209,8 @@ object SetUnification {
         // [x1 -> x2]
         case (Compl(Var(x)), Compl(y@Var(_))) =>
           p.markProgress()
+          // TODO: decide on Equation ordering method.
+          //       how to bias this symmetric equation
           (Nil, SetSubstitution.singleton(x, y))
 
         case _ =>
@@ -220,6 +227,7 @@ object SetUnification {
       */
     def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
+      // TODO: decide on Equation ordering method.
       (t1, t2) match {
         // x ~ f, where f does not contain x
         // ---
