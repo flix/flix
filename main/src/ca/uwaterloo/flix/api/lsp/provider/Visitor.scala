@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 object Visitor {
 
@@ -385,34 +385,29 @@ object Visitor {
       case Expr.Sig(_, _, _) => ()
       case Expr.Hole(_, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) => {
+      case Expr.HoleWithExp(exp, _, _, _) =>
         visitExpr(exp)
-      }
 
       // we do nothing here, because open as is a restrictable enum feature and thus experimental
       case Expr.OpenAs(_, _, _, _) => ()
 
-      case Expr.Use(_, _, exp, _) => {
+      case Expr.Use(_, _, exp, _) =>
         visitExpr(exp)
-      }
 
-      case Expr.Lambda(fparam, exp, _, _) => {
+      case Expr.Lambda(fparam, exp, _, _) =>
         visitFormalParam(fparam)
         visitExpr(exp)
-      }
 
-      case Expr.Apply(exp, exps, _, _, _) => {
+      case Expr.Apply(exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
-      }
 
       case Expr.ApplyDef(sym, exps, _, _, _, _) =>
         visitDefSymUse(sym)
         exps.foreach(visitExpr)
 
-      case Expr.Unary(_, exp, _, _, _) => {
+      case Expr.Unary(_, exp, _, _, _) =>
         visitExpr(exp)
-      }
 
       case Expr.Binary(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
@@ -430,6 +425,7 @@ object Visitor {
       case Expr.Region(_, _) => ()
 
       case Expr.Scope(_, regionVar, exp, _, _, _) =>
+        visitType(regionVar)
         visitExpr(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
