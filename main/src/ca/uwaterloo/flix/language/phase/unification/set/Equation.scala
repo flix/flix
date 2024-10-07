@@ -62,10 +62,6 @@ object Equation {
   def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Unknown): Equation = {
     // This reordering is not part of the interface and should not be relied on.
     (f1, f2) match {
-      case (Univ, _) => Equation(f2, f1, status, loc)
-      case (Empty, _) => Equation(f2, f1, status, loc)
-      case (ElemSet(_), _) => Equation(f2, f1, status, loc)
-      case (Cst(_), _) => Equation(f2, f1, status, loc)
       case (_, Var(_)) => Equation(f2, f1, status, loc)
       case _ => Equation(f1, f2, status, loc)
     }
