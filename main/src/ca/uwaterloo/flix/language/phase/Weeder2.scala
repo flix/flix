@@ -691,10 +691,9 @@ object Weeder2 {
       })
 
       mapN(constraints) {
-        case optListOpt =>
-          optListOpt.getOrElse(List.empty)
-            .filter(_.isDefined)
-            .map(_.get)
+        case maybeConstrs => maybeConstrs.getOrElse(List.empty).collect {
+          case Some(constr) => constr
+        }
       }
     }
 
