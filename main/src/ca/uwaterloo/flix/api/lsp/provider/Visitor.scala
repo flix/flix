@@ -55,7 +55,6 @@ object Visitor {
     def consumePattern(pat: Pattern): Unit = ()
     def consumePredicate(p: Predicate): Unit = ()
     def consumeRecordLabelPattern(pat: RecordLabelPattern): Unit = ()
-    def consumeRoot(root: Root): Unit = ()
     def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
@@ -69,7 +68,6 @@ object Visitor {
     def consumeType(tpe: Type): Unit = ()
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
     def consumeTypeParam(tparam: TypeParam): Unit = ()
-    def consumeUseOrImport(use: UseOrImport): Unit = ()
   }
 
   trait Acceptor {
@@ -390,13 +388,6 @@ object Visitor {
     if (!a.accept(loc)) { return }
 
     c.consumeTypeParam(tparam)
-  }
-
-  private def visitUse(use: UseOrImport)(implicit a: Acceptor, c: Consumer): Unit = use match {
-    case UseOrImport.Use(_, _, loc) if a.accept(loc) =>
-      c.consumeUseOrImport(use)
-    case UseOrImport.Import(_, _, loc) if a.accept(loc) =>
-      c.consumeUseOrImport(use)
   }
 
   private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
