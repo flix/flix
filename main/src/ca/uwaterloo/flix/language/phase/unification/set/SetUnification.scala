@@ -50,13 +50,11 @@ object SetUnification {
     def trivial(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
       val Equation(t1, t2, _, _) = eq
 
-      @inline
       def error(): (List[Equation], SetSubstitution) = {
         p.markProgress()
         (List(eq.toUnsolvable), SetSubstitution.empty)
       }
 
-      @inline
       def success(): (List[Equation], SetSubstitution) = {
         p.markProgress()
         (Nil, SetSubstitution.empty)
