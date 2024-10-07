@@ -362,12 +362,12 @@ object Kinder {
     case ResolvedAst.Expr.Cst(cst, loc) =>
       KindedAst.Expr.Cst(cst, loc)
 
-    case ResolvedAst.Expr.Apply(exp0, exps0, loc) =>
+    case ResolvedAst.Expr.ApplyClo(exp0, exps0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
+      KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc)
 
     case ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
@@ -378,10 +378,17 @@ object Kinder {
 
     case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      val arrowTvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val arrowTvar = Type.freshVar(Kind.Star, loc.asSynthetic) // use loc of symuse
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
+
+    case ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps0, loc2) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+      KindedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
@@ -414,10 +421,10 @@ object Kinder {
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Discard(exp, loc)
 
-    case ResolvedAst.Expr.Let(sym, mod, exp10, exp20, loc) =>
+    case ResolvedAst.Expr.Let(sym, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
+      KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
     case ResolvedAst.Expr.LetRec(sym, ann, mod, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)

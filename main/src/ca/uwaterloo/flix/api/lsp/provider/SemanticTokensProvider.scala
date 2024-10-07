@@ -346,7 +346,7 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
@@ -363,13 +363,20 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val t = SemanticToken(o, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)

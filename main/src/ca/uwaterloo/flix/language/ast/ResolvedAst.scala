@@ -101,11 +101,13 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: Ast.LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class ApplySig(symUse: Ast.SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -119,7 +121,7 @@ object ResolvedAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 

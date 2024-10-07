@@ -684,22 +684,26 @@ object Weeder2 {
     }
 
     private def pickEqualityConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
-      val maybeContraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
-      val constraints = traverseOpt(maybeContraintList)(t => {
+      val maybeConstraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
+      val constraints = traverseOpt(maybeConstraintList)(t => {
         val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t)
         traverse(constraintTrees)(visitEqualityConstraint)
       })
 
-      mapN(constraints)(_.getOrElse(List.empty))
+      mapN(constraints) {
+        case maybeConstrs => maybeConstrs.getOrElse(List.empty).collect {
+          case Some(constr) => constr
+        }
+      }
     }
 
-    private def visitEqualityConstraint(tree: Tree): Validation[EqualityConstraint, CompilationMessage] = {
+    private def visitEqualityConstraint(tree: Tree): Validation[Option[EqualityConstraint], CompilationMessage] = {
       flatMapN(traverse(pickAll(TreeKind.Type.Type, tree))(Types.visitType)) {
         case t1 :: t2 :: Nil => t1 match {
-          case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(EqualityConstraint(qname, t11, t2, tree.loc))
-          case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+          case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(Some(EqualityConstraint(qname, t11, t2, tree.loc)))
+          case _ => Validation.toSoftFailure(None, IllegalEqualityConstraint(tree.loc))
         }
-        case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+        case _ => Validation.toSoftFailure(None, IllegalEqualityConstraint(tree.loc))
       }
     }
 
@@ -1535,7 +1539,7 @@ object Weeder2 {
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), e.loc)
               Validation.success((e, Expr.Error(error)))
           }
-          mapN(exprs)(exprs => Expr.LetMatch(pattern, Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+          mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
       }
     }
 

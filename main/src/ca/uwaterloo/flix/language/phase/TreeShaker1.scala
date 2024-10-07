@@ -109,7 +109,7 @@ object TreeShaker1 {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
@@ -118,10 +118,13 @@ object TreeShaker1 {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.ApplySig(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>

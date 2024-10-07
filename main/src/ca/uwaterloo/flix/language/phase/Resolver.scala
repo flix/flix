@@ -902,7 +902,7 @@ object Resolver {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.Var(_) => visitApply(app, env0)
+        case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -913,14 +913,14 @@ object Resolver {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.Var(_) => visitApply(app, env0)
+        case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
-      visitApply(app, env0)
+      visitApplyClo(app, env0)
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val pVal = resolveFormalParam(fparam, env0, taenv, ns0, root)
@@ -966,12 +966,12 @@ object Resolver {
         case e => ResolvedAst.Expr.Discard(e, loc)
       }
 
-    case NamedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
+    case NamedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1Val = resolveExp(exp1, env0)
       val env = env0 ++ mkVarEnv(sym)
       val e2Val = resolveExp(exp2, env)
       mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.Let(sym, mod, e1, e2, loc)
+        case (e1, e2) => ResolvedAst.Expr.Let(sym, e1, e2, loc)
       }
 
     case NamedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
@@ -1700,14 +1700,14 @@ object Resolver {
   /**
     * Resolve the application expression, performing currying over the subexpressions.
     */
-  private def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
+  private def visitApplyClo(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
     case NamedAst.Expr.Apply(exp0, exps0, loc) =>
       val expVal = resolveExp(exp0, env0)
       val expsVal = traverse(exps0)(resolveExp(_, env0))
       mapN(expVal, expsVal) {
         case (e, es) =>
           es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.Apply(acc, List(a), loc.asSynthetic)
+            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, List(a), loc.asSynthetic)
           }
       }
   }
@@ -1737,7 +1737,7 @@ object Resolver {
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), loc)
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, List(cloArg), loc)
     }
 
     closureApplication
@@ -1776,7 +1776,7 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1792,7 +1792,7 @@ object Resolver {
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }

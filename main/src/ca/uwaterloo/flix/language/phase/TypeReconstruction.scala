@@ -113,14 +113,18 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.Apply(exp, exps, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
-      TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyClo(e, es, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc2) =>
+    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc2)
+      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -165,12 +169,12 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.Discard(e, e.eff, loc)
 
-    case KindedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

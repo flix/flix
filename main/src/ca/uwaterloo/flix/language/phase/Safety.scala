@@ -253,7 +253,7 @@ object Safety {
         // The inside expression will be its own function, so inTryCatch is reset
         visit(exp)(inTryCatch = false)
 
-      case Expr.Apply(exp, exps, _, _, _) =>
+      case Expr.ApplyClo(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
 
       case Expr.ApplyDef(_, exps, _, _, _, _) =>
@@ -262,13 +262,16 @@ object Safety {
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
         exps.flatMap(visit)
 
+      case Expr.ApplySig(_, exps, _, _, _, _) =>
+        exps.flatMap(visit)
+
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp)
 
       case Expr.Binary(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+      case Expr.Let(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>

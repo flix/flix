@@ -94,10 +94,10 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, loc) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, _) =>
       val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
       val hints1 = checkDeprecated(sym, loc1) ++
         checkExperimental(sym, loc1) ++
@@ -108,13 +108,16 @@ object CodeHinter {
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
 
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      visitExps(exps)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>

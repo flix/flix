@@ -227,7 +227,6 @@ object LambdaLift {
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
-    case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
   }
 
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
