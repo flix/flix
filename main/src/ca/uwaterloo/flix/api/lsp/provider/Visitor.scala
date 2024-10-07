@@ -112,21 +112,21 @@ object Visitor {
     implicit val c: Consumer = consumer
     implicit val a: Acceptor = acceptor
 
-    root.defs.foreach{ case (_, defn) => visitDef(defn) }
+    root.defs.values.foreach(visitDef)
 
-    root.effects.foreach{ case (_, eff) => visitEffect(eff) }
+    root.effects.values.foreach(visitEffect)
 
-    root.enums.foreach{ case (_, e) => visitEnum(e) }
+    root.enums.values.foreach(visitEnum)
 
-    root.instances.foreach{ case (_, l) => l.foreach(visitInstance) }
+    root.instances.values.flatten.foreach(visitInstance)
 
-    root.sigs.foreach{ case (_, sig) => visitSig(sig) }
+    root.sigs.values.foreach(visitSig)
 
-    root.structs.foreach{ case (_, struct) => visitStruct(struct) }
+    root.structs.values.foreach(visitStruct)
 
-    root.traits.foreach{ case (_, traitt) => visitTrait(traitt) }
+    root.traits.values.foreach(visitTrait)
 
-    root.typeAliases.foreach{ case (_, alias) => visitTypeAlias(alias) }
+    root.typeAliases.values.foreach(visitTypeAlias)
   }
 
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
