@@ -3210,7 +3210,9 @@ object Weeder2 {
       case Some(t) => Validation.success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
-        Validation.HardFailure(Chain(error))
+        val errorTreeKind = TreeKind.ErrorTree(error)
+        val errorTree = Tree(errorTreeKind, Array.empty, tree.loc)
+        Validation.toSoftFailure(errorTree, error)
     }
   }
 
