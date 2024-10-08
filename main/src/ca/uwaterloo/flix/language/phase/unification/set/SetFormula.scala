@@ -800,7 +800,7 @@ object SetFormula {
             // Unreachable since `instElemSet` only returns univ, empty, or elem set.
             throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
         }
-        case None => No ne
+        case None => None
       }
       if (cstsNeg0.exists(c => insts.get(c.c).contains(Empty))) return Univ
       if (varsNeg0.exists(x => insts.get(x.x).contains(Empty))) return Univ
