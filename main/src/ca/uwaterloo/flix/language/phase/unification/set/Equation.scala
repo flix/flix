@@ -52,11 +52,9 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   }
 
   /** Returns a copy of `this` with status [[Equation.Status.Unsolvable]]. */
-  @inline
   final def toUnsolvable: Equation = copyWithStatus(Equation.Status.Unsolvable)
 
   /** Returns a copy of `this` with status [[Equation.Status.Timeout]]. */
-  @inline
   final def toTimeout(msg: String): Equation = copyWithStatus(Equation.Status.Timeout(msg))
 
 }

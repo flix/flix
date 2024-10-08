@@ -136,7 +136,6 @@ sealed trait SetFormula {
     var counter = 0
 
     /** Updates `counter` and `workList` given intersection or union subformulas. */
-    @inline
     def countSetFormulas(
                           elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
                           elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
@@ -897,7 +896,6 @@ object SetFormula {
   }
 
   /** Calls [[setElemOne]] if `e != None` */
-  @inline
   private def setElemOneOpt[T <: SetFormula](e: Option[ElemSet], f: T): SortedMap[Int, T] = {
     e match {
       case Some(e) => setElemOne(e, f)
