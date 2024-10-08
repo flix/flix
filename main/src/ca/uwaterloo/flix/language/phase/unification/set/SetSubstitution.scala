@@ -57,66 +57,72 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
 
     case variable@SetFormula.Var(x) => m.getOrElse(x, variable)
 
-    case compl@SetFormula.Compl(t1) =>
-      val t1Applied = applyInternal(t1)
-      if (t1Applied eq t1) compl else SetFormula.mkCompl(t1Applied)
+    case compl@SetFormula.Compl(f1) =>
+      val f1Applied = applyInternal(f1)
+      if (f1Applied eq f1) compl else SetFormula.mkCompl(f1Applied)
 
-    case inter@SetFormula.Inter(_, _, posVars, _, _, negVars, Nil)
-      if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
+    case inter@SetFormula.Inter(_, _, varsPos, _, _, varsNeg, Nil)
+      if varsPos.forall(v => !this.m.contains(v.x)) && varsNeg.forall(v => !this.m.contains(v.x)) =>
       inter
 
-    case SetFormula.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+    case SetFormula.Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val ts = ListBuffer.empty[SetFormula]
-      for (x <- posVars) {
+      for (x <- varsPos) {
         val x1 = applyInternal(x)
         if (x1 == SetFormula.Empty) return SetFormula.Empty
         ts += x1
       }
-      for (x <- negVars) {
+      for (x <- varsNeg) {
         val x1 = applyInternal(x)
         if (x1 == SetFormula.Univ) return SetFormula.Empty
         ts += SetFormula.mkCompl(x1)
       }
-      for (t <- rest) {
+      for (e <- elemPos) ts += e
+      for (cst <- cstsPos) ts += cst
+      for (e <- elemNeg) ts += SetFormula.mkCompl(e)
+      for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
+      for (t <- other) {
         val t1 = applyInternal(t)
         if (t1 == SetFormula.Empty) return SetFormula.Empty
         ts += t1
       }
-      val simpleInter = SetFormula.Inter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, Nil)
-      SetFormula.mkInterAll(simpleInter :: ts.toList)
+      SetFormula.mkInterAll(ts.toList)
 
-    case union@SetFormula.Union(_, _, posVars, _, _, negVars, Nil)
-      if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
+    case union@SetFormula.Union(_, _, varsPos, _, _, varsNeg, Nil)
+      if varsPos.forall(v => !this.m.contains(v.x)) && varsNeg.forall(v => !this.m.contains(v.x)) =>
       union
 
-    case SetFormula.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+    case SetFormula.Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val ts = ListBuffer.empty[SetFormula]
-      for (x <- posVars) {
+      for (x <- varsPos) {
         val x1 = applyInternal(x)
-        if (x1 == SetFormula.Univ) return SetFormula.Univ
+        if (x1 == SetFormula.Empty) return SetFormula.Empty
         ts += x1
       }
-      for (x <- negVars) {
+      for (x <- varsNeg) {
         val x1 = applyInternal(x)
-        if (x1 == SetFormula.Empty) return SetFormula.Univ
+        if (x1 == SetFormula.Univ) return SetFormula.Empty
         ts += SetFormula.mkCompl(x1)
       }
-      for (t <- rest) {
+      for (e <- elemPos) ts += e
+      for (cst <- cstsPos) ts += cst
+      for (e <- elemNeg) ts += SetFormula.mkCompl(e)
+      for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
+      for (t <- other) {
         val t1 = applyInternal(t)
-        if (t1 == SetFormula.Univ) return SetFormula.Univ
+        if (t1 == SetFormula.Empty) return SetFormula.Empty
         ts += t1
       }
-      val simpleUnion = SetFormula.Union(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, Nil)
-      SetFormula.mkUnionAll(simpleUnion :: ts.toList)
+      SetFormula.mkUnionAll(ts.toList)
   }
 
   /** Applies `this` to both sides of `eq`. */
   def apply(eq: Equation): Equation = {
-    val Equation(t1, t2, status, loc) = eq
-    val app1 = apply(t1)
-    val app2 = apply(t2)
+    val Equation(f1, f2, status, loc) = eq
+    val app1 = apply(f1)
+    val app2 = apply(f2)
     // Maintain and exploit reference equality for performance.
-    if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc, status)
+    if ((app1 eq f1) && (app2 eq f2)) eq else Equation.mk(app1, app2, loc, status)
   }
 
   /** Applies `this` to each [[Equation]] in `eqs`. */
@@ -136,9 +142,9 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
     else {
       val result = mutable.Map.empty[Int, SetFormula]
       // Add all bindings in `that` with `this` applied to the result.
-      for ((x, t) <- that.m) result.update(x, this.apply(t))
+      for ((x, f) <- that.m) result.update(x, this.apply(f))
       // Add all bindings in `this` that are not in `that`.
-      for ((x, t) <- this.m) if (!that.m.contains(x)) result.update(x, t)
+      for ((x, f) <- this.m) if (!that.m.contains(x)) result.update(x, f)
       SetSubstitution(result.toMap)
     }
   }
@@ -159,12 +165,12 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
     val sb = new StringBuilder()
     sb.append("SetSubstitution{\n")
     val sorted = m.toList.sortBy[(Int, Int)] { case (x, t) => (t.size, x) }
-    for ((x, t) <- sorted) {
+    for ((x, f) <- sorted) {
       sb.append(indentString)
       sb.append("x")
       sb.append(x.toString)
       sb.append(" -> ")
-      sb.append(t)
+      sb.append(f)
       sb.append("\n")
     }
     sb.append("}")
