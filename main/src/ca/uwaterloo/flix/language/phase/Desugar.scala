@@ -554,10 +554,11 @@ object Desugar {
       val fps = visitFormalParams(fparams)
       val t = dtpe.map(visitType)
       val ef = deff.map(visitType)
-      val e1 = visitExp(exp1)
-      val e11 = Expr.Ascribe(e1, t, ef, e1.loc)
+      val e10 = visitExp(exp1)
+      // Ascribe has an invariant that at least t or ef must be defined
+      val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e11, e2, loc)
+      Expr.LocalDef(ident, fps, e1, e2, loc)
 
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
