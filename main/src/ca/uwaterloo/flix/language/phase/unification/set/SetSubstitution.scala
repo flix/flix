@@ -96,12 +96,12 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       val ts = ListBuffer.empty[SetFormula]
       for (x <- varsPos) {
         val x1 = applyInternal(x)
-        if (x1 == SetFormula.Empty) return SetFormula.Empty
+        if (x1 == SetFormula.Univ) return SetFormula.Univ
         ts += x1
       }
       for (x <- varsNeg) {
         val x1 = applyInternal(x)
-        if (x1 == SetFormula.Univ) return SetFormula.Empty
+        if (x1 == SetFormula.Empty) return SetFormula.Univ
         ts += SetFormula.mkCompl(x1)
       }
       for (e <- elemPos) ts += e
@@ -110,7 +110,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
       for (t <- other) {
         val t1 = applyInternal(t)
-        if (t1 == SetFormula.Empty) return SetFormula.Empty
+        if (t1 == SetFormula.Univ) return SetFormula.Univ
         ts += t1
       }
       SetFormula.mkUnionAll(ts.toList)
