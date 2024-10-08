@@ -105,6 +105,11 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
     case Expr.ApplySig(_, exps, _, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
@@ -120,6 +125,9 @@ object PredDeps {
       visitExp(exp1) + visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) + visitExp(exp2)
+
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
     case Expr.Region(_, _) =>

@@ -35,7 +35,7 @@ object LambdaLift {
     * Performs lambda lifting on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    implicit val ctx: SharedContext = SharedContext.mk()
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -51,7 +51,7 @@ object LambdaLift {
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = visitExp(exp)(sym, ctx, flix)
+      val e = visitExp(exp)(sym, Map.empty, ctx, flix)
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
   }
 
@@ -67,7 +67,7 @@ object LambdaLift {
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
+  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], ctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
     case SimplifiedAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
@@ -126,6 +126,14 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val newDefnSym = liftedLocalDefs.get(sym)
+      newDefnSym match {
+        case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
+        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym at ${loc.format}", loc)
+      }
+
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -170,6 +178,22 @@ object LambdaLift {
         case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
       }
 
+    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+      val freshDefnSym = Symbol.freshDefnSym(sym0)
+      val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
+      // It is **very import** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
+      // before visiting the body since exp1 may contain recursive calls to `sym`
+      // so they need to be substituted for `freshDefnSym` in `exp1` which
+      // `visitExp` handles for us.
+      val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, ctx, flix)
+      val ann = Annotations.Empty
+      val mod = Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val fps = fparams.map(visitFormalParam)
+      val defTpe = exp1.tpe
+      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
+      ctx.liftedDefs.add(freshDefnSym -> liftedDef)
+      visitExp(exp2)(sym0, updatedLiftedLocalDefs, ctx, flix) // LocalDef node is erased here
+
     case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
@@ -205,7 +229,7 @@ object LambdaLift {
 
   }
 
-  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
     case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
       LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
@@ -222,5 +246,13 @@ object LambdaLift {
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
   private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)])
+
+  private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
+  }
 
 }
