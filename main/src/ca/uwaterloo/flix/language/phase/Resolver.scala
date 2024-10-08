@@ -3900,6 +3900,9 @@ object Resolver {
     }
   }
 
+  /**
+    * Creates an environment from the given local def symbol and formal parameters.
+    */
   private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): ListMap[String, Resolution] = {
     ListMap.singleton(sym.text, Resolution.LocalDef(sym, fparams))
   }
