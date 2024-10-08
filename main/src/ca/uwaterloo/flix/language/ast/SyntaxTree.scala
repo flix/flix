@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
  * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
  * abstract syntax trees. This flexibility is used to capture source code that may
  * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
- * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
+  * more children. Each child is either a [[Token]] or a [[Tree]].
  *
  * Note that [[SyntaxTree]] offers few guarantees. In particular:
  *   - There is no guarantee that a specific node is present or absent as a child.
