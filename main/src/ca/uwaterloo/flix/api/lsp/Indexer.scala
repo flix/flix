@@ -263,7 +263,7 @@ object Indexer {
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       // We construct the type manually here, since we do not have immediate access to it
       // like with normal defs.
-      val arrowType = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
+      val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
       Index.all(
         traverse(fparams)(visitFormalParam),
         Index.occurrenceOf(sym, arrowType),
