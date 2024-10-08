@@ -35,7 +35,7 @@ object Unification {
     implicit val t: ConstraintSolver2.Tracker = ConstraintSolver2.Tracker()
     implicit val r: RigidityEnv = renv
     val (leftovers, subst) = ConstraintSolver2.makeSubstitution(ConstraintSolver2.TypeConstraint.Equality(x, tpe))
-    Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeToBroadEqualityConstraint), t.query()))
+    Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
   }
 
   /**
@@ -46,7 +46,7 @@ object Unification {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
     val (leftovers, subst) = ConstraintSolver2.goTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
-    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeToBroadEqualityConstraint), t.query()))
+    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
   }
 
   /**
