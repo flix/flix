@@ -319,7 +319,7 @@ object SetUnification {
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
       val recFormula = propagation(mkInter(f0, f1))
-      assertSveSize(recFormula)
+      assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
       val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
       // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
@@ -329,7 +329,7 @@ object SetUnification {
   }
 
   /** Throws [[ComplexException]] if `f` is larger than [[Options.sveRecSizeThreshold]]. */
-  private def assertSveSize(f: SetFormula)(implicit opts: Options): Unit = {
+  private def assertSveRecSize(f: SetFormula)(implicit opts: Options): Unit = {
     if (opts.sveRecSizeThreshold > 0) {
       val fSize = f.size
       if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
