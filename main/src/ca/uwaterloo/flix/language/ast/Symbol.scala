@@ -333,7 +333,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.", loc)
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
     }
 
     /**

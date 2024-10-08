@@ -325,7 +325,7 @@ object Parser2 {
     */
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
-      throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
+      throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
 
     if (s.position + lookahead >= s.tokens.length - 1) {
