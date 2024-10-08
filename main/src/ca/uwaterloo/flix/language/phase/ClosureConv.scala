@@ -449,7 +449,7 @@ object ClosureConv {
     *       let b = 2;
     *       let c = 3;
     *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
-    *       g(a, b, c, 10)
+    *       g(a, b, c, 4)
     *   }
     * }}}
     */
@@ -515,7 +515,7 @@ object ClosureConv {
     *       let b = 2;
     *       let c = 3;
     *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
-    *       g(a, b, c, 10)
+    *       g(a, b, c, 4)
     *   }
     * }}}
     *
