@@ -43,6 +43,7 @@ object ResolvedAstPrinter {
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
     case Expr.ApplyClo(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
     case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
@@ -52,12 +53,13 @@ object ResolvedAstPrinter {
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.LetRec(sym, _, _, exp1, exp2, _) => DocAst.Expr.LetRec(printVarSym(sym), None, print(exp1), print(exp2))
+    case Expr.LocalDef(sym, _, exp1, exp2, _) => DocAst.Expr.LetRec(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
     })
-    case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map{
+    case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
       case ResolvedAst.TypeMatchRule(sym, _, exp) => (printVarSym(sym), DocAst.Type.Unknown, print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
@@ -73,7 +75,7 @@ object ResolvedAstPrinter {
     case Expr.ArrayLoad(base, index, _) => DocAst.Expr.ArrayLoad(print(base), print(index))
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
-    case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map{
+    case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map {
       case (sym, exp) => (sym.sym, print(exp))
     }, print(region))
     case Expr.StructGet(e, sym, _) => DocAst.Expr.StructGet(print(e), sym.sym)
@@ -87,7 +89,7 @@ object ResolvedAstPrinter {
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedMaskingCast(exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
-    case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map{
+    case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))

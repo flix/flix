@@ -100,6 +100,11 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ApplyLocalDef(_, exps, arrowTpe, _, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(Type.eraseTopAliases(arrowTpe).arrowEffectType :: exps.map(_.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
     case Expr.ApplySig(_, exps, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
@@ -126,6 +131,12 @@ object EffectVerifier {
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+    case Expr.LocalDef(_, _, exp1, exp2, _, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      val expected = exp2.eff
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Region(tpe, loc) => ()
@@ -230,10 +241,10 @@ object EffectVerifier {
       // TODO region stuff
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      val expected = Type.mkUnion(fields.map {case (k, v) => v.eff} :+ region.eff, loc)
+      val expected = Type.mkUnion(fields.map { case (k, v) => v.eff } :+ region.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-      fields.map {case(k, v) => v}.map(visitExp)
+      fields.map { case (k, v) => v }.map(visitExp)
       visitExp(region)
     case Expr.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff

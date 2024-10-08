@@ -213,6 +213,13 @@ object Ast {
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a LocalDef sym.
+    */
+  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation) {
+    if (sym.boundBy != BoundBy.LocalDef) throw ca.uwaterloo.flix.util.InternalCompilerException(s"$sym is not a local def", loc)
+  }
+
+  /**
     * Represents a use of a sig sym.
     */
   case class SigSymUse(sym: Symbol.SigSym, loc: SourceLocation)
@@ -298,6 +305,10 @@ object Ast {
       */
     case object Constraint extends BoundBy
 
+    /**
+      * Represents a variable that is bound by a local def.
+      */
+    case object LocalDef extends BoundBy
   }
 
   /**

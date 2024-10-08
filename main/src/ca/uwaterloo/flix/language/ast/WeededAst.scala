@@ -117,6 +117,8 @@ object WeededAst {
 
     case class LetRec(ident: Name.Ident, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
+    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr

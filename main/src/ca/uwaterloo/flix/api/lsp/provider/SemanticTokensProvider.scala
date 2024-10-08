@@ -357,6 +357,11 @@ object SemanticTokensProvider {
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
     case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
@@ -380,6 +385,15 @@ object SemanticTokensProvider {
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      IteratorOps.all(
+        Iterator(t),
+        visitFormalParams(fparams),
+        visitExp(exp1),
+        visitExp(exp2)
+      )
 
     case Expr.Region(_, _) =>
       Iterator.empty

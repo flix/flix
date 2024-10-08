@@ -46,11 +46,13 @@ object TypedAstOps {
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expr.ApplyClo(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
@@ -158,6 +160,11 @@ object TypedAstOps {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
     case Expr.ApplySig(_, exps, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
@@ -174,6 +181,10 @@ object TypedAstOps {
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      val bound = sym :: fparams.map(_.sym)
+      (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
     case Expr.Region(_, _) =>
       Map.empty
