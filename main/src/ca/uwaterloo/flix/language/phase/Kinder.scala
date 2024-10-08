@@ -805,8 +805,9 @@ object Kinder {
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
     case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
+      val kenv = inferType(tpe0, Kind.Star, kenv0, taenv, root)
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)
       KindedAst.TypeMatchRule(sym, tpe, exp)
