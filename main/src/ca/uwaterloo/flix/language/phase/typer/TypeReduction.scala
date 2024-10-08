@@ -168,7 +168,7 @@ object TypeReduction {
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type]): JavaConstructorResolution = {
+  def lookupConstructor(clazz: Class[?], ts: List[Type]): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
@@ -184,7 +184,7 @@ object TypeReduction {
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type]): JavaMethodResolution = {
+  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type]): JavaMethodResolution = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
@@ -195,7 +195,7 @@ object TypeReduction {
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type]): JavaMethodResolution = {
+  def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type]): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
@@ -203,7 +203,7 @@ object TypeReduction {
   }
 
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
-  private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): JavaMethodResolution = {
+  def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): JavaMethodResolution = {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
     // We check if we found a method and if its static flag matches.
@@ -228,7 +228,7 @@ object TypeReduction {
   /**
    * Returns the Java reflective class object corresponding to the given Flix `tpe`.
    */
-  private def getJavaType(tpe: Type): Class[?] = tpe match {
+  def getJavaType(tpe: Type): Class[?] = tpe match {
     case Type.Bool => java.lang.Boolean.TYPE
     case Type.Int8 => java.lang.Byte.TYPE
     case Type.Int16 => java.lang.Short.TYPE
@@ -292,7 +292,7 @@ object TypeReduction {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
+  def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
     val opt = for {
@@ -316,9 +316,9 @@ object TypeReduction {
   }
 
   /** A lookup result of a Java field. */
-  private sealed trait JavaFieldResolution
+  sealed trait JavaFieldResolution
 
-  private object JavaFieldResolution {
+  object JavaFieldResolution {
 
     /** One matching field. */
     case class Resolved(field: Field) extends JavaFieldResolution
@@ -335,9 +335,9 @@ object TypeReduction {
   }
 
   /** A lookup result of a Java method. */
-  private sealed trait JavaMethodResolution
+  sealed trait JavaMethodResolution
 
-  private object JavaMethodResolution {
+  object JavaMethodResolution {
 
     /** One matching method. */
     case class Resolved(method: Method) extends JavaMethodResolution
@@ -354,9 +354,9 @@ object TypeReduction {
   }
 
   /** A lookup result of a Java constructor. */
-  private sealed trait JavaConstructorResolution
+  sealed trait JavaConstructorResolution
 
-  private object JavaConstructorResolution {
+  object JavaConstructorResolution {
 
     /** One matching constructor. */
     case class Resolved(constructor: Constructor[?]) extends JavaConstructorResolution
