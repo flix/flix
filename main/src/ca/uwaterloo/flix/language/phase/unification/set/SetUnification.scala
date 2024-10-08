@@ -20,8 +20,15 @@ import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 
 object SetUnification {
 
+  /**
+    * The static parameters of set unification.
+    *
+    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size.
+    */
+  private final case class Options(sveRecSizeThreshold: Int)
+
   /** A class to track progress during set unification. */
-  private class Progress() {
+  private final class Progress() {
 
     /** Is `true` if [[markProgress]] has been called. */
     private var hasMadeProgress: Boolean = false
@@ -32,7 +39,6 @@ object SetUnification {
     /** Returns `true` if [[markProgress]] has been called. */
     def hasProgressed: Boolean = hasMadeProgress
   }
-
 
   /**
     * Solves equations that trivially hold (like `univ ~ univ`) and marks trivially unsolvable
@@ -45,7 +51,7 @@ object SetUnification {
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x2 ~ univ` becomes `({x2 ~ univ}, [])`
     */
-  def trivial(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def trivial(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
     val Equation(t1, t2, _, _) = eq
 
     def error(): (List[Equation], SetSubstitution) = {
@@ -97,7 +103,7 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
       // x ~ f, where f is ground
@@ -182,7 +188,7 @@ object SetUnification {
     * There is a binding-bias towards lower variables, such that `x1 ~ x2` and `x2 ~ x1` both
     * become `({}, [x1 -> x2])`.
     */
-  def variableAlias(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def variableAlias(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
     val Equation(t1, t2, _, _) = eq
     (t1, t2) match {
       // x1 ~ x1
@@ -235,7 +241,7 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
     val Equation(t1, t2, _, _) = eq
     (t1, t2) match {
       // x ~ f, where f does not contain x
@@ -276,12 +282,12 @@ object SetUnification {
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  def sve(recSizeThreshold: Int)(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def sve(eq: Equation)(implicit p: Progress, opts: Options): (List[Equation], SetSubstitution) = {
     p.markProgress()
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList
     try {
-      val subst = successiveVariableElimination(query, fvs, recSizeThreshold)
+      val subst = successiveVariableElimination(query, fvs)
       (Nil, subst)
     } catch {
       case NoSolutionException() => (List(eq.toUnsolvable), SetSubstitution.empty)
@@ -289,4 +295,46 @@ object SetUnification {
     }
   }
 
+  /**
+    * The Successive Variable Elimination algorithm.
+    *
+    * Returns the most-general unifier of the equation `f ~ empty` where `fvs` is the free
+    * variables in `f`. If there is no unifier then [[NoSolutionException]] is thrown.
+    *
+    * Eliminates variables recursively from `fvs`.
+    *
+    * If the formula that is recursively built is ever larger than `recSizeThreshold` then
+    * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
+    * checking.
+    */
+  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit opts: Options): SetSubstitution = fvs match {
+    case Nil =>
+      // `fvs` is empty so `f` has no variables.
+      // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
+      // Return the empty substitution if `f` is equivalent to `empty`.
+      if (isEmptyEquivalent(f)) SetSubstitution.empty
+      else throw NoSolutionException()
+
+    case x :: xs =>
+      val f0 = SetSubstitution.singleton(x, Empty)(f)
+      val f1 = SetSubstitution.singleton(x, Univ)(f)
+      val recFormula = propagation(mkInter(f0, f1))
+      assertSize(recFormula, opts.sveRecSizeThreshold)
+      val se = successiveVariableElimination(recFormula, xs)
+      val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
+      // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
+      // each variable of `fvs` once (which is assumed to have no duplicates).
+      // `se`, `x`, and `xFormula` therefore have disjoint variables.
+      se.unsafeExtend(x, xFormula)
+  }
+
+  /** Throws [[ComplexException]] if `f` is larger than `size`. */
+  private def assertSize(f: SetFormula, size: Int): Unit = {
+    if (size > 0) {
+      val fSize = f.size
+      if (fSize > size) throw ComplexException(
+        s"SetFormula size ($fSize) is over recursive SVE threshold ($size)."
+      )
+    }
+  }
 }

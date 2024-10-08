@@ -904,44 +904,6 @@ object SetFormula {
   }
 
   /**
-    * The Successive Variable Elimination algorithm.
-    *
-    * Returns the most-general unifier of the equation `f ~ empty` where `fvs` is the free
-    * variables in `f`. If there is no unifier then [[NoSolutionException]] is thrown.
-    *
-    * Eliminates variables recursively from `fvs`.
-    *
-    * If the formula that is recursively built is ever larger than `recSizeThreshold` then
-    * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
-    * checking.
-    */
-  def successiveVariableElimination(f: SetFormula, fvs: List[Int], recSizeThreshold: Int): SetSubstitution = fvs match {
-    case Nil =>
-      // `fvs` is empty so `f` has no variables.
-      // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
-      // Return the empty substitution if `f` is equivalent to `empty`.
-      if (isEmptyEquivalent(f)) SetSubstitution.empty
-      else throw NoSolutionException()
-
-    case x :: xs =>
-      val f0 = SetSubstitution.singleton(x, Empty)(f)
-      val f1 = SetSubstitution.singleton(x, Univ)(f)
-      val recFormula = propagation(mkInter(f0, f1))
-      if (recSizeThreshold > 0) {
-        val recFormulaSize = recFormula.size
-        if (recFormulaSize > recSizeThreshold) throw ComplexException(
-          s"SetFormula size ($recFormulaSize) is over recursive SVE threshold ($recSizeThreshold)"
-        )
-      }
-      val se = successiveVariableElimination(recFormula, xs, recSizeThreshold)
-      val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
-      // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
-      // each variable of `fvs` once (which is assumed to have no duplicates).
-      // `se`, `x`, and `xFormula` therefore have disjoint variables.
-      se.unsafeExtend(x, xFormula)
-  }
-
-  /**
     * Returns `true` if `f` is equivalent to [[Empty]].
     * Exponential time in the number of unknowns.
     */
