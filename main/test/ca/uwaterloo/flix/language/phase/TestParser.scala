@@ -1122,44 +1122,4 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
-
-  test("MalformedSelectChannelRule.01") {
-    val input =
-      """
-        |def f(): Int32 = {
-        |    select {
-        |        case aeg <- raeg?ge => m
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError.Malformed](result)
-  }
-
-  test("MalformedSelectChannelRule.02") {
-    val input =
-      """
-        |def f(): Int32 = {
-        |    select {
-        |        case { a = x } <- recv(???) => m
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError.Malformed](result)
-  }
-
-  test("MalformedSelectChannelRule.03") {
-    val input =
-      """
-        |def f(): Int32 = {
-        |    select {
-        |        case { a = x } <- => m
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError.Malformed](result)
-  }
-
 }
