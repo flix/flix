@@ -131,7 +131,7 @@ object LambdaLift {
       val newDefnSym = liftedLocalDefs.get(sym)
       newDefnSym match {
         case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
-        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym at ${loc.format}", loc)
+        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
       }
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>

@@ -403,7 +403,7 @@ object EffectVerifier {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
     if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {
-      throw InternalCompilerException(s"Expected type $expected but found $actual at $loc", loc)
+      throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }
 }
