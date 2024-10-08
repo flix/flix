@@ -219,6 +219,9 @@ object Ast {
     if (sym.boundBy != BoundBy.LocalDef) throw ca.uwaterloo.flix.util.InternalCompilerException(s"$sym is not a local def", loc)
   }
 
+  /**
+    * Represents a use of a sig sym.
+    */
   case class SigSymUse(sym: Symbol.SigSym, loc: SourceLocation)
 
   /**
