@@ -326,8 +326,7 @@ object ClosureConv {
 
       case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
         // We do not substitute any local def symbol
-        // since the will be lifted to top level in LambdaLift
-        // so it is okay to capture a local def symbol.
+        // since it will be lifted to top level in LambdaLift.
         val es = exps.map(visitExp)
         Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
