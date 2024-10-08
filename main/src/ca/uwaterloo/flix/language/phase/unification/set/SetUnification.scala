@@ -88,27 +88,17 @@ object SetUnification {
   /**
     * Solves equations of ground assignments to variables (e.g. `x ~ c1 ∪ e2`).
     *
-    *   - `x ~ f` where [[SetFormula.isGround]] on `f` becomes `({}, [x -> f])`
-    *   - `!x ~ f` where [[SetFormula.isGround]] on `f` becomes `({}, [x -> !f])`
+    *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
+    *   - `!x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> !f])`
     *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
     *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
+    *   - `f1 ~ f2` where [[SetFormula.isGround]] is true on both sides, becomes `({}, [])` if it
+    *     holds or `({f1 ~error f2}, [])` if it does not.
     *
     * This also applies to the symmetric equations.
     */
   def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-    val Equation(f01, f02, _, loc) = eq
-
-    // Reorder formulas to avoid symmetric matches below.
-    //   - `x` and `!x` to the left
-    //   - `empty` and `univ` to the right
-    val (f1, f2) = (f01, f02) match {
-      case (_, Var(_)) => (f02, f01)
-      case (_, Compl(Var(_))) => (f02, f01)
-      case (Empty, _) => (f02, f01)
-      case (Univ, _) => (f02, f01)
-      case _ => (f01, f02)
-    }
-
+    val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
       // x ~ f, where f is ground
       // ---
@@ -118,11 +108,21 @@ object SetUnification {
         p.markProgress()
         (Nil, SetSubstitution.singleton(x, f))
 
+      // Symmetric case.
+      case (f, Var(x)) if f.isGround =>
+        p.markProgress()
+        (Nil, SetSubstitution.singleton(x, f))
+
       // !x ~ f, where f is ground
       // ---
       // {},
       // [x -> !f]
       case (Compl(Var(x)), f) if f.isGround =>
+        p.markProgress()
+        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+
+      // Symmetric case.
+      case (f, Compl(Var(x))) if f.isGround =>
         p.markProgress()
         (Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
@@ -135,11 +135,23 @@ object SetUnification {
         val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
         (eqs, SetSubstitution.empty)
 
+      // Symmetric case.
+      case (Univ, inter@Inter(_, _, _, _, _, _, _)) =>
+        p.markProgress()
+        val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
+        (eqs, SetSubstitution.empty)
+
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
       case (union@Union(_, _, _, _, _, _, _), Empty) =>
+        p.markProgress()
+        val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
+        (eqs, SetSubstitution.empty)
+
+      // Symmetric Case.
+      case (Empty, union@Union(_, _, _, _, _, _, _)) =>
         p.markProgress()
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         (eqs, SetSubstitution.empty)
@@ -224,16 +236,7 @@ object SetUnification {
     * This also applies to the symmetric equations.
     */
   def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-    val Equation(t01, t02, _, _) = eq
-
-    // Reorder formulas to avoid symmetric matches below.
-    //   - `x` and `!x` to the left
-    val (t1, t2) = (t01, t02) match {
-      case (_, Var(_)) => (t02, t01)
-      case (_, Compl(Var(_))) => (t02, t01)
-      case _ => (t01, t02)
-    }
-
+    val Equation(t1, t2, _, _) = eq
     (t1, t2) match {
       // x ~ f, where f does not contain x
       // ---
@@ -243,11 +246,21 @@ object SetUnification {
         p.markProgress()
         (Nil, SetSubstitution.singleton(x, f))
 
+      // Symmetric case.
+      case (f, v@Var(x)) if !f.contains(v) =>
+        p.markProgress()
+        (Nil, SetSubstitution.singleton(x, f))
+
       // !x ~ f, where f does not contain x
       // ---
       // {},
       // [x -> !f]
       case (Compl(v@Var(x)), f) if !f.contains(v) =>
+        p.markProgress()
+        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+
+      // Symmetric case.
+      case (f, Compl(v@Var(x))) if !f.contains(v) =>
         p.markProgress()
         (Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
