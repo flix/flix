@@ -337,4 +337,14 @@ object SetUnification {
       )
     }
   }
+
+
+  /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
+  case class NoSolutionException() extends RuntimeException
+
+  /**
+    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
+    * big.
+    */
+  case class ComplexException(msg: String) extends RuntimeException
 }

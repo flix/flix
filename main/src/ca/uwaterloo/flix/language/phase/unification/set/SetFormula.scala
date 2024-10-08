@@ -400,16 +400,10 @@ object SetFormula {
     case v@Var(_) => Compl(v)
     case e@ElemSet(_) => Compl(e)
     case Compl(f1) => f1
-    case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      // Swapping the elements maintain all invariants, so building directly is safe.
-      // This avoids putting complement on the list of negated elements, constants, and variables.
-      val simpleCompl = Union(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, List())
-      mkUnionAll(simpleCompl :: other.map(mkCompl))
-    case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      // Swapping the elements maintain all invariants, so building directly is safe.
-      // This avoids putting complement on the list of negated elements, constants, and variables.
-      val simpleCompl = Inter(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, List())
-      mkInterAll(simpleCompl :: other.map(mkCompl))
+    case inter@Inter(_, _, _, _, _, _, _) =>
+      mkUnionAll(inter.mapSubformulas(mkCompl))
+    case union@Union(_, _, _, _, _, _, _) =>
+      mkInterAll(union.mapSubformulas(mkCompl))
   }
 
   /**
@@ -553,11 +547,11 @@ object SetFormula {
   }
 
   /**
-    * Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`).
+    * Returns the union of `fs` (`fs1 ∪ fs2 ∪ ..`).
     *
     * Nested unions are put into a single union.
     */
-  def mkUnionAll(ts: List[SetFormula]): SetFormula = {
+  def mkUnionAll(fs: List[SetFormula]): SetFormula = {
     // We need to do two things:
     // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
     // - Flatten nested unions.
@@ -580,7 +574,7 @@ object SetFormula {
     // Variables and constants are checked for overlap immediately.
     // Elements are checked at the end.
 
-    var workList = ts
+    var workList = fs
     while (workList.nonEmpty) {
       val f0 :: next = workList
       workList = next
@@ -715,7 +709,7 @@ object SetFormula {
       // Maintain and exploit reference equality for performance.
       if (f1Prop eq f1) compl else mkCompl(f1Prop)
 
-    case Inter(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, rest0) =>
+    case Inter(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, other0) =>
       // Compute element sets and check for early exits.
       val elemPos = elemPos0.map(instElemSet(_, insts)) match {
         case Some(e) => e match {
@@ -760,9 +754,9 @@ object SetFormula {
         varsPos.map(_.x -> Univ) ++
         varsNeg.map(_.x -> Empty)
 
-      // Recursively instantiate `rest` while collecting further instantiations as we go.
-      val rest = mutable.ListBuffer.empty[SetFormula]
-      for (f <- rest0) {
+      // Recursively instantiate `other` while collecting further instantiations as we go.
+      val other = mutable.ListBuffer.empty[SetFormula]
+      for (f <- other0) {
         val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
@@ -778,14 +772,11 @@ object SetFormula {
           case Inter(_, _, _, _, _, _, _) => ()
           case Union(_, _, _, _, _, _, _) => ()
         }
-        rest.appended(fProp)
+        other.appended(fProp)
       }
-      // We adhere to invariants, so building directly is safe.
-      // This avoids putting complement on the list of negated elements, constants, and variables.
-      val simpleInter = Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkInterAll(simpleInter :: rest.toList)
+      mkInterAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
 
-    case Union(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, rest0) =>
+    case Union(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, other0) =>
       // Compute element sets and check for early exits.
       val elemPos = elemPos0.map(instElemSet(_, insts)) match {
         case Some(e) => e match {
@@ -830,9 +821,9 @@ object SetFormula {
         varsPos.map(_.x -> Empty) ++
         varsNeg.map(_.x -> Univ)
 
-      // Recursively instantiate `rest` while collecting further instantiations as we go.
-      val rest = mutable.ListBuffer.empty[SetFormula]
-      for (f <- rest0) {
+      // Recursively instantiate `other` while collecting further instantiations as we go.
+      val other = mutable.ListBuffer.empty[SetFormula]
+      for (f <- other0) {
         val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
@@ -848,12 +839,9 @@ object SetFormula {
           case Inter(_, _, _, _, _, _, _) => ()
           case Union(_, _, _, _, _, _, _) => ()
         }
-        rest.appended(fProp)
+        other.appended(fProp)
       }
-      // We adhere to invariants, so building directly is safe.
-      // This avoids putting complement on the list of negated elements, constants, and variables.
-      val simpleInter = Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkInterAll(simpleInter :: rest.toList)
+      mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
   }
 
   /**
@@ -970,7 +958,7 @@ object SetFormula {
       case Var(x) => if (univUnknowns.contains(x)) CISet.universe else CISet.empty
       case Compl(t) => CISet.complement(evaluate(t, univUnknowns))
 
-      case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
+      case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
         // Evaluate the subformulas, exiting early in case the running set is `empty`.
         var running = CISet.universe
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
@@ -981,13 +969,13 @@ object SetFormula {
           running = CISet.intersection(running, CISet.complement(evaluate(t, univUnknowns)))
           if (running.isEmpty) return CISet.empty
         }
-        for (t <- rest) {
+        for (t <- other) {
           running = CISet.intersection(running, evaluate(t, univUnknowns))
           if (running.isEmpty) return CISet.empty
         }
         running
 
-      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, rest) =>
+      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
         // Evaluate the subformulas, exiting early in case the running set is `univ`.
         var running = CISet.empty
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
@@ -998,21 +986,12 @@ object SetFormula {
           running = CISet.union(running, CISet.complement(evaluate(t, univUnknowns)))
           if (running.isUniverse) return CISet.universe
         }
-        for (t <- rest) {
+        for (t <- other) {
           running = CISet.union(running, evaluate(t, univUnknowns))
           if (running.isUniverse) return CISet.universe
         }
         running
     }
   }
-
-  /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
-  case class NoSolutionException() extends RuntimeException
-
-  /**
-    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
-    * big.
-    */
-  case class ComplexException(msg: String) extends RuntimeException
 
 }
