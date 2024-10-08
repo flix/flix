@@ -145,7 +145,7 @@ object CompletionProvider {
         case Some(s) => getLastWord(s)
       }
       // Remember positions are one-indexed.
-      val range = Range(Position(y+1, start+1), Position(y+1, end+1))
+      val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
       val sctx = getSyntacticContext(uri, pos, errors)
       CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }
