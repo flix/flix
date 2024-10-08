@@ -1301,7 +1301,7 @@ object Weeder2 {
       }
 
       mapN(
-        annVal, // Even though the annotation is unused, we still need to map over it to collect possible errors.
+        annVal, // Even though the annotation is unused, we still need to collect possible errors.
         exprs,
         Decls.pickFormalParameters(tree, Presence.Optional),
         pickNameIdent(tree),
