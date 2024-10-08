@@ -1284,13 +1284,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.LetRecDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Annotations(as) =>
-          // Check for [[IllegalAnnotation]]
+          // Check for annotations
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
-            a match {
-              case Annotation.TailRecursive(_) => // OK
-              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
-            }
+            errors += IllegalAnnotation(a.loc)
           }
           Validation.toSuccessOrSoftFailure(Annotations(as), errors)
       }
