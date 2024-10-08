@@ -25,8 +25,10 @@ import scala.annotation.nowarn
 /**
   * Represents an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`).
   *
-  * Equations can be marked as [[Equation.Status.Unsolvable]] or [[Equation.Status.Timeout]] during
-  * unification, in which case its written `f1 !~ f2`.
+  * Equations are created with [[Equation.Status.Pending]] but can be marked as
+  * [[Equation.Status.Unsolvable]] (`f1 ~unsolvable f2`) or
+  * [[Equation.Status.Timeout]] (`f1 ~timeout f2`) during unification.
+  * An unspecified non-pending equation is written `f1 !~ f2`.
   *
   * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy` method
   * is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still
@@ -40,8 +42,8 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
 
   /** Returns a human-readable string of `this`. */
   override final def toString: String = status match {
-    case Status.Unknown => s"$f1 ~ $f2"
-    case Status.Unsolvable => s"$f1 ~error $f2"
+    case Status.Pending => s"$f1 ~ $f2"
+    case Status.Unsolvable => s"$f1 ~unsolvable $f2"
     case Status.Timeout(_) => s"$f1 ~timeout $f2"
   }
 
@@ -61,8 +63,11 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
 
 object Equation {
 
-  /** Returns an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`). */
-  def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Unknown): Equation = {
+  /**
+    * Returns an equality equation between the formulas `f1` and `f2` with [[Status.Pending]] as
+    * the default status (`f1 ~ f2`).
+    */
+  def mk(f1: SetFormula, f2: SetFormula, loc: SourceLocation, status: Status = Status.Pending): Equation = {
     // This reordering is not part of the interface and should not be relied on.
     (f1, f2) match {
       case (_, Var(_)) => Equation(f2, f1, status, loc)
@@ -74,13 +79,13 @@ object Equation {
 
   object Status {
 
-    /** Equation might be solvable or unsolvable. */
-    case object Unknown extends Status
+    /** Equation might be solvable or unsolvable (`f1 ~ f2`). */
+    case object Pending extends Status
 
-    /** Equation is unsolvable. */
+    /** Equation is unsolvable (`f1 ~unsolvable f2`). */
     case object Unsolvable extends Status
 
-    /** The equation is unsolvable due to a timeout or a size threshold. */
+    /** The equation is unsolvable due to a timeout or a size threshold (`f1 ~timeout f2`). */
     case class Timeout(msg: String) extends Status
 
   }

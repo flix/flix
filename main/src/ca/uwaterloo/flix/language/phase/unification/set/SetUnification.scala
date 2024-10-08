@@ -41,7 +41,7 @@ object SetUnification {
     * Otherwise returns `eq` directly.
     *
     *   - `univ ~ univ` becomes `({}, [])`
-    *   - `univ ~ empty` becomes `({univ !~ empty}, [])`
+    *   - `univ ~ empty` becomes `({univ ~error empty}, [])`
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x2 ~ univ` becomes `({x2 ~ univ}, [])`
     */
@@ -147,7 +147,7 @@ object SetUnification {
       // f1 ~ f2, where f1 and f2 are ground
       // ---
       // {}, [] if solved
-      // {f1 !~ f2}, [] if unsolvable
+      // {f1 ~error f2}, [] if unsolvable
       case (f1, f2) if f1.isGround && f2.isGround =>
         p.markProgress()
         if (isEquivalent(f1, f2)) (Nil, SetSubstitution.empty)
