@@ -64,20 +64,23 @@ object SetFormulaGenerator {
 
   /** Returns a random singleton [[Var]] from the domain, if it it non-empty. */
   def generateVar()(implicit r: Random, opts: Options): Var = {
-    if (opts.varDomSize <= 0) throw InternalCompilerException(s"Tried to generate a variable with domain size ${opts.varDomSize}", SourceLocation.Unknown)
-    else Var(opts.varOffset + r.nextInt(opts.varDomSize))
+    if (opts.varDomSize <= 0) throw InternalCompilerException(
+      s"Tried to generate a variable with domain size ${opts.varDomSize}", SourceLocation.Unknown
+    ) else Var(opts.varOffset + r.nextInt(opts.varDomSize))
   }
 
   /** Returns a random singleton [[Cst]] from the domain, if it it non-empty. */
   def generateCst()(implicit r: Random, opts: Options): Cst = {
-    if (opts.cstDomSize <= 0) throw InternalCompilerException(s"Tried to generate a constant with domain size ${opts.cstDomSize}", SourceLocation.Unknown)
-    else Cst(opts.cstOffset + r.nextInt(opts.cstDomSize))
+    if (opts.cstDomSize <= 0) throw InternalCompilerException(
+      s"Tried to generate a constant with domain size ${opts.cstDomSize}", SourceLocation.Unknown
+    ) else Cst(opts.cstOffset + r.nextInt(opts.cstDomSize))
   }
 
   /** Returns a random singleton [[ElemSet]] from the domain, if it it non-empty. */
   def generateElem()(implicit r: Random, opts: Options): ElemSet = {
-    if (opts.elemDomSize <= 0) throw InternalCompilerException(s"Tried to generate an element with domain size ${opts.elemDomSize}", SourceLocation.Unknown)
-    else mkElemSet(opts.elemOffset + r.nextInt(opts.elemDomSize))
+    if (opts.elemDomSize <= 0) throw InternalCompilerException(
+      s"Tried to generate an element with domain size ${opts.elemDomSize}", SourceLocation.Unknown
+    ) else mkElemSet(opts.elemOffset + r.nextInt(opts.elemDomSize))
   }
 
   private sealed trait Atom
@@ -169,12 +172,14 @@ object SetFormulaGenerator {
 
   def main(args: Array[String]): Unit = {
     val r: Random = new Random(-62150363)
-    println(generate(1, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 0, elemDomSize = 0)))
-    println(generate(3, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 0, elemDomSize = 0)))
-    println(generate(10, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 2, elemDomSize = 0)))
-    println(generate(10, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 2, elemDomSize = 0)))
-    println(generate(10, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 2, elemDomSize = 0)))
-    println(generate(10, -1)(r, Options(maxWidth = 1, varDomSize = 0, cstDomSize = 2, elemDomSize = 0)))
+    for (i <- 0 until 1000) {
+      val f = generate(i, -1)(r, Options(maxWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3))
+      println()
+      println(f)
+      val fProp = SetFormula.propagation(f)
+      println(fProp)
+      assert(SetFormula.isEquivalent(f, fProp))
+    }
   }
 
 }
