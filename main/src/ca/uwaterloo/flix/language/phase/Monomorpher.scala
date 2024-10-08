@@ -476,6 +476,13 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val newSym = env0(sym)
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
@@ -491,6 +498,17 @@ object Monomorpher {
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       MonoAst.Expr.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      // Generate a fresh symbol for the let-bound variable.
+      val freshSym = Symbol.freshVarSym(sym)
+      val env1 = env0 + (sym -> freshSym)
+      val (fps, env2) = specializeFormalParams(fparams, subst)
+      val e1 = visitExp(exp1, env1 ++ env2, subst)
+      val e2 = visitExp(exp2, env1, subst)
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)

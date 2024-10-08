@@ -85,6 +85,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
 
+    case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
+
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
@@ -150,6 +155,14 @@ object Simplifier {
     case MonoAst.Expr.LetRec(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+
+    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      val ef = simplifyEffect(eff)
+      SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
 
     case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)

@@ -259,6 +259,9 @@ object Safety {
       case Expr.ApplyDef(_, exps, _, _, _, _) =>
         exps.flatMap(visit)
 
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+        exps.flatMap(visit)
+
       case Expr.ApplySig(_, exps, _, _, _, _) =>
         exps.flatMap(visit)
 
@@ -273,6 +276,10 @@ object Safety {
 
       case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
+
+      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+        // The inside expression will be its own function, so inTryCatch is reset
+        visit(exp1)(inTryCatch = false) ++ visit(exp2)
 
       case Expr.Region(_, _) =>
         Nil

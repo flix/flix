@@ -102,8 +102,8 @@ object Indexer {
   }
 
   /**
-   * Returns a reverse index for the given struct `struct0`.
-   */
+    * Returns a reverse index for the given struct `struct0`.
+    */
   private def visitStruct(struct0: Struct): Index = struct0 match {
     case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
       Index.all(
@@ -244,6 +244,10 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc) ++ visitExps(exps)
 
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -255,6 +259,18 @@ object Indexer {
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      // We construct the type manually here, since we do not have immediate access to it
+      // like with normal defs.
+      val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
+      Index.all(
+        traverse(fparams)(visitFormalParam),
+        Index.occurrenceOf(sym, arrowType),
+        visitExp(exp1),
+        visitExp(exp2),
+        Index.occurrenceOf(exp0)
+      )
 
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)

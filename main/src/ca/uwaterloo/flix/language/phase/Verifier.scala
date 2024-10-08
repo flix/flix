@@ -65,7 +65,7 @@ object Verifier {
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
-      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)
+      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym' at ${sym.loc.format}", sym.loc)
       case Some(tpe2) =>
         checkEq(tpe1, tpe2, loc)
     }

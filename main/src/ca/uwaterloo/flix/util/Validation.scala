@@ -70,19 +70,6 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Transform exactly one hard error into a soft error using the given function `f`.
-    */
-  def recoverOne[U >: T](f: PartialFunction[E, U]): Validation[U, E] = this match {
-    case Validation.HardFailure(errors) if errors.length == 1 =>
-      val one = errors.head.get
-      if (f.isDefinedAt(one))
-        Validation.SoftFailure(f(one), Chain(one))
-      else
-        this
-    case _ => this
-  }
-
-  /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
@@ -235,15 +222,6 @@ object Validation {
     * Traverses `xs` applying the function `f` to each element.
     */
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
-
-  /**
-    * Traverses the given map, applying the function `f` to each value.
-    */
-  def traverseValues[K, V1, V2, E](xs: Map[K, V1])(f: V1 => Validation[V2, E]): Validation[Map[K, V2], E] = {
-    mapN(traverse(xs) {
-      case (k, v0) => mapN(f(v0))(v => k -> v)
-    })(_.toMap)
-  }
 
   /**
     * Traverses `o` applying the function `f` to the value, if it exists.

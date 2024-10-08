@@ -59,14 +59,12 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
-
-    Validation.success(result)
+    OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {

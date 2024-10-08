@@ -256,14 +256,14 @@ object WeederError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation on inner function.
+      s""">> Unexpected annotation on local function.
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
   /**
