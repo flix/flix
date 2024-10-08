@@ -513,8 +513,8 @@ class Flix {
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
-      afterDeriver <- Deriver.run(afterKinder)
+      (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      afterDeriver <- Deriver.run(afterKinder).withSoftFailures(kinderErrors)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       _ = EffectVerifier.run(afterTyper)
       _ <- Regions.run(afterTyper)
@@ -610,6 +610,36 @@ class Flix {
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+    // Initialize the phase time object.
+    currentPhase = PhaseTime(phase, 0)
+
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
+
+    // Measure the execution time.
+    val t = System.nanoTime()
+    val (root, errs) = f
+    val e = System.nanoTime() - t
+
+    // Update the phase time.
+    currentPhase = currentPhase.copy(time = e)
+
+    // And add it to the list of executed phases.
+    phaseTimers += currentPhase
+
+    if (this.options.xprintphases) {
+      d.emit(phase, root)(this)
+    }
+
+    // Return the result computed by the phase.
+    (root, errs)
   }
 
   /**

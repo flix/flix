@@ -105,6 +105,9 @@ object CodeHinter {
         checkLazy(sym, loc1)
       hints0 ++ hints1 ++ visitExps(exps)
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      visitExps(exps)
+
     case Expr.ApplySig(_, exps, _, _, _, _) =>
       visitExps(exps)
 
@@ -118,6 +121,9 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _) => Nil

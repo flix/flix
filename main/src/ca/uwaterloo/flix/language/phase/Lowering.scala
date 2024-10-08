@@ -389,6 +389,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
 
+    case TypedAst.Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, arrowTpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
+
     case TypedAst.Expr.ApplySig(Ast.SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
@@ -412,11 +417,18 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(sym, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LetRec(sym, _, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       LoweredAst.Expr.LetRec(sym, mod, e1, e2, t, eff, loc)
+
+    case TypedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expr.LocalDef(sym, fps, e1, e2, t, eff, loc)
 
     case TypedAst.Expr.Region(tpe, loc) =>
       val t = visitType(tpe)
@@ -1872,6 +1884,10 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
+    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+
     case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplySig(sym, es, itpe, tpe, eff, loc)
@@ -1891,6 +1907,13 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       LoweredAst.Expr.LetRec(s, mod, e1, e2, tpe, eff, loc)
+
+    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val fps = fparams.map(substFormalParam(_, subst))
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expr.LocalDef(s, fps, e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)

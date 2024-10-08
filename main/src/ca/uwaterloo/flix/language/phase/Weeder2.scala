@@ -1284,13 +1284,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.LetRecDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Annotations(as) =>
-          // Check for [[IllegalAnnotation]]
+          // Check for annotations
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
-            a match {
-              case Annotation.TailRecursive(_) => // OK
-              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
-            }
+            errors += IllegalAnnotation(a.loc)
           }
           Validation.toSuccessOrSoftFailure(Annotations(as), errors)
       }
@@ -1304,19 +1301,15 @@ object Weeder2 {
       }
 
       mapN(
-        annVal,
+        annVal, // Even though the annotation is unused, we still need to collect possible errors.
         exprs,
         Decls.pickFormalParameters(tree, Presence.Optional),
         pickNameIdent(tree),
         Types.tryPickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
-          val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
-          val lambda = fparams.foldRight(e) {
-            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, exp1.loc.asSynthetic)
-          }
-          Expr.LetRec(ident, ann, Modifiers.Empty, lambda, exp2, tree.loc)
+        case (_, (exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
+          Expr.LocalDef(ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
 
