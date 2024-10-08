@@ -3126,7 +3126,10 @@ object Weeder2 {
         val name = text(tree).mkString("")
         val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
         Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
-      case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
+      case _ =>
+        val name = text(tree).mkString("")
+        val error = Malformed(NamedTokenSet.FromTreeKinds(Set(Kind.Ambiguous)), SyntacticContext.Unknown, tree.loc)
+        Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
     }
   }
 
@@ -3211,7 +3214,8 @@ object Weeder2 {
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
         val errorTreeKind = TreeKind.ErrorTree(error)
-        val errorTree = Tree(errorTreeKind, Array.empty, tree.loc)
+        val errorChild = Tree(errorTreeKind, Array.empty, tree.loc)
+        val errorTree = Tree(errorTreeKind, Array(errorChild), tree.loc) // Any child should always just return an error node. Maybe infinite error node? Sounds dangerous
         Validation.toSoftFailure(errorTree, error)
     }
   }
