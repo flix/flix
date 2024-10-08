@@ -58,7 +58,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseNew("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
@@ -79,8 +79,9 @@ object Kinder {
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
     val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
-    Validation.success(newRoot).withSoftFailures(sctx.errors.asScala)
-  }(DebugValidation())
+
+    (newRoot, sctx.errors.asScala.toList)
+  }
 
   /**
     * Performs kinding on the given enum.
