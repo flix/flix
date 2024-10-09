@@ -66,7 +66,7 @@ object Visitor {
     def consumeEff(eff: Effect): Unit = ()
     def consumeEffectSymUse(effUse: EffectSymUse): Unit = ()
     def consumeEnum(enm: Enum): Unit = ()
-    def consumeEqConstraint(ec: EqualityConstraint): Unit = ()
+    def consumeEqualityConstraint(ec: EqualityConstraint): Unit = ()
     def consumeExpr(exp: Expr): Unit = ()
     def consumeFormalParam(fparam: FormalParam): Unit = ()
     def consumeParYieldFragment(frag: ParYieldFragment): Unit = ()
@@ -407,7 +407,7 @@ object Visitor {
     val EqualityConstraint(cst, tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) { return }
 
-    c.consumeEqConstraint(ec)
+    c.consumeEqualityConstraint(ec)
 
     visitAssocTypeConstructor(cst)
     visitType(tpe1)
