@@ -33,7 +33,6 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  // MATT extract this to type reduction
   def reduce(tpe0: Type)(implicit scope: Scope, tracker: Tracker, renv0: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
@@ -111,7 +110,6 @@ object TypeReduction2 {
         case t => Type.JvmToType(t, loc)
       }
 
-    // MATT how to organize?
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
       member.map(reduce) match {
         case JvmMember.JvmConstructor(clazz, tpes) =>
