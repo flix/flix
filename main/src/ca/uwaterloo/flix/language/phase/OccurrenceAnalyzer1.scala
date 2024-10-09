@@ -99,7 +99,7 @@ object OccurrenceAnalyzer1 {
     val (e, oi) = visitExp(defn.sym, defn.exp)
     val fparams = defn.fparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
     // Def consists of a single direct call to a def
-    val isDirectCall = e match {
+    val isDirectCall = e match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
       case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _) => true
       case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
         clo match {
