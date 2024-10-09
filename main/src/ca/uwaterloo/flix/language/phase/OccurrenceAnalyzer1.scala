@@ -80,8 +80,8 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Visits every definition in the program in parallel and perform occurrence analysis.
-    * Set the occurrence of each `def` based on the occurrence found in `defOccur`
+    * Performs occurrence analysis on every entry in `defs0` in parallel.
+    * Sets the occurrence of each `def` based on the occurrence found in `defOccur`. TODO: What does this mean?
     */
   private def visitDefs(defs0: Map[DefnSym, SimplifiedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst1.Def] = {
     val (ds, os) = ParOps.parMap(defs0.values)((d: SimplifiedAst.Def) => visitDef(d)).unzip
@@ -96,7 +96,7 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Visits a definition in the program and performs occurrence analysis
+    * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn: SimplifiedAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
     val (e, oi) = visitExp(defn.sym, defn.exp)
@@ -133,7 +133,7 @@ object OccurrenceAnalyzer1 {
     OccurrenceAst1.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
   /**
-    * Performs occurrence analysis on the given expression `exp0`
+    * Performs occurrence analysis on `exp0`
     */
   private def visitExp(sym0: Symbol.DefnSym, exp0: SimplifiedAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
     case Expr.Cst(cst, tpe, loc) => (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
@@ -261,7 +261,7 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
+    * Performs occurrence analysis on a list of expressions `exps`` and merges occurrences.
     */
   private def visitExps(sym0: Symbol.DefnSym, exps: List[SimplifiedAst.Expr]): (List[OccurrenceAst1.Expr], OccurInfo) = {
     val (es, o1) = exps.map(visitExp(sym0, _)).unzip
@@ -270,21 +270,21 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineBranch`.
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAllBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineBranch)
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineSeq`.
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAllSeq(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineSeq)
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the argument `combine`.
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
@@ -294,7 +294,7 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type using the argument `combine`.
+    * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type.
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)

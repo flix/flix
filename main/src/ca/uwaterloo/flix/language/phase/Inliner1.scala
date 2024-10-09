@@ -25,14 +25,15 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, SimplifiedAst, OccurrenceAst1, 
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
-  * The inliner replaces closures and functions by their code to improve performance.
+  * The inliner optionally performs beta-reduction at call-sites.
+  * TODO: Improve this documentation
   */
 object Inliner1 {
 
   sealed trait Expr
 
   object Expr {
-    case class LiftedExp(exp: SimplifiedAst.Expr) extends Expr
+    case class SimplifiedExp(exp: SimplifiedAst.Expr) extends Expr
 
     case class OccurrenceExp(exp: OccurrenceAst1.Expr) extends Expr
   }
@@ -298,7 +299,7 @@ object Inliner1 {
   }
 
   /**
-    * Checks if `occur` is dead and  `exp` is pure.
+    * Checks if `occur` is dead and `exp` is pure.
     */
   private def isDeadAndPure(occur: OccurrenceAst1.Occur, exp: SimplifiedAst.Expr): Boolean = (occur, exp.purity) match {
     case (Dead, Pure) => true
@@ -331,7 +332,7 @@ object Inliner1 {
   }
 
   /**
-    * returns `true` if `exp0` is considered a trivial expression.
+    * Returns `true` if `exp0` is considered a trivial expression.
     *
     * An expression is trivial if:
     * It is either a literal (float, string, int, bool, unit), or it is a variable.
@@ -441,7 +442,7 @@ object Inliner1 {
   }
 
   /**
-    * Translates the given formal parameter `fparam` from OccurrenceAst1.FormalParam into a lifted formal parameter.
+    * Translates the given formal parameter `fparam` from [[OccurrenceAst1.FormalParam]] into a [[SimplifiedAst.FormalParam]].
     */
   private def visitFormalParam(fparam: OccurrenceAst1.FormalParam): SimplifiedAst.FormalParam = fparam match {
     case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
