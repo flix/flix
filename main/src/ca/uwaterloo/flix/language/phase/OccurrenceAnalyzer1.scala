@@ -98,7 +98,7 @@ object OccurrenceAnalyzer1 {
   private def visitDef(defn: SimplifiedAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
     val (e, oi) = visitExp(defn.sym, defn.exp)
     val fparams = defn.fparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
-    /// Def consists of a single direct call to a def
+    // Def consists of a single direct call to a def
     val isDirectCall = e match {
       case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _) => true
       case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
