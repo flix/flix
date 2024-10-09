@@ -27,20 +27,20 @@ object TypeReconstruction {
     * Reconstructs types in the given def.
     */
   def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
-    case KindedAst.Def(sym, spec0, exp0) =>
+    case KindedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0, subst)
       val exp = visitExp(exp0)(subst)
-      TypedAst.Def(sym, spec, exp)
+      TypedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
   def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
-    case KindedAst.Sig(sym, spec0, exp0) =>
+    case KindedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0, subst)
       val exp = exp0.map(visitExp(_)(subst))
-      TypedAst.Sig(sym, spec, exp)
+      TypedAst.Sig(sym, spec, exp, loc)
   }
 
   /**
@@ -78,9 +78,9 @@ object TypeReconstruction {
     * Reconstructs types in the given operation.
     */
   def visitOp(op: KindedAst.Op): TypedAst.Op = op match {
-    case KindedAst.Op(sym, spec0) =>
+    case KindedAst.Op(sym, spec0, loc) =>
       val spec = visitSpec(spec0, Substitution.empty)
-      TypedAst.Op(sym, spec)
+      TypedAst.Op(sym, spec, loc)
   }
 
   /**

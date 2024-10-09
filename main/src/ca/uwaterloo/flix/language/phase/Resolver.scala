@@ -149,8 +149,8 @@ object Resolver {
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
-    case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.Op(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.Sig(sym, spec, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
@@ -358,7 +358,7 @@ object Resolver {
       resolveTrait(trt, env0, ns0)
     case inst@NamedAst.Declaration.Instance(doc, ann, mod, trt, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
       resolveInstance(inst, env0, ns0)
-    case defn@NamedAst.Declaration.Def(sym, spec, exp) =>
+    case defn@NamedAst.Declaration.Def(sym, spec, exp, _) =>
       resolveDef(defn, None, env0)(ns0, taenv, root, flix)
     case enum0@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum0, env0, taenv, ns0, root)
@@ -370,8 +370,8 @@ object Resolver {
       Validation.success(taenv(sym))
     case eff@NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
       resolveEffect(eff, env0, taenv, ns0, root)
-    case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
-    case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
+    case op@NamedAst.Declaration.Op(sym, spec, _) => throw InternalCompilerException("unexpected op", sym.loc)
+    case NamedAst.Declaration.Sig(sym, spec, exp, _) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.StructField(_, sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
@@ -479,7 +479,7 @@ object Resolver {
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
   private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
-    case NamedAst.Declaration.Sig(sym, spec0, exp0) =>
+    case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
       flatMapN(specVal) {
@@ -488,7 +488,7 @@ object Resolver {
           val specCheckVal = checkSigSpec(sym, spec, traitTvar)
           val expVal = traverseOpt(exp0)(resolveExp(_, env)(Scope.Top, ns0, taenv, root, flix))
           mapN(specCheckVal, expVal) {
-            case (_, exp) => ResolvedAst.Declaration.Sig(sym, spec, exp)
+            case (_, exp) => ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
           }
       }
   }
@@ -497,7 +497,7 @@ object Resolver {
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
-    case NamedAst.Declaration.Def(sym, spec0, exp0) =>
+    case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
 
       val specVal = resolveSpec(spec0, tconstr, env0, taenv, ns0, root)
@@ -506,7 +506,7 @@ object Resolver {
           val env = env0 ++ mkSpecEnv(spec)
           val expVal = resolveExp(exp0, env)(Scope.Top, ns0, taenv, root, flix)
           mapN(expVal) {
-            case exp => ResolvedAst.Declaration.Def(sym, spec, exp)
+            case exp => ResolvedAst.Declaration.Def(sym, spec, exp, loc)
           }
       }
   }
@@ -641,10 +641,10 @@ object Resolver {
     * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
     */
   private def resolveOp(op0: NamedAst.Declaration.Op, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Op, ResolutionError] = op0 match {
-    case NamedAst.Declaration.Op(sym, spec0) =>
+    case NamedAst.Declaration.Op(sym, spec0, loc) =>
       val specVal = resolveSpec(spec0, None, env, taenv, ns0, root)
       mapN(specVal) {
-        spec => ResolvedAst.Declaration.Op(sym, spec)
+        spec => ResolvedAst.Declaration.Op(sym, spec, loc)
       }
   }
 
@@ -3744,8 +3744,8 @@ object Resolver {
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => sym
     case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym
-    case NamedAst.Declaration.Sig(sym, spec, exp) => sym
-    case NamedAst.Declaration.Def(sym, spec, exp) => sym
+    case NamedAst.Declaration.Sig(sym, spec, exp, _) => sym
+    case NamedAst.Declaration.Def(sym, spec, exp, _) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym
@@ -3753,7 +3753,7 @@ object Resolver {
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
-    case NamedAst.Declaration.Op(sym, spec) => sym
+    case NamedAst.Declaration.Op(sym, spec, _) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
