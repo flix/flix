@@ -132,12 +132,16 @@ object OccurrenceAnalyzer1 {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(sym0: Symbol.DefnSym, exp0: SimplifiedAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
+  private def visitExp(sym0: Symbol.DefnSym, exp0: SimplifiedAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match { // TODO (refactor): Add local function `visit` that captures `sym0`
     case Expr.Cst(cst, tpe, loc) => (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
     case Expr.Var(sym, tpe, loc) => (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
-    case Expr.Lambda(fparams, exp, tpe, loc) => ???
+    case Expr.Lambda(fparams, exp, tpe, loc) =>
+      // TODO: Map every Once occurrence to OnceInLambda
+      val fps = fparams.map(visitFormalParam)
+      val (e, o) = visitExp(sym0, exp)
+      (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), o)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
