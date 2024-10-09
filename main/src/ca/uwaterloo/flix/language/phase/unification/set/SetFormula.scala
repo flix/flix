@@ -827,12 +827,12 @@ object SetFormula {
         val fProp = debug(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
-          case Cst(c) => currentInsts += (c -> Univ)
-          case Compl(Cst(c)) => currentInsts += (c -> Empty)
-          case Var(x) => currentInsts += (x -> Univ)
-          case Compl(Var(x)) => currentInsts += (x -> Empty)
-          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Univ)
-          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Empty)
+          case Cst(c) => currentInsts += (c -> Empty)
+          case Compl(Cst(c)) => currentInsts += (c -> Univ)
+          case Var(x) => currentInsts += (x -> Empty)
+          case Compl(Var(x)) => currentInsts += (x -> Univ)
+          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Empty)
+          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Univ)
           case Univ => ()
           case Empty => ()
           case Compl(_) => ()
