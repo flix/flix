@@ -132,8 +132,8 @@ object Inliner1 {
           }
       }
 
-    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) =>
-      val fps = fparams.map(visitFormalParam)
+    case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
+      val fps = visitFormalParam(fparam)
       val e = visitExp(exp, subst0)
       MonoAst.Expr.Lambda(fps, e, tpe, loc)
 
