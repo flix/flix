@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Purity, Symbol, Type}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -169,7 +169,7 @@ object Inliner1 {
         case _ => MonoAst.Expr.ApplyClo(e, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst1.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
@@ -178,7 +178,7 @@ object Inliner1 {
       if (canInlineDef(def1)) {
         bindFormals(def1.exp, def1.fparams, es, Map.empty)
       } else {
-        MonoAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+        MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, purity, loc)
       }
 
     case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
@@ -338,24 +338,25 @@ object Inliner1 {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
-  private def bindFormals(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, OccurrenceAst1.Occur)], args: List[MonoAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
-    (symbols, args) match {
-      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1) =>
-        // if the parameter is unused and the argument is pure, then throw it away.
-        bindFormals(exp0, nextSymbols, nextExpressions, env0)
-      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
-        // if the parameter is unused and the argument is NOT pure, then put it in a statement.
-        val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
-        val purity = Purity.combine(e1.purity, nextLet.purity)
-        MonoAst.Expr.Stm(e1, nextLet, exp0.tpe, purity, exp0.loc)
-      case ((formal, _) :: nextSymbols, e1 :: nextExpressions) =>
-        val freshVar = Symbol.freshVarSym(formal.sym)
-        val env1 = env0 + (formal.sym -> freshVar)
-        val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
-        val purity = Purity.combine(e1.purity, nextLet.purity)
-        MonoAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
-      case _ => applySubst(exp0, env0)
-    }
+  private def bindFormals(exp0: OccurrenceAst1.Expr, symbols: List[OccurrenceAst1.FormalParam], args: List[MonoAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = (symbols, args) match {
+    case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1) =>
+      // if the parameter is unused and the argument is pure, then throw it away.
+      bindFormals(exp0, nextSymbols, nextExpressions, env0)
+
+    case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
+      // if the parameter is unused and the argument is NOT pure, then put it in a statement.
+      val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
+      val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
+      MonoAst.Expr.Stm(e1, nextLet, exp0.tpe, eff, exp0.loc)
+
+    case (OccurrenceAst1.FormalParam(sym, _, _, _, _, _) :: nextSymbols, e1 :: nextExpressions) =>
+      val freshVar = Symbol.freshVarSym(sym)
+      val env1 = env0 + (sym -> freshVar)
+      val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
+      val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
+      MonoAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, eff, exp0.loc)
+
+    case _ => applySubst(exp0, env0)
   }
 
   /**
