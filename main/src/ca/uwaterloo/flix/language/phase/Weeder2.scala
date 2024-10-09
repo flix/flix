@@ -3065,17 +3065,17 @@ object Weeder2 {
   }
 
   private def visitQName(tree: Tree): Validation[Name.QName, CompilationMessage] = {
-    expect(tree, TreeKind.QName)
     val idents = pickAll(TreeKind.Ident, tree)
     mapN(traverse(idents)(tokenToIdent)) {
-      idents =>
-        assert(idents.nonEmpty) // We require atleast one element to construct a qname
+      case idents if idents.nonEmpty => // We require at least one element to construct a qname
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
         val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
         val nname = Name.NName(nnameIdents, loc)
         Name.QName(nname, ident, loc)
+      case nothing => // Return None instead?
+        Name.mkQName("error", SourceLocation.Unknown)
     }
   }
 
