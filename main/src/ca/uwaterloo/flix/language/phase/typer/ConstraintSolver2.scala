@@ -408,11 +408,11 @@ object ConstraintSolver2 {
     *
     * Returns None if the type are not unifiable.
     */
-  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit tracker: Tracker, scope: Scope, eqenv: EqualityEnv, flix: Flix): Option[Substitution] = {
+  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, eqenv: EqualityEnv, flix: Flix): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
     val constr = TypeConstraint.Equality(tpe1, tpe2)
     implicit val r = renv
-    goTypes(List(constr)) match { // MATT need to goAllTypes
+    goAllTypes(List(constr)) match {
       // Case 1: No constraints left. Success.
       case (Nil, subst) => Some(subst)
 
