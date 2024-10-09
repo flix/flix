@@ -243,7 +243,7 @@ object ConstraintSolver2 {
     *
     * Only applies rules relevant to equality constraints.
     */
-  def goTypes(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, Substitution) = {
+  private def goTypes(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, Substitution) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
