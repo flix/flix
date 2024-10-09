@@ -333,7 +333,7 @@ object Inliner1 {
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
         val purity = Purity.combine(e1.purity, nextLet.purity)
         SimplifiedAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
-      case _ => substituteExp(exp0, env0)
+      case _ => applySubst(exp0, env0)
     }
   }
 
@@ -355,7 +355,7 @@ object Inliner1 {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def substituteExp(exp0: OccurrenceAst1.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
+  private def applySubst(exp0: OccurrenceAst1.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) => SimplifiedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) => SimplifiedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
@@ -371,36 +371,36 @@ object Inliner1 {
         case (sym, fp) => sym -> fp.sym
       }.toMap
       val env1 = env0 ++ fpsEnv
-      val e = substituteExp(exp, env1)
+      val e = applySubst(exp, env1)
       SimplifiedAst.Expr.Lambda(fps, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
+      val es = exps.map(applySubst(_, env0))
       SimplifiedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      val es = exps.map(substituteExp(_, env0))
+      val e = applySubst(exp, env0)
+      val es = exps.map(applySubst(_, env0))
       SimplifiedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
+      val es = exps.map(applySubst(_, env0))
       SimplifiedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
+      val es = exps.map(applySubst(_, env0))
       SimplifiedAst.Expr.ApplyLocalDef(env0.getOrElse(sym, sym), es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
-      val e3 = substituteExp(exp3, env0)
+      val e1 = applySubst(exp1, env0)
+      val e2 = applySubst(exp2, env0)
+      val e3 = applySubst(exp3, env0)
       SimplifiedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Branch(exp, branches, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
+      val e = applySubst(exp, env0)
       val bs = branches.map {
-        case (sym, br) => sym -> substituteExp(br, env0)
+        case (sym, br) => sym -> applySubst(br, env0)
       }
       SimplifiedAst.Expr.Branch(e, bs, tpe, purity, loc)
 
@@ -409,8 +409,8 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Let(sym, exp1, exp2, _, tpe, purity, loc) =>
       val freshVar = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshVar)
-      val e1 = substituteExp(exp1, env1)
-      val e2 = substituteExp(exp2, env1)
+      val e1 = applySubst(exp1, env1)
+      val e2 = applySubst(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) =>
@@ -425,42 +425,42 @@ object Inliner1 {
         case (sym, fp) => sym -> fp.sym
       }.toMap
       val env1 = env0 + (sym -> newSym)
-      val e1 = substituteExp(exp1, env1 ++ fpsEnv)
-      val e2 = substituteExp(exp2, env1)
+      val e1 = applySubst(exp1, env1 ++ fpsEnv)
+      val e2 = applySubst(exp2, env1)
       SimplifiedAst.Expr.LocalDef(newSym, fps, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
+      val e1 = applySubst(exp1, env0)
+      val e2 = applySubst(exp2, env0)
       SimplifiedAst.Expr.Stm(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, exp, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
+      val e = applySubst(exp, env0)
       SimplifiedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
+      val e = applySubst(exp, env0)
       val rs = rules.map {
         case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
           val freshVar = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshVar)
-          val e = substituteExp(exp, env1)
+          val e = applySubst(exp, env1)
           SimplifiedAst.CatchRule(freshVar, clazz, e)
       }
       SimplifiedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
+      val e = applySubst(exp, env0)
       val rs = rules.map {
         case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
           val fps = fparams.map(visitFormalParam)
-          val e = substituteExp(exp, env0)
+          val e = applySubst(exp, env0)
           SimplifiedAst.HandlerRule(op, fps, e)
       }
       SimplifiedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
+      val es = exps.map(applySubst(_, env0))
       SimplifiedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
@@ -469,7 +469,7 @@ object Inliner1 {
           val f = fparams.map {
             case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
           }
-          val c = substituteExp(clo, env0)
+          val c = applySubst(clo, env0)
           SimplifiedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
