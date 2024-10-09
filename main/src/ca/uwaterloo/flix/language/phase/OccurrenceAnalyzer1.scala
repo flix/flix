@@ -83,8 +83,8 @@ object OccurrenceAnalyzer1 {
   private def visitDefs(defs0: Map[DefnSym, SimplifiedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst1.Def] = {
     val (ds, os) = ParOps.parMap(defs0.values)((d: SimplifiedAst.Def) => visitDef(d)).unzip
 
-    // Combine all `defOccurrences` into 1 map.
-    val defOccur = os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
+    // Combine all `defOccurrences` into one map.
+    val defOccur = combineAll(os)
 
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     ds.foldLeft(Map.empty[DefnSym, OccurrenceAst1.Def]) {
@@ -267,21 +267,21 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAllBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineBranch)
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAllSeq(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineSeq)
   }
 
   /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
@@ -291,7 +291,7 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type.
+    * Combines maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type.
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
@@ -300,6 +300,13 @@ object OccurrenceAnalyzer1 {
         val occur = combine(v, acc.getOrElse(k, Dead))
         acc + (k -> occur)
     }
+  }
+
+  /**
+    * Combines all [[OccurInfo]] in `os` and maps each [[DefnSym]] to its corresponding [[OccurInfo]].
+    */
+  private def combineAll(os: Iterable[OccurInfo]): Map[DefnSym, Occur] = {
+    os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
   }
 
   /**
