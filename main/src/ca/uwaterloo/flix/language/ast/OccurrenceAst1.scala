@@ -1,5 +1,6 @@
 /*
- * Copyright 2022 Magnus Madsen, Christian Bonde, Patrick Lundvig, Anna Krogh
+ * Copyright 2024 Magnus Madsen, Christian Bonde, Patrick Lundvig, Anna Krogh
+ * 2024 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
