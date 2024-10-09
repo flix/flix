@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
   */
-object Optimizer {
+object Optimizer2 {
 
   /**
     * Returns an optimized version of the given AST `root`.
@@ -35,8 +35,8 @@ object Optimizer {
     } else {
       var result = root
       for (_ <- 1 to 2) {
-        val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
-        val afterInliner = Inliner.run(afterOccurrenceAnalyzer)
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer2.run(result)
+        val afterInliner = Inliner2.run(afterOccurrenceAnalyzer)
         result = afterInliner.unsafeGet
       }
       result

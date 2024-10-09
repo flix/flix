@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 /**
   * The inliner replaces closures and functions by their code to improve performance.
   */
-object Inliner {
+object Inliner2 {
 
   sealed trait Expr
 

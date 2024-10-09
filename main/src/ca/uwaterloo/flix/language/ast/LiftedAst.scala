@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
-import ca.uwaterloo.flix.language.phase.Inliner
+import ca.uwaterloo.flix.language.phase.Inliner2
 
 object LiftedAst {
 
@@ -69,7 +69,7 @@ object LiftedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    @IntroducedBy(Inliner.getClass)
+    @IntroducedBy(Inliner2.getClass)
     case class Stm(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
