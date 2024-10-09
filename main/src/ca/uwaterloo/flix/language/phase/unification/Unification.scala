@@ -42,11 +42,10 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
-    implicit val t: ConstraintSolver2.Tracker = ConstraintSolver2.Tracker()
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    val (leftovers, subst) = ConstraintSolver2.goTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
-    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
+    val (leftovers, subst) = ConstraintSolver2.goAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
+    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), true)) // MATT hack: assuming progress
   }
 
   /**
