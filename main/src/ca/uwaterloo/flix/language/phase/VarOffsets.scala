@@ -94,11 +94,6 @@ object VarOffsets {
       val i2 = visitExp(exp1, i1)
       visitExp(exp2, i2)
 
-    case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
-      val i1 = setStackOffset(varSym, exp1.tpe, i0)
-      val i2 = visitExp(exp1, i1)
-      visitExp(exp2, i2)
-
     case Expr.Stmt(exp1, exp2, _, _, _) =>
       val i1 = visitExp(exp1, i0)
       visitExp(exp2, i1)

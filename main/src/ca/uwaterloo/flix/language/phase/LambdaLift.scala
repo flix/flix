@@ -160,24 +160,6 @@ object LambdaLift {
       val e2 = visitExp(exp2)
       LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      e1 match {
-        case LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(defSym), closureArgs, _, _, _) =>
-          val index = closureArgs.indexWhere {
-            case LiftedAst.Expr.Var(sym, _, _) => varSym == sym
-            case _ => false
-          }
-          if (index == -1) {
-            // function never calls itself
-            LiftedAst.Expr.Let(varSym, e1, e2, tpe, purity, loc)
-          } else
-            LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
-        case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
-      }
-
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
