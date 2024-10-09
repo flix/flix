@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Modifiers, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 
 object OccurrenceAst1 {
