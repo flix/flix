@@ -387,7 +387,9 @@ object Inliner1 {
       val es = exps.map(substituteExp(_, env0))
       SimplifiedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      SimplifiedAst.Expr.ApplyLocalDef(env0.getOrElse(sym, sym), es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -411,7 +413,21 @@ object Inliner1 {
       val e2 = substituteExp(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) =>
+      val newSym = Symbol.freshVarSym(sym)
+      val freshFps = fparams.map {
+        case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
+          val newSym = Symbol.freshVarSym(sym)
+          sym -> SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
+      }
+      val fps = freshFps.map(_._2)
+      val fpsEnv = freshFps.map {
+        case (sym, fp) => sym -> fp.sym
+      }.toMap
+      val env1 = env0 + (sym -> newSym)
+      val e1 = substituteExp(exp1, env1 ++ fpsEnv)
+      val e2 = substituteExp(exp2, env1)
+      SimplifiedAst.Expr.LocalDef(newSym, fps, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
