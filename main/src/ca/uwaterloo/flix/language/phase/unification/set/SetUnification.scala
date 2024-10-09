@@ -195,7 +195,7 @@ object SetUnification {
     *   - equations that occur multiple types
     *   - `f ~ f` (syntactically trivial)
     */
-  def eliminateTrivialAndRedundant(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def eliminateTrivialAndRedundant(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var result: List[Equation] = Nil
     val seen = mutable.Set.empty[Equation]
     var changed = false
@@ -217,7 +217,7 @@ object SetUnification {
   /**
     * Applies [[sve]] on `eqs`, trying multiple different orderings to minimize substitution size.
     */
-  def svePermuations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def svePermuations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
     // We solve the first `permutationLimit` permutations and pick the one that
     // gives rise to the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
