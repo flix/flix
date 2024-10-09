@@ -772,7 +772,7 @@ object SetFormula {
           case Inter(_, _, _, _, _, _, _) => ()
           case Union(_, _, _, _, _, _, _) => ()
         }
-        other.appended(fProp)
+        other.append(fProp)
       }
       mkInterAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
 
@@ -839,7 +839,7 @@ object SetFormula {
           case Inter(_, _, _, _, _, _, _) => ()
           case Union(_, _, _, _, _, _, _) => ()
         }
-        other.appended(fProp)
+        other.append(fProp)
       }
       mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
   }
