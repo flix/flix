@@ -24,7 +24,7 @@ mod Benchmark.Inliner.Optimized {
     pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
         case Nil     => acc
         case x :: xs =>
-            if (Int32.remainder(x, 2))
+            if (Int32.remainder(x, 2) == 0)
                 fmp(xs, acc)
             else
                 fmp(xs, x :: acc)

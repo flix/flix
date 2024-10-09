@@ -26,7 +26,7 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "List.map"       => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
     "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
     "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "List.filterMap" => () -> List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2)) Some(x) else None) |> blackhole,
+    "List.filterMap" => () -> List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole,
     "InlinerMap10k"  => () -> {
         let l1 = Benchmark.Inliner.range(0, 10_000);
         let l2 = Benchmark.Inliner.map(x -> x + 1, l1);
