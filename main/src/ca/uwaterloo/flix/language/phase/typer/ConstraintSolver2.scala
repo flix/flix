@@ -25,7 +25,10 @@ import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
-// MATT docs
+/**
+  * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
+  * The result of constraint solving is a substitution and a list of constraints that could not be resolved.
+  */
 object ConstraintSolver2 {
 
   sealed trait TypeConstraint
@@ -66,13 +69,13 @@ object ConstraintSolver2 {
   /**
     * A mutable class used for tracking whether progress has been made.
     */
-  case class Tracker(private var progress: Boolean = false) {
+  case class Progress(private var progressMade: Boolean = false) {
     def markProgress(): Unit = {
-      progress = true
+      progressMade = true
     }
 
     def query(): Boolean = {
-      progress
+      progressMade
     }
   }
 
@@ -191,7 +194,7 @@ object ConstraintSolver2 {
     var subst = SubstitutionTree.empty
     var progressMade = true
     while (progressMade) {
-      implicit val tracker: Tracker = Tracker()
+      implicit val tracker: Progress = Progress()
       val (newConstrs, newSubst) = goOne(constrs)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
@@ -211,7 +214,7 @@ object ConstraintSolver2 {
     var subst = Substitution.empty
     var progressMade = true
     while (progressMade) {
-      implicit val tracker: Tracker = Tracker()
+      implicit val tracker: Progress = Progress()
       val (newConstrs, newSubst) = goTypes(constrs)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
@@ -224,7 +227,7 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = {
+  private def goOne(constrs: ConstraintSet)(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
@@ -243,7 +246,7 @@ object ConstraintSolver2 {
     *
     * Only applies rules relevant to equality constraints.
     */
-  private def goTypes(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, Substitution) = {
+  private def goTypes(constrs: ConstraintSet)(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, Substitution) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
@@ -295,7 +298,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (appU)
-  private def breakDownConstraints(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
+  private def breakDownConstraints(constr: TypeConstraint)(implicit tracker: Progress): ConstraintSet = constr match {
     case TypeConstraint.Equality(t1@Type.Apply(tpe11, tpe12, _), t2@Type.Apply(tpe21, tpe22, _)) if isSyntactic(t1.kind) && isSyntactic(t2.kind) =>
       tracker.markProgress()
       List(TypeConstraint.Equality(tpe11, tpe21), TypeConstraint.Equality(tpe12, tpe22))
@@ -321,7 +324,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (reflU)
-  private def eliminateIdentities(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
+  private def eliminateIdentities(constr: TypeConstraint)(implicit tracker: Progress): ConstraintSet = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2) =>
       if (tpe1 == tpe2) {
         tracker.markProgress()
@@ -361,7 +364,7 @@ object ConstraintSolver2 {
     *   instance Ord[List[a]] with Ord[a]
     * }}}
     */
-  private def contextReduction(constr: TypeConstraint)(implicit tracker: Tracker, scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): ConstraintSet = constr match {
+  private def contextReduction(constr: TypeConstraint)(implicit tracker: Progress, scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): ConstraintSet = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
 
@@ -424,7 +427,7 @@ object ConstraintSolver2 {
   /**
     * Performs effect unification on the given type constraint.
     */
-  private def effectUnification(constr: TypeConstraint)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
+  private def effectUnification(constr: TypeConstraint)(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2) if tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff =>
       EffUnification.unify(tpe1, tpe2, renv) match {
         case Result.Ok((subst, newConstrs)) => (newConstrs.map(broadEqualityConstraintToTypeConstraint), SubstitutionTree(subst, Map()))
@@ -443,7 +446,7 @@ object ConstraintSolver2 {
   /**
     * Performs record row unification on the given type constraint.
     */
-  private def recordUnification(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
+  private def recordUnification(constr: TypeConstraint)(implicit scope: Scope, tracker: Progress, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
       RecordConstraintSolver2.solve(tpe1, tpe2) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
@@ -461,7 +464,7 @@ object ConstraintSolver2 {
   /**
     * Performs schema row unification on the given type constraint.
     */
-  private def schemaUnification(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
+  private def schemaUnification(constr: TypeConstraint)(implicit scope: Scope, tracker: Progress, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
       SchemaConstraintSolver2.solve(tpe1, tpe2) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
@@ -480,7 +483,7 @@ object ConstraintSolver2 {
     * Performs reduction on the types in the given type constraints.
     */
   // (redU)
-  private def reduceTypes(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv0: RigidityEnv, eqenv: EqualityEnv, flix: Flix): TypeConstraint = constr match {
+  private def reduceTypes(constr: TypeConstraint)(implicit scope: Scope, tracker: Progress, renv0: RigidityEnv, eqenv: EqualityEnv, flix: Flix): TypeConstraint = constr match {
     case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(reduce(tpe1), reduce(tpe2))
     case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, reduce(tpe))
     case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(sym, reduce(eff1), reduce(eff2), nested)
@@ -501,7 +504,7 @@ object ConstraintSolver2 {
     */
   // (varU)
   // TODO CONSTR-SOLVER-2 make private
-  def makeSubstitution(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv): (ConstraintSet, SubstitutionTree) = constr match {
+  def makeSubstitution(constr: TypeConstraint)(implicit scope: Scope, tracker: Progress, renv: RigidityEnv): (ConstraintSet, SubstitutionTree) = constr match {
     case TypeConstraint.Equality(Type.Var(sym, _), tpe2) if !renv.isRigid(sym) && sym.kind == tpe2.kind =>
       tracker.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
