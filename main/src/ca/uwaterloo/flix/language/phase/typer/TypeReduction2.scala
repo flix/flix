@@ -18,12 +18,9 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.{EqualityEnv, Tracker}
-import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
+import ca.uwaterloo.flix.util.JvmUtils
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -205,8 +202,8 @@ object TypeReduction2 {
   }
 
   /**
-   * Returns the Java reflective class object corresponding to the given Flix `tpe`.
-   */
+    * Returns the Java reflective class object corresponding to the given Flix `tpe`.
+    */
   def getJavaType(tpe: Type): Class[?] = tpe match {
     case Type.Bool => java.lang.Boolean.TYPE
     case Type.Int8 => java.lang.Byte.TYPE
@@ -306,9 +303,9 @@ object TypeReduction2 {
     case object NotFound extends JavaFieldResolution
 
     /**
-     * The types of the lookup are not resolved enough to decide
-     * (it contains type variables, associated types, etc.).
-     */
+      * The types of the lookup are not resolved enough to decide
+      * (it contains type variables, associated types, etc.).
+      */
     case object UnresolvedTypes extends JavaFieldResolution
 
   }
@@ -325,9 +322,9 @@ object TypeReduction2 {
     case object NotFound extends JavaMethodResolution
 
     /**
-     * The types of the lookup are not resolved enough to decide
-     * (they contain type variables, associated types, etc.).
-     */
+      * The types of the lookup are not resolved enough to decide
+      * (they contain type variables, associated types, etc.).
+      */
     case object UnresolvedTypes extends JavaMethodResolution
 
   }
@@ -344,9 +341,9 @@ object TypeReduction2 {
     case object NotFound extends JavaConstructorResolution
 
     /**
-     * The types of the lookup are not resolved enough to decide
-     * (they contain type variables, associated types, etc.).
-     */
+      * The types of the lookup are not resolved enough to decide
+      * (they contain type variables, associated types, etc.).
+      */
     case object UnresolvedTypes extends JavaConstructorResolution
 
   }
