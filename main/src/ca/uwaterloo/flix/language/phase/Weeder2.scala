@@ -1911,6 +1911,8 @@ object Weeder2 {
           case Expr.Apply(Expr.Ambiguous(qname, _), _, _) =>
             val error = UnexpectedIdent(qname.toString, channel.loc, expected = Some("Channel.recv"))
             Validation.toSoftFailure(SelectChannelRule(ident, channel, body), error)
+          case _ => // Unreachable case, since this is a parser error
+            throw InternalCompilerException(s"unexpected malformed select rule: $ident", ident.loc)
         }
         case (ident, _) => // Unreachable case, since this is a parser error
           throw InternalCompilerException(s"unexpected malformed select rule: $ident", ident.loc)
