@@ -93,8 +93,8 @@ object Inliner1 {
   }
 
   /**
-    * Performs inlining operations on the expression `exp0` of Monotype OccurrenceAst1.Expression.
-    * Returns an expression of Monotype Expression
+    * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
+    * Returns a [[SimplifiedAst.Expr]]
     */
   private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst1.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) => SimplifiedAst.Expr.Cst(cst, tpe, loc)
@@ -346,6 +346,8 @@ object Inliner1 {
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) => SimplifiedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => ???
+
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
       SimplifiedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
@@ -358,6 +360,8 @@ object Inliner1 {
     case OccurrenceAst1.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
       SimplifiedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -380,6 +384,8 @@ object Inliner1 {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -140,6 +140,8 @@ object OccurrenceAnalyzer1 {
 
     case Expr.Var(sym, tpe, loc) => (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
+    case Expr.Lambda(fparams, exp, tpe, loc) => ???
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
       val o1 = op match {
@@ -204,6 +206,8 @@ object OccurrenceAnalyzer1 {
       val o4 = o3.copy(vars = o3.vars - sym)
       (OccurrenceAst1.Expr.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
 
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
+
     case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
@@ -251,6 +255,8 @@ object OccurrenceAnalyzer1 {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
+
+    case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException("unexpected lambda closure expression", loc)
 
   }
 

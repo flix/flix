@@ -22,13 +22,13 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, 
 
 object OccurrenceAst1 {
 
-  case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst1.Def],
-                  effects: Map[Symbol.EffectSym, OccurrenceAst1.Effect],
+  case class Root(defs: Map[Symbol.DefnSym, Def],
+                  effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[(OccurrenceAst1.FormalParam, Occur)], exp: OccurrenceAst1.Expr, context: DefContext, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], exp: Expr, context: DefContext, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -44,49 +44,55 @@ object OccurrenceAst1 {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst1.Expr {
+    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst1.Expr {
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
+      def purity: Purity = Pure
+    }
 
-    case class ApplyClo(exp: OccurrenceAst1.Expr, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: OccurrenceAst1.Expr, exp2: OccurrenceAst1.Expr, exp3: OccurrenceAst1.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst1.Expr, exp2: OccurrenceAst1.Expr, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Stmt(exp1: OccurrenceAst1.Expr, exp2: OccurrenceAst1.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst1.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: OccurrenceAst1.Expr, rules: List[OccurrenceAst1.CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class Stmt(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: OccurrenceAst1.Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst1.JvmMethod], loc: SourceLocation) extends OccurrenceAst1.Expr
+    case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst1.FormalParam], clo: OccurrenceAst1.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: OccurrenceAst1.Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst1.Expr)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
 
