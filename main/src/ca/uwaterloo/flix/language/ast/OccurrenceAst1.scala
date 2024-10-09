@@ -72,7 +72,7 @@ object OccurrenceAst1 {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Stmt(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

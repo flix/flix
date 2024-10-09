@@ -207,7 +207,15 @@ object OccurrenceAnalyzer1 {
       val o4 = o3.copy(vars = o3.vars - sym)
       (OccurrenceAst1.Expr.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+      // TODO: Figure out if this is correct...
+      val fps = fparams.map(visitFormalParam)
+      val (e1, o1) = visitExp(sym0, exp1) // TODO: Map every Once to OnceInLocalDef unless they are bound by formal params
+      val (e2, o2) = visitExp(sym0, exp2)
+      val o3 = combineAllSeq(o1, o2)
+      val occur = o3.vars.getOrElse(sym, Dead)
+      val o4 = o3.copy(vars = o3.vars - sym)
+      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
 
     case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
