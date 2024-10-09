@@ -3126,7 +3126,7 @@ object Weeder2 {
         Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
       case _ =>
         val name = text(tree).mkString("")
-        val error = Malformed(NamedTokenSet.FromTreeKinds(Set(Kind.Ambiguous)), SyntacticContext.Unknown, tree.loc)
+        val error = Malformed(NamedTokenSet.FromTreeKinds(Set(SyntaxTree.TreeKind.Ident)), SyntacticContext.Unknown, None, tree.loc)
         Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
     }
   }
