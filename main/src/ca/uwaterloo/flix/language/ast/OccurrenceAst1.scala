@@ -30,13 +30,13 @@ object OccurrenceAst1 {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, context: DefContext)
+  case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: Spec, exp: Expr, context: DefContext)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, functionType: Type, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, spec: Spec)
+  case class Op(sym: Symbol.OpSym, fparams: List[FormalParam], spec: Spec)
 
   case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: List[StructField], loc: SourceLocation)
 
@@ -148,57 +148,11 @@ object OccurrenceAst1 {
     }
   }
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[Expr], tpe: Type, loc: SourceLocation) extends Predicate.Head
-
-    }
-
-    sealed trait Body extends Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
-
-      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
-
-      case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
-
-    }
-
-  }
-
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-
-    def tpe: Type
-
-    def loc: SourceLocation
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends ConstraintParam
-
-  }
-
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: Ast.TypeSource, occur: Occur, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
@@ -230,6 +184,9 @@ object OccurrenceAst1 {
       * Represents a variables that occur exactly once in an expression.
       */
     case object Once extends Occur
+
+    // TODO: Add OnceInLambda
+    // TODO: Add OnceInLocalDef
 
     /**
       * Represents a variable that occur in expressions more than once.

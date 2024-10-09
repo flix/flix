@@ -60,20 +60,9 @@ object OccurrenceAnalyzer1 {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
     val defs = visitDefs(root.defs)
-    val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-    OccurrenceAst1.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
-  }
-
-  private def visitEffect(effect: MonoAst.Effect): OccurrenceAst1.Effect = effect match {
-    case MonoAst.Effect(ann, mod, sym, ops0, loc) =>
-      val ops = ops0.map(visitEffectOp)
-      OccurrenceAst1.Effect(ann, mod, sym, ops, loc)
-  }
-
-  private def visitEffectOp(op: MonoAst.Op): OccurrenceAst1.Op = op match {
-    case MonoAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
-      val fparams = fparams0.map(visitFormalParam)
-      OccurrenceAst1.Op(sym, ann, mod, fparams, tpe, purity, loc)
+    val structs = visitStructs(root.structs)
+    val effects = visitEffects(root.effects)
+    OccurrenceAst1.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   /**
@@ -95,12 +84,12 @@ object OccurrenceAnalyzer1 {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
-    val (e, oi) = visitExp(defn.sym, defn.exp)
-    val fparams = defn.fparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
+  private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
+    val (e, oi) = visitExp(defn0.sym, defn0.exp)
+    val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> oi.vars.getOrElse(p.sym, Dead))
     // Def consists of a single direct call to a def
     val isDirectCall = e match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
-      case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _) => true
+      case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
       case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
         clo match {
           case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
@@ -109,7 +98,7 @@ object OccurrenceAnalyzer1 {
       case _ => false
 
     }
-    val isSelfRecursive = oi.defs.get(defn.sym) match {
+    val isSelfRecursive = oi.defs.get(defn0.sym) match {
       case None => false
       case Some(o) => o match {
         case Occur.Dead => false
@@ -119,15 +108,42 @@ object OccurrenceAnalyzer1 {
         case Occur.DontInline => false
       }
     }
-    val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn.sym, Dead), oi.size, isSelfRecursive)
-    (OccurrenceAst1.Def(defn.ann, defn.mod, defn.sym, fparams, e, defContext, defn.tpe, defn.purity, defn.loc), oi)
+    val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn0.sym, Dead), oi.size, isSelfRecursive)
+    val spec = visitSpec(defn0.spec)
+    (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext), oi)
   }
+
+  private def visitEffects(effects0: Map[Symbol.EffectSym, MonoAst.Effect]): Map[Symbol.EffectSym, OccurrenceAst1.Effect] = {
+    effects0.map { case (k, v) => k -> visitEffect(v) }
+  }
+
+  private def visitEffect(effect0: MonoAst.Effect): OccurrenceAst1.Effect = effect0 match {
+    case MonoAst.Effect(doc, ann, mod, sym, ops, loc) =>
+      val os = ops.map(visitEffectOp)
+      OccurrenceAst1.Effect(doc, ann, mod, sym, os, loc)
+  }
+
+  private def visitEffectOp(op0: MonoAst.Op): OccurrenceAst1.Op = op0 match {
+    case MonoAst.Op(sym, spec) =>
+      val sp = visitSpec(spec)
+      val fps = spec.fparams.map(visitFormalParam)
+      OccurrenceAst1.Op(sym, fps, sp)
+  }
+
+  private def visitSpec(spec0: MonoAst.Spec): OccurrenceAst1.Spec = spec0 match {
+    case MonoAst.Spec(doc, ann, mod, _, functionType, retTpe, eff, loc) =>
+      OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff, loc)
+  }
+
+  private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = ???
 
   /**
     * Translates the given formal param `p` to the OccurrenceAst1.
     */
-  private def visitFormalParam(p: MonoAst.FormalParam): OccurrenceAst1.FormalParam =
-    OccurrenceAst1.FormalParam(p.sym, p.mod, p.tpe, p.loc)
+  private def visitFormalParam(fparam0: MonoAst.FormalParam): OccurrenceAst1.FormalParam = fparam0 match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
+      OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc)
+  }
 
   /**
     * Performs occurrence analysis on `exp0`
@@ -137,9 +153,9 @@ object OccurrenceAnalyzer1 {
 
     case Expr.Var(sym, tpe, loc) => (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
-    case Expr.Lambda(fparams, exp, tpe, loc) =>
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       // TODO: Map every Once occurrence to OnceInLambda
-      val fps = fparams.map(visitFormalParam)
+      val fps = visitFormalParam(fparam)
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), o)
 
@@ -163,11 +179,11 @@ object OccurrenceAnalyzer1 {
         case _ => (OccurrenceAst1.Expr.ApplyClo(e, es, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
-    case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst1.Expr.ApplyDef(sym, es, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), o3.increaseSizeByOne())
 
     case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)
@@ -182,32 +198,15 @@ object OccurrenceAnalyzer1 {
       val o4 = combineAllSeq(o1, combineAllBranch(o2, o3))
       (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc), o4.increaseSizeByOne())
 
-    case Expr.Branch(exp, branches, tpe, purity, loc) =>
-      val (e1, o1) = visitExp(sym0, exp)
-      val (o2, bs) = branches.foldLeft(OccurInfo.Empty, Map[LabelSym, OccurrenceAst1.Expr]())((acc, b) => {
-        val (oacc, bsacc) = acc
-        b match {
-          case (sym, exp1) =>
-            val (e2, o3) = visitExp(sym0, exp1)
-            val o4 = combineAllBranch(oacc, o3)
-            val bs = bsacc + (sym -> e2)
-            (o4, bs)
-        }
-      })
-      val o5 = combineAllSeq(o1, o2)
-      (OccurrenceAst1.Expr.Branch(e1, bs, tpe, purity, loc), o5.increaseSizeByOne())
-
-    case Expr.JumpTo(sym, tpe, purity, loc) => (OccurrenceAst1.Expr.JumpTo(sym, tpe, purity, loc), OccurInfo.One)
-
-    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
       val occur = o3.vars.getOrElse(sym, Dead)
       val o4 = o3.copy(vars = o3.vars - sym)
-      (OccurrenceAst1.Expr.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
+      (OccurrenceAst1.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), o4.increaseSizeByOne())
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       // TODO: Figure out if this is correct...
       val fps = fparams.map(visitFormalParam)
       val (e1, o1) = visitExp(sym0, exp1) // TODO: Map every Once to OnceInLocalDef unless they are bound by formal params
@@ -215,31 +214,35 @@ object OccurrenceAnalyzer1 {
       val o3 = combineAllSeq(o1, o2)
       val occur = o3.vars.getOrElse(sym, Dead)
       val o4 = o3.copy(vars = o3.vars - sym)
-      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
+      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), o4.increaseSizeByOne())
 
     case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst1.Expr.Stmt(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst1.Expr.Stm(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expr.Scope(sym, exp, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst1.Expr.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
+    case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+      val (e, o1) = visitExp(sym0, exp)
+      val withSym0 = o1.defs + (sym0 -> DontInline)
+      val o2 = o1.copy(defs = withSym0).increaseSizeByOne()
+      (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), o2)
 
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
-      val (rs, o2) = rules.map {
+      val (rs, o2) = rules.map { // TODO: add helper function
         case MonoAst.CatchRule(sym, clazz, exp) =>
           val (e, o3) = visitExp(sym0, exp)
           (OccurrenceAst1.CatchRule(sym, clazz, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
+      val withSym0 = o4.defs + (sym0 -> DontInline)
+      val o5 = o4.copy(defs = withSym0).increaseSizeByOne()
+      (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), o5)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
-      val (rs, o2) = rules.map {
+      val (rs, o2) = rules.map { // TODO: add helper function
         case MonoAst.HandlerRule(op, fparams, exp) =>
           val (e, o3) = visitExp(sym0, exp)
           val fps = fparams.map(visitFormalParam)
@@ -248,24 +251,20 @@ object OccurrenceAnalyzer1 {
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
       (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
+    case Expr.Do(op, exps, tpe, eff, loc) =>
       val (es, o1) = visitExps(sym0, exps)
-      (OccurrenceAst1.Expr.Do(op, es, tpe, purity, loc), o1.increaseSizeByOne())
+      (OccurrenceAst1.Expr.Do(op, es, tpe, eff, loc), o1.increaseSizeByOne())
 
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      val (ms, o1) = methods.map {
-        case MonoAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) => {
-          val f = fparams.map {
-            case MonoAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst1.FormalParam(sym, mod, tpe, loc)
-          }
+      val (ms, o1) = methods.map { // TODO: add helper function
+        case MonoAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          val f = fparams.map(visitFormalParam)
           val (c, o) = visitExp(sym0, clo)
           (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, purity, loc), o.increaseSizeByOne())
-        }
+
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
-
-    case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException("unexpected lambda closure expression", loc)
 
   }
 
