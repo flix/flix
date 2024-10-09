@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Instance, TraitContext}
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -448,124 +449,6 @@ object ConstraintSolver2 {
       (cs, tree)
 
     case c => (List(c), SubstitutionTree.empty)
-  }
-
-  /**
-    * Performs various reduction rules on the given type.
-    */
-  // MATT extract this to type reduction
-  def reduce(tpe0: Type)(implicit scope: Scope, tracker: Tracker, renv0: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
-    case t: Type.Var => t
-
-    case t: Type.Cst => t
-
-    case Type.Apply(tpe1, tpe2, loc) =>
-      // TODO CONSTR-SOLVER-2 this is recursive. Might be a hot-spot for performance?
-      val t1 = reduce(tpe1)
-      val t2 = reduce(tpe2)
-      Type.Apply(t1, t2, loc)
-
-    case Type.Alias(cst, args, tpe, loc) => tpe
-
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), tpe, kind, loc) =>
-
-      // Get all the associated types from the context
-      val assocs = eqenv(sym)
-
-      // Find the instance that matches
-      val matches = assocs.flatMap {
-        case Ast.AssocTypeDef(assocTpe, ret) =>
-          // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
-          // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
-          // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
-
-          // Instantiate all the instance constraints according to the substitution.
-          fullyUnify(tpe, assocTpe, renv).map {
-            case subst => subst(ret)
-          }
-      }
-
-      // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
-      matches match {
-        // Case 1: No match. Can't reduce the type.
-        case Nil => tpe0
-
-        // Case 2: One match. Use it.
-        case newTpe :: Nil =>
-          tracker.markProgress()
-          newTpe
-
-        // Case 3: Multiple matches. Give back the original type.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => tpe0
-      }
-
-    case Type.JvmToType(tpe, loc) =>
-      reduce(tpe) match {
-        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          tracker.markProgress()
-          Type.getFlixType(constructor.getDeclaringClass)
-
-        case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
-          tracker.markProgress()
-          Type.getFlixType(method.getReturnType)
-
-        case Type.Cst(TypeConstructor.JvmField(field), _) =>
-          tracker.markProgress()
-          Type.getFlixType(field.getType)
-
-        case t => Type.JvmToType(t, loc)
-      }
-
-    case Type.JvmToEff(tpe, loc) =>
-      reduce(tpe) match {
-        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          tracker.markProgress()
-          BaseEffects.getConstructorEffs(constructor, loc)
-
-        case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
-          tracker.markProgress()
-          BaseEffects.getMethodEffs(method, loc)
-
-        case t => Type.JvmToType(t, loc)
-      }
-
-    // MATT how to organize?
-    case unresolved@Type.UnresolvedJvmType(member, loc) =>
-      member.map(reduce) match {
-        case JvmMember.JvmConstructor(clazz, tpes) =>
-          TypeReduction.lookupConstructor(clazz, tpes) match {
-            case TypeReduction.JavaConstructorResolution.Resolved(constructor) =>
-              tracker.markProgress()
-              Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
-            case _ => unresolved
-          }
-
-        case JvmMember.JvmField(tpe, name) =>
-          TypeReduction.lookupField(tpe, name.name) match {
-            case TypeReduction.JavaFieldResolution.Resolved(field) =>
-              tracker.markProgress()
-              Type.Cst(TypeConstructor.JvmField(field), loc)
-            case _ => unresolved
-          }
-
-        case JvmMember.JvmMethod(tpe, name, tpes) =>
-          TypeReduction.lookupMethod(tpe, name.name, tpes) match {
-            case TypeReduction.JavaMethodResolution.Resolved(method) =>
-              tracker.markProgress()
-              Type.Cst(TypeConstructor.JvmMethod(method), loc)
-            case _ => unresolved
-          }
-
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
-          TypeReduction.lookupStaticMethod(clazz, name.name, tpes) match {
-            case TypeReduction.JavaMethodResolution.Resolved(method) =>
-              tracker.markProgress()
-              Type.Cst(TypeConstructor.JvmMethod(method), loc)
-            case _ => unresolved
-          }
-      }
   }
 
   /**
