@@ -340,11 +340,11 @@ object Inliner1 {
     */
   private def bindFormals(exp0: OccurrenceAst1.Expr, symbols: List[OccurrenceAst1.FormalParam], args: List[MonoAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = (symbols, args) match {
     case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1) =>
-      // if the parameter is unused and the argument is pure, then throw it away.
+      // If the parameter is unused and the argument is pure, then throw it away.
       bindFormals(exp0, nextSymbols, nextExpressions, env0)
 
     case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
-      // if the parameter is unused and the argument is NOT pure, then put it in a statement.
+      // If the parameter is unused and the argument is NOT pure, then put it in a statement.
       val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
       val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
       MonoAst.Expr.Stm(e1, nextLet, exp0.tpe, eff, exp0.loc)
