@@ -28,7 +28,7 @@ mod Benchmark.Inliner.Optimized {
                 fmp(xs, acc)
             else
                 fmp(xs, x :: acc)
-    };
+    }
 
     pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
         case Nil     => acc
