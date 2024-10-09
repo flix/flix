@@ -3213,7 +3213,7 @@ object Weeder2 {
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
         val errorTreeKind = TreeKind.ErrorTree(error)
         val errorChild = Tree(errorTreeKind, Array.empty, tree.loc)
-        val errorTree = Tree(errorTreeKind, Array(errorChild), tree.loc) // Any child should always just return an error node. Maybe infinite error node? Sounds dangerous
+        val errorTree = Tree(errorTreeKind, Array(errorChild), tree.loc)
         Validation.toSoftFailure(errorTree, error)
     }
   }
