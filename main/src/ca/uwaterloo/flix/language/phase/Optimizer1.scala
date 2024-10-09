@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde
+ * Copyright 2024 Anna Krogh, Patrick Lundvig, Christian Bonde, Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ object Optimizer1 {
   }
 
   /**
-    * returns `true` if `exp0` is considered a trivial expression.
+    * Returns `true` if `exp0` is considered a trivial expression.
     *
     * An expression is trivial if:
     * It is either a literal (float, string, int, bool, unit), or it is a variable.
