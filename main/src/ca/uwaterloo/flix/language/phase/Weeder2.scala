@@ -1908,10 +1908,8 @@ object Weeder2 {
       flatMapN(pickNameIdent(tree), exprs) {
         case (ident, channel :: body :: Nil) =>
           Validation.success(SelectChannelRule(ident, channel, body))
-        case _ => // Unreachable case, since this is a parser error
-          val err = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          val ident = Name.Ident("error", tree.loc.asSynthetic)
-          Validation.toSoftFailure(SelectChannelRule(ident, Expr.Error(err), Expr.Error(err)), err)
+        case (ident, _) => // Unreachable case, since this is a parser error
+          throw InternalCompilerException(s"unexpected malformed select rule: $ident", ident.loc)
       }
     }
 
