@@ -99,7 +99,7 @@ object SetFormulaGenerator {
     *
     * @throws InternalCompilerException if [[Options.varDomSize]] is non-positive.
     */
-  def generateVar()(implicit r: Random, opts: Options): Var = {
+  private def generateVar()(implicit r: Random, opts: Options): Var = {
     if (opts.varDomSize <= 0) throw InternalCompilerException(
       s"Tried to generate a variable with domain size ${opts.varDomSize}", SourceLocation.Unknown
     ) else Var(opts.varOffset + r.nextInt(opts.varDomSize))
@@ -110,7 +110,7 @@ object SetFormulaGenerator {
     *
     * @throws InternalCompilerException if [[Options.cstDomSize]] is non-positive.
     */
-  def generateCst()(implicit r: Random, opts: Options): Cst = {
+  private def generateCst()(implicit r: Random, opts: Options): Cst = {
     if (opts.cstDomSize <= 0) throw InternalCompilerException(
       s"Tried to generate a constant with domain size ${opts.cstDomSize}", SourceLocation.Unknown
     ) else Cst(opts.cstOffset + r.nextInt(opts.cstDomSize))
@@ -121,7 +121,7 @@ object SetFormulaGenerator {
     *
     * @throws InternalCompilerException if [[Options.elemDomSize]] is non-positive.
     */
-  def generateElem()(implicit r: Random, opts: Options): ElemSet = {
+  private def generateElem()(implicit r: Random, opts: Options): ElemSet = {
     if (opts.elemDomSize <= 0) throw InternalCompilerException(
       s"Tried to generate an element with domain size ${opts.elemDomSize}", SourceLocation.Unknown
     ) else mkElemSet(opts.elemOffset + r.nextInt(opts.elemDomSize))
@@ -229,18 +229,6 @@ object SetFormulaGenerator {
   private def chooseFrom[T](xs: List[T])(implicit r: Random): T = {
     if (xs.isEmpty) throw InternalCompilerException("Cannot choose one of zero elements", SourceLocation.Unknown)
     else xs(r.nextInt(xs.length))
-  }
-
-  def main(args: Array[String]): Unit = {
-    val r: Random = new Random(-62150363)
-    for (i <- 0 until 1000) {
-      val f = generate(i, -1)(r, Options(maxConnectiveWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3))
-      println()
-      println(f)
-      val fProp = SetFormula.propagation(f)
-      println(fProp)
-      assert(SetFormula.isEquivalent(f, fProp))
-    }
   }
 
 }
