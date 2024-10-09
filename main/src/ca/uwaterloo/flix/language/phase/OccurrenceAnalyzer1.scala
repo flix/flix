@@ -55,15 +55,12 @@ object OccurrenceAnalyzer1 {
     def increaseSizeByOne(): OccurInfo = this.copy(size = this.size + 1)
   }
 
-
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
-
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-
     OccurrenceAst1.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
