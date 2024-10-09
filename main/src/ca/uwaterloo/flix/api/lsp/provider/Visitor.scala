@@ -45,7 +45,7 @@ object Visitor {
     * }
     * }}}
     *
-    * This consumer only cares `Expr`s and simply collects all expressions visited.
+    * This consumer only cares about `Expr`s and simply collects all expressions visited.
     */
   trait Consumer {
     def consumeAnnotation(ann: Annotation): Unit = ()
