@@ -18,8 +18,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1
-import ca.uwaterloo.flix.language.ast.SimplifiedAst
+import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
 /**
@@ -30,7 +29,7 @@ object Optimizer1 {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Optimizer1") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
     if (flix.options.xnooptimizer) {
       root
     } else {
