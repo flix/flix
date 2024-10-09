@@ -849,7 +849,7 @@ object Weeder2 {
         case TreeKind.Expr.Binary => visitBinaryExpr(tree)
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
-        case TreeKind.Expr.LetRecDef => visitLetRecDefExpr(tree)
+        case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.LetImport => visitLetImportExpr(tree)
         case TreeKind.Expr.Scope => visitScopeExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
@@ -1279,8 +1279,8 @@ object Weeder2 {
       }
     }
 
-    private def visitLetRecDefExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.LetRecDef)
+    private def visitLocalDefExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.LocalDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Annotations(as) =>
           // Check for annotations
