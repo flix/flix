@@ -92,9 +92,6 @@ object Regions {
     case Expr.Let(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
     case Expr.LocalDef(_, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 

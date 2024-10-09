@@ -398,25 +398,6 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
-      // Extend the environment with the variable symbol.
-      val env1 = env0 + sym
-
-      // Visit the two expressions under the extended environment.
-      // Add the variable to the recursion context only in the first expression.
-      val innerUsed1 = visitExp(exp1, env1, rc.withVar(sym))
-      val innerUsed2 = visitExp(exp2, env1, rc)
-      val used = innerUsed1 ++ innerUsed2
-
-      // Check for shadowing.
-      val shadowedVar = shadowing(sym.text, sym.loc, env0)
-
-      // Check if the let-bound variable symbol is dead in exp1 + exp2.
-      if (deadVarSym(sym, used))
-        (used ++ shadowedVar) - sym + UnusedVarSym(sym)
-      else
-        (used ++ shadowedVar) - sym
-
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym

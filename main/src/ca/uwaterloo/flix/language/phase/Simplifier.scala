@@ -152,10 +152,6 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LetRec(sym, _, e1, e2, tpe, eff, loc) =>
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
-
     case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)

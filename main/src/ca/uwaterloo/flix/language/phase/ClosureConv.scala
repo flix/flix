@@ -102,9 +102,6 @@ object ClosureConv {
     case Expr.Let(sym, e1, e2, tpe, purity, loc) =>
       Expr.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expr.LetRec(sym, e1, e2, tpe, purity, loc) =>
-      Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
-
     case e: Expr.LocalDef => visitLocalDef(e)
 
     case Expr.Scope(sym, e, tpe, purity, loc) =>
@@ -225,9 +222,6 @@ object ClosureConv {
     case Expr.JumpTo(_, _, _, _) => SortedSet.empty
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
-
-    case Expr.LetRec(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
@@ -356,12 +350,6 @@ object ClosureConv {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expr.Let(newSym, e1, e2, tpe, purity, loc)
-
-      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
-        val newSym = subst.getOrElse(sym, sym)
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expr.LetRec(newSym, e1, e2, tpe, purity, loc)
 
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
         // We never substitute a LocalDef symbol, since it is never free
@@ -589,11 +577,6 @@ object ClosureConv {
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         Expr.Let(sym, e1, e2, tpe, purity, loc)
-
-      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        Expr.LetRec(sym, e1, e2, tpe, purity, loc)
 
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
         val e1 = visit(exp1)
