@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
 /**
-  * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
+  * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
   */
 object Optimizer1 {
 
