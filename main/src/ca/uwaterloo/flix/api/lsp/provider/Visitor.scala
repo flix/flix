@@ -192,23 +192,19 @@ object Visitor {
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    val (x, y) = pos.toZeroIndexed
-
-    val posLine = x + 1
-    val posCol = y + 1
-
     val sameSource = uri == loc.source.name
-    val posWithinLocLines = (loc.beginLine <= posLine) && (posLine <= loc.endLine)
+    if (!sameSource) { return false }
 
-    val beginSameLine = posLine == loc.beginLine
-    val endSameLine = posLine == loc.endLine
-    val beginSameLineImpliesPosColGeq = !beginSameLine || loc.beginCol <= posCol
-    val endSameLineImpliesPosColLess = !endSameLine || posCol < loc.endCol // pos column must be *strictly* less than since location range is exclusive with regard to columns
+    val afterStart = loc.beginLine < pos.line ||
+                     loc.beginLine == pos.line && loc.beginCol <= pos.character
+    if (!afterStart) { return false }
 
-    sameSource &&
-      posWithinLocLines &&
-      beginSameLineImpliesPosColGeq &&
-      endSameLineImpliesPosColLess
+
+    val beforeEnd = pos.line < loc.endLine ||
+                    pos.line == loc.beginLine && pos.character < loc.endCol
+    if (!beforeEnd) { return false }
+
+    true
   }
 
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {

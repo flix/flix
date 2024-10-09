@@ -27,14 +27,6 @@ import org.json4s.*
 object Position {
 
   /**
-    * Returns a position from zero-indexed input
-    *
-    * Temporary fix due to positions currently being one-indexed.
-    */
-  def fromZeroIndexed(line: Int, character: Int): Position =
-    Position(line + 1, character + 1)
-
-  /**
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
@@ -76,11 +68,4 @@ object Position {
   */
 case class Position(line: Int, character: Int) {
   def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
-
-  /**
-    * Returns zero-indexed tuple containing line and character.
-    *
-    * Temporary fix for Position erroneously being one-indexed.
-    */
-  def toZeroIndexed: (Int, Int) = (line - 1, character - 1)
 }
