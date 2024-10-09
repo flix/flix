@@ -1905,11 +1905,26 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       flatMapN(pickNameIdent(tree), exprs) {
-        case (ident, channel :: body :: Nil) =>
-          Validation.success(SelectChannelRule(ident, channel, body))
-        case _ =>
-          val err = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.HardFailure(Chain(err))
+        // Problem: Parser just "eats" the qname that is Channel.recv so there is
+        // no way of checking that it is actually that name being used.
+        // Either we do a parse check or we do not parse the qname and just have the syntax
+        // case pattern <- expr => expr where the first expr evaluates to the channel to receive
+        // from. That way we can insert a call to Channel.recv, but this seems to contradict the design
+        // on the Channel library in general... but then again it is weird to have special select syntax
+        // for something that is so closely tied to the Channel library...
+        case (ident, channel :: body :: Nil) => channel match {
+          case Expr.Apply(Expr.Ambiguous(Name.QName(Name.NName(Name.Ident("Channel", _) :: Nil, _), Name.Ident("recv", _), _), _), _, _) => // this is nasty
+            Validation.success(SelectChannelRule(ident, channel, body))
+          case Expr.Apply(Expr.Ambiguous(qname, _), _, _) =>
+            val error = UnexpectedIdent(qname.toString, channel.loc, expected = Some("Channel.recv"))
+            Validation.toSoftFailure(SelectChannelRule(ident, channel, body), error)
+          case Expr.Error(_) =>
+            Validation.success(SelectChannelRule(ident, channel, body))
+          case _ => // Unreachable case, since this is a parser error
+            throw InternalCompilerException(s"unexpected malformed select rule: $ident, $channel, $body", ident.loc)
+        }
+        case (ident, _) => // Unreachable case, since this is a parser error
+          throw InternalCompilerException(s"unexpected malformed select rule: $ident", ident.loc)
       }
     }
 
