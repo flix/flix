@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expr
+import ca.uwaterloo.flix.language.ast.OccurrenceAst1
 import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
@@ -51,9 +51,9 @@ object Optimizer1 {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  def isTrivialExp(exp0: SimplifiedAst.Expr): Boolean = exp0 match {
-    case Expr.Cst(_, _, _) => true
-    case Expr.Var(_, _, _) => true
+  def isTrivialExp(exp0: OccurrenceAst1.Expr): Boolean = exp0 match {
+    case OccurrenceAst1.Expr.Cst(_, _, _) => true
+    case OccurrenceAst1.Expr.Var(_, _, _) => true
     case _ => false
   }
 }
