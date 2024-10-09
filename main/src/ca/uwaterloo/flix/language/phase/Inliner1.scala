@@ -110,7 +110,7 @@ object Inliner1 {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expr.LiftedExp(exp) => exp
+            case Expr.SimplifiedExp(exp) => exp
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
             case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
           }
@@ -208,7 +208,7 @@ object Inliner1 {
           if (wantToPostInline) {
             /// If `e1` is to be inlined:
             /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = subst0 + (sym -> Expr.LiftedExp(e1))
+            val subst1 = subst0 + (sym -> Expr.SimplifiedExp(e1))
             visitExp(exp2, subst1)
           } else {
             /// Case 5:
@@ -220,7 +220,7 @@ object Inliner1 {
         }
       }
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       /// Case 1:
@@ -392,7 +392,7 @@ object Inliner1 {
       val e2 = substituteExp(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
