@@ -29,7 +29,7 @@ object Optimizer2 {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer2") {
     if (flix.options.xnooptimizer) {
       root
     } else {
