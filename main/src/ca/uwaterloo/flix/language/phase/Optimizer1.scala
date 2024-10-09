@@ -43,18 +43,4 @@ object Optimizer1 {
       result
     }
   }
-
-  /**
-    * Returns `true` if `exp0` is considered a trivial expression.
-    *
-    * An expression is trivial if:
-    * It is either a literal (float, string, int, bool, unit), or it is a variable.
-    *
-    * A pure and trivial expression can always be inlined even without duplicating work.
-    */
-  def isTrivialExp(exp0: OccurrenceAst1.Expr): Boolean = exp0 match {
-    case OccurrenceAst1.Expr.Cst(_, _, _) => true
-    case OccurrenceAst1.Expr.Var(_, _, _) => true
-    case _ => false
-  }
 }

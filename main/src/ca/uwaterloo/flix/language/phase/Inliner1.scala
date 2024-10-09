@@ -97,7 +97,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[SimplifiedAst.Expr]]
     */
-  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst1.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
+  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst1.Root, flix: Flix): SimplifiedAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) => SimplifiedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
@@ -220,7 +220,13 @@ object Inliner1 {
         }
       }
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) =>
+      // TODO: Update this case if we want to inline
+      // Current impl is just placeholder
+      val fps = fparams.map(visitFormalParam)
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       /// Case 1:
@@ -340,6 +346,7 @@ object Inliner1 {
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivialExp(exp0: SimplifiedAst.Expr): Boolean = exp0 match {
+    // TODO: Add recursive case for Tag, i.e., if its args are trivial, then it is trivial
     case SimplifiedAst.Expr.Cst(_, _, _) => true
     case SimplifiedAst.Expr.Var(_, _, _) => true
     case _ => false
@@ -353,7 +360,19 @@ object Inliner1 {
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) => SimplifiedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => ???
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) =>
+      val freshFps = fparams.map {
+        case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
+          val newSym = Symbol.freshVarSym(sym)
+          sym -> SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
+      }
+      val fps = freshFps.map(_._2)
+      val fpsEnv = freshFps.map {
+        case (sym, fp) => sym -> fp.sym
+      }.toMap
+      val env1 = env0 ++ fpsEnv
+      val e = substituteExp(exp, env1)
+      SimplifiedAst.Expr.Lambda(fps, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
