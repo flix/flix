@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expr
+import ca.uwaterloo.flix.language.ast.OccurrenceAst2.Expr
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
 /**
