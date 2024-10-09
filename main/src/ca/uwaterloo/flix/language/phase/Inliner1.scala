@@ -365,18 +365,9 @@ object Inliner1 {
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) => SimplifiedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => // TODO: Remove fparam update
-      val freshFps = fparams.map {
-        case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
-          val newSym = Symbol.freshVarSym(sym)
-          sym -> SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
-      }
-      val fps = freshFps.map(_._2)
-      val fpsEnv = freshFps.map {
-        case (sym, fp) => sym -> fp.sym
-      }.toMap
-      val env1 = env0 ++ fpsEnv
-      val e = applySubst(exp, env1)
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e = applySubst(exp, env0)
       SimplifiedAst.Expr.Lambda(fps, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -418,21 +409,11 @@ object Inliner1 {
       val e2 = applySubst(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => // TODO: Remove fparam update
-      val newSym = Symbol.freshVarSym(sym)
-      val freshFps = fparams.map {
-        case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
-          val newSym = Symbol.freshVarSym(sym)
-          sym -> SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
-      }
-      val fps = freshFps.map(_._2)
-      val fpsEnv = freshFps.map {
-        case (sym, fp) => sym -> fp.sym
-      }.toMap
-      val env1 = env0 + (sym -> newSym)
-      val e1 = applySubst(exp1, env1 ++ fpsEnv)
-      val e2 = applySubst(exp2, env1)
-      SimplifiedAst.Expr.LocalDef(newSym, fps, e1, e2, tpe, purity, loc)
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, _, tpe, purity, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e1 = applySubst(exp1, env0)
+      val e2 = applySubst(exp2, env0)
+      SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = applySubst(exp1, env0)
