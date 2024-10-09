@@ -102,9 +102,4 @@ object SchemaUnification {
 
     visit(rewrittenRow)
   }
-
-  // MATT
-  def withProgress(pair: (Substitution, List[Ast.BroadEqualityConstraint])): (Substitution, List[Ast.BroadEqualityConstraint], Boolean) = pair match {
-    case (subst, constrs) => (subst, constrs, true)
-  }
 }

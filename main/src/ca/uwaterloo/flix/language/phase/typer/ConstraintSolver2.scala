@@ -147,7 +147,8 @@ object ConstraintSolver2 {
       case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(root(tpe1), root(tpe2))
       case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, root(tpe))
       case TypeConstraint.Purification(sym, eff1, eff2, nested) =>
-        // MATT docs
+        // Use the root substitution for the external effects.
+        // Use the appropriate branch substitution for the nested constraints.
         // MATT what to do if sym not in branches?
         TypeConstraint.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply))
     }
