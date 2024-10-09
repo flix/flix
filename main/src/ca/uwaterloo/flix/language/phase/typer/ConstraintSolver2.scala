@@ -500,7 +500,8 @@ object ConstraintSolver2 {
     * }}}
     */
   // (varU)
-  private def makeSubstitution(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv): (ConstraintSet, SubstitutionTree) = constr match {
+  // TODO CONSTR-SOLVER-2 make private
+  def makeSubstitution(constr: TypeConstraint)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv): (ConstraintSet, SubstitutionTree) = constr match {
     case TypeConstraint.Equality(Type.Var(sym, _), tpe2) if !renv.isRigid(sym) && sym.kind == tpe2.kind =>
       tracker.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
