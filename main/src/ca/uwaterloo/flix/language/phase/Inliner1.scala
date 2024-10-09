@@ -70,7 +70,7 @@ object Inliner1 {
 
   /**
     * Performs expression inlining on the given definition `def0`.
-    * Converts definition from OccurrenceAst1 to SimplifiedAst.
+    * Converts definition from [[OccurrenceAst1]] to [[SimplifiedAst]].
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): SimplifiedAst.Def = {
     val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
@@ -115,6 +115,8 @@ object Inliner1 {
           }
       }
 
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => ???
+
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
@@ -158,6 +160,8 @@ object Inliner1 {
       } else {
         SimplifiedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
+
+    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -214,6 +218,8 @@ object Inliner1 {
           }
         }
       }
+
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => ???
 
     case OccurrenceAst1.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       /// Case 1:
