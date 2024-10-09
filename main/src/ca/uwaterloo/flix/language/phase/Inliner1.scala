@@ -116,7 +116,10 @@ object Inliner1 {
           }
       }
 
-    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => ???
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e = visitExp(exp, subst0)
+      SimplifiedAst.Expr.Lambda(fps, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
@@ -162,7 +165,9 @@ object Inliner1 {
         SimplifiedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) => ???
+    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      SimplifiedAst.Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -360,7 +365,7 @@ object Inliner1 {
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) => SimplifiedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) =>
+    case OccurrenceAst1.Expr.Lambda(fparams, exp, tpe, loc) => // TODO: Remove fparam update
       val freshFps = fparams.map {
         case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
           val newSym = Symbol.freshVarSym(sym)
@@ -413,7 +418,7 @@ object Inliner1 {
       val e2 = applySubst(exp2, env1)
       SimplifiedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) =>
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, occur, tpe, purity, loc) => // TODO: Remove fparam update
       val newSym = Symbol.freshVarSym(sym)
       val freshFps = fparams.map {
         case OccurrenceAst1.FormalParam(sym, mod, tpe, loc) =>
