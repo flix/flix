@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.{ConstraintSet, Tracker, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.{ConstraintSet, Progress, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -27,7 +27,7 @@ object RecordConstraintSolver2 {
   /**
     * Unifies the two given record row types.
     */
-  def solve(tpe1: Type, tpe2: Type)(implicit scope: Scope, tracker: Tracker, renv: RigidityEnv, flix: Flix): (ConstraintSet, Substitution) = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type)(implicit scope: Scope, tracker: Progress, renv: RigidityEnv, flix: Flix): (ConstraintSet, Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅

@@ -32,7 +32,7 @@ object Unification {
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
-    implicit val t: ConstraintSolver2.Tracker = ConstraintSolver2.Tracker()
+    implicit val t: ConstraintSolver2.Progress = ConstraintSolver2.Progress()
     implicit val r: RigidityEnv = renv
     val (leftovers, subst) = ConstraintSolver2.makeSubstitution(ConstraintSolver2.TypeConstraint.Equality(x, tpe))
     Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
