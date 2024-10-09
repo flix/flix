@@ -692,7 +692,7 @@ object SetFormula {
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
-  def propagation(f: SetFormula): SetFormula = debug(f, SortedMap.empty)
+  def propagation(f: SetFormula): SetFormula = propagationWithInsts(f, SortedMap.empty)
 
   /**
     * Applies set propagation to `f` where `insts` keep track of running instantiations for
@@ -705,7 +705,7 @@ object SetFormula {
     case Var(x) => insts.getOrElse(x, f)
     case e@ElemSet(_) => instElemSet(e, insts)
     case compl@Compl(f1) =>
-      val f1Prop = debug(f1, insts)
+      val f1Prop = propagationWithInsts(f1, insts)
       // Maintain and exploit reference equality for performance.
       if (f1Prop eq f1) compl else mkCompl(f1Prop)
 
@@ -757,7 +757,7 @@ object SetFormula {
       // Recursively instantiate `other` while collecting further instantiations as we go.
       val other = mutable.ListBuffer.empty[SetFormula]
       for (f <- other0) {
-        val fProp = debug(f, currentInsts)
+        val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
           case Cst(c) => currentInsts += (c -> Univ)
@@ -824,7 +824,7 @@ object SetFormula {
       // Recursively instantiate `other` while collecting further instantiations as we go.
       val other = mutable.ListBuffer.empty[SetFormula]
       for (f <- other0) {
-        val fProp = debug(f, currentInsts)
+        val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
           case Cst(c) => currentInsts += (c -> Empty)
@@ -842,15 +842,6 @@ object SetFormula {
         other.append(fProp)
       }
       mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
-  }
-
-  private def debug(f: SetFormula, insts: SortedMap[Int, UnivOrEmpty]): SetFormula = {
-    val res = propagationWithInsts(f, insts)
-    println()
-    println("  f: " + f.toString)
-    println(s"  insts: ${insts.mkString(", ")}" )
-    println("  res: " + res)
-    res
   }
 
   /**

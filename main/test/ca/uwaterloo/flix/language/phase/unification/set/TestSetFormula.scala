@@ -24,12 +24,16 @@ import scala.util.Random
 class TestSetFormula extends AnyFunSuite with TestUtils {
 
   test("TestSetFormula.Propagation") {
-    val r = new Random(-62150363)
-    for (i <- 0 until 1000) {
-      val opts = SetFormulaGenerator.Options(maxWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3)
-      val f = SetFormulaGenerator.generate(i, -1)(r, opts)
-      val fProp = SetFormula.propagation(f)
-      assert(SetFormula.isEquivalent(f, fProp))
+    val seed = System.currentTimeMillis()
+    val r = new Random(seed)
+    println(s"Testing with seed $seed")
+    for (_ <- 0 until 100) {
+      for (i <- 0 until 1000) {
+        val opts = SetFormulaGenerator.Options(maxWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3)
+        val f = SetFormulaGenerator.generate(i, -1)(r, opts)
+        val fProp = SetFormula.propagation(f)
+        assert(SetFormula.isEquivalent(f, fProp), s"Formulas not equivalent (seed: $seed): $f ~ $fProp")
+      }
     }
   }
 
