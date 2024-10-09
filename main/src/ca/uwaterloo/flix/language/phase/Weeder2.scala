@@ -2986,8 +2986,6 @@ object Weeder2 {
         case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField.apply)
-        // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
-        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(UnexpectedToken(NamedTokenSet.JvmOp, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)))
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
@@ -3048,7 +3046,7 @@ object Weeder2 {
     private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       flatMapN(idents) {
-        case _ :: Nil => Validation.HardFailure(Chain(UnexpectedToken(NamedTokenSet.Name, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)))
+        case _ :: Nil => throw InternalCompilerException("JvmOp incomplete name", tree.loc)
         case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
         case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
       }
