@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Purity, Symbol, Type}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -73,15 +74,15 @@ object Inliner1 {
     * Converts definition from [[OccurrenceAst1]] to [[MonoAst]].
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
-    case OccurrenceAst1.Def(sym, spec, exp, _) =>
+    case OccurrenceAst1.Def(sym, fparams, spec, exp, _) =>
       val e = visitExp(exp, Map.empty)(root, flix)
-      val sp = visitSpec(spec)
+      val sp = visitSpec(spec, fparams.map(_._1))
       MonoAst.Def(sym, sp, e)
   }
 
-  private def visitSpec(spec0: OccurrenceAst1.Spec): MonoAst.Spec = spec0 match {
-    case OccurrenceAst1.Spec(doc, ann, mod, fparams, functionType, retTpe, eff, loc) =>
-      val fps = fparams.map(visitFormalParam)
+  private def visitSpec(spec0: OccurrenceAst1.Spec, fparams0: List[OccurrenceAst1.FormalParam]): MonoAst.Spec = spec0 match {
+    case OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff, loc) =>
+      val fps = fparams0.map(visitFormalParam)
       MonoAst.Spec(doc, ann, mod, fps, functionType, retTpe, eff, loc)
   }
 
@@ -103,9 +104,16 @@ object Inliner1 {
   }
 
   private def visitEffectOp(op: OccurrenceAst1.Op): MonoAst.Op = op match {
-    case OccurrenceAst1.Op(sym0, spec0) =>
-      val spec = visitSpec(spec0)
+    case OccurrenceAst1.Op(sym0, fparams0, spec0) =>
+      val spec = visitSpec(spec0, fparams0)
       MonoAst.Op(sym0, spec)
+  }
+
+  /**
+    * Translates the given formal parameter `fparam` from [[OccurrenceAst1.FormalParam]] into a [[MonoAst.FormalParam]].
+    */
+  private def visitFormalParam(fparam: OccurrenceAst1.FormalParam): MonoAst.FormalParam = fparam match {
+    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
   }
 
   /**
@@ -161,7 +169,7 @@ object Inliner1 {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.spec.fparams, closureArgs ++ es, Map.empty)
+            bindFormals(def1.exp, def1.fparams, closureArgs ++ es, Map.empty)
           } else {
             MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
           }
@@ -175,7 +183,7 @@ object Inliner1 {
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.spec.fparams, es, Map.empty)
+        bindFormals(def1.exp, def1.fparams, es, Map.empty)
       } else {
         MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
@@ -329,18 +337,18 @@ object Inliner1 {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
-  private def bindFormals(exp0: OccurrenceAst1.Expr, symbols: List[OccurrenceAst1.FormalParam], args: List[MonoAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = (symbols, args) match {
-    case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
+  private def bindFormals(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[MonoAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = (symbols, args) match {
+    case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
       // If the parameter is unused and the argument is pure, then throw it away.
       bindFormals(exp0, nextSymbols, nextExpressions, env0)
 
-    case (OccurrenceAst1.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
+    case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
       // If the parameter is unused and the argument is NOT pure, then put it in a statement.
       val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
       val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
       MonoAst.Expr.Stm(e1, nextLet, exp0.tpe, eff, exp0.loc)
 
-    case (OccurrenceAst1.FormalParam(sym, _, _, _, _, _) :: nextSymbols, e1 :: nextExpressions) =>
+    case ((OccurrenceAst1.FormalParam(sym, _, _, _, _), _) :: nextSymbols, e1 :: nextExpressions) =>
       val freshVar = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshVar)
       val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
@@ -458,12 +466,4 @@ object Inliner1 {
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
 
   }
-
-  /**
-    * Translates the given formal parameter `fparam` from [[OccurrenceAst1.FormalParam]] into a [[MonoAst.FormalParam]].
-    */
-  private def visitFormalParam(fparam: OccurrenceAst1.FormalParam): MonoAst.FormalParam = fparam match {
-    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, _, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
-  }
-
 }
