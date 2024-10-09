@@ -224,7 +224,7 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = {
+  private def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (ConstraintSet, SubstitutionTree) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
@@ -270,7 +270,7 @@ object ConstraintSolver2 {
     *
     * where `{ }` represents actual substitution
     */
-  def purifyEmptyRegion(constr: TypeConstraint): TypeConstraint = constr match {
+  private def purifyEmptyRegion(constr: TypeConstraint): TypeConstraint = constr match {
     case TypeConstraint.Purification(sym, eff1, eff2, Nil) =>
       val purified = Substitution.singleton(sym, Type.Pure)(eff2)
       TypeConstraint.Equality(eff1, purified)
@@ -295,7 +295,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (appU)
-  def breakDownConstraints(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
+  private def breakDownConstraints(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
     case TypeConstraint.Equality(t1@Type.Apply(tpe11, tpe12, _), t2@Type.Apply(tpe21, tpe22, _)) if isSyntactic(t1.kind) && isSyntactic(t2.kind) =>
       tracker.markProgress()
       List(TypeConstraint.Equality(tpe11, tpe21), TypeConstraint.Equality(tpe12, tpe22))
@@ -321,7 +321,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (reflU)
-  def eliminateIdentities(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
+  private def eliminateIdentities(constr: TypeConstraint)(implicit tracker: Tracker): ConstraintSet = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2) =>
       if (tpe1 == tpe2) {
         tracker.markProgress()
