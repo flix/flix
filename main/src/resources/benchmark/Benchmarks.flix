@@ -35,7 +35,7 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     },
     "InlinerFilterMap10k" => () -> {
         let l1 = Benchmark.Inliner.range(0, 10_000);
-        let l2 = Benchmark.Inliner.filterMap(x -> if (Int32.remainder(x, 2)) Some(x) else None, l1);
+        let l2 = Benchmark.Inliner.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
         blackhole(l2)
     },
     "InlinerMap10kOptimized" => () -> {
