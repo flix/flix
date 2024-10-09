@@ -58,6 +58,8 @@ object OccurrenceAst1 {
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
 
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
+
     case class IfThenElse(exp1: OccurrenceAst1.Expr, exp2: OccurrenceAst1.Expr, exp3: OccurrenceAst1.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr
 
     case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, OccurrenceAst1.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst1.Expr

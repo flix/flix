@@ -166,6 +166,12 @@ object OccurrenceAnalyzer1 {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst1.Expr.ApplyDef(sym, es, tpe, purity, loc), o3.increaseSizeByOne())
 
+    case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val (es, o1) = visitExps(sym0, exps)
+      val o2 = OccurInfo(Map.empty, Map(sym -> Once), 1)
+      val o3 = combineAllSeq(o1, o2)
+      (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), o3)
+
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
