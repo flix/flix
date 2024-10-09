@@ -48,7 +48,7 @@ object OccurrenceAnalyzer1 {
     * The occurrence of `defs` and `vars` inside the body of a `def`
     * `size` represents the number of expressions in the body of a `def`
     */
-  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) {
+  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) { // TODO: Maybe add LocalDefs
     /**
       * Increments number of expressions by one
       */
