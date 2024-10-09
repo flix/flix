@@ -26,7 +26,14 @@ object SetUnification {
   /**
     * The static parameters of set unification.
     *
-    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size.
+    * @param sizeThreshold if positive, [[solveWithInfo]] will give up before SVE if there are more
+    *                      equations than this
+    * @param permutationLimit if positive, the maximum number of permutations that
+    *                         [[svePermuations]] will try
+    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
+    * @param svePermutationExitSize [[svePermuations]] will stop searching early if it finds a\
+    *                               substitution smaller than this
+    * @param debugging the amount of debugging information printed
     */
   final case class Options(
                             sizeThreshold: Int = 1800,
@@ -47,11 +54,12 @@ object SetUnification {
   }
 
   /**
-    * Represents the running state of the solver
-    *   - eqs: the remaining equations to solve
-    *   - subst: the current substitution, which has already been applied to `eqs`
-    *   - lastProgressPhase: the name of the last phase that was run and made progress
-    *   - currentPhase: the number of the last phase that was run
+    * Represents the running state of the solver.
+    *   - `eqs`: the remaining equations to solve
+    *   - `errEqs`: the remaining equations that have been found unsolvable
+    *   - `subst`: the current substitution, which has already been applied to `eqs`
+    *   - `lastProgressPhase`: the name of the last phase that was run and made progress
+    *   - `currentPhase`: the number of the last phase that was run
     */
   private class State(var eqs: List[Equation]) {
     var errEqs: List[Equation] = Nil
@@ -63,7 +71,10 @@ object SetUnification {
     def allEqs: List[Equation] = eqs ++ errEqs
   }
 
-  /** Moves all non-pending equations into their own list. */
+  /**
+    * Moves all non-pending equations into their own list for performance, not
+    * required for correctness.
+    * */
   private def moveErrEquations(state: State): Unit = {
     state.eqs = state.eqs.filter(eq => {
       if (eq.isPending) {
@@ -102,7 +113,7 @@ object SetUnification {
     runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
     runPhase(runRule(variableAssignment), state, "Simple Variable Assignment", "Solves non-recursive variable assignments.")
     runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(eliminateTrivialAndRedundant, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
+    runPhase(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
     runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
     runPhase(assertEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
     runPhase(svePermuations, state, "SVE", "Applies SVE in different permutations.")
@@ -112,10 +123,7 @@ object SetUnification {
     (state.allEqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
   }
 
-  /**
-    * Throws [[ComplexException]] if `eqs` has a length more than [[Options.sizeThreshold]]
-    * (if positive).
-    */
+  /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
   private def assertEquationCount(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
     if (opts.sizeThreshold > 0 && eqs.length > opts.sizeThreshold) {
       val errMsg = s"Amount of complex equations in substitution (${eqs.length}) is over the threshold (${opts.sizeThreshold})."
@@ -139,10 +147,10 @@ object SetUnification {
       if (SetFormula.isEquivalent(f1, f2)) ()
       else {
         val msg =
-          """  Incorrect Substitution:
-            |  Original  : $e
-            |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
-            |""".stripMargin
+          s"""  Incorrect Substitution:
+             |  Original  : $e
+             |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
+             |""".stripMargin
         return Result.Err(msg)
       }
     }
@@ -185,6 +193,10 @@ object SetUnification {
     if (opts.debugging == Options.Debugging.All) {
       Console.println(s"Equations (${state.eqs.size}):")
       Console.println(state.eqs.map("  " + _).mkString(",\n"))
+      if (state.errEqs.nonEmpty) {
+        Console.println(s"Error Equations (${state.errEqs.size}):")
+        Console.println(state.errEqs.map("  " + _).mkString(",\n"))
+      }
       Console.println(s"Substitution (${state.subst.numberOfBindings}):")
       Console.println(state.subst.toString)
       Console.println("")
@@ -192,10 +204,10 @@ object SetUnification {
 
   /**
     * Eliminates redundant equations
-    *   - equations that occur multiple types
-    *   - `f ~ f` (syntactically trivial)
+    *   - equations that occur multiple times
+    *   - `f ~ f` (reflective, syntactically trivial)
     */
-  private def eliminateTrivialAndRedundant(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def duplicatedAndReflective(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var result: List[Equation] = Nil
     val seen = mutable.Set.empty[Equation]
     var changed = false
@@ -214,9 +226,7 @@ object SetUnification {
     if (changed) Some(result.reverse, SetSubstitution.empty) else None
   }
 
-  /**
-    * Applies [[sve]] on `eqs`, trying multiple different orderings to minimize substitution size.
-    */
+  /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
   private def svePermuations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
     // We solve the first `permutationLimit` permutations and pick the one that
     // gives rise to the smallest substitution.
@@ -243,14 +253,7 @@ object SetUnification {
     else Some(bestEqs, bestSubst)
   }
 
-  /**
-    * Run a unification rule on an equation system in a fixpoint.
-    *
-    * @param rule a rule that can solve singular equations. It is assumed to signal progress on
-    *             `progress`.
-    * @param eqs the constraints to run the rule on
-    * @return the remaining constraints and the found substitution.
-    */
+  /** Run a unification rule on an equation system in a fixpoint. */
   private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var subst = SetSubstitution.empty
     var workList = eqs
