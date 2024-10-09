@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -1906,8 +1905,13 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       flatMapN(pickNameIdent(tree), exprs) {
-        case (ident, channel :: body :: Nil) =>
-          Validation.success(SelectChannelRule(ident, channel, body))
+        case (ident, channel :: body :: Nil) => channel match {
+          case Expr.Apply(Expr.Ambiguous(Name.QName(Name.NName(Name.Ident("Channel", _) :: Nil, _), Name.Ident("recv", _), _), _), _, _) => // this is nasty
+            Validation.success(SelectChannelRule(ident, channel, body))
+          case Expr.Apply(Expr.Ambiguous(qname, _), _, _) =>
+            val error = UnexpectedIdent(qname.toString, channel.loc, expected = Some("Channel.recv"))
+            Validation.toSoftFailure(SelectChannelRule(ident, channel, body), error)
+        }
         case (ident, _) => // Unreachable case, since this is a parser error
           throw InternalCompilerException(s"unexpected malformed select rule: $ident", ident.loc)
       }
