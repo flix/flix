@@ -444,10 +444,6 @@ object Monomorpher {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Sig(sym, tpe, loc) =>
-      val newSym = specializeSigSym(sym, subst(tpe))
-      MonoAst.Expr.Sig(newSym, subst(tpe), loc)
-
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, subst(tpe), loc)
 
@@ -459,10 +455,7 @@ object Monomorpher {
     case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
-      e match {
-        case MonoAst.Expr.Sig(sym, itpe, _) => MonoAst.Expr.ApplyDef(sym, es, itpe, subst(tpe), subst(eff), loc)
-        case _ => MonoAst.Expr.ApplyClo(e, es, subst(tpe), subst(eff), loc)
-      }
+      MonoAst.Expr.ApplyClo(e, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
