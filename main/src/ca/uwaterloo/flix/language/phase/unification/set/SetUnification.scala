@@ -17,54 +17,249 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.util.Result
+
+import scala.collection.mutable
 
 object SetUnification {
 
   /**
     * The static parameters of set unification.
     *
-    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size.
+    * @param sizeThreshold if positive, [[solve]] will give up before SVE if there are more
+    *                      equations than this
+    * @param permutationLimit if positive, the maximum number of permutations that
+    *                         [[svePermutations]] will try
+    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
+    * @param svePermutationExitSize [[svePermutations]] will stop searching early if it finds a
+    *                               substitution smaller than this
     */
-  private final case class Options(sveRecSizeThreshold: Int)
+  final case class Options(
+                            sizeThreshold: Int,
+                            permutationLimit: Int,
+                            sveRecSizeThreshold: Int,
+                            svePermutationExitSize: Int
+                          )
 
-  /** A class to track progress during set unification. */
-  private final class Progress() {
+  final object Options {
+    /** The default options. */
+    val default: Options = Options(10, 10, 3500, 0)
+  }
 
-    /** Is `true` if [[markProgress]] has been called. */
-    private var hasMadeProgress: Boolean = false
-
-    /** Mark that progress has been made. */
-    def markProgress(): Unit = hasMadeProgress = true
-
-    /** Returns `true` if [[markProgress]] has been called. */
-    def hasProgressed: Boolean = hasMadeProgress
+  /** Represents the running mutable state of the solver. */
+  final class State(initialEquations: List[Equation]) {
+    /** The remaining equations to solve. */
+    var eqs: List[Equation] = initialEquations
+    /** The current substitution, which has already been applied to `eqs`. */
+    var subst: SetSubstitution = SetSubstitution.empty
   }
 
   /**
-    * Solves equations that trivially hold (like `univ ~ univ`) and marks trivially unsolvable
-    * equations (like `univ ~ empty`). Always returns an empty substitution.
+    * A listener that observes the operations of [[solve]].
     *
-    * Otherwise returns `eq` directly.
+    *   - `onEnterPhase(phaseName: String, state: State): Unit`
+    *   - `enExitPhase(state: State): Unit`
+    */
+  final case class SolverListener(onEnterPhase: (String, State) => Unit, onExitPhase: (State, Boolean) => Unit)
+
+  final object SolverListener {
+
+    /** The [[SolverListener]] that does nothing. */
+    val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
+  }
+
+  /**
+    * Attempts to solve the equation system `eqs` to find the most general substitution.
+    *
+    * If the returned [[Equation]] list is empty, then the returned substitution is the most general
+    * solution to `eqs`.
+    *
+    * If the returned [[Equation]] list is non-empty, then the returned substitution is the most general
+    * solution to the removed equations.
+    *
+    * All returned equations are either marked [[Equation.Status.Unsolvable]] or
+    * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
+    * will be derived from it.
+    */
+  def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
+    val state = new State(l)
+    val trivialPhaseName = "Trivial Equations"
+
+    runWithState(state, runRule(constantAssignment), "Constant Assignment")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(variableAlias), "Variable Aliases")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, assertSveEquationCount, "Assert Size")
+    runWithState(state, svePermutations, "SVE")
+
+    (state.eqs, state.subst)
+  }
+
+  /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
+  private def assertSveEquationCount(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    if (opts.sizeThreshold > 0 && eqs.length > opts.sizeThreshold) {
+      val errMsg = s"Amount of leftover equations for SVE (${eqs.length}) is over the threshold (${opts.sizeThreshold})."
+      Some(eqs.map(_.toTimeout(errMsg)), SetSubstitution.empty)
+    } else None
+  }
+
+  /**
+    * Runs the given equation system solver `phase` on `state`, printing debugging information
+    * according to [[Options]].
+    */
+  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
+    listener.onEnterPhase(phaseName, state)
+
+    phase(state.eqs) match {
+      case Some((eqs, subst)) =>
+        state.eqs = eqs
+        state.subst = subst @@ state.subst
+        listener.onExitPhase(state, true)
+
+      case None =>
+        listener.onExitPhase(state, false)
+    }
+  }
+
+  /**
+    * Eliminates redundant equations
+    *   - equations that occur multiple times
+    *   - `f ~ f` (reflective, syntactically trivial)
+    */
+  private def duplicatedAndReflective(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+    var result: List[Equation] = Nil
+    val seen = mutable.Set.empty[Equation]
+    var changed = false
+
+    for (eq <- eqs) {
+      if (eq.f1 == eq.f2 || seen.contains(eq)) {
+        // Don't add to result.
+        changed = true
+      } else {
+        // Add to result, thus not making a change.
+        seen.add(eq)
+        result = eq :: result
+      }
+    }
+
+    if (changed) Some(result.reverse, SetSubstitution.empty) else None
+  }
+
+  /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
+  private def svePermutations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
+    // both successfully solves it and has the smallest substitution.
+    val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
+    var bestEqs: List[Equation] = Nil
+    var bestSubst = SetSubstitution.empty
+    var bestSize = -1
+    def noPreviousPermutation(): Boolean = bestSize == -1
+
+    // Go through the permutations, tracking the best one.
+    var stop = false
+    for (s <- permutations.map(runRule(sve)) if !stop) s match {
+      case Some((ruleEqs, s)) =>
+        val firstSolution = bestEqs.nonEmpty && ruleEqs.isEmpty
+        val sSize = s.totalFormulaSize
+        val smallestSubstitution = sSize < bestSize
+        if (noPreviousPermutation() || firstSolution || smallestSubstitution) {
+          bestEqs = ruleEqs
+          bestSize = sSize
+          bestSubst = s
+          // If we have a solution and it is below the good-enough threshold of opts, exit early.
+          if (bestEqs.isEmpty && bestSize <= opts.svePermutationExitSize) stop = true
+        }
+      case None => ()
+    }
+    if (noPreviousPermutation()) None
+    else Some(bestEqs, bestSubst)
+  }
+
+  /** Run a unification rule on an equation system in a fixpoint. */
+  private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+    // Procedure:
+    //   - Run the `rule` on all the (pending) equations in `iterationWorkList`, building
+    //     `overallSubst` and producing `iterationOutput`.
+    //   - If any rule made progress, store `iterationOutput` back into `iterationWorkList` and repeat.
+
+    // The running substitution - applied to `iterationWorkList` equations lazily.
+    var overallSubst = SetSubstitution.empty
+    var overallProgress = false
+
+    // The mutable state of the iteration.
+    var iterationWorkList = eqs
+    var iterationOutput: List[Equation] = Nil
+    var iterationProgress = true // this is `true` to run the loop at least once.
+
+    // Run iterations until there is no progress.
+    while (iterationProgress) {
+      iterationProgress = false
+
+      for (eq0 <- iterationWorkList) {
+        val eq = overallSubst.apply(eq0)
+        // If `eq` is marked with error or timeout, don't try again.
+        val appliedRule = if (eq.isPending) rule(eq) else None
+
+        appliedRule match {
+          case Some((outputEqs, outputSubst)) =>
+            // We made progress - signal that and update state.
+            iterationProgress = true
+            overallProgress = true
+
+            iterationOutput = outputEqs ++ iterationOutput
+            overallSubst = outputSubst @@ overallSubst
+
+          case None =>
+            // No progress, just add to the output.
+            iterationOutput = eq :: iterationOutput
+        }
+      }
+
+      // Swap `iterationOutput` into `iterationWorkList` for next iteration or for return.
+      iterationWorkList = iterationOutput
+      iterationOutput = Nil
+    }
+
+    if (overallProgress) {
+      // We apply `overallSubst` lazily, not all equations have seen all substitution information.
+      val resultEqs = iterationWorkList.map(overallSubst.apply)
+      Some(resultEqs, overallSubst)
+    } else {
+      None
+    }
+  }
+
+  //
+  // Rules.
+  //
+
+  /**
+    * Solves equations that trivially hold (like `univ ~ univ`) and marks trivially unsolvable
+    * equations (like `univ ~ empty`).
+    *
+    * If no progress can be made, [[None]] is returned.
     *
     *   - `univ ~ univ` becomes `({}, [])`
     *   - `univ ~ empty` becomes `({univ ~error empty}, [])`
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x2 ~ univ` becomes `({x2 ~ univ}, [])`
     */
-  private def trivial(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-    val Equation(t1, t2, _, _) = eq
+  private def trivial(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, _) = eq
 
-    def error(): (List[Equation], SetSubstitution) = {
-      p.markProgress()
-      (List(eq.toUnsolvable), SetSubstitution.empty)
+    def error(): Option[(List[Equation], SetSubstitution)] = {
+      Some(List(eq.toUnsolvable), SetSubstitution.empty)
     }
 
-    def success(): (List[Equation], SetSubstitution) = {
-      p.markProgress()
-      (Nil, SetSubstitution.empty)
+    def success(): Option[(List[Equation], SetSubstitution)] = {
+      Some(Nil, SetSubstitution.empty)
     }
 
-    (t1, t2) match {
+    (f1, f2) match {
       // Equations that are solved.
       case (Univ, Univ) => success()
       case (Empty, Empty) => success()
@@ -87,23 +282,25 @@ object SetUnification {
       case (Cst(_), ElemSet(_)) => error()
       case (Cst(c1), Cst(c2)) if c1 != c2 => error()
       // Equations that are not trivial.
-      case _ => (List(eq), SetSubstitution.empty) // Cannot do anything.
+      case _ => None // Cannot do anything.
     }
   }
 
   /**
     * Solves equations of ground assignments to variables (e.g. `x ~ c1 ∪ e2`).
     *
+    * If no progress can be made, [[None]] is returned.
+    *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
     *   - `!x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> !f])`
-    *   - `t1 ∩ t2 ∩ .. ~ univ` becomes `({t1 ~ univ, t2 ~ univ, ..}, [])`
-    *   - `t1 ∪ t2 ∪ .. ~ empty` becomes `({t1 ~ empty, t2 ~ empty, ..}, [])`
+    *   - `f1 ∩ f2 ∩ .. ~ univ` becomes `({f1 ~ univ, f2 ~ univ, ..}, [])`
+    *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
     *   - `f1 ~ f2` where [[SetFormula.isGround]] is true on both sides, becomes `({}, [])` if it
     *     holds or `({f1 ~error f2}, [])` if it does not.
     *
     * This also applies to the symmetric equations.
     */
-  private def constantAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
+  private def constantAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
       // x ~ f, where f is ground
@@ -111,74 +308,70 @@ object SetUnification {
       // {},
       // [x -> f]
       case (Var(x), f) if f.isGround =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, f))
+        Some(Nil, SetSubstitution.singleton(x, f))
 
       // Symmetric case.
       case (f, Var(x)) if f.isGround =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, f))
+        Some(Nil, SetSubstitution.singleton(x, f))
 
       // !x ~ f, where f is ground
       // ---
       // {},
       // [x -> !f]
       case (Compl(Var(x)), f) if f.isGround =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
       // Symmetric case.
       case (f, Compl(Var(x))) if f.isGround =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
       // f1 ∩ f2 ∩ .. ~ univ
       // ---
       // {f1 ~ univ, f2 ~ univ, ..},
       // []
       case (inter@Inter(_, _, _, _, _, _, _), Univ) =>
-        p.markProgress()
         val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
-        (eqs, SetSubstitution.empty)
+        Some(eqs, SetSubstitution.empty)
 
       // Symmetric case.
       case (Univ, inter@Inter(_, _, _, _, _, _, _)) =>
-        p.markProgress()
         val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
-        (eqs, SetSubstitution.empty)
+        Some(eqs, SetSubstitution.empty)
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
       case (union@Union(_, _, _, _, _, _, _), Empty) =>
-        p.markProgress()
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
-        (eqs, SetSubstitution.empty)
+        Some(eqs, SetSubstitution.empty)
 
       // Symmetric Case.
       case (Empty, union@Union(_, _, _, _, _, _, _)) =>
-        p.markProgress()
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
-        (eqs, SetSubstitution.empty)
+        Some(eqs, SetSubstitution.empty)
 
       // f1 ~ f2, where f1 and f2 are ground
       // ---
       // {}, [] if solved
       // {f1 ~error f2}, [] if unsolvable
       case (f1, f2) if f1.isGround && f2.isGround =>
-        p.markProgress()
-        if (isEquivalent(f1, f2)) (Nil, SetSubstitution.empty)
-        else (List(eq.toUnsolvable), SetSubstitution.empty)
+        if (isEquivalent(f1, f2)) {
+          Some(Nil, SetSubstitution.empty)
+        } else {
+          Some(List(eq.toUnsolvable), SetSubstitution.empty)
+        }
 
       case _ =>
         // Cannot do anything.
-        (List(eq), SetSubstitution.empty)
+        None
     }
   }
 
   /**
     * Solves variable alias equations (e.g. `x1 ~ x2`).
+    *
+    * If no progress can be made, [[None]] is returned.
     *
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x1 ~ x2` becomes `({}, [x1 -> x2])`
@@ -188,110 +381,105 @@ object SetUnification {
     * There is a binding-bias towards lower variables, such that `x1 ~ x2` and `x2 ~ x1` both
     * become `({}, [x1 -> x2])`.
     */
-  private def variableAlias(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-    val Equation(t1, t2, _, _) = eq
-    (t1, t2) match {
+  private def variableAlias(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, _) = eq
+    (f1, f2) match {
       // x1 ~ x1
       // ---
       // {},
       // []
       case (Var(x), Var(y)) if x == y =>
-        p.markProgress()
-        (Nil, SetSubstitution.empty)
+        Some(Nil, SetSubstitution.empty)
 
       // x1 ~ x2
       // ---
       // {},
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
-        p.markProgress()
         // Make this rule stable on symmetric equations.
         val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
-        (Nil, SetSubstitution.singleton(x.x, y))
+        Some(Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
       // ---
       // {},
       // []
       case (Compl(Var(x)), Compl(Var(y))) if x == y =>
-        p.markProgress()
-        (Nil, SetSubstitution.empty)
+        Some(Nil, SetSubstitution.empty)
 
       // !x1 ~ !x2
       // ---
       // {},
       // [x1 -> x2]
       case (Compl(x0@Var(_)), Compl(y0@Var(_))) =>
-        p.markProgress()
         // Make this rule stable on symmetric equations.
         val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
-        (Nil, SetSubstitution.singleton(x.x, y))
+        Some(Nil, SetSubstitution.singleton(x.x, y))
 
       case _ =>
         // Cannot do anything.
-        (List(eq), SetSubstitution.empty)
+        None
     }
   }
 
   /**
     * Solves non-recursive variable assignments (e.g. `x1 ~ x2 ∪ c4`).
     *
+    * If no progress can be made, [[None]] is returned.
+    *
     *   - `x ~ f` where `f` does not contain `x` becomes `({}, [x -> f])`
     *   - `!x ~ f` where `f` does not contain `x` becomes `({}, [x -> !f])`
     *
     * This also applies to the symmetric equations.
     */
-  private def variableAssignment(eq: Equation)(implicit p: Progress): (List[Equation], SetSubstitution) = {
-    val Equation(t1, t2, _, _) = eq
-    (t1, t2) match {
+  private def variableAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, _) = eq
+    (f1, f2) match {
       // x ~ f, where f does not contain x
       // ---
       // {},
       // [x -> f]
       case (v@Var(x), f) if !f.contains(v) =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, f))
+        Some(Nil, SetSubstitution.singleton(x, f))
 
       // Symmetric case.
       case (f, v@Var(x)) if !f.contains(v) =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, f))
+        Some(Nil, SetSubstitution.singleton(x, f))
 
       // !x ~ f, where f does not contain x
       // ---
       // {},
       // [x -> !f]
       case (Compl(v@Var(x)), f) if !f.contains(v) =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
       // Symmetric case.
       case (f, Compl(v@Var(x))) if !f.contains(v) =>
-        p.markProgress()
-        (Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
 
       case _ =>
         // Cannot do anything.
-        (List(eq), SetSubstitution.empty)
+        None
     }
   }
 
   /**
     * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
     *
+    * SVE can always make progress, so [[None]] is never returned.
+    *
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  private def sve(eq: Equation)(implicit p: Progress, opts: Options): (List[Equation], SetSubstitution) = {
-    p.markProgress()
+  private def sve(eq: Equation)(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList
     try {
       val subst = successiveVariableElimination(query, fvs)
-      (Nil, subst)
+      Some(Nil, subst)
     } catch {
-      case NoSolutionException() => (List(eq.toUnsolvable), SetSubstitution.empty)
-      case ComplexException(msg) => (List(eq.toTimeout(msg)), SetSubstitution.empty)
+      case NoSolutionException() => Some(List(eq.toUnsolvable), SetSubstitution.empty)
+      case ComplexException(msg) => Some(List(eq.toTimeout(msg)), SetSubstitution.empty)
     }
   }
 
@@ -338,13 +526,42 @@ object SetUnification {
     }
   }
 
-
   /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
-  case class NoSolutionException() extends RuntimeException
+  private case class NoSolutionException() extends RuntimeException
 
   /**
     * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
     * big.
     */
-  case class ComplexException(msg: String) extends RuntimeException
+  private case class ComplexException(msg: String) extends RuntimeException
+
+  //
+  // Checking and Debugging.
+  //
+
+  /**
+    * Verifies that `subst` is a solution to `eqs`.
+    *
+    * Note: Does not verify that `subst` is the most general solution.
+    *
+    * Note: This function is very slow since [[SetFormula.isEquivalent]] is very slow.
+    */
+  def verifySubst(eqs: List[Equation], subst: SetSubstitution): Result[Unit, String] = {
+    // Apply the substitution to every equation and check that it is solved.
+    for (e <- eqs) {
+      // We want to check that `s(f1) ~ s(f2)`
+      val f1 = subst.apply(e.f1)
+      val f2 = subst.apply(e.f2)
+      if (SetFormula.isEquivalent(f1, f2)) ()
+      else {
+        val msg =
+          s"""  Incorrect Substitution:
+             |  Original  : $e
+             |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
+             |""".stripMargin
+        return Result.Err(msg)
+      }
+    }
+    Result.Ok(())
+  }
 }
