@@ -310,12 +310,11 @@ object ConstraintSolver {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
+        res0 <- EffUnification3.unify(t1, t2, scope, renv).mapErr(toTypeError(_, prov))
         res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
+          res0 match {
+            case Some(subst) => ResolutionResult.newSubst(subst)
+            case None => ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
