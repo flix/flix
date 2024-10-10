@@ -43,21 +43,22 @@ object SetUnification {
                             debugging: Boolean = false
                           )
 
-  /**
-    * Represents the running state of the solver.
-    *   - `eqs`: the remaining equations to solve
-    *   - `errEqs`: the remaining equations that have been found unsolvable
-    *   - `subst`: the current substitution, which has already been applied to `eqs`
-    *   - `lastProgressPhase`: the name of the last phase that was run and made progress
-    *   - `currentPhase`: the number of the last phase that was run
-    */
-  private class State(var eqs: List[Equation]) {
+  /** Represents the running mutable state of the solver. */
+  private class State(initialEquations: List[Equation]) {
+    /** The remaining equations to solve. */
+    var eqs: List[Equation] = initialEquations
+    /** The remaining equations that have been found unsolvable. */
     var errEqs: List[Equation] = Nil
+    /** The current substitution, which has already been applied to `eqs`. */
     var subst: SetSubstitution = SetSubstitution.empty
+    /** The name of the last phase that was run and made progress. */
     var lastProgressPhaseName: String = "Setup (Nothing)"
+    /** The number of the last phase that was run. */
     var lastProgressPhaseNumber: Int = 0
-    var currentPhaseNumber: Int = 0
+    /** The number of the previous phase that was run. */
+    var previousPhaseNumber: Int = 0
 
+    /** Returns all equations, both with and without errors. */
     def allEqs: List[Equation] = eqs ++ errEqs
   }
 
@@ -150,13 +151,13 @@ object SetUnification {
   private def runPhase(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Boolean = {
     if (state.eqs.isEmpty) return false
 
-    state.currentPhaseNumber += 1
-    debugPhase(state.currentPhaseNumber, name, descr)
+    state.previousPhaseNumber += 1
+    debugPhase(state.previousPhaseNumber, name, descr)
 
     phase(state.eqs) match {
       case Some((eqs, subst)) =>
         state.lastProgressPhaseName = name
-        state.lastProgressPhaseNumber = state.currentPhaseNumber
+        state.lastProgressPhaseNumber = state.previousPhaseNumber
         state.eqs = eqs
         state.subst = subst @@ state.subst
         state.errEqs = subst.apply(state.errEqs)
