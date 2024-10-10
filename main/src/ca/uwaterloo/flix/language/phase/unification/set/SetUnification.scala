@@ -414,8 +414,11 @@ object SetUnification {
       // {}, [] if solved
       // {f1 ~error f2}, [] if unsolvable
       case (f1, f2) if f1.isGround && f2.isGround =>
-        if (isEquivalent(f1, f2)) Some(Nil, SetSubstitution.empty)
-        else Some(List(eq.toUnsolvable), SetSubstitution.empty)
+        if (isEquivalent(f1, f2)) {
+          Some(Nil, SetSubstitution.empty)
+        } else {
+          Some(List(eq.toUnsolvable), SetSubstitution.empty)
+        }
 
       case _ =>
         // Cannot do anything.
