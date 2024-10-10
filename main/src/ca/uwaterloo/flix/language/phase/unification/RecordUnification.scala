@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
+import ca.uwaterloo.flix.language.phase.unification.OldStarUnification.unifyTypes
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object RecordUnification {
@@ -30,28 +29,28 @@ object RecordUnification {
     *
     * The given types must have kind [[Kind.RecordRow]]
     */
-  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = (tpe1, tpe2) match {
+  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
-    case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv, eqEnv)
+    case (tvar: Type.Var, tpe) => OldStarUnification.unifyVar(tvar, tpe, renv)
 
-    case (tpe, tvar: Type.Var) => Unification.unifyVar(tvar, tpe, renv, eqEnv)
+    case (tpe, tvar: Type.Var) => OldStarUnification.unifyVar(tvar, tpe, renv)
 
-    case (Type.RecordRowEmpty, Type.RecordRowEmpty) => Ok((Substitution.empty, Nil, true))
+    case (Type.RecordRowEmpty, Type.RecordRowEmpty) => Ok((Substitution.empty, Nil))
 
     case (Type.RecordRowEmpty, _) => Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
     case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(_), _), _, _), restRow1, _), row2) =>
       // Attempt to write the row to match.
-      rewriteRecordRow(row2, row1, renv, eqEnv) flatMap {
-        case (subst1, restRow2, econstrs1, prog1) =>
-          unifyTypes(subst1(restRow1), subst1(restRow2), renv, eqEnv) flatMap {
-            case (subst2, econstrs2, prog2) => Result.Ok((subst2 @@ subst1, econstrs1 ++ econstrs2, prog1 || prog2))
+      rewriteRecordRow(row2, row1, renv) flatMap {
+        case (subst1, restRow2, econstrs1) =>
+          unifyTypes(subst1(restRow1), subst1(restRow2), renv) flatMap {
+            case (subst2, econstrs2) => Result.Ok((subst2 @@ subst1, econstrs1 ++ econstrs2))
           }
       }
 
-    case (Type.Cst(TypeConstructor.Error(_, _), _), _) => Ok((Substitution.empty, Nil, true))
+    case (Type.Cst(TypeConstructor.Error(_, _), _), _) => Ok((Substitution.empty, Nil))
 
-    case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => Ok((Substitution.empty, Nil, true))
+    case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => Ok((Substitution.empty, Nil))
 
     case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }
@@ -59,21 +58,21 @@ object RecordUnification {
   /**
     * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
     */
-  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    def visit(row: Type): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = (row, staticRow) match {
+    def visit(row: Type): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), labelType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), labelType1, _), _, _)) =>
         // Case 1: The row is of the form { label2 = labelType2 | restRow2 }
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
           for {
-            (subst, econstrs, prog) <- unifyTypes(labelType1, labelType2, renv, eqEnv)
-          } yield (subst, restRow2, econstrs, prog)
+            (subst, econstrs) <- unifyTypes(labelType1, labelType2, renv)
+          } yield (subst, restRow2, econstrs)
         } else {
           // Case 1.2: The labels do not match, attempt to match with a field further down.
           visit(restRow2).map {
-            case (subst, rewrittenRow, econstrs, prog) => (subst, Type.mkRecordRowExtend(label2, labelType2, rewrittenRow, loc), econstrs, prog)
+            case (subst, rewrittenRow, econstrs) => (subst, Type.mkRecordRowExtend(label2, labelType2, rewrittenRow, loc), econstrs)
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), labelType1, _), _, _)) =>
@@ -86,7 +85,7 @@ object RecordUnification {
           val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)
           val type2 = Type.mkRecordRowExtend(label1, labelType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv.sym, type2)
-          Ok((subst, restRow2, Nil, true))
+          Ok((subst, restRow2, Nil))
         }
 
       case (Type.Cst(TypeConstructor.RecordRowEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), labelType1, _), _, _)) =>

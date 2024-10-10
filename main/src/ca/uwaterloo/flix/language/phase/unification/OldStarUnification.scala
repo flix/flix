@@ -96,9 +96,9 @@ object OldStarUnification {
       val cases = sym1.universe
       CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets
 
-    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv, ListMap.empty).map { case (subst, constrs, prog) => (subst, constrs) } // MATT empty hack
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
-    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv, ListMap.empty).map { case (subst, constrs, prog) => (subst, constrs) } // MATT empty hack
+    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv)
 
     case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
   }
