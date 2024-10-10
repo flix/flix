@@ -494,12 +494,6 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       checkEq(bodyType, tpe, loc)
 
-    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
-      val env1 = env + (varSym -> exp1.tpe)
-      val letBoundType = visitExpr(exp1)(root, env1, lenv)
-      val bodyType = visitExpr(exp2)(root, env1, lenv)
-      checkEq(bodyType, tpe, loc)
-
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
       val firstType = visitExpr(exp1)
       val secondType = visitExpr(exp2)

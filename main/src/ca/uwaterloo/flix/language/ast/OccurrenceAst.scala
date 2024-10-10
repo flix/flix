@@ -65,8 +65,6 @@ object OccurrenceAst {
 
     case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expr, exp2: OccurrenceAst.Expr, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expr, exp2: OccurrenceAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
-
     case class Stmt(exp1: OccurrenceAst.Expr, exp2: OccurrenceAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr

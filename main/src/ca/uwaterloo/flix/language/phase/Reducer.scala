@@ -121,12 +121,6 @@ object Reducer {
         val e2 = visitExpr(exp2)
         Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-      case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-        lctx.lparams.addOne(LocalParam(varSym, exp1.tpe))
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
-        Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
       case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)

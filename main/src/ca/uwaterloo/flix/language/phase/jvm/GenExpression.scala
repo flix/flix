@@ -1248,27 +1248,6 @@ object GenExpression {
       mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, _) =>
-      // Jvm Type of the `exp1`
-      val jvmType = JvmOps.getJvmType(exp1.tpe)
-      // Store instruction for `jvmType`
-      val iStore = AsmOps.getStoreInstruction(jvmType)
-      // JvmType of the closure
-      val cloType = JvmOps.getClosureClassType(defSym)
-
-      // Store temp recursive value
-      mv.visitInsn(ACONST_NULL)
-      mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
-      // Compile the closure
-      compileExpr(exp1)
-      // fix the local and closure reference
-      mv.visitInsn(DUP)
-      mv.visitInsn(DUP)
-      mv.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo$index", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
-      // Store the closure locally (maybe not needed?)
-      mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
-      compileExpr(exp2)
-
     case Expr.Stmt(exp1, exp2, _, _, _) =>
       compileExpr(exp1)
       BytecodeInstructions.xPop(BackendType.toErasedBackendType(exp1.tpe))(new BytecodeInstructions.F(mv))

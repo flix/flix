@@ -217,11 +217,6 @@ object Inliner {
         }
       }
 
-    case OccurrenceAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
     case OccurrenceAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       /// Case 1:
       /// If `exp1` is pure, so it has no side effects, then it is safe to remove
@@ -387,13 +382,6 @@ object Inliner {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
-
-    case OccurrenceAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val freshVar = Symbol.freshVarSym(varSym)
-      val env1 = env0 + (varSym -> freshVar)
-      val e1 = substituteExp(exp1, env1)
-      val e2 = substituteExp(exp2, env1)
-      LiftedAst.Expr.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

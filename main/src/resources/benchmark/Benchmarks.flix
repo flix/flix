@@ -26,11 +26,17 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "List.map"       => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
     "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
     "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "InlinerMap10k" => () -> {
+    "List.filterMap" => () -> List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole,
+    "InlinerMap10k"  => () -> {
         let l1 = Benchmark.Inliner.range(0, 10_000);
         let l2 = Benchmark.Inliner.map(x -> x + 1, l1);
         let l3 = Benchmark.Inliner.length(l2);
         blackhole(l3)
+    },
+    "InlinerFilterMap10k" => () -> {
+        let l1 = Benchmark.Inliner.range(0, 10_000);
+        let l2 = Benchmark.Inliner.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
+        blackhole(l2)
     },
     "InlinerMap10kOptimized" => () -> {
         let top = 10_000 - 1;
@@ -39,5 +45,12 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
         let l4 = Benchmark.Inliner.Optimized.ln(l3, 0);
         blackhole(l4)
+    },
+    "InlinerFilterMap10kOptimized" => () -> {
+        let top = 10_000 - 1;
+        let l1 = Benchmark.Inliner.Optimized.rng(top, Nil);
+        let l2 = Benchmark.Inliner.Optimized.fmp(l1, Nil);
+        let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
+        blackhole(l3)
     }
 }
