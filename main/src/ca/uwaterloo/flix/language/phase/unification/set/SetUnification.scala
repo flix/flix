@@ -180,25 +180,27 @@ object SetUnification {
     var progress = true
     while (progress) {
       progress = false
-      while (workList != Nil) workList match {
-        case eq0 :: tail if !eq0.isPending =>
-          // Equation could not be solved, so avoid trying again.
-          workList = tail
-          val eq = subst.apply(eq0)
-          producedEqs = eq :: producedEqs
-        case eq0 :: tail =>
-          workList = tail
-          val eq = subst.apply(eq0)
-          rule(eq) match {
-            case Some((ruleEqs, s)) =>
-              progress = true
-              producedEqs = ruleEqs ++ producedEqs
-              subst = s @@ subst
-            case None =>
-              producedEqs = eq :: producedEqs
-          }
+      while (workList != Nil) {
+        workList match {
+          case eq0 :: tail if !eq0.isPending =>
+            // Equation could not be solved, so avoid trying again.
+            workList = tail
+            val eq = subst.apply(eq0)
+            producedEqs = eq :: producedEqs
+          case eq0 :: tail =>
+            workList = tail
+            val eq = subst.apply(eq0)
+            rule(eq) match {
+              case Some((ruleEqs, s)) =>
+                progress = true
+                producedEqs = ruleEqs ++ producedEqs
+                subst = s @@ subst
+              case None =>
+                producedEqs = eq :: producedEqs
+            }
 
-        case Nil => ()
+          case Nil => ()
+        }
       }
       workList = producedEqs
       producedEqs = Nil
