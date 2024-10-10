@@ -47,8 +47,6 @@ object SetUnification {
   private class State(initialEquations: List[Equation]) {
     /** The remaining equations to solve. */
     var eqs: List[Equation] = initialEquations
-    /** The remaining equations that have been found unsolvable. */
-    var errEqs: List[Equation] = Nil
     /** The current substitution, which has already been applied to `eqs`. */
     var subst: SetSubstitution = SetSubstitution.empty
     /** The name of the last phase that was run and made progress. */
@@ -57,24 +55,6 @@ object SetUnification {
     var lastProgressPhaseNumber: Int = 0
     /** The number of the previous phase that was run. */
     var previousPhaseNumber: Int = 0
-
-    /** Returns all equations, both with and without errors. */
-    def allEqs: List[Equation] = eqs ++ errEqs
-  }
-
-  /**
-    * Moves all non-pending equations into their own list for performance, not
-    * required for correctness.
-    * */
-  private def moveErrEquations(state: State): Unit = {
-    state.eqs = state.eqs.filter(eq => {
-      if (eq.isPending) {
-        true
-      } else {
-        state.errEqs = eq :: state.errEqs
-        false
-      }
-    })
   }
 
   /**
@@ -109,9 +89,7 @@ object SetUnification {
     runPhase(assertEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
     runPhase(svePermuations, state, "SVE", "Applies SVE in different permutations.")
 
-    assert(state.eqs.isEmpty, message = state.eqs)
-
-    (state.allEqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
+    (state.eqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
   }
 
   /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
@@ -160,8 +138,6 @@ object SetUnification {
         state.lastProgressPhaseNumber = state.previousPhaseNumber
         state.eqs = eqs
         state.subst = subst @@ state.subst
-        state.errEqs = subst.apply(state.errEqs)
-        moveErrEquations(state)
 
         debugState(state)
         true
@@ -184,10 +160,6 @@ object SetUnification {
     if (opts.debugging) {
       Console.println(s"Equations (${state.eqs.size}):")
       Console.println(state.eqs.map("  " + _).mkString(",\n"))
-      if (state.errEqs.nonEmpty) {
-        Console.println(s"Error Equations (${state.errEqs.size}):")
-        Console.println(state.errEqs.map("  " + _).mkString(",\n"))
-      }
       Console.println(s"Substitution (${state.subst.numberOfBindings}):")
       Console.println(state.subst.toString)
       Console.println("")
