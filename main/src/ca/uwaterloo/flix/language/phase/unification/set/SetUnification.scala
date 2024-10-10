@@ -31,7 +31,7 @@ object SetUnification {
     * @param permutationLimit if positive, the maximum number of permutations that
     *                         [[svePermuations]] will try
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
-    * @param svePermutationExitSize [[svePermuations]] will stop searching early if it finds a\
+    * @param svePermutationExitSize [[svePermuations]] will stop searching early if it finds a
     *                               substitution smaller than this
     * @param debugging the amount of debugging information printed
     */
