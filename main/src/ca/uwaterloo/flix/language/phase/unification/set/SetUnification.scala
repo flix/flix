@@ -26,35 +26,41 @@ object SetUnification {
   /**
     * The static parameters of set unification.
     *
-    * @param sizeThreshold if positive, [[solveWithInfo]] will give up before SVE if there are more
+    * @param sizeThreshold if positive, [[solve]] will give up before SVE if there are more
     *                      equations than this
     * @param permutationLimit if positive, the maximum number of permutations that
     *                         [[svePermutations]] will try
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
     * @param svePermutationExitSize [[svePermutations]] will stop searching early if it finds a
     *                               substitution smaller than this
-    * @param debugging the amount of debugging information printed
     */
   final case class Options(
                             sizeThreshold: Int = 10,
                             permutationLimit: Int = 10,
                             sveRecSizeThreshold: Int = 1800 * 2,
-                            svePermutationExitSize: Int = 0,
-                            debugging: Boolean = false
+                            svePermutationExitSize: Int = 0
                           )
 
   /** Represents the running mutable state of the solver. */
-  private class State(initialEquations: List[Equation]) {
+  class State(initialEquations: List[Equation]) {
     /** The remaining equations to solve. */
     var eqs: List[Equation] = initialEquations
     /** The current substitution, which has already been applied to `eqs`. */
     var subst: SetSubstitution = SetSubstitution.empty
-    /** The name of the last phase that was run and made progress. */
-    var lastProgressPhaseName: String = "Setup (Nothing)"
-    /** The number of the last phase that was run. */
-    var lastProgressPhaseNumber: Int = 0
-    /** The number of the previous phase that was run. */
-    var previousPhaseNumber: Int = 0
+  }
+
+  /**
+    * A listener that observes the operations of [[solve]].
+    *
+    *   - `onEnterPhase(phaseName: String, state: State): Unit`
+    *   - `enExitPhase(state: State): Unit`
+    */
+  final case class SolverListener(onEnterPhase: (String, State) => Unit, onExitPhase: (State, Boolean) => Unit)
+
+  object SolverListener {
+
+    /** The [[SolverListener]] that does nothing. */
+    val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
   }
 
   /**
@@ -70,45 +76,23 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     */
-  def solve(eqs: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution) = {
-    val (solvedEqs, s, _) = solveWithInfo(eqs)
-    (solvedEqs, s)
-  }
-
-  /**
-    * Contains information about the call to [[solveWithInfo]].
-    *
-    * @param lastProgressPhaseName the name of the last phase to make progress.
-    * @param lastProgressPhaseNumber the number of the last phase to make progress.
-    */
-  final case class Info(
-                       lastProgressPhaseName: String,
-                       lastProgressPhaseNumber: Int,
-                       )
-
-  /**
-    * Attempts to solve the equation system `eqs`, like [[solve]].
-    *
-    * Additionally returns [[Info]] about the unification.
-    */
-  def solveWithInfo(l: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution, Info) = {
-    val noDebug = opts.copy(debugging = false)
+  def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
 
     val state = new State(l)
+    val trivialPhaseName = "Trivial Equations"
 
-    runWithState(runRule(constantAssignment), state, "Constant Assignment")
-    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
-    runWithState(runRule(variableAlias), state, "Variable Aliases")
-    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
-    runWithState(runRule(variableAssignment), state, "Simple Variable Assignment")
-    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
-    runWithState(duplicatedAndReflective, state, "Duplicates and Reflective")
-    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
-    runWithState(assertSveEquationCount, state, "Assert Size")(noDebug)
-    runWithState(svePermutations, state, "SVE")
+    runWithState(state, runRule(constantAssignment), "Constant Assignment")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(variableAlias), "Variable Aliases")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
+    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, assertSveEquationCount, "Assert Size")
+    runWithState(state, svePermutations, "SVE")
 
-    val info = Info(state.lastProgressPhaseName, state.lastProgressPhaseNumber)
-    (state.eqs, state.subst, info)
+    (state.eqs, state.subst)
   }
 
   /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
@@ -123,20 +107,17 @@ object SetUnification {
     * Runs the given equation system solver `phase` on `state`, printing debugging information
     * according to [[Options]].
     */
-  private def runWithState(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String)(implicit opts: Options): Unit = {
-    state.previousPhaseNumber += 1
-    debugPhase(state.previousPhaseNumber, name)
+  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
+    listener.onEnterPhase(phaseName, state)
 
     phase(state.eqs) match {
       case Some((eqs, subst)) =>
-        state.lastProgressPhaseName = name
-        state.lastProgressPhaseNumber = state.previousPhaseNumber
         state.eqs = eqs
         state.subst = subst @@ state.subst
-        debugState(state)
+        listener.onExitPhase(state, true)
 
       case None =>
-        ()
+        listener.onExitPhase(state, false)
     }
   }
 
@@ -541,15 +522,14 @@ object SetUnification {
     }
   }
 
-
   /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
-  case class NoSolutionException() extends RuntimeException
+  private case class NoSolutionException() extends RuntimeException
 
   /**
     * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
     * big.
     */
-  case class ComplexException(msg: String) extends RuntimeException
+  private case class ComplexException(msg: String) extends RuntimeException
 
   //
   // Checking and Debugging.
@@ -580,22 +560,4 @@ object SetUnification {
     }
     Result.Ok(())
   }
-
-  /** Prints the phase number, name, and description if enabled by [[Options]]. */
-  private def debugPhase(number: Int, name: String)(implicit opts: Options): Unit =
-    if (opts.debugging) {
-      Console.println("-".repeat(80))
-      Console.println(s"--- Phase $number: $name")
-      Console.println("-".repeat(80))
-    }
-
-  /** Prints the state equations and substitution if enabled by [[Options]]. */
-  private def debugState(state: State)(implicit opts: Options): Unit =
-    if (opts.debugging) {
-      Console.println(s"Equations (${state.eqs.size}):")
-      Console.println(state.eqs.map("  " + _).mkString(",\n"))
-      Console.println(s"Substitution (${state.subst.numberOfBindings}):")
-      Console.println(state.subst.toString)
-      Console.println("")
-    }
 }
