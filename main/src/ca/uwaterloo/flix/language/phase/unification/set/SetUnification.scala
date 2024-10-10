@@ -96,16 +96,16 @@ object SetUnification {
 
     val state = new State(l)
 
-    runWithState(runRule(constantAssignment), state, "Constant Assignment", "Solves equations where one or both sides are ground.")
-    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runWithState(runRule(variableAlias), state, "Variable Aliases", "Solves equations like `x1 ~ x2`.")
-    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runWithState(runRule(variableAssignment), state, "Simple Variable Assignment", "Solves non-recursive variable assignments.")
-    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runWithState(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
-    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runWithState(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
-    runWithState(svePermutations, state, "SVE", "Applies SVE in different permutations.")
+    runWithState(runRule(constantAssignment), state, "Constant Assignment")
+    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
+    runWithState(runRule(variableAlias), state, "Variable Aliases")
+    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
+    runWithState(runRule(variableAssignment), state, "Simple Variable Assignment")
+    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
+    runWithState(duplicatedAndReflective, state, "Duplicates and Reflective")
+    runWithState(runRule(trivial), state, "Trivial Equations")(noDebug)
+    runWithState(assertSveEquationCount, state, "Assert Size")(noDebug)
+    runWithState(svePermutations, state, "SVE")
 
     val info = Info(state.lastProgressPhaseName, state.lastProgressPhaseNumber)
     (state.eqs, state.subst, info)
@@ -123,9 +123,9 @@ object SetUnification {
     * Runs the given equation system solver `phase` on `state`, printing debugging information
     * according to [[Options]].
     */
-  private def runWithState(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Unit = {
+  private def runWithState(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String)(implicit opts: Options): Unit = {
     state.previousPhaseNumber += 1
-    debugPhase(state.previousPhaseNumber, name, descr)
+    debugPhase(state.previousPhaseNumber, name)
 
     phase(state.eqs) match {
       case Some((eqs, subst)) =>
@@ -582,11 +582,10 @@ object SetUnification {
   }
 
   /** Prints the phase number, name, and description if enabled by [[Options]]. */
-  private def debugPhase(number: Int, name: String, description: String)(implicit opts: Options): Unit =
+  private def debugPhase(number: Int, name: String)(implicit opts: Options): Unit =
     if (opts.debugging) {
       Console.println("-".repeat(80))
       Console.println(s"--- Phase $number: $name")
-      Console.println(s"    ($description)")
       Console.println("-".repeat(80))
     }
 
