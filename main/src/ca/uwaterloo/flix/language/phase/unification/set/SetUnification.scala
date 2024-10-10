@@ -297,9 +297,9 @@ object SetUnification {
 
   /**
     * Solves equations that trivially hold (like `univ ~ univ`) and marks trivially unsolvable
-    * equations (like `univ ~ empty`). Always returns an empty substitution.
+    * equations (like `univ ~ empty`).
     *
-    * Otherwise returns `eq` directly.
+    * If no progress can be made, [[None]] is returned.
     *
     *   - `univ ~ univ` becomes `({}, [])`
     *   - `univ ~ empty` becomes `({univ ~error empty}, [])`
@@ -346,6 +346,8 @@ object SetUnification {
 
   /**
     * Solves equations of ground assignments to variables (e.g. `x ~ c1 ∪ e2`).
+    *
+    * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
     *   - `!x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> !f])`
@@ -424,6 +426,8 @@ object SetUnification {
   /**
     * Solves variable alias equations (e.g. `x1 ~ x2`).
     *
+    * If no progress can be made, [[None]] is returned.
+    *
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x1 ~ x2` becomes `({}, [x1 -> x2])`
     *   - `!x1 ~ !x1` becomes `({}, [])`
@@ -475,6 +479,8 @@ object SetUnification {
 
   /**
     * Solves non-recursive variable assignments (e.g. `x1 ~ x2 ∪ c4`).
+    *
+    * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where `f` does not contain `x` becomes `({}, [x -> f])`
     *   - `!x ~ f` where `f` does not contain `x` becomes `({}, [x -> !f])`
