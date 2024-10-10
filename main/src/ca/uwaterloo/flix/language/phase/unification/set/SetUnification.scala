@@ -29,9 +29,9 @@ object SetUnification {
     * @param sizeThreshold if positive, [[solveWithInfo]] will give up before SVE if there are more
     *                      equations than this
     * @param permutationLimit if positive, the maximum number of permutations that
-    *                         [[svePermuations]] will try
+    *                         [[svePermutations]] will try
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
-    * @param svePermutationExitSize [[svePermuations]] will stop searching early if it finds a
+    * @param svePermutationExitSize [[svePermutations]] will stop searching early if it finds a
     *                               substitution smaller than this
     * @param debugging the amount of debugging information printed
     */
@@ -105,7 +105,7 @@ object SetUnification {
     runWithState(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
     runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
     runWithState(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
-    runWithState(svePermuations, state, "SVE", "Applies SVE in different permutations.")
+    runWithState(svePermutations, state, "SVE", "Applies SVE in different permutations.")
 
     val info = Info(state.lastProgressPhaseName, state.lastProgressPhaseNumber)
     (state.eqs, state.subst, info)
@@ -165,29 +165,32 @@ object SetUnification {
   }
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
-  private def svePermuations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    // We solve the first `permutationLimit` permutations and pick the one that
-    // gives rise to the smallest substitution.
+  private def svePermutations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
+    // both successfully solves it and has the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
     var bestEqs: List[Equation] = Nil
     var bestSubst = SetSubstitution.empty
     var bestSize = -1
+    def noPreviousPermutation(): Boolean = bestSize == -1
+
+    // Go through the permutations, tracking the best one.
     var stop = false
     for (s <- permutations.map(runRule(sve)) if !stop) s match {
       case Some((ruleEqs, s)) =>
-        val sSize = s.totalFormulaSize
-        val firstPermutation = bestSize < 0
         val firstSolution = bestEqs.nonEmpty && ruleEqs.isEmpty
+        val sSize = s.totalFormulaSize
         val smallestSubstitution = sSize < bestSize
-        if (firstPermutation || firstSolution || smallestSubstitution) {
+        if (noPreviousPermutation() || firstSolution || smallestSubstitution) {
           bestEqs = ruleEqs
           bestSize = sSize
           bestSubst = s
+          // If we have a solution and it is below the good-enough threshold of opts, exit early.
           if (bestEqs.isEmpty && bestSize <= opts.svePermutationExitSize) stop = true
         }
       case None => ()
     }
-    if (bestSize < 0) None
+    if (noPreviousPermutation()) None
     else Some(bestEqs, bestSubst)
   }
 
