@@ -44,7 +44,7 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    val (leftovers, subst) = ConstraintSolver2.goAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
+    val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
     Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), true)) // MATT hack: assuming progress
   }
 
@@ -54,7 +54,7 @@ object Unification {
   def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    ConstraintSolver2.goAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
+    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
       case (Nil, subst) => Some(subst)
       case (_ :: _, _) => None
     }
@@ -66,7 +66,7 @@ object Unification {
   def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    ConstraintSolver2.goAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
+    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
       case (cs, subst) =>
         if (cs.forall(isAssocConstraint)) {
           Some(subst)

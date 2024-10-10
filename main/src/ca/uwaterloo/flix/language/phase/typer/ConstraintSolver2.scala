@@ -183,15 +183,33 @@ object ConstraintSolver2 {
   }
 
   /**
+    * Unifies the given type fully, reducing all generated constraints.
+    *
+    * Returns None if the type are not unifiable.
+    */
+  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Option[Substitution] = {
+    // unification is now defined as taking a single constraint and applying rules until it's done
+    val constr = TypeConstraint.Equality(tpe1, tpe2)
+    implicit val r = renv
+    solveAllTypes(List(constr)) match {
+      // Case 1: No constraints left. Success.
+      case (Nil, subst) => Some(subst)
+
+      // Case 2: Leftover constraints. Failure
+      case (_ :: _, _) => None
+    }
+  }
+
+  /**
     * Solves the given constraint set as far as possible.
     */
-  def goAll(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv, trenv: Map[Symbol.TraitSym, TraitContext], eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  def solveAll(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv, trenv: Map[Symbol.TraitSym, TraitContext], eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     var constrs = constrs0
     var subst = SubstitutionTree.empty
     var progressMade = true
     while (progressMade) {
       implicit val tracker: Progress = Progress()
-      val (newConstrs, newSubst) = goOne(constrs)
+      val (newConstrs, newSubst) = solveOne(constrs)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
       subst = newSubst @@ subst
@@ -205,13 +223,13 @@ object ConstraintSolver2 {
     *
     * The constraint set must contain only equality constraints.
     */
-  def goAllTypes(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], Substitution) = {
+  def solveAllTypes(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], Substitution) = {
     var constrs = constrs0
     var subst = Substitution.empty
     var progressMade = true
     while (progressMade) {
       implicit val tracker: Progress = Progress()
-      val (newConstrs, newSubst) = goTypes(constrs)
+      val (newConstrs, newSubst) = solveOneTypes(constrs)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
       subst = newSubst @@ subst
@@ -223,7 +241,7 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def goOne(constrs: List[TypeConstraint])(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, trenv: Map[Symbol.TraitSym, TraitContext], eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  private def solveOne(constrs: List[TypeConstraint])(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, trenv: Map[Symbol.TraitSym, TraitContext], eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
@@ -242,7 +260,7 @@ object ConstraintSolver2 {
     *
     * Only applies rules relevant to equality constraints.
     */
-  private def goTypes(constrs: List[TypeConstraint])(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], Substitution) = {
+  private def solveOneTypes(constrs: List[TypeConstraint])(implicit tracker: Progress, scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint], Substitution) = {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
@@ -400,24 +418,6 @@ object ConstraintSolver2 {
         // TODO CONSTR-SOLVER-2 Right resiliency strategy?
         case _ :: _ :: _ => List(c)
       }
-  }
-
-  /**
-    * Unifies the given type fully, reducing all generated constraints.
-    *
-    * Returns None if the type are not unifiable.
-    */
-  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Option[Substitution] = {
-    // unification is now defined as taking a single constraint and applying rules until it's done
-    val constr = TypeConstraint.Equality(tpe1, tpe2)
-    implicit val r = renv
-    goAllTypes(List(constr)) match {
-      // Case 1: No constraints left. Success.
-      case (Nil, subst) => Some(subst)
-
-      // Case 2: Leftover constraints. Failure
-      case (_ :: _, _) => None
-    }
   }
 
   /**
