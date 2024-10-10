@@ -16,11 +16,12 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.{EqualityEnv, Progress}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.Progress
 import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -30,7 +31,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: Scope, tracker: Progress, renv0: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type)(implicit scope: Scope, tracker: Progress, renv0: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
