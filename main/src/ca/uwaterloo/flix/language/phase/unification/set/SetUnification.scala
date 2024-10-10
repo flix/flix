@@ -69,11 +69,22 @@ object SetUnification {
   }
 
   /**
+    * Contains information about the call to [[solveWithInfo]].
+    *
+    * @param lastProgressPhaseName the name of the last phase to make progress.
+    * @param lastProgressPhaseNumber the number of the last phase to make progress.
+    */
+  final case class Info(
+                       lastProgressPhaseName: String,
+                       lastProgressPhaseNumber: Int,
+                       )
+
+  /**
     * Attempts to solve the equation system `eqs`, like [[solve]].
     *
     * Additionally returns the name and number of the last phase to make progress.
     */
-  def solveWithInfo(l: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution, (String, Int)) = {
+  def solveWithInfo(l: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution, Info) = {
     val noDebug = opts.copy(debugging = false)
 
     val state = new State(l)
@@ -89,7 +100,8 @@ object SetUnification {
     runWithState(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
     runWithState(svePermuations, state, "SVE", "Applies SVE in different permutations.")
 
-    (state.eqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
+    val info = Info(state.lastProgressPhaseName, state.lastProgressPhaseNumber)
+    (state.eqs, state.subst, info)
   }
 
   /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
