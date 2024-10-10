@@ -36,7 +36,7 @@ object SetUnification {
     * @param debugging the amount of debugging information printed
     */
   final case class Options(
-                            sizeThreshold: Int = 1800,
+                            sizeThreshold: Int = 10,
                             permutationLimit: Int = 10,
                             sveRecSizeThreshold: Int = 1800 * 2,
                             svePermutationExitSize: Int = 0,
@@ -86,16 +86,16 @@ object SetUnification {
     runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
     runPhase(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
     runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(assertEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
+    runPhase(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
     runPhase(svePermuations, state, "SVE", "Applies SVE in different permutations.")
 
     (state.eqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
   }
 
   /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
-  private def assertEquationCount(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def assertSveEquationCount(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
     if (opts.sizeThreshold > 0 && eqs.length > opts.sizeThreshold) {
-      val errMsg = s"Amount of complex equations in substitution (${eqs.length}) is over the threshold (${opts.sizeThreshold})."
+      val errMsg = s"Amount of leftover equations for SVE (${eqs.length}) is over the threshold (${opts.sizeThreshold})."
       Some(eqs.map(_.toTimeout(errMsg)), SetSubstitution.empty)
     } else None
   }
