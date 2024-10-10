@@ -515,6 +515,8 @@ object SetUnification {
   /**
     * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
     *
+    * SVE can always make progress, so [[None]] is never returned.
+    *
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
