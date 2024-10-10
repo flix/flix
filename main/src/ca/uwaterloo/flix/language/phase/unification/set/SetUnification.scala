@@ -100,9 +100,11 @@ object SetUnification {
     } else None
   }
 
-  private def runPhase(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Boolean = {
-    if (state.eqs.isEmpty) return false
-
+  /**
+    * Runs the given equation system solver `phase` on `state`, printing debugging information
+    * according to [[Options]].
+    */
+  private def runPhase(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Unit = {
     state.previousPhaseNumber += 1
     debugPhase(state.previousPhaseNumber, name, descr)
 
@@ -112,11 +114,10 @@ object SetUnification {
         state.lastProgressPhaseNumber = state.previousPhaseNumber
         state.eqs = eqs
         state.subst = subst @@ state.subst
-
         debugState(state)
-        true
+
       case None =>
-        false
+        ()
     }
   }
 
