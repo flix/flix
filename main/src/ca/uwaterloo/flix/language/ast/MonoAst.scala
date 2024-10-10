@@ -96,8 +96,6 @@ object MonoAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -162,8 +160,6 @@ object MonoAst {
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
-
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
