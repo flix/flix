@@ -3064,17 +3064,17 @@ object Weeder2 {
   }
 
   private def visitQName(tree: Tree): Validation[Name.QName, CompilationMessage] = {
-    expect(tree, TreeKind.QName)
     val idents = pickAll(TreeKind.Ident, tree)
     mapN(traverse(idents)(tokenToIdent)) {
-      idents =>
-        assert(idents.nonEmpty) // We require atleast one element to construct a qname
+      case idents if idents.nonEmpty => // We require at least one element to construct a qname
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
         val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
         val nname = Name.NName(nnameIdents, loc)
         Name.QName(nname, ident, loc)
+      case nothing => // Return None instead?
+        Name.mkQName("error", SourceLocation.Unknown)
     }
   }
 
@@ -3123,7 +3123,10 @@ object Weeder2 {
         val name = text(tree).mkString("")
         val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
         Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
-      case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
+      case _ =>
+        val name = text(tree).mkString("")
+        val error = Malformed(NamedTokenSet.FromTreeKinds(Set(SyntaxTree.TreeKind.Ident)), SyntacticContext.Unknown, None, tree.loc)
+        Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
     }
   }
 
@@ -3207,7 +3210,10 @@ object Weeder2 {
       case Some(t) => Validation.success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
-        Validation.HardFailure(Chain(error))
+        val errorTreeKind = TreeKind.ErrorTree(error)
+        val errorChild = Tree(errorTreeKind, Array.empty, tree.loc)
+        val errorTree = Tree(errorTreeKind, Array(errorChild), tree.loc)
+        Validation.toSoftFailure(errorTree, error)
     }
   }
 
