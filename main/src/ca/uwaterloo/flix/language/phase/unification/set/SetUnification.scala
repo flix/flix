@@ -82,7 +82,6 @@ object SetUnification {
     * will be derived from it.
     */
   def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
-
     val state = new State(l)
     val trivialPhaseName = "Trivial Equations"
 
