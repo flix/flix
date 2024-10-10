@@ -35,14 +35,19 @@ object SetUnification {
     *                               substitution smaller than this
     */
   final case class Options(
-                            sizeThreshold: Int = 10,
-                            permutationLimit: Int = 10,
-                            sveRecSizeThreshold: Int = 1800 * 2,
-                            svePermutationExitSize: Int = 0
+                            sizeThreshold: Int,
+                            permutationLimit: Int,
+                            sveRecSizeThreshold: Int,
+                            svePermutationExitSize: Int
                           )
 
+  final object Options {
+    /** The default options. */
+    val default: Options = Options(10, 10, 3500, 0)
+  }
+
   /** Represents the running mutable state of the solver. */
-  class State(initialEquations: List[Equation]) {
+  final class State(initialEquations: List[Equation]) {
     /** The remaining equations to solve. */
     var eqs: List[Equation] = initialEquations
     /** The current substitution, which has already been applied to `eqs`. */
@@ -57,7 +62,7 @@ object SetUnification {
     */
   final case class SolverListener(onEnterPhase: (String, State) => Unit, onExitPhase: (State, Boolean) => Unit)
 
-  object SolverListener {
+  final object SolverListener {
 
     /** The [[SolverListener]] that does nothing. */
     val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
