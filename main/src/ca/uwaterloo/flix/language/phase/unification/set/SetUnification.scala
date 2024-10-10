@@ -63,8 +63,12 @@ object SetUnification {
     * If the returned [[Equation]] list is empty, then the returned substitution is the most general
     * solution to `eqs`.
     *
+    * If the returned [[Equation]] list is non-empty, then the returned substitution is the most general
+    * solution to the removed equations.
+    *
     * All returned equations are either marked [[Equation.Status.Unsolvable]] or
-    * [[Equation.Status.Timeout]].
+    * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
+    * will be derived from it.
     */
   def solve(eqs: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution) = {
     val (solvedEqs, s, _) = solveWithInfo(eqs)
