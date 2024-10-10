@@ -1,6 +1,7 @@
 {
   "methods": {
     "java.lang.Runtime::exec": "Exec",
-    "java.lang.System::exit": "Sys"
+    "java.lang.System::exit": "Sys",
+    "java.nio.file.FileSystem.getFileStores": "Read"
   }
 }
