@@ -100,32 +100,6 @@ object SetUnification {
     } else None
   }
 
-  /**
-    * Verifies that `subst` is a solution to `eqs`.
-    *
-    * Note: Does not verify that `subst` is the most general solution.
-    *
-    * Note: This function is very slow since [[SetFormula.isEquivalent]] is very slow.
-    */
-  def verifySubst(eqs: List[Equation], subst: SetSubstitution): Result[Unit, String] = {
-    // Apply the substitution to every equation and check that it is solved.
-    for (e <- eqs) {
-      // We want to check that `s(f1) ~ s(f2)`
-      val f1 = subst.apply(e.f1)
-      val f2 = subst.apply(e.f2)
-      if (SetFormula.isEquivalent(f1, f2)) ()
-      else {
-        val msg =
-          s"""  Incorrect Substitution:
-             |  Original  : $e
-             |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
-             |""".stripMargin
-        return Result.Err(msg)
-      }
-    }
-    Result.Ok(())
-  }
-
   private def runPhase(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Boolean = {
     if (state.eqs.isEmpty) return false
 
@@ -145,25 +119,6 @@ object SetUnification {
         false
     }
   }
-
-  /** Prints the phase number, name, and description if enabled by [[Options]]. */
-  private def debugPhase(number: Int, name: String, description: String)(implicit opts: Options): Unit =
-    if (opts.debugging) {
-      Console.println("-".repeat(80))
-      Console.println(s"--- Phase $number: $name")
-      Console.println(s"    ($description)")
-      Console.println("-".repeat(80))
-    }
-
-  /** Prints the state equations and substitution if enabled by [[Options]]. */
-  private def debugState(state: State)(implicit opts: Options): Unit =
-    if (opts.debugging) {
-      Console.println(s"Equations (${state.eqs.size}):")
-      Console.println(state.eqs.map("  " + _).mkString(",\n"))
-      Console.println(s"Substitution (${state.subst.numberOfBindings}):")
-      Console.println(state.subst.toString)
-      Console.println("")
-    }
 
   /**
     * Eliminates redundant equations
@@ -255,7 +210,7 @@ object SetUnification {
   }
 
   //
-  // Rules
+  // Rules.
   //
 
   /**
@@ -556,4 +511,53 @@ object SetUnification {
     * big.
     */
   case class ComplexException(msg: String) extends RuntimeException
+
+  //
+  // Checking and Debugging.
+  //
+
+  /**
+    * Verifies that `subst` is a solution to `eqs`.
+    *
+    * Note: Does not verify that `subst` is the most general solution.
+    *
+    * Note: This function is very slow since [[SetFormula.isEquivalent]] is very slow.
+    */
+  def verifySubst(eqs: List[Equation], subst: SetSubstitution): Result[Unit, String] = {
+    // Apply the substitution to every equation and check that it is solved.
+    for (e <- eqs) {
+      // We want to check that `s(f1) ~ s(f2)`
+      val f1 = subst.apply(e.f1)
+      val f2 = subst.apply(e.f2)
+      if (SetFormula.isEquivalent(f1, f2)) ()
+      else {
+        val msg =
+          s"""  Incorrect Substitution:
+             |  Original  : $e
+             |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
+             |""".stripMargin
+        return Result.Err(msg)
+      }
+    }
+    Result.Ok(())
+  }
+
+  /** Prints the phase number, name, and description if enabled by [[Options]]. */
+  private def debugPhase(number: Int, name: String, description: String)(implicit opts: Options): Unit =
+    if (opts.debugging) {
+      Console.println("-".repeat(80))
+      Console.println(s"--- Phase $number: $name")
+      Console.println(s"    ($description)")
+      Console.println("-".repeat(80))
+    }
+
+  /** Prints the state equations and substitution if enabled by [[Options]]. */
+  private def debugState(state: State)(implicit opts: Options): Unit =
+    if (opts.debugging) {
+      Console.println(s"Equations (${state.eqs.size}):")
+      Console.println(state.eqs.map("  " + _).mkString(",\n"))
+      Console.println(s"Substitution (${state.subst.numberOfBindings}):")
+      Console.println(state.subst.toString)
+      Console.println("")
+    }
 }
