@@ -40,18 +40,8 @@ object SetUnification {
                             permutationLimit: Int = 10,
                             sveRecSizeThreshold: Int = 1800 * 2,
                             svePermutationExitSize: Int = 0,
-                            debugging: Options.Debugging = Options.Debugging.Nothing
+                            debugging: Boolean = false
                           )
-
-  object Options {
-    sealed trait Debugging
-
-    object Debugging {
-      case object Nothing extends Debugging
-
-      case object All extends Debugging
-    }
-  }
 
   /**
     * Represents the running state of the solver.
@@ -103,7 +93,7 @@ object SetUnification {
     * Additionally returns the name and number of the last phase to make progress.
     */
   def solveWithInfo(l: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution, (String, Int)) = {
-    val noDebug = opts.copy(debugging = Options.Debugging.Nothing)
+    val noDebug = opts.copy(debugging = false)
 
     val state = new State(l)
 
@@ -181,7 +171,7 @@ object SetUnification {
 
   /** Prints the phase number, name, and description if enabled by [[Options]]. */
   private def debugPhase(number: Int, name: String, description: String)(implicit opts: Options): Unit =
-    if (opts.debugging == Options.Debugging.All) {
+    if (opts.debugging) {
       Console.println("-".repeat(80))
       Console.println(s"--- Phase $number: $name")
       Console.println(s"    ($description)")
@@ -190,7 +180,7 @@ object SetUnification {
 
   /** Prints the state equations and substitution if enabled by [[Options]]. */
   private def debugState(state: State)(implicit opts: Options): Unit =
-    if (opts.debugging == Options.Debugging.All) {
+    if (opts.debugging) {
       Console.println(s"Equations (${state.eqs.size}):")
       Console.println(state.eqs.map("  " + _).mkString(",\n"))
       if (state.errEqs.nonEmpty) {
