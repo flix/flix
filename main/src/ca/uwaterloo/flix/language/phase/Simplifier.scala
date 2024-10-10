@@ -227,8 +227,6 @@ object Simplifier {
     case MonoAst.Expr.Sig(_, _, loc) =>
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-    case MonoAst.Expr.TypeMatch(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
   private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
