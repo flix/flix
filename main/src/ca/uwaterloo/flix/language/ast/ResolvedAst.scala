@@ -89,8 +89,6 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Sig(sym: Symbol.SigSym, loc: SourceLocation) extends Expr
-
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, loc: SourceLocation) extends Expr

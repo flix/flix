@@ -38,7 +38,6 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
-    case Expr.Sig(sym, _, _) => Set(sym)
     case Expr.Hole(_, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
@@ -132,8 +131,6 @@ object TypedAstOps {
     case Expr.Cst(_, _, _) => Map.empty
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
-
-    case Expr.Sig(_, _, _) => Map.empty
 
     case Expr.Hole(_, _, _, _) => Map.empty
 

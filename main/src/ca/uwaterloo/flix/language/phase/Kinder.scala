@@ -336,10 +336,6 @@ object Kinder {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Sig(sym, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.Sig(sym, tvar, loc)
-
     case ResolvedAst.Expr.Hole(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)

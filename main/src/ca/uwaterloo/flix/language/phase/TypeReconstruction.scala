@@ -90,9 +90,6 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Sig(sym, tvar, loc) =>
-      TypedAst.Expr.Sig(sym, subst(tvar), loc)
-
     case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
       TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
 
