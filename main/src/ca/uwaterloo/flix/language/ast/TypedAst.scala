@@ -50,9 +50,9 @@ object TypedAst {
 
   case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
   case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
 
@@ -72,7 +72,7 @@ object TypedAst {
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, spec: Spec)
+  case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type

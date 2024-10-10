@@ -256,35 +256,35 @@ object Kinder {
     * Performs kinding on the given def under the given kind environment.
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
-    case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
+    case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
-      KindedAst.Def(sym, spec, exp)
+      KindedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
   private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Sig = sig0 match {
-    case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
+    case ResolvedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
       val exp = exp0.map(visitExp(_, kenv, taenv, henv, root)(Scope.Top, sctx, flix))
-      KindedAst.Sig(sym, spec, exp)
+      KindedAst.Sig(sym, spec, exp, loc)
   }
 
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
   private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
-    case ResolvedAst.Declaration.Op(sym, spec0) =>
+    case ResolvedAst.Declaration.Op(sym, spec0, loc) =>
       val kenv = inferSpec(spec0, KindEnv.empty, taenv, root)
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
-      KindedAst.Op(sym, spec)
+      KindedAst.Op(sym, spec, loc)
   }
 
   /**

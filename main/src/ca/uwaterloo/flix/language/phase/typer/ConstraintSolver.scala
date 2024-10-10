@@ -43,7 +43,7 @@ object ConstraintSolver {
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(sym, spec, _) =>
+    case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
@@ -54,8 +54,8 @@ object ConstraintSolver {
     * Resolves constraints in the given signature using the given inference result.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
-    case KindedAst.Sig(sym, spec, Some(_)) =>
+    case KindedAst.Sig(_, _, None, _) => Validation.success(Substitution.empty)
+    case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
