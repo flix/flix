@@ -78,16 +78,16 @@ object SetUnification {
 
     val state = new State(l)
 
-    runPhase(runRule(constantAssignment), state, "Constant Assignment", "Solves equations where one or both sides are ground.")
-    runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(runRule(variableAlias), state, "Variable Aliases", "Solves equations like `x1 ~ x2`.")
-    runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(runRule(variableAssignment), state, "Simple Variable Assignment", "Solves non-recursive variable assignments.")
-    runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
-    runPhase(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
-    runPhase(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
-    runPhase(svePermuations, state, "SVE", "Applies SVE in different permutations.")
+    runWithState(runRule(constantAssignment), state, "Constant Assignment", "Solves equations where one or both sides are ground.")
+    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
+    runWithState(runRule(variableAlias), state, "Variable Aliases", "Solves equations like `x1 ~ x2`.")
+    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
+    runWithState(runRule(variableAssignment), state, "Simple Variable Assignment", "Solves non-recursive variable assignments.")
+    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
+    runWithState(duplicatedAndReflective, state, "Duplicates and Reflective", "Solves `f ~ f` and duplicated formulas.")
+    runWithState(runRule(trivial), state, "Trivial Equations", "Solves trivial equations.")(noDebug)
+    runWithState(assertSveEquationCount, state, "Assert Size", "Quits if there are too many equations.")(noDebug)
+    runWithState(svePermuations, state, "SVE", "Applies SVE in different permutations.")
 
     (state.eqs, state.subst, (state.lastProgressPhaseName, state.lastProgressPhaseNumber))
   }
@@ -104,7 +104,7 @@ object SetUnification {
     * Runs the given equation system solver `phase` on `state`, printing debugging information
     * according to [[Options]].
     */
-  private def runPhase(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Unit = {
+  private def runWithState(phase: List[Equation] => Option[(List[Equation], SetSubstitution)], state: State, name: String, descr: String)(implicit opts: Options): Unit = {
     state.previousPhaseNumber += 1
     debugPhase(state.previousPhaseNumber, name, descr)
 
