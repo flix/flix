@@ -58,7 +58,10 @@ object SetUnification {
   }
 
   /**
-    * Attempts to solve the equation system `eqs`.
+    * Attempts to solve the equation system `eqs` to find the most general substitution.
+    *
+    * If the returned [[Equation]] list is empty, then the returned substitution is the most general
+    * solution to `eqs`.
     *
     * All returned equations are either marked [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
@@ -82,7 +85,7 @@ object SetUnification {
   /**
     * Attempts to solve the equation system `eqs`, like [[solve]].
     *
-    * Additionally returns the name and number of the last phase to make progress.
+    * Additionally returns [[Info]] about the unification.
     */
   def solveWithInfo(l: List[Equation])(implicit opts: Options): (List[Equation], SetSubstitution, Info) = {
     val noDebug = opts.copy(debugging = false)
