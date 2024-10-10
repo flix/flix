@@ -173,42 +173,56 @@ object SetUnification {
 
   /** Run a unification rule on an equation system in a fixpoint. */
   private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
-    var subst = SetSubstitution.empty
-    var workList = eqs
-    var producedEqs: List[Equation] = Nil
-    var overallProgress = false // Has there been progress at any point in the loops.
-    var progress = true
-    while (progress) {
-      progress = false
-      while (workList != Nil) {
-        workList match {
-          case eq0 :: tail if !eq0.isPending =>
-            // Equation could not be solved, so avoid trying again.
-            workList = tail
-            val eq = subst.apply(eq0)
-            producedEqs = eq :: producedEqs
-          case eq0 :: tail =>
-            workList = tail
-            val eq = subst.apply(eq0)
-            rule(eq) match {
-              case Some((ruleEqs, s)) =>
-                progress = true
-                producedEqs = ruleEqs ++ producedEqs
-                subst = s @@ subst
-              case None =>
-                producedEqs = eq :: producedEqs
-            }
+    // Procedure:
+    //   - Run the `rule` on all the (pending) equations in `iterationWorkList`, building
+    //     `overallSubst` and producing `iterationOutput`.
+    //   - If any rule made progress, store `iterationOutput` back into `iterationWorkList` and repeat.
 
-          case Nil => ()
+    // The running substitution - applied to `iterationWorkList` equations lazily.
+    var overallSubst = SetSubstitution.empty
+    var overallProgress = false
+
+    // The mutable state of the iteration.
+    var iterationWorkList = eqs
+    var iterationOutput: List[Equation] = Nil
+    var iterationProgress = true // this is `true` to run the loop at least once.
+
+    // Run iterations until there is no progress.
+    while (iterationProgress) {
+      iterationProgress = false
+
+      for (eq0 <- iterationWorkList) {
+        val eq = overallSubst.apply(eq0)
+        // If `eq` is marked with error or timeout, don't try again.
+        val appliedRule = if (eq.isPending) rule(eq) else None
+
+        appliedRule match {
+          case Some((outputEqs, outputSubst)) =>
+            // We made progress - signal that and update state.
+            iterationProgress = true
+            overallProgress = true
+
+            iterationOutput = outputEqs ++ iterationOutput
+            overallSubst = outputSubst @@ overallSubst
+
+          case None =>
+            // No progress, just add to the output.
+            iterationOutput = eq :: iterationOutput
         }
       }
-      workList = producedEqs
-      producedEqs = Nil
-      if (progress) overallProgress = true
+
+      // Swap `iterationOutput` into `iterationWorkList` for next iteration or for return.
+      iterationWorkList = iterationOutput
+      iterationOutput = Nil
     }
-    // Signal process via `progress` and maintain the old `progress`.
-    if (overallProgress) Some(workList.map(subst.apply), subst)
-    else None
+
+    if (overallProgress) {
+      // We apply `overallSubst` lazily, not all equations have seen all substitution information.
+      val resultEqs = iterationWorkList.map(overallSubst.apply)
+      Some(resultEqs, overallSubst)
+    } else {
+      None
+    }
   }
 
   //
