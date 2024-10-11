@@ -71,7 +71,7 @@ object EntryPoint {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    flatMapN(findOriginalEntryPoint(root)) {
+    findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
         mapN(visitEntryPoint(entryPoint0, root, root.traitEnv)) {
@@ -88,8 +88,8 @@ object EntryPoint {
   }(DebugValidation())
 
   /**
-   * Returns all reachable definitions.
-   */
+    * Returns all reachable definitions.
+    */
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
@@ -103,15 +103,18 @@ object EntryPoint {
   /**
     * Finds the entry point in the given `root`.
     */
-  private def findOriginalEntryPoint(root: TypedAst.Root): Validation[Option[TypedAst.Def], EntryPointError] = {
+  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit sctx: SharedContext): Option[TypedAst.Def] = {
     root.entryPoint match {
       case None => root.defs.get(DefaultEntryPoint) match {
-        case None => Validation.success(None)
-        case Some(entryPoint) => Validation.success(Some(entryPoint))
+        case None => None
+        case Some(entryPoint) => Some(entryPoint)
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => Validation.toSoftFailure(None, EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
-        case Some(entryPoint) => Validation.success(Some(entryPoint))
+        case None =>
+          val error = EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root))
+          sctx.errors.add(error)
+          None
+        case Some(entryPoint) => Some(entryPoint)
       }
     }
   }
@@ -188,7 +191,7 @@ object EntryPoint {
 
       // Check for [[IllegalEntryPointEffect]]
       if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
-        return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
+        return Validation.toSoftFailure((), EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 
       if (Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
