@@ -168,15 +168,18 @@ object EntryPoint {
       // Then check validity of the argument
       optArg match {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) => () // TODO ASSOC-TYPES better eqEnv
+        case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
 
         // Case 2: Bad arguments. SoftError
         // Case 3: `arg` was None. SoftError
         case _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
           sctx.errors.add(error)
-          ()
       }
+  }
+
+  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], unitSc: Scheme, arg: Type)(implicit flix: Flix) = {
+    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty)
   }
 
   /**
