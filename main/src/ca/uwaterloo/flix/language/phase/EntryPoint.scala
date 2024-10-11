@@ -74,14 +74,12 @@ object EntryPoint {
     findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        mapN(visitEntryPoint(entryPoint0, root, root.traitEnv)) {
-          entryPoint =>
-            root.copy(
-              defs = root.defs + (entryPoint.sym -> entryPoint),
-              entryPoint = Some(entryPoint.sym),
-              reachable = getReachable(root) + entryPoint.sym
-            )
-        }
+        val entryPoint = visitEntryPoint(entryPoint0, root, root.traitEnv)
+        Validation.success(root.copy(
+          defs = root.defs + (entryPoint.sym -> entryPoint),
+          entryPoint = Some(entryPoint.sym),
+          reachable = getReachable(root) + entryPoint.sym
+        ))
       // Case 2: No entry point. Don't touch anything.
       case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
@@ -138,10 +136,10 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     checkEntryPointArgs(defn, traitEnv)
     checkEntryPointResult(defn, root, traitEnv)
-    Validation.success(mkEntryPoint(defn, root))
+    mkEntryPoint(defn, root)
   }
 
   /**
