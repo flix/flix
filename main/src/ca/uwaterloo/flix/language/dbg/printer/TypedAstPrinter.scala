@@ -28,18 +28,19 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
-    case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Unknown
     case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.Apply(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
+    case Expr.ApplyClo(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
     case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LocalDef(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -60,7 +61,7 @@ object TypedAstPrinter {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
     case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
-    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map {case (k, v) => (k.sym, print(v))}, print(region))
+    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, print(region))
     case Expr.StructGet(exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
     case Expr.StructPut(exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))

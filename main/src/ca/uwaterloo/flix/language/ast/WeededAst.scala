@@ -115,9 +115,7 @@ object WeededAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(ident: Name.Ident, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class LetRec(ident: Name.Ident, ann: Annotations, mod: Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -137,7 +135,7 @@ object WeededAst {
 
     case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class LetMatch(pat: Pattern, mod: Modifiers, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetMatch(pat: Pattern, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 

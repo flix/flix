@@ -23,10 +23,13 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{Equality, Provenan
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-object RecordConstraintSolver {
+//
+// This is a copy of the RecordConstraintSolver. Because the shapes are slightly different, we cannot reuse the same solver.
+//
+object SchemaConstraintSolver {
 
   /**
-    * Unifies the two given record row types.
+    * Unifies the two given schema row types.
     */
   def solve(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): ResolutionResult = (tpe1, tpe2) match {
 
@@ -51,7 +54,7 @@ object RecordConstraintSolver {
     //
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
-    case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
+    case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       ResolutionResult.constraints(List(Equality(t1, t2, prov), Equality(rest1, rest2, prov)), progress = true)
 
     // If labels do not match, then we pivot the right row to make them match.
@@ -59,7 +62,7 @@ object RecordConstraintSolver {
     //        ρ₂ ~~{ℓ : τ₁}~~> { ℓ : τ₃ | ρ₃ } ; S
     // -------------------------------------------------
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
-    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), rest1, _), r2) =>
+    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), t1, _), rest1, _), r2) =>
       pivot(r2, label, t1, r1.typeVars.map(_.sym), renv) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
           ResolutionResult(subst, List(Equality(t1, t3, prov), Equality(rest1, rest3, prov)), progress = true)
@@ -79,13 +82,13 @@ object RecordConstraintSolver {
     *
     * Returns None if no such pivot is possible.
     */
-  private def pivot(row: Type, hdLabel: Name.Label, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym], renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Substitution)] = row match {
+  private def pivot(row: Type, hdLabel: Name.Pred, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym], renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Substitution)] = row match {
 
     // If head labels match, then there is nothing to do. We return the same row.
     //
     // -------------------------------------------
     // { ℓ : τ₁ | ρ } ~~{ℓ : τ₂}~~> { ℓ : τ₁ | ρ }
-    case r@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), _, _), _, _) if label == hdLabel =>
+    case r@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), _, _), _, _) if label == hdLabel =>
       Some((r, Substitution.empty))
 
     // If head labels do not match, we need to recurse and bring the selected label to the front.
@@ -93,12 +96,12 @@ object RecordConstraintSolver {
     //       ℓ₁ ≠ ℓ₂    ρ₁ ~~{ℓ₂ : τ₂}~~> { ℓ₂ : τ₃  | ρ₃ }
     // ---------------------------------------------------------
     // { ℓ₁ : τ₁ | ρ₁ } ~~{ℓ₂ : τ₂}~~> { ℓ₂ : τ₃, ℓ₁ : τ₁ | ρ₃ }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest, loc) =>
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest, loc) =>
       pivot(rest, hdLabel, hdTpe, tvars, renv).map {
         case (Type.Apply(newHead, rest, _), subst) =>
           // The new row from the recursive call has the selected label at the head.
           // Now we just swap the new row's head with ours, to keep the selected label on top.
-          val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), loc), tpe, loc), rest, loc), loc)
+          val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), loc), tpe, loc), rest, loc), loc)
           (newRow, subst)
 
         case _ => throw InternalCompilerException("unexpected non-row", loc)
@@ -110,8 +113,8 @@ object RecordConstraintSolver {
     // ----------------------------------------------------
     //  α ~~{ℓ : τ}~~> { ℓ : τ | β } ; {α ↦ { ℓ : τ | β }}
     case Type.Var(sym, loc) if !tvars.contains(sym) && renv.isFlexible(sym) =>
-      val tvar = Type.freshVar(Kind.RecordRow, loc)
-      val newRow = Type.mkRecordRowExtend(hdLabel, hdTpe, tvar, loc)
+      val tvar = Type.freshVar(Kind.SchemaRow, loc)
+      val newRow = Type.mkSchemaRowExtend(hdLabel, hdTpe, tvar, loc)
       val subst = Substitution.singleton(sym, newRow)
       Some((newRow, subst))
 

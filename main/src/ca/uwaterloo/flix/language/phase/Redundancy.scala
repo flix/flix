@@ -300,14 +300,6 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Sig(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.sig.contains(sym)) {
-        sctx.sigSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
     case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
@@ -347,7 +339,7 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.sym
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       val us1 = visitExp(exp, env0, rc)
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
@@ -359,6 +351,20 @@ object Redundancy {
       }
       visitExps(exps, env0, rc)
 
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _, _, _, _) =>
+      if (rc.vars.contains(sym)) {
+        visitExps(exps, env0, rc)
+      } else {
+        Used.of(sym) ++ visitExps(exps, env0, rc)
+      }
+
+    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.sigSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -367,7 +373,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -384,24 +390,33 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
       // Visit the two expressions under the extended environment.
+      // Also add fparams to env1 in the first expression.
       // Add the variable to the recursion context only in the first expression.
-      val innerUsed1 = visitExp(exp1, env1, rc.withVar(sym))
+      val innerUsed1 = visitExp(exp1, env1 ++ fparams.map(_.sym), rc.withVar(sym))
       val innerUsed2 = visitExp(exp2, env1, rc)
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
+      // Check if the LocalDef variable symbol is dead in exp1 + exp2.
       val shadowedVar = shadowing(sym.text, sym.loc, env0)
-
-      // Check if the let-bound variable symbol is dead in exp1 + exp2.
-      if (deadVarSym(sym, used))
+      val res1 = if (deadVarSym(sym, used))
         (used ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
         (used ++ shadowedVar) - sym
+
+      // Check if the fparams are dead in exp1
+      val fparamVars = fparams.map(_.sym)
+      val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
+
+      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+        case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
+        case (acc, (s, shadow)) => (acc ++ shadow) - s
+      }
 
     case Expr.Region(_, _) =>
       Used.empty

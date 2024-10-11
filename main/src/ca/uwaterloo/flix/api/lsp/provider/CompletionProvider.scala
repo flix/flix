@@ -126,6 +126,7 @@ object CompletionProvider {
     * Find context from the source, and cursor position within it.
     */
   private def getCompletionContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
+    // Use zero-indexed lines and characters.
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
@@ -143,7 +144,8 @@ object CompletionProvider {
         case None => ""
         case Some(s) => getLastWord(s)
       }
-      val range = Range(Position(y, start), Position(y, end))
+      // Remember positions are one-indexed.
+      val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
       val sctx = getSyntacticContext(uri, pos, errors)
       CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }

@@ -60,8 +60,6 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Apply(exp: Expr, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
-
     @IntroducedBy(ClosureConv.getClass)
     case class LambdaClosure(cparams: List[FormalParam], fparams: List[FormalParam], freeVars: List[FreeVar], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
@@ -69,10 +67,11 @@ object SimplifiedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    @IntroducedBy(ClosureConv.getClass)
     case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -84,7 +83,7 @@ object SimplifiedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

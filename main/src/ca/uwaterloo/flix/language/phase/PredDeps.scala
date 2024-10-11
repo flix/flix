@@ -78,8 +78,6 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Sig(_, _, _) => LabelledPrecedenceGraph.empty
-
     case Expr.Hole(_, _, _, _) => LabelledPrecedenceGraph.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
@@ -94,7 +92,7 @@ object PredDeps {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       val init = visitExp(exp)
       exps.foldLeft(init) {
         case (acc, exp) => acc + visitExp(exp)
@@ -105,16 +103,26 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
     case Expr.Region(_, _) =>

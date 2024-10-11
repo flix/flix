@@ -256,14 +256,14 @@ object WeederError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation on inner function.
+      s""">> Unexpected annotation on local function.
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
   /**
@@ -368,7 +368,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Illegal equality constraint."
 
     override def message(formatter: Formatter): String = {

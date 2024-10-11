@@ -616,18 +616,19 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Discard(e, loc)
 
-    case DesugaredAst.Expr.Let(ident, mod, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.Let(sym, mod, e1, e2, loc)
+      NamedAst.Expr.Let(sym, e1, e2, loc)
 
-    case DesugaredAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
+    case DesugaredAst.Expr.LocalDef(ident, fparams, exp1, exp2, loc) =>
+      val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
+      val fps = fparams.map(visitFormalParam(_))
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
+      NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
     case DesugaredAst.Expr.Region(tpe, loc) =>
       NamedAst.Expr.Region(tpe, loc)

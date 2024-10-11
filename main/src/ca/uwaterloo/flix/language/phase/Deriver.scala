@@ -197,12 +197,12 @@ object Deriver {
       // `x0 == y0`, `x1 == y1`
       val eqs = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
-          KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(eqSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expr.ApplySig(Ast.SigSymUse(eqSym, loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -308,23 +308,24 @@ object Deriver {
       val defaultMatchRule = KindedAst.MatchRule(
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
         None,
-        KindedAst.Expr.Apply(
-          KindedAst.Expr.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Expr.ApplySig(
+          Ast.SigSymUse(compareSigSym, loc),
           List(
-            KindedAst.Expr.Apply(
+            KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param1, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
-            KindedAst.Expr.Apply(
+            KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param2, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc),
           ),
+          Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
@@ -334,12 +335,12 @@ object Deriver {
       // Wrap the cases in a match expression
       val matchExp = KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        matchRules.toList :+ defaultMatchRule,
+        matchRules :+ defaultMatchRule,
         loc
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaVarSym, Modifiers.Empty, lambda, matchExp, loc)
+      KindedAst.Expr.Let(lambdaVarSym, lambda, matchExp, loc)
   }
 
   /**
@@ -404,12 +405,13 @@ object Deriver {
       // `compare(x0, y0)`, `compare(x1, y1)`
       val compares = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
-          KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expr.ApplySig(
+            Ast.SigSymUse(compareSigSym, loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -556,9 +558,10 @@ object Deriver {
       // `toString(x0)`, `toString(x1)`
       val toStrings = varSyms.map {
         varSym =>
-          KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(toStringSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expr.ApplySig(
+            Ast.SigSymUse(toStringSym, loc),
             List(mkVarExpr(varSym, loc)),
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -697,9 +700,10 @@ object Deriver {
             Ast.DefSymUse(combineDefSym, loc),
             List(
               acc,
-              KindedAst.Expr.Apply(
-                KindedAst.Expr.Sig(hashSigSym, Type.freshVar(Kind.Star, loc), loc),
+              KindedAst.Expr.ApplySig(
+                Ast.SigSymUse(hashSigSym, loc),
                 List(mkVarExpr(varSym, loc)),
+                Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Eff, loc),
                 loc

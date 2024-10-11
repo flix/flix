@@ -56,8 +56,6 @@ object Regions {
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expr.Sig(_, _, _) => Nil
-
     case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, tpe, _, loc) =>
@@ -71,10 +69,16 @@ object Regions {
     case Expr.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
+    case Expr.ApplyLocalDef(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
+    case Expr.ApplySig(_, exps, _, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
@@ -83,10 +87,10 @@ object Regions {
     case Expr.Binary(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.Let(_, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.Let(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.LocalDef(_, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.Region(_, _) =>
@@ -161,7 +165,7 @@ object Regions {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
 
     case Expr.StructGet(e, _, tpe, _, loc) =>
       visitExp(e) ++ checkType(tpe, loc)

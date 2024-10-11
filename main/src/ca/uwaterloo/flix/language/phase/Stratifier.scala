@@ -104,8 +104,6 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Sig(_, _, _) => exp0
-
     case Expr.Hole(_, _, _, _) => exp0
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
@@ -124,14 +122,22 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      Expr.Apply(e, es, tpe, eff, loc)
+      Expr.ApplyClo(e, es, tpe, eff, loc)
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.ApplyDef(symUse, es, itpe, tpe, eff, loc)
+
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
+
+    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplySig(symUse, es, itpe, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -142,15 +148,15 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      Expr.Let(sym, e1, e2, tpe, eff, loc)
 
-    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
+      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
 
     case Expr.Region(_, _) => exp0
 

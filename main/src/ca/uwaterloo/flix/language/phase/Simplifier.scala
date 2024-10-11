@@ -74,16 +74,21 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Lambda(List(p), e, t, loc)
 
-    case MonoAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.ApplyClo(e, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
+
+    case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -143,13 +148,17 @@ object Simplifier {
       val t = visitType(d.tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Let(sym, _, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LetRec(sym, _, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      val ef = simplifyEffect(eff)
+      SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
 
     case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
@@ -215,11 +224,6 @@ object Simplifier {
       val methods = methods0 map visitJvmMethod
       SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
-    case MonoAst.Expr.Sig(_, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-    case MonoAst.Expr.TypeMatch(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
   private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {

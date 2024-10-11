@@ -134,19 +134,20 @@ object PatMatch {
   private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
     tast match {
       case Expr.Var(_, _, _) => Nil
-      case Expr.Sig(_, _, _) => Nil
       case Expr.Hole(_, _, _, _) => Nil
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expr.Use(_, _, exp, _) => visitExp(exp)
       case Expr.Cst(_, _, _) => Nil
       case Expr.Lambda(_, body, _, _) => visitExp(body)
-      case Expr.Apply(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
+      case Expr.ApplyClo(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
+      case Expr.ApplySig(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
       case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.Let(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Region(_, _) => Nil
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp)

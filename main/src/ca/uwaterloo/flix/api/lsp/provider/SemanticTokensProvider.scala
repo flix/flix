@@ -326,11 +326,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Sig(sym, _, loc) =>
-      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
-      val t = SemanticToken(o, Nil, loc)
-      Iterator(t)
-
     case Expr.Hole(_, _, _, _) => Iterator.empty
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
@@ -346,13 +341,25 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
+      val t = SemanticToken(o, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -364,15 +371,19 @@ object SemanticTokensProvider {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
-      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      IteratorOps.all(
+        Iterator(t),
+        visitFormalParams(fparams),
+        visitExp(exp1),
+        visitExp(exp2)
+      )
 
     case Expr.Region(_, _) =>
       Iterator.empty

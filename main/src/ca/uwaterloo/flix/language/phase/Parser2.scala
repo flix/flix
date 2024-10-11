@@ -325,7 +325,7 @@ object Parser2 {
     */
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
-      throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
+      throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
 
     if (s.position + lookahead >= s.tokens.length - 1) {
@@ -1021,8 +1021,8 @@ object Parser2 {
         equalityConstraints()
       }
 
-      // We want to only parse an expression if we see an equal sign to avoid consuming following definitions as LetRecDefs.
-      // Here is an example. We want to avoid consuming 'main' as a nested function, even though 'def' signifies an Expr.LetRecDef:
+      // We want to only parse an expression if we see an equal sign to avoid consuming following definitions as LocalDef.
+      // Here is an example. We want to avoid consuming 'main' as a nested function, even though 'def' signifies an Expr.LocalDef:
       // def f(): Unit // <- no equal sign
       // def main(): Unit = ()
       if (eat(TokenKind.Equal)) {
@@ -1545,7 +1545,7 @@ object Parser2 {
         // For instance:
         // def foo(): Int32 = bar(
         // def main(): Unit = ()
-        // In this example, if we had KeywordDef, main would be read as a LetRecDef expression!
+        // In this example, if we had KeywordDef, main would be read as a LocalDef expression!
         checkForItem = kind => kind != TokenKind.KeywordDef && kind.isFirstExpr,
         breakWhen = _.isRecoverExpr,
         context = SyntacticContext.Expr.OtherExpr
@@ -1604,7 +1604,7 @@ object Parser2 {
              | TokenKind.KeywordDiscard => unaryExpr()
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
-        case TokenKind.Annotation | TokenKind.KeywordDef => letRecDefExpr()
+        case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordImport => letImportExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
@@ -1860,7 +1860,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.LetMatch)
     }
 
-    private def letRecDefExpr()(implicit s: State): Mark.Closed = {
+    private def localDefExpr()(implicit s: State): Mark.Closed = {
       assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
       val mark = open(consumeDocComments = false)
       Decl.docComment()
@@ -1873,7 +1873,7 @@ object Parser2 {
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       statement(rhsIsOptional = false)
-      close(mark, TreeKind.Expr.LetRecDef)
+      close(mark, TreeKind.Expr.LocalDef)
     }
 
     private def letImportExpr()(implicit s: State): Mark.Closed = {
