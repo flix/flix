@@ -154,7 +154,7 @@ object EntryPoint {
       // First check that there's exactly one argument.
       val arg = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Some(arg)
+        case param :: Nil => Some(param)
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
