@@ -117,7 +117,7 @@ object EntryPoint {
   /**
     * Retrieves an arbitrary source location from the root.
     */
-  private def getArbitrarySourceLocation(root: TypedAst.Root)(implicit flix: Flix): SourceLocation = {
+  private def getArbitrarySourceLocation(root: TypedAst.Root): SourceLocation = {
     root.sources.headOption match {
       // Case 1: Some arbitrary source. Use its location.
       case Some((_, loc)) => loc
