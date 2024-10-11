@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider
+package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.Ast.*
@@ -73,6 +73,7 @@ object Visitor {
     def consumeHandlerRule(rule: HandlerRule): Unit = ()
     def consumeInstance(ins: Instance): Unit = ()
     def consumeJvmMethod(method: JvmMethod): Unit = ()
+    def consumeLocalDefSym(symUse: LocalDefSymUse): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumeOp(op: Op): Unit = ()
     def consumeOpSymUse(sym: OpSymUse): Unit = ()
@@ -82,6 +83,7 @@ object Visitor {
     def consumeRecordLabelPattern(pat: RecordLabelPattern): Unit = ()
     def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
+    def consumeSigSymUse(symUse: SigSymUse): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
     def consumeStructField(field: StructField): Unit = ()
@@ -443,7 +445,6 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
-      case Expr.Sig(_, _, _) => ()
       case Expr.Hole(_, _, _, _) => ()
 
       case Expr.HoleWithExp(exp, _, _, _) =>
@@ -459,12 +460,20 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.Apply(exp, exps, _, _, _) =>
+      case Expr.ApplyClo(exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyDef(sym, exps, _, _, _, _) =>
-        visitDefSymUse(sym)
+      case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
+        visitDefSymUse(symUse)
+        exps.foreach(visitExpr)
+
+      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
+        visitLocalDefSymUse(symUse)
+        exps.foreach(visitExpr)
+
+      case Expr.ApplySig(symUse, exps, _, _, _, _) =>
+        visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
       case Expr.Unary(_, exp, _, _, _) =>
@@ -474,12 +483,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-        visitExpr(exp1)
-        visitExpr(exp2)
-
-      case Expr.LetRec(_, ann, _, exp1, exp2, _, _, _) =>
-        visitAnnotations(ann)
+      case Expr.Let(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
@@ -697,6 +701,20 @@ object Visitor {
 
       case Expr.Error(_, _, _) => ()
     }
+  }
+
+  private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    val SigSymUse(_, loc) = symUse
+    if (!a.accept(loc)) { return }
+
+    c.consumeSigSymUse(symUse)
+  }
+
+  private def visitLocalDefSymUse(symUse: LocalDefSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    val LocalDefSymUse(_, loc) = symUse
+    if (!a.accept(loc)) { return }
+
+    c.consumeLocalDefSym(symUse)
   }
 
   private def visitPredicateParam(pparam: PredicateParam)(implicit a: Acceptor, c: Consumer): Unit = {
