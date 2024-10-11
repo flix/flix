@@ -140,12 +140,8 @@ object EntryPoint {
     */
   private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
     checkEntryPointArgs(defn, traitEnv)
-    val resultVal = checkEntryPointResult(defn, root, traitEnv)
-
-    mapN(resultVal) {
-      case _ =>
-        mkEntryPoint(defn, root)
-    }
+    checkEntryPointResult(defn, root, traitEnv)
+    Validation.success(mkEntryPoint(defn, root))
   }
 
   /**
@@ -188,29 +184,30 @@ object EntryPoint {
     * Checks the entry point function result type.
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
-      // Check for [[IllegalEntryPointEffect]]
+      // Check for IllegalEntryPointEffect
       if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
-        return Validation.toSoftFailure((), EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
+        val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
+        sctx.errors.add(error)
+        return
       }
 
       if (Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
-        // Case 1: XYZ -> Unit.
-        Validation.success(())
+
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
         if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
           // Case 2: XYZ -> a with ToString[a]
-          Validation.success(())
         } else {
           // Case 3: Bad result type. Error.
-          Validation.toSoftFailure((), EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
+          val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
+          sctx.errors.add(error)
         }
       }
   }
