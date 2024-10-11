@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 
 /**
@@ -69,6 +70,7 @@ object EntryPoint {
     * Introduces a new function `main%` which calls the entry point (if any).
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+    implicit val sctx: SharedContext = SharedContext.mk()
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
@@ -101,7 +103,7 @@ object EntryPoint {
   /**
     * Finds the entry point in the given `root`.
     */
-  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
+  private def findOriginalEntryPoint(root: TypedAst.Root): Validation[Option[TypedAst.Def], EntryPointError] = {
     root.entryPoint match {
       case None => root.defs.get(DefaultEntryPoint) match {
         case None => Validation.success(None)
@@ -244,5 +246,24 @@ object EntryPoint {
 
     TypedAst.Def(sym, spec, print)
   }
+
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[EntryPointError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError])
+
 }
 
