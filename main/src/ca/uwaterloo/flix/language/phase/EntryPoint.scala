@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.mapN
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -138,12 +138,12 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
-    val argsVal = checkEntryPointArgs(defn, traitEnv)
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
+    checkEntryPointArgs(defn, traitEnv)
     val resultVal = checkEntryPointResult(defn, root, traitEnv)
 
-    mapN(argsVal, resultVal) {
-      case (_, _) =>
+    mapN(resultVal) {
+      case _ =>
         mkEntryPoint(defn, root)
     }
   }
@@ -152,30 +152,35 @@ object EntryPoint {
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
-      val argVal = declaredScheme.base.arrowArgTypes match {
+      val arg = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Validation.success(Some(arg))
+        case arg :: Nil => Some(arg)
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => Validation.toSoftFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ :: _ :: _ =>
+          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+          sctx.errors.add(error)
+          None
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 
-      flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
+      // Then check validity of the argument
+      arg match {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) =>
-          // TODO ASSOC-TYPES better eqEnv
-          Validation.success(())
+        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) => () // TODO ASSOC-TYPES better eqEnv
 
         // Case 2: Bad arguments. SoftError
-        // Case 3: argVal was None. SoftError
-        case _ => Validation.toSoftFailure((), EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        // Case 3: `arg` was None. SoftError
+        case _ =>
+          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+          sctx.errors.add(error)
+          ()
       }
   }
 
