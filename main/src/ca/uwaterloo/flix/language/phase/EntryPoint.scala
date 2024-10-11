@@ -71,19 +71,19 @@ object EntryPoint {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    findOriginalEntryPoint(root) match {
+    val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
         val entryPoint = visitEntryPoint(entryPoint0, root, root.traitEnv)
-        val newRoot = root.copy(
+        root.copy(
           defs = root.defs + (entryPoint.sym -> entryPoint),
           entryPoint = Some(entryPoint.sym),
           reachable = getReachable(root) + entryPoint.sym
         )
-        Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
       // Case 2: No entry point. Don't touch anything.
-      case None => Validation.success(root.copy(reachable = getReachable(root)))
+      case None => root.copy(reachable = getReachable(root))
     }
+    Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
   }(DebugValidation())
 
   /**
