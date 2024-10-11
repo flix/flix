@@ -152,7 +152,7 @@ object EntryPoint {
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
-      val arg = declaredScheme.base.arrowArgTypes match {
+      val optArg = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
         case param :: Nil => Some(param)
         // Case 2: Multiple args. Error.
@@ -166,7 +166,7 @@ object EntryPoint {
       }
 
       // Then check validity of the argument
-      arg match {
+      optArg match {
         // Case 1: Unit -> XYZ. We can ignore the args.
         case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) => () // TODO ASSOC-TYPES better eqEnv
 
