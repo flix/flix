@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
 
 /**
@@ -74,11 +75,12 @@ object EntryPoint {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
         val entryPoint = visitEntryPoint(entryPoint0, root, root.traitEnv)
-        Validation.success(root.copy(
+        val newRoot = root.copy(
           defs = root.defs + (entryPoint.sym -> entryPoint),
           entryPoint = Some(entryPoint.sym),
           reachable = getReachable(root) + entryPoint.sym
-        ))
+        )
+        Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
       // Case 2: No entry point. Don't touch anything.
       case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
