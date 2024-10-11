@@ -194,7 +194,6 @@ object EntryPoint {
       if (isBadEntryPointEffect(declaredEff)) {
         val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
         sctx.errors.add(error)
-        return
       }
 
       // Case 1: XYZ -> Unit.
