@@ -191,12 +191,11 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for IllegalEntryPointEffect
-      if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
+      if (isBadEntryPointEffect(declaredEff)) {
         val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
         sctx.errors.add(error)
         return
       }
-
 
       // Case 1: XYZ -> Unit.
       val isUnitResult = Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
@@ -212,6 +211,13 @@ object EntryPoint {
         val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
         sctx.errors.add(error)
       }
+  }
+
+  /**
+    * Returns `true` iff `declaredEff` is not `Pure`, `IO`, `NonDet` or `Sys`
+    */
+  private def isBadEntryPointEffect(declaredEff: Type) = {
+    declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)
   }
 
   /**
