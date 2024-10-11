@@ -197,18 +197,20 @@ object EntryPoint {
         return
       }
 
-      if (Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
 
-      } else {
-        // Delay ToString resolution if main has return type unit for testing with lib nix.
-        val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
-          // Case 2: XYZ -> a with ToString[a]
-        } else {
-          // Case 3: Bad result type. Error.
-          val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
-          sctx.errors.add(error)
-        }
+      // Case 1: XYZ -> Unit.
+      val isUnitResult = Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
+
+      // Case 2: XYZ -> a with ToString[a]
+      val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
+      val hasToStringConstraint = TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
+
+      // Case 3: Bad result type. Error.
+      val isBadResultType = !isUnitResult && !hasToStringConstraint
+
+      if (isBadResultType) {
+        val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
+        sctx.errors.add(error)
       }
   }
 
