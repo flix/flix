@@ -352,10 +352,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Sig(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.Sig(sym, t, loc)
-
     case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
@@ -1861,8 +1857,6 @@ object Lowering {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
       LoweredAst.Expr.Var(s, tpe, loc)
-
-    case LoweredAst.Expr.Sig(_, _, _) => exp0
 
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)

@@ -224,11 +224,6 @@ object Simplifier {
       val methods = methods0 map visitJvmMethod
       SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
-    case MonoAst.Expr.Sig(_, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-    case MonoAst.Expr.TypeMatch(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
   private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {

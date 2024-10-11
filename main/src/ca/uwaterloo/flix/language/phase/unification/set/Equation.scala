@@ -59,6 +59,13 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   /** Returns a copy of `this` with status [[Equation.Status.Timeout]]. */
   final def toTimeout(msg: String): Equation = copyWithStatus(Equation.Status.Timeout(msg))
 
+  /** Returns `true` if this equation is [[Equation.Status.Pending]]. */
+  final def isPending: Boolean = status match {
+    case Status.Pending => true
+    case Status.Unsolvable => false
+    case Status.Timeout(_) => false
+  }
+
 }
 
 object Equation {

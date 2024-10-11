@@ -79,8 +79,6 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Sig(_, _, _) => Nil
-
     case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)

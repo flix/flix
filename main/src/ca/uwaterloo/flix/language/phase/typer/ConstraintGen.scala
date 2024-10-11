@@ -47,17 +47,6 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Sig(sym, tvar, loc) =>
-        val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs, econstrs, sigTpe, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
-        c.unifyType(tvar, sigTpe, loc)
-        val constrs = tconstrs.map(_.copy(loc = loc))
-        c.addClassConstraints(constrs, loc)
-        econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-        val resTpe = sigTpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
       case Expr.Hole(_, tpe, eff, _) =>
         val resTpe = tpe
         val resEff = eff
