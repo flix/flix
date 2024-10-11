@@ -40,11 +40,11 @@ mod Adaptor {
     /// Note: Currently requires a Proxy (until Java types support generics).
     ///
     pub def comparator(_: Proxy[a]): Comparator \ IO with Order[a] =
-        let f1 = (o1, o2) -> unchecked_cast ({
+        let f1 = (o1, o2) -> {
             let a = unchecked_cast(o1 as a);
             let b = unchecked_cast(o2 as a);
             Order.compare(a, b) |> Comparison.toInt32
-        } as _ \ {});
+        };
         new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 f1(t, u)
