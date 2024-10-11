@@ -59,15 +59,6 @@ object MonoAst {
       def eff: Type = Type.Pure
     }
 
-    /**
-      * It now uses a DefSymUse since it has been specialized.
-      * This AST Node will be removed entirely once we have `ApplySig`.
-      */
-    @EliminatedBy(Monomorpher.getClass)
-    case class Sig(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
-
     case class Lambda(fparam: FormalParam, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
