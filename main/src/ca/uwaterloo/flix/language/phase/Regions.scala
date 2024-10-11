@@ -56,8 +56,6 @@ object Regions {
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expr.Sig(_, _, _) => Nil
-
     case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, tpe, _, loc) =>

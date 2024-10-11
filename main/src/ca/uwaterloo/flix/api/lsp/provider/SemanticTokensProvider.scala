@@ -326,11 +326,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Sig(sym, _, loc) =>
-      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
-      val t = SemanticToken(o, Nil, loc)
-      Iterator(t)
-
     case Expr.Hole(_, _, _, _) => Iterator.empty
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)

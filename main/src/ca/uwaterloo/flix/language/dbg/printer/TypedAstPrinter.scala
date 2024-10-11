@@ -28,7 +28,6 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
-    case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Unknown
     case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
