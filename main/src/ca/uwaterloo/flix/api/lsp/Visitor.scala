@@ -487,6 +487,11 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
+      case Expr.LocalDef(_, fparams, exp1, exp2, _, _, _) =>
+        fparams.foreach(visitFormalParam)
+        visitExpr(exp1)
+        visitExpr(exp2)
+
       case Expr.Region(_, _) => ()
 
       case Expr.Scope(_, regionVar, exp, _, _, _) =>

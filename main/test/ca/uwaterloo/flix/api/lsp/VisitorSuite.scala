@@ -15,19 +15,18 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.provider.Visitor
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
 
 class VisitorSuite extends AnyFunSuite {
-  val source = Source(Input.Text("test", "test", true, SecurityContext.AllPermissions), Array.emptyCharArray)
+  val source: Source = Source(Input.Text("test", "test", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
   val uri = "test"
 
   test("Inside.01") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 3, 10),
       SourcePosition(source, 6, 2))
     val pos = Position(5, 5)
@@ -37,7 +36,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.02") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 5, 2),
       SourcePosition(source, 5, 5),
     )
@@ -48,7 +47,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.03") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 5, 4),
       SourcePosition(source, 5, 5),
     )
@@ -59,7 +58,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.04") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 6, 4),
       SourcePosition(source, 6, 5),
     )
@@ -70,7 +69,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.05") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 4, 4),
       SourcePosition(source, 6, 10),
     )
@@ -82,7 +81,7 @@ class VisitorSuite extends AnyFunSuite {
   test("Inside.06") {
 
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 3, 2),
       SourcePosition(source, 6, 5),
     )
@@ -93,7 +92,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.07") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 2, 7),
       SourcePosition(source, 6, 4),
     )
@@ -105,7 +104,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.08") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 2, 7),
       SourcePosition(source, 6, 4),
     )
@@ -116,7 +115,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.09") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 6, 4),
       SourcePosition(source, 6, 6),
     )
@@ -127,7 +126,7 @@ class VisitorSuite extends AnyFunSuite {
 
   test("Inside.10") {
     val loc = SourceLocation(
-      false,
+      isReal = false,
       SourcePosition(source, 3, 5),
       SourcePosition(source, 5, 3),
     )
