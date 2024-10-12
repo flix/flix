@@ -191,7 +191,7 @@ object SymbolProvider {
     * Returns an Function SymbolInformation from an Op node.
     */
   private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
-    case TypedAst.Op(sym, _, loc) =>
+    case TypedAst.Op(sym, _, _) =>
       SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
   }
 
