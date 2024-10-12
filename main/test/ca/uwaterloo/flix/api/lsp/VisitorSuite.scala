@@ -31,7 +31,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition(source, 6, 2))
     val pos = Position(5, 5)
 
-    assert(Visitor.inside(uri, pos)(loc) === true)
+    assert(Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.02") {
@@ -42,7 +42,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(5, 4)
 
-    assert(Visitor.inside(uri, pos)(loc) === true)
+    assert(Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.03") {
@@ -53,7 +53,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(5, 4)
 
-    assert(Visitor.inside(uri, pos)(loc) === true)
+    assert(Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.04") {
@@ -64,7 +64,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 4)
 
-    assert(Visitor.inside(uri, pos)(loc) === true)
+    assert(Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.05") {
@@ -75,7 +75,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(3, 7)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.06") {
@@ -87,7 +87,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(7, 4)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.07") {
@@ -98,7 +98,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 11)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
 
   }
 
@@ -110,7 +110,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(2, 3)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.09") {
@@ -121,7 +121,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 2)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
   }
 
   test("Inside.10") {
@@ -132,6 +132,6 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(5, 3)
 
-    assert(Visitor.inside(uri, pos)(loc) === false)
+    assert(!Visitor.inside(uri, pos)(loc))
   }
 }
