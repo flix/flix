@@ -55,7 +55,7 @@ object HoleCompletion {
     )
 
     val matches = root.defs.values.flatMap {
-      case TypedAst.Def(sym, spec, _, loc) =>
+      case TypedAst.Def(sym, spec, _, _) =>
         val lastArrow = Type.mkArrowWithEffect(
           spec.fparams.last.tpe,
           spec.eff,

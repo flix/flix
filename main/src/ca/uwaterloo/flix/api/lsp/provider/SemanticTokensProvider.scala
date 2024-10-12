@@ -217,7 +217,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = defn0 match {
-    case Def(sym, spec, exp, loc) =>
+    case Def(sym, spec, exp, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -230,7 +230,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig): Iterator[SemanticToken] = sig0 match {
-    case TypedAst.Sig(sym, spec, exp, loc) =>
+    case TypedAst.Sig(sym, spec, exp, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -309,7 +309,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given effect operation.
     */
   private def visitOp(op: TypedAst.Op): Iterator[SemanticToken] = op match {
-    case TypedAst.Op(sym, spec, loc) =>
+    case TypedAst.Op(sym, spec, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
