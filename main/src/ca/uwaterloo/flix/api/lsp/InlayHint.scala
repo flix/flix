@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.Position
 import org.json4s.JsonDSL.*
 import org.json4s.JValue
 

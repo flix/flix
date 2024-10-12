@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 
 /**
   * Companion object for the [[SourceLocation]] class.
@@ -12,16 +12,15 @@ object SourceLocation {
     *
     * Must only be used if *absolutely necessary*.
     */
-  val Unknown: SourceLocation = SourceLocation(isReal = true, SourcePosition.Unknown, SourcePosition.Unknown)
+  val Unknown: SourceLocation = SourceLocation(isReal = true, Source(Input.Unknown, Array.emptyCharArray), Range(Position(0,0), Position(0,0)))
 
   implicit object Order extends Ordering[SourceLocation] {
 
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.beginLine, x.beginCol, x.endLine, x.endCol).compare(y.source.name, y.beginLine, y.beginCol, y.endLine, y.endCol)
+      (x.source.name, x.range).compare(y.source.name, y.range)
   }
-
 }
 
 /**
@@ -29,45 +28,27 @@ object SourceLocation {
   *
   * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosition) {
-
-  // Invariant: Ensure that sp1 and sp2 come from the same source.
-  assert(sp1.source eq sp2.source)
-
-  /**
-    * Returns the source associated with the source location.
-    */
-  def source: Source = sp1.source
+case class SourceLocation(isReal: Boolean, source: Source, range: Range) {
 
   /**
    * Returns the security context associated with the source location.
    */
-  def security: SecurityContext = sp1.source.input.security
+  def security: SecurityContext = source.input.security
 
-  /**
-    * Returns the line where the entity begins.
-    */
-  def beginLine: Int = sp1.line
+  def start: Position = range.start
+  def end: Position = range.end
 
-  /**
-    * Returns the column where the entity begins.
-    */
-  def beginCol: Int = sp1.col
+  def beginLine: Int = range.start.line
+  def beginCol: Int = range.start.character
+  def endLine: Int = range.end.line
+  def endCol: Int = range.end.character
 
-  /**
-    * Returns the line where the entity ends.
-    */
-  def endLine: Int = sp2.line
-
-  /**
-    * Returns the column where the entity ends.
-    */
-  def endCol: Int = sp2.col
+  def contains(pos: Position): Boolean = range.contains(pos)
 
   /**
     * Returns `true` if this source location spans a single line.
     */
-  def isSingleLine: Boolean = beginLine == endLine
+  def isSingleLine: Boolean = start.line == end.line
 
   /**
     * Returns `true` if this source location is synthetic.
@@ -101,21 +82,21 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   /**
     * Returns a string representation of `this` source location with the line number.
     */
-  def formatWithLine: String = s"${source.name}:$beginLine"
+  def formatWithLine: String = s"${source.name}:${range.start.line}"
 
   /**
     * Returns a string representation of `this` source location with the line and column numbers.
     */
-  def format: String = s"${source.name}:$beginLine:$beginCol"
+  def format: String = s"${source.name}:${range.start.line}:${range.start.character}"
 
   /**
     * Returns the source text of the source location.
     */
   def text: Option[String] = {
     if (isSingleLine) {
-      val line = lineAt(beginLine)
-      val b = Math.min(beginCol - 1, line.length)
-      val e = Math.min(endCol - 1, line.length)
+      val line = lineAt(range.start.line)
+      val b = Math.min(range.start.character - 1, line.length)
+      val e = Math.min(range.end.character - 1, line.length)
       Some(line.substring(b, e))
     } else {
       None
@@ -125,7 +106,7 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   /**
     * Returns the hashCode of `this` source location.
     */
-  override def hashCode(): Int = source.hashCode() + beginLine + beginCol + endLine + endCol
+  override def hashCode(): Int = source.hashCode() + start.hashCode() + end.hashCode()
 
   /**
     * Returns `true` if `this` and `o` represent the same source location.
@@ -133,10 +114,7 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   override def equals(o: Any): Boolean = o match {
     case that: SourceLocation =>
       this.source == that.source &&
-        this.beginLine == that.beginLine &&
-        this.beginCol == that.beginCol &&
-        this.endLine == that.endLine &&
-        this.endCol == that.endCol
+        this.range == that.range
     case _ => false
   }
 

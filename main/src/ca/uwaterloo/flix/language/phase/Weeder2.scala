@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, Range, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
@@ -409,7 +409,7 @@ object Weeder2 {
             .map(flattenEnumCaseType)
             .getOrElse(Type.Unit(ident.loc))
           // Make a source location that spans the name and type, excluding 'case'.
-          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, Range(ident.loc.start, tree.loc.end))
           Case(ident, tpe, loc)
       }
     }
@@ -528,7 +528,7 @@ object Weeder2 {
       ) {
         (mod, ident, ttype) =>
           // Make a source location that spans the name and type
-          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, Range(ident.loc.start, tree.loc.end))
           StructField(mod, Name.mkLabel(ident), ttype, loc)
       }
     }
@@ -920,7 +920,7 @@ object Weeder2 {
           val first = idents.head
           val ident = idents.last
           val nnameIdents = idents.dropRight(1)
-          val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
+          val loc = SourceLocation(isReal = true, first.loc.source, Range(first.loc.start, ident.loc.end))
           val nname = Name.NName(nnameIdents, loc)
           val qname = Name.QName(nname, ident, loc)
           Validation.success(Expr.Ambiguous(qname, qname.loc))
@@ -1005,9 +1005,9 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident =>
           // Strip '?' suffix and update source location
-          val sp1 = ident.loc.sp1
-          val sp2 = ident.loc.sp2.copy(col = (ident.loc.sp2.col - 1).toShort)
-          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, sp1, sp2))
+          val sp1 = ident.loc.start
+          val sp2 = ident.loc.end.copy(character = (ident.loc.end.character - 1).toShort)
+          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, Range(sp1, sp2)))
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -3072,7 +3072,7 @@ object Weeder2 {
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
-        val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
+        val loc = SourceLocation(isReal = true, first.loc.source, Range(first.loc.start, ident.loc.end))
         val nname = Name.NName(nnameIdents, loc)
         Name.QName(nname, ident, loc)
     }
@@ -3110,8 +3110,8 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(token@Token(_, _, _, _, sp1, sp2)) =>
-        Validation.success(Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2)))
+      case Some(token@Token(_, src, _, _, sp1, sp2)) =>
+        Validation.success(Name.Ident(token.text, SourceLocation(isReal = true, src, Range(sp1, sp2))))
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.

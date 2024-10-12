@@ -16,9 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
+import ca.uwaterloo.flix.language.ast.Range
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Position, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
@@ -90,7 +91,7 @@ object HoverProvider {
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
+    val range = loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
@@ -104,7 +105,7 @@ object HoverProvider {
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
+    val range = loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
@@ -119,7 +120,7 @@ object HoverProvider {
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
+    val range = loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
@@ -134,7 +135,7 @@ object HoverProvider {
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
+    val range = loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
@@ -149,7 +150,7 @@ object HoverProvider {
          |${FormatDoc.asMarkDown(opDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
+    val range = loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
@@ -173,7 +174,7 @@ object HoverProvider {
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(t.loc)
+    val range = t.loc.range
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
     ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }

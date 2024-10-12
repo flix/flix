@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   * @param sp1   The source position that the lexeme __starts__ on. Must be one-indexed.
   * @param sp2   The source position that the lexeme __ends__ on. Must be one-indexed.
   */
-case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
+case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Position, sp2: Position) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *
@@ -46,10 +46,10 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
     * Makes a [[SourceLocation]] spanning this token.
     * NB: Tokens are zero-indexed while SourceLocations are one-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, sp1, sp2)
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, Range(sp1, sp2))
 
   /**
     * Returns a string representation of this token. Must only be used for debugging.
     */
-  override def toString: String = s"Token($kind, $text, ${sp1.line}, ${sp1.col}, ${sp2.line}, ${sp2.col})"
+  override def toString: String = s"Token($kind, $text, ${sp1.line}, ${sp1.character}, ${sp2.line}, ${sp2.character})"
 }

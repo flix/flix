@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Position, Range, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.mutable.ArrayBuffer

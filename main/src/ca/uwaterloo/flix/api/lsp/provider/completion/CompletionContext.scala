@@ -15,9 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{Position, Range}
+import ca.uwaterloo.flix.language.ast.Range
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.Position
 
 /**
   * Represents a completion context.

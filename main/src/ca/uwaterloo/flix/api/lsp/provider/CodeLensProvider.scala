@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range, ResponseStatus}
+import ca.uwaterloo.flix.language.ast.Range
+import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}

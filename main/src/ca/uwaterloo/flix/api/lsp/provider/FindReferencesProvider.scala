@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position, ResponseStatus}
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Position, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 

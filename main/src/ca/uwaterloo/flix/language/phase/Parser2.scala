@@ -167,8 +167,8 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition(s.src, 0, 0)
-    val e = SourcePosition(s.src, 0, 0)
+    val b = Position(0, 0)
+    val e = Position(0, 0)
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
@@ -183,15 +183,21 @@ object Parser2 {
             // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation(
               isReal = true,
-              lastAdvance.sp2,
-              lastAdvance.sp2
+              lastAdvance.src,
+              Range(
+                lastAdvance.sp2,
+                lastAdvance.sp2
+              )
             )
           else
             // Otherwise the source location can span from the first to the last token in the sub tree
             SourceLocation(
               isReal = true,
-              openToken.sp1,
-              lastAdvance.sp2
+              openToken.src,
+              Range(
+                openToken.sp1,
+                lastAdvance.sp2
+              )
             )
           locationStack = locationStack.tail
           stack = stack.tail
@@ -208,8 +214,11 @@ object Parser2 {
     val openToken = locationStack.last
     stack.last.loc = SourceLocation(
       isReal = true,
-      openToken.sp1,
-      tokens.head.sp2
+      openToken.src,
+      Range(
+        openToken.sp1,
+        tokens.head.sp2
+      )
     )
 
     // The stack should now contain a single Source tree,
@@ -225,7 +234,7 @@ object Parser2 {
     */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens((s.position - 1).max(0))
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    SourceLocation(isReal = true, token.src, Range(token.sp1, token.sp2))
   }
 
   /**
@@ -233,7 +242,7 @@ object Parser2 {
     */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens(s.position)
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    SourceLocation(isReal = true, token.src, Range(token.sp1, token.sp2))
   }
 
   /**
@@ -613,7 +622,7 @@ object Parser2 {
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
-      val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
+      val loc = SourceLocation(isReal = true, locBefore.source, Range(locBefore.start, locAfter.start))
       Some(NeedAtleastOne(namedTokenSet, context, loc = loc))
     } else {
       None

@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import org.json4s.JsonDSL.*
 import org.json4s.*
+import ca.uwaterloo.flix.language.ast.Range
 
 /**
   * Represents a `TextEdit` in LSP.

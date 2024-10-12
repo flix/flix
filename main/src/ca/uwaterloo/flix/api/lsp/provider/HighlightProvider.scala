@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus}
+import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Position, Range, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
@@ -102,7 +102,7 @@ object HighlightProvider {
 
     // Construct the highlights.
     val highlights = occurrencesInDoc map {
-      case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
+      case (loc, kind) => DocumentHighlight(loc.range, kind)
     }
 
     // Construct the JSON result.
