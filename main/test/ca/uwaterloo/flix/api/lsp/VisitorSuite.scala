@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
-
 class VisitorSuite extends AnyFunSuite {
   val source: Source = Source(Input.Text("test", "test", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
   val uri = "test"
