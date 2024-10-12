@@ -141,6 +141,21 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointResult](result)
   }
 
+  test("Test.IllegalSignature.Main.01") {
+    val input =
+      """
+        |enum E
+        |eff Exc {
+        |    pub def raise(): Unit
+        |}
+        |def main(a: Int32): E \ Exc = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointResult](result)
+    expectError[EntryPointError.IllegalEntryPointEff](result)
+  }
+
   test("Test.EntryPointNotFound.01") {
     val input =
       """
