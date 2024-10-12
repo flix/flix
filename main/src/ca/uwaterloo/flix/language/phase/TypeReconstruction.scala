@@ -47,7 +47,7 @@ object TypeReconstruction {
     * Reconstructs types in the given spec.
     */
   private def visitSpec(spec: KindedAst.Spec, subst: Substitution): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam)
       val fparams = fparams0.map(visitFormalParam(_, subst))
       val tpe = subst(tpe0)
@@ -55,7 +55,7 @@ object TypeReconstruction {
       val tconstrs = tconstrs0.map(subst.apply)
       val econstrs = econstrs0.map(subst.apply)
       val sc = sc0 // TODO ASSOC-TYPES get rid of type visits here and elsewhere that only go over rigid tvars
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**

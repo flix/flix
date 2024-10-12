@@ -47,7 +47,7 @@ object ConstraintSolver {
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
@@ -59,14 +59,14 @@ object ConstraintSolver {
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
-    case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+    case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
 

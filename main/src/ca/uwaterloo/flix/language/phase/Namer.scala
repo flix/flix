@@ -484,7 +484,7 @@ object Namer {
       val e = exp.map(visitExp(_, ns0)(Scope.Top, sctx, flix))
 
       val sym = Symbol.mkSigSym(traitSym, ident)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
       NamedAst.Declaration.Sig(sym, spec, e, loc)
   }
 
@@ -515,7 +515,7 @@ object Namer {
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
       NamedAst.Declaration.Def(sym, spec, e, loc)
   }
 
@@ -546,7 +546,7 @@ object Namer {
       val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
       val sym = Symbol.mkOpSym(effSym, ident)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs)
       NamedAst.Declaration.Op(sym, spec, loc)
   }
 

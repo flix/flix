@@ -293,7 +293,7 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
@@ -303,7 +303,7 @@ object Kinder {
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -1297,7 +1297,7 @@ object Kinder {
     * as in the case of a trait type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
       val fparamKenvs = fparams.map(inferFormalParam(_, kenv, taenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, taenv, root)).toList
@@ -1490,7 +1490,7 @@ object Kinder {
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
-    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       // first get the kenv from the declared tparams
       val kenv1 = getKindEnvFromTypeParams(tparams0)
 

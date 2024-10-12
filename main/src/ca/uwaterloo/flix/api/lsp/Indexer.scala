@@ -67,7 +67,7 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),

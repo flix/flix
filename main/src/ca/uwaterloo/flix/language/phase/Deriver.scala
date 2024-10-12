@@ -176,7 +176,6 @@ object Deriver {
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
-        loc = loc
       )
   }
 
@@ -369,8 +368,7 @@ object Deriver {
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -535,8 +533,7 @@ object Deriver {
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -673,8 +670,7 @@ object Deriver {
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -859,8 +855,7 @@ object Deriver {
         tpe = retTpe,
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 

@@ -149,8 +149,8 @@ object Resolver {
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.Op(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
-    case ResolvedAst.Declaration.Sig(sym, spec, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.Op(sym, spec, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
+    case ResolvedAst.Declaration.Sig(sym, spec, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
@@ -515,7 +515,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -532,7 +532,7 @@ object Resolver {
               mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
                 case (tpe, eff, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs, loc)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs)
               }
           }
       }
@@ -742,7 +742,7 @@ object Resolver {
     * A signature spec is legal if it contains the trait's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
@@ -3857,7 +3857,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs) =>
       mkTypeParamEnv(tparams) ++ mkFormalParamEnv(fparams)
   }
 

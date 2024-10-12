@@ -79,7 +79,7 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
   }
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
   sealed trait Expr {
     def loc: SourceLocation

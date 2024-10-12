@@ -243,7 +243,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       IteratorOps.all(
         visitTypeParams(tparams),
         visitFormalParams(fparams),

@@ -121,11 +121,11 @@ object Safety {
     val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
     val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
     val types = if (isPolymorphic(defn)) {
-      List(SafetyError.IllegalExportPolymorphism(defn.spec.loc))
+      List(SafetyError.IllegalExportPolymorphism(defn.loc))
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 

@@ -16,7 +16,7 @@ object TypedAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
     }.toList
     val defs = root.defs.values.map {
-      case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _, _), exp, _) =>
+      case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp, _) =>
         DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.printAsEffect(eff), print(exp))
     }.toList
     DocAst.Program(enums, defs)
