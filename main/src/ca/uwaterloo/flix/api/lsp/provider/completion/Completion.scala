@@ -350,7 +350,7 @@ sealed trait Completion {
 
       val label = method.getName + "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect
       val text = method.getName + "(" + argsWithName.zipWithIndex.map {case (arg, i) => s"$${${i + 1}:$arg}" }.mkString(", ") + ")"
-      val range = Range.from(ident.loc)
+      val range = ident.loc.range
 
       CompletionItem(
         label            = label,
@@ -370,7 +370,7 @@ sealed trait Completion {
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
         filterText = Some(s"${sym.text}?$name"),
         sortText = priority,
-        textEdit = TextEdit(Range.from(loc), snippet),
+        textEdit = TextEdit(loc.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,

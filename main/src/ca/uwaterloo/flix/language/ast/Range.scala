@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.util.Result
 import org.json4s.JValue
 import org.json4s.JsonDSL.pair2Assoc
+import org.json4s.jvalue2monadic
 
 object Range {
   /**

@@ -40,7 +40,7 @@ object CodeLensProvider {
       case sym =>
         val args = List(JString(sym.toString))
         val command = Command("▶ Run", "flix.runMain", args)
-        val range = Range.from(sym.loc)
+        val range = sym.loc.range
         CodeLens(range, Some(command))
     }
   }
@@ -52,7 +52,7 @@ object CodeLensProvider {
     getTests(uri)(root).map {
       case sym =>
         val command = Command("▶ Run Tests", "flix.cmdTests", Nil)
-        val range = Range.from(sym.loc)
+        val range = sym.loc.range
         CodeLens(range, Some(command))
     }
   }
