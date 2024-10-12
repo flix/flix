@@ -261,12 +261,10 @@ object ConstraintSolver {
     */
   private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
-      val tmin1 = TypeMinimization.minimizeType(subst0(tpe1))
-      val tmin2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
       for {
-        (t1, p1) <- TypeReduction.simplify(tmin1, renv, prov.loc)
-        (t2, p2) <- TypeReduction.simplify(tmin2, renv, prov.loc)
+        (t1, p1) <- TypeReduction.simplify(subst0(tpe1), renv, prov.loc)
+        (t2, p2) <- TypeReduction.simplify(subst0(tpe2), renv, prov.loc)
         ResolutionResult(subst, constrs, p) <-
           // A small hack to ensure that we do not add reducible types to the substitution.
           if (Type.hasJvmType(t1) || Type.hasJvmType(t2)) {
@@ -292,7 +290,7 @@ object ConstraintSolver {
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
           val qvars = e2Raw.typeVars.map(_.sym)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypeConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
+          val constr = TypeConstraint.Equality(e1, e2, prov)
           ResolutionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ResolutionResult(subst, newConstrs, progress) =>
