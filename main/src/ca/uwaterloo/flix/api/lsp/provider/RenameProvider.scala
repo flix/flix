@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, ResponseStatus, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Position, Range, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -103,7 +103,7 @@ object RenameProvider {
 
     // Construct text edits.
     val textEdits = groupedByUri map {
-      case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
+      case (uri, locs) => uri -> locs.map(loc => TextEdit(loc.range, newName))
     }
 
     // Assemble the workspace edit.

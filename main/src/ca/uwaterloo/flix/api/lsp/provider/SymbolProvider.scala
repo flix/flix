@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolInformation, SymbolKind}
+import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, SymbolInformation, SymbolKind}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
@@ -53,7 +53,7 @@ object SymbolProvider {
     */
   private def mkTraitSymbolInformation(t: TypedAst.Trait) = t match {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+      sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, sym.loc.range), None,
     )
   }
 
@@ -66,8 +66,8 @@ object SymbolProvider {
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,
-      Range.from(sym.loc),
-      Range.from(sym.loc),
+      sym.loc.range,
+      sym.loc.range,
       Nil,
       signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
     )
@@ -78,7 +78,7 @@ object SymbolProvider {
     */
   private def mkTypeParamDocumentSymbol(t: TypedAst.TypeParam) = t match {
     case TypedAst.TypeParam(name, tpe, loc) => DocumentSymbol(
-      name.name, Some(formatKind(tpe.kind)), SymbolKind.TypeParameter, Range.from(loc), Range.from(loc), Nil, Nil,
+      name.name, Some(formatKind(tpe.kind)), SymbolKind.TypeParameter, loc.range, loc.range, Nil, Nil,
     )
   }
 
@@ -87,7 +87,7 @@ object SymbolProvider {
     */
   private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
     case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
-      sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+      sym.name, Some(spec.doc.text), SymbolKind.Method, sym.loc.range, sym.loc.range, Nil, Nil,
     )
   }
 
@@ -96,7 +96,7 @@ object SymbolProvider {
     */
   private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
     case TypedAst.Sig(sym, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+      sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, sym.loc.range), None,
     )
   }
 
@@ -105,7 +105,7 @@ object SymbolProvider {
     */
   private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
     case TypedAst.Def(sym, spec, _) => DocumentSymbol(
-      sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+      sym.name, Some(spec.doc.text), SymbolKind.Function, sym.loc.range, sym.loc.range, Nil, Nil,
     )
   }
 
@@ -114,7 +114,7 @@ object SymbolProvider {
     */
   private def mkDefSymbolInformation(d: TypedAst.Def): SymbolInformation = d match {
     case TypedAst.Def(sym, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+      sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, sym.loc.range), None,
     )
   }
 
@@ -127,8 +127,8 @@ object SymbolProvider {
       sym.name,
       Some(doc.text),
       SymbolKind.Enum,
-      Range.from(loc),
-      Range.from(loc),
+      loc.range,
+      loc.range,
       Nil,
       cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol),
     )
@@ -139,7 +139,7 @@ object SymbolProvider {
     */
   private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = c match {
     case TypedAst.Case(sym, _, _, loc) => DocumentSymbol(
-      sym.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
+      sym.name, None, SymbolKind.EnumMember, loc.range, loc.range, Nil, Nil,
     )
   }
 
@@ -150,7 +150,7 @@ object SymbolProvider {
   private def mkEnumSymbolInformation(enum0: TypedAst.Enum): List[SymbolInformation] = enum0 match {
     case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
       cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
-        sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
+        sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, loc.range), None,
       )
   }
 
@@ -159,7 +159,7 @@ object SymbolProvider {
     */
   private def mkCaseSymbolInformation(c: TypedAst.Case): SymbolInformation = c match {
     case TypedAst.Case(sym, _, _, loc) => SymbolInformation(
-      sym.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None)
+      sym.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, loc.range), None)
   }
 
   /**
@@ -168,7 +168,7 @@ object SymbolProvider {
   private def mkEffectSymbolInformation(effect: TypedAst.Effect): List[SymbolInformation] = effect match {
     case TypedAst.Effect(_, _, _, sym, ops, _) =>
       ops.map(mkOpSymbolInformation) :+ SymbolInformation(
-        sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
+        sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, sym.loc.range), None)
   }
 
   /**
@@ -180,8 +180,8 @@ object SymbolProvider {
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,
-      Range.from(sym.loc),
-      Range.from(sym.loc),
+      sym.loc.range,
+      sym.loc.range,
       Nil,
       ops.map(mkOpDocumentSymbol),
     )
@@ -192,7 +192,7 @@ object SymbolProvider {
     */
   private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
     case TypedAst.Op(sym, _) =>
-      SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
+      SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, sym.loc.range), None)
   }
 
   /**
@@ -200,7 +200,7 @@ object SymbolProvider {
     */
   private def mkOpDocumentSymbol(s: TypedAst.Op): DocumentSymbol = s match {
     case TypedAst.Op(sym, spec) => DocumentSymbol(
-      sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+      sym.name, Some(spec.doc.text), SymbolKind.Method, sym.loc.range, sym.loc.range, Nil, Nil,
     )
   }
 

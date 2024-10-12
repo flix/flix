@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Range, ChangeSet, Position, ReadAst, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -269,9 +269,9 @@ object Lexer {
     // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    val sp1 = SourcePosition(s.src, line, column.toShort)
-    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
-    SourceLocation(isReal = true, sp1, sp2)
+    val sp1 = Position(line, column.toShort)
+    val sp2 = Position(line, (column + length).toShort)
+    SourceLocation(isReal = true, s.src, Range(sp1, sp2))
   }
 
   /**
@@ -283,9 +283,9 @@ object Lexer {
     // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    val sp1 = SourcePosition(s.src, line, column.toShort)
-    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
-    SourceLocation(isReal = true, sp1, sp2)
+    val sp1 = Position(line, column.toShort)
+    val sp2 = Position(line, (column + length).toShort)
+    SourceLocation(isReal = true, s.src, Range(sp1, sp2))
   }
 
   /**
@@ -293,8 +293,8 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
-    val e = SourcePosition(s.src, s.end.line + 1, (s.end.column + 1).toShort)
+    val b = Position(s.start.line + 1, (s.start.column + 1).toShort)
+    val e = Position(s.end.line + 1, (s.end.column + 1).toShort)
     s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }

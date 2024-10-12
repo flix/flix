@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext.AllPermissions
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, SourcePosition, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Position, Range, SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -88,7 +88,7 @@ object Summary {
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
-    val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, SourcePosition(unknownSource, 0, 0), SourcePosition(unknownSource, 0, 0)))
+    val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, unknownSource, Range(Position(0, 0), Position(0, 0))))
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.JustIO) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
@@ -179,7 +179,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, justIODefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+        SourceLocation(isReal = true, src, Range(Position(0, 0), Position(0, 0)))
       )
     }
 
@@ -192,7 +192,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+          SourceLocation(isReal = true, src, Range(Position(0, 0), Position(0, 0)))
         )
       }
       FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)

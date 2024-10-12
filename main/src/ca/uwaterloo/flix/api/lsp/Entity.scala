@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Range, Name, SourceLocation, Symbol, TypedAst}
 
 sealed trait Entity {
   /**

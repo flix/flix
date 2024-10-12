@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.Range
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
@@ -26,7 +27,7 @@ import org.json4s.*
   */
 object Diagnostic {
   def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
-    val range = Range.from(compilationMessage.loc)
+    val range = compilationMessage.loc.range
     val severity = Some(DiagnosticSeverity.Error)
     val code = compilationMessage.kind
     val summary = compilationMessage.summary
@@ -43,7 +44,7 @@ object Diagnostic {
   }
 
   def from(codeHint: CodeHint, formatter: Formatter): Diagnostic = {
-    val range = Range.from(codeHint.loc)
+    val range = codeHint.loc.range
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
     val summary = codeHint.summary
     Diagnostic(range, severity, None, None, summary, summary, Nil)

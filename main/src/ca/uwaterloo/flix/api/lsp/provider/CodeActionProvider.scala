@@ -16,9 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.language.ast.Range
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Position, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{InstanceError, RedundancyError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
@@ -210,7 +211,7 @@ object CodeActionProvider {
   private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused variable with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -220,7 +221,7 @@ object CodeActionProvider {
   private def mkUnusedDefCodeAction(sym: Symbol.DefnSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused function with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -230,7 +231,7 @@ object CodeActionProvider {
   private def mkUnusedParamCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused parameter with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -240,7 +241,7 @@ object CodeActionProvider {
   private def mkUnusedTypeParamCodeAction(sym: Name.Ident, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused type parameter with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -250,7 +251,7 @@ object CodeActionProvider {
   private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused effect with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -260,7 +261,7 @@ object CodeActionProvider {
   private def mkUnusedEnumCodeAction(sym: Symbol.EnumSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       s"Prefix unused enum with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -270,7 +271,7 @@ object CodeActionProvider {
   private def mkUnusedEnumTagCodeAction(sym: Symbol.CaseSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       s"Prefix unused case with underscore",
-      Position.fromBegin(sym.loc),
+      sym.loc.start,
       uri,
     )
 
@@ -345,7 +346,7 @@ object CodeActionProvider {
       kind = CodeActionKind.QuickFix,
       edit = Some(WorkspaceEdit(
         Map(uri -> List(TextEdit(
-          Range(Position.fromBegin(loc), Position.fromEnd(loc)),
+          loc.range,
           correctName
         )))
       )),
@@ -458,7 +459,7 @@ object CodeActionProvider {
       else
         s", $trt"
 
-    val end = Position.fromEnd(e.derives.loc)
+    val end = e.derives.loc.end
 
     WorkspaceEdit(
       Map(uri -> List(TextEdit(

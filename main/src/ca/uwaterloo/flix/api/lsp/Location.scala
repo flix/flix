@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{Range, SourceLocation}
 
 import org.json4s.JsonDSL.*
 import org.json4s.*
@@ -24,7 +24,7 @@ import org.json4s.*
   * Companion object of [[Location]].
   */
 object Location {
-  def from(loc: SourceLocation): Location = Location(loc.source.name, Range.from(loc))
+  def from(loc: SourceLocation): Location = Location(loc.source.name, loc.range)
 }
 
 /**

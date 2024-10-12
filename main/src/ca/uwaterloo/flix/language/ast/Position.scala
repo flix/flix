@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp
+package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object for [[Position]].
   */
 object Position {
 
-  /**
-    * Returns a position from the given source location `loc` using its beginning line and col.
-    */
-  def fromBegin(loc: SourceLocation): Position =
-    Position(loc.beginLine, loc.beginCol)
+  implicit object Order extends Ordering[Position] {
 
-  /**
-    * Returns a position from the given source location `loc` using its ending line and col.
-    */
-  def fromEnd(loc: SourceLocation): Position =
-    Position(loc.endLine, loc.endCol)
+    override def compare(x: Position, y: Position): Int = {
+      if (x.line < y.line) { return -1 }
+      if (x.line > y.line) { return 1 }
+      if (x.character < y.character) { return -1 }
+      if (x.character > y.character) { return 1 }
+      0
+    }
+  }
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
@@ -64,7 +62,9 @@ object Position {
   * @param line      Line position in a document (one-indexed).
   * @param character Character offset on a line in a document (one-indexed).
   */
-case class Position(line: Int, character: Int) {
+case class Position(line: Int, character: Int) extends Ordered[Position] {
   // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toJSON: JValue = ("line" -> (line - 1)) ~ ("character" -> (character - 1))
+
+  def compare(that: Position): Int = Position.Order.compare(this, that)
 }
