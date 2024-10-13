@@ -537,9 +537,10 @@ object Visitor {
         visitExpr(exp3)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.foreach{case (symUse, exp) =>
-          visitStructFieldSymUse(symUse)
-          visitExpr(exp)
+        fields.foreach{
+          case (symUse, exp) =>
+            visitStructFieldSymUse(symUse)
+            visitExpr(exp)
         }
         visitExpr(region)
 
