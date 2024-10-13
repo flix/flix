@@ -37,12 +37,12 @@ object Deriver {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-  val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
+  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
+  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
+  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
+  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
+  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
+  private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
 
   val DerivableSyms = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
@@ -146,7 +146,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        (mainMatchRules ++ List(defaultRule)),
+        mainMatchRules ++ List(defaultRule),
         loc
       )
   }
