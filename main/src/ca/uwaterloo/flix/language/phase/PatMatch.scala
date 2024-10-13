@@ -108,8 +108,8 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatMatch") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
+    flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
 
       val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
@@ -122,8 +122,8 @@ object PatMatch {
 
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
-      Validation.toSuccessOrSoftFailure(root, errors)
-    }(DebugValidation())
+      ((), errors.toList)
+    }
 
   /**
     * Check that all patterns in an expression are exhaustive

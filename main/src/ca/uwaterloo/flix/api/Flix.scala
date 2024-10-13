@@ -521,12 +521,12 @@ class Flix {
       _ = EffectVerifier.run(afterTyper)
       (_, regionErrors) = Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper).withSoftFailures(regionErrors)
-      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterPredDeps <- PredDeps.run(afterEntryPoint)
+      (_, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterPredDeps <- PredDeps.run(afterEntryPoint).withSoftFailures(instanceErrors)
       afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
-      (_, redundancyErrors) = Redundancy.run(afterPatMatch)
-      afterSafety <- Safety.run(afterPatMatch).withSoftFailures(redundancyErrors)
+      (_, patMatchErrors) = PatMatch.run(afterStratifier)
+      (_, redundancyErrors) = Redundancy.run(afterStratifier)
+      afterSafety <- Safety.run(afterStratifier).withSoftFailures(patMatchErrors).withSoftFailures(redundancyErrors)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
