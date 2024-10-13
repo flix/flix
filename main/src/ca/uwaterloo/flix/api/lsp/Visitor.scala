@@ -184,31 +184,6 @@ object Visitor {
     root.typeAliases.values.foreach(visitTypeAlias)
   }
 
-  /**
-    * Returns `true` if the position `pos` within the file given by path `uri` is contained within the `SourceLocation` `loc`.
-    * Returns `false` otherwise.
-    *
-    * @param uri  the path of the file that `pos` is within.
-    * @param pos  the position that we want to know whether is within `loc`.
-    * @param loc  the `SourceLocation` that want to know if `pos` is within.
-    * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
-    */
-  def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    val sameSource = uri == loc.source.name
-    if (!sameSource) { return false }
-
-    val afterStart = loc.beginLine < pos.line ||
-                     (loc.beginLine == pos.line && loc.beginCol <= pos.character)
-    if (!afterStart) { return false }
-
-
-    val beforeEnd = pos.line < loc.endLine ||
-                    (pos.line == loc.endLine && pos.character < loc.endCol)
-    if (!beforeEnd) { return false }
-
-    true
-  }
-
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
     val Enum(_, ann, _, _, tparams, derives, cases, loc) = enm
     if (!a.accept(loc)) { return }
@@ -933,5 +908,30 @@ object Visitor {
     val CaseSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
     c.consumeCaseSymUse(symUse)
+  }
+
+  /**
+    * Returns `true` if the position `pos` within the file given by path `uri` is contained within the `SourceLocation` `loc`.
+    * Returns `false` otherwise.
+    *
+    * @param uri  the path of the file that `pos` is within.
+    * @param pos  the position that we want to know whether is within `loc`.
+    * @param loc  the `SourceLocation` that want to know if `pos` is within.
+    * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
+    */
+  def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
+    val sameSource = uri == loc.source.name
+    if (!sameSource) { return false }
+
+    val afterStart = loc.beginLine < pos.line ||
+      (loc.beginLine == pos.line && loc.beginCol <= pos.character)
+    if (!afterStart) { return false }
+
+
+    val beforeEnd = pos.line < loc.endLine ||
+      (pos.line == loc.endLine && pos.character < loc.endCol)
+    if (!beforeEnd) { return false }
+
+    true
   }
 }
