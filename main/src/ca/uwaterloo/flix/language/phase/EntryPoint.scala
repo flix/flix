@@ -69,7 +69,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
@@ -83,8 +83,8 @@ object EntryPoint {
       // Case 2: No entry point. Don't touch anything.
       case None => root.copy(reachable = getReachable(root))
     }
-    Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
-  }(DebugValidation())
+    (newRoot, sctx.errors.asScala.toList)
+  }(DebugNoOp())
 
   /**
     * Returns all reachable definitions.
