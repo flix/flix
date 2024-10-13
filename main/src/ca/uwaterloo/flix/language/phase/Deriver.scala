@@ -154,7 +154,7 @@ object Deriver {
   /**
     * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
     */
-  private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
