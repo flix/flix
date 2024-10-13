@@ -524,8 +524,8 @@ class Flix {
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
       afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterPatMatch)
+      (_, patMatchErrors) = PatMatch.run(afterStratifier)
+      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(patMatchErrors)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
