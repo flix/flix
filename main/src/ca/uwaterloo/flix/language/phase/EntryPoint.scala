@@ -151,29 +151,24 @@ object EntryPoint {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
 
       // First check that there's exactly one argument.
-      val optArg = declaredScheme.base.arrowArgTypes match {
+      declaredScheme.base.arrowArgTypes match {
+
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Some(arg)
+        case arg :: Nil =>
+          // Case 1.1: Check that `arg` is the Unit parameter, i.e, `defn: Unit -> XYZ`
+          if (!isUnitParameter(traitEnv, arg)) {
+            val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+            sctx.errors.add(error)
+          }
+
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
           sctx.errors.add(error)
-          None
+
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
-      }
-
-      // Then check validity of the argument
-      optArg match {
-        // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if isUnitParameter(traitEnv, arg) =>
-
-        // Case 2: Bad arguments. SoftError
-        // Case 3: `optArg` was None. SoftError
-        case _ =>
-          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
-          sctx.errors.add(error)
       }
   }
 
