@@ -68,50 +68,6 @@ object HoverProvider {
     case _ => mkNotFound(uri, pos)
   }
 
-  @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = entity match {
-
-    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
-
-    case Entity.StructField(field) => hoverType(field.tpe, field.sym.loc)
-
-    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc)
-
-    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc)
-
-    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.StructFieldUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
-
-    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
-
-    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
-
-    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc)
-
-    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
-
-    case Entity.Type(t) => hoverKind(t)
-
-    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc)
-
-    case Entity.Trait(_) => mkNotFound(uri, pos)
-    case Entity.Def(_) => mkNotFound(uri, pos)
-    case Entity.Effect(_) => mkNotFound(uri, pos)
-    case Entity.Enum(_) => mkNotFound(uri, pos)
-    case Entity.Struct(_) => mkNotFound(uri, pos)
-    case Entity.TypeAlias(_) => mkNotFound(uri, pos)
-    case Entity.AssocType(_) => mkNotFound(uri, pos)
-    case Entity.Label(_) => mkNotFound(uri, pos)
-    case Entity.Op(_) => mkNotFound(uri, pos)
-    case Entity.Sig(_) => mkNotFound(uri, pos)
-    case Entity.TypeVar(_) => mkNotFound(uri, pos)
-  }
-
   private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
