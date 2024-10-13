@@ -76,7 +76,7 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == HashSym => Validation.success(Some(mkHashInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == SendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == SendableSym => Validation.success(Some(mkSendableInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == CoerceSym => mkCoerceInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, DerivableSyms, loc))
       }
@@ -738,13 +738,13 @@ object Deriver {
     *
     * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
     */
-  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val sendableTraitSym = PredefinedTraits.lookupTraitSym("Sendable", root)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, sendableTraitSym, loc)
 
-      Validation.success(KindedAst.Instance(
+      KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
@@ -755,7 +755,7 @@ object Deriver {
         assocs = Nil,
         ns = Name.RootNS,
         loc = loc
-      ))
+      )
   }
 
   /**
