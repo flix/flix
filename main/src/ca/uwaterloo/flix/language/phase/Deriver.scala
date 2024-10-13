@@ -835,7 +835,7 @@ object Deriver {
   /**
     * Creates the coerce specification for the given enum.
     */
-  private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
       val (_, caze) = cases.head
