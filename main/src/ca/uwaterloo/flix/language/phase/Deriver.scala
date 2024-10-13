@@ -863,7 +863,7 @@ object Deriver {
     * Creates a Coerce match rule for the given enum case.
     */
   private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _, _) =>
+    case KindedAst.Case(sym, _, _, _) =>
       // get a pattern corresponding to this case, e.g.
       // `case C(x0)`
       // Unlike other derivations, we do not unpack tuples
