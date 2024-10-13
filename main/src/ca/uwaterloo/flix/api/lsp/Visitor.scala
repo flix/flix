@@ -812,7 +812,7 @@ object Visitor {
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
     val Annotations(ls) = anns
-    // TODO `insideAnns` is a hack, should be removed eventually. Necessary for now since Annotations (not to be confused with Annotation) don't have locations
+    // `insideAnns` is a hack. Necessary for now since `Annotations` (not to be confused with `Annotation`) don't have locations
     val insideAnns = ls.map(_.loc).exists(a.accept)
     if (!insideAnns) { return }
 
