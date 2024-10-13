@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.phase.unification.Zhegalkin
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.util.Result
 
@@ -95,6 +96,24 @@ object SetUnification {
     runWithState(state, runRule(trivial), trivialPhaseName)
     runWithState(state, assertSveEquationCount, "Assert Size")
     runWithState(state, svePermutations, "SVE")
+
+    // Experiment with Zhegalkin polynomials.
+    //    for ((_, f) <- state.subst.m) {
+    //      f match {
+    //        case SetFormula.Empty => // nop
+    //        case SetFormula.Var(_) => // nop
+    //        case SetFormula.ElemSet(_) => // nop
+    //        case SetFormula.Cst(_) => // nop
+    //        case _ =>
+    //          def withBound(s: String, b: Int): String =
+    //            if (s.length < b) s else s.substring(0, b - 3) + "..."
+    //
+    //          val z = Zhegalkin.toZhegalkin(f)
+    //          val s1 = withBound(f.toString, 100)
+    //          val s2 = withBound(z.toString, 100)
+    //          println(f"$s1%100s -- $s2")
+    //      }
+    //    }
 
     (state.eqs, state.subst)
   }

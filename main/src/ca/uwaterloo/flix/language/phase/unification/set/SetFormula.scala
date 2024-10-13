@@ -351,7 +351,7 @@ object SetFormula {
   }
 
   /** Returns an iterator of the subformulas of the union or intersection. */
-  private def subformulasOf(
+  def subformulasOf(
                              elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
                              elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
                              other: Iterable[SetFormula]
