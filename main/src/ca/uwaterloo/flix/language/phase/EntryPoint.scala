@@ -84,7 +84,7 @@ object EntryPoint {
       case None => root.copy(reachable = getReachable(root))
     }
     (newRoot, sctx.errors.asScala.toList)
-  }(DebugNoOp())
+  }
 
   /**
     * Returns all reachable definitions.
