@@ -523,9 +523,9 @@ class Flix {
       afterEntryPoint <- EntryPoint.run(afterTyper).withSoftFailures(regionErrors)
       (_, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps = PredDeps.run(afterEntryPoint)
-      afterStratifier <- Stratifier.run(afterPredDeps).withSoftFailures(instanceErrors)
+      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
       (_, patMatchErrors) = PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(patMatchErrors)
+      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(instanceErrors).withSoftFailures(stratificationErrors).withSoftFailures(patMatchErrors)
       (_, safetyErrors) = Safety.run(afterRedundancy)
       output <- Validation.toSuccessOrSoftFailure(afterRedundancy, safetyErrors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
