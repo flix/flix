@@ -823,7 +823,7 @@ object Deriver {
   private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val (_, caze) = cases.head
-      val matchRule = mkCoerceMatchRule(caze, loc, root)
+      val matchRule = mkCoerceMatchRule(caze, loc)
 
       KindedAst.Expr.Match(
         KindedAst.Expr.Var(param, loc),
@@ -862,7 +862,7 @@ object Deriver {
   /**
     * Creates a Coerce match rule for the given enum case.
     */
-  private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+  private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
       // get a pattern corresponding to this case, e.g.
       // `case C(x0)`
