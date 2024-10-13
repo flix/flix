@@ -181,8 +181,8 @@ object EntryPoint {
     * Returns `true` iff `arg` is the Unit type.
     */
   private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], arg: Type)(implicit flix: Flix) = {
-    val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
-    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
+    val unitScheme = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
+    Scheme.equal(unitScheme, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
   }
 
   /**
