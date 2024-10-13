@@ -1,7 +1,7 @@
 # Changelog
 
 Version 0.52.0:
-- Compiler: Improved compilation of recursive functions leading to significant speed-ups (thanks Jakob!)
+- Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
 
 Version 0.51.0:
 - Language: Added support for mutable structs (thanks Joseph!)
