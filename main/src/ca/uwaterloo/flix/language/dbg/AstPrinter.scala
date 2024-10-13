@@ -31,6 +31,8 @@ object AstPrinter {
     override def emit(phase: String, root: T)(implicit flix: Flix): Unit = ()
   }
 
+  implicit object DebugUnit extends DebugNoOp[Unit]
+
   implicit object DebugSyntaxTree extends Debug[SyntaxTree.Root] {
     override def emit(phase: String, root: SyntaxTree.Root)(implicit flix: Flix): Unit = ()
   }
