@@ -171,7 +171,7 @@ object EntryPoint {
         case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
 
         // Case 2: Bad arguments. SoftError
-        // Case 3: `arg` was None. SoftError
+        // Case 3: `optArg` was None. SoftError
         case _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
           sctx.errors.add(error)
