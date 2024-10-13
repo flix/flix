@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.mapN
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -72,7 +72,7 @@ object Deriver {
 
       val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
-        case Ast.Derivation(sym, loc) if sym == EqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == OrderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == ToStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == HashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
@@ -107,7 +107,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId()))
@@ -121,7 +121,7 @@ object Deriver {
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, eqTraitSym, loc)
 
-      Validation.success(KindedAst.Instance(
+      KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
@@ -132,7 +132,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ))
+      )
   }
 
   /**
@@ -978,7 +978,7 @@ object Deriver {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[NameError]]s in the AST, if any.
+    * @param errors the [[DerivationError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError])
 
