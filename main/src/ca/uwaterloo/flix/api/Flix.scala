@@ -523,8 +523,8 @@ class Flix {
       afterEntryPoint <- EntryPoint.run(afterTyper).withSoftFailures(regionErrors)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
-      afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
+      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+      afterPatMatch <- PatMatch.run(afterStratifier).withSoftFailures(stratificationErrors)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
