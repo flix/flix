@@ -795,7 +795,7 @@ object Deriver {
         )
 
         val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
-        val exp = mkCoerceImpl(enum0, param, loc, root)
+        val exp = mkCoerceImpl(enum0, param, loc)
         val spec = mkCoerceSpec(enum0, param, loc, root)
 
         val defn = KindedAst.Def(coerceDefSym, spec, exp, loc)
@@ -820,7 +820,7 @@ object Deriver {
   /**
     * Creates the coerce implementation for the given enum.
     */
-  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val (_, caze) = cases.head
       val matchRule = mkCoerceMatchRule(caze, loc)
