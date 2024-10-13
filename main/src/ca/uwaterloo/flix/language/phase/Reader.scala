@@ -67,7 +67,7 @@ object Reader {
 
       val sources = result.toMap
       (ReadAst.Root(sources, names), List.empty)
-    }(DebugNoOp())
+    }
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
