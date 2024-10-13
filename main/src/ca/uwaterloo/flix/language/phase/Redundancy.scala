@@ -50,7 +50,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[RedundancyError]) = flix.phaseNew("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -79,9 +79,8 @@ object Redundancy {
         checkRedundantTraitConstraints()(root, flix)
     }
 
-    // Determine whether to return success or soft failure.
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }(DebugValidation())
+    ((), errors)
+  }
 
   /**
     * Checks for unused definition symbols.
