@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.Visitor
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Ast.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Case, Def, Enum, Expr, FormalParam, Op, Root, Sig}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 import org.json4s.JsonAST.JObject
@@ -28,16 +30,46 @@ import scala.annotation.tailrec
 
 object HoverProvider {
 
-  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+    var stack: List[AnyRef] = Nil
+    def push(x: AnyRef): Unit = {
+      stack = x :: stack
+    }
+    object HoverConsumer extends Visitor.Consumer {
+      override def consumeType(tpe: Type): Unit = push(tpe)
+      override def consumeExpr(exp: Expr): Unit = push(exp)
+      override def consumeDefSymUse(symUse: DefSymUse): Unit = push(symUse)
+      override def consumeSigSymUse(symUse: SigSymUse): Unit = push(symUse)
+      override def consumeOpSymUse(symUse: OpSymUse): Unit = push(symUse)
+      override def consumeDef(defn: Def): Unit = push(defn)
+      override def consumeSig(sig: Sig): Unit = push(sig)
+      override def consumeOp(op: Op): Unit = push(op)
+      override def consumeFormalParam(fparam: FormalParam): Unit = push(fparam)
+    }
 
-      case Some(entity) => hoverEntity(entity, uri, pos)
+    Visitor.visitRoot(root, HoverConsumer, Visitor.InsideAcceptor(uri, pos))
+
+    stack match {
+      case Nil => mkNotFound(uri, pos)
+      case head :: _ => hoverAny(head, uri, pos)
     }
   }
 
+  private def hoverAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
+    case tpe: Type => hoverKind(tpe)
+    case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
+    case DefSymUse(sym, loc) => hoverDef(sym, loc)
+    case SigSymUse(sym, loc) => hoverSig(sym, loc)
+    case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
+    case Def(sym, _, _, loc) => hoverDef(sym, loc)
+    case Sig(sym, _, _, loc) => hoverSig(sym, loc)
+    case Op(sym, _, loc) => hoverOp(sym, loc)
+    case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
+    case _ => mkNotFound(uri, pos)
+  }
+
   @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
+  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = entity match {
 
     case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
 
