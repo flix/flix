@@ -28,12 +28,12 @@ object Visitor {
   /**
     * Defines how each AST node type is handled when it's visited.
     *
-    * Each consume function `consumeX` takes a value of type `X` and returns nothing.
+    * Each consume function `consumeX` takes a value of type `X` and returns [[Unit]].
     * Thus, anything it does is through effects.
     *
     * Implementations need only implement the consume functions that they care about,
     * Any consume function not implemented falls back on the default of doing nothing
-    * upon consuming the the corresponding AST node.
+    * upon consuming the corresponding AST node.
     *
     * Example
     * {{{
@@ -45,7 +45,7 @@ object Visitor {
     * }
     * }}}
     *
-    * This consumer only cares about `Expr`s and simply collects all expressions visited.
+    * This consumer only cares about [[Expr]]s and simply collects all expressions visited.
     */
   trait Consumer {
     def consumeAnnotation(ann: Annotation): Unit = ()
@@ -103,10 +103,10 @@ object Visitor {
     */
   trait Acceptor {
     /**
-      * Defines whether an AST node is visited based on its `SourceLocation`
+      * Defines whether an AST node is visited based on its [[SourceLocation]]
       *
-      * @param loc  `SourceLocation` of the AST node
-      * @return     `true` if the AST node should be visited, `false` otherwise
+      * @param loc  [[SourceLocation]] of the AST node
+      * @return     true if the AST node should be visited, `false` otherwise
       */
     def accept(loc: SourceLocation): Boolean;
   }
@@ -122,7 +122,7 @@ object Visitor {
     * Acceptor that accepts all AST nodes whose `SourceLocation` is within
     * the file given by the path `uri`.
     *
-    * @param uri  the path of the file that an AST node `SourceLocation` must be within to be accepted.
+    * @param uri  the path of the file that an AST node [[SourceLocation]] must be within to be accepted.
     */
   case class FileAcceptor(uri: String) extends Acceptor {
     def accept(loc: SourceLocation): Boolean = uri == loc.source.name
@@ -131,11 +131,11 @@ object Visitor {
   /**
     * Acceptor that accepts an AST node if it contains a given position.
     *
-    * `InsideAcceptor` accepts an AST if it's `SourceLocation` is within the file given by `uri`
-    * and the position `pos` is within the `SourceLocation` of the AST.
+    * [[InsideAcceptor]] accepts an AST if it's [[SourceLocation]] is within the file given by `uri`
+    * and the `pos` is within the [[SourceLocation]] of the AST.
     *
-    * @param uri  the path to the file that the AST node `SourceLocation` must be in to be accepted.
-    * @param pos  the position that must be within the AST node `SourceLocation` for the node to be accepted.
+    * @param uri  the path to the file that the AST node [[SourceLocation]] must be in to be accepted.
+    * @param pos  the [[Position]] that must be within the AST node's [[SourceLocation]] for the node to be accepted.
     */
   case class InsideAcceptor(uri: String, pos: Position) extends Acceptor {
     def accept(loc: SourceLocation): Boolean = inside(uri, pos)(loc)
@@ -148,19 +148,19 @@ object Visitor {
     *
     * By "consuming" what is meant is that the node is used
     * as the input to a function of the consumer associated with
-    * the AST node type. Such consumer funcitons have no output,
-    * but can have effects. For instance, the consumer can be defined such that each
+    * the AST node type. Such consumer functions have no output,
+    * but can have effects. For instance, the `consumer` can be defined such that each
     * expression containing a specific variable is collected in a list, via
     * mutation a variable.
     *
-    * Note that if a node is not accepted, none of the nodes in it's
-    * subtree will be visited either. For instance, if a `def` is not
-    * accepted, none of the expressions in the body will be visited eiter,
-    * even if they would otherwise be accepted by the acceptor.
+    * Note that if a node is not accepted, none of the nodes in its
+    * subtree will be visited either. For instance, if a [[Def]] is not
+    * accepted, none of the expressions in its `exp` will be visited eiter,
+    * even if they would otherwise be accepted by the `acceptor`.
     *
     * @param root      The AST root node.
-    * @param consumer  A consumer which defines what to do when visiting different types of AST nodes.
-    * @param acceptor  An acceptor which defines the criteria for whether an AST node should be visited.
+    * @param consumer  A [[Consumer]] that defines what to do when visiting different types of AST nodes.
+    * @param acceptor  An [[Acceptor]] that defines the criteria for whether an AST node should be visited.
     */
   def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
@@ -909,7 +909,7 @@ object Visitor {
   }
 
   /**
-    * Returns `true` if the position `pos` within the file given by path `uri` is contained within the `SourceLocation` `loc`.
+    * Returns `true` if the position `pos` within the file given by path `uri` is contained within `loc`.
     * Returns `false` otherwise.
     *
     * @param uri  the path of the file that `pos` is within.
