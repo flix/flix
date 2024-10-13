@@ -73,7 +73,7 @@ object Deriver {
       val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
         case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == OrderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == ToStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == HashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == SendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
@@ -257,7 +257,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId()))
@@ -270,7 +270,7 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp, loc)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, orderTraitSym, loc)
-      Validation.success(KindedAst.Instance(
+      KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
@@ -281,7 +281,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ))
+      )
   }
 
   /**
