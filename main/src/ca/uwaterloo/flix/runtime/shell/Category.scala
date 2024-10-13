@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.phase.Lexer
-import ca.uwaterloo.flix.util.Validation
 
 /**
   * A common super-type for the syntactic category of a source code fragment.
@@ -49,14 +48,15 @@ object Category {
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     val (tokens, errors) = Lexer.lex(source)
-    Validation.mapN(Validation.toSuccessOrSoftFailure(tokens, errors)) {
-      tokens =>
-        val start = tokens(0).kind
-        (start.isFirstDecl, start.isFirstExpr) match {
-          case (true, _) => Category.Decl
-          case (_, true) => Category.Expr
-          case _ => Category.Unknown
-        }
-    }.toHardResult.toOption.getOrElse(Category.Unknown)
+    if (errors.isEmpty) {
+      val start = tokens(0).kind
+      (start.isFirstDecl, start.isFirstExpr) match {
+        case (true, _) => Category.Decl
+        case (_, true) => Category.Expr
+        case _ => Category.Unknown
+      }
+    } else {
+      Category.Unknown
+    }
   }
 }
