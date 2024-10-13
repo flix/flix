@@ -49,7 +49,6 @@ object Visitor {
     */
   trait Consumer {
     def consumeAnnotation(ann: Annotation): Unit = ()
-    def consumeAnnotations(anns: Annotations): Unit = ()
     def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
     def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
@@ -84,7 +83,6 @@ object Visitor {
     def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSigSymUse(symUse: SigSymUse): Unit = ()
-    def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
     def consumeStructField(field: StructField): Unit = ()
     def consumeStructFieldSymUse(symUse: StructFieldSymUse): Unit = ()
@@ -812,17 +810,13 @@ object Visitor {
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
     val Annotations(ls) = anns
-    // `insideAnns` is a hack. Necessary for now since `Annotations` (not to be confused with `Annotation`) don't have locations
-    val insideAnns = ls.map(_.loc).exists(a.accept)
-    if (!insideAnns) { return }
-
-    c.consumeAnnotations(anns)
 
     ls.foreach(visitAnnotation)
   }
 
   private def visitAnnotation(ann: Annotation)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(ann.loc)) { return }
+
     c.consumeAnnotation(ann)
   }
 
