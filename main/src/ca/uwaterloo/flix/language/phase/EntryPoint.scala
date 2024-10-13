@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
 
 /**
@@ -69,25 +70,25 @@ object EntryPoint {
     * Introduces a new function `main%` which calls the entry point (if any).
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
-    flatMapN(findOriginalEntryPoint(root)) {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        mapN(visitEntryPoint(entryPoint0, root, root.traitEnv)) {
-          entryPoint =>
-            root.copy(
-              defs = root.defs + (entryPoint.sym -> entryPoint),
-              entryPoint = Some(entryPoint.sym),
-              reachable = getReachable(root) + entryPoint.sym
-            )
-        }
+        val entryPoint = visitEntryPoint(entryPoint0, root, root.traitEnv)
+        root.copy(
+          defs = root.defs + (entryPoint.sym -> entryPoint),
+          entryPoint = Some(entryPoint.sym),
+          reachable = getReachable(root) + entryPoint.sym
+        )
       // Case 2: No entry point. Don't touch anything.
-      case None => Validation.success(root.copy(reachable = getReachable(root)))
+      case None => root.copy(reachable = getReachable(root))
     }
+    Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
   }(DebugValidation())
 
   /**
-   * Returns all reachable definitions.
-   */
+    * Returns all reachable definitions.
+    */
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
@@ -101,15 +102,18 @@ object EntryPoint {
   /**
     * Finds the entry point in the given `root`.
     */
-  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
+  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit sctx: SharedContext): Option[TypedAst.Def] = {
     root.entryPoint match {
       case None => root.defs.get(DefaultEntryPoint) match {
-        case None => Validation.success(None)
-        case Some(entryPoint) => Validation.success(Some(entryPoint))
+        case None => None
+        case Some(entryPoint) => Some(entryPoint)
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => Validation.toSoftFailure(None, EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
-        case Some(entryPoint) => Validation.success(Some(entryPoint))
+        case None =>
+          val error = EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root))
+          sctx.errors.add(error)
+          None
+        case Some(entryPoint) => Some(entryPoint)
       }
     }
   }
@@ -117,7 +121,7 @@ object EntryPoint {
   /**
     * Retrieves an arbitrary source location from the root.
     */
-  private def getArbitrarySourceLocation(root: TypedAst.Root)(implicit flix: Flix): SourceLocation = {
+  private def getArbitrarySourceLocation(root: TypedAst.Root): SourceLocation = {
     root.sources.headOption match {
       // Case 1: Some arbitrary source. Use its location.
       case Some((_, loc)) => loc
@@ -133,76 +137,88 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
-    val argsVal = checkEntryPointArgs(defn, traitEnv, root)
-    val resultVal = checkEntryPointResult(defn, root, traitEnv)
-
-    mapN(argsVal, resultVal) {
-      case (_, _) =>
-        mkEntryPoint(defn, root)
-    }
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+    checkEntryPointArgs(defn, traitEnv)
+    checkEntryPointResult(defn, root, traitEnv)
+    mkEntryPoint(defn, root)
   }
 
   /**
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
-      val argVal = declaredScheme.base.arrowArgTypes match {
+      val optArg = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Validation.success(Some(arg))
+        case arg :: Nil => Some(arg)
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => Validation.toSoftFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ :: _ :: _ =>
+          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+          sctx.errors.add(error)
+          None
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 
-      flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
+      // Then check validity of the argument
+      optArg match {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) =>
-          // TODO ASSOC-TYPES better eqEnv
-          Validation.success(())
+        case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
 
         // Case 2: Bad arguments. SoftError
-        // Case 3: argVal was None. SoftError
-        case _ => Validation.toSoftFailure((), EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        // Case 3: `arg` was None. SoftError
+        case _ =>
+          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+          sctx.errors.add(error)
       }
+  }
+
+  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], unitSc: Scheme, arg: Type)(implicit flix: Flix) = {
+    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty)
   }
 
   /**
     * Checks the entry point function result type.
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _), _, _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
-      // Check for [[IllegalEntryPointEffect]]
-      if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
-        return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
+      // Check for IllegalEntryPointEffect
+      if (isBadEntryPointEffect(declaredEff)) {
+        val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
+        sctx.errors.add(error)
       }
 
-      if (Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
-        // Case 1: XYZ -> Unit.
-        Validation.success(())
-      } else {
-        // Delay ToString resolution if main has return type unit for testing with lib nix.
-        val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
-          // Case 2: XYZ -> a with ToString[a]
-          Validation.success(())
-        } else {
-          // Case 3: Bad result type. Error.
-          Validation.toSoftFailure((), EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
-        }
+      // Case 1: XYZ -> Unit.
+      val isUnitResult = Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
+
+      // Case 2: XYZ -> a with ToString[a]
+      val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
+      val hasToStringConstraint = TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
+
+      // Case 3: Bad result type. Error.
+      val isBadResultType = !isUnitResult && !hasToStringConstraint
+
+      if (isBadResultType) {
+        val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
+        sctx.errors.add(error)
       }
+  }
+
+  /**
+    * Returns `true` iff `declaredEff` is not `Pure`, `IO`, `NonDet` or `Sys`
+    */
+  private def isBadEntryPointEffect(declaredEff: Type) = {
+    declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)
   }
 
   /**
@@ -243,5 +259,24 @@ object EntryPoint {
 
     TypedAst.Def(sym, spec, print, SourceLocation.Unknown)
   }
+
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[EntryPointError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError])
+
 }
 
