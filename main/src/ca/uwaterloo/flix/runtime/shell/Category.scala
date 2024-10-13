@@ -48,7 +48,8 @@ object Category {
     val source = Source(input, s.toCharArray)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
-    Validation.mapN(Lexer.lex(source)) {
+    val (tokens, errors) = Lexer.lex(source)
+    Validation.mapN(Validation.toSuccessOrSoftFailure(tokens, errors)) {
       tokens =>
         val start = tokens(0).kind
         (start.isFirstDecl, start.isFirstExpr) match {
