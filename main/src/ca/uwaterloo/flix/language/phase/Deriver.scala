@@ -81,7 +81,10 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == HashSym => Validation.success(Some(mkHashInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == SendableSym => Validation.success(Some(mkSendableInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == CoerceSym => Validation.success(mkCoerceInstance(enum0, loc, root))
-        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, DerivableSyms, loc))
+        case Ast.Derivation(sym, loc) =>
+          val error = DerivationError.IllegalDerivation(sym, DerivableSyms, loc)
+          sctx.errors.add(error)
+          Validation.success(None)
       }
       mapN(instanceVals)(_.flatten)
   }
