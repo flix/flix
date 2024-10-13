@@ -149,7 +149,6 @@ object EntryPoint {
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
       val optArg = declaredScheme.base.arrowArgTypes match {
@@ -168,7 +167,7 @@ object EntryPoint {
       // Then check validity of the argument
       optArg match {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
+        case Some(arg) if isUnitParameter(traitEnv, arg) =>
 
         // Case 2: Bad arguments. SoftError
         // Case 3: `optArg` was None. SoftError
@@ -178,8 +177,12 @@ object EntryPoint {
       }
   }
 
-  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], unitSc: Scheme, arg: Type)(implicit flix: Flix) = {
-    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty)
+  /**
+    * Returns `true` iff `arg` is the Unit type.
+    */
+  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], arg: Type)(implicit flix: Flix) = {
+    val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
+    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
   }
 
   /**
