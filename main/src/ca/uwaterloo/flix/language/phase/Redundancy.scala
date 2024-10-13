@@ -274,7 +274,7 @@ object Redundancy {
     * Finds unused type parameters.
     */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
@@ -299,14 +299,6 @@ object Redundancy {
       // Case 4: Wild, recursive use of sym.
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
-
-    case Expr.Sig(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.sig.contains(sym)) {
-        sctx.sigSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
 
     case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym

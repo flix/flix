@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp
 
-package ca.uwaterloo.flix.api
+import org.scalatest.Suites
 
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 52, revision = 0)
-}
-
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
-}
+class LspSuite extends Suites(
+  new VisitorSuite
+)

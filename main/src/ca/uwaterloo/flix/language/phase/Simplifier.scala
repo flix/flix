@@ -44,7 +44,7 @@ object Simplifier {
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
-    case MonoAst.Def(sym, spec, exp) =>
+    case MonoAst.Def(sym, spec, exp, _) =>
       val fs = spec.fparams.map(visitFormalParam)
       val e = visitExp(exp)
       val funType = spec.functionType
@@ -224,11 +224,6 @@ object Simplifier {
       val methods = methods0 map visitJvmMethod
       SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
-    case MonoAst.Expr.Sig(_, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-    case MonoAst.Expr.TypeMatch(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
   private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
@@ -682,7 +677,7 @@ object Simplifier {
     }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Op = op match {
-    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, loc)) =>
+    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0), loc) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)

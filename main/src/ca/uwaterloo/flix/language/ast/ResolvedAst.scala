@@ -52,9 +52,9 @@ object ResolvedAst {
 
     case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Ast.TraitSymUse, tpe: UnkindedType, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
-    case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr]) extends Declaration
+    case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation) extends Declaration
 
-    case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
+    case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
@@ -76,10 +76,10 @@ object ResolvedAst {
 
     case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
-    case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
+    case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
   }
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
   sealed trait Expr {
     def loc: SourceLocation
@@ -88,8 +88,6 @@ object ResolvedAst {
   object Expr {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
-
-    case class Sig(sym: Symbol.SigSym, loc: SourceLocation) extends Expr
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends Expr
 

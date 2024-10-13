@@ -26,7 +26,7 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: ResolvedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case ResolvedAst.Declaration.Def(sym, spec, exp) =>
+      case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
         DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
     }.toList
     DocAst.Program(Nil, defs)
@@ -35,7 +35,6 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
   private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
     case Expr.Var(sym, _) => printVarSym(sym)
-    case Expr.Sig(sym, _) => DocAst.Expr.AsIs(sym.name)
     case Expr.Hole(sym, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown

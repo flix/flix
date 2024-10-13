@@ -16,7 +16,7 @@ object TypedAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
     }.toList
     val defs = root.defs.values.map {
-      case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _, _), exp) =>
+      case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp, _) =>
         DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.printAsEffect(eff), print(exp))
     }.toList
     DocAst.Program(enums, defs)
@@ -28,7 +28,6 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
-    case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Unknown
     case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown

@@ -171,20 +171,20 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, exp0) =>
+    case TypedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
       val exp = visitExp(exp0)(Scope.Top, root, flix)
-      LoweredAst.Def(sym, spec, exp)
+      LoweredAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Lowers the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Sig = sig0 match {
-    case TypedAst.Sig(sym, spec0, exp0) =>
+    case TypedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
       val impl = exp0.map(visitExp(_)(Scope.Top, root, flix))
-      LoweredAst.Sig(sym, spec, impl)
+      LoweredAst.Sig(sym, spec, impl, loc)
   }
 
   /**
@@ -283,9 +283,9 @@ object Lowering {
     * Lowers the given `op`.
     */
   private def visitOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Op = op match {
-    case TypedAst.Op(sym, spec0) =>
+    case TypedAst.Op(sym, spec0, loc) =>
       val spec = visitSpec(spec0)
-      LoweredAst.Op(sym, spec)
+      LoweredAst.Op(sym, spec, loc)
   }
 
   /**
@@ -326,11 +326,11 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs, loc) => // TODO ASSOC-TYPES econstrs needed in lowering?
+    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs) => // TODO ASSOC-TYPES econstrs needed in lowering?
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs, loc)
+      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs)
   }
 
   /**
@@ -351,10 +351,6 @@ object Lowering {
     case TypedAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
-
-    case TypedAst.Expr.Sig(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.Sig(sym, t, loc)
 
     case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
       val t = visitType(tpe)
@@ -1861,8 +1857,6 @@ object Lowering {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
       LoweredAst.Expr.Var(s, tpe, loc)
-
-    case LoweredAst.Expr.Sig(_, _, _) => exp0
 
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)
