@@ -23,9 +23,9 @@ class VisitorSuite extends AnyFunSuite {
   val source: Source = Source(Input.Text("test", "test", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
   val uri = "test"
 
-  test("Inside.01") {
+  test("inside.01") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 3, 10),
       SourcePosition(source, 6, 2))
     val pos = Position(5, 5)
@@ -33,9 +33,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.02") {
+  test("inside.02") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 5, 2),
       SourcePosition(source, 5, 5),
     )
@@ -44,9 +44,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.03") {
+  test("inside.03") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 5, 4),
       SourcePosition(source, 5, 5),
     )
@@ -55,9 +55,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.04") {
+  test("inside.04") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 6, 4),
       SourcePosition(source, 6, 5),
     )
@@ -66,9 +66,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.05") {
+  test("inside.05") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 4, 4),
       SourcePosition(source, 6, 10),
     )
@@ -77,10 +77,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.06") {
-
+  test("inside.06") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 3, 2),
       SourcePosition(source, 6, 5),
     )
@@ -89,9 +88,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.07") {
+  test("inside.07") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 2, 7),
       SourcePosition(source, 6, 4),
     )
@@ -101,9 +100,9 @@ class VisitorSuite extends AnyFunSuite {
 
   }
 
-  test("Inside.08") {
+  test("inside.08") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 2, 7),
       SourcePosition(source, 6, 4),
     )
@@ -112,9 +111,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.09") {
+  test("inside.09") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 6, 4),
       SourcePosition(source, 6, 6),
     )
@@ -123,9 +122,9 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside(uri, pos)(loc))
   }
 
-  test("Inside.10") {
+  test("inside.10") {
     val loc = SourceLocation(
-      isReal = false,
+      isReal = true,
       SourcePosition(source, 3, 5),
       SourcePosition(source, 5, 3),
     )
