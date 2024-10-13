@@ -526,7 +526,8 @@ class Flix {
       afterStratifier <- Stratifier.run(afterPredDeps)
       afterPatMatch <- PatMatch.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
-      afterSafety <- Safety.run(afterRedundancy)
+      (_, safetyErrors) = Safety.run(afterRedundancy)
+      output <- Validation.toSuccessOrSoftFailure(afterRedundancy, safetyErrors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -538,7 +539,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      afterSafety
+      output
     }
 
     // Shutdown fork-join thread pool.

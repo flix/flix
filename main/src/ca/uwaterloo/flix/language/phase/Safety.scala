@@ -30,7 +30,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseNew("Safety") {
     //
     // Collect all errors.
     //
@@ -44,8 +44,8 @@ object Safety {
     //
     // Check if any errors were found.
     //
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }(DebugValidation())
+    ((), errors.toList)
+  }
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
