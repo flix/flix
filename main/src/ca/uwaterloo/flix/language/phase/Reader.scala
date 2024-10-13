@@ -37,37 +37,36 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
-    flix.phaseNew("Reader") {
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): ReadAst.Root = flix.phase("Reader") {
 
-      val result = mutable.Map.empty[Source, Unit]
-      for (input <- inputs) {
-        input match {
-          case Input.Text(_, text, _, _) =>
-            val src = Source(input, text.toCharArray)
+    val result = mutable.Map.empty[Source, Unit]
+    for (input <- inputs) {
+      input match {
+        case Input.Text(_, text, _, _) =>
+          val src = Source(input, text.toCharArray)
+          result += (src -> ())
+
+        case Input.TxtFile(path, _) =>
+          val bytes = Files.readAllBytes(path)
+          val str = new String(bytes, flix.defaultCharset)
+          val arr = str.toCharArray
+          val src = Source(input, arr)
+          result += (src -> ())
+
+        case Input.PkgFile(path, sctx) =>
+          for (src <- unpack(path)(sctx, flix)) {
             result += (src -> ())
+          }
 
-          case Input.TxtFile(path, _) =>
-            val bytes = Files.readAllBytes(path)
-            val str = new String(bytes, flix.defaultCharset)
-            val arr = str.toCharArray
-            val src = Source(input, arr)
-            result += (src -> ())
+        case Input.FileInPackage(_, _, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
 
-          case Input.PkgFile(path, sctx) =>
-            for (src <- unpack(path)(sctx, flix)) {
-              result += (src -> ())
-            }
-
-          case Input.FileInPackage(_, _, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
-
-          case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
-        }
+        case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
       }
+    }
 
-      val sources = result.toMap
-      (ReadAst.Root(sources, names), List.empty)
-    }(DebugNoOp())
+    val sources = result.toMap
+    ReadAst.Root(sources, names)
+  }(DebugNoOp())
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.

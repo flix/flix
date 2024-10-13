@@ -504,7 +504,7 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
-    val (sources, _) = Reader.run(getInputs, knownClassesAndInterfaces)
+    val sources = Reader.run(getInputs, knownClassesAndInterfaces)
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
