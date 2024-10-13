@@ -274,10 +274,8 @@ object Visitor {
   }
 
   private def visitSig(sig: Sig)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Sig(_, spec, exp) = sig
-    // TODO `insideSig` is a hack and should eventually be removed. This hack is necessary because a signature currently does not have a location.
-    val insideSig = a.accept(sig.spec.loc) || sig.exp.exists(e => a.accept(e.loc))
-    if (!insideSig) { return }
+    val Sig(_, spec, exp, loc) = sig
+    if (!a.accept(loc)) { return }
 
     c.consumeSig(sig)
 
@@ -340,9 +338,8 @@ object Visitor {
   }
 
   private def visitOp(op: Op)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Op(_, spec) = op
-    // TODO: hack that should eventually be fixed. Really it should be `op.loc`, but since op decls don't have locations, this hack is necessary for now
-    if (!a.accept(spec.loc)) { return }
+    val Op(_, spec, loc) = op
+    if (!a.accept(loc)) { return }
 
     c.consumeOp(op)
 
@@ -350,22 +347,20 @@ object Visitor {
   }
 
   private def visitDef(defn: Def)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Def(sym, spec, exp) = defn
-    // TODO `insideDef` is a hack and should be removed eventually. Necessary for now since Defs  don't have locations
-    val insideDef = a.accept(spec.loc) || a.accept(exp.loc) || a.accept(sym.loc)
-    if (!insideDef) { return }
+    val Def(_, spec, exp, loc) = defn
+    if (!a.accept(loc)) { return }
 
     c.consumeDef(defn)
 
-    visitSpec(defn.spec)
-    visitExpr(defn.exp)
+    visitSpec(spec)
+    visitExpr(exp)
   }
 
   private def visitSpec(spec: Spec)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Spec(_, ann, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, loc) = spec
-    if (!a.accept(loc)) { return }
+    val Spec(_, ann, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) = spec
 
-    c.consumeSpec(spec)
+    // NB: Specs should not be consumed and when they occur, their corresponding
+    // Def, Sig or Op is visited, they should always be visited as well.
 
     visitAnnotations(ann)
     tparams.foreach(visitTypeParam)
