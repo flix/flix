@@ -425,8 +425,7 @@ object Visitor {
       case Expr.HoleWithExp(exp, _, _, _) =>
         visitExpr(exp)
 
-      // we do nothing here, because open as is a restrictable enum feature and thus experimental
-      case Expr.OpenAs(_, _, _, _) => ()
+      case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.Use(_, _, exp, _) =>
         visitExpr(exp)
@@ -493,15 +492,13 @@ object Visitor {
         visitExpr(exp)
         rules.foreach(visitTypeMatchRule)
 
-      case Expr.RestrictableChoose(_, _, _, _, _, _) =>
-        // Does nothing because feature is experimental
+      case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.Tag(symUse, exp, _, _, _) =>
         visitCaseSymUse(symUse)
         visitExpr(exp)
 
-      case Expr.RestrictableTag(_, exp, _, _, _) =>
-        visitExpr(exp)
+      case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
