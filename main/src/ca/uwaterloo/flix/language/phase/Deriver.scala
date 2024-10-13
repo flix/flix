@@ -71,7 +71,10 @@ object Deriver {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
       val instanceVals = Validation.traverse(derives.traits) {
-        case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
+        case Ast.Derivation(traitSym, loc) if cases.isEmpty =>
+          val error = DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc)
+          sctx.errors.add(error)
+          Validation.success(None)
         case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
