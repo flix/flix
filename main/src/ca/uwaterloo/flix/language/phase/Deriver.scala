@@ -49,7 +49,7 @@ object Deriver {
 
   val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
+  def run(root: KindedAst.Root)(implicit flix: Flix): (KindedAst.Root, List[DerivationError]) = flix.phaseNew("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
     val newInstances = derivedInstances.foldLeft(root.instances) {
@@ -57,8 +57,8 @@ object Deriver {
         val accInsts = acc.getOrElse(inst.trt.sym, Nil)
         acc + (inst.trt.sym -> (inst :: accInsts))
     }
-    Validation.toSuccessOrSoftFailure(root.copy(instances = newInstances), sctx.errors.asScala)
-  }(DebugValidation())
+    (root.copy(instances = newInstances), sctx.errors.asScala.toList)
+  }
 
   /**
     * Builds the instances derived from this enum.
