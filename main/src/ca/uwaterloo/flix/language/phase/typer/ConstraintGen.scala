@@ -1092,7 +1092,7 @@ object ConstraintGen {
       // Don't need to handle unknown op because resolver would have caught this
       val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
       ops(op.sym) match {
-        case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
+        case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
           val resumptionArgType = opTpe
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect

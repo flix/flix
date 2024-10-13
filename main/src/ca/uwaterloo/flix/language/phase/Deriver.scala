@@ -113,7 +113,7 @@ object Deriver {
       val exp = mkEqImpl(enum0, param1, param2, loc, root)
       val spec = mkEqSpec(enum0, param1, param2, loc, root)
 
-      val defn = KindedAst.Def(eqDefSym, spec, exp)
+      val defn = KindedAst.Def(eqDefSym, spec, exp, loc)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, eqTraitSym, loc)
 
@@ -176,7 +176,6 @@ object Deriver {
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
-        loc = loc
       )
   }
 
@@ -264,7 +263,7 @@ object Deriver {
       val exp = mkCompareImpl(enum0, param1, param2, loc, root)
       val spec = mkCompareSpec(enum0, param1, param2, loc, root)
 
-      val defn = KindedAst.Def(compareDefSym, spec, exp)
+      val defn = KindedAst.Def(compareDefSym, spec, exp, loc)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, orderTraitSym, loc)
       Validation.success(KindedAst.Instance(
@@ -369,8 +368,7 @@ object Deriver {
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -480,7 +478,7 @@ object Deriver {
       val exp = mkToStringImpl(enum0, param, loc, root)
       val spec = mkToStringSpec(enum0, param, loc, root)
 
-      val defn = KindedAst.Def(toStringDefSym, spec, exp)
+      val defn = KindedAst.Def(toStringDefSym, spec, exp, loc)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, toStringTraitSym, loc)
 
@@ -535,8 +533,7 @@ object Deriver {
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -617,7 +614,7 @@ object Deriver {
       val exp = mkHashImpl(enum0, param, loc, root)
       val spec = mkHashSpec(enum0, param, loc, root)
 
-      val defn = KindedAst.Def(hashDefSym, spec, exp)
+      val defn = KindedAst.Def(hashDefSym, spec, exp, loc)
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, hashTraitSym, loc)
       Validation.success(KindedAst.Instance(
@@ -673,8 +670,7 @@ object Deriver {
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
@@ -802,7 +798,7 @@ object Deriver {
         val exp = mkCoerceImpl(enum0, param, loc, root)
         val spec = mkCoerceSpec(enum0, param, loc, root)
 
-        val defn = KindedAst.Def(coerceDefSym, spec, exp)
+        val defn = KindedAst.Def(coerceDefSym, spec, exp, loc)
 
         Validation.success(Some(KindedAst.Instance(
           doc = Doc(Nil, loc),
@@ -859,8 +855,7 @@ object Deriver {
         tpe = retTpe,
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
-        econstrs = Nil,
-        loc = loc
+        econstrs = Nil
       )
   }
 
