@@ -198,12 +198,12 @@ object Visitor {
     if (!sameSource) { return false }
 
     val afterStart = loc.beginLine < pos.line ||
-                     loc.beginLine == pos.line && loc.beginCol <= pos.character
+                     (loc.beginLine == pos.line && loc.beginCol <= pos.character)
     if (!afterStart) { return false }
 
 
     val beforeEnd = pos.line < loc.endLine ||
-                    pos.line == loc.endLine && pos.character < loc.endCol
+                    (pos.line == loc.endLine && pos.character < loc.endCol)
     if (!beforeEnd) { return false }
 
     true
