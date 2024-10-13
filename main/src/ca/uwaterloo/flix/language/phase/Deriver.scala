@@ -74,7 +74,7 @@ object Deriver {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
         case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == ToStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == HashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == SendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == CoerceSym => mkCoerceInstance(enum0, loc, root)
@@ -473,7 +473,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId()))
@@ -486,7 +486,7 @@ object Deriver {
 
       val tconstrs = getTraitConstraintsForTypeParams(tparams, toStringTraitSym, loc)
 
-      Validation.success(KindedAst.Instance(
+      KindedAst.Instance(
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
@@ -497,7 +497,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ))
+      )
   }
 
   /**
