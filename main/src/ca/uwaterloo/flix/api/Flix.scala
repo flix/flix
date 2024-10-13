@@ -504,15 +504,17 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    val (sources, _) = Reader.run(getInputs, knownClassesAndInterfaces)
+
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
+      afterReader <- Validation.success(sources) // This is required for Scala to desugar the for-comprehension correctly. Will be removed once Validation is gone.
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-      afterNamer <- Namer.run(afterDesugar)
-      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
+      (afterNamer, namerErrors) = Namer.run(afterDesugar)
+      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet).withSoftFailures(namerErrors)
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder).withSoftFailures(kinderErrors)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
