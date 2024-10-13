@@ -108,22 +108,21 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
-    flix.phaseNew("PatMatch") {
-      implicit val r: TypedAst.Root = root
+  def run(root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = flix.phase("PatMatch") {
+    implicit val r: TypedAst.Root = root
 
-      val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
-      val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
+    val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
+    val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
 
-      val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten
-      val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp)).flatten
-      // Only need to check sigs with implementations
-      val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
+    val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten
+    val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp)).flatten
+    // Only need to check sigs with implementations
+    val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
 
-      val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
+    val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
-      ((), errors.toList)
-    }
+    errors.toList
+  }(DebugNoOp())
 
   /**
     * Check that all patterns in an expression are exhaustive

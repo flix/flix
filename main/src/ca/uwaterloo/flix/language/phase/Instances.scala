@@ -33,11 +33,10 @@ object Instances {
   /**
     * Validates instances and traits in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Unit, List[InstanceError]) =
-    flix.phaseNew("Instances") {
-      val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
-      ((), errors)
-    }
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = flix.phase("Instances") {
+    val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
+    errors
+  }(DebugNoOp())
 
   /**
     * Validates all instances in the given AST root.
