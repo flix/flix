@@ -507,7 +507,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
-        matchRules.toList,
+        matchRules,
         loc
       )
   }
