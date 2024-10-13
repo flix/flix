@@ -203,7 +203,7 @@ object Visitor {
 
 
     val beforeEnd = pos.line < loc.endLine ||
-                    pos.line == loc.beginLine && pos.character < loc.endCol
+                    pos.line == loc.endLine && pos.character < loc.endCol
     if (!beforeEnd) { return false }
 
     true
