@@ -119,9 +119,7 @@ object PatMatch {
     // Only need to check sigs with implementations
     val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
 
-    val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
-
-    errors.toList
+    (classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs).toList
   }(DebugNoOp())
 
   /**
