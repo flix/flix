@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Validation.mapN
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 /**
   * Constructs instances derived from enums.
   *
@@ -960,4 +962,22 @@ object Deriver {
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
   }
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[NameError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError])
+
 }
