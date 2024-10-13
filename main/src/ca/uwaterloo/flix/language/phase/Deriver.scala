@@ -37,14 +37,14 @@ object Deriver {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-  val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
+  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
+  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
+  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
+  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
+  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
+  private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
 
-  val DerivableSyms = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
+  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
@@ -146,7 +146,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        (mainMatchRules ++ List(defaultRule)),
+        mainMatchRules ++ List(defaultRule),
         loc
       )
   }
@@ -154,7 +154,7 @@ object Deriver {
   /**
     * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
     */
-  private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
@@ -507,7 +507,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
-        matchRules.toList,
+        matchRules,
         loc
       )
   }
@@ -515,7 +515,7 @@ object Deriver {
   /**
     * Creates the toString spec for the given enum, where `param` is the parameter to the function.
     */
-  private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       KindedAst.Spec(
@@ -652,7 +652,7 @@ object Deriver {
   /**
     * Creates the hash spec for the given enum, where `param` is the parameter to the function.
     */
-  private def mkHashSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkHashSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       KindedAst.Spec(
@@ -734,7 +734,7 @@ object Deriver {
     *
     * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
     */
-  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val sendableTraitSym = PredefinedTraits.lookupTraitSym("Sendable", root)
 
@@ -795,7 +795,7 @@ object Deriver {
         )
 
         val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
-        val exp = mkCoerceImpl(enum0, param, loc, root)
+        val exp = mkCoerceImpl(enum0, param, loc)
         val spec = mkCoerceSpec(enum0, param, loc, root)
 
         val defn = KindedAst.Def(coerceDefSym, spec, exp, loc)
@@ -820,10 +820,10 @@ object Deriver {
   /**
     * Creates the coerce implementation for the given enum.
     */
-  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val (_, caze) = cases.head
-      val matchRule = mkCoerceMatchRule(caze, loc, root)
+      val matchRule = mkCoerceMatchRule(caze, loc)
 
       KindedAst.Expr.Match(
         KindedAst.Expr.Var(param, loc),
@@ -835,7 +835,7 @@ object Deriver {
   /**
     * Creates the coerce specification for the given enum.
     */
-  private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
       val (_, caze) = cases.head
@@ -862,8 +862,8 @@ object Deriver {
   /**
     * Creates a Coerce match rule for the given enum case.
     */
-  private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _, _) =>
+  private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(sym, _, _, _) =>
       // get a pattern corresponding to this case, e.g.
       // `case C(x0)`
       // Unlike other derivations, we do not unpack tuples
