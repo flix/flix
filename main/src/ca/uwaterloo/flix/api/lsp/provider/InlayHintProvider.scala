@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource
-import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType}
-import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object InlayHintProvider {
 
@@ -49,11 +48,10 @@ object InlayHintProvider {
 
       case TypeSource.Inferred =>
         val pos = Position.fromEnd(fparam.loc)
-        val minType = TypeMinimization.minimizeType(tpe)
-        val label = ": " + FormatType.formatType(minType)
+        val label = ": " + FormatType.formatType(tpe)
 
         // Hide long inlay hints.
-        if (isTypeVar(minType))
+        if (isTypeVar(tpe))
           None
         else
           Some(InlayHint(pos, abbreviate(label, 14), Some(InlayHintKind.Type), Nil, ""))
