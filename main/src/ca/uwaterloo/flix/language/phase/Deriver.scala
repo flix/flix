@@ -23,10 +23,11 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.Validation.mapN
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 
 /**
   * Constructs instances derived from enums.
@@ -49,6 +50,7 @@ object Deriver {
   val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
+    implicit val sctx: SharedContext = SharedContext.mk()
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
 
     mapN(derivedInstances) {
@@ -59,7 +61,7 @@ object Deriver {
             acc + (inst.trt.sym -> (inst :: accInsts))
         }
         root.copy(instances = newInstances)
-    }
+    }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
 
   /**
