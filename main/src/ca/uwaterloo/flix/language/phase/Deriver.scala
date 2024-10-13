@@ -51,42 +51,50 @@ object Deriver {
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
-
-    mapN(derivedInstances) {
-      instances =>
-        val newInstances = instances.flatten.foldLeft(root.instances) {
-          case (acc, inst) =>
-            val accInsts = acc.getOrElse(inst.trt.sym, Nil)
-            acc + (inst.trt.sym -> (inst :: accInsts))
-        }
-        root.copy(instances = newInstances)
-    }.withSoftFailures(sctx.errors.asScala)
+    val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
+    val newInstances = derivedInstances.foldLeft(root.instances) {
+      case (acc, inst) =>
+        val accInsts = acc.getOrElse(inst.trt.sym, Nil)
+        acc + (inst.trt.sym -> (inst :: accInsts))
+    }
+    Validation.toSuccessOrSoftFailure(root.copy(instances = newInstances), sctx.errors.asScala)
   }(DebugValidation())
 
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
+  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
-      val instanceVals = Validation.traverse(derives.traits) {
+      derives.traits.flatMap {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty =>
           val error = DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc)
           sctx.errors.add(error)
-          Validation.success(None)
-        case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == HashSym => Validation.success(Some(mkHashInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == SendableSym => Validation.success(Some(mkSendableInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == CoerceSym => Validation.success(mkCoerceInstance(enum0, loc, root))
+          None
+
+        case Ast.Derivation(sym, loc) if sym == EqSym =>
+          Some(mkEqInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == OrderSym =>
+          Some(mkOrderInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == ToStringSym =>
+          Some(mkToStringInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == HashSym =>
+          Some(mkHashInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == SendableSym =>
+          Some(mkSendableInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == CoerceSym =>
+          mkCoerceInstance(enum0, loc, root)
+
         case Ast.Derivation(sym, loc) =>
           val error = DerivationError.IllegalDerivation(sym, DerivableSyms, loc)
           sctx.errors.add(error)
-          Validation.success(None)
+          None
       }
-      mapN(instanceVals)(_.flatten)
   }
 
   /**
