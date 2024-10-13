@@ -39,7 +39,7 @@ object Regions {
     val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
     val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
     ((), (defErrors ++ sigErrors ++ instanceErrors).toList)
-  }(DebugNoOp())
+  }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
