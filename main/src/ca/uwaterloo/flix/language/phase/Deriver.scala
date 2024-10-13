@@ -67,7 +67,7 @@ object Deriver {
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
+  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
       val instanceVals = Validation.traverse(derives.traits) {
@@ -77,7 +77,7 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == HashSym => Validation.success(Some(mkHashInstance(enum0, loc, root)))
         case Ast.Derivation(sym, loc) if sym == SendableSym => Validation.success(Some(mkSendableInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == CoerceSym => mkCoerceInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == CoerceSym => Validation.success(mkCoerceInstance(enum0, loc, root))
         case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, DerivableSyms, loc))
       }
       mapN(instanceVals)(_.flatten)
@@ -779,7 +779,7 @@ object Deriver {
     *   }
     * }}}
     */
-  private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[Option[KindedAst.Instance], DerivationError] = enum0 match {
+  private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, sym, _, _, cases, tpe, _) =>
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
@@ -804,7 +804,7 @@ object Deriver {
 
         val defn = KindedAst.Def(coerceDefSym, spec, exp, loc)
 
-        Validation.success(Some(KindedAst.Instance(
+        Some(KindedAst.Instance(
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
@@ -815,9 +815,11 @@ object Deriver {
           assocs = List(out),
           ns = Name.RootNS,
           loc = loc
-        )))
+        ))
       } else {
-        Validation.toSoftFailure(None, DerivationError.IllegalNonSingletonCoerce(sym, loc))
+        val error = DerivationError.IllegalNonSingletonCoerce(sym, loc)
+        sctx.errors.add(error)
+        None
       }
   }
 
