@@ -734,7 +734,7 @@ object Deriver {
     *
     * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
     */
-  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val sendableTraitSym = PredefinedTraits.lookupTraitSym("Sendable", root)
 
