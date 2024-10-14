@@ -69,7 +69,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseWithTwoValues("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
