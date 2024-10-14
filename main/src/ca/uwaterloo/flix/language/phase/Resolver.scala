@@ -803,9 +803,9 @@ object Resolver {
                 // Returns out of resolveExp
                 return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
               case None =>
-                val m = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
-                // Returns out of resolveExp
-                return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+                val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
+                sctx.errors.add(error)
+                return Validation.success(ResolvedAst.Expr.Error(error))
             }
           case _ =>
           // Fallthrough to below.
@@ -905,7 +905,9 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case ResolvedQName.Error(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
@@ -916,7 +918,9 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case ResolvedQName.Error(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
@@ -1168,18 +1172,19 @@ object Resolver {
               val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
               val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
               val errors0 = extraFieldErrors ++ missingFieldErrors
-              val errors = if (!errors0.isEmpty) {
+              val errors = if (errors0.nonEmpty) {
                 errors0
               } else if (providedFieldNames != expectedFieldNames) {
                 List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
               } else {
                 Nil
               }
-
-              structNew.withSoftFailures(errors)
+              errors.foreach(sctx.errors.add)
+              structNew
           }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.StructGet(e, field0, loc) =>
@@ -1191,8 +1196,9 @@ object Resolver {
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
           }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
@@ -1202,16 +1208,17 @@ object Resolver {
           val e2Val = resolveExp(e2, env0)
           val idx = field.sym.idx
           val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
-          val put = mapN(e1Val, e2Val) {
+          if (!field.mod.isMutable) {
+            val error = ResolutionError.ImmutableField(field.sym, field0.loc)
+            sctx.errors.add(error)
+          }
+          mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSymUse, e2, loc)
           }
-          if (field.mod.isMutable) {
-            put
-          } else {
-            put.withSoftFailure(ResolutionError.ImmutableField(field.sym, field0.loc))
-          }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.VectorLit(exps, loc) =>
@@ -1248,8 +1255,9 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-            Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+            sctx.errors.add(error)
+            Validation.success(ResolvedAst.Expr.Error(error))
         }
       }
 
@@ -1305,7 +1313,9 @@ object Resolver {
                 ResolvedAst.Expr.Without(e, effUse, loc)
             }
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
@@ -1335,7 +1345,9 @@ object Resolver {
                 rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
               }
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.Do(op, exps, loc) =>
@@ -1358,8 +1370,9 @@ object Resolver {
             case Some(List(Resolution.JavaClass(clazz))) =>
               Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
             case _ =>
-              val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+              sctx.errors.add(error)
+              Validation.success(ResolvedAst.Expr.Error(error))
           }
       }
 
@@ -1389,11 +1402,15 @@ object Resolver {
                 case ts => lookupJvmConstructor(clazz, ts, loc) match {
                   case Result.Ok(constructor) =>
                     Validation.success(ResolvedAst.Expr.InvokeConstructorOld(constructor, as, loc))
-                  case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+                  case Result.Err(error) =>
+                    sctx.errors.add(error)
+                    Validation.success(ResolvedAst.Expr.Error(error))
                 }
               }
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
@@ -1408,7 +1425,9 @@ object Resolver {
             case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
               case Result.Ok(method) =>
                 Validation.success(ResolvedAst.Expr.InvokeMethodOld(method, clazz, e, as, loc))
-              case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              case Result.Err(error) =>
+                sctx.errors.add(error)
+                Validation.success(ResolvedAst.Expr.Error(error))
             }
           }
       }
@@ -1424,7 +1443,9 @@ object Resolver {
             case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
               case Result.Ok(method) =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethodOld(method, as, loc))
-              case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              case Result.Err(error) =>
+                sctx.errors.add(error)
+                Validation.success(ResolvedAst.Expr.Error(error))
             }
           }
       }
@@ -1435,7 +1456,9 @@ object Resolver {
           mapN(resolveExp(exp, env0)) {
             case e => ResolvedAst.Expr.GetFieldOld(field, clazz, e, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
@@ -1444,14 +1467,18 @@ object Resolver {
           mapN(resolveExp(exp1, env0), resolveExp(exp2, env0)) {
             case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
       lookupJvmField(className, fieldName, static = true, loc) match {
         case Result.Ok((_, field)) =>
           Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
@@ -1460,7 +1487,9 @@ object Resolver {
           mapN(resolveExp(exp, env0)) {
             case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
@@ -1473,8 +1502,9 @@ object Resolver {
             case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
               Validation.success(ResolvedAst.Expr.NewObject(name, clazz, ms, loc))
             case _ =>
-              val err = ResolutionError.IllegalNonJavaType(t, t.loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(err), err)
+              val error = ResolutionError.IllegalNonJavaType(t, t.loc)
+              sctx.errors.add(error)
+              Validation.success(ResolvedAst.Expr.Error(error))
           }
       }
 
