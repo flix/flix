@@ -1372,8 +1372,9 @@ object Resolver {
             case Some(List(Resolution.JavaClass(clazz))) =>
               Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
             case _ =>
-              val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+              sctx.errors.add(error)
+              Validation.toSoftFailure(ResolvedAst.Expr.Error(error))
           }
       }
 
