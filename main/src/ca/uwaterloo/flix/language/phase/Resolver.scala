@@ -905,9 +905,9 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(err) =>
-          sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err))
+        case ResolvedQName.Error(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
@@ -918,9 +918,9 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(err) =>
-          sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err))
+        case ResolvedQName.Error(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
@@ -1182,9 +1182,9 @@ object Resolver {
               errors.foreach(sctx.errors.add)
               structNew
           }
-        case Result.Err(err) =>
-          sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err))
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.StructGet(e, field0, loc) =>
@@ -1196,9 +1196,9 @@ object Resolver {
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
           }
-        case Result.Err(err) =>
-          sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err))
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
@@ -1214,13 +1214,13 @@ object Resolver {
           if (field.mod.isMutable) {
             put
           } else {
-            val err = ResolutionError.ImmutableField(field.sym, field0.loc)
-            sctx.errors.add(err)
+            val error = ResolutionError.ImmutableField(field.sym, field0.loc)
+            sctx.errors.add(error)
             put
           }
-        case Result.Err(err) =>
-          sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err))
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.VectorLit(exps, loc) =>
@@ -1257,9 +1257,9 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val err = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-            sctx.errors.add(err)
-            Validation.success(ResolvedAst.Expr.Error(err))
+            val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+            sctx.errors.add(error)
+            Validation.success(ResolvedAst.Expr.Error(error))
         }
       }
 
