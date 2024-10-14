@@ -1216,7 +1216,9 @@ object Resolver {
           if (field.mod.isMutable) {
             put
           } else {
-            put.withSoftFailure(ResolutionError.ImmutableField(field.sym, field0.loc))
+            val err = ResolutionError.ImmutableField(field.sym, field0.loc)
+            sctx.errors.add(err)
+            put
           }
         case Result.Err(e) =>
           Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
