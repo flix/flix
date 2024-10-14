@@ -69,7 +69,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
@@ -83,8 +83,8 @@ object EntryPoint {
       // Case 2: No entry point. Don't touch anything.
       case None => root.copy(reachable = getReachable(root))
     }
-    Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
-  }(DebugValidation())
+    (newRoot, sctx.errors.asScala.toList)
+  }
 
   /**
     * Returns all reachable definitions.
@@ -149,37 +149,35 @@ object EntryPoint {
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
-      val optArg = declaredScheme.base.arrowArgTypes match {
+      declaredScheme.base.arrowArgTypes match {
+
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Some(arg)
+        case arg :: Nil =>
+          // Case 1.1: Check that `arg` is the Unit parameter, i.e, `defn: Unit -> XYZ`
+          if (!isUnitParameter(traitEnv, arg)) {
+            val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+            sctx.errors.add(error)
+          }
+
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
           sctx.errors.add(error)
-          None
+
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
-
-      // Then check validity of the argument
-      optArg match {
-        // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
-
-        // Case 2: Bad arguments. SoftError
-        // Case 3: `arg` was None. SoftError
-        case _ =>
-          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
-          sctx.errors.add(error)
-      }
   }
 
-  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], unitSc: Scheme, arg: Type)(implicit flix: Flix) = {
-    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty)
+  /**
+    * Returns `true` iff `arg` is the Unit type.
+    */
+  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], arg: Type)(implicit flix: Flix) = {
+    val unitScheme = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
+    Scheme.equal(unitScheme, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
   }
 
   /**

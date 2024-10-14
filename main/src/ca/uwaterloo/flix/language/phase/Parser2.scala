@@ -119,34 +119,34 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    flix.phase("Parser2") {
-      // Compute the stale and fresh sources.
-      val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
+  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = flix.phase("Parser2") {
+    // Compute the stale and fresh sources.
+    val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
-      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
-      val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
+    // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
+    val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
 
-      // Parse each stale source in parallel and join them into a WeededAst.Root
-      val refreshed = ParOps.parMap(staleByDecreasingSize) {
-        case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
-      }
+    // Parse each stale source in parallel and join them into a WeededAst.Root
+    val (refreshed, errors) = ParOps.parMap(staleByDecreasingSize) {
+      case (src, tokens) =>
+        val (tree, errors) = parse(src, tokens)
+        (src -> tree, errors)
+    }.unzip
 
-      // Join refreshed syntax trees with the already fresh ones.
-      mapN(sequence(refreshed)) {
-        refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
-      }
-    }(DebugValidation())
-  }
+    // Join refreshed syntax trees with the already fresh ones.
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh)
+    Validation.success(result).withSoftFailures(errors.flatten.toList)
+  }(DebugValidation())
 
-  private def parse(src: Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
+
+  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage]) = {
     implicit val s: State = new State(tokens, src)
     // Call the top-most grammar rule to gather all events into state.
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
     // Return with errors as soft failures to run subsequent phases for more validations.
-    Validation.success(tree).withSoftFailures(s.errors)
+    (tree, s.errors.toList)
   }
 
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
@@ -2561,7 +2561,7 @@ object Parser2 {
         //     or: new Struct @ rc {}
         expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
         expression()
-        if(!at(TokenKind.CurlyL)) {
+        if (!at(TokenKind.CurlyL)) {
           expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
         }
         else {

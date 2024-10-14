@@ -34,7 +34,7 @@ import scala.collection.immutable.SortedSet
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): (Unit, List[CompilationMessage]) = flix.phaseNew("Regions") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[TypeError]) = flix.phaseNew("Regions") {
     val defErrors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
     val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
     val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
