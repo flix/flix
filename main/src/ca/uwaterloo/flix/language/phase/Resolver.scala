@@ -1200,7 +1200,7 @@ object Resolver {
           }
         case Result.Err(err) =>
           sctx.errors.add(err)
-          Validation.success(ResolvedAst.Expr.Error(err)
+          Validation.success(ResolvedAst.Expr.Error(err))
       }
 
     case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
@@ -1259,8 +1259,9 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-            Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            val err = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+            sctx.errors.add(err)
+            Validation.success(ResolvedAst.Expr.Error(err))
         }
       }
 
