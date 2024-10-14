@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
-import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
@@ -33,6 +32,7 @@ import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -125,7 +125,7 @@ object Resolver {
                 )
             }
         }
-    }
+    }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
 
   /**
