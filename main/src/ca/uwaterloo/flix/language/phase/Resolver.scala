@@ -1427,7 +1427,9 @@ object Resolver {
             case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
               case Result.Ok(method) =>
                 Validation.success(ResolvedAst.Expr.InvokeMethodOld(method, clazz, e, as, loc))
-              case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              case Result.Err(error) =>
+                sctx.errors.add(error)
+                Validation.success(ResolvedAst.Expr.Error(error))
             }
           }
       }
@@ -1443,7 +1445,9 @@ object Resolver {
             case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
               case Result.Ok(method) =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethodOld(method, as, loc))
-              case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              case Result.Err(error) =>
+                sctx.errors.add(error)
+                Validation.success(ResolvedAst.Expr.Error(error))
             }
           }
       }
