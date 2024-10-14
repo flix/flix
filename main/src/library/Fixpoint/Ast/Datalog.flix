@@ -85,10 +85,8 @@ mod Fixpoint.Ast.Datalog {
                     + String.lineSeparator()
             }
             case Datalog.Join(d1, d2) => {
-                ToString.toString(d1)
-                    + String.lineSeparator()
-                    + ToString.toString(d2)
-                    + String.lineSeparator()
+                let lineSep = String.lineSeparator();
+                "${d1}${lineSep}${d2}${lineSep}"
             }
         }
     }
