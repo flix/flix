@@ -1469,14 +1469,18 @@ object Resolver {
           mapN(resolveExp(exp1, env0), resolveExp(exp2, env0)) {
             case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
       lookupJvmField(className, fieldName, static = true, loc) match {
         case Result.Ok((_, field)) =>
           Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
