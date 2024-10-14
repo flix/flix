@@ -1404,7 +1404,9 @@ object Resolver {
                 case ts => lookupJvmConstructor(clazz, ts, loc) match {
                   case Result.Ok(constructor) =>
                     Validation.success(ResolvedAst.Expr.InvokeConstructorOld(constructor, as, loc))
-                  case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+                  case Result.Err(error) =>
+                    sctx.errors.add(error)
+                    Validation.success(ResolvedAst.Expr.Error(error))
                 }
               }
           }
