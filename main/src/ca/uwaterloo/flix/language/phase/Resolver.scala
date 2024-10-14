@@ -1458,7 +1458,9 @@ object Resolver {
           mapN(resolveExp(exp, env0)) {
             case e => ResolvedAst.Expr.GetFieldOld(field, clazz, e, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
