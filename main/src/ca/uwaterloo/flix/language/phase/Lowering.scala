@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifiers, Polarity, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
@@ -260,8 +261,8 @@ object Lowering {
   /**
     * Lowers `sym` from a restrictable case sym use into a regular case sym use.
     */
-  private def visitRestrictableCaseSymUse(sym: Ast.RestrictableCaseSymUse): Ast.CaseSymUse = {
-    Ast.CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
+  private def visitRestrictableCaseSymUse(sym: RestrictableCaseSymUse): CaseSymUse = {
+    CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
   }
 
   /**
@@ -379,18 +380,18 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyClo(e, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
 
-    case TypedAst.Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, arrowTpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplySig(Ast.SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)

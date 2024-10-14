@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 
 object OccurrenceAst {
@@ -71,9 +72,9 @@ object OccurrenceAst {
 
     case class TryCatch(exp: OccurrenceAst.Expr, rules: List[OccurrenceAst.CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class TryWith(exp: OccurrenceAst.Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
+    case class TryWith(exp: OccurrenceAst.Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
+    case class Do(op: OpSymUse, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expr
 
@@ -83,7 +84,7 @@ object OccurrenceAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: OccurrenceAst.Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
 

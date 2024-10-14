@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, EffectSymUse, OpSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -41,7 +42,7 @@ object LoweredAst {
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TraitConstraint], assocs: List[AssocTypeSig], signatures: List[Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 
@@ -59,7 +60,7 @@ object LoweredAst {
   case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypedAst.TypeParam, kind: Kind, loc: SourceLocation)
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
-  case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
+  case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -131,9 +132,9 @@ object LoweredAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Do(op: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -153,7 +154,7 @@ object LoweredAst {
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tag(sym: CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -224,7 +225,7 @@ object LoweredAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
