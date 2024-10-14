@@ -525,9 +525,10 @@ class Flix {
       afterPredDeps = PredDeps.run(afterEntryPoint)
       (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
       (_, patMatchErrors) = PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(regionErrors).withSoftFailures(entryPointErrors).withSoftFailures(instanceErrors).withSoftFailures(stratificationErrors).withSoftFailures(patMatchErrors)
-      (_, safetyErrors) = Safety.run(afterRedundancy)
-      output <- Validation.toSuccessOrSoftFailure(afterRedundancy, safetyErrors) // Minimal change for things to still work. Will be removed once Validation is removed.
+      redundancyErrors = Redundancy.run(afterStratifier)
+      (_, safetyErrors) = Safety.run(afterStratifier)
+      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      output <- Validation.toSuccessOrSoftFailure(afterStratifier, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
