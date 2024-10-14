@@ -1347,7 +1347,9 @@ object Resolver {
                 rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
               }
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.Do(op, exps, loc) =>
