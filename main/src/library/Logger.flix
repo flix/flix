@@ -36,7 +36,7 @@ mod Logger {
     ///
     /// Logs the message `m` at the `Debug` level.
     ///
-    pub def debug1(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Debug, "${m}")
+    pub def debug(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Debug, "${m}")
 
     ///
     /// Logs the message `m` at the `Info` level.
