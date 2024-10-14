@@ -1211,13 +1211,12 @@ object Resolver {
           val put = mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSymUse, e2, loc)
           }
-          if (field.mod.isMutable) {
-            put
-          } else {
+          if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
             sctx.errors.add(error)
-            put
           }
+          put
+
         case Result.Err(error) =>
           sctx.errors.add(error)
           Validation.success(ResolvedAst.Expr.Error(error))
