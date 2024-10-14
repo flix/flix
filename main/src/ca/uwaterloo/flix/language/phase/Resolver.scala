@@ -803,9 +803,11 @@ object Resolver {
                 // Returns out of resolveExp
                 return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
               case None =>
-                val m = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
+                val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 // Returns out of resolveExp
-                return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+                val e = ResolvedAst.Expr.Error(error)
+                sctx.errors.add(error)
+                return Validation.success(e)
             }
           case _ =>
           // Fallthrough to below.
