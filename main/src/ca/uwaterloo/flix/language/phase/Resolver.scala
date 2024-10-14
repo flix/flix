@@ -1184,8 +1184,9 @@ object Resolver {
 
               structNew.withSoftFailures(errors)
           }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(err) =>
+          sctx.errors.add(err)
+          Validation.success(ResolvedAst.Expr.Error(err))
       }
 
     case NamedAst.Expr.StructGet(e, field0, loc) =>
