@@ -1504,8 +1504,9 @@ object Resolver {
             case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
               Validation.success(ResolvedAst.Expr.NewObject(name, clazz, ms, loc))
             case _ =>
-              val err = ResolutionError.IllegalNonJavaType(t, t.loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(err), err)
+              val error = ResolutionError.IllegalNonJavaType(t, t.loc)
+              sctx.errors.add(error)
+              Validation.success(ResolvedAst.Expr.Error(error))
           }
       }
 
