@@ -617,7 +617,7 @@ class Flix {
   }
 
   /**
-    * Enters the phase with the given name.
+    * Enters the phase that returns two results.
     */
   def phase2[A, B](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     implicit object DebugA extends Debug[(A, B)] {
