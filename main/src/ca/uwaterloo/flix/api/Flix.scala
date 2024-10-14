@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -528,7 +527,7 @@ class Flix {
       (_, patMatchErrors) = PatMatch.run(afterStratifier)
       redundancyErrors = Redundancy.run(afterStratifier)
       (_, safetyErrors) = Safety.run(afterStratifier)
-      errors: List[CompilationMessage & Recoverable] = regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
       output <- Validation.toSuccessOrSoftFailure(afterStratifier, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
