@@ -27,46 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common super-type for modifiers.
-    */
-  sealed trait Modifier
-
-  object Modifier {
-
-    /**
-      * The lawful modifier.
-      */
-    case object Lawful extends Modifier
-
-   /**
-     * The mutable modifier.
-     */
-
-    case object Mutable extends Modifier
-
-    /**
-      * The override modifier.
-      */
-    case object Override extends Modifier
-
-    /**
-      * The public modifier.
-      */
-    case object Public extends Modifier
-
-    /**
-      * The sealed modifier.
-      */
-    case object Sealed extends Modifier
-
-    /**
-      * The synthetic modifier.
-      */
-    case object Synthetic extends Modifier
-
-  }
-
-  /**
     * Represents a positive or negative labelled dependency edge.
     *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
