@@ -1410,7 +1410,9 @@ object Resolver {
                 }
               }
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
