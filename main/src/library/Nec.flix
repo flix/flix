@@ -125,16 +125,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Nec#{", sb);
-        Nec.forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-        }, c);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 

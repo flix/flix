@@ -66,17 +66,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let _ = parallelForce(m);
-        StringBuilder.appendString!("DelayMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///
