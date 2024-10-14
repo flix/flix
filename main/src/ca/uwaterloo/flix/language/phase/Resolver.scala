@@ -568,7 +568,7 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(tparams)
           val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(s0.sym, idx, field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
-            case (fields) =>
+            case fields =>
               ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
       }
