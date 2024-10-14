@@ -48,7 +48,7 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): (Root, List[StratificationError]) = flix.phaseNew("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[StratificationError]) = flix.phase2("Stratifier") {
     // Construct a new shared context.
     implicit val sctx: SharedContext = SharedContext.mk()
 
