@@ -1489,7 +1489,9 @@ object Resolver {
           mapN(resolveExp(exp, env0)) {
             case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
           }
-        case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
