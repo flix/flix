@@ -1174,7 +1174,7 @@ object Resolver {
               val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
               val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
               val errors0 = extraFieldErrors ++ missingFieldErrors
-              val errors = if (!errors0.isEmpty) {
+              val errors = if (errors0.nonEmpty) {
                 errors0
               } else if (providedFieldNames != expectedFieldNames) {
                 List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
