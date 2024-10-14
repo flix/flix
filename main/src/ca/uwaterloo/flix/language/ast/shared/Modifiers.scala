@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Ast.Modifier
-
 /**
   * Companion object of [[Modifiers]].
   */
