@@ -2181,7 +2181,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[Ast.Derivations, ResolutionError] = {
     val qnames = derives0.traits
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
     flatMapN(derivesVal) {
@@ -2198,8 +2198,8 @@ object Resolver {
               errors += DuplicateDerivation(traitSym, loc2, loc1)
           }
         }
-
-        Validation.toSuccessOrSoftFailure(Ast.Derivations(derives, derives0.loc), errors)
+        errors.foreach(sctx.errors.add)
+        Validation.success(Ast.Derivations(derives, derives0.loc))
     }
   }
 
