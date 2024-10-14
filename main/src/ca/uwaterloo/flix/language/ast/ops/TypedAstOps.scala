@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.SigSymUse
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 
 object TypedAstOps {
 

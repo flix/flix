@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.jvalue2monadic
+import org.json4s.JsonAST.{JString, JValue}
 
 import java.util.Base64
 

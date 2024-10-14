@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
-import org.json4s.*
 import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[PublishDiagnosticsParams]].

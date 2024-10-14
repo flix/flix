@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 
