@@ -1220,8 +1220,9 @@ object Resolver {
             sctx.errors.add(err)
             put
           }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(err) =>
+          sctx.errors.add(err)
+          Validation.success(ResolvedAst.Expr.Error(err))
       }
 
     case NamedAst.Expr.VectorLit(exps, loc) =>
