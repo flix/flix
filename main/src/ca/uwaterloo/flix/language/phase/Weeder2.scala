@@ -1699,7 +1699,7 @@ object Weeder2 {
     private def visitWithoutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Without)
       val effectSet = pick(TreeKind.Type.EffectSet, tree)
-      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))
+      val effects = flatMapN(effectSet)(effectSetTree => mapN(traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))(_.flatten))
       mapN(pickExpr(tree), effects) {
         case (expr, effect :: effects) =>
           val base = Expr.Without(expr, effect, tree.loc)
@@ -2639,7 +2639,10 @@ object Weeder2 {
     }
 
     private def visitNameType(tree: Tree): Validation[Type, CompilationMessage] = {
-      mapN(visitQName(tree))(Type.Ambiguous(_, tree.loc))
+      mapN(visitQName(tree)) {
+        case Some(t) => Type.Ambiguous(t, tree.loc)
+        case None => Type.Error(tree.loc)
+      }
     }
 
     private def visitIdentType(tree: Tree): Validation[Type, CompilationMessage] = {
@@ -2812,7 +2815,15 @@ object Weeder2 {
     private def visitCaseSetType(tree: Tree): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.CaseSet)
       val cases = traverse(pickAll(TreeKind.QName, tree))(visitQName)
-      mapN(cases)(Type.CaseSet(_, tree.loc))
+      mapN(cases) {
+        cs =>
+          val qnames = cs.filter(_.isDefined).flatten
+          if (qnames.length == cs.length) {
+            Type.CaseSet(qnames, tree.loc)
+          } else {
+            Type.Error(tree.loc)
+          }
+      }
     }
 
     private def visitEffectType(tree: Tree): Validation[Type, CompilationMessage] = {
@@ -2854,7 +2865,6 @@ object Weeder2 {
       val derivations = maybeDerivations
         .map(tree => traverse(pickAll(TreeKind.QName, tree))(visitQName))
         .getOrElse(Validation.success(List.empty))
-
       mapN(derivations)(Derivations(_, loc))
     }
 
@@ -3063,7 +3073,7 @@ object Weeder2 {
     flatMapN(pick(TreeKind.QName, tree))(visitQName)
   }
 
-  private def visitQName(tree: Tree): Validation[Name.QName, CompilationMessage] = {
+  private def visitQName(tree: Tree): Validation[Option[Name.QName], CompilationMessage] = {
     val idents = pickAll(TreeKind.Ident, tree)
     mapN(traverse(idents)(tokenToIdent)) {
       case idents if idents.nonEmpty => // We require at least one element to construct a qname
@@ -3072,9 +3082,9 @@ object Weeder2 {
         val nnameIdents = idents.dropRight(1)
         val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
         val nname = Name.NName(nnameIdents, loc)
-        Name.QName(nname, ident, loc)
-      case nothing => // Return None instead?
-        Name.mkQName("error", SourceLocation.Unknown)
+        Some(Name.QName(nname, ident, loc))
+      case nothing =>
+        None
     }
   }
 
