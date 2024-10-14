@@ -33,12 +33,11 @@ object Instances {
   /**
     * Validates instances and traits in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] =
-    flix.phase("Instances") {
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Unit, List[InstanceError]) =
+    flix.phaseNew("Instances") {
       val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
-
-      Validation.toSuccessOrSoftFailure(root, errors)
-    }(DebugValidation())
+      ((), errors)
+    }
 
   /**
     * Validates all instances in the given AST root.
@@ -55,7 +54,7 @@ object Instances {
     // Case 1: lawful trait
     case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-        case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
+        case (acc, TypedAst.Def(_, _, exp, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
       }
       val unusedSigs = sigs.map(_.sym).toSet -- usedSigs
       unusedSigs.toList.map {

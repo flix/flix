@@ -217,7 +217,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = defn0 match {
-    case Def(sym, spec, exp) =>
+    case Def(sym, spec, exp, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -230,7 +230,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig): Iterator[SemanticToken] = sig0 match {
-    case TypedAst.Sig(sym, spec, exp) =>
+    case TypedAst.Sig(sym, spec, exp, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -243,7 +243,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       IteratorOps.all(
         visitTypeParams(tparams),
         visitFormalParams(fparams),
@@ -309,7 +309,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given effect operation.
     */
   private def visitOp(op: TypedAst.Op): Iterator[SemanticToken] = op match {
-    case TypedAst.Op(sym, spec) =>
+    case TypedAst.Op(sym, spec, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -323,11 +323,6 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expr): Iterator[SemanticToken] = exp0 match {
     case Expr.Var(sym, tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
-      val t = SemanticToken(o, Nil, loc)
-      Iterator(t)
-
-    case Expr.Sig(sym, _, loc) =>
-      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
@@ -346,13 +341,25 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
+      val t = SemanticToken(o, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -364,15 +371,19 @@ object SemanticTokensProvider {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
-      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      IteratorOps.all(
+        Iterator(t),
+        visitFormalParams(fparams),
+        visitExp(exp1),
+        visitExp(exp2)
+      )
 
     case Expr.Region(_, _) =>
       Iterator.empty

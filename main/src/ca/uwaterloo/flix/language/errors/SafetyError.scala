@@ -23,7 +23,7 @@ object SafetyError {
    *
    * @param loc  the source location of the forbidden operation.
    */
-  case class Forbidden(ctx: SecurityContext, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = "Operation not permitted"
 
     override def message(formatter: Formatter): String = {
@@ -193,6 +193,42 @@ object SafetyError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal method effect in a new expression.
+    *
+    * @param eff the illegal effect.
+    * @param loc the source location of the method.
+    */
+  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Illegal method effect"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a base effect.
+         |
+         |${code(loc, "illegal effect.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal effect in a spawn expression.
+    *
+    * @param eff the illegal effect.
+    * @param loc the source location of the spawn.
+    */
+  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Illegal spawn effect"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a base effect.
+         |
+         |${code(loc, "illegal effect.")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -538,18 +574,19 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that the IO effect is attempted to be handled in a try-with expression.
+    * An error raised to indicate that a base effect is attempted to be handled in a try-with expression.
     *
+    * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class IOEffectInTryWith(loc: SourceLocation) extends SafetyError with Recoverable {
-    override def summary: String = s"The IO effect cannot be handled."
+  case class BaseEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError with Recoverable {
+    override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The IO effect cannot be handled.
+      s""">> The ${sym.name} effect cannot be handled.
          |
-         |${code(loc, "attempted to handle the IO effect here.")}
+         |${code(loc, s"attempted to handle the ${sym.name} effect here.")}
          |""".stripMargin
     }
 

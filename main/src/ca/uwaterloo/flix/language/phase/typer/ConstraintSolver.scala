@@ -43,30 +43,30 @@ object ConstraintSolver {
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(sym, spec, _) =>
+    case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
-    case KindedAst.Sig(sym, spec, Some(_)) =>
+    case KindedAst.Sig(_, _, None, _) => Validation.success(Substitution.empty)
+    case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
-    case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+    case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
 
@@ -261,12 +261,10 @@ object ConstraintSolver {
     */
   private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
-      val tmin1 = TypeMinimization.minimizeType(subst0(tpe1))
-      val tmin2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
       for {
-        (t1, p1) <- TypeReduction.simplify(tmin1, renv, prov.loc)
-        (t2, p2) <- TypeReduction.simplify(tmin2, renv, prov.loc)
+        (t1, p1) <- TypeReduction.simplify(subst0(tpe1), renv, prov.loc)
+        (t2, p2) <- TypeReduction.simplify(subst0(tpe2), renv, prov.loc)
         ResolutionResult(subst, constrs, p) <-
           // A small hack to ensure that we do not add reducible types to the substitution.
           if (Type.hasJvmType(t1) || Type.hasJvmType(t2)) {
@@ -292,7 +290,7 @@ object ConstraintSolver {
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
           val qvars = e2Raw.typeVars.map(_.sym)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypeConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
+          val constr = TypeConstraint.Equality(e1, e2, prov)
           ResolutionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ResolutionResult(subst, newConstrs, progress) =>
@@ -333,28 +331,10 @@ object ConstraintSolver {
 
 
     case (Kind.RecordRow, Kind.RecordRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
-          }
-      } yield res
+      Result.Ok(RecordConstraintSolver.solve(t1, t2, prov, renv))
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        res0 <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
-          }
-      } yield res
+      Result.Ok(SchemaConstraintSolver.solve(t1, t2, prov, renv))
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       for {

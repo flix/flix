@@ -143,8 +143,6 @@ object Eraser {
       JumpTo(sym, visitType(tpe), purity, loc)
     case Let(sym, exp1, exp2, tpe, purity, loc) =>
       Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
-    case LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      LetRec(varSym, index, defSym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Stmt(exp1, exp2, tpe, purity, loc) =>
       Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Scope(sym, exp, tpe, purity, loc) =>

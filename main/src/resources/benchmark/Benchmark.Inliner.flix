@@ -18,10 +18,21 @@ mod Benchmark.Inliner {
 
     pub def map(f: a -> b, l: List[a]) : List[b] = {
         def mp(xs, acc) = match xs {
-            case Nil     => rev(acc)
+            case Nil     => acc
             case z :: zs => mp(zs, f(z) :: acc)
         };
-        mp(l, Nil)
+        rev(mp(l, Nil))
+    }
+
+    pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef = {
+        def fmp(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => match f(x) {
+                case None    => fmp(xs, acc)
+                case Some(y) => fmp(xs, y :: acc)
+            }
+        };
+        rev(fmp(l, Nil))
     }
 
     pub def rev(l: List[a]): List[a] = {

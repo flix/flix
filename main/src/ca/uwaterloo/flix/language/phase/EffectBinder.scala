@@ -63,8 +63,6 @@ object EffectBinder {
 
   private case class LetBinder(sym: VarSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
 
-  private case class LetRecBinder(varSym: VarSym, index: Int, defSym: DefnSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
-
   private case class NonBinder(exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
 
   /**
@@ -156,13 +154,6 @@ object EffectBinder {
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
       val e = ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
-      val e = ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
@@ -260,11 +251,6 @@ object EffectBinder {
       binders.addOne(LetBinder(sym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
-    case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      binders.addOne(LetRecBinder(varSym, index, defSym, e1, loc))
-      visitExprInnerWithBinders(binders)(exp2)
-
     case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       binders.addOne(NonBinder(e1, loc))
@@ -332,9 +318,6 @@ object EffectBinder {
       case ReducedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
-        binders.addOne(LetRecBinder(varSym, index, defSym, exp1, loc))
-        bind(exp2)
       case ReducedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
         binders.addOne(NonBinder(exp1, loc))
         bind(exp2)
@@ -367,8 +350,6 @@ object EffectBinder {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
         ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
-      case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
-        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (NonBinder(exp1, loc), acc) =>
         ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
     }

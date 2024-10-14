@@ -423,7 +423,7 @@ object Typer {
     }
 
     spec0 match {
-      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
         // get all the associated types in the spec
         val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
           case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>

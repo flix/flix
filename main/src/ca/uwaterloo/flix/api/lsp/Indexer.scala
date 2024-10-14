@@ -43,7 +43,7 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, exp) =>
+    case Def(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(def0),
         visitSpec(spec),
@@ -55,7 +55,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, exp) =>
+    case Sig(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(sig0),
         visitSpec(spec),
@@ -67,7 +67,7 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),
@@ -102,8 +102,8 @@ object Indexer {
   }
 
   /**
-   * Returns a reverse index for the given struct `struct0`.
-   */
+    * Returns a reverse index for the given struct `struct0`.
+    */
   private def visitStruct(struct0: Struct): Index = struct0 match {
     case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
       Index.all(
@@ -196,7 +196,7 @@ object Indexer {
     * Returns a reverse index for the given effect operation `op0`
     */
   private def visitOp(op0: Op): Index = op0 match {
-    case Op(_, spec) =>
+    case Op(_, spec, _) =>
       Index.all(
         Index.occurrenceOf(op0),
         visitSpec(spec),
@@ -214,10 +214,6 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
-    case Expr.Sig(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)
-
     case Expr.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
 
@@ -233,10 +229,18 @@ object Indexer {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ visitExps(exps)
+
+    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc) ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
@@ -246,11 +250,20 @@ object Indexer {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      // We construct the type manually here, since we do not have immediate access to it
+      // like with normal defs.
+      val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
+      Index.all(
+        traverse(fparams)(visitFormalParam),
+        Index.occurrenceOf(sym, arrowType),
+        visitExp(exp1),
+        visitExp(exp2),
+        Index.occurrenceOf(exp0)
+      )
 
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)

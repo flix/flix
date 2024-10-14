@@ -36,7 +36,7 @@ object Optimizer {
       var result = root
       for (_ <- 1 to 2) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
-        val afterInliner = Inliner.run(afterOccurrenceAnalyzer.unsafeGet)
+        val afterInliner = Inliner.run(afterOccurrenceAnalyzer)
         result = afterInliner.unsafeGet
       }
       result

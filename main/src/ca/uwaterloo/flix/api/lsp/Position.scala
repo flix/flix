@@ -30,25 +30,25 @@ object Position {
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
-    Position(loc.beginLine - 1, loc.beginCol - 1)
+    Position(loc.beginLine, loc.beginCol)
 
   /**
     * Returns a position from the given source location `loc` using its ending line and col.
     */
   def fromEnd(loc: SourceLocation): Position =
-    Position(loc.endLine - 1, loc.endCol - 1)
+    Position(loc.endLine, loc.endCol)
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
     */
   def parse(json: JValue): Result[Position, String] = {
-    // NB: LSP line and column numbers are zero-indexed, but Flix uses 1-indexed numbers internally.
+    // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
     val lineResult: Result[Int, String] = json \\ "line" match {
       case JInt(i) => Ok(i.toInt + 1) // Flix uses 1-indexed line numbers.
       case v => Err(s"Unexpected non-integer line number: '$v'.")
     }
     val characterResult: Result[Int, String] = json \\ "character" match {
-      case JInt(i) => Ok(i.toInt + 1) // Flix uses 1-indexed column numbers.
+      case JInt(i) => Ok(i.toInt + 1) // Flix uses one-indexed column numbers.
       case v => Err(s"Unexpected non-integer character: '$v'.")
     }
     for {
@@ -59,11 +59,12 @@ object Position {
 }
 
 /**
-  * Represent a `Position` in LSP.
+  * Represent a one-indexed position representation of an LSP `Position`.
   *
-  * @param line      Line position in a document (zero-based).
-  * @param character Character offset on a line in a document (zero-based).
+  * @param line      Line position in a document (one-indexed).
+  * @param character Character offset on a line in a document (one-indexed).
   */
 case class Position(line: Int, character: Int) {
-  def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
+  // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
+  def toJSON: JValue = ("line" -> (line - 1)) ~ ("character" -> (character - 1))
 }
