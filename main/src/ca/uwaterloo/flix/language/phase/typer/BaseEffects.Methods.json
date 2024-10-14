@@ -19,12 +19,17 @@
 		"java.lang.System::setOut": "Sys",
 		"java.lang.System::setErr": "Sys",
 		"java.lang.System::setSecurityManager": "Sys",
+		"java.lang.System::getSecurityManager": "Sys",
 		"java.lang.System::getProperties": "Sys",
 		"java.lang.System::setProperties": "Sys",
 		"java.lang.System::getProperty": "Sys",
 		"java.lang.System::setProperty": "Sys",
 		"java.lang.System::clearProperty": "Sys",
 		"java.lang.System::getenv": "Sys",
+		"java.lang.System::gc": "Sys",
+		"java.lang.System::runFinalization": "Sys",
+		"java.lang.System::load": ["FileRead", "Exec"],
+		"java.lang.System::loadLibrary": ["FileRead", "Exec"],
     "java.nio.file.FileSystem::getFileStores": "FileRead"
   }
 }
