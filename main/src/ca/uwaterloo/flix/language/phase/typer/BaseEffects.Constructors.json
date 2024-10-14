@@ -1,5 +1,6 @@
 {
   "constructors": {
-    "java.net.URL": "Net"
+    "java.net.URL": "Net",
+    "java.lang.ClassLoader": "Sys"
   }
 }
