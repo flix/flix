@@ -58,7 +58,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phase2("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseWithTwoValues("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.

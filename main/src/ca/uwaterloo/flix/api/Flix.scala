@@ -619,7 +619,7 @@ class Flix {
   /**
     * Enters the phase that returns two results.
     */
-  def phase2[A, B](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+  def phaseWithTwoValues[A, B](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     implicit object DebugA extends Debug[(A, B)] {
       override def emit(phase: String, tuple: (A, B))(implicit flix: Flix): Unit = {
         val (a, _) = tuple
