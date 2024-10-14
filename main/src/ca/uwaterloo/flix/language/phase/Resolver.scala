@@ -1374,7 +1374,7 @@ object Resolver {
             case _ =>
               val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
               sctx.errors.add(error)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(error))
+              Validation.success(ResolvedAst.Expr.Error(error))
           }
       }
 
