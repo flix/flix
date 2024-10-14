@@ -1198,8 +1198,9 @@ object Resolver {
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
           }
-        case Result.Err(e) =>
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case Result.Err(err) =>
+          sctx.errors.add(err)
+          Validation.success(ResolvedAst.Expr.Error(err)
       }
 
     case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
