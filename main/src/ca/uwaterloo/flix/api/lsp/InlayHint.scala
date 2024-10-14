@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonDSL.*
 import org.json4s.JValue
+import org.json4s.JsonDSL.*
 
 /**
   * Represent `InlayHint` in LSP.

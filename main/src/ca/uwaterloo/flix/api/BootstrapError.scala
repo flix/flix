@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.errors.Unrecoverable
+import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 

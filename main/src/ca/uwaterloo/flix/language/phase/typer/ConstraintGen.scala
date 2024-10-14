@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 
 /**
   * This phase generates a list of type constraints, which include

@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object TypedAstPrinter {

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -33,10 +33,10 @@ import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 /**
   * The Resolver phase performs name resolution on the program.

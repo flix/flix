@@ -16,10 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.WithCompletion
+import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.phase.{Deriver, Resolver}
+import ca.uwaterloo.flix.language.phase.Deriver
 
 object WithCompleter {
   /**

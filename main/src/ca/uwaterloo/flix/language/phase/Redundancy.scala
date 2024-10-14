@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, SigSymUse}
@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec

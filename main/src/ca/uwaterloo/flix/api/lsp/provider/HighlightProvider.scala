@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 

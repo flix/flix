@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.{InstanceError, RedundancyError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 

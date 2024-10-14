@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object of [[Location]].

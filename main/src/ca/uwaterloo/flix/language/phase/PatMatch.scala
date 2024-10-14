@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.Constant
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
