@@ -5,6 +5,7 @@
 		"java.lang.System::setIn": "Sys",
 		"java.lang.System::setOut": "Sys",
 		"java.lang.System::setErr": "Sys",
+		"java.lang.System::setSecurityManager": "Sys",
     "java.nio.file.FileSystem::getFileStores": "FileRead"
   }
 }
