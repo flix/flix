@@ -48,7 +48,7 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[StratificationError]) = flix.phaseNew("Stratifier") {
     // Construct a new shared context.
     implicit val sctx: SharedContext = SharedContext.mk()
 
@@ -60,8 +60,8 @@ object Stratifier {
     val is = ParOps.parMapValues(root.instances)(is0 => is0.map(visitInstance))
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
-    Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
-  }(DebugValidation())
+    (root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala.toList)
+  }
 
   /**
     * Performs Stratification of the given trait `t0`.
