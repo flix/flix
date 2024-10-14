@@ -746,12 +746,9 @@ object Resolver {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
-      if (tvars.contains(tvar)) {
-        ()
-      } else {
+      if (!tvars.contains(tvar)) {
         val error = ResolutionError.IllegalSignature(sym, sym.loc)
         sctx.errors.add(error)
-        ()
       }
   }
 
