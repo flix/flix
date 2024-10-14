@@ -72,6 +72,11 @@ class Flix {
   private val inputs = mutable.Map.empty[String, Input]
 
   /**
+    * A set of the sizes of tuples
+    */
+  var tupleSizes = mutable.Set.empty[Int]
+
+  /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource.Ascribed
+import ca.uwaterloo.flix.language.ast.KindedAst.Pattern
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
@@ -55,11 +56,16 @@ object Deriver {
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
     val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
+    val tupleInstances = flix.tupleSizes.toList.flatMap(size =>
+      (0 to size - 1).map(idx =>
+        tupleGetInstance(size, idx, root)
+      )
+    )
     val fieldNames = root.structs.values.flatMap(struct => struct.fields).map(field => Name.Label(field.sym.name, field.sym.loc)).toSet
 
     mapN(derivedInstances) {
       instances =>
-        val newInstances = (instances ++ structFieldInstances).flatten.foldLeft(root.instances) {
+        val newInstances = ((instances ++ structFieldInstances).flatten ++ tupleInstances).foldLeft(root.instances) {
           case (acc, inst) =>
             val accInsts = acc.getOrElse(inst.trt.sym, Nil)
             acc + (inst.trt.sym -> (inst :: accInsts))
@@ -111,6 +117,39 @@ object Deriver {
       mod = Ast.Modifiers.Empty,
       trt = Ast.TraitSymUse(traitSym, loc),
       tpe = structType,
+      tconstrs = List(),
+      assocs = List(assocTpe, assocEff),
+      defs = List(getDef),
+      ns = Name.RootNS,
+      loc = loc)
+  }
+
+  /**
+    * Builds the instances for the `get` operation of this struct field
+    */
+  private def tupleGetInstance(size: Int, idx: Int, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = {
+    val loc = SourceLocation.Unknown
+    val tvars = (1 to size).map(_ => Type.freshVar(Kind.Star, loc)).toList
+    val tupleTpe = Type.mkTuple(tvars, loc)
+    val elemTpe = tvars(idx)
+    val eff = Type.Pure
+    val traitSym = Symbol.mkTraitSym(structFieldGetTraitName("_" + idx.toString))
+    val assocTypeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
+    val assocEffSymUse = Ast.AssocTypeSymUse(assocEffSym, loc)
+    val assocTpe = fieldAssocTypeDef(assocTypeSymUse, tupleTpe, elemTpe, loc)
+    val assocEff = fieldAssocTypeDef(assocEffSymUse, tupleTpe, eff, loc)
+    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
+    val getSpec = fieldGetSpec(tupleTpe, eff, elemTpe, Nil, param1Symbol, loc)
+    val getExpr = tupleGetImpl(param1Symbol, size, idx, loc)
+    val getDef = KindedAst.Def(fieldDefnSymbol(structFieldGetTraitName("_" + idx.toString), GetMethodName), getSpec, getExpr)
+    KindedAst.Instance(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      trt = Ast.TraitSymUse(traitSym, loc),
+      tpe = tupleTpe,
       tconstrs = List(),
       assocs = List(assocTpe, assocEff),
       defs = List(getDef),
@@ -181,6 +220,29 @@ object Deriver {
       evar = Type.freshVar(Kind.Eff, loc),
       loc = loc
     )
+
+  /**
+    * Builds the body for this tuple `get` operation
+    */
+  private def tupleGetImpl(param1Symbol: Symbol.VarSym, tupleSize: Int, idx: Int, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
+    val pats0 = (1 to idx).map(_ => Pattern.Wild(Type.freshVar(Kind.Star, loc), loc)).toList
+    assert(pats0.length == idx)
+    val varsym = Symbol.freshVarSym("v", BoundBy.Pattern, loc)
+    val pats1 = pats0 :+ Pattern.Var(varsym, Type.freshVar(Kind.Star, loc), loc)
+    val pats = pats1 ++ (idx + 2 to tupleSize).map(_ => Pattern.Wild(Type.freshVar(Kind.Star, loc), loc)).toList
+    assert(pats.length == tupleSize)
+    KindedAst.Expr.Match(
+      exp = KindedAst.Expr.Var(param1Symbol, loc),
+      rules = List(
+        KindedAst.MatchRule(
+          pat = KindedAst.Pattern.Tuple(pats, loc),
+          guard = None,
+          exp = KindedAst.Expr.Var(varsym, loc)
+        )
+      ),
+      loc = loc
+    )
+  }
 
   /**
     * Builds the body for the `get` operation

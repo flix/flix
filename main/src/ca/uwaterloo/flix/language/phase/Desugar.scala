@@ -1558,6 +1558,7 @@ object Desugar {
     */
   private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
+    flix.tupleSizes.add(exps0.length)
     es match {
       case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)
       case x :: Nil => x

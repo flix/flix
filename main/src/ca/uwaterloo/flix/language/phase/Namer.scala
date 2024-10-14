@@ -1684,8 +1684,10 @@ object Namer {
   /**
     * Builds the traits for this struct
     */
-  private def fieldTraits(fieldNames: Set[Name.Label])(implicit scope: Scope, flix: Flix): List[NamedAst.Declaration.Trait] =
-    fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
+  private def fieldTraits(fieldNames: Set[Name.Label])(implicit scope: Scope, flix: Flix): List[NamedAst.Declaration.Trait] = {
+    val tupleFieldNames = flix.tupleSizes.map(size => Name.Label("_" + size.toString, SourceLocation.Unknown))
+    (tupleFieldNames ++ fieldNames).toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
+  }
 
   /**
     * Builds the `get` trait for this struct field
