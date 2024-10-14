@@ -1181,8 +1181,8 @@ object Resolver {
               } else {
                 Nil
               }
-
-              structNew.withSoftFailures(errors)
+              errors.foreach(sctx.errors.add)
+              structNew
           }
         case Result.Err(err) =>
           sctx.errors.add(err)
