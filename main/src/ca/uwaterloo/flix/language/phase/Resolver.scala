@@ -1901,61 +1901,58 @@ object Resolver {
     * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
     * Constraint patterns do not introduce new variables.
     */
-  private def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+  private def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
 
-    def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+    def visit(p0: NamedAst.Pattern): ResolvedAst.Pattern = p0 match {
       case NamedAst.Pattern.Wild(loc) =>
-        Validation.success(ResolvedAst.Pattern.Wild(loc))
+        ResolvedAst.Pattern.Wild(loc)
 
       case NamedAst.Pattern.Var(sym0, loc) =>
         // TODO NS-REFACTOR wild patterns should not be counted as vars
         // if the sym is wild then just call the pattern wild
         if (sym0.isWild) {
-          Validation.success(ResolvedAst.Pattern.Wild(loc))
+          ResolvedAst.Pattern.Wild(loc)
         } else {
           env(sym0.text).collectFirst {
             case Resolution.Var(sym) => sym
           } match {
             case Some(sym) =>
-              Validation.success(ResolvedAst.Pattern.Var(sym, loc))
+              ResolvedAst.Pattern.Var(sym, loc)
             case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
           }
         }
 
       case NamedAst.Pattern.Cst(cst, loc) =>
-        Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+        ResolvedAst.Pattern.Cst(cst, loc)
 
       case NamedAst.Pattern.Tag(qname, pat, loc) =>
         lookupTag(qname, env, ns0, root) match {
-          case Result.Ok(c) => mapN(visit(pat)) {
-            case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
-          }
-          case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
+          case Result.Ok(c) =>
+            val p = visit(pat)
+            ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            ResolvedAst.Pattern.Error(loc)
         }
 
       case NamedAst.Pattern.Tuple(elms, loc) =>
-        val esVal = traverse(elms)(visit)
-        mapN(esVal) {
-          es => ResolvedAst.Pattern.Tuple(es, loc)
-        }
+        val es = elms.map(visit)
+        ResolvedAst.Pattern.Tuple(es, loc)
 
       case NamedAst.Pattern.Record(pats, pat, loc) =>
-        val psVal = traverse(pats) {
+        val ps = pats.map {
           case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
-            mapN(visit(pat1)) {
-              case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
-            }
+            val p = visit(pat1)
+            ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
         }
-        val pVal = visit(pat)
-        mapN(psVal, pVal) {
-          case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
-        }
+        val p = visit(pat)
+        ResolvedAst.Pattern.Record(ps, p, loc)
 
       case NamedAst.Pattern.RecordEmpty(loc) =>
-        Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
+        ResolvedAst.Pattern.RecordEmpty(loc)
 
       case NamedAst.Pattern.Error(loc) =>
-        Validation.success(ResolvedAst.Pattern.Error(loc))
+        ResolvedAst.Pattern.Error(loc)
     }
 
     visit(pat0)
@@ -2028,10 +2025,8 @@ object Resolver {
     */
   private def resolvePredicateBody(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
     case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-      val tsVal = traverse(terms)(resolvePatternInConstraint(_, env, ns0, root))
-      mapN(tsVal) {
-        ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
-      }
+      val ts = terms.map(resolvePatternInConstraint(_, env, ns0, root))
+      Validation.success(ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
 
     case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
       val outVars = idents.map {
