@@ -6,6 +6,12 @@
 		"java.lang.System::setOut": "Sys",
 		"java.lang.System::setErr": "Sys",
 		"java.lang.System::setSecurityManager": "Sys",
+		"java.lang.System::getProperties": "Sys",
+		"java.lang.System::setProperties": "Sys",
+		"java.lang.System::getProperty": "Sys",
+		"java.lang.System::setProperty": "Sys",
+		"java.lang.System::clearProperty": "Sys",
+		"java.lang.System::getenv": "Sys",
     "java.nio.file.FileSystem::getFileStores": "FileRead"
   }
 }
