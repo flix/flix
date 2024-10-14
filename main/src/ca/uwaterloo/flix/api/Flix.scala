@@ -522,11 +522,12 @@ class Flix {
       (_, regionErrors) = Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper).withSoftFailures(regionErrors)
       (_, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterPredDeps <- PredDeps.run(afterEntryPoint).withSoftFailures(instanceErrors)
-      afterStratifier <- Stratifier.run(afterPredDeps)
+      afterPredDeps = PredDeps.run(afterEntryPoint)
+      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
       (_, patMatchErrors) = PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(patMatchErrors)
-      afterSafety <- Safety.run(afterRedundancy)
+      afterRedundancy <- Redundancy.run(afterStratifier).withSoftFailures(instanceErrors).withSoftFailures(stratificationErrors).withSoftFailures(patMatchErrors)
+      (_, safetyErrors) = Safety.run(afterRedundancy)
+      output <- Validation.toSuccessOrSoftFailure(afterRedundancy, safetyErrors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -538,7 +539,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      afterSafety
+      output
     }
 
     // Shutdown fork-join thread pool.
