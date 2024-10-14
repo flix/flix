@@ -2279,7 +2279,7 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedQName, ResolutionError] = {
+  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedQName, ResolutionError] = {
     // first look in the local env
     val resolutions = tryLookupName(qname, env, ns0, root)
 
@@ -2295,13 +2295,17 @@ object Resolver {
         if (isDefAccessible(defn, ns0)) {
           Validation.success(ResolvedQName.Def(defn))
         } else {
-          Validation.toSoftFailure(ResolvedQName.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
+          val error = ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc)
+          sctx.errors.add(error)
+          Validation.success(ResolvedQName.Def(defn))
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
           Validation.success(ResolvedQName.Sig(sig))
         } else {
-          Validation.toSoftFailure(ResolvedQName.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
+          val error = ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc)
+          sctx.errors.add(error)
+          Validation.success(ResolvedQName.Sig(sig))
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
@@ -2316,8 +2320,9 @@ object Resolver {
       case Resolution.LocalDef(sym, fparams) :: _ => Validation.success(ResolvedQName.LocalDef(sym, fparams))
       case Resolution.Var(sym) :: _ => Validation.success(ResolvedQName.Var(sym))
       case _ =>
-        val e = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
-        Validation.toSoftFailure(ResolvedQName.Error(e), e)
+        val error = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        sctx.errors.add(error)
+        Validation.success(ResolvedQName.Error(error))
     }
   }
 
