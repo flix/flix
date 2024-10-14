@@ -21,14 +21,9 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 object SymUse {
 
   /**
-    * Represents a use of an effect sym.
+    * Represents a use of an associated type sym.
     */
-  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of an effect operation sym.
-    */
-  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
+  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
   /**
     * Represents a use of an enum case sym.
@@ -36,9 +31,26 @@ object SymUse {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
-    * Represents a use of a struct field sym.
+    * Represents a use of a defn sym.
     */
-  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
+  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of an effect sym.
+    */
+  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a LocalDef sym.
+    */
+  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation) {
+    if (sym.boundBy != BoundBy.LocalDef) throw ca.uwaterloo.flix.util.InternalCompilerException(s"$sym is not a local def", loc)
+  }
+
+  /**
+    * Represents a use of an effect operation sym.
+    */
+  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
 
   /**
     * Represents a use of a restrictable enum case sym.
@@ -51,30 +63,18 @@ object SymUse {
   case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
 
   /**
-    * Represents a use of a defn sym.
-    */
-  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of a LocalDef sym.
-    */
-  case class LocalDefSymUse(sym: Symbol.VarSym, loc: SourceLocation) {
-    if (sym.boundBy != BoundBy.LocalDef) throw ca.uwaterloo.flix.util.InternalCompilerException(s"$sym is not a local def", loc)
-  }
-
-  /**
     * Represents a use of a sig sym.
     */
   case class SigSymUse(sym: Symbol.SigSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a struct field sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a class sym.
     */
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of an associated type sym.
-    */
-  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
 }
