@@ -920,7 +920,9 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        case ResolvedQName.Error(err) =>
+          sctx.errors.add(err)
+          Validation.success(ResolvedAst.Expr.Error(err))
       }
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
