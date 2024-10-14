@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.Validation.mapN
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -51,36 +50,50 @@ object Deriver {
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
-
-    mapN(derivedInstances) {
-      instances =>
-        val newInstances = instances.flatten.foldLeft(root.instances) {
-          case (acc, inst) =>
-            val accInsts = acc.getOrElse(inst.trt.sym, Nil)
-            acc + (inst.trt.sym -> (inst :: accInsts))
-        }
-        root.copy(instances = newInstances)
-    }.withSoftFailures(sctx.errors.asScala)
+    val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
+    val newInstances = derivedInstances.foldLeft(root.instances) {
+      case (acc, inst) =>
+        val accInsts = acc.getOrElse(inst.trt.sym, Nil)
+        acc + (inst.trt.sym -> (inst :: accInsts))
+    }
+    Validation.toSuccessOrSoftFailure(root.copy(instances = newInstances), sctx.errors.asScala)
   }(DebugValidation())
 
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
+  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
-      val instanceVals = Validation.traverse(derives.traits) {
-        case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
-        case Ast.Derivation(sym, loc) if sym == EqSym => Validation.success(Some(mkEqInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == OrderSym => Validation.success(Some(mkOrderInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == ToStringSym => Validation.success(Some(mkToStringInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == HashSym => Validation.success(Some(mkHashInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == SendableSym => Validation.success(Some(mkSendableInstance(enum0, loc, root)))
-        case Ast.Derivation(sym, loc) if sym == CoerceSym => mkCoerceInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, DerivableSyms, loc))
+      derives.traits.flatMap {
+        case Ast.Derivation(traitSym, loc) if cases.isEmpty =>
+          val error = DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc)
+          sctx.errors.add(error)
+          None
+
+        case Ast.Derivation(sym, loc) if sym == EqSym =>
+          Some(mkEqInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == OrderSym =>
+          Some(mkOrderInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == ToStringSym =>
+          Some(mkToStringInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == HashSym =>
+          Some(mkHashInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == SendableSym =>
+          Some(mkSendableInstance(enum0, loc, root))
+
+        case Ast.Derivation(sym, loc) if sym == CoerceSym =>
+          mkCoerceInstance(enum0, loc, root)
+
+        case Ast.Derivation(sym, loc) =>
+          val error = DerivationError.IllegalDerivation(sym, DerivableSyms, loc)
+          sctx.errors.add(error)
+          None
       }
-      mapN(instanceVals)(_.flatten)
   }
 
   /**
@@ -779,7 +792,7 @@ object Deriver {
     *   }
     * }}}
     */
-  private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[Option[KindedAst.Instance], DerivationError] = enum0 match {
+  private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, sym, _, _, cases, tpe, _) =>
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
@@ -804,7 +817,7 @@ object Deriver {
 
         val defn = KindedAst.Def(coerceDefSym, spec, exp, loc)
 
-        Validation.success(Some(KindedAst.Instance(
+        Some(KindedAst.Instance(
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
@@ -815,9 +828,11 @@ object Deriver {
           assocs = List(out),
           ns = Name.RootNS,
           loc = loc
-        )))
+        ))
       } else {
-        Validation.toSoftFailure(None, DerivationError.IllegalNonSingletonCoerce(sym, loc))
+        val error = DerivationError.IllegalNonSingletonCoerce(sym, loc)
+        sctx.errors.add(error)
+        None
       }
   }
 

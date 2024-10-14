@@ -96,7 +96,7 @@ object Lexer {
   /**
    * Run the lexer on multiple `Source`s in parallel.
    */
-  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Source, Array[Token]], CompilationMessage] =
+  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Source, Array[Token]], LexerError] =
     flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
@@ -105,17 +105,22 @@ object Lexer {
       val staleByDecreasingSize = stale.keys.toList.sortBy(s => -s.data.length)
 
       // Lex each stale source file in parallel.
-      val results = ParOps.parMap(staleByDecreasingSize)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
+      val (results, errors) = ParOps.parMap(staleByDecreasingSize) {
+        src =>
+          val (tokens, errors) = lex(src)
+          val fuzzedTokens = fuzz(tokens)
+          (src -> fuzzedTokens, errors)
+      }.unzip
 
       // Construct a map from each source to its tokens.
-      val reused = fresh.map(m => Validation.success(m))
-      mapN(sequence(results ++ reused))(_.toMap)
+      val all = results ++ fresh
+      Validation.toSuccessOrSoftFailure(all.toMap, errors.flatten.toList)
     }(DebugValidation()(DebugNoOp()))
 
   /**
    * Lexes a single source (file) into an array of tokens.
    */
-  def lex(src: Source): Validation[Array[Token], CompilationMessage] = {
+  def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
       whitespace()
@@ -133,7 +138,7 @@ object Lexer {
       case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
 
-    Validation.toSuccessOrSoftFailure(s.tokens.toArray, errors)
+    (s.tokens.toArray, errors.toList)
   }
 
   /**
@@ -1129,3 +1134,4 @@ object Lexer {
     copy
   }
 }
+
