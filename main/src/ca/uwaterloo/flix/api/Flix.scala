@@ -631,9 +631,9 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
+  def phase[A](phaseName: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = PhaseTime(phaseName, 0)
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "", sample = false)
@@ -651,7 +651,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, r)(this)
+      d.emit(phaseName, r)(this)
     }
 
     // Return the result computed by the phase.
