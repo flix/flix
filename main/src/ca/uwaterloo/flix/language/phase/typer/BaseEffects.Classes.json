@@ -5,6 +5,10 @@
     "java.lang.ProcessHandle": "Exec",
     "java.lang.reflect.Method": "Sys",
     "java.lang.Thread": "Exec",
-    "java.net.Socket": "Net"
+    "java.net.Socket": "Net",
+    "java.net.ServerSocket": "Net",
+    "java.net.DatagramSocket": "Net",
+    "java.net.MulticastSocket": "Net",
+    "java.net.Authenticator": "Net"
   }
 }
