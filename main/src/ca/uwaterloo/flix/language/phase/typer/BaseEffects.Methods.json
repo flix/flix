@@ -38,6 +38,8 @@
     "java.net.InetAddress::getByName": "Net",
     "java.net.InetAddress::getAllByName": "Net",
     "java.net.ProxySelector::getDefault": "Net",
-    "java.net.ProxySelector::setDefault": "Net"
+    "java.net.ProxySelector::setDefault": "Net",
+    "java.net.ResponseCache::getDefault": "Net",
+    "java.net.ResponseCache::setDefault": "Net"
   }
 }
