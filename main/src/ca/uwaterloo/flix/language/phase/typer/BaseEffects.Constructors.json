@@ -1,6 +1,7 @@
 {
   "constructors": {
     "java.net.URL": "Net",
-    "java.lang.ClassLoader": "Sys"
+    "java.lang.ClassLoader": "Sys",
+    "java.net.InetSocketAddress": "Net"
   }
 }
