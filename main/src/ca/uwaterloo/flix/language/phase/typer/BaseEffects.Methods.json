@@ -30,6 +30,10 @@
     "java.lang.System::runFinalization": "Sys",
     "java.lang.System::load": ["FileRead", "Exec"],
     "java.lang.System::loadLibrary": ["FileRead", "Exec"],
-    "java.nio.file.FileSystem::getFileStores": "FileRead"
+    "java.nio.file.FileSystem::getFileStores": "FileRead",
+    "java.net.CookieHandler::getDefault": "Net",
+    "java.net.CookieHandler::setDefault": "Net",
+    "java.net.HttpURLConnection::setRequestMethod": "Net",
+    "java.net.HttpURLConnection::setFollowRedirects": "Net"
   }
 }
