@@ -135,16 +135,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Map#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///

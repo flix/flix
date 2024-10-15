@@ -133,16 +133,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("DelayList(", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-            }, l);
-        StringBuilder.appendString!(")", sb);
-        StringBuilder.toString(sb)
+        "DelayList(" + (DelayList.iterator(rc, l) |> Iterator.join(", ")) + ")"
     }
 
     ///
