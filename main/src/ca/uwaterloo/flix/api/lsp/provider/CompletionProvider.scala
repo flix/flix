@@ -209,13 +209,11 @@ object CompletionProvider {
     errorsAt(uri, pos, errors).map({
       // We can have multiple errors, so we rank them, and pick the highest priority.
       case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
       case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
-      case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
