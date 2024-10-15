@@ -4,6 +4,7 @@
     "java.lang.ProcessBuilder": "Exec",
     "java.lang.ProcessHandle": "Exec",
     "java.lang.reflect.Method": "Sys",
-    "java.lang.Thread": "Exec"
+    "java.lang.Thread": "Exec",
+    "java.net.Socket": "Net"
   }
 }
