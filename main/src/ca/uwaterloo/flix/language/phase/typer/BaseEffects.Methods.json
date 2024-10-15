@@ -34,6 +34,10 @@
     "java.net.CookieHandler::getDefault": "Net",
     "java.net.CookieHandler::setDefault": "Net",
     "java.net.HttpURLConnection::setRequestMethod": "Net",
-    "java.net.HttpURLConnection::setFollowRedirects": "Net"
+    "java.net.HttpURLConnection::setFollowRedirects": "Net",
+    "java.net.InetAddress::getByName": "Net",
+    "java.net.InetAddress::getAllByName": "Net",
+    "java.net.ProxySelector::getDefault": "Net",
+    "java.net.ProxySelector::setDefault": "Net"
   }
 }
