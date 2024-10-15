@@ -39,6 +39,7 @@ object Symbol {
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
 
   /**
     * Returns `true` if the given effect symbol is a base effect.
@@ -51,6 +52,7 @@ object Symbol {
     case Net => true
     case NonDet => true
     case Sys => true
+    case Env => true
     case _ => false
   }
 
@@ -67,6 +69,7 @@ object Symbol {
     case "Net" => Net
     case "NonDet" => NonDet
     case "Sys" => Sys
+    case "Env" => Env
     case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
   }
 
