@@ -100,7 +100,7 @@ instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
-        "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(" ,")) + "}"
+        "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 
