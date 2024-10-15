@@ -53,7 +53,7 @@ object CompletionProvider {
         // We were able to compute the completion context. Compute suggestions.
         val sctx = getSyntacticContext(uri, pos, currentErrors)
         val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, index, root)
-        val semanticCompletions =  getSemanticCompletions(ctx, currentErrors)(flix, index, root)
+        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(flix, index, root)
         val completions = syntacticCompletions ++ semanticCompletions
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
         ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
