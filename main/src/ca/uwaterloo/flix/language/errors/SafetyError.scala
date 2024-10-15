@@ -23,7 +23,7 @@ object SafetyError {
    *
    * @param loc  the source location of the forbidden operation.
    */
-  case class Forbidden(ctx: SecurityContext, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = "Operation not permitted"
 
     override def message(formatter: Formatter): String = {
@@ -193,6 +193,42 @@ object SafetyError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal method effect in a new expression.
+    *
+    * @param eff the illegal effect.
+    * @param loc the source location of the method.
+    */
+  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Illegal method effect"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a base effect.
+         |
+         |${code(loc, "illegal effect.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal effect in a spawn expression.
+    *
+    * @param eff the illegal effect.
+    * @param loc the source location of the spawn.
+    */
+  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Illegal spawn effect"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a base effect.
+         |
+         |${code(loc, "illegal effect.")}
+         |""".stripMargin
+    }
   }
 
   /**

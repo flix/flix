@@ -235,67 +235,67 @@ mod TestDebug {
 
     @test
     def testDebug01(): Bool =
-        debug(1) == 1
+        dbg(1) == 1
 
     @test
     def testDebug02(): Bool =
-        debug("hey") == "hey"
+        dbg("hey") == "hey"
 
     @test
     def testDebug03(): Bool =
-        debug('a') == 'a'
+        dbg('a') == 'a'
 
     @test
     def testDebug04(): Bool =
-        debug(x -> x + 1)(1) == 2
+        dbg(x -> x + 1)(1) == 2
 
     @test
     def testDebug05(): Bool =
-        match debug(Poly.This('s')) {
+        match dbg(Poly.This('s')) {
             case Poly.This(x) => x == 's' case _ => false
         }
 
     @test
     def testDebugBang01(): Bool =
-        debug!(1) == 1
+        dbg!(1) == 1
 
     @test
     def testDebugBang02(): Bool =
-        debug!("hey") == "hey"
+        dbg!("hey") == "hey"
 
     @test
     def testDebugBang03(): Bool =
-        debug!('a') == 'a'
+        dbg!('a') == 'a'
 
     @test
     def testDebugBang04(): Bool =
-        debug!(x -> x + 1)(1) == 2
+        dbg!(x -> x + 1)(1) == 2
 
     @test
     def testDebugBang05(): Bool =
-        match debug!(Poly.This('s')) {
+        match dbg!(Poly.This('s')) {
             case Poly.This(x) => x == 's' case _ => false
         }
 
     @test
     def testDebugBangBang01(): Bool =
-        debug!!(1) == 1
+        dbg!!(1) == 1
 
     @test
     def testDebugBangBang02(): Bool =
-        debug!!("hey") == "hey"
+        dbg!!("hey") == "hey"
 
     @test
     def testDebugBangBang03(): Bool =
-        debug!!('a') == 'a'
+        dbg!!('a') == 'a'
 
     @test
     def testDebugBangBang04(): Bool =
-        debug!!(x -> x + 1)(1) == 2
+        dbg!!(x -> x + 1)(1) == 2
 
     @test
     def testDebugBangBang05(): Bool =
-        match debug!!(Poly.This('s')) {
+        match dbg!!(Poly.This('s')) {
             case Poly.This(x) => x == 's' case _ => false
         }
 

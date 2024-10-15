@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
@@ -357,8 +356,8 @@ object Monomorpher {
     val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
         val ops = ops0.map {
-          case LoweredAst.Op(sym, spec) =>
-            MonoAst.Op(sym, visitEffectOpSpec(spec, empty))
+          case LoweredAst.Op(sym, spec, loc) =>
+            MonoAst.Op(sym, visitEffectOpSpec(spec, empty), loc)
         }
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
@@ -393,12 +392,12 @@ object Monomorpher {
     * they have no variables - so the substitution can be empty.
     */
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
-    case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, loc) =>
+    case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _) =>
       val fparams = fparams0.map {
         case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
           MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
       }
-      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff), loc)
+      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff))
   }
 
   /**
@@ -421,10 +420,9 @@ object Monomorpher {
       fparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
-      subst(spec0.eff),
-      spec0.loc
+      subst(spec0.eff)
     )
-    val specializedDefn = MonoAst.Def(freshSym, spec, specializedExp)
+    val specializedDefn = MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
 
     // Save the specialized function.
     ctx.putSpecializedDef(freshSym, specializedDefn)
@@ -445,10 +443,6 @@ object Monomorpher {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Sig(sym, tpe, loc) =>
-      val newSym = specializeSigSym(sym, subst(tpe))
-      MonoAst.Expr.Sig(newSym, subst(tpe), loc)
-
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, subst(tpe), loc)
 
@@ -457,35 +451,50 @@ object Monomorpher {
       val e = visitExp(exp, env0 ++ env1, subst)
       MonoAst.Expr.Lambda(p, e, subst(tpe), loc)
 
-    case LoweredAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      val es = exps.map(visitExp(_, env0, subst))
-      e match {
-        case MonoAst.Expr.Sig(sym, itpe, _) => MonoAst.Expr.ApplyDef(sym, es, itpe, subst(tpe), subst(eff), loc)
-        case _ => MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
-      }
-
-    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc2) =>
-      val it = subst(itpe)
-      val newSym = specializeDefSym(sym, it)
-      val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc2)
-
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-      // Generate a fresh symbol for the let-bound variable.
-      val freshSym = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+    case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyClo(e, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val it = subst(itpe)
+      val newSym = specializeDefSym(sym, it)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+      val it = subst(itpe)
+      val newSym = specializeSigSym(sym, it)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val newSym = env0(sym)
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+
+    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Let(freshSym, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      // Generate a fresh symbol for the let-bound variable.
+      val freshSym = Symbol.freshVarSym(sym)
+      val env1 = env0 + (sym -> freshSym)
+      val (fps, env2) = specializeFormalParams(fparams, subst)
+      val e1 = visitExp(exp1, env1 ++ env2, subst)
+      val e2 = visitExp(exp2, env1, subst)
+      val t = subst(tpe)
+      val ef = subst(eff)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -546,7 +555,7 @@ object Monomorpher {
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match
 
@@ -687,7 +696,7 @@ object Monomorpher {
       // Case 1: An instance implementation exists. Use it.
       case (_, defn :: Nil) => specializeDef(defn, tpe)
       // Case 2: No instance implementation, but a default implementation exists. Use it.
-      case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl), tpe)
+      case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl, sig.loc), tpe)
       // Case 3: Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // Case 4: No matching defs and no default. Should have been caught previously.
@@ -698,8 +707,8 @@ object Monomorpher {
   /**
     * Converts a signature with an implementation into the equivalent definition.
     */
-  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr): LoweredAst.Def = {
-    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp)
+  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr, loc: SourceLocation): LoweredAst.Def = {
+    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp, loc)
   }
 
   /**

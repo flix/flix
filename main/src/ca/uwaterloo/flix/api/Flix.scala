@@ -504,27 +504,31 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    val (sources, _) = Reader.run(getInputs, knownClassesAndInterfaces)
+
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
+      afterReader <- Validation.success(sources) // This is required for Scala to desugar the for-comprehension correctly. Will be removed once Validation is gone.
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-      afterNamer <- Namer.run(afterDesugar)
-      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
-      afterDeriver <- Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      (afterNamer, namerErrors) = Namer.run(afterDesugar)
+      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet).withSoftFailures(namerErrors)
+      (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
       _ = EffectVerifier.run(afterTyper)
-      _ <- Regions.run(afterTyper)
-      afterEntryPoint <- EntryPoint.run(afterTyper)
-      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterPredDeps <- PredDeps.run(afterEntryPoint)
-      afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterPatMatch)
-      afterSafety <- Safety.run(afterRedundancy)
+      (_, regionErrors) = Regions.run(afterTyper)
+      (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterTyper)
+      (_, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterPredDeps = PredDeps.run(afterEntryPoint)
+      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+      (_, patMatchErrors) = PatMatch.run(afterStratifier)
+      redundancyErrors = Redundancy.run(afterStratifier)
+      (_, safetyErrors) = Safety.run(afterStratifier)
+      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      output <- Validation.toSuccessOrSoftFailure(afterStratifier, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -536,7 +540,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      afterSafety
+      output
     }
 
     // Shutdown fork-join thread pool.
@@ -610,6 +614,36 @@ class Flix {
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+    // Initialize the phase time object.
+    currentPhase = PhaseTime(phase, 0)
+
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
+
+    // Measure the execution time.
+    val t = System.nanoTime()
+    val (root, errs) = f
+    val e = System.nanoTime() - t
+
+    // Update the phase time.
+    currentPhase = currentPhase.copy(time = e)
+
+    // And add it to the list of executed phases.
+    phaseTimers += currentPhase
+
+    if (this.options.xprintphases) {
+      d.emit(phase, root)(this)
+    }
+
+    // Return the result computed by the phase.
+    (root, errs)
   }
 
   /**

@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object RecordConstraintSolver {
 
   /**
-    * Unifies the two given record types.
+    * Unifies the two given record row types.
     */
   def solve(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): ResolutionResult = (tpe1, tpe2) match {
 
@@ -47,25 +47,27 @@ object RecordConstraintSolver {
     case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
       ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
 
-    // If labels match, then we compare the label types and rest of the record.
+    // If labels match, then we compare the label types and rest of the row.
     //
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       ResolutionResult.constraints(List(Equality(t1, t2, prov), Equality(rest1, rest2, prov)), progress = true)
 
-    // If labels do not match, then we pivot the right record to make them match.
+    // If labels do not match, then we pivot the right row to make them match.
     //
     //        ρ₂ ~~{ℓ : τ₁}~~> { ℓ : τ₃ | ρ₃ } ; S
     // -------------------------------------------------
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
-    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), _, _), r2) =>
+    case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), rest1, _), r2) =>
       pivot(r2, label, t1, r1.typeVars.map(_.sym), renv) match {
-        case Some((newRow, subst)) =>
-          ResolutionResult(subst, List(Equality(r1, newRow, prov)), progress = true)
+        case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
+          ResolutionResult(subst, List(Equality(t1, t3, prov), Equality(rest1, rest3, prov)), progress = true)
 
         case None =>
           ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
+
+        case Some((t, _)) => throw InternalCompilerException("unexpected result from pivot: " + t, t.loc)
       }
 
     // If nothing matches, we give up and return the constraints as we got them.
@@ -79,7 +81,7 @@ object RecordConstraintSolver {
     */
   private def pivot(row: Type, hdLabel: Name.Label, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym], renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Substitution)] = row match {
 
-    // If head labels match, then there is nothing to do. We return the same record.
+    // If head labels match, then there is nothing to do. We return the same row.
     //
     // -------------------------------------------
     // { ℓ : τ₁ | ρ } ~~{ℓ : τ₂}~~> { ℓ : τ₁ | ρ }
@@ -99,10 +101,10 @@ object RecordConstraintSolver {
           val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), loc), tpe, loc), rest, loc), loc)
           (newRow, subst)
 
-        case _ => throw InternalCompilerException("unexpected non-record", loc)
+        case _ => throw InternalCompilerException("unexpected non-row", loc)
       }
 
-    // If we have a variable, then we can map it to a fresh record type with the selected label at the head.
+    // If we have a variable, then we can map it to a fresh row type with the selected label at the head.
     //
     //     β fresh, α ∉ fv(ρ)
     // ----------------------------------------------------
@@ -113,7 +115,7 @@ object RecordConstraintSolver {
       val subst = Substitution.singleton(sym, newRow)
       Some((newRow, subst))
 
-    // If no rule matches, then we cannot pivot this record type.
+    // If no rule matches, then we cannot pivot this row type.
     case _ => None
   }
 }

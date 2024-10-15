@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
@@ -58,7 +59,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseNew("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
@@ -79,8 +80,9 @@ object Kinder {
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
     val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
-    Validation.success(newRoot).withSoftFailures(sctx.errors.asScala)
-  }(DebugValidation())
+
+    (newRoot, sctx.errors.asScala.toList)
+  }
 
   /**
     * Performs kinding on the given enum.
@@ -255,35 +257,35 @@ object Kinder {
     * Performs kinding on the given def under the given kind environment.
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
-    case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
+    case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
-      KindedAst.Def(sym, spec, exp)
+      KindedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
   private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Sig = sig0 match {
-    case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
+    case ResolvedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
       val exp = exp0.map(visitExp(_, kenv, taenv, henv, root)(Scope.Top, sctx, flix))
-      KindedAst.Sig(sym, spec, exp)
+      KindedAst.Sig(sym, spec, exp, loc)
   }
 
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
   private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
-    case ResolvedAst.Declaration.Op(sym, spec0) =>
+    case ResolvedAst.Declaration.Op(sym, spec0, loc) =>
       val kenv = inferSpec(spec0, KindEnv.empty, taenv, root)
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
-      KindedAst.Op(sym, spec)
+      KindedAst.Op(sym, spec, loc)
   }
 
   /**
@@ -292,7 +294,7 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
@@ -302,7 +304,7 @@ object Kinder {
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -335,10 +337,6 @@ object Kinder {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Sig(sym, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.Sig(sym, tvar, loc)
-
     case ResolvedAst.Expr.Hole(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
@@ -362,19 +360,33 @@ object Kinder {
     case ResolvedAst.Expr.Cst(cst, loc) =>
       KindedAst.Expr.Cst(cst, loc)
 
-    case ResolvedAst.Expr.Apply(exp0, exps0, loc) =>
+    case ResolvedAst.Expr.ApplyClo(exp0, exps0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
+      KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps0, loc2) =>
+    case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+
+    case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val arrowTvar = Type.freshVar(Kind.Star, loc.asSynthetic) // use loc of symuse
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
+
+    case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+      KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
@@ -407,15 +419,18 @@ object Kinder {
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Discard(exp, loc)
 
-    case ResolvedAst.Expr.Let(sym, mod, exp10, exp20, loc) =>
+    case ResolvedAst.Expr.Let(sym, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
+      KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
-    case ResolvedAst.Expr.LetRec(sym, ann, mod, exp10, exp20, loc) =>
-      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+    case ResolvedAst.Expr.LocalDef(sym, fparams0, exp10, exp20, loc) =>
+      val fparams = fparams0.map(visitFormalParam(_, kenv0, taenv, root))
+      val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, taenv, root))
+      val kenv1 = kenv0 ++ KindEnv.merge(fparamKenvs)
+      val exp1 = visitExp(exp10, kenv1, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
+      KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
 
     case ResolvedAst.Expr.Region(tpe, loc) =>
       KindedAst.Expr.Region(tpe, loc)
@@ -782,8 +797,9 @@ object Kinder {
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
     case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
+      val kenv = inferType(tpe0, Kind.Star, kenv0, taenv, root)
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)
       KindedAst.TypeMatchRule(sym, tpe, exp)
@@ -1282,7 +1298,7 @@ object Kinder {
     * as in the case of a trait type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
       val fparamKenvs = fparams.map(inferFormalParam(_, kenv, taenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, taenv, root)).toList
@@ -1475,7 +1491,7 @@ object Kinder {
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
-    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       // first get the kenv from the declared tparams
       val kenv1 = getKindEnvFromTypeParams(tparams0)
 
