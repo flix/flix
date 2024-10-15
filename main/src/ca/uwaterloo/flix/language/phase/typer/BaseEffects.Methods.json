@@ -40,6 +40,7 @@
     "java.net.ProxySelector::getDefault": "Net",
     "java.net.ProxySelector::setDefault": "Net",
     "java.net.ResponseCache::getDefault": "Net",
-    "java.net.ResponseCache::setDefault": "Net"
+    "java.net.ResponseCache::setDefault": "Net",
+    "java.net.SocketPermission::add": "Net"
   }
 }
