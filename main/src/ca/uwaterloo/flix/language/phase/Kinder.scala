@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
@@ -366,12 +367,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps0, loc2) =>
+    case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
@@ -380,12 +381,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps0, loc2) =>
+    case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
