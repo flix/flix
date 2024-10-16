@@ -3239,22 +3239,25 @@ object Resolver {
     //
     // Check if the definition is marked public.
     //
-    if (enum0.mod.isPublic)
-      return Validation.success(enum0)
+    val isPublic = enum0.mod.isPublic
 
     //
     // Check if the enum is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = enum0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(enum0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The enum is not accessible.
-    //
-    val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
-    sctx.errors.add(error)
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The enum is not accessible.
+      //
+      val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
+
     Validation.success(enum0)
   }
 
