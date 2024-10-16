@@ -2517,7 +2517,7 @@ object Resolver {
         // Disambiguate type.
         case typeName =>
           lookupType(qname, env, ns0, root) match {
-            case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
+            case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
             case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
@@ -2534,7 +2534,7 @@ object Resolver {
       case NamedAst.Type.Ambiguous(qname, loc) =>
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
-          case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
+          case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
           case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
           case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
@@ -3235,7 +3235,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  private def checkEnumIsAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
@@ -3257,8 +3257,6 @@ object Resolver {
       val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
       sctx.errors.add(error)
     }
-
-    Validation.success(enum0)
   }
 
   /**
@@ -3331,10 +3329,10 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] =
-    mapN(getEnumIfAccessible(enum0, ns0, loc)) {
-      case enum0 => mkEnum(enum0.sym, loc)
-    }
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkEnumIsAccessible(enum0, ns0, loc)
+    mkEnum(enum0.sym, loc)
+  }
 
   /**
     * Successfully returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
