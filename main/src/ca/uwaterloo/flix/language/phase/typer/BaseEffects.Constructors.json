@@ -1,5 +1,5 @@
 {
   "constructors": {
-    "java.net.URL": "Net"
+    "java.net.InetSocketAddress": "Net"
   }
 }

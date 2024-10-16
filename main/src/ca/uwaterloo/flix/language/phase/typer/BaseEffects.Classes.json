@@ -3,6 +3,22 @@
     "java.lang.Process": "Exec",
     "java.lang.ProcessBuilder": "Exec",
     "java.lang.ProcessHandle": "Exec",
-    "java.lang.reflect.Method": "Sys"
+    "java.lang.reflect.Method": "Sys",
+    "java.net.Socket": "Net",
+    "java.net.ServerSocket": "Net",
+    "java.net.DatagramSocket": "Net",
+    "java.net.MulticastSocket": "Net",
+    "java.net.Authenticator": "Net",
+    "java.net.HttpURLConnection": "Net",
+    "java.net.NetMulticastSocket": "Net",
+    "java.net.NetworkInterface": "Net",
+    "java.net.ProxySelector": "Net",
+    "java.net.ResponseCache": "Net",
+    "java.net.URL": "Net",
+    "java.net.URLClassLoader": ["Net", "Sys"],
+    "java.net.URLConnection": "Net",
+    "java.net.URLStreamHandler": "Net",
+    "java.net.spi.InetAddressResolverProvider": "Net",
+    "java.net.spi.URLStreamHandlerProvider": "Net"
   }
 }
