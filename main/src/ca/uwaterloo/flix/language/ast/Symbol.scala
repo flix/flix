@@ -32,6 +32,7 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
@@ -39,12 +40,12 @@ object Symbol {
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
-  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
 
   /**
     * Returns `true` if the given effect symbol is a base effect.
     */
   def isBaseEff(sym: EffectSym): Boolean = sym match {
+    case Env => true
     case Exec => true
     case FileRead => true
     case FileWrite => true
@@ -52,7 +53,6 @@ object Symbol {
     case Net => true
     case NonDet => true
     case Sys => true
-    case Env => true
     case _ => false
   }
 
@@ -62,6 +62,7 @@ object Symbol {
     * The String must be a valid name of a base effect.
     */
   def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Env" => Env
     case "Exec" => Exec
     case "FileRead" => FileRead
     case "FileWrite" => FileWrite
@@ -69,7 +70,6 @@ object Symbol {
     case "Net" => Net
     case "NonDet" => NonDet
     case "Sys" => Sys
-    case "Env" => Env
     case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
   }
 
