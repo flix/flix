@@ -2336,14 +2336,13 @@ object Resolver {
 
     opOpt match {
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: Nil =>
-        if (isOpAccessible(op, ns0)) {
-          Validation.success(op)
-        } else {
+        if (!isOpAccessible(op, ns0)) {
           val error = ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc)
           sctx.errors.add(error)
-          Validation.success(op)
         }
-      case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
+        Validation.success(op)
+      case _ =>
+        Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
   }
 
