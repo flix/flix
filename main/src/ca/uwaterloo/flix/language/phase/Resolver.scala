@@ -2518,7 +2518,7 @@ object Resolver {
             case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
             case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
-            case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
+            case TypeLookupResult.AssocType(assoc) => Validation.success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
               val error = ResolutionError.UndefinedType(qname, ns0, loc)
               sctx.errors.add(error)
@@ -2535,7 +2535,7 @@ object Resolver {
           case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
           case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
-          case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
+          case TypeLookupResult.AssocType(assoc) => Validation.success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
             val error = ResolutionError.UndefinedType(qname, ns0, loc)
             sctx.errors.add(error)
@@ -3386,28 +3386,23 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether the given associated type `assoc0` it is accessible from the given namespace `ns0`.
     *
     * An associated type is accessible from a namespace `ns0` if:
     *
     * (a) its trait is marked public, or
     * (b) the trait is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
-    Validation.success(assoc0) // TODO ASSOC-TYPES check class accessibility
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): NamedAst.Declaration.AssocTypeSig = {
+    assoc0 // TODO ASSOC-TYPES check class accessibility
   }
 
   /**
-    * Successfully returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     */
-  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    mapN(getAssocTypeIfAccessible(assoc0, ns0, loc)) {
-      assoc => mkUnappliedAssocType(assoc0.sym, loc)
-    }
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): UnkindedType = {
+    getAssocTypeIfAccessible(assoc0, ns0, loc)
+    mkUnappliedAssocType(assoc0.sym, loc)
   }
 
   /**
