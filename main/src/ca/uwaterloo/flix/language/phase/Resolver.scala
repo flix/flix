@@ -1329,11 +1329,10 @@ object Resolver {
                   flatMapN(opVal, fparamsVal) {
                     case (o, fp) =>
                       val env = env0 ++ mkFormalParamEnv(fp)
-                      // ignore the continuation for checking arity
-                      val arityVal = checkOpArity(o, fp.length - 1, ident.loc)
+                      checkOpArity(o, fp.length - 1, ident.loc)
                       val bodyVal = resolveExp(body, env)
-                      mapN(arityVal, bodyVal) {
-                        case (_, b) =>
+                      mapN(bodyVal) {
+                        case b =>
                           val opUse = OpSymUse(o.sym, ident.loc)
                           ResolvedAst.HandlerRule(opUse, fp, b)
                       }
@@ -1351,13 +1350,11 @@ object Resolver {
     case NamedAst.Expr.Do(op, exps, loc) =>
       val opVal = lookupOp(op, env0, ns0, root)
       val expsVal = traverse(exps)(resolveExp(_, env0))
-      flatMapN(opVal, expsVal) {
+      mapN(opVal, expsVal) {
         case (o, es) =>
-          mapN(checkOpArity(o, exps.length, loc)) {
-            case _ =>
-              val opUse = OpSymUse(o.sym, op.loc)
-              ResolvedAst.Expr.Do(opUse, es, loc)
-          }
+          checkOpArity(o, exps.length, loc)
+          val opUse = OpSymUse(o.sym, op.loc)
+          ResolvedAst.Expr.Do(opUse, es, loc)
       }
 
     case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
@@ -3999,13 +3996,10 @@ object Resolver {
   /**
     * Checks that the operator's arity matches the number of arguments given.
     */
-  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Validation[Unit, ResolutionError] = {
-    if (op.spec.fparams.length == numArgs) {
-      Validation.success(())
-    } else {
+  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    if (op.spec.fparams.length != numArgs) {
       val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
       sctx.errors.add(error)
-      Validation.success(())
     }
   }
 
