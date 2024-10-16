@@ -3999,11 +3999,13 @@ object Resolver {
   /**
     * Checks that the operator's arity matches the number of arguments given.
     */
-  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation): Validation[Unit, ResolutionError] = {
+  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Validation[Unit, ResolutionError] = {
     if (op.spec.fparams.length == numArgs) {
       Validation.success(())
     } else {
-      Validation.toSoftFailure((), ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc))
+      val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
+      sctx.errors.add(error)
+      Validation.success(())
     }
   }
 
