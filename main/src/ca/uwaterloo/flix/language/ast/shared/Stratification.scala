@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.Name
 
-
 object Stratification {
   /**
     * Represents the empty stratification.
