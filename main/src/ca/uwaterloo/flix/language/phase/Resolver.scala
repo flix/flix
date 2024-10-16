@@ -2331,7 +2331,7 @@ object Resolver {
   /**
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupOp(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Op, ResolutionError] = {
+  private def lookupOp(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Op, ResolutionError] = {
     val opOpt = tryLookupName(qname, env, ns0, root)
 
     opOpt match {
@@ -2339,7 +2339,9 @@ object Resolver {
         if (isOpAccessible(op, ns0)) {
           Validation.success(op)
         } else {
-          Validation.toSoftFailure(op, ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
+          val error = ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc)
+          sctx.errors.add(error)
+          Validation.success(op)
         }
       case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
