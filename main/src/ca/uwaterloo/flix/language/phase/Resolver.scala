@@ -1303,12 +1303,11 @@ object Resolver {
     case NamedAst.Expr.Without(exp, eff, loc) =>
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
-          flatMapN(resolveExp(exp, env0)) {
-            case e => mapN(getEffectIfAccessible(decl, ns0, eff.loc)) {
-              case decl =>
-                val effUse = EffectSymUse(decl.sym, eff.loc)
-                ResolvedAst.Expr.Without(e, effUse, loc)
-            }
+          checkEffectIsAccessible(decl, ns0, eff.loc)
+          val effUse = EffectSymUse(decl.sym, eff.loc)
+          val expVal = resolveExp(exp, env0)
+          mapN(expVal) {
+            case e => ResolvedAst.Expr.Without(e, effUse, loc)
           }
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -1318,12 +1317,14 @@ object Resolver {
     case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
-          flatMapN(getEffectIfAccessible(decl, ns0, eff.loc), resolveExp(exp, env0)) {
-            case (f, e) =>
-              val effUse = EffectSymUse(f.sym, eff.loc)
+          checkEffectIsAccessible(decl, ns0, eff.loc)
+          val expVal = resolveExp(exp, env0)
+          flatMapN(expVal) {
+            case e =>
+              val effUse = EffectSymUse(decl.sym, eff.loc)
               val rulesVal = traverse(rules) {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
-                  val opVal = findOpInEffect(ident, f)
+                  val opVal = findOpInEffect(ident, decl)
                   val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
                   flatMapN(opVal, fparamsVal) {
                     case (o, fp) =>
@@ -2518,7 +2519,7 @@ object Resolver {
             case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
             case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
-            case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, loc)
+            case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
             case TypeLookupResult.NotFound =>
@@ -2535,7 +2536,7 @@ object Resolver {
           case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
           case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
-          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, loc)
+          case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
           case TypeLookupResult.NotFound =>
@@ -3419,36 +3420,35 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether the given `eff0` is accessible from the given namespace `ns0`.
     *
     * An effect is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getEffectIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
+  private def checkEffectIsAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
-    // Check if the effect is marked public.
+    // Check if the definition is marked public.
     //
-    if (eff0.mod.isPublic)
-      return Validation.success(eff0)
+    val isPublic = eff0.mod.isPublic
 
     //
     // Check if the effect is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = eff0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(eff0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The effect is not accessible.
-    //
-    val error = ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc)
-    sctx.errors.add(error)
-    Validation.success(eff0)
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The effect is not accessible.
+      //
+      val error = ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
   /**
@@ -3456,10 +3456,9 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] = {
-    mapN(getEffectIfAccessible(eff0, ns0, loc)) {
-      alias => mkEffect(alias.sym, loc)
-    }
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkEffectIsAccessible(eff0, ns0, loc)
+    mkEffect(eff0.sym, loc)
   }
 
   /**
