@@ -2482,9 +2482,10 @@ object Resolver {
       case NamedAst.Type.Var(ident, loc) =>
         lookupTypeVar(ident, wildness, env) match {
           case Result.Ok(sym) => Validation.success(UnkindedType.Var(sym, loc))
-          case Result.Err(e) =>
+          case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
-            Validation.toSoftFailure(UnkindedType.Error(loc), e)
+            sctx.errors.add(error)
+            Validation.success(UnkindedType.Error(loc))
         }
 
       case NamedAst.Type.Unit(loc) => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
