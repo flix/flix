@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -50,7 +51,7 @@ object ResolvedAst {
 
     case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Ast.TraitSymUse, tpe: UnkindedType, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: UnkindedType, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation) extends Declaration
 
@@ -72,7 +73,7 @@ object ResolvedAst {
 
     case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[UnkindedType], loc: SourceLocation) extends Declaration
 
-    case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: Ast.AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
@@ -93,7 +94,7 @@ object ResolvedAst {
 
     case class HoleWithExp(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class OpenAs(symUse: Ast.RestrictableEnumSymUse, exp: Expr, loc: SourceLocation) extends Expr
+    case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -101,11 +102,11 @@ object ResolvedAst {
 
     case class ApplyClo(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(symUse: Ast.LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: Ast.SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -134,9 +135,9 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class Tag(sym: Ast.CaseSymUse, exp: Expr, loc: SourceLocation) extends Expr
+    case class Tag(sym: CaseSymUse, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -158,11 +159,11 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Ast.StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, exps: List[(StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(e: Expr, sym: Ast.StructFieldSymUse, loc: SourceLocation) extends Expr
+    case class StructGet(e: Expr, sym: StructFieldSymUse, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: StructFieldSymUse, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -180,15 +181,15 @@ object ResolvedAst {
 
     case class UncheckedMaskingCast(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Ast.EffectSymUse, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, eff: EffectSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, eff: EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class Do(op: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor2(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -262,7 +263,7 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(sym: CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -288,7 +289,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
+    case class Tag(sym: RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
@@ -340,7 +341,7 @@ object ResolvedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

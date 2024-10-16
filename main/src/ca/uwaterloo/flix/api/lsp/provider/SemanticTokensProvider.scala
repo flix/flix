@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -330,7 +331,7 @@ object SemanticTokensProvider {
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
-    case Expr.OpenAs(Ast.RestrictableEnumSymUse(_, loc), exp, _, _) =>
+    case Expr.OpenAs(RestrictableEnumSymUse(_, loc), exp, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -346,19 +347,19 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
-    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(_, loc), exps, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
@@ -423,11 +424,11 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.Tag(CaseSymUse(_, loc), exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(RestrictableCaseSymUse(_, loc), exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -640,7 +641,7 @@ object SemanticTokensProvider {
 
     case Pattern.Cst(_, _, _) => Iterator.empty
 
-    case Pattern.Tag(Ast.CaseSymUse(_, loc), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(_, loc), pat, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitPat(pat)
 
@@ -665,7 +666,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given pattern `pat0`.
     */
   private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
-    case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
+    case RestrictableChoosePattern.Tag(RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
       val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
       val ts = pat1.iterator.flatMap {
         case RestrictableChoosePattern.Wild(_, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))

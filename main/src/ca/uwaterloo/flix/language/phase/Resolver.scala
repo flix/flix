@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -469,7 +470,7 @@ object Resolver {
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
-                  val traitUse = Ast.TraitSymUse(trt.sym, trt0.loc)
+                  val traitUse = TraitSymUse(trt.sym, trt0.loc)
                   ResolvedAst.Declaration.Instance(doc, ann, mod, traitUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
           }
@@ -697,7 +698,7 @@ object Resolver {
             // We recover by introducing a dummy associated type definition.
             val doc = Doc(Nil, loc)
             val mod = Modifiers.Empty
-            val use = Ast.AssocTypeSymUse(ascSym, loc)
+            val use = AssocTypeSymUse(ascSym, loc)
             val arg = targ
             val tpe = UnkindedType.Error(loc)
             val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
@@ -732,7 +733,7 @@ object Resolver {
       }
       mapN(symVal, argVal, tpeVal) {
         case (sym, arg, tpe) =>
-          val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
+          val symUse = AssocTypeSymUse(sym, ident.loc)
           ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
       }
   }
@@ -812,7 +813,7 @@ object Resolver {
         }
       }
 
-      mapN(lookupQName(qname, env0, ns0, root)) {
+      val exp = lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
@@ -821,9 +822,10 @@ object Resolver {
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
+      Validation.success(exp)
 
     case NamedAst.Expr.Open(name, loc) =>
-      mapN(lookupQName(name, env0, ns0, root)) {
+      val exp = lookupQName(name, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
@@ -832,12 +834,13 @@ object Resolver {
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
+      Validation.success(exp)
 
     case NamedAst.Expr.OpenAs(name, exp, loc) =>
       val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
       val eVal = resolveExp(exp, env0)
       mapN(enumVal, eVal) {
-        case (enum0, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
+        case (enum0, e) => ResolvedAst.Expr.OpenAs(RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
       }
 
     case NamedAst.Expr.Hole(nameOpt, loc) =>
@@ -898,7 +901,7 @@ object Resolver {
         }
       }
 
-      flatMapN(lookupQName(qname, env0, ns0, root)) {
+      lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
@@ -911,7 +914,7 @@ object Resolver {
       }
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
-      flatMapN(lookupQName(qname, env0, ns0, root)) {
+      lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
@@ -1049,7 +1052,7 @@ object Resolver {
                 case NamedAst.RestrictableChoosePattern.Error(loc) => ResolvedAst.RestrictableChoosePattern.Error(loc)
               }
               mapN(tagVal) {
-                case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
+                case tag => ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
               }
             case NamedAst.RestrictableChoosePattern.Error(loc) => Validation.success(ResolvedAst.RestrictableChoosePattern.Error(loc))
           }
@@ -1150,7 +1153,7 @@ object Resolver {
                   val eVal = resolveExp(e, env0)
                   val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
                   val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
-                  val fieldSymUse = Ast.StructFieldSymUse(fieldSym, f.loc)
+                  val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
                   mapN(eVal) {
                     case e => (fieldSymUse, e)
                   }
@@ -1189,7 +1192,7 @@ object Resolver {
         case Result.Ok(field) =>
           val eVal = resolveExp(e, env0)
           val idx = field.sym.idx
-          val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
+          val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
           }
@@ -1204,7 +1207,7 @@ object Resolver {
           val e1Val = resolveExp(e1, env0)
           val e2Val = resolveExp(e2, env0)
           val idx = field.sym.idx
-          val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
+          val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
             sctx.errors.add(error)
@@ -1306,7 +1309,7 @@ object Resolver {
           flatMapN(resolveExp(exp, env0)) {
             case e => mapN(getEffectIfAccessible(decl, ns0, eff.loc)) {
               case decl =>
-                val effUse = Ast.EffectSymUse(decl.sym, eff.loc)
+                val effUse = EffectSymUse(decl.sym, eff.loc)
                 ResolvedAst.Expr.Without(e, effUse, loc)
             }
           }
@@ -1320,7 +1323,7 @@ object Resolver {
         case Result.Ok(decl) =>
           flatMapN(getEffectIfAccessible(decl, ns0, eff.loc), resolveExp(exp, env0)) {
             case (f, e) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
+              val effUse = EffectSymUse(f.sym, eff.loc)
               val rulesVal = traverse(rules) {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
                   val opVal = findOpInEffect(ident, f)
@@ -1333,7 +1336,7 @@ object Resolver {
                       val bodyVal = resolveExp(body, env)
                       mapN(arityVal, bodyVal) {
                         case (_, b) =>
-                          val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                          val opUse = OpSymUse(o.sym, ident.loc)
                           ResolvedAst.HandlerRule(opUse, fp, b)
                       }
                   }
@@ -1354,7 +1357,7 @@ object Resolver {
         case (o, es) =>
           mapN(checkOpArity(o, exps.length, loc)) {
             case _ =>
-              val opUse = Ast.OpSymUse(o.sym, op.loc)
+              val opUse = OpSymUse(o.sym, op.loc)
               ResolvedAst.Expr.Do(opUse, es, loc)
           }
       }
@@ -1661,7 +1664,7 @@ object Resolver {
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
       val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
-      ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, loc), e, loc)
+      ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -1676,7 +1679,7 @@ object Resolver {
       val varExp = ResolvedAst.Expr.Var(freshVar, loc)
 
       // Construct the tag expression on the fresh symbol expression.
-      val tagExp = ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, loc), varExp, loc)
+      val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expressions.
       ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
@@ -1691,7 +1694,7 @@ object Resolver {
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
       val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
-      ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
+      ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -1706,7 +1709,7 @@ object Resolver {
       val varExp = ResolvedAst.Expr.Var(freshVar, loc)
 
       // Construct the tag expression on the fresh symbol expression.
-      val tagExp = ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
+      val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
       // Assemble the lambda expressions.
       ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
@@ -1765,7 +1768,7 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1781,7 +1784,7 @@ object Resolver {
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
     }
   }
@@ -1792,7 +1795,7 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1808,7 +1811,7 @@ object Resolver {
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sig.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }
@@ -1819,7 +1822,7 @@ object Resolver {
     *   - `loop ===> x -> y -> loop(x, y)`
     */
   private def visitLocalDef(sym: Symbol.VarSym, arity: Int, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, arity, Nil, loc.asSynthetic)
   }
 
@@ -1835,7 +1838,7 @@ object Resolver {
   private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
         visitApplyFull(base, arity, es, outerLoc)
     }
   }
@@ -1848,11 +1851,11 @@ object Resolver {
     mapN(esVal) {
       // Case 1: one expression. No tuple.
       case e :: Nil =>
-        ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, innerLoc), e, outerLoc)
+        ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), e, outerLoc)
       // Case 2: multiple expressions. Make them a tuple
       case es =>
         val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
-        ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+        ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
     }
   }
 
@@ -1864,11 +1867,11 @@ object Resolver {
     mapN(esVal) {
       // Case 1: one expression. No tuple.
       case e :: Nil =>
-        ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, isOpen, outerLoc)
+        ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), e, isOpen, outerLoc)
       // Case 2: multiple expressions. Make them a tuple
       case es =>
         val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
-        ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, isOpen, outerLoc)
+        ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), exp, isOpen, outerLoc)
     }
   }
 
@@ -1923,7 +1926,7 @@ object Resolver {
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
             val p = visit(pat)
-            ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)
             ResolvedAst.Pattern.Error(loc)
@@ -1971,7 +1974,7 @@ object Resolver {
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
             val p = visit(pat)
-            ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)
             ResolvedAst.Pattern.Error(loc)
@@ -2232,18 +2235,26 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  private def lookupTraitForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTraitForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
     } match {
       case Some(trt) =>
         getTraitAccessibility(trt, ns0) match {
-          case TraitAccessibility.Accessible => Validation.success(trt)
-          case TraitAccessibility.Sealed => Validation.toSoftFailure(trt, ResolutionError.SealedTrait(trt.sym, ns0, qname.loc))
-          case TraitAccessibility.Inaccessible => Validation.toSoftFailure(trt, ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc))
+          case TraitAccessibility.Accessible =>
+            Validation.success(trt)
+          case TraitAccessibility.Sealed =>
+            val error = ResolutionError.SealedTrait(trt.sym, ns0, qname.loc)
+            sctx.errors.add(error)
+            Validation.success(trt)
+          case TraitAccessibility.Inaccessible =>
+            val error = ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc)
+            sctx.errors.add(error)
+            Validation.success(trt)
         }
-      case None => Validation.toHardFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+      case None =>
+        Validation.toHardFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
     }
   }
 
@@ -2270,7 +2281,7 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedQName, ResolutionError] = {
+  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedQName = {
     // first look in the local env
     val resolutions = tryLookupName(qname, env, ns0, root)
 
@@ -2284,31 +2295,36 @@ object Resolver {
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
-          Validation.success(ResolvedQName.Def(defn))
+          ResolvedQName.Def(defn)
         } else {
-          Validation.toSoftFailure(ResolvedQName.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
+          val error = ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc)
+          sctx.errors.add(error)
+          ResolvedQName.Def(defn)
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
-          Validation.success(ResolvedQName.Sig(sig))
+          ResolvedQName.Sig(sig)
         } else {
-          Validation.toSoftFailure(ResolvedQName.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
+          val error = ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc)
+          sctx.errors.add(error)
+          ResolvedQName.Sig(sig)
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
       //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
-        Validation.success(ResolvedQName.Tag(caze))
+        ResolvedQName.Tag(caze)
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
-        Validation.success(ResolvedQName.RestrictableTag(caze))
+        ResolvedQName.RestrictableTag(caze)
       // TODO NS-REFACTOR check accessibility
-      case Resolution.LocalDef(sym, fparams) :: _ => Validation.success(ResolvedQName.LocalDef(sym, fparams))
-      case Resolution.Var(sym) :: _ => Validation.success(ResolvedQName.Var(sym))
+      case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
+      case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
-        val e = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
-        Validation.toSoftFailure(ResolvedQName.Error(e), e)
+        val error = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        sctx.errors.add(error)
+        ResolvedQName.Error(error)
     }
   }
 

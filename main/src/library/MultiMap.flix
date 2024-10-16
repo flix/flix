@@ -90,17 +90,7 @@ mod MultiMap {
     /// Returns a string representation of `m`.
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let MultiMap(m1) = m;
-        StringBuilder.appendString!("MultiMap#{", sb);
-        Map.forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m1);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "MultiMap#{" + (MultiMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///

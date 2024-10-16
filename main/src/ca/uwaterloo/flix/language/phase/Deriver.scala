@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, SigSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
@@ -137,7 +138,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = Ast.TraitSymUse(eqTraitSym, loc),
+        trt = TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -212,7 +213,7 @@ object Deriver {
       // `x0 == y0`, `x1 == y1`
       val eqs = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
-          KindedAst.Expr.ApplySig(Ast.SigSymUse(eqSym, loc),
+          KindedAst.Expr.ApplySig(SigSymUse(eqSym, loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
@@ -286,7 +287,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = Ast.TraitSymUse(orderTraitSym, loc),
+        trt = TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -324,7 +325,7 @@ object Deriver {
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
         None,
         KindedAst.Expr.ApplySig(
-          Ast.SigSymUse(compareSigSym, loc),
+          SigSymUse(compareSigSym, loc),
           List(
             KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaVarSym, loc),
@@ -394,7 +395,7 @@ object Deriver {
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, _, _, _) =>
-      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
+      val pat = KindedAst.Pattern.Tag(CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
       val exp = KindedAst.Expr.Cst(Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
   }
@@ -420,7 +421,7 @@ object Deriver {
       val compares = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expr.ApplySig(
-            Ast.SigSymUse(compareSigSym, loc),
+            SigSymUse(compareSigSym, loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
@@ -438,7 +439,7 @@ object Deriver {
         */
       def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
         KindedAst.Expr.ApplyDef(
-          Ast.DefSymUse(thenCompareDefSym, loc),
+          DefSymUse(thenCompareDefSym, loc),
           List(
             exp1,
             KindedAst.Expr.Lazy(exp2, loc)
@@ -454,7 +455,7 @@ object Deriver {
       // compare(x0, y0) `thenCompare` lazy compare(x1, y1)
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expr.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expr.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc)
+        case Nil => KindedAst.Expr.Tag(CaseSymUse(equalToSym, loc), KindedAst.Expr.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
@@ -502,7 +503,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = Ast.TraitSymUse(toStringTraitSym, loc),
+        trt = TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -572,7 +573,7 @@ object Deriver {
       val toStrings = varSyms.map {
         varSym =>
           KindedAst.Expr.ApplySig(
-            Ast.SigSymUse(toStringSym, loc),
+            SigSymUse(toStringSym, loc),
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
@@ -637,7 +638,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = Ast.TraitSymUse(hashTraitSym, loc),
+        trt = TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -709,11 +710,11 @@ object Deriver {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
           KindedAst.Expr.ApplyDef(
-            Ast.DefSymUse(combineDefSym, loc),
+            DefSymUse(combineDefSym, loc),
             List(
               acc,
               KindedAst.Expr.ApplySig(
-                Ast.SigSymUse(hashSigSym, loc),
+                SigSymUse(hashSigSym, loc),
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Star, loc),
@@ -760,7 +761,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = Ast.TraitSymUse(sendableTraitSym, loc),
+        trt = TraitSymUse(sendableTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
@@ -804,7 +805,7 @@ object Deriver {
         val out = KindedAst.AssocTypeDef(
           Doc(Nil, loc),
           Modifiers.Empty,
-          Ast.AssocTypeSymUse(outSym, loc),
+          AssocTypeSymUse(outSym, loc),
           tpe,
           outTpe,
           loc
@@ -820,7 +821,7 @@ object Deriver {
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
-          trt = Ast.TraitSymUse(coerceTraitSym, loc),
+          trt = TraitSymUse(coerceTraitSym, loc),
           tpe = tpe,
           tconstrs = Nil,
           defs = List(defn),
@@ -886,7 +887,7 @@ object Deriver {
       // `case C(x0)`
       // Unlike other derivations, we do not unpack tuples
       val varSym = Symbol.freshVarSym("x0", BoundBy.Pattern, loc)
-      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
+      val pat = KindedAst.Pattern.Tag(CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
 
       // the body is just whatever we extracted
       val exp = KindedAst.Expr.Var(varSym, loc)
@@ -954,14 +955,14 @@ object Deriver {
     */
   private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
     unpack(tpe) match {
-      case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
+      case Nil => (KindedAst.Pattern.Tag(CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
       case _ :: Nil =>
         val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
-        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
+        (KindedAst.Pattern.Tag(CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
       case tpes =>
         val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
         val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
+        (KindedAst.Pattern.Tag(CaseSymUse(sym, loc), KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
     }
   }
 
