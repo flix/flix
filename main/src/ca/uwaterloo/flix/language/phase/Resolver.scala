@@ -1008,15 +1008,12 @@ object Resolver {
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.MatchRule(pat, guard, body) =>
-          val pVal = resolvePattern(pat, env0, ns0, root)
-          flatMapN(pVal) {
-            case p =>
-              val env = env0 ++ mkPatternEnv(p)
-              val gVal = traverseOpt(guard)(resolveExp(_, env))
-              val bVal = resolveExp(body, env)
-              mapN(gVal, bVal) {
-                case (g, b) => ResolvedAst.MatchRule(p, g, b)
-              }
+          val p = resolvePattern(pat, env0, ns0, root)
+          val env = env0 ++ mkPatternEnv(p)
+          val gVal = traverseOpt(guard)(resolveExp(_, env))
+          val bVal = resolveExp(body, env)
+          mapN(gVal, bVal) {
+            case (g, b) => ResolvedAst.MatchRule(p, g, b)
           }
       }
 
@@ -1570,16 +1567,13 @@ object Resolver {
 
       val fragsVal = traverse(frags) {
         case NamedAst.ParYieldFragment(pat, e0, l0) =>
-          val pVal = resolvePattern(pat, env0, ns0, root)
-          flatMapN(pVal) {
-            case p =>
-              val patEnv = mkPatternEnv(p)
-              val env = env0 ++ patEnv
-              finalUenv = finalUenv ++ patEnv
-              val e0Val = resolveExp(e0, env)
-              mapN(e0Val) {
-                case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
-              }
+          val p = resolvePattern(pat, env0, ns0, root)
+          val patEnv = mkPatternEnv(p)
+          val env = env0 ++ patEnv
+          finalUenv = finalUenv ++ patEnv
+          val e0Val = resolveExp(e0, env)
+          mapN(e0Val) {
+            case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
           }
       }
 
@@ -1964,49 +1958,46 @@ object Resolver {
   /**
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
-  private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+  private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
 
-    def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+    def visit(p0: NamedAst.Pattern): ResolvedAst.Pattern = p0 match {
       case NamedAst.Pattern.Wild(loc) =>
-        Validation.success(ResolvedAst.Pattern.Wild(loc))
+        ResolvedAst.Pattern.Wild(loc)
 
       case NamedAst.Pattern.Var(sym, loc) =>
-        Validation.success(ResolvedAst.Pattern.Var(sym, loc))
+        ResolvedAst.Pattern.Var(sym, loc)
 
       case NamedAst.Pattern.Cst(cst, loc) =>
-        Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+        ResolvedAst.Pattern.Cst(cst, loc)
 
       case NamedAst.Pattern.Tag(qname, pat, loc) =>
         lookupTag(qname, env, ns0, root) match {
-          case Result.Ok(c) => mapN(visit(pat)) {
-            case p => ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
-          }
-          case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
+          case Result.Ok(c) =>
+            val p = visit(pat)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            ResolvedAst.Pattern.Error(loc)
         }
 
       case NamedAst.Pattern.Tuple(elms, loc) =>
-        val esVal = traverse(elms)(visit)
-        mapN(esVal) {
-          es => ResolvedAst.Pattern.Tuple(es, loc)
-        }
+        val es = elms.map(visit)
+        ResolvedAst.Pattern.Tuple(es, loc)
 
       case NamedAst.Pattern.Record(pats, pat, loc) =>
-        val psVal = traverse(pats) {
+        val ps = pats.map {
           case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
-            mapN(visit(pat1)) {
-              case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
-            }
+            val p = visit(pat1)
+            ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
         }
-        val pVal = visit(pat)
-        mapN(psVal, pVal) {
-          case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
-        }
+        val p = visit(pat)
+        ResolvedAst.Pattern.Record(ps, p, loc)
 
       case NamedAst.Pattern.RecordEmpty(loc) =>
-        Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
+        ResolvedAst.Pattern.RecordEmpty(loc)
 
       case NamedAst.Pattern.Error(loc) =>
-        Validation.success(ResolvedAst.Pattern.Error(loc))
+        ResolvedAst.Pattern.Error(loc)
     }
 
     visit(pat0)
