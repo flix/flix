@@ -2525,7 +2525,9 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
             case TypeLookupResult.NotFound =>
-              Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
+              val error = ResolutionError.UndefinedType(qname, ns0, loc)
+              sctx.errors.add(error)
+              Validation.success(UnkindedType.Error(loc))
           }
       }
 
