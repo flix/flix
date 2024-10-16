@@ -3223,7 +3223,7 @@ object Resolver {
   }
 
   /**
-    * Checks whether `enum0` it is accessible from the given namespace `ns0`.
+    * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
     * An enum is accessible from a namespace `ns0` if:
     *
@@ -3255,9 +3255,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the given `struct0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether `struct0` is accessible from the given namespace `ns0`.
     *
     * A struct is accessible from a namespace `ns0` if:
     *
