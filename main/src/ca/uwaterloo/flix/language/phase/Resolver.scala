@@ -3267,7 +3267,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getStructIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Struct, ResolutionError] = {
+  private def getStructIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Struct, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
@@ -3285,7 +3285,9 @@ object Resolver {
     //
     // The struct is not accessible.
     //
-    Validation.toSoftFailure(struct0, ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc))
+    val error = ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc)
+    sctx.errors.add(error)
+    Validation.success(struct0)
   }
 
 
@@ -3337,7 +3339,7 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
+  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] =
     mapN(getStructIfAccessible(struct0, ns0, loc)) {
       case struct => mkStruct(struct.sym, loc)
     }
