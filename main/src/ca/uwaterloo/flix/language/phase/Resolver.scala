@@ -1144,44 +1144,41 @@ object Resolver {
 
     case NamedAst.Expr.StructNew(name, fields, region, loc) =>
       lookupStruct(name, env0, ns0, root) match {
-
         case Result.Ok(st0) =>
-          flatMapN(getStructIfAccessible(st0, ns0, loc)) {
-            case st =>
-              val fieldsVal = traverse(fields) {
-                case (f, e) =>
-                  val eVal = resolveExp(e, env0)
-                  val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
-                  val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
-                  val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
-                  mapN(eVal) {
-                    case e => (fieldSymUse, e)
-                  }
+          checkStructIsAccessible(st0, ns0, loc)
+          val fieldsVal = traverse(fields) {
+            case (f, e) =>
+              val eVal = resolveExp(e, env0)
+              val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
+              val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
+              val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
+              mapN(eVal) {
+                case e => (fieldSymUse, e)
               }
-              val regionVal = resolveExp(region, env0)
-              val structNew = mapN(fieldsVal, regionVal) {
-                case (fields, region) =>
-                  ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
-              }
-              // Potential errors
-              val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
-              val expectedFieldNames = st.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
-              val extraFields = providedFieldNames.diff(expectedFieldNames)
-              val missingFields = expectedFieldNames.diff(providedFieldNames)
-
-              val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
-              val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
-              val errors0 = extraFieldErrors ++ missingFieldErrors
-              val errors = if (errors0.nonEmpty) {
-                errors0
-              } else if (providedFieldNames != expectedFieldNames) {
-                List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
-              } else {
-                Nil
-              }
-              errors.foreach(sctx.errors.add)
-              structNew
           }
+          val regionVal = resolveExp(region, env0)
+          val structNew = mapN(fieldsVal, regionVal) {
+            case (fields, region) =>
+              ResolvedAst.Expr.StructNew(st0.sym, fields, region, loc)
+          }
+          // Potential errors
+          val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
+          val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
+          val extraFields = providedFieldNames.diff(expectedFieldNames)
+          val missingFields = expectedFieldNames.diff(providedFieldNames)
+
+          val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
+          val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
+          val errors0 = extraFieldErrors ++ missingFieldErrors
+          val errors = if (errors0.nonEmpty) {
+            errors0
+          } else if (providedFieldNames != expectedFieldNames) {
+            List(ResolutionError.IllegalFieldOrderInNew(st0.sym, providedFieldNames, expectedFieldNames, loc))
+          } else {
+            Nil
+          }
+          errors.foreach(sctx.errors.add)
+          structNew
         case Result.Err(error) =>
           sctx.errors.add(error)
           Validation.success(ResolvedAst.Expr.Error(error))
@@ -2518,7 +2515,7 @@ object Resolver {
         case typeName =>
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
-            case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
+            case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
             case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
@@ -2535,7 +2532,7 @@ object Resolver {
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
           case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
-          case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
+          case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
           case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
@@ -3267,27 +3264,28 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getStructIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Struct, ResolutionError] = {
+  private def checkStructIsAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (struct0.mod.isPublic)
-      return Validation.success(struct0)
+    val isPublic = struct0.mod.isPublic
 
     //
     // Check if the struct is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = struct0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(struct0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The struct is not accessible.
-    //
-    val error = ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc)
-    sctx.errors.add(error)
-    Validation.success(struct0)
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The struct is not accessible.
+      //
+      val error = ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
 
@@ -3339,10 +3337,10 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] =
-    mapN(getStructIfAccessible(struct0, ns0, loc)) {
-      case struct => mkStruct(struct.sym, loc)
-    }
+  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkStructIsAccessible(struct0, ns0, loc)
+    mkStruct(struct0.sym, loc)
+  }
 
   /**
     * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
