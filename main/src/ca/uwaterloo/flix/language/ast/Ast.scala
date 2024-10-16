@@ -25,18 +25,6 @@ import java.util.Objects
   */
 object Ast {
 
-  object Stratification {
-    /**
-      * Represents the empty stratification.
-      */
-    val empty: Stratification = Stratification(Map.empty)
-  }
-
-  /**
-    * Represents a stratification that maps every predicate symbol to its stratum.
-    */
-  case class Stratification(m: Map[Name.Pred, Int])
-
   /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
