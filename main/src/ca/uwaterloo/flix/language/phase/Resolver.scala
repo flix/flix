@@ -3226,9 +3226,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether `enum0` it is accessible from the given namespace `ns0`.
     *
     * An enum is accessible from a namespace `ns0` if:
     *
