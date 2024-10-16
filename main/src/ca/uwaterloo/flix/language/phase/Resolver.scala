@@ -2958,7 +2958,9 @@ object Resolver {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
-      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
+        getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+        Validation.success(assoc)
     }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
