@@ -3330,9 +3330,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
     */
   private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
     checkStructIsAccessible(struct0, ns0, loc)
