@@ -3320,9 +3320,7 @@ object Resolver {
 
 
   /**
-    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
   private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
     checkEnumIsAccessible(enum0, ns0, loc)
