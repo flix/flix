@@ -3382,9 +3382,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given type alias `alias0` if it is accessible from the given namespace `ns0`.
     */
   private def getTypeAliasTypeIfAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
     checkTypeAliasIsAccessible(alias0, ns0, loc)
