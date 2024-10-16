@@ -2740,7 +2740,10 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedAssocType(sym, loc))
+          case Nil =>
+            val error = ResolutionError.UnderAppliedAssocType(sym, loc)
+            sctx.errors.add(error)
+            Validation.success(UnkindedType.Error(loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
