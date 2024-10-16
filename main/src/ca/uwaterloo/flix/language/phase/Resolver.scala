@@ -3235,7 +3235,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  private def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
@@ -3253,7 +3253,9 @@ object Resolver {
     //
     // The enum is not accessible.
     //
-    Validation.toSoftFailure(enum0, ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc))
+    val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
+    sctx.errors.add(error)
+    Validation.success(enum0)
   }
 
   /**
@@ -3326,7 +3328,7 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] =
     mapN(getEnumIfAccessible(enum0, ns0, loc)) {
       case enum0 => mkEnum(enum0.sym, loc)
     }
