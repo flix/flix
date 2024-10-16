@@ -2517,7 +2517,7 @@ object Resolver {
             case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
             case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
-            case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
+            case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
@@ -2534,7 +2534,7 @@ object Resolver {
           case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
           case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
           case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
-          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
+          case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
@@ -2573,11 +2573,11 @@ object Resolver {
         // Lookup the type alias.
         flatMapN(lookupTypeAlias(qname, env, ns0, root)) {
           typeAlias =>
-            val tVal = getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
+            val t = getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
             val tsVal = traverse(targs)(visit)
             val rVal = visit(rest)
-            mapN(tVal, tsVal, rVal) {
-              case (t, ts, r) =>
+            mapN(tsVal, rVal) {
+              case (ts, r) =>
                 val app = UnkindedType.mkApply(t, ts, loc)
                 UnkindedType.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
             }
@@ -2947,7 +2947,9 @@ object Resolver {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
-      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
+        checkTypeAliasIsAccessible(alias, ns0, qname.loc)
+        Validation.success(alias)
     }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
@@ -3296,6 +3298,7 @@ object Resolver {
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    * TODO: Refactor this function
     */
   private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
     //
@@ -3303,7 +3306,6 @@ object Resolver {
     //
     if (enum0.mod.isPublic)
       return Validation.success(enum0)
-
 
     //
     // Check if the enum is defined in `ns0` or in a parent of `ns0`.
@@ -3351,36 +3353,35 @@ object Resolver {
     }
 
   /**
-    * Successfully returns the given type alias `alia0` if it is accessible from the given namespace `ns0`.
+    * Checks whether the given type alias `alias0` is accessible from the given namespace `ns0`.
     *
-    * Otherwise fails with a resolution error.
-    *
-    * An enum is accessible from a namespace `ns0` if:
+    * A type alias is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getTypeAliasIfAccessible(alia0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+  private def checkTypeAliasIsAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (alia0.mod.isPublic)
-      return Validation.success(alia0)
+    val isPublic = alias0.mod.isPublic
 
     //
     // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
     //
-    val prefixNs = alia0.sym.namespace
+    val prefixNs = alias0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(alia0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The type alias is not accessible.
-    //
-    val error = ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc)
-    sctx.errors.add(error)
-    Validation.success(alia0)
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The type alias is not accessible.
+      //
+      val error = ResolutionError.InaccessibleTypeAlias(alias0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
   /**
@@ -3388,10 +3389,9 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] = {
-    mapN(getTypeAliasIfAccessible(alia0, ns0, loc)) {
-      alias => mkUnappliedTypeAlias(alias.sym, loc)
-    }
+  private def getTypeAliasTypeIfAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkTypeAliasIsAccessible(alias0, ns0, loc)
+    mkUnappliedTypeAlias(alias0.sym, loc)
   }
 
   /**
