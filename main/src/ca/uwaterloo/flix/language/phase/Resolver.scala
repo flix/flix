@@ -2756,7 +2756,9 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 Validation.success(UnkindedType.mkApply(assoc, targTl, tpe0.loc))
               case _ =>
-                Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
+                val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
+                sctx.errors.add(error)
+                Validation.success(UnkindedType.Error(loc))
             }
         }
 
