@@ -3452,9 +3452,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
     */
   private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
     checkEffectIsAccessible(eff0, ns0, loc)
