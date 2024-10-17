@@ -1,8 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet

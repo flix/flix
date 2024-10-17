@@ -25,16 +25,6 @@ import java.util.Objects
   */
 object Ast {
 
-  /**
-    * Represents that the annotated element is introduced by the class `clazz`.
-    */
-  case class IntroducedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
-
-  /**
-    * Represents that the annotated element is eliminated by the class `clazz`.
-    */
-  case class EliminatedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
-
   case object TraitConstraint {
     /**
       * Represents the head (located class) of a type constraint.

@@ -695,7 +695,7 @@ mod Chain {
             case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), eidentity)
+        loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
 
     ///
