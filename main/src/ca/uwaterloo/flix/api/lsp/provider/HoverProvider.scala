@@ -43,9 +43,6 @@ object HoverProvider {
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
-    case Def(sym, _, _, loc) => hoverDef(sym, loc)
-    case Sig(sym, _, _, loc) => hoverSig(sym, loc)
-    case Op(sym, _, loc) => hoverOp(sym, loc)
     case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
     case _ => mkNotFound(uri, pos)
   }
