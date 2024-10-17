@@ -31,7 +31,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: Scope, tracker: Progress, renv0: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type)(implicit scope: Scope, progress: Progress, renv0: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
@@ -70,7 +70,7 @@ object TypeReduction2 {
 
         // Case 2: One match. Use it.
         case newTpe :: Nil =>
-          tracker.markProgress()
+          progress.markProgress()
           newTpe
 
         // Case 3: Multiple matches. Give back the original type.
@@ -81,15 +81,15 @@ object TypeReduction2 {
     case Type.JvmToType(tpe, loc) =>
       reduce(tpe) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          tracker.markProgress()
+          progress.markProgress()
           Type.getFlixType(constructor.getDeclaringClass)
 
         case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
-          tracker.markProgress()
+          progress.markProgress()
           Type.getFlixType(method.getReturnType)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
-          tracker.markProgress()
+          progress.markProgress()
           Type.getFlixType(field.getType)
 
         case t => Type.JvmToType(t, loc)
@@ -98,11 +98,11 @@ object TypeReduction2 {
     case Type.JvmToEff(tpe, loc) =>
       reduce(tpe) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          tracker.markProgress()
+          progress.markProgress()
           BaseEffects.getConstructorEffs(constructor, loc)
 
         case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
-          tracker.markProgress()
+          progress.markProgress()
           BaseEffects.getMethodEffs(method, loc)
 
         case t => Type.JvmToType(t, loc)
@@ -113,7 +113,7 @@ object TypeReduction2 {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           lookupConstructor(clazz, tpes) match {
             case JavaConstructorResolution.Resolved(constructor) =>
-              tracker.markProgress()
+              progress.markProgress()
               Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
             case _ => unresolved
           }
@@ -121,7 +121,7 @@ object TypeReduction2 {
         case JvmMember.JvmField(tpe, name) =>
           lookupField(tpe, name.name) match {
             case JavaFieldResolution.Resolved(field) =>
-              tracker.markProgress()
+              progress.markProgress()
               Type.Cst(TypeConstructor.JvmField(field), loc)
             case _ => unresolved
           }
@@ -129,7 +129,7 @@ object TypeReduction2 {
         case JvmMember.JvmMethod(tpe, name, tpes) =>
           lookupMethod(tpe, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              tracker.markProgress()
+              progress.markProgress()
               Type.Cst(TypeConstructor.JvmMethod(method), loc)
             case _ => unresolved
           }
@@ -137,7 +137,7 @@ object TypeReduction2 {
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           lookupStaticMethod(clazz, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              tracker.markProgress()
+              progress.markProgress()
               Type.Cst(TypeConstructor.JvmMethod(method), loc)
             case _ => unresolved
           }
