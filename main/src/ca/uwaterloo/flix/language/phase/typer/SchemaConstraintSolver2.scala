@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.{Progress, TypeConstraint2}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.Progress
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 

@@ -30,41 +30,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
   */
 object ConstraintSolver2 {
 
-  sealed trait TypeConstraint2
-
-  object TypeConstraint2 {
-    /**
-      * A constraint indicating the equivalence of two types.
-      * {{{
-      *   tpe1 ~ tpe2
-      * }}}
-      */
-    case class Equality(tpe1: Type, tpe2: Type) extends TypeConstraint2
-
-    /**
-      * A constraint indicating that the given type is a member of the given trait.
-      * {{{
-      *   sym[tpe]
-      * }}}
-      */
-    case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint2
-
-    /**
-      * A constraint indicating that:
-      *   - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
-      *   - the nested constraints all hold
-      *
-      * This constraint arises when exiting a region.
-      * All nested constraints must be resolved before determining the equality of `eff1` and `eff2`,
-      * because the nested constraints influence `eff2`.
-      *
-      * {{{
-      *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
-      * }}}
-      */
-    case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, nested: List[TypeConstraint2]) extends TypeConstraint2
-  }
-
   /**
     * A mutable class used for tracking whether progress has been made.
     */
