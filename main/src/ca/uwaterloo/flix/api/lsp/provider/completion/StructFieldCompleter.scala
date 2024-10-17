@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypeConstructor, TypedAst}
 
 import java.lang.reflect.{Field, Method, Modifier}
 
@@ -30,7 +30,9 @@ object StructFieldCompleter {
       }
       case None => Nil
     }
+    val loc = SourceLocation(true, e.loc.sp2, e.loc.sp2)
     val completions = fields.filter (_.sym.name.startsWith(e.field.name))
-    completions.map(field => Completion.StructFieldCompletion(field.sym.name, e.field.loc, field.tpe))
+    val result = completions.map(field => Completion.StructFieldCompletion(field.sym.name, loc, field.tpe))
+    result
   }
 }
