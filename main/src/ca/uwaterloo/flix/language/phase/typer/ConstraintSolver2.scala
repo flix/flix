@@ -82,59 +82,6 @@ object ConstraintSolver2 {
   }
 
   /**
-    * The substitution tree represents the substitutions that apply to different region scopes.
-    * It is structured as a map rather than a proper tree,
-    * since regions are uniquely identified by their region variable.
-    *
-    * @param root     the substitutions at the top level
-    * @param branches a map from region variables to the substitutions for those regions
-    */
-  case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeVarSym, SubstitutionTree]) {
-
-    /**
-      * Applies this substitution tree to the given type constraint.
-      */
-    def apply(constr: TypeConstraint2): TypeConstraint2 = constr match {
-      case TypeConstraint2.Equality(tpe1, tpe2) => TypeConstraint2.Equality(root(tpe1), root(tpe2))
-      case TypeConstraint2.Trait(sym, tpe) => TypeConstraint2.Trait(sym, root(tpe))
-      case TypeConstraint2.Purification(sym, eff1, eff2, nested) =>
-        // Use the root substitution for the external effects.
-        // Use the appropriate branch substitution for the nested constraints.
-        // MATT what to do if sym not in branches?
-        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply))
-    }
-
-    /**
-      * Composes this substitution tree with the given substitution tree.
-      */
-    def @@(that: SubstitutionTree): SubstitutionTree = that match {
-      case SubstitutionTree(thatRoot, thatBranches) =>
-        val newRoot = root @@ thatRoot
-        val newBranches = MapOps.unionWith(branches, thatBranches)(_ @@ _)
-        SubstitutionTree(newRoot, newBranches)
-    }
-  }
-
-  object SubstitutionTree {
-    /**
-      * The empty substitution tree.
-      */
-    val empty: SubstitutionTree = SubstitutionTree(Substitution.empty, Map.empty)
-
-    /**
-      * Returns a substitution tree mapping one key to one value.
-      */
-    def singleton(key: Symbol.KindedTypeVarSym, value: Type): SubstitutionTree = SubstitutionTree(Substitution.singleton(key, value), Map.empty)
-
-    /**
-      * Returns a substitution tree containing one branch.
-      */
-    def oneBranch(sym: Symbol.KindedTypeVarSym, tree: SubstitutionTree): SubstitutionTree = {
-      SubstitutionTree(Substitution.empty, Map(sym -> tree))
-    }
-  }
-
-  /**
     * Unifies the given type fully, reducing all generated constraints.
     *
     * Returns None if the type are not unifiable.
