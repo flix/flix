@@ -356,7 +356,7 @@ mod Files {
             Iterator.iterate(rc, next)
         } catch {
             case ex: IOException =>
-                Iterator.iterate(rc, constant(Some(Err(Generic(ex.getMessage())))))
+                Iterator.iterate(rc, _ -> checked_ecast(Some(Err(Generic(ex.getMessage())))))
         }
 
     ///
@@ -389,7 +389,7 @@ mod Files {
             Iterator.iterate(rc, next)
         } catch {
             case ex: IOException =>
-                Iterator.iterate(rc, constant(Some(Err(Generic(ex.getMessage())))))
+                Iterator.iterate(rc, _ -> checked_ecast(Some(Err(Generic(ex.getMessage())))))
         }
 
     ///
@@ -481,10 +481,10 @@ mod Files {
                 Iterator.iterate(rc, next)
             } catch {
                 case ex: IOException =>
-                    Iterator.iterate(rc, constant(Some(Err(Generic(ex.getMessage())))))
+                    Iterator.iterate(rc, _ -> checked_ecast(Some(Err(Generic(ex.getMessage())))))
             }
         } else {
-            Iterator.iterate(rc, constant(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
+            Iterator.iterate(rc, _ -> checked_ecast(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
         }
 
     ///

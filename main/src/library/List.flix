@@ -284,7 +284,7 @@ mod List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -343,7 +343,7 @@ mod List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -668,7 +668,7 @@ mod List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -708,7 +708,7 @@ mod List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -969,7 +969,7 @@ mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, eidentity)
+        loop(xs, ys, x -> checked_ecast(x))
 
 
 
@@ -1047,7 +1047,7 @@ mod List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), eidentity)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), x -> checked_ecast(x))
 
     ///
     /// Returns the result of mapping each element and combining the results.
