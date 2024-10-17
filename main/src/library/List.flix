@@ -284,7 +284,7 @@ mod List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
