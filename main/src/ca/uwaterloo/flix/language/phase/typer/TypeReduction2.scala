@@ -42,9 +42,9 @@ object TypeReduction2 {
       val t2 = reduce(tpe2)
       Type.Apply(t1, t2, loc)
 
-    case Type.Alias(cst, args, tpe, loc) => tpe
+    case Type.Alias(_, _, tpe, _) => tpe
 
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), tpe, kind, loc) =>
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), tpe, _, _) =>
 
       // Get all the associated types from the context
       val assocs = eqenv(sym)
