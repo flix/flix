@@ -426,7 +426,7 @@ mod Iterator {
             case Done   => k(s)
 
         };
-        loop(eidentity)
+        loop(x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
