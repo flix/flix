@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -62,16 +63,18 @@ object Summary {
   private def defSummary(defn: TypedAst.Def, isInstance: Boolean): DefSummary = {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
-    DefSummary(fun, eff)
+    val ecasts = countCheckedEcasts(defn.exp)
+    DefSummary(fun, eff, ecasts)
   }
 
   /** Returns a function summary for a signature, if it has implementation */
   private def defSummary(sig: TypedAst.Sig): Option[DefSummary] = sig.exp match {
     case None => None
-    case Some(_) =>
+    case Some(exp) =>
       val fun = FunctionSym.TraitFunWithExp(sig.sym)
       val eff = resEffect(sig.spec.eff)
-      Some(DefSummary(fun, eff))
+      val ecasts = countCheckedEcasts(exp)
+      Some(DefSummary(fun, eff, ecasts))
   }
 
   /** Returns a function summary for every function */
@@ -92,7 +95,8 @@ object Summary {
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs)
+    val ecasts = sum.checkedEcasts
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts)
   }
 
   /** Combines function summaries into file data. */
@@ -158,6 +162,112 @@ object Summary {
     FileData.naiveSum(l.map(_.data))
   }
 
+  private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
+    case Expr.Cst(cst, tpe, loc) => 0
+    case Expr.Var(sym, tpe, loc) => 0
+    case Expr.Hole(sym, tpe, eff, loc) => 0
+    case Expr.HoleWithExp(exp, tpe, eff, loc) => 0
+    case Expr.OpenAs(symUse, exp, tpe, loc) => countCheckedEcasts(exp)
+    case Expr.Use(sym, alias, exp, loc) => countCheckedEcasts(exp)
+    case Expr.Lambda(fparam, exp, tpe, loc) => countCheckedEcasts(exp)
+    case Expr.ApplyClo(exp, exps, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.Unary(sop, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Region(tpe, loc) => 0
+    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Discard(exp, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Match(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+      case TypedAst.MatchRule(pat, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
+    }.sum
+    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+      case TypedAst.TypeMatchRule(sym, tpe, exp) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+      case TypedAst.RestrictableChooseRule(pat, exp) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.Tag(sym, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Tuple(exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.RecordEmpty(tpe, loc) => 0
+    case Expr.RecordSelect(exp, label, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.RecordRestrict(label, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.ArrayLit(exps, exp, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ArrayLength(exp, eff, loc) => countCheckedEcasts(exp)
+    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => countCheckedEcasts(region) + fields.map{
+      case (sym, exp) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.StructGet(exp, sym, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.VectorLit(exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.VectorLength(exp, loc) => countCheckedEcasts(exp)
+    case Expr.Ascribe(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.InstanceOf(exp, clazz, loc) => countCheckedEcasts(exp)
+    case Expr.CheckedCast(CheckedCastType.EffectCast, exp, tpe, eff, loc) => 1 + countCheckedEcasts(exp)
+    case Expr.CheckedCast(CheckedCastType.TypeCast, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Without(exp, effUse, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+      case TypedAst.CatchRule(sym, clazz, exp) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.Throw(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+      case TypedAst.HandlerRule(op, fparams, exp) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.Do(op, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
+    case Expr.GetField(field, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.GetStaticField(field, tpe, eff, loc) => 0
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => methods.map{
+      case TypedAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.GetChannel(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.SelectChannel(rules, default, tpe, eff, loc) => default.map(countCheckedEcasts).sum + rules.map{
+      case TypedAst.SelectChannelRule(sym, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
+    }.sum
+    case Expr.Spawn(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ParYield(frags, exp, tpe, eff, loc) => countCheckedEcasts(exp) + frags.map{
+      case TypedAst.ParYieldFragment(pat, exp, loc) => countCheckedEcasts(exp)
+    }.sum
+    case Expr.Lazy(exp, tpe, loc) => countCheckedEcasts(exp)
+    case Expr.Force(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.map{
+      case TypedAst.Constraint(cparams, head, body, loc) =>
+        (head match {
+          case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) => terms.map(countCheckedEcasts).sum
+        }) + body.map {
+          case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => 0
+          case Body.Functional(outVars, exp, loc) => countCheckedEcasts(exp)
+          case Body.Guard(exp, loc) => countCheckedEcasts(exp)
+        }.sum
+    }.sum
+    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.FixpointSolve(exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Error(m, tpe, eff) => 0
+  }
+
   /**
     * Returns the [[ResEffect]] representation of an effect. It is assumed that effects are written
     * "sensibly", e.g. not `Pure + (ef - ef)` or `not IO`.
@@ -173,7 +283,7 @@ object Summary {
   }
 
   /** debugSrc is just for consistency checking exceptions */
-  private sealed case class FileData(debugSrc: Option[Source], lines: Int, defs: Int, pureDefs: Int, groundNonPureDefs: Int, polyDefs: Int) {
+  private sealed case class FileData(debugSrc: Option[Source], lines: Int, defs: Int, pureDefs: Int, groundNonPureDefs: Int, polyDefs: Int, checkedEcasts: Int) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
@@ -194,7 +304,7 @@ object Summary {
           SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
         )
       }
-      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs)
+      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts)
     }
 
     /**
@@ -202,14 +312,14 @@ object Summary {
       * different files to compute a total of a folder fx.
       */
     def naiveSum(other: FileData): FileData = {
-      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs)
+      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts)
     }
 
-    def toRow: List[String] = List(lines, defs, pureDefs, groundNonPureDefs, polyDefs).map(format)
+    def toRow: List[String] = List(lines, defs, pureDefs, groundNonPureDefs, polyDefs, checkedEcasts).map(format)
   }
 
   private object FileData {
-    val zero: FileData = FileData(None, 0, 0, 0, 0, 0)
+    val zero: FileData = FileData(None, 0, 0, 0, 0, 0, 0)
 
     /**
       * Combines a list of partial FileData from the same file. Line count is
@@ -224,7 +334,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.")
+    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -235,7 +345,7 @@ object Summary {
     def header: List[String] = List("Module") ++ FileData.header
   }
 
-  private sealed case class DefSummary(fun: FunctionSym, eff: ResEffect) {
+  private sealed case class DefSummary(fun: FunctionSym, eff: ResEffect, checkedEcasts: Int) {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
