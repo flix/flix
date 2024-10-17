@@ -15,13 +15,12 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 object Summary {
 
@@ -418,13 +417,13 @@ object Summary {
   class Table() {
 
     /** The rows collected so far */
-    private val rows: ListBuffer[List[String]] = ListBuffer.empty
+    private val rows: mutable.ListBuffer[List[String]] = mutable.ListBuffer.empty
 
     /**
       * Has the length of the longest list in rows. Each integer contains the
       * max length of any string in that column.
       */
-    private val maxLens: ListBuffer[Int] = ListBuffer.empty
+    private val maxLens: mutable.ListBuffer[Int] = mutable.ListBuffer.empty
 
     /** Adds a row to the builder. The rows can have different lengths */
     def addRow(row: List[String]): Unit = insertRow(rows.length, row)
