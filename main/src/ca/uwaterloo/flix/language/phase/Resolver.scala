@@ -3290,36 +3290,35 @@ object Resolver {
 
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
-    * Otherwise fails with a resolution error.
-    *
-    * An enum is accessible from a namespace `ns0` if:
+    * A restrictable enum is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): NamedAst.Declaration.RestrictableEnum = {
+  private def checkRestrictableEnumIsAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (enum0.mod.isPublic)
-      return enum0
+    val isPublic = enum0.mod.isPublic
 
     //
-    // Check if the enum is defined in `ns0` or in a parent of `ns0`.
+    // Check if the restrictable enum is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = enum0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return enum0
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The enum is not accessible.
-    //
-    val error = ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)
-    sctx.errors.add(error)
-    enum0
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The restrictable enum is not accessible.
+      //
+      val error = ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
 
@@ -3343,7 +3342,7 @@ object Resolver {
     * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
   private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    getRestrictableEnumIfAccessible(enum0, ns0, loc)
+    checkRestrictableEnumIsAccessible(enum0, ns0, loc)
     mkRestrictableEnum(enum0.sym, loc)
   }
 
