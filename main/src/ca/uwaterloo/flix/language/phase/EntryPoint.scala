@@ -16,17 +16,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 /**
   * Processes the entry point of the program.
@@ -69,7 +70,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
@@ -83,8 +84,8 @@ object EntryPoint {
       // Case 2: No entry point. Don't touch anything.
       case None => root.copy(reachable = getReachable(root))
     }
-    Validation.toSuccessOrSoftFailure(newRoot, sctx.errors.asScala)
-  }(DebugValidation())
+    (newRoot, sctx.errors.asScala.toList)
+  }
 
   /**
     * Returns all reachable definitions.
@@ -149,37 +150,35 @@ object EntryPoint {
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
-      val optArg = declaredScheme.base.arrowArgTypes match {
+      declaredScheme.base.arrowArgTypes match {
+
         // Case 1: One arg. Ok :)
-        case arg :: Nil => Some(arg)
+        case arg :: Nil =>
+          // Case 1.1: Check that `arg` is the Unit parameter, i.e, `defn: Unit -> XYZ`
+          if (!isUnitParameter(traitEnv, arg)) {
+            val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
+            sctx.errors.add(error)
+          }
+
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ =>
           val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
           sctx.errors.add(error)
-          None
+
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
-
-      // Then check validity of the argument
-      optArg match {
-        // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if isUnitParameter(traitEnv, unitSc, arg) => // TODO ASSOC-TYPES better eqEnv
-
-        // Case 2: Bad arguments. SoftError
-        // Case 3: `arg` was None. SoftError
-        case _ =>
-          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
-          sctx.errors.add(error)
-      }
   }
 
-  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], unitSc: Scheme, arg: Type)(implicit flix: Flix) = {
-    Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty)
+  /**
+    * Returns `true` iff `arg` is the Unit type.
+    */
+  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], arg: Type)(implicit flix: Flix) = {
+    val unitScheme = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
+    Scheme.equal(unitScheme, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
   }
 
   /**
@@ -215,10 +214,10 @@ object EntryPoint {
   }
 
   /**
-    * Returns `true` iff `declaredEff` is not `Pure`, `IO`, `NonDet` or `Sys`
+    * Returns `true` iff `declaredEff` is not `Pure` and contains some non-base effect.
     */
   private def isBadEntryPointEffect(declaredEff: Type) = {
-    declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)
+    declaredEff.effects.exists(sym => !Symbol.isBaseEff(sym))
   }
 
   /**
@@ -244,7 +243,7 @@ object EntryPoint {
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
     val itpe = oldEntryPoint.spec.declaredScheme.base
-    val symUse = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
+    val symUse = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
     val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
     // func()
     val call = TypedAst.Expr.ApplyDef(symUse, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
@@ -253,7 +252,7 @@ object EntryPoint {
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val printTpe = Type.mkArrowWithEffect(itpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
-    val print = TypedAst.Expr.ApplyDef(Ast.DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
+    val print = TypedAst.Expr.ApplyDef(DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 

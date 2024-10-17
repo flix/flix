@@ -112,6 +112,22 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointEff](result)
   }
 
+  test("Test.IllegalEntryPointEff.Main.03") {
+    val input =
+      """
+        |eff Print {
+        |    pub def print(): Unit
+        |}
+        |
+        |def main(): Unit \ Print + IO  =
+        |    do Print.print();
+        |    println("Hello, World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalEntryPointEff](result)
+  }
+
   test("Test.IllegalEntryPointResult.Main.01") {
     val input =
       """
@@ -195,7 +211,61 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.03") {
     val input =
       """
-        |def main(): Unit = ???
+        |def main(): Int64 \ Exec = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.04") {
+    val input =
+      """
+        |def main(): Int64 \ FileRead = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.05") {
+    val input =
+      """
+        |def main(): Int64 \ FileWrite = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.06") {
+    val input =
+      """
+        |def main(): Int64 \ Net = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.07") {
+    val input =
+      """
+        |def main(): Int64 \ NonDet = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.08") {
+    val input =
+      """
+        |def main(): Int64 \ Sys = checked_ecast(42i64)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.09") {
+    val input =
+      """
+        |def main(): Int64 \ Sys + Exec + NonDet = checked_ecast(42i64)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)

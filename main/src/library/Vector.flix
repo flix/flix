@@ -161,19 +161,7 @@ mod Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let first = Ref.fresh(rc, true);
-
-        StringBuilder.appendString!("Vector#{", sb);
-
-        let f = x -> {
-            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
-            StringBuilder.appendString!("${x}", sb)
-        };
-        forEach(f, v);
-
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
     }
 
     ///
@@ -540,7 +528,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -558,7 +546,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -584,7 +572,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
