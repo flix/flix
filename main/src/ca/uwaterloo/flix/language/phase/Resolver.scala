@@ -2514,7 +2514,7 @@ object Resolver {
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
-            case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
+            case TypeLookupResult.RestrictableEnum(enum0) => Validation.success(getRestrictableEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
             case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
@@ -2531,7 +2531,7 @@ object Resolver {
         lookupType(qname, env, ns0, root) match {
           case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
           case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
-          case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
+          case TypeLookupResult.RestrictableEnum(enum0) => Validation.success(getRestrictableEnumTypeIfAccessible(enum0, ns0, loc))
           case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
           case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
@@ -3299,12 +3299,12 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+  private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): NamedAst.Declaration.RestrictableEnum = {
     //
     // Check if the definition is marked public.
     //
     if (enum0.mod.isPublic)
-      return Validation.success(enum0)
+      return enum0
 
     //
     // Check if the enum is defined in `ns0` or in a parent of `ns0`.
@@ -3312,13 +3312,14 @@ object Resolver {
     val prefixNs = enum0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return Validation.success(enum0)
+      return enum0
 
     //
     // The enum is not accessible.
     //
     val error = ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)
-    Validation.toSoftFailure(enum0, error)
+    sctx.errors.add(error)
+    enum0
   }
 
 
@@ -3339,14 +3340,12 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
-  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    mapN(getRestrictableEnumIfAccessible(enum0, ns0, loc)) {
-      case enum0 => mkRestrictableEnum(enum0.sym, loc)
-    }
+  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    getRestrictableEnumIfAccessible(enum0, ns0, loc)
+    mkRestrictableEnum(enum0.sym, loc)
+  }
 
   /**
     * Checks whether the given type alias `alias0` is accessible from the given namespace `ns0`.
