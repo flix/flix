@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.printer.*
 import ca.uwaterloo.flix.util.tc.Debug
@@ -32,6 +33,8 @@ object AstPrinter {
   }
 
   implicit object DebugUnit extends DebugNoOp[Unit]
+
+  implicit object DebugErrors extends DebugNoOp[List[CompilationMessage]]
 
   implicit object DebugSyntaxTree extends Debug[SyntaxTree.Root] {
     override def emit(phase: String, root: SyntaxTree.Root)(implicit flix: Flix): Unit = ()
