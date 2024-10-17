@@ -3317,7 +3317,8 @@ object Resolver {
     //
     // The enum is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)) // TODO: Refactor this to be soft failure
+    val error = ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)
+    Validation.toSoftFailure(enum0, error)
   }
 
 
