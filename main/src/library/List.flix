@@ -145,11 +145,10 @@ mod List {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        foreach (x <- l)
-            StringBuilder.appendString!("${x} :: ", sb);
-        StringBuilder.appendString!("Nil", sb);
-        StringBuilder.toString(sb)
+        List.iterator(rc, l)
+            |> Iterator.map(ToString.toString)
+            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+            |> Iterator.join(" :: ")
     }
 
     ///

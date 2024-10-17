@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
 import java.net.BindException
@@ -423,7 +423,7 @@ object Main {
       case "lambdas" => SubEffectLevel.Lambdas
       case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
       case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are 'nothing', 'lambdas', 'lambdas-and-instances', and 'lambdas-and-defs'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {

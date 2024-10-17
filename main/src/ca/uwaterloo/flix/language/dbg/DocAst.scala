@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -24,9 +25,9 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
+  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
   case class Case(sym: Symbol.CaseSym, tpe: Type)
 
@@ -99,7 +100,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
 
@@ -121,11 +122,11 @@ object DocAst {
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
 
-    case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
+    case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
     val Unknown: Expr =
       Meta("unknown exp")
@@ -232,7 +233,7 @@ object DocAst {
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
-    def InstanceOf(d: Expr, clazz: Class[_]): Expr =
+    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
@@ -255,16 +256,16 @@ object DocAst {
     def Without(d: Expr, sym: Symbol.EffectSym): Expr =
       Binary(d, "without", AsIs(sym.toString))
 
-    def Cst(cst: Ast.Constant): Expr =
+    def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(d, ds)
 
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
@@ -284,7 +285,7 @@ object DocAst {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
-    def JavaInvokeConstructor(c: Constructor[_], ds: List[Expr]): Expr = {
+    def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
     }
 
@@ -340,9 +341,9 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
-    case class JvmConstructor(constructor: Constructor[_]) extends Atom
+    case class JvmConstructor(constructor: Constructor[?]) extends Atom
 
     case class JvmMethod(method: Method) extends Atom
 

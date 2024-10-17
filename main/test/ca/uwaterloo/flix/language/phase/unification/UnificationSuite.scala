@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.TestIncremental
+import ca.uwaterloo.flix.language.phase.unification.set.TestSetFormula
 import org.scalatest.Suites
 
 class UnificationSuite extends Suites(
@@ -23,5 +24,6 @@ class UnificationSuite extends Suites(
   new TestBoolFormulaTable,
   new TestFastBoolUnification,
   new TestQMCtoBoolFormula,
-  new TestIncremental
+  new TestIncremental,
+  new TestSetFormula
 )

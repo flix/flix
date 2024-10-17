@@ -22,7 +22,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestFastBoolUnification extends AnyFunSuite with TestUtils {
 
-  import Term._
+  import Term.*
 
   private implicit val defaultLoc: SourceLocation = SourceLocation.Unknown
 

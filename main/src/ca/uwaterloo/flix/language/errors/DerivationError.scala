@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for derivation errors.
   */
-sealed trait DerivationError extends CompilationMessage {
+sealed trait DerivationError extends CompilationMessage with Recoverable {
   val kind: String = "Derivation Error"
 }
 
@@ -40,7 +40,7 @@ object DerivationError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal derivation '${red(sym.name)}'.
          |
          |${code(loc, "Illegal derivation.")}
@@ -48,7 +48,7 @@ object DerivationError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
   }
@@ -64,7 +64,7 @@ object DerivationError {
     def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
@@ -84,7 +84,7 @@ object DerivationError {
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}

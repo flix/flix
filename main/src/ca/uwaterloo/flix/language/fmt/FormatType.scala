@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType.Mode
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 object FormatType {
   /**
@@ -31,10 +31,9 @@ object FormatType {
     * Performs alpha renaming if the rigidity environment is present.
     */
   def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
-    val minimized = TypeMinimization.minimizeType(tpe)
     val renamed = renv match {
-      case None => minimized
-      case Some(env) => alphaRename(minimized, env)
+      case None => tpe
+      case Some(env) => alphaRename(tpe, env)
     }
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }

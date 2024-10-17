@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
 object CodeHinter {
@@ -79,15 +80,7 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc) ++
-        checkExperimental(sym, loc) ++
-        checkParallel(sym, loc) ++
-        checkLazy(sym, loc)
-
-    case Expr.Sig(_, _, _) => Nil
-
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
@@ -100,13 +93,22 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, loc) =>
-      val hints0 = (exp, exps) match {
-        case (Expr.Def(sym, _, _), lambda :: _) =>
-          checkEffect(sym, lambda.tpe, loc)
-        case _ => Nil
-      }
-      hints0 ++ visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
+
+    case Expr.ApplyDef(DefSymUse(sym, loc1), exps, _, _, _, _) =>
+      val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
+      val hints1 = checkDeprecated(sym, loc1) ++
+        checkExperimental(sym, loc1) ++
+        checkParallel(sym, loc1) ++
+        checkLazy(sym, loc1)
+      hints0 ++ hints1 ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -114,10 +116,10 @@ object CodeHinter {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _) => Nil
@@ -185,7 +187,7 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)

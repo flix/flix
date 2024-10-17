@@ -32,15 +32,46 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val Exit: EffectSym = mkEffectSym(Name.RootNS, Ident("Exit", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
-  val Time: EffectSym = mkEffectSym(Name.RootNS, Ident("Time", SourceLocation.Unknown))
+
+  /**
+    * Returns `true` if the given effect symbol is a base effect.
+    */
+  def isBaseEff(sym: EffectSym): Boolean = sym match {
+    case Env => true
+    case Exec => true
+    case FileRead => true
+    case FileWrite => true
+    case IO => true
+    case Net => true
+    case NonDet => true
+    case Sys => true
+    case _ => false
+  }
+
+  /**
+    * Parses the given String `s` into an effect symbol.
+    *
+    * The String must be a valid name of a base effect.
+    */
+  def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Env" => Env
+    case "Exec" => Exec
+    case "FileRead" => FileRead
+    case "FileWrite" => FileWrite
+    case "IO" => IO
+    case "Net" => Net
+    case "NonDet" => NonDet
+    case "Sys" => Sys
+    case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
+  }
 
   /**
     * Returns a fresh def symbol based on the given symbol.
@@ -305,7 +336,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.", loc)
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
     }
 
     /**

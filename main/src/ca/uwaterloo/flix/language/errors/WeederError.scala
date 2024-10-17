@@ -40,7 +40,7 @@ object WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Multiple occurrences of the annotation '${red("@" + name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -51,7 +51,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Remove one of the two annotations."
     })
 
@@ -70,7 +70,7 @@ object WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Multiple declarations of the formal parameter '${red(name)}'.
          |
          |${code(loc1, "the first declaration was here.")}
@@ -81,7 +81,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
     })
 
@@ -100,7 +100,7 @@ object WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Multiple occurrences of the modifier '${red(name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -125,7 +125,7 @@ object WeederError {
     def summary: String = s"struct has duplicate fields"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Struct has duplicate fields
          |
          |${code(loc, "struct declaration has duplicate fields")}
@@ -138,7 +138,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Remove one of the two fields."
     })
   }
@@ -155,7 +155,7 @@ object WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
          |
          |${code(loc1, "the first declaration was here.")}
@@ -166,7 +166,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
     })
 
@@ -183,7 +183,7 @@ object WeederError {
     def summary: String = "A loop must iterate over some collection."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Loop does not iterate over any collection.
          |
          |${code(loc, "Loop does not iterate over any collection.")}
@@ -211,7 +211,7 @@ object WeederError {
     def summary: String = "Empty interpolated expression."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Empty interpolated expression.
          |
          |${code(loc, "empty interpolated expression")}
@@ -220,7 +220,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
     })
 
@@ -235,7 +235,7 @@ object WeederError {
     override def summary: String = "A record pattern must specify at least one field."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected record pattern.
          |
          |${code(loc, "A record pattern must specify at least one field.")}
@@ -255,15 +255,15 @@ object WeederError {
     override def summary: String = "Unexpected annotation on inner function."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unexpected annotation on inner function.
+      import formatter.*
+      s""">> Unexpected annotation on local function.
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
   /**
@@ -275,7 +275,7 @@ object WeederError {
     override def summary: String = "Illegal effect set member."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal effect set member.
          |
          |${code(loc, s"Effect sets may only contain variables and constants.")}
@@ -295,7 +295,7 @@ object WeederError {
     def summary: String = "Unexpected effect type parameters."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected effect type parameters.
          |
          |${code(loc, "unexpected effect type parameters")}
@@ -304,7 +304,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Type parameters are not allowed on effects."
     })
   }
@@ -318,7 +318,7 @@ object WeederError {
     def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected effect. Effect operations may not themselves have effects.
          |
          |${code(loc, "unexpected effect")}
@@ -336,7 +336,7 @@ object WeederError {
     def summary: String = "Unexpected enum format."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected enum format.
          |
          |${code(loc, "unexpected enum format")}
@@ -368,11 +368,11 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Illegal equality constraint."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal equality constraint.
          |
          |${code(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
@@ -393,7 +393,7 @@ object WeederError {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Invalid escape sequence.
          |
          |${code(loc, "invalid escape sequence")}
@@ -402,7 +402,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
     })
   }
@@ -416,7 +416,7 @@ object WeederError {
     def summary: String = "Illegal fixed atom"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal fixed atom. A negative atom is implicitly fixed.
          |
          |${code(loc, "Illegal fixed atom.")}
@@ -433,7 +433,7 @@ object WeederError {
     def summary: String = s"A foreach expression must start with a collection comprehension."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Loop does not start with collection comprehension.
          |
          |${code(loc, "Loop does not start with collection comprehension.")}
@@ -462,7 +462,7 @@ object WeederError {
     def summary: String = s"A forA loop may only contain comprehensions of the form `x <- xs`."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Loop contains bad for-comprehension.
          |
          |${code(loc, "Loop contains bad for-comprehension.")}
@@ -480,7 +480,7 @@ object WeederError {
     def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
          |
          |${code(loc, "unexpected type ascription")}
@@ -498,7 +498,7 @@ object WeederError {
     def summary: String = "Illegal modifier."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal modifier.
          |
          |${code(loc, "illegal modifier.")}
@@ -517,7 +517,7 @@ object WeederError {
     override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Lowercase module name.
          |
          |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
@@ -539,7 +539,7 @@ object WeederError {
     def summary: String = "Illegal null pattern"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal null pattern.
          |
          |${code(loc, "illegal null pattern.")}
@@ -557,7 +557,7 @@ object WeederError {
     def summary: String = s"Declaration must be public: '${ident.name}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Declaration must be public: '${red(ident.name)}'.
          |
          |${code(loc, "illegal private declaration")}
@@ -576,7 +576,7 @@ object WeederError {
     override def summary: String = "A record extension must be either a variable or wildcard."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected record extension pattern.
          |
          |${code(loc, "A record extension must be either a variable or wildcard.")}
@@ -596,7 +596,7 @@ object WeederError {
     def summary: String = "Illegal regex pattern"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal regex pattern.
          |
          |${code(loc, "regex not allowed here.")}
@@ -607,7 +607,7 @@ object WeederError {
       * Returns a formatted string with helpful suggestions.
       */
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
   }
@@ -624,7 +624,7 @@ object WeederError {
     def summary: String = s"Cases of $operationName do not allow guards."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> $summary
          |
          |${code(loc, "Disallowed guard.")}
@@ -641,7 +641,7 @@ object WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal type constraint parameter.
          |
          |${code(loc, "illegal type constraint parameter")}
@@ -650,7 +650,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
     })
 
@@ -667,7 +667,7 @@ object WeederError {
     def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Mismatched alias case.
          |
          |${code(loc, s"The case of '$fromName' does not match the case of '$toName'.")}
@@ -693,7 +693,7 @@ object WeederError {
     override def summary: String = "Unexpected qualified name"
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected qualified name.
          |
          |${code(loc, "illegal qualified name")}
@@ -714,7 +714,7 @@ object WeederError {
     def summary: String = "Malformed, non-single-character literal."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Malformed, non-single-character literal.
          |
          |${code(loc, "non-single-character literal")}
@@ -723,7 +723,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} A character literal must consist of a single character."
     })
 
@@ -738,7 +738,7 @@ object WeederError {
     def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Malformed float.
          |
          |${code(loc, "malformed float.")}
@@ -747,7 +747,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
 
@@ -760,7 +760,7 @@ object WeederError {
     def summary: String = s"Malformed identifier: '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Malformed identifier '${red(name)}'.
          |
          |${code(loc, "illegal identifier")}
@@ -778,7 +778,7 @@ object WeederError {
     def summary: String = "Malformed int."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Malformed int.
          |
          |${code(loc, "malformed int.")}
@@ -787,7 +787,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
 
@@ -803,7 +803,7 @@ object WeederError {
     def summary: String = s"Malformed regular expression."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Malformed regular expression.
          |
          |${code(loc, "malformed regex.")}
@@ -836,7 +836,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
     })
   }
@@ -852,7 +852,7 @@ object WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Mismatched arity: expected: $expected, actual: $actual.
          |
          |${code(loc, "mismatched arity.")}
@@ -869,7 +869,7 @@ object WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Inconsistent type parameters.
          |
          |${code(loc, "inconsistent type parameters")}
@@ -878,7 +878,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
     })
 
@@ -894,7 +894,7 @@ object WeederError {
     def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> The formal parameter '${red(name)}' must have a declared type.
          |
          |${code(loc, "has no declared type.")}
@@ -911,7 +911,7 @@ object WeederError {
     def summary: String = "Type parameter must be annotated with its kind."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Missing kind annotation. The type parameter must be annotated with its kind.
          |
          |${code(loc, "missing kind.")}
@@ -931,7 +931,7 @@ object WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Multiple occurrences of '${red(name)}' in pattern.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -943,7 +943,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"""${underline("Tip:")} You can replace
          |
          |  case (x, x) => ...
@@ -968,7 +968,7 @@ object WeederError {
     override def summary: String = "Non-unary associated type signature."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Associated types must have exactly one parameter, but $n are given here.
          |
          |${code(loc, s"too many parameters")}
@@ -987,7 +987,7 @@ object WeederError {
     def summary: String = "Re-definition of a reserved name."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Re-definition of reserved name '${red(ident.name)}'.
          |
          |${code(loc, "re-definition of a reserved name")}
@@ -996,7 +996,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
@@ -1012,7 +1012,7 @@ object WeederError {
     def summary: String = s"Undefined annotation $name"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Undefined annotation '${red(name)}'.
          |
          |${code(loc, "undefined annotation.")}
@@ -1029,7 +1029,7 @@ object WeederError {
     def summary: String = "Illegal intrinsic"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal intrinsic.
          |
          |${code(loc, "illegal intrinsic.")}
@@ -1047,7 +1047,7 @@ object WeederError {
     def summary: String = s"Unapplied intrinsic '$intrinsic'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unapplied intrinsic '${red(intrinsic)}'.
          |
          |${code(loc, "unapplied intrinsic.")}
@@ -1064,7 +1064,7 @@ object WeederError {
     def summary: String = "Unqualified use."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unqualified use.
          |
          |${code(loc, "unqualified use.")}
@@ -1072,7 +1072,7 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} A use must be qualified: It should have the form `use Foo.bar`"
     })
   }
@@ -1083,13 +1083,13 @@ object WeederError {
     * @param star whether the choose is of the star kind.
     * @param loc  the location where the error occurs.
     */
-  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError with Recoverable {
     private val operationName: String = if (star) "choose*" else "choose"
 
     def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> $summary
          |
          |${code(loc, "Unsupported pattern.")}

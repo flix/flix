@@ -22,6 +22,7 @@ dependencies {
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:33.2.0-jre')
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
 
     // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
@@ -84,6 +85,7 @@ jar {
 
     from('main') {
         include '**/*.flix'
+        include '**/*.json'
         include '**/*.zip'
         include '**/ClassList.txt'
     }

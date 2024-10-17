@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
@@ -47,31 +48,9 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Def(sym, tvar, loc) =>
-        val defn = root.defs(sym)
-        val (tconstrs, econstrs, defTpe, _) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
-        c.unifyType(tvar, defTpe, loc)
-        val constrs = tconstrs.map(_.copy(loc = loc))
-        c.addClassConstraints(tconstrs, loc)
-        econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-        val resTpe = defTpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
-      case Expr.Sig(sym, tvar, loc) =>
-        val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs, econstrs, sigTpe, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
-        c.unifyType(tvar, sigTpe, loc)
-        val constrs = tconstrs.map(_.copy(loc = loc))
-        c.addClassConstraints(constrs, loc)
-        econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-        val resTpe = sigTpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
-      case Expr.Hole(_, tpe, _) =>
+      case Expr.Hole(_, tpe, eff, _) =>
         val resTpe = tpe
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
@@ -94,68 +73,64 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Apply(exp, exps, tvar, evar, loc) =>
-        //
-        // Determine if there is a direct call to a Def or Sig.
-        // By treating these as special cases, we can:
-        // - have better error messages (knowing the precise types of the arguments, etc)
-        // - have better performance (we don't generate unnecessary type variables)
-        //
-        val knownTarget = exp match {
-          case KindedAst.Expr.Def(sym, tvar1, loc1) =>
-            // Case 1: Lookup the sym and instantiate its scheme.
-            val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar1, constrs1, econstrs1, declaredType))
+      case Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
+        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
+        val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
+        val (tpe, eff) = visitExp(exp)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+        c.unifyType(tvar, lambdaBodyType, loc)
+        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
-          case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
-            // Case 2: Lookup the sym and instantiate its scheme.
-            val sig = root.traits(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar1, constrs1, econstrs1, declaredType))
+      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+        val defn = root.defs(sym)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc2))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(itvar, declaredType, loc2)
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
-          case _ =>
-            // Case 3: Unknown target.
-            None
-        }
+      case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val defEff = Type.freshVar(Kind.Eff, loc1.asSynthetic)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
+        c.unifyType(actualDefTpe, arrowTvar, loc1)
+        c.expectType(sym.tvar, actualDefTpe, loc1)
+        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
-        knownTarget match {
-          case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
-            //
-            // Special Case: We are applying a Def or Sig and we break apart its declared type.
-            //
-            val declaredEff = declaredType.arrowEffectType
-            val declaredArgumentTypes = declaredType.arrowArgTypes
-            val declaredResultType = declaredType.arrowResultType
-
-            val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-            c.addClassConstraints(constrs1, loc)
-            econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-            c.unifyType(tvar1, declaredType, loc)
-            c.unifyType(tvar, declaredResultType, loc)
-            c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-            val resTpe = tvar
-            val resEff = evar
-            (resTpe, resEff)
-
-          case None =>
-            //
-            // Default Case: Apply.
-            //
-            val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-            val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
-            val (tpe, eff) = visitExp(exp)
-            val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
-            c.unifyType(tvar, lambdaBodyType, loc)
-            c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
-            val resTpe = tvar
-            val resEff = evar
-            (resTpe, resEff)
-        }
+      case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+        val sig = root.traits(sym.trt).sigs(sym)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(itvar, declaredType, loc2)
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
@@ -383,7 +358,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Let(sym, _, exp1, exp2, loc) =>
+      case Expr.Let(sym, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         c.unifyType(sym.tvar, tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -391,13 +366,15 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LetRec(sym, _, _, exp1, exp2, loc) =>
-        // exp1 is known to be a lambda syntactically
+      case Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
-        c.unifyType(sym.tvar, tpe1, exp1.loc)
+        fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
+        val defEff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff1 else Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
+        val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
+        c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
-        val resEff = Type.mkUnion(eff1, eff2, loc)
+        val resEff = eff2
         (resTpe, resEff)
 
       case Expr.Region(tpe, _) =>
@@ -1116,7 +1093,7 @@ object ConstraintGen {
       // Don't need to handle unknown op because resolver would have caught this
       val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
       ops(op.sym) match {
-        case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
+        case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
           val resumptionArgType = opTpe
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
@@ -1261,11 +1238,11 @@ object ConstraintGen {
     * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
-    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
-    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    *   The third element of the return tuple would be `r'`
+    * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
+    * The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)

@@ -41,7 +41,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
 
     val expectedSubst = Substitution.empty
     val expectedEconstrs = List(Ast.EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))
-    val expectedResult: Result[(Substitution, List[Ast.EqualityConstraint]), _] = Ok((expectedSubst, expectedEconstrs))
+    val expectedResult: Result[(Substitution, List[Ast.EqualityConstraint]), ?] = Ok((expectedSubst, expectedEconstrs))
 
     assert(result == expectedResult)
   }

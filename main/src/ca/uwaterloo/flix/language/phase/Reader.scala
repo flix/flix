@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -37,8 +37,8 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
-    flix.phase("Reader") {
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
+    flix.phaseNew("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
@@ -66,8 +66,8 @@ object Reader {
       }
 
       val sources = result.toMap
-      Validation.success(ReadAst.Root(sources, names))
-    }(DebugValidation()(DebugNoOp()))
+      (ReadAst.Root(sources, names), List.empty)
+    }(DebugNoOp())
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.

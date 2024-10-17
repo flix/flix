@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Doc}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -1039,7 +1040,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec, Some(s"def-${esc(defn.sym.name)}"))
+    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1050,7 +1051,7 @@ object HtmlDocumentor {
     */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
-    docSpec(sig.sym.name, sig.spec, Some(s"sig-${esc(sig.sym.name)}"))
+    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${esc(sig.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1061,7 +1062,7 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, Some(s"op-${esc(op.sym.name)}"))
+    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${esc(op.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1071,7 +1072,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1084,7 +1085,7 @@ object HtmlDocumentor {
     docTraitConstraints(spec.tconstrs)
     docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
-    docActions(linkId, spec.loc)
+    docActions(linkId, loc)
     sb.append("</div>")
     docDoc(spec.doc)
   }
@@ -1288,7 +1289,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAnnotations(anns: Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (anns.annotations.isEmpty) {
       return
     }
@@ -1340,7 +1341,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDoc(doc: Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return

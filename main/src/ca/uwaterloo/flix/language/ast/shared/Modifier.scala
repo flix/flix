@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,39 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.language.ast.shared
 
 /**
-  * A simple class to measure the execution time of a function.
+  * A common super-type for modifiers.
   */
-class Timer[T](f: => T) {
+sealed trait Modifier
 
-  // Start the clock.
-  private val b = System.nanoTime()
-
-  // Evaluate the function.
-  private val r = f
-
-  // Stop the clock.
-  private val e = System.nanoTime()
-
-  // Compute the duration.
-  private val d = e - b
+object Modifier {
 
   /**
-    * Returns the result computed by the function `f`.
+    * The lawful modifier.
     */
-  def getResult: T = r
+  case object Lawful extends Modifier
 
   /**
-    * Returns the elapsed time.
+    * The mutable modifier.
     */
-  def getElapsed: Long = d
+
+  case object Mutable extends Modifier
 
   /**
-    * Returns a duration object.
+    * The override modifier.
     */
-  def getDuration: Duration = new Duration(d)
+  case object Override extends Modifier
+
+  /**
+    * The public modifier.
+    */
+  case object Public extends Modifier
+
+  /**
+    * The sealed modifier.
+    */
+  case object Sealed extends Modifier
+
+  /**
+    * The synthetic modifier.
+    */
+  case object Synthetic extends Modifier
 
 }

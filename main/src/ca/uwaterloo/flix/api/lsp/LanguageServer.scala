@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.provider._
+import ca.uwaterloo.flix.api.lsp.provider.*
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -24,15 +24,15 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST.{JString, JValue}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.ParserUtil.ParseException
-import org.json4s._
+import org.json4s.*
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
@@ -107,7 +107,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     *
     * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
     */
-  private var indexingFuture: Future[_] = _
+  private var indexingFuture: Future[?] = _
 
   /**
     * The current compilation errors.
@@ -281,7 +281,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
+      // Find the source of the given URI (which should always exist).
+      val sourceCode = sources(uri)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)

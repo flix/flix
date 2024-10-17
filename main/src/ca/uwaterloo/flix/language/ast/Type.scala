@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 
 import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
@@ -892,7 +891,7 @@ object Type {
   /**
     * Constructs the a native type.
     */
-  def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+  def mkNative(clazz: Class[?], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
 
   /**
     * Constructs a RecordExtend type.
@@ -1191,6 +1190,23 @@ object Type {
   }
 
   /**
+    * Returns true if the given type contains [[TypeConstructor.Error]].
+    */
+  def hasError(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Error(_, _) => true
+      case _ => false
+    }
+    case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasError(tpe)
+    case Type.AssocType(_, arg, _, _) => hasError(arg)
+    case Type.JvmToType(_, _) => false
+    case Type.JvmToEff(_, _) => false
+    case Type.UnresolvedJvmType(_, _) => false
+  }
+
+  /**
     * Returns the Flix Type of a Java Class.
     *
     * Arrays are returned with the [[Type.IO]] region.
@@ -1271,7 +1287,7 @@ object Type {
   /**
     * Returns the type of the given constant.
     */
-  def constantType(cst: Ast.Constant): Type = cst match {
+  def constantType(cst: Constant): Type = cst match {
     case Constant.Unit => Type.Unit
     case Constant.Null => Type.Null
     case Constant.Bool(_) => Type.Bool
