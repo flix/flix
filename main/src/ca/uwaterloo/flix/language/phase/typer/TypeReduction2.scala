@@ -31,7 +31,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: Scope, progress: Progress, renv0: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
@@ -55,10 +55,10 @@ object TypeReduction2 {
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
+          val assocRenv = tpe.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
 
           // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(tpe, assocTpe, renv).map {
+          ConstraintSolver2.fullyUnify(tpe, assocTpe, assocRenv).map {
             case subst => subst(ret)
           }
       }
