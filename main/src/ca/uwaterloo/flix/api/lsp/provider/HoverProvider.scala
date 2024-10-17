@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.Visitor
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.Ast.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Case, Def, Enum, Expr, FormalParam, Op, Root, Sig}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
