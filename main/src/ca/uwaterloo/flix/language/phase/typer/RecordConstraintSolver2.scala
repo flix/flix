@@ -27,26 +27,26 @@ object RecordConstraintSolver2 {
   /**
     * Unifies the two given record row types.
     */
-  def solve(tpe1: Type, tpe2: Type)(implicit scope: Scope, tracker: Progress, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅
     case (t1, t2) if t1 == t2 =>
-      tracker.markProgress()
+      progress.markProgress()
       (Nil, Substitution.empty)
 
     //    α ∉ fv(ρ)
     // ----------------
     // α ~ ρ  =>  {α ↦ ρ}
     case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
-      tracker.markProgress()
+      progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 
     //    α ∉ fv(ρ)
     // ----------------
     //  ρ ~ α  =>  {α ↦ ρ}
     case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
-      tracker.markProgress()
+      progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 
     // If labels match, then we compare the label types and rest of the row.
@@ -54,7 +54,7 @@ object RecordConstraintSolver2 {
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
-      tracker.markProgress()
+      progress.markProgress()
       (List(TypeConstraint.Equality(t1, t2), TypeConstraint.Equality(rest1, rest2)), Substitution.empty)
 
     // If labels do not match, then we pivot the right row to make them match.
@@ -65,7 +65,7 @@ object RecordConstraintSolver2 {
     case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), t1, _), rest1, _), r2) =>
       pivot(r2, label, t1, r1.typeVars.map(_.sym)) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
-          tracker.markProgress()
+          progress.markProgress()
           (List(TypeConstraint.Equality(t1, t3), TypeConstraint.Equality(rest1, rest3)), subst)
 
         case None =>
