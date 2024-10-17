@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
@@ -183,13 +183,13 @@ object Summary {
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Match(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+    case Expr.Match(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.MatchRule(pat, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.TypeMatchRule(sym, tpe, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(pat, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.Tag(sym, exp, tpe, eff, loc) => countCheckedEcasts(exp)
@@ -204,7 +204,7 @@ object Summary {
     case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ArrayLength(exp, eff, loc) => countCheckedEcasts(exp)
     case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => countCheckedEcasts(region) + fields.map{
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => countCheckedEcasts(region) + fields.map {
       case (sym, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.StructGet(exp, sym, tpe, eff, loc) => countCheckedEcasts(exp)
@@ -219,11 +219,11 @@ object Summary {
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => countCheckedEcasts(exp)
     case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => countCheckedEcasts(exp)
     case Expr.Without(exp, effUse, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(sym, clazz, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.Throw(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map{
+    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.HandlerRule(op, fparams, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.Do(op, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
@@ -234,29 +234,29 @@ object Summary {
     case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.GetStaticField(field, tpe, eff, loc) => 0
     case Expr.PutStaticField(field, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => methods.map{
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => methods.map {
       case TypedAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => countCheckedEcasts(exp)
     }.sum
     case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.GetChannel(exp, tpe, eff, loc) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) => default.map(countCheckedEcasts).sum + rules.map{
+    case Expr.SelectChannel(rules, default, tpe, eff, loc) => default.map(countCheckedEcasts).sum + rules.map {
       case TypedAst.SelectChannelRule(sym, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum
     case Expr.Spawn(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ParYield(frags, exp, tpe, eff, loc) => countCheckedEcasts(exp) + frags.map{
+    case Expr.ParYield(frags, exp, tpe, eff, loc) => countCheckedEcasts(exp) + frags.map {
       case TypedAst.ParYieldFragment(pat, exp, loc) => countCheckedEcasts(exp)
     }.sum
     case Expr.Lazy(exp, tpe, loc) => countCheckedEcasts(exp)
     case Expr.Force(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.map{
+    case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.map {
       case TypedAst.Constraint(cparams, head, body, loc) =>
         (head match {
           case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) => terms.map(countCheckedEcasts).sum
         }) + body.map {
-          case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => 0
-          case Body.Functional(outVars, exp, loc) => countCheckedEcasts(exp)
-          case Body.Guard(exp, loc) => countCheckedEcasts(exp)
+          case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => 0
+          case TypedAst.Predicate.Body.Functional(outVars, exp, loc) => countCheckedEcasts(exp)
+          case TypedAst.Predicate.Body.Guard(exp, loc) => countCheckedEcasts(exp)
         }.sum
     }.sum
     case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => countCheckedEcasts(exp)
