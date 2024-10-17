@@ -31,15 +31,15 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
 
     case Type.Apply(tpe1, tpe2, loc) =>
       // TODO CONSTR-SOLVER-2 this is recursive. Might be a hot-spot for performance?
-      val t1 = reduce(tpe1)
-      val t2 = reduce(tpe2)
+      val t1 = reduce(tpe1, scope, renv)
+      val t2 = reduce(tpe2, scope, renv)
       Type.Apply(t1, t2, loc)
 
     case Type.Alias(_, _, tpe, _) => tpe
@@ -58,7 +58,7 @@ object TypeReduction2 {
           val assocRenv = tpe.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
 
           // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(tpe, assocTpe, assocRenv).map {
+          ConstraintSolver2.fullyUnify(tpe, assocTpe, scope, assocRenv).map {
             case subst => subst(ret)
           }
       }
@@ -79,7 +79,7 @@ object TypeReduction2 {
       }
 
     case Type.JvmToType(tpe, loc) =>
-      reduce(tpe) match {
+      reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
           Type.getFlixType(constructor.getDeclaringClass)
@@ -96,7 +96,7 @@ object TypeReduction2 {
       }
 
     case Type.JvmToEff(tpe, loc) =>
-      reduce(tpe) match {
+      reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
           BaseEffects.getConstructorEffs(constructor, loc)
@@ -109,7 +109,7 @@ object TypeReduction2 {
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
-      member.map(reduce) match {
+      member.map(reduce(_, scope, renv)) match {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           lookupConstructor(clazz, tpes) match {
             case JavaConstructorResolution.Resolved(constructor) =>

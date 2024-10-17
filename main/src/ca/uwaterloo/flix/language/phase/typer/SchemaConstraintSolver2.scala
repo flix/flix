@@ -30,7 +30,7 @@ object SchemaConstraintSolver2 {
   /**
     * Unifies the two given schema row types.
     */
-  def solve(tpe1: Type, tpe2: Type)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅
@@ -41,14 +41,14 @@ object SchemaConstraintSolver2 {
     //    α ∉ fv(ρ)
     // ----------------
     // α ~ ρ  =>  {α ↦ ρ}
-    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
+    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
       progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 
     //    α ∉ fv(ρ)
     // ----------------
     //  ρ ~ α  =>  {α ↦ ρ}
-    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
+    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
       progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 
@@ -66,7 +66,7 @@ object SchemaConstraintSolver2 {
     // -------------------------------------------------
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
     case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), t1, _), rest1, _), r2) =>
-      pivot(r2, label, t1, r1.typeVars.map(_.sym)) match {
+      pivot(r2, label, t1, r1.typeVars.map(_.sym))(scope, renv, flix) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
           progress.markProgress()
           (List(TypeConstraint.Equality(t1, t3), TypeConstraint.Equality(rest1, rest3)), subst)
