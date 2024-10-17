@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint2}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -31,7 +31,7 @@ object Unification {
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
-    implicit val t: ConstraintSolver2.Progress = ConstraintSolver2.Progress()
+    implicit val t: Progress = Progress()
     implicit val r: RigidityEnv = renv
     val (leftovers, subst) = ConstraintSolver2.makeSubstitution(TypeConstraint2.Equality(x, tpe))
     Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
