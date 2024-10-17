@@ -304,8 +304,9 @@ object TypeReduction2 {
     case object NotFound extends JavaFieldResolution
 
     /**
-      * The types of the lookup are not resolved enough to decide
-      * (it contains type variables, associated types, etc.).
+      * The types used for the lookup are not resolved enough to decide on a field.
+      *
+      * This happens if they contain e.g., type variables or associated types.
       */
     case object UnresolvedTypes extends JavaFieldResolution
 
@@ -323,8 +324,9 @@ object TypeReduction2 {
     case object NotFound extends JavaMethodResolution
 
     /**
-      * The types of the lookup are not resolved enough to decide
-      * (they contain type variables, associated types, etc.).
+      * The types used for the lookup are not resolved enough to decide on a method.
+      *
+      * This happens if they contain e.g., type variables or associated types.
       */
     case object UnresolvedTypes extends JavaMethodResolution
 
@@ -342,8 +344,9 @@ object TypeReduction2 {
     case object NotFound extends JavaConstructorResolution
 
     /**
-      * The types of the lookup are not resolved enough to decide
-      * (they contain type variables, associated types, etc.).
+      * The types used for the lookup are not resolved enough to decide on a constructor.
+      *
+      * This happens if they contain e.g., type variables or associated types.
       */
     case object UnresolvedTypes extends JavaConstructorResolution
 
