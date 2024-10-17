@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2.TypeConstraint2
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -34,7 +34,7 @@ object Unification {
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val t: ConstraintSolver2.Progress = ConstraintSolver2.Progress()
     implicit val r: RigidityEnv = renv
-    val (leftovers, subst) = ConstraintSolver2.makeSubstitution(ConstraintSolver2.TypeConstraint.Equality(x, tpe))
+    val (leftovers, subst) = ConstraintSolver2.makeSubstitution(ConstraintSolver2.TypeConstraint2.Equality(x, tpe))
     Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
   }
 
@@ -44,7 +44,7 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2)))
+    val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint2.Equality(tpe1, tpe2)))
     Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), true)) // MATT hack: assuming progress
   }
 
@@ -54,7 +54,7 @@ object Unification {
   def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
+    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint2.Equality(tpe1, tpe2))) match {
       case (Nil, subst) => Some(subst)
       case (_ :: _, _) => None
     }
@@ -66,7 +66,7 @@ object Unification {
   def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
-    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint.Equality(tpe1, tpe2))) match {
+    ConstraintSolver2.solveAllTypes(List(ConstraintSolver2.TypeConstraint2.Equality(tpe1, tpe2))) match {
       case (cs, subst) =>
         if (cs.forall(isAssocConstraint)) {
           Some(subst)
@@ -76,9 +76,9 @@ object Unification {
     }
   }
 
-  def isAssocConstraint(constr: ConstraintSolver2.TypeConstraint): Boolean = constr match {
-    case TypeConstraint.Equality(_: Type.AssocType, _) => true
-    case TypeConstraint.Equality(_, _: Type.AssocType) => true
+  def isAssocConstraint(constr: ConstraintSolver2.TypeConstraint2): Boolean = constr match {
+    case TypeConstraint2.Equality(_: Type.AssocType, _) => true
+    case TypeConstraint2.Equality(_, _: Type.AssocType) => true
     case _ => false
   }
 
