@@ -58,13 +58,13 @@ object Zhegalkin {
         s"$cst n ${vars.mkString(" n ")}"
   }
 
-  /** Represents a Zhegalkin expr: c ? t1 ? t2 ? ... ? tn */
+  /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
   case class ZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]) {
     override def toString: String =
       if (terms.isEmpty)
         cst.toString
       else
-        s"$cst ? ${terms.map(t => s"($t)").mkString(" ? ")}"
+        s"$cst ⊕ ${terms.map(t => s"($t)").mkString(" ⊕ ")}"
   }
 
   /**
@@ -75,7 +75,7 @@ object Zhegalkin {
 
   /** Returns the xor of the two Zhegalkin constants */
   private def mkXor(c1: ZhegalkinConstant, c2: ZhegalkinConstant): ZhegalkinConstant = {
-    // a ? b = (a ? b) - (a n b) = (a ? b) n ~(a n b)
+    // a ⊕ b = (a ⊕ b) - (a n b) = (a ⊕ b) n ~(a n b)
     c1.union(c2).inter(c1.inter(c2).compl)
   }
 
@@ -89,14 +89,14 @@ object Zhegalkin {
 
   /** Returns the complement of the Zhegalkin expr. */
   private def zmkCompl(a: ZhegalkinExpr): ZhegalkinExpr =
-    // ~a = 1 ? a
+    // ~a = 1 ⊕ a
     mkXor(ZhegalkinExpr(ZUniverse, Nil), a)
 
   //
-  // (c1 ? t11 ? t12 ? ... ? t1n) n (c2 ? t21 ? t22 ? ... ? t2m)
-  //   =   (c1  n (c2 ? t21 ? t22 ? ... ? t2m)
-  //     ? (t11 n (c2 ? t21 ? t22 ? ... ? t2m)
-  //     ? (t12 n (c2 ? t21 ? t22 ? ... ? t2m)
+  // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) n (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+  //   =   (c1  n (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+  //     ⊕ (t11 n (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+  //     ⊕ (t12 n (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
   private def mkInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
@@ -115,7 +115,7 @@ object Zhegalkin {
   }
 
   //
-  // c n (c2 ? t21 ? t22 ? ... ? t2m) = (c n c2) ? t21 ? t22 ? ... ? t2m
+  // c n (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c n c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
   //
   private def mkInterConstantExpr(c: ZhegalkinConstant, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
@@ -124,7 +124,7 @@ object Zhegalkin {
   }
 
   //
-  // t n (c2 ? t1 ? t2 ? ... ? tn) = (t n c2) ? (t n t1) ? (t n t2) ? ... ? (t n tn)
+  // t n (c2 ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t n c2) ⊕ (t n t1) ⊕ (t n t2) ⊕ ... ⊕ (t n tn)
   //
   private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
@@ -142,7 +142,7 @@ object Zhegalkin {
 
   /** Returns the union of the two Zhegalkin expressions. */
   private def mkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ? b = a ? b ? (a n b) */
+    /** a ⊕ b = a ⊕ b ⊕ (a n b) */
     mkXor(mkXor(a, b), mkInter(a, b))
   }
 
