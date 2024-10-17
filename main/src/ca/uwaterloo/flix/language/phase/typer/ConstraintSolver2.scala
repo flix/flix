@@ -31,19 +31,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object ConstraintSolver2 {
 
   /**
-    * A mutable class used for tracking whether progress has been made.
-    */
-  case class Progress(private var progressMade: Boolean = false) {
-    def markProgress(): Unit = {
-      progressMade = true
-    }
-
-    def query(): Boolean = {
-      progressMade
-    }
-  }
-
-  /**
     * A container for a constraint set and a substitution tree.
     *
     * This class provides several methods for manipulating the constraints.
