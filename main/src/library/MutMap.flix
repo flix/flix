@@ -614,21 +614,21 @@ mod MutMap {
     ///
     pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iterator(rc, Ref.get(mm)) |> Iterator.map(eidentity)
+        Map.iterator(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, Ref.get(mm)) |> Iterator.map(eidentity)
+        Map.iteratorKeys(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, Ref.get(mm)) |> Iterator.map(eidentity)
+        Map.iteratorValues(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

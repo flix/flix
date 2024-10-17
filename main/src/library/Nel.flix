@@ -408,7 +408,7 @@ mod Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, eidentity)
+        loop(x :: xs, x -> checked_ecast(x))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
