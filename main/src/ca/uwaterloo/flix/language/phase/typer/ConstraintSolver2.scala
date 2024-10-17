@@ -410,7 +410,7 @@ object ConstraintSolver2 {
     */
   private def recordUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
-      RecordConstraintSolver2.solve(tpe1, tpe2) match {
+      RecordConstraintSolver2.solve(tpe1, tpe2, scope, renv) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
       }
 
@@ -428,7 +428,7 @@ object ConstraintSolver2 {
     */
   private def schemaUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
-      SchemaConstraintSolver2.solve(tpe1, tpe2) match {
+      SchemaConstraintSolver2.solve(tpe1, tpe2, scope, renv) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
       }
 
