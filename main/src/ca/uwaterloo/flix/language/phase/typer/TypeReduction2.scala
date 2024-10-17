@@ -312,26 +312,6 @@ object TypeReduction2 {
 
   }
 
-  /** A lookup result of a Java method. */
-  private sealed trait JavaMethodResolution
-
-  private object JavaMethodResolution {
-
-    /** One matching method. */
-    case class Resolved(method: Method) extends JavaMethodResolution
-
-    /** No matching method. */
-    case object NotFound extends JavaMethodResolution
-
-    /**
-      * The types used for the lookup are not resolved enough to decide on a method.
-      *
-      * This happens if they contain e.g., type variables or associated types.
-      */
-    case object UnresolvedTypes extends JavaMethodResolution
-
-  }
-
   /** A lookup result of a Java constructor. */
   private sealed trait JavaConstructorResolution
 
@@ -352,4 +332,23 @@ object TypeReduction2 {
 
   }
 
+  /** A lookup result of a Java method. */
+  private sealed trait JavaMethodResolution
+
+  private object JavaMethodResolution {
+
+    /** One matching method. */
+    case class Resolved(method: Method) extends JavaMethodResolution
+
+    /** No matching method. */
+    case object NotFound extends JavaMethodResolution
+
+    /**
+      * The types used for the lookup are not resolved enough to decide on a method.
+      *
+      * This happens if they contain e.g., type variables or associated types.
+      */
+    case object UnresolvedTypes extends JavaMethodResolution
+
+  }
 }
