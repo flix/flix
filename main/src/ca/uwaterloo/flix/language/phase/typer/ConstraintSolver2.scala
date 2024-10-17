@@ -187,10 +187,11 @@ object ConstraintSolver2 {
     *
     * Returns None if the type are not unifiable.
     */
-  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Option[Substitution] = {
+  def fullyUnify(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv)(implicit eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
     val constr = TypeConstraint.Equality(tpe1, tpe2)
     implicit val r = renv
+    implicit val s = scope
     solveAllTypes(List(constr)) match {
       // Case 1: No constraints left. Success.
       case (Nil, subst) => Some(subst)
@@ -401,7 +402,7 @@ object ConstraintSolver2 {
           val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
 
           // Instantiate all the instance constraints according to the substitution.
-          fullyUnify(tpe, instTpe, renv).map {
+          fullyUnify(tpe, instTpe, scope, renv).map {
             case subst => instConstrs.map(subst.apply)
           }
       }
@@ -479,10 +480,10 @@ object ConstraintSolver2 {
     * Performs reduction on the types in the given type constraints.
     */
   // (redU)
-  private def reduceTypes(constr: TypeConstraint)(implicit scope: Scope, progress: Progress, renv0: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): TypeConstraint = constr match {
-    case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(reduce(tpe1), reduce(tpe2))
-    case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, reduce(tpe))
-    case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(sym, reduce(eff1), reduce(eff2), nested)
+  private def reduceTypes(constr: TypeConstraint)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): TypeConstraint = constr match {
+    case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(reduce(tpe1, scope, renv), reduce(tpe2, scope, renv))
+    case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, reduce(tpe, scope, renv))
+    case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(sym, reduce(eff1, scope, renv), reduce(eff2, scope, renv), nested)
   }
 
   /**
