@@ -15,43 +15,25 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.Visitor
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Case, Def, Enum, Expr, FormalParam, Op, Root, Sig}
+import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
-import scala.annotation.tailrec
-
 object HoverProvider {
 
   def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
-    var stack: List[AnyRef] = Nil
-    def push(x: AnyRef): Unit = {
-      stack = x :: stack
-    }
-    object HoverConsumer extends Visitor.Consumer {
-      override def consumeType(tpe: Type): Unit = push(tpe)
-      override def consumeExpr(exp: Expr): Unit = push(exp)
-      override def consumeDefSymUse(symUse: DefSymUse): Unit = push(symUse)
-      override def consumeSigSymUse(symUse: SigSymUse): Unit = push(symUse)
-      override def consumeOpSymUse(symUse: OpSymUse): Unit = push(symUse)
-      override def consumeDef(defn: Def): Unit = push(defn)
-      override def consumeSig(sig: Sig): Unit = push(sig)
-      override def consumeOp(op: Op): Unit = push(op)
-      override def consumeFormalParam(fparam: FormalParam): Unit = push(fparam)
-    }
+    val consumer = Visitor.StackConsumer()
+    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
 
-    Visitor.visitRoot(root, HoverConsumer, Visitor.InsideAcceptor(uri, pos))
-
-    stack match {
-      case Nil => mkNotFound(uri, pos)
-      case head :: _ => hoverAny(head, uri, pos)
+    consumer.getHead match {
+      case None => mkNotFound(uri, pos)
+      case Some(head) => hoverAny(head, uri, pos)
     }
   }
 
