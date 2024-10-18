@@ -242,8 +242,6 @@ object Ast {
     object Expr {
       case object Constraint extends Expr
 
-      case object Do extends Expr
-
       case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
 
       case object New extends Expr

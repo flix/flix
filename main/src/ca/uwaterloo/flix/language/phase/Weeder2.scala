@@ -1784,7 +1784,7 @@ object Weeder2 {
 
     private def visitDoExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.Do)) {
+      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)) {
         (op, args) => Expr.Do(op, args, tree.loc)
       }
     }

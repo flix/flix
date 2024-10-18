@@ -25,10 +25,6 @@ object OpCompleter {
     * Returns a List of Completion for completer.
     */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[OpCompletion] = {
-    if (context.previousWord != "do") {
-      return Nil
-    }
-
     val word = context.word
     val uri = context.uri
 
