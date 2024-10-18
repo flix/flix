@@ -967,7 +967,8 @@ object Visitor {
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    if(!loc.isReal) { return false }
+    // TODO this check seems reasonable but causes filtering out real AST nodes. Inspect why this is
+    // if(!loc.isReal) { return false }
 
     val sameSource = uri == loc.source.name
     if (!sameSource) { return false }
