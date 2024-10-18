@@ -53,10 +53,10 @@ object HoverProvider {
     val structOpt = root.structs.get(sym.structSym)
 
     structOpt match {
-      case None => ("status" -> ResponseStatus.CompilerError) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
+      case None => ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
       case Some(struct) =>
         struct.fields.get(sym) match {
-          case None => ("status" -> ResponseStatus.CompilerError) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
+          case None => ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
           case Some(field) =>
             val mods = field.mod.mod.flatMap {
               case Modifier.Mutable => Some("mut")
