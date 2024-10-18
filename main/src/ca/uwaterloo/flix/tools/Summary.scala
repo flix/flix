@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext.AllPermissions
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, SourcePosition, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -83,14 +82,15 @@ object Summary {
     (defs ++ instances ++ traits).toList
   }
 
-  /** Converts a function summary into file data.
+  /**
+    * Converts a function summary into file data.
     * Root is used to find file length.
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
     val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, SourcePosition(unknownSource, 0, 0), SourcePosition(unknownSource, 0, 0)))
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
-    val justIODefs = if (sum.eff == ResEffect.JustIO) 1 else 0
+    val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs)
   }
@@ -159,14 +159,13 @@ object Summary {
   }
 
   /**
-    * Assumes that IO and Pure are represented simply, i.e. no `{} + {}`,
-    * `IO + {}`, or `x - x`.
+    * Returns the [[ResEffect]] representation of an effect. It is assumed that effects are written
+    * "sensibly", e.g. not `Pure + (ef - ef)` or `not IO`.
     */
   private def resEffect(eff: Type): ResEffect = eff match {
-    case Type.Pure => ResEffect.Pure
-    case Type.IO => ResEffect.JustIO
-    case _ if eff.kind == Kind.Eff => ResEffect.Poly
-    case _ => throw InternalCompilerException(s"Not an effect: '$eff'", eff.loc)
+    case Type.Cst(TypeConstructor.Pure, _) => ResEffect.Pure
+    case _ if eff.typeVars.nonEmpty => ResEffect.Poly
+    case _ => ResEffect.GroundNonPure
   }
 
   private val unknownSource = {
@@ -174,11 +173,11 @@ object Summary {
   }
 
   /** debugSrc is just for consistency checking exceptions */
-  private sealed case class FileData(debugSrc: Option[Source], lines: Int, defs: Int, pureDefs: Int, justIODefs: Int, polyDefs: Int) {
-    if (defs != pureDefs + justIODefs + polyDefs) {
+  private sealed case class FileData(debugSrc: Option[Source], lines: Int, defs: Int, pureDefs: Int, groundNonPureDefs: Int, polyDefs: Int) {
+    if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
-        s"${(defs, pureDefs, justIODefs, polyDefs)} does not sum for $src",
+        s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
         SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
       )
     }
@@ -188,14 +187,14 @@ object Summary {
       * to be equal for both data and is left unchanged. The remaining fields
       * are summed.
       */
-    def combine(other: FileData): FileData = {
+    private def combine(other: FileData): FileData = {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
           SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
         )
       }
-      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
+      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs)
     }
 
     /**
@@ -203,10 +202,10 @@ object Summary {
       * different files to compute a total of a folder fx.
       */
     def naiveSum(other: FileData): FileData = {
-      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
+      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs)
     }
 
-    def toRow: List[String] = List(lines, defs, pureDefs, justIODefs, polyDefs).map(format)
+    def toRow: List[String] = List(lines, defs, pureDefs, groundNonPureDefs, polyDefs).map(format)
   }
 
   private object FileData {
@@ -225,7 +224,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "IO", "Eff. Poly.")
+    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -245,7 +244,8 @@ object Summary {
   /**
     * Represents the direct effect of a function
     *   - `def f(x: Int32): Int32` is `Pure`
-    *   - `def f(x: Int32): Unit \ IO` is `JustIO`
+    *   - `def f(x: Int32): Unit \ IO` is `GroundNonPure`
+    *   - `def f(x: Int32): Unit \ IO + Crash` is `GroundNonPure`
     *   - `def f(x: Array[Int32, r]): IO + r` is `Poly`
     */
   private sealed trait ResEffect
@@ -253,7 +253,7 @@ object Summary {
   private object ResEffect {
     case object Pure extends ResEffect
 
-    case object JustIO extends ResEffect
+    case object GroundNonPure extends ResEffect
 
     case object Poly extends ResEffect
   }
