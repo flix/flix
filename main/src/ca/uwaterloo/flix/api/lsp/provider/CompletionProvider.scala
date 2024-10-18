@@ -63,7 +63,6 @@ object CompletionProvider {
       // Expressions.
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(ctx)
       case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, ctx)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
@@ -205,7 +204,6 @@ object CompletionProvider {
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
-      case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
