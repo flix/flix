@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
+import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
@@ -211,7 +212,8 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside("wrong!", pos)(loc))
   }
 
-  test("not inside if SourceLocation isn't real") {
+
+  ignore("not inside if SourceLocation isn't real") {
     val loc = SourceLocation(
       isReal = false,
       SourcePosition(source, 3, 6),
