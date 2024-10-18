@@ -5,7 +5,7 @@ mod Test.Handler.Ask.String {
     }
 
     def generator(x: String): Unit \ Ask =
-        do Ask.ask(x); generator(next(x))
+        Ask.ask(x); generator(next(x))
 
     def sample(limit: String): List[String] =
         try {

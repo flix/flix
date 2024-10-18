@@ -541,7 +541,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedOp.01") {
     val input =
       """
-        |def f(): Unit = do E.op()
+        |def f(): Unit = E.op()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedOp](result)
@@ -552,7 +552,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |eff E
         |
-        |def f(): Unit = do E.op()
+        |def f(): Unit = E.op()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedOp](result)
@@ -1693,7 +1693,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def op(x: String): Unit
         |}
         |
-        |def foo(): Unit \ E = do E.op("hello", "world")
+        |def foo(): Unit \ E = E.op("hello", "world")
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
