@@ -36,7 +36,7 @@ mod Clock {
     ///
     /// Equivalent to `currentTime(TimeUnit.Milliseconds)`.
     ///
-    pub def now(): Int64 \ Clock = do Clock.currentTime(TimeUnit.Milliseconds)
+    pub def now(): Int64 \ Clock = Clock.currentTime(TimeUnit.Milliseconds)
 
     ///
     /// Runs the `Clock` effect of the given function `f`.
