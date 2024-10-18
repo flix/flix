@@ -521,8 +521,7 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(_, regionVar, exp, _, _, _) =>
-        visitType(regionVar)
+      case Expr.Scope(_, _, exp, _, _, _) =>
         visitExpr(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
