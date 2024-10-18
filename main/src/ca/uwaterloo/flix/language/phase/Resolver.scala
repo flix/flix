@@ -2330,7 +2330,7 @@ object Resolver {
     val opOpt = tryLookupName(qname, env, ns0, root)
 
     opOpt match {
-      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: Nil =>
+      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
         if (!isOpAccessible(op, ns0)) {
           val error = ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc)
           sctx.errors.add(error)
