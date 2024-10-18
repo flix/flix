@@ -17,8 +17,10 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.language.ast.Symbol.StructFieldSym
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.Modifier
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse, StructFieldSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
@@ -43,7 +45,35 @@ object HoverProvider {
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
+    case StructFieldSymUse(sym, loc) => hoverStructFieldSymUse(sym, loc)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def hoverStructFieldSymUse(sym: StructFieldSym, loc: SourceLocation)(implicit root: Root, flix: Flix) = {
+    val structOpt = root.structs.get(sym.structSym)
+
+    structOpt match {
+      case None => ("status" -> ResponseStatus.CompilerError) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
+      case Some(struct) =>
+        struct.fields.get(sym) match {
+          case None => ("status" -> ResponseStatus.CompilerError) ~ ("message" -> s"struct `${sym.structSym.text}` is malformed")
+          case Some(field) =>
+            val mods = field.mod.mod.flatMap {
+              case Modifier.Mutable => Some("mut")
+              case Modifier.Public => Some("pub")
+              case _ => None
+            }.foldRight(""){case (mod, acc) => s"$mod $acc"}
+            val markup =
+              s"""```flix
+                 |${struct.sym.name}->$mods${sym.name}: ${FormatType.formatType(field.tpe)}
+                 |```
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+        }
+    }
   }
 
   private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {

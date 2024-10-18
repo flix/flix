@@ -353,7 +353,7 @@ object Visitor {
   }
 
   private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
-    val StructField(_, tpe, loc) = field
+    val StructField(_, mod, tpe, loc) = field
     if (!a.accept(loc)) { return }
 
     c.consumeStructField(field)

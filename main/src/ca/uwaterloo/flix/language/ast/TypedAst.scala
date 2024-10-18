@@ -347,7 +347,7 @@ object TypedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, mod: Modifiers, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 

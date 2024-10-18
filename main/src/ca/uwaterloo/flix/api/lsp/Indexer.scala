@@ -111,7 +111,7 @@ object Indexer {
         Index.occurrenceOf(struct0),
         traverse(tparams)(visitTypeParam),
         traverse(fields.values) {
-          case f@StructField(sym, tpe, loc) => Index.occurrenceOf(f) ++ visitType(tpe)
+          case f@StructField(sym, _, tpe, loc) => Index.occurrenceOf(f) ++ visitType(tpe)
         },
       )
   }
