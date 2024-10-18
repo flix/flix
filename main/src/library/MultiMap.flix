@@ -54,7 +54,7 @@ instance Indexable[MultiMap[k, v]] with Order[k] {
     pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound =
         let vs = MultiMap.get(i, t);
         if (Set.isEmpty(vs))
-            do KeyNotFound.keyNotFound("key not found")
+            KeyNotFound.keyNotFound("key not found")
         else
             vs
 }

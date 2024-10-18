@@ -407,7 +407,7 @@ object Lexer {
       case _ if isKeyword("dbg") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
-      case _ if isKeyword("do") => TokenKind.KeywordDo
+      //case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
