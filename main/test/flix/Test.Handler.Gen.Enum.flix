@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Enum {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[Option[Int32]] =
         region rc {

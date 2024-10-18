@@ -5,7 +5,7 @@ mod Test.Handler.Ask.Unit {
     }
 
     def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+        Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Unit] =
         try {

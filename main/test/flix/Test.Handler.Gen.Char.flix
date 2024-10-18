@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Char {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Char): List[Char] =
         region rc {

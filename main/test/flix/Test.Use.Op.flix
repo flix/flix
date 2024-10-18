@@ -7,6 +7,6 @@ mod Test.Use.Op {
 
     pub def testUseOp(): String \ Foo = {
         use Foo.foo;
-        do foo()
+        foo()
     }
 }

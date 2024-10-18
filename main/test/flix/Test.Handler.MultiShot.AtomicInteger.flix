@@ -14,7 +14,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         let result = try {
             f1()
         } with Ask {
@@ -24,7 +24,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
         let result = try {
             f2()
@@ -35,7 +35,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
         def f3() = f2();
         let result = try {
@@ -47,7 +47,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Ask.ask(newAtomicInteger(42));
+        def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
@@ -58,7 +58,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Ask.ask(newAtomicInteger(42));
+        def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
@@ -69,7 +69,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
@@ -123,7 +123,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         };
         Assert.eq(84, toInt(result))
 
-    def f(): AtomicInteger \ Ask = do Ask.ask(newAtomicInteger(42))
+    def f(): AtomicInteger \ Ask = Ask.ask(newAtomicInteger(42))
 
     def mutual1(x: Int32): AtomicInteger \ Ask =
         if (x == 0) f() else mutual2(x - 1)

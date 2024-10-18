@@ -13,7 +13,7 @@ mod Test.Handler.Gen.AtomicInteger {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {

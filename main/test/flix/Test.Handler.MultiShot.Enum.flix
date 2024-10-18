@@ -6,7 +6,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do AskTell.askTell(42);
+        def f1() = AskTell.askTell(42);
         let result = try {
             f1()
         } with AskTell {
@@ -19,7 +19,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do AskTell.askTell(42);
+        def f1() = AskTell.askTell(42);
         def f2() = f1();
         let result = try {
             f2()
@@ -33,7 +33,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do AskTell.askTell(42);
+        def f1() = AskTell.askTell(42);
         def f2() = f1();
         def f3() = f2();
         let result = try {
@@ -48,7 +48,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do AskTell.askTell(42);
+        def f() = AskTell.askTell(42);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
@@ -62,7 +62,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do AskTell.askTell(42);
+        def f() = AskTell.askTell(42);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
@@ -76,7 +76,7 @@ mod Test.Handler.MultiShot.Enum {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do AskTell.askTell(42);
+        def f1() = AskTell.askTell(42);
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
@@ -148,7 +148,7 @@ mod Test.Handler.MultiShot.Enum {
         };
         Assert.eq(Some(84), result)
 
-    def f(): Option[Int32] \ AskTell = do AskTell.askTell(42)
+    def f(): Option[Int32] \ AskTell = AskTell.askTell(42)
 
     def mutual1(x: Int32): Option[Int32] \ AskTell =
         if (x == 0) f() else mutual2(x - 1)

@@ -5,7 +5,7 @@ mod Test.Handler.Ask.Int16 {
     }
 
     def generator(x: Int16): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1i16)
+        Ask.ask(x); generator(x + 1i16)
 
     def sample(limit: Int16): List[Int16] =
         try {

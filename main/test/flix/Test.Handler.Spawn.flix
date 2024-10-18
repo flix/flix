@@ -10,23 +10,23 @@ mod Test.Handler.Spawn {
 
     def runAsk(tx: Sender[Int32, rc]): Unit \ rc =
         try {
-            do Ask.ask(42)
+            Ask.ask(42)
         } with Ask {
             def ask(x, _) = Channel.send(x, tx)
         }
 
     def runGen(tx: Sender[Int32, rc]): Unit \ rc =
         try {
-            Channel.send(do Gen.gen(), tx)
+            Channel.send(Gen.gen(), tx)
         } with Gen {
             def gen(k) = k(42)
         }
 
     def runGenAsk(tx: Sender[Int32, rc]): Unit \ rc =
         try {
-            do Ask.ask(
+            Ask.ask(
                 try {
-                    do Gen.gen()
+                    Gen.gen()
                 } with Gen {
                     def gen(k) = k(42)
                 }

@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Float32 {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Float32): List[Float32] =
         region rc {

@@ -6,7 +6,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Exc.raise();
+        def f1() = Exc.raise();
         let result = try {
             f1()
         } with Exc {
@@ -16,7 +16,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Exc.raise();
+        def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
         let result = try {
             f2()
@@ -27,7 +27,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Exc.raise();
+        def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
         let result = try {
@@ -39,7 +39,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(0)
@@ -50,7 +50,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(1)
@@ -61,7 +61,7 @@ mod Test.Handler.ZeroShot.String {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(10)
@@ -125,7 +125,7 @@ mod Test.Handler.ZeroShot.String {
         Assert.eq("b", result)
 
     def f(): String \ Exc =
-         do Exc.raise();
+         Exc.raise();
          unreachable!()
 
     def mutual1(x: Int32): String \ Exc =

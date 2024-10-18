@@ -13,7 +13,7 @@ mod Test.Handler.Ask.AtomicInteger {
     }
 
     def generator(x: AtomicInteger): Unit \ Ask =
-        do Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
+        Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
 
     def sample(limit: Int32): List[AtomicInteger] =
         try {
