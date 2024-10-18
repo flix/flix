@@ -775,10 +775,6 @@ object Namer {
       val rs = rules.map(visitTryWithRule(_, ns0))
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
-    case DesugaredAst.Expr.Do(op, exps, loc) =>
-      val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.Do(op, es, loc)
-
     case DesugaredAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.InvokeConstructor2(className, es, loc)
