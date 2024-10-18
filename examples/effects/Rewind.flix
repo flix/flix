@@ -31,12 +31,12 @@ mod RewindExample {
     def search(k: Int32): Int32 \ Rewind + IO = {
         let rnd = new Random();
         println("Beginning to search!");
-        do Rewind.save("start");
+        Rewind.save("start");
         let guess = rnd.nextInt(k);
         // 1. and 2. hold automatically
-        if (Int32.modulo(guess, 2) == 0) {println("retry for ${guess}"); do Rewind.rewind("start"); ?unreachable}
+        if (Int32.modulo(guess, 2) == 0) {println("retry for ${guess}"); Rewind.rewind("start"); ?unreachable}
         // now 3. holds
-        else if (Int32.modulo(guess, 3) == 0) {println("retry for ${guess}"); do Rewind.rewind("start"); ?unreachable}
+        else if (Int32.modulo(guess, 3) == 0) {println("retry for ${guess}"); Rewind.rewind("start"); ?unreachable}
         // now 4. holds and we can return
         else guess
     }
