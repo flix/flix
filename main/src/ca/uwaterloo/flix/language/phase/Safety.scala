@@ -216,13 +216,17 @@ object Safety {
     * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
   private def isAllowedEffect(defn: Def): Boolean = {
-    defn.spec.eff match {
-      case Type.Pure => true
-      case Type.IO => true
-      case Type.NonDet => true
-      case Type.Sys => true
-      case _ => false
+    def isAllowedEffect0(eff: Type): Boolean = {
+      eff match {
+        case Type.Pure => true
+        case Type.IO => true
+        case Type.Net => true
+        case Type.NonDet => true
+        case Type.Sys => true
+        case ts => ts.typeVars.forall(isAllowedEffect0)
+      }
     }
+    isAllowedEffect0(defn.spec.eff)
   }
 
   /**

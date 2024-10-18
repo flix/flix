@@ -15,7 +15,7 @@
     "java.net.ProxySelector": "Net",
     "java.net.ResponseCache": "Net",
     "java.net.URL": "Net",
-    "java.net.URLClassLoader": "Net, Sys",
+    "java.net.URLClassLoader": "Net, Sys, IO",
     "java.net.URLConnection": "Net",
     "java.net.URLStreamHandler": "Net",
     "java.net.spi.InetAddressResolverProvider": "Net",
