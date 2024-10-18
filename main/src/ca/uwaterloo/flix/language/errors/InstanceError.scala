@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType, FormatTraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -253,7 +254,7 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingTraitConstraint(tconstr: Ast.TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+  case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = s"Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}"
 
     override def message(formatter: Formatter): String = {

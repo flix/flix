@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -194,10 +194,10 @@ class TypeContext {
   /**
     * Adds the given trait constraints to the context.
     */
-  def addClassConstraints(tconstrs0: List[Ast.TraitConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case Ast.TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
+      case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }

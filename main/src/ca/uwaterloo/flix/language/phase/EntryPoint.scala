@@ -202,7 +202,7 @@ object EntryPoint {
 
       // Case 2: XYZ -> a with ToString[a]
       val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-      val hasToStringConstraint = TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
+      val hasToStringConstraint = TraitEnvironment.holds(TraitConstraint(TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
 
       // Case 3: Bad result type. Error.
       val isBadResultType = !isUnitResult && !hasToStringConstraint
