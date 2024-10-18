@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ConstraintGen.{visitExp, visitPattern}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 object SchemaConstraintGen {
@@ -134,8 +134,8 @@ object SchemaConstraintGen {
         // Require Order and Foldable instances.
         val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
         val foldableSym = PredefinedTraits.lookupTraitSym("Foldable", root)
-        val order = Ast.TraitConstraint(Ast.TraitConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
-        val foldable = Ast.TraitConstraint(Ast.TraitConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
+        val order = TraitConstraint(TraitConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
+        val foldable = TraitConstraint(TraitConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
         c.addClassConstraints(List(order, foldable), loc)
 
@@ -258,7 +258,7 @@ object SchemaConstraintGen {
   /**
     * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
+  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = den match {
     case Denotation.Relational =>
       ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
     case Denotation.Latticenal =>
@@ -268,18 +268,18 @@ object SchemaConstraintGen {
   /**
     * Constructs the trait constraints for the given relational term type `tpe`.
     */
-  private def mkTraitConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = {
+  private def mkTraitConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),
       PredefinedTraits.lookupTraitSym("Order", root),
     )
-    traits.map(trt => Ast.TraitConstraint(Ast.TraitConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitConstraint.Head(trt, loc), tpe, loc))
   }
 
   /**
     * Constructs the trait constraints for the given lattice term type `tpe`.
     */
-  private def mkTraitConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = {
+  private def mkTraitConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),
       PredefinedTraits.lookupTraitSym("Order", root),
@@ -288,7 +288,7 @@ object SchemaConstraintGen {
       PredefinedTraits.lookupTraitSym("JoinLattice", root),
       PredefinedTraits.lookupTraitSym("MeetLattice", root),
     )
-    traits.map(trt => Ast.TraitConstraint(Ast.TraitConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitConstraint.Head(trt, loc), tpe, loc))
   }
 
 
