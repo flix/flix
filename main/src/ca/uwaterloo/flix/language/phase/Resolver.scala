@@ -816,6 +816,7 @@ object Resolver {
       val exp = lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
@@ -828,6 +829,7 @@ object Resolver {
       val exp = lookupQName(name, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
@@ -904,6 +906,7 @@ object Resolver {
       lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Op(op) => visitApplyOp(op, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
@@ -917,6 +920,7 @@ object Resolver {
       lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Op(op) => visitApplyOp(op, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
@@ -1839,6 +1843,33 @@ object Resolver {
   }
 
   /**
+    * Returns a curried lambda and application of `defn`.
+    *
+    *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
+    */
+  private def visitOp(op: NamedAst.Declaration.Op, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val base = es => ResolvedAst.Expr.Do(OpSymUse(op.sym, loc), es, loc.asSynthetic)
+    visitApplyFull(base, op.spec.fparams.length, Nil, loc.asSynthetic)
+  }
+
+  /**
+    * Resolve the application expression, applying `op` to `exps`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es =>
+        val base = args => ResolvedAst.Expr.Do(OpSymUse(op.sym, innerLoc), args, outerLoc)
+        visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
+    }
+  }
+
+  /**
     * Resolves the tag application.
     */
   private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
@@ -2285,6 +2316,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
       case decl@Resolution.Var(_) => decl
       case decl@Resolution.LocalDef(_, _) => decl
     } match {
@@ -2308,6 +2340,9 @@ object Resolver {
       //        // Multiple case matches. Error.
       //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
+
+      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        ResolvedQName.Op(op)
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedQName.Tag(caze)
       // TODO NS-REFACTOR check accessibility
@@ -4021,6 +4056,8 @@ object Resolver {
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedQName
+
+    case class Op(op: NamedAst.Declaration.Op) extends ResolvedQName
 
     case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
 
