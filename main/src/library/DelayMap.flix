@@ -38,7 +38,7 @@ instance Indexable[DelayMap[k, v]] with Order[k] {
     type Aef = KeyNotFound
     pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
         case Some(v) => v
-        case None    => do KeyNotFound.keyNotFound("key not found")
+        case None    => KeyNotFound.keyNotFound("key not found")
     }
 }
 
@@ -66,17 +66,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let _ = parallelForce(m);
-        StringBuilder.appendString!("DelayMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///

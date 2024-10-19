@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifier, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -86,7 +86,7 @@ object LambdaLift {
 
       // Construct annotations and modifiers for the fresh definition.
       val ann = Annotations.Empty
-      val mod = Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
@@ -169,7 +169,7 @@ object LambdaLift {
       // `visitExp` handles for us.
       val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, sctx, flix)
       val ann = Annotations.Empty
-      val mod = Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
       val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
