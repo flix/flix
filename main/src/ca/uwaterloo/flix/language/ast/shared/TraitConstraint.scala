@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 import java.util.Objects
 
-case object TraitConstraint {
+object TraitConstraint {
   /**
     * Represents the head (located class) of a type constraint.
     */
