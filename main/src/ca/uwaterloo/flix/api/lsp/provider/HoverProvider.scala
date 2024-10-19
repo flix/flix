@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
 import ca.uwaterloo.flix.language.ast.Symbol.StructFieldSym
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Modifier
@@ -30,7 +30,7 @@ import org.json4s.JsonDSL.*
 object HoverProvider {
 
   def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
-    val consumer = Visitor.StackConsumer()
+    val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
 
     consumer.getHead match {
