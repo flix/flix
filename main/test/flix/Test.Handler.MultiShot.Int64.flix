@@ -6,7 +6,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do AskTell.askTell(42i64);
+        def f1() = AskTell.askTell(42i64);
         let result = try {
             f1()
         } with AskTell {
@@ -16,7 +16,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do AskTell.askTell(42i64);
+        def f1() = AskTell.askTell(42i64);
         def f2() = f1();
         let result = try {
             f2()
@@ -27,7 +27,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do AskTell.askTell(42i64);
+        def f1() = AskTell.askTell(42i64);
         def f2() = f1();
         def f3() = f2();
         let result = try {
@@ -39,7 +39,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do AskTell.askTell(42i64);
+        def f() = AskTell.askTell(42i64);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
@@ -50,7 +50,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do AskTell.askTell(42i64);
+        def f() = AskTell.askTell(42i64);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
@@ -61,7 +61,7 @@ mod Test.Handler.MultiShot.Int64 {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do AskTell.askTell(42i64);
+        def f1() = AskTell.askTell(42i64);
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
@@ -115,7 +115,7 @@ mod Test.Handler.MultiShot.Int64 {
         };
         Assert.eq(84i64, result)
 
-    def f(): Int64 \ AskTell = do AskTell.askTell(42i64)
+    def f(): Int64 \ AskTell = AskTell.askTell(42i64)
 
     def mutual1(x: Int32): Int64 \ AskTell =
         if (x == 0) f() else mutual2(x - 1)
