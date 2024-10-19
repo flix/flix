@@ -223,6 +223,7 @@ object Safety {
         case Type.Net => true
         case Type.NonDet => true
         case Type.Sys => true
+        case Type.Cst(_,_) => false
         case ts => ts.typeVars.forall(isAllowedEffect0)
       }
     }
