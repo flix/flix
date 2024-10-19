@@ -98,7 +98,7 @@ object Weeder2 {
           case Some(uses) => uses
         }
       case None =>
-        Validation.toSoftFailure(Nil, UnqualifiedUse(tree.loc))
+        Validation.toSoftFailure(Nil, UnqualifiedUse(tree.loc)) // should probably be success of nil since a more precise error is produced if we are in the None case
     }
   }
 
