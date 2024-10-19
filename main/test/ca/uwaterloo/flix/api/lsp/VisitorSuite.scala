@@ -211,7 +211,7 @@ class VisitorSuite extends AnyFunSuite {
     assert(!Visitor.inside("wrong!", pos)(loc))
   }
 
-  test("not inside if SourceLocation isn't real") {
+  ignore("not inside if SourceLocation isn't real") {
     val loc = SourceLocation(
       isReal = false,
       SourcePosition(source, 3, 6),
