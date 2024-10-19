@@ -25,6 +25,9 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 
 /**
   * Consumer that collects every visited AST nodes on a stack where the head is the last element visited.
+  *
+  * Whenever `consumeX` is called for some `x: X` by the [[Visitor]], `x` is pushed onto the stack.
+  * This way, after the visitor is done, every AST node visited is accessible via [[StackConsumer.getStack]]
   */
 case class StackConsumer() extends Consumer {
   private var stack: List[AnyRef] = Nil
@@ -34,21 +37,9 @@ case class StackConsumer() extends Consumer {
   }
 
   /**
-    * @return [[Option]] containing the top element from the stack of AST elements that the consumer has collected.
-    *         Returns [[Null]] if the stack is empty.
-    */
-  def getHead: Option[AnyRef] = stack.headOption
-
-  /**
     * @return The stack of AST elements that the consumer has collected.
     */
   def getStack: List[AnyRef] = stack
-
-  /**
-    * @return The tail of the stack of AST elements that the consumer has collected.
-    *         By tail, what is meant is the list of every element except the top most.
-    */
-  def getTail: List[AnyRef] = stack.tail
 
   override def consumeAnnotation(ann: Annotation): Unit = push(ann)
   override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = push(tcst)
