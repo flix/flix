@@ -97,7 +97,8 @@ object Weeder2 {
           // case: use many
           case Some(uses) => uses
         }
-      case None => Validation.success(Nil)
+      case None =>
+        Validation.toSoftFailure(Nil, UnqualifiedUse(tree.loc))
     }
   }
 
