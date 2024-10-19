@@ -26,8 +26,8 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 /**
   * Consumer that collects every visited AST nodes on a stack where the head is the last element visited.
   *
-  * Whenever `consumeX` is called for some `x: X` by the [[Visitor]], `x` is pushed onto the stack.
-  * This way, after the visitor is done, every AST node visited is accessible via [[StackConsumer.getStack]]
+  * Whenever `consumeX` is called for some AST node `x: X` by the [[Visitor]], `x` is pushed onto the stack.
+  * This way, after the visitor is done, every AST node visited is accessible via [[getStack]].
   */
 case class StackConsumer() extends Consumer {
   private var stack: List[AnyRef] = Nil
