@@ -110,7 +110,7 @@ object PatMatch {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
-    flix.phaseWithTwoValues("PatMatch") {
+    flix.phaseRecoverable("PatMatch") {
       implicit val r: TypedAst.Root = root
 
       val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)

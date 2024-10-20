@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -617,9 +618,9 @@ class Flix {
   }
 
   /**
-    * Enters the phase that returns two results.
+    * Enters a phase with name `phaseName` that returns a result along with recoverable errors.
     */
-  def phaseWithTwoValues[A, B](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+  def phaseRecoverable[A, B <: List[Recoverable]](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     implicit object DebugA extends Debug[(A, B)] {
       override def emit(phase: String, tuple: (A, B))(implicit flix: Flix): Unit = {
         val (a, _) = tuple

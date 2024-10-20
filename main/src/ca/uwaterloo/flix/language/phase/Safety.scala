@@ -30,7 +30,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseWithTwoValues("Safety") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseRecoverable("Safety") {
     //
     // Collect all errors.
     //

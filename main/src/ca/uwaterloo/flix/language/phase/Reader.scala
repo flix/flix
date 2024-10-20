@@ -38,7 +38,7 @@ object Reader {
     * Reads the given source inputs into memory.
     */
   def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
-    flix.phaseWithTwoValues("Reader") {
+    flix.phaseRecoverable("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
