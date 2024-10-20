@@ -1899,16 +1899,20 @@ object Weeder2 {
       val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
       flatMapN(rules, maybeDefault) {
         case (rules, maybeDefault) if rules.forall(_.isLeft) =>
-          val unpackedRules = rules.map { case Left(rule) => rule }
+          val unpackedRules = rules.map { case Left(rule) => rule case _ => ??? }
           Validation.success(Expr.SelectChannel(unpackedRules, maybeDefault, tree.loc))
 
         case (rules, _) => // At least one error occurred
           val errors = rules.filter(_.isRight).map {
             case Right(error) => error
+            case _ => ???
           }
-          traverse(errors) {
-            case error => Validation.toSoftFailure(Expr.Error(error), error)
-          }
+          // TODO use compound error?
+          // traverse(errors) {
+          //  case error => Validation.toSoftFailure(Expr.Error(error), error)
+          // }
+          val error = errors.head
+          Validation.toSoftFailure(Expr.Error(error), error)
       }
     }
 
