@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCa
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
@@ -1911,7 +1912,7 @@ object Weeder2 {
       }
     }
 
-    private def visitSelectRule(tree: Tree): Validation[Either[SelectChannelRule, CompilationMessage], CompilationMessage] = {
+    private def visitSelectRule(tree: Tree): Validation[Either[SelectChannelRule, CompilationMessage & Recoverable], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       mapN(pickNameIdent(tree), pickQName(tree), exprs) {
