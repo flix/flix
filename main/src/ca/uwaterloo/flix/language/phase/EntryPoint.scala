@@ -16,17 +16,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 /**
   * Processes the entry point of the program.
@@ -213,10 +214,10 @@ object EntryPoint {
   }
 
   /**
-    * Returns `true` iff `declaredEff` is not `Pure`, `IO`, `NonDet` or `Sys`
+    * Returns `true` iff `declaredEff` is not `Pure` and contains some non-base effect.
     */
   private def isBadEntryPointEffect(declaredEff: Type) = {
-    declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)
+    declaredEff.effects.exists(sym => !Symbol.isBaseEff(sym))
   }
 
   /**
@@ -242,7 +243,7 @@ object EntryPoint {
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
     val itpe = oldEntryPoint.spec.declaredScheme.base
-    val symUse = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
+    val symUse = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
     val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
     // func()
     val call = TypedAst.Expr.ApplyDef(symUse, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
@@ -251,7 +252,7 @@ object EntryPoint {
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val printTpe = Type.mkArrowWithEffect(itpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
-    val print = TypedAst.Expr.ApplyDef(Ast.DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
+    val print = TypedAst.Expr.ApplyDef(DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 

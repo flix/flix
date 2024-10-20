@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -339,21 +340,21 @@ object Redundancy {
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
       }
       visitExps(exps, env0, rc)
 
-    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
         visitExps(exps, env0, rc)
       } else {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
-    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
@@ -554,7 +555,7 @@ object Redundancy {
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
 
-    case Expr.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _) =>
+    case Expr.Tag(CaseSymUse(sym, _), exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
@@ -883,7 +884,7 @@ object Redundancy {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
     case Pattern.Cst(_, _, _) => Used.empty
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, _), _, _, _) =>
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       Used.empty

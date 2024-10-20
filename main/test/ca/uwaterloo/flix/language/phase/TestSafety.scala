@@ -969,7 +969,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |
         |@Test
-        |def foo(): Unit \ Print = do Print.println()
+        |def foo(): Unit \ Print = Print.println()
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1084,7 +1084,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def newRunnable(): Runnable \ IO = new Runnable {
         |    def run(_this: Runnable): Unit \ Ask =
-        |        do Ask.ask(); ()
+        |        Ask.ask(); ()
         |}
         |
         |def main(): Unit \ IO =
@@ -1105,7 +1105,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def main(): Unit \ IO =
         |    region rc {
-        |        spawn do Ask.ask() @ rc
+        |        spawn Ask.ask() @ rc
         |    }
         |
       """.stripMargin

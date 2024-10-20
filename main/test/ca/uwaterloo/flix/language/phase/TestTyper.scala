@@ -495,8 +495,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Unit =
-        |    do Print.print();
-        |    do Exc.raise()
+        |    Print.print();
+        |    Exc.raise()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -680,7 +680,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def op(x: String): Unit
         |}
         |
-        |def foo(): Unit \ E = do E.op(123)
+        |def foo(): Unit \ E = E.op(123)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -694,7 +694,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def op(): Unit
         |}
         |
-        |def foo(): Unit = do E.op() without E
+        |def foo(): Unit = E.op() without E
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -710,7 +710,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def disjoint(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2 - ef1): Unit = ???
         |
-        |def foo(): Unit = disjoint(_ -> do E.op(), _ -> do E.op())
+        |def foo(): Unit = disjoint(_ -> E.op(), _ -> E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -814,7 +814,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def noE(f: Unit -> Unit \ ef - E): Unit = ???
         |
-        |def foo(): Unit = noE(_ -> do E.op())
+        |def foo(): Unit = noE(_ -> E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -1262,7 +1262,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1278,11 +1278,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1302,8 +1302,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
@@ -1326,12 +1326,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1351,12 +1351,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do AskTell.askTell(42);
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1376,13 +1376,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
-        |    do AskTell.askTell(42);
+        |    Gen.gen();
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1401,11 +1401,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do AskTell.askTell(42);
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1425,9 +1425,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
-        |        def gen(k) = do AskTell.askTell(k("a"))
+        |        def gen(k) = AskTell.askTell(k("a"))
         |    };
         |    ()
         |""".stripMargin

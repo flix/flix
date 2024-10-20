@@ -2543,8 +2543,8 @@ object Parser2 {
     private def doExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDo))
       val mark = open()
-      expect(TokenKind.KeywordDo, SyntacticContext.Expr.Do)
-      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
+      expect(TokenKind.KeywordDo, SyntacticContext.Expr.OtherExpr)
+      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
       arguments()
       close(mark, TreeKind.Expr.Do)
     }
