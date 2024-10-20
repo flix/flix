@@ -1897,33 +1897,25 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Select)
       val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
       val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
-      flatMapN(rules, maybeDefault) {
-        case (rules, maybeDefault) if rules.forall(_.isLeft) =>
-          val unpackedRules = rules.map { case Left(rule) => rule case _ => ??? }
-          Validation.success(Expr.SelectChannel(unpackedRules, maybeDefault, tree.loc))
-
-        case (rules, _) => // At least one error occurred
-          val errors = rules.filter(_.isRight).map {
-            case Right(error) => error
-            case _ => ???
-          }
-          // TODO use compound error?
-          // traverse(errors) {
-          //  case error => Validation.toSoftFailure(Expr.Error(error), error)
-          // }
-          val error = errors.head
-          Validation.toSoftFailure(Expr.Error(error), error)
+      mapN(rules, maybeDefault) {
+        (rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc)
       }
     }
 
-    private def visitSelectRule(tree: Tree): Validation[Either[SelectChannelRule, CompilationMessage & Recoverable], CompilationMessage] = {
+    private def visitSelectRule(tree: Tree): Validation[SelectChannelRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      mapN(pickNameIdent(tree), pickQName(tree), exprs) {
-        case (ident, qname, channel :: body :: Nil) if qname.toString == "Channel.recv" =>
-          Left(SelectChannelRule(ident, channel, body))
+      flatMapN(pickNameIdent(tree), pickQName(tree), exprs) {
+        case (ident, qname, channel :: body :: Nil) => // Shape is correct
+          if (qname.toString == "Channel.recv") {
+            Validation.success(SelectChannelRule.Rule(ident, channel, body))
+          } else {
+            val error = ??? // Name was incorrect
+            Validation.toSoftFailure(SelectChannelRule.Error, error)
+          }
         case _ =>
-          Right(???)
+          val error = ???
+          Validation.toSoftFailure(SelectChannelRule.Error, error)
       }
     }
 

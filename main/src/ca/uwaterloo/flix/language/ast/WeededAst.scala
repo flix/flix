@@ -440,7 +440,15 @@ object WeededAst {
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr)
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    case class Rule(ident: Name.Ident, exp1: Expr, exp2: Expr) extends SelectChannelRule
+
+    case object Error extends SelectChannelRule
+
+  }
 
   sealed trait TypeParam
 
