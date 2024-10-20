@@ -727,10 +727,6 @@ object Desugar {
           Expr.TryWith(acc, handler.eff, rs, loc)
       }
 
-    case WeededAst.Expr.Do(op, exps, loc) =>
-      val es = visitExps(exps)
-      Expr.Do(op, es, loc)
-
     case WeededAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val es = visitExps(exps)
       Expr.InvokeConstructor2(className, es, loc)

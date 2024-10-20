@@ -192,8 +192,6 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
-      case object Do extends Expr
-
       case object Index extends Expr
 
       case object IndexMut extends Expr
