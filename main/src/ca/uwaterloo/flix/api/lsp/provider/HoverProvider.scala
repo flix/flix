@@ -39,6 +39,8 @@ object HoverProvider {
 
   private def hoverAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
     case tpe: Type => hoverKind(tpe)
+    case Expr.Let(sym, exp1, _, _, _, _) if Visitor.inside(uri, pos)(sym.loc) =>
+      hoverType(exp1.tpe, sym.loc)
     case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
