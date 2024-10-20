@@ -18,14 +18,14 @@ mod Test.Exp.Effect {
 
     // @test
     pub def perform01(): Unit \ Fail = {
-        do Test.Exp.Effect.Fail.fail(":(")
+        Test.Exp.Effect.Fail.fail(":(")
     }
 
     // @test
     pub def perform02(): Bool = {
         try {
-            do Test.Exp.Effect.Console.println("hi");
-            do Test.Exp.Effect.Console.println("bye");
+            Test.Exp.Effect.Console.println("hi");
+            Test.Exp.Effect.Console.println("bye");
             true
         } with Console {
             def println(_, cont) = cont()
@@ -34,7 +34,7 @@ mod Test.Exp.Effect {
 
     // @test
     pub def handlePerform01(): Unit = {
-        try do Test.Exp.Effect.Fail.fail("rats") with Fail {
+        try Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_, _cont) = ()
         }
     }
@@ -42,7 +42,7 @@ mod Test.Exp.Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Test.Exp.Effect.Console.println("It was the best of times");
+            let _ = Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {
             def println(_, cont) = cont()

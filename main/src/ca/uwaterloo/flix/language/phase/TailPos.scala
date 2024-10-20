@@ -64,12 +64,6 @@ object TailPos {
         val e2 = visitExp(exp2)
         Expr.Let(sym, exp1, e2, tpe, purity, loc)
 
-      case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-        // The body expression is in tail position.
-        // (The value expression is *not* in tail position).
-        val e2 = visitExp(exp2)
-        Expr.LetRec(varSym, index, defSym, exp1, e2, tpe, purity, loc)
-
       case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
         // The body expression is in tail position.
         // (The dicarded expression is *not* in tail position

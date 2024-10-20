@@ -78,7 +78,6 @@ object EffectVerifier {
   def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
-    case Expr.Sig(sym, tpe, loc) => ()
     case Expr.Hole(sym, tpe, eff, loc) => ()
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -122,12 +121,6 @@ object EffectVerifier {
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
-      val actual = eff
-      expectType(expected, actual, loc)
-    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)

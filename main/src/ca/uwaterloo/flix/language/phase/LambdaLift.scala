@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifier, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -86,7 +86,7 @@ object LambdaLift {
 
       // Construct annotations and modifiers for the fresh definition.
       val ann = Annotations.Empty
-      val mod = Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
@@ -160,24 +160,6 @@ object LambdaLift {
       val e2 = visitExp(exp2)
       LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      e1 match {
-        case LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(defSym), closureArgs, _, _, _) =>
-          val index = closureArgs.indexWhere {
-            case LiftedAst.Expr.Var(sym, _, _) => varSym == sym
-            case _ => false
-          }
-          if (index == -1) {
-            // function never calls itself
-            LiftedAst.Expr.Let(varSym, e1, e2, tpe, purity, loc)
-          } else
-            LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
-        case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
-      }
-
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
@@ -187,7 +169,7 @@ object LambdaLift {
       // `visitExp` handles for us.
       val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, sctx, flix)
       val ann = Annotations.Empty
-      val mod = Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
       val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)

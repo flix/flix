@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
 
 object Indexer {
 
@@ -43,7 +44,7 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, exp) =>
+    case Def(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(def0),
         visitSpec(spec),
@@ -55,7 +56,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, exp) =>
+    case Sig(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(sig0),
         visitSpec(spec),
@@ -67,7 +68,7 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),
@@ -161,7 +162,7 @@ object Indexer {
     * Returns a reverse index for the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
-    case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
+    case AssocTypeDef(_, _, AssocTypeSymUse(sym, loc), arg, tpe, _) =>
       Index.all(
         Index.useOf(sym, loc),
         visitType(arg),
@@ -196,7 +197,7 @@ object Indexer {
     * Returns a reverse index for the given effect operation `op0`
     */
   private def visitOp(op0: Op): Index = op0 match {
-    case Op(_, spec) =>
+    case Op(_, spec, _) =>
       Index.all(
         Index.occurrenceOf(op0),
         visitSpec(spec),
@@ -213,10 +214,6 @@ object Indexer {
     case Expr.Var(sym, _, loc) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
-
-    case Expr.Sig(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)
 
     case Expr.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
@@ -236,15 +233,15 @@ object Indexer {
     case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ visitExps(exps)
 
-    case Expr.ApplySig(Ast.SigSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc) ++ visitExps(exps)
 
-    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
@@ -255,9 +252,6 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
-
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
@@ -307,11 +301,11 @@ object Indexer {
         case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
-    case Expr.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.Tag(CaseSymUse(sym, loc), exp, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
       val parent = Entity.Exp(exp0)
       // TODO RESTR-VARS use of sym
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -514,7 +508,7 @@ object Indexer {
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, loc), pat, _, _) =>
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)

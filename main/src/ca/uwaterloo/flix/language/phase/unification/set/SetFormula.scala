@@ -351,7 +351,7 @@ object SetFormula {
   }
 
   /** Returns an iterator of the subformulas of the union or intersection. */
-  private def subformulasOf(
+  def subformulasOf(
                              elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
                              elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
                              other: Iterable[SetFormula]
@@ -760,19 +760,30 @@ object SetFormula {
         val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
-          case Cst(c) => currentInsts += (c -> Univ)
-          case Compl(Cst(c)) => currentInsts += (c -> Empty)
-          case Var(x) => currentInsts += (x -> Univ)
-          case Compl(Var(x)) => currentInsts += (x -> Empty)
-          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Univ)
-          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Empty)
-          case Univ => ()
-          case Empty => ()
-          case Compl(_) => ()
-          case Inter(_, _, _, _, _, _, _) => ()
-          case Union(_, _, _, _, _, _, _) => ()
+          case Cst(c) =>
+            currentInsts += (c -> Univ)
+            other.append(fProp)
+          case Compl(Cst(c)) =>
+            currentInsts += (c -> Empty)
+            other.append(fProp)
+          case Var(x) =>
+            currentInsts += (x -> Univ)
+            other.append(fProp)
+          case Compl(Var(x)) =>
+            currentInsts += (x -> Empty)
+            other.append(fProp)
+          case e@ElemSet(_) =>
+            currentInsts ++= setElemOne(e, Univ)
+            other.append(fProp)
+          case Compl(e@ElemSet(_)) =>
+            currentInsts ++= setElemOne(e, Empty)
+            other.append(fProp)
+          case Univ => () // Redundant, so don't include.
+          case Empty => return Empty
+          case Compl(_) => other.append(fProp)
+          case Inter(_, _, _, _, _, _, _) => other.append(fProp)
+          case Union(_, _, _, _, _, _, _) => other.append(fProp)
         }
-        other.appended(fProp)
       }
       mkInterAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
 
@@ -827,19 +838,30 @@ object SetFormula {
         val fProp = propagationWithInsts(f, currentInsts)
         // Add elements, constants, and variables to the instantiations.
         fProp match {
-          case Cst(c) => currentInsts += (c -> Univ)
-          case Compl(Cst(c)) => currentInsts += (c -> Empty)
-          case Var(x) => currentInsts += (x -> Univ)
-          case Compl(Var(x)) => currentInsts += (x -> Empty)
-          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Univ)
-          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Empty)
-          case Univ => ()
-          case Empty => ()
-          case Compl(_) => ()
-          case Inter(_, _, _, _, _, _, _) => ()
-          case Union(_, _, _, _, _, _, _) => ()
+          case Cst(c) =>
+            currentInsts += (c -> Empty)
+            other.append(fProp)
+          case Compl(Cst(c)) =>
+            currentInsts += (c -> Univ)
+            other.append(fProp)
+          case Var(x) =>
+            currentInsts += (x -> Empty)
+            other.append(fProp)
+          case Compl(Var(x)) =>
+            currentInsts += (x -> Univ)
+            other.append(fProp)
+          case e@ElemSet(_) =>
+            currentInsts ++= setElemOne(e, Empty)
+            other.append(fProp)
+          case Compl(e@ElemSet(_)) =>
+            currentInsts ++= setElemOne(e, Univ)
+            other.append(fProp)
+          case Univ => return Univ
+          case Empty => () // Redundant, so don't include.
+          case Compl(_) => other.append(fProp)
+          case Inter(_, _, _, _, _, _, _) => other.append(fProp)
+          case Union(_, _, _, _, _, _, _) => other.append(fProp)
         }
-        other.appended(fProp)
       }
       mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
   }

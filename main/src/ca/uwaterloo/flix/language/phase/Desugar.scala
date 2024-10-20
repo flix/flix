@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Modifier
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifiers}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifier, Modifiers}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -544,11 +543,6 @@ object Desugar {
     case WeededAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)
       Expr.Discard(e, loc)
-
-    case WeededAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
     case WeededAst.Expr.LocalDef(ident, fparams, dtpe, deff, exp1, exp2, loc) =>
       val fps = visitFormalParams(fparams)

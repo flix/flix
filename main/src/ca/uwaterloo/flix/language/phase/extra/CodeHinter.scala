@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
@@ -79,8 +80,6 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Sig(_, _, _) => Nil
-
     case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
@@ -97,7 +96,7 @@ object CodeHinter {
     case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc1), exps, _, _, _, _) =>
       val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
       val hints1 = checkDeprecated(sym, loc1) ++
         checkExperimental(sym, loc1) ++
@@ -118,9 +117,6 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -740,14 +740,14 @@ object Weeder2 {
       }
     }
 
-    private def visitModifier(token: Token, allowed: Set[TokenKind]): Validation[Ast.Modifier, CompilationMessage] = {
+    private def visitModifier(token: Token, allowed: Set[TokenKind]): Validation[Modifier, CompilationMessage] = {
       val mod = token.kind match {
-        // TODO: there is no Ast.Modifier for 'inline'
-        case TokenKind.KeywordSealed => Validation.success(Ast.Modifier.Sealed)
-        case TokenKind.KeywordLawful => Validation.success(Ast.Modifier.Lawful)
-        case TokenKind.KeywordPub => Validation.success(Ast.Modifier.Public)
-        case TokenKind.KeywordMut => Validation.success(Ast.Modifier.Mutable)
-        case TokenKind.KeywordOverride => Validation.success(Ast.Modifier.Override)
+        // TODO: there is no Modifier for 'inline'
+        case TokenKind.KeywordSealed => Validation.success(Modifier.Sealed)
+        case TokenKind.KeywordLawful => Validation.success(Modifier.Lawful)
+        case TokenKind.KeywordPub => Validation.success(Modifier.Public)
+        case TokenKind.KeywordMut => Validation.success(Modifier.Mutable)
+        case TokenKind.KeywordOverride => Validation.success(Modifier.Override)
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
       if (!allowed.contains(token.kind)) {
@@ -849,7 +849,7 @@ object Weeder2 {
         case TreeKind.Expr.Binary => visitBinaryExpr(tree)
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
-        case TreeKind.Expr.LetRecDef => visitLetRecDefExpr(tree)
+        case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.LetImport => visitLetImportExpr(tree)
         case TreeKind.Expr.Scope => visitScopeExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
@@ -1279,8 +1279,8 @@ object Weeder2 {
       }
     }
 
-    private def visitLetRecDefExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.LetRecDef)
+    private def visitLocalDefExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.LocalDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Annotations(as) =>
           // Check for annotations
@@ -1784,7 +1784,7 @@ object Weeder2 {
 
     private def visitDoExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.Do)) {
+      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)) {
         (op, args) => Expr.Do(op, args, tree.loc)
       }
     }

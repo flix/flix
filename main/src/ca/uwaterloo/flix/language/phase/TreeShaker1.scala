@@ -103,9 +103,6 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Sig(sym, _, _) =>
-      Set(ReachableSym.SigSym(sym))
-
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
@@ -125,9 +122,6 @@ object TreeShaker1 {
       visitExps(exps)
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
