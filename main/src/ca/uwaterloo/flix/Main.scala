@@ -94,7 +94,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
@@ -346,7 +345,6 @@ object Main {
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
-                     xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
@@ -553,10 +551,6 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
-
-      // Xbdd-threshold
-      opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
-        text("[experimental] sets the threshold for when to use BDDs.")
 
       // Xno-bool-cache
       opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
