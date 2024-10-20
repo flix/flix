@@ -510,11 +510,11 @@ class Flix {
     val result = for {
       afterReader <- Validation.success(sources) // This is required for Scala to desugar the for-comprehension correctly. Will be removed once Validation is gone.
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       (afterNamer, namerErrors) = Namer.run(afterDesugar)
-      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet).withSoftFailures(namerErrors)
+      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet).withSoftFailures(parserErrors).withSoftFailures(namerErrors)
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
