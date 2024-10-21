@@ -1427,8 +1427,9 @@ object Weeder2 {
                 case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
                 case Pattern.Cst(Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case other =>
-                  val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-                  Validation.toSoftFailure(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic), e)
+                  val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
+                  sctx.errors.add(error)
+                  Validation.success(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic))
               }
             case other =>
               val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
