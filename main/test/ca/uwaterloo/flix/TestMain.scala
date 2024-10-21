@@ -189,12 +189,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnoboolunif)
   }
 
-  test("--Xno-qmc") {
-    val args = Array("--Xno-qmc")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoqmc)
-  }
-
   test("--explain") {
     val args = Array("--explain")
     val opts = Main.parseCmdOpts(args).get
