@@ -1512,8 +1512,9 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ForeachYield)
       flatMapN(pickForFragments(tree), pickExpr(tree)) {
         case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
+          val error = EmptyForFragment(tree.loc)
+          sctx.errors.add(error)
+          Validation.success(Expr.Error(error))
         case (fragments, expr) =>
           // It's okay to do head rather than headOption here because we check for Nil above.
           fragments.head match {
@@ -1521,6 +1522,7 @@ object Weeder2 {
             case _: ForFragment.Generator => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
             case f =>
               val error = IllegalForFragment(f.loc)
+              sctx.errors.add(error)
               Validation.toSoftFailure(Expr.Error(error), error)
           }
       }
