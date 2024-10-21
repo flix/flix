@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt.{FormatType, FormatTraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -139,7 +140,7 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTraitConstraint(entailingTconstr: Ast.TraitConstraint, redundantTconstr: Ast.TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
+  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
     def summary: String = "Redundant type constraint."
 
     def message(formatter: Formatter): String = {
