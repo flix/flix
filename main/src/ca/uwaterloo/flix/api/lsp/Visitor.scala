@@ -212,10 +212,12 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, _, _, loc) = cse
+    val Case(_, tpe, _, loc) = cse
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
+
+    visitType(tpe)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
