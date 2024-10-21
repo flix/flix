@@ -1523,7 +1523,7 @@ object Weeder2 {
             case f =>
               val error = IllegalForFragment(f.loc)
               sctx.errors.add(error)
-              Validation.toSoftFailure(Expr.Error(error), error)
+              Validation.success(Expr.Error(error))
           }
       }
     }
