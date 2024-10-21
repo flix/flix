@@ -783,9 +783,8 @@ object Weeder2 {
     )
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Validation[List[FormalParam], CompilationMessage] = {
-      val paramTree = tryPick(TreeKind.ParameterList, tree)
-      paramTree.map(
-        t => {
+      tryPick(TreeKind.ParameterList, tree) match {
+        case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
             Validation.success(List(unitFormalParameter(t.loc)))
@@ -801,11 +800,12 @@ object Weeder2 {
                 Validation.success(params).withSoftFailures(errors)
             }
           }
-        }
-      ).getOrElse(Validation.toSoftFailure(
-        List(unitFormalParameter(tree.loc)),
-        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc))
-      )
+        case None =>
+          Validation.toSoftFailure(
+            List(unitFormalParameter(tree.loc)),
+            UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
+          )
+      }
     }
 
     private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
