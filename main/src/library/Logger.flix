@@ -58,7 +58,7 @@ mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Logger) + IO = {
+    pub def run(f: Unit -> a \ ef): a \ ef - Logger + IO = {
         // Currently try-with typing is broken, so fix it with checked_ecast
         checked_ecast(try {
             f()

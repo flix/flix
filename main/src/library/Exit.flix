@@ -37,7 +37,7 @@ mod Exit {
     ///
     /// Note: This function can still return normally if `exit` is never called by `f`.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Exit) + Sys  = {
+    pub def run(f: Unit -> a \ ef): a \ ef - Exit + Sys  = {
         // Currently try-with typing is broken, so fix it with checked_ecast
         unchecked_cast(try {
             f()

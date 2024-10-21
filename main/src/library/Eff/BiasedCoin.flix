@@ -36,7 +36,7 @@ mod Eff {
         ///
         /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = {
+        pub def run(f: Unit -> a \ ef): a \ ef - BiasedCoin + IO = {
             // Currently try-with typing is broken, so fix it with checked_ecast
             checked_ecast(try {
                 f()
