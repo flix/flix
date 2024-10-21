@@ -751,23 +751,23 @@ object Weeder2 {
           })
           errors.foreach(sctx.errors.add)
 
-          val mods = traverse(tokens)(visitModifier(_, allowed))
-          mapN(mods)(Modifiers(_))
+          val mods = tokens.toList.map(visitModifier(_, allowed))
+          Validation.success(Modifiers(mods))
       }
     }
 
-    private def visitModifier(token: Token, allowed: Set[TokenKind])(implicit sctx: SharedContext): Validation[Modifier, CompilationMessage] = {
+    private def visitModifier(token: Token, allowed: Set[TokenKind])(implicit sctx: SharedContext): Modifier = {
       if (!allowed.contains(token.kind)) {
         val error = IllegalModifier(token.mkSourceLocation())
         sctx.errors.add(error)
       }
       token.kind match {
         // TODO: there is no Modifier for 'inline'
-        case TokenKind.KeywordSealed => Validation.success(Modifier.Sealed)
-        case TokenKind.KeywordLawful => Validation.success(Modifier.Lawful)
-        case TokenKind.KeywordPub => Validation.success(Modifier.Public)
-        case TokenKind.KeywordMut => Validation.success(Modifier.Mutable)
-        case TokenKind.KeywordOverride => Validation.success(Modifier.Override)
+        case TokenKind.KeywordSealed => Modifier.Sealed
+        case TokenKind.KeywordLawful => Modifier.Lawful
+        case TokenKind.KeywordPub => Modifier.Public
+        case TokenKind.KeywordMut => Modifier.Mutable
+        case TokenKind.KeywordOverride => Modifier.Override
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
     }
