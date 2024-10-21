@@ -20,16 +20,10 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import org.sosy_lab.pjbdd.api.DD
 
 import scala.collection.mutable
 
 object EffUnification {
-
-  /**
-    * The number of variables required before we switch to using BDDs for SVE.
-    */
-  private val DefaultThreshold: Int = 5
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
@@ -162,17 +156,9 @@ object EffUnification {
             sym -> tpe
         }
 
-        // Choose the SVE implementation based on the number of variables.
-        val numberOfVars = (t1.typeVars ++ t2.typeVars).size
-        val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
-
-        val substRes = if (numberOfVars < threshold) {
+        val substRes = {
           implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
           implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-          lookupOrSolve(t1, t2, renv)
-        } else {
-          implicit val alg: BoolAlg[DD] = new BddFormulaAlg
-          implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
           lookupOrSolve(t1, t2, renv)
         }
 
