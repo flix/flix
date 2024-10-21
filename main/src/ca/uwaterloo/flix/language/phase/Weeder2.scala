@@ -1482,7 +1482,8 @@ object Weeder2 {
             case _: ForFragment.Generator => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
             case f =>
               val error = IllegalForFragment(f.loc)
-              Validation.toSoftFailure(Expr.Error(error), error)
+              sctx.errors.add(error)
+              Validation.success(Expr.Error(error))
           }
       }
     }
