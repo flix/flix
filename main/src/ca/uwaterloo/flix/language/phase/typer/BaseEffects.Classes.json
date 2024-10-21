@@ -7,6 +7,7 @@
     "java.net.Authenticator": "Net, IO",
     "java.net.DatagramSocket": "Net, IO",
     "java.net.HttpURLConnection": "Net, IO",
+    "java.net.InetAddress": "Net, IO",
     "java.net.MulticastSocket": "Net, IO",
     "java.net.NetMulticastSocket": "Net, IO",
     "java.net.NetworkInterface": "Net, IO",
