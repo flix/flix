@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -616,41 +617,24 @@ class Flix {
   }
 
   /**
-    * Enters the phase with the given name.
+    * Enters a phase with name `phaseName` that returns a result along with recoverable errors.
     */
-  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
-    // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
-
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+  def phaseRecoverable[A, B <: List[Recoverable]](phaseName: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+    implicit object DebugA extends Debug[(A, B)] {
+      override def emit(phase: String, tuple: (A, B))(implicit flix: Flix): Unit = {
+        val (a, _) = tuple
+        d.emit(phase, a)
+      }
     }
-
-    // Measure the execution time.
-    val t = System.nanoTime()
-    val (root, errs) = f
-    val e = System.nanoTime() - t
-
-    // Update the phase time.
-    currentPhase = currentPhase.copy(time = e)
-
-    // And add it to the list of executed phases.
-    phaseTimers += currentPhase
-
-    if (this.options.xprintphases) {
-      d.emit(phase, root)(this)
-    }
-
-    // Return the result computed by the phase.
-    (root, errs)
+    phase(phaseName)(f)
   }
 
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
+  def phase[A](phaseName: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = PhaseTime(phaseName, 0)
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "", sample = false)
@@ -668,7 +652,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, r)(this)
+      d.emit(phaseName, r)(this)
     }
 
     // Return the result computed by the phase.

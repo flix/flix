@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for kind errors.
   */
-sealed trait KindError extends CompilationMessage {
+sealed trait KindError extends CompilationMessage with Recoverable {
   val kind: String = "Kind Error"
 }
 
