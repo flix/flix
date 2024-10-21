@@ -1643,8 +1643,9 @@ object Weeder2 {
       flatMapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
         case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
         case (exprs, None) =>
-          val err = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), err)
+          val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
+          sctx.errors.add(error)
+          Validation.success(Expr.ArrayLit(exprs, Expr.Error(error), tree.loc))
       }
     }
 
