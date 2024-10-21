@@ -20,9 +20,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
@@ -1904,12 +1905,17 @@ object Weeder2 {
     private def visitSelectRule(tree: Tree): Validation[SelectChannelRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      flatMapN(pickNameIdent(tree), exprs) {
-        case (ident, channel :: body :: Nil) =>
-          Validation.success(SelectChannelRule(ident, channel, body))
+      flatMapN(pickNameIdent(tree), pickQName(tree), exprs) {
+        case (ident, qname, channel :: body :: Nil) => // Shape is correct
+          if (qname.toString == "Channel.recv") {
+            Validation.success(SelectChannelRule.Rule(ident, channel, body))
+          } else {
+            val error = ??? // Name was incorrect
+            Validation.toSoftFailure(SelectChannelRule.Error, error)
+          }
         case _ =>
-          val err = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.HardFailure(Chain(err))
+          val error = ???
+          Validation.toSoftFailure(SelectChannelRule.Error, error)
       }
     }
 

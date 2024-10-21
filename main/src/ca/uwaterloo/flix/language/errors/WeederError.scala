@@ -113,14 +113,14 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate a struct contains duplicate fields
-   *
-   * @param structName the name of the struct
-   * @param fieldName the name of the field
-   * @param field1Loc the location of the first field
-   * @param field2Loc the location of the second field
-   * @param loc the location of the struct declaration
-   */
+    * An error raised to indicate a struct contains duplicate fields
+    *
+    * @param structName the name of the struct
+    * @param fieldName  the name of the field
+    * @param field1Loc  the location of the first field
+    * @param field2Loc  the location of the second field
+    * @param loc        the location of the struct declaration
+    */
   case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"struct has duplicate fields"
 
@@ -1093,6 +1093,18 @@ object WeederError {
       s""">> $summary
          |
          |${code(loc, "Unsupported pattern.")}
+         |""".stripMargin
+    }
+  }
+
+  case class UnexpectedIdent(name: String, loc: SourceLocation, expected: Option[String] = None) extends WeederError with Recoverable {
+    override def summary: String = s"Unexpected identifier '$name''" + expected.map(s => s", expected '$s'.").getOrElse("")
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> $summary
+         |
+         |${code(loc, "Unexpected identifier.")}
          |""".stripMargin
     }
   }
