@@ -94,7 +94,7 @@ object Visitor {
     def consumeType(tpe: Type): Unit = ()
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
     def consumeTypeParam(tparam: TypeParam): Unit = ()
-    def consumeVarBinder(varSym: Symbol.VarSym): Unit = ()
+    def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = ()
   }
 
   /**
@@ -454,7 +454,7 @@ object Visitor {
         visitExpr(exp2)
 
       case Expr.Let(varSym, exp1, exp2, _, _, _) =>
-        visitVarBinder(varSym)
+        visitVarBinder(varSym, exp1.tpe)
         visitExpr(exp1)
         visitExpr(exp2)
 
@@ -466,7 +466,7 @@ object Visitor {
       case Expr.Region(_, _) => ()
 
       case Expr.Scope(varSym, regionVar, exp, _, _, _) =>
-        visitVarBinder(varSym)
+        visitVarBinder(varSym, regionVar)
         visitType(regionVar)
         visitExpr(exp)
 
@@ -679,10 +679,10 @@ object Visitor {
     }
   }
 
-  private def visitVarBinder(varSym: Symbol.VarSym)(implicit a: Acceptor, c: Consumer): Unit = {
+  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(varSym.loc)) { return }
 
-    c.consumeVarBinder(varSym)
+    c.consumeVarBinder(varSym, tpe)
   }
 
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -746,7 +746,7 @@ object Visitor {
 
     c.consumeSelectChannelRule(rule)
 
-    visitVarBinder(varSym)
+    visitVarBinder(varSym, chan.tpe)
     visitExpr(chan)
     visitExpr(exp)
   }
@@ -757,7 +757,7 @@ object Visitor {
 
     c.consumeFormalParam(fparam)
 
-    visitVarBinder(varSym)
+    visitVarBinder(varSym, tpe)
     visitType(tpe)
   }
 
@@ -856,12 +856,12 @@ object Visitor {
   }
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val ConstraintParam(varSym, _, loc) = cparam
+    val ConstraintParam(varSym, tpe, loc) = cparam
     if (!a.accept(loc)) { return }
 
     c.consumeConstraintParam(cparam)
 
-    visitVarBinder(varSym)
+    visitVarBinder(varSym, tpe)
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -884,7 +884,7 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(varSym, _, _) => visitVarBinder(varSym)
+    	case Var(varSym, tpe, _) => visitVarBinder(varSym, tpe)
     	case Cst(_, _, _) => ()
     	case Tag(sym, pat, _, _) =>
     	  visitCaseSymUse(sym)
