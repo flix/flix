@@ -795,9 +795,10 @@ object Weeder2 {
                 val paramsWithoutWildcards = params.filter(!_.ident.isWild)
                 val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
+                errors.foreach(sctx.errors.add)
 
                 // Check missing or illegal type ascription
-                Validation.success(params).withSoftFailures(errors)
+                Validation.success(params)
             }
           }
         case None =>
