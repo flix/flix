@@ -64,7 +64,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Builder()
 
     @test
-    def testInvokeConstructorWithArrayParam(): URLClassLoader \ IO = region rc {
+    def testInvokeConstructorWithArrayParam(): URLClassLoader \ {Sys, Net, IO} = region rc {
         let arr : Array[URL, rc] = Array#{} @ rc;
         new URLClassLoader(arr)
     }
