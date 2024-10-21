@@ -922,7 +922,8 @@ object Weeder2 {
           // This means that intrinsics are not "first-class" like other functions.
           // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
           val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
-          Validation.toSoftFailure(Expr.Error(error), error)
+          sctx.errors.add(error)
+          Validation.success(Expr.Error(error))
         case TreeKind.ErrorTree(err) => Validation.success(Expr.Error(err))
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
