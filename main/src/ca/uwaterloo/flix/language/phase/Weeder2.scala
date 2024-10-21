@@ -817,8 +817,9 @@ object Weeder2 {
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
             case (None, Presence.Required) =>
-              val e = MissingFormalParamAscription(ident.name, tree.loc)
-              Validation.toSoftFailure(FormalParam(ident, mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc), e)
+              val error = MissingFormalParamAscription(ident.name, tree.loc)
+              sctx.errors.add(error)
+              Validation.success(FormalParam(ident, mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
               val e = IllegalFormalParamAscription(tree.loc)
               Validation.toSoftFailure(FormalParam(ident, mods, None, tree.loc), e)
