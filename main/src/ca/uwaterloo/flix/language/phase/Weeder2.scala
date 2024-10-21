@@ -2249,20 +2249,21 @@ object Weeder2 {
 
     private def visitLiteralPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Literal)
-      flatMapN(Exprs.visitLiteralExpr(tree)) {
+      mapN(Exprs.visitLiteralExpr(tree)) {
         case Expr.Cst(cst, _) => cst match {
           case Constant.Null =>
             val error = IllegalNullPattern(tree.loc)
             sctx.errors.add(error)
-            Validation.success(WeededAst.Pattern.Error(tree.loc))
+            WeededAst.Pattern.Error(tree.loc)
           case Constant.Regex(_) =>
             val error = IllegalRegexPattern(tree.loc)
             sctx.errors.add(error)
-            Validation.success(WeededAst.Pattern.Error(tree.loc))
-          case c => Validation.success(Pattern.Cst(c, tree.loc))
+            WeededAst.Pattern.Error(tree.loc)
+          case c =>
+            Pattern.Cst(c, tree.loc)
         }
         // Avoid double reporting errors
-        case Expr.Error(_) => Validation.success(Pattern.Error(tree.loc))
+        case Expr.Error(_) => Pattern.Error(tree.loc)
         case e => throw InternalCompilerException(s"Malformed Pattern.Literal. Expected literal but found $e", e.loc)
       }
     }
