@@ -802,10 +802,9 @@ object Weeder2 {
             }
           }
         case None =>
-          Validation.toSoftFailure(
-            List(unitFormalParameter(tree.loc)),
-            UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
-          )
+          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
+          sctx.errors.add(error)
+          Validation.success(List(unitFormalParameter(tree.loc)))
       }
     }
 
