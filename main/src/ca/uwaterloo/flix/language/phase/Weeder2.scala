@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCa
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.language.errors.{Recoverable, WeederError}
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
@@ -35,6 +35,7 @@ import java.util.regex.{PatternSyntaxException, Pattern as JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.*
 
 /**
   * Weeder2 walks a [[Tree]], validates it and thereby transforms it into a [[WeededAst]].
@@ -51,6 +52,7 @@ object Weeder2 {
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     flix.phase("Weeder2") {
+      implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
@@ -58,7 +60,7 @@ object Weeder2 {
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names))
+      mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)).withSoftFailures(sctx.errors.asScala)
     }(DebugValidation())
   }
 
