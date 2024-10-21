@@ -491,7 +491,6 @@ object CompilerPerf {
     */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
   }
 
   /**

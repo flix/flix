@@ -96,7 +96,7 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
