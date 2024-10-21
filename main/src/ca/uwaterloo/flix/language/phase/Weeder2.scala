@@ -1128,7 +1128,8 @@ object Weeder2 {
               Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
             case _ =>
               val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-              Validation.toSoftFailure(Expr.Error(error), error)
+              sctx.errors.add(error)
+              Validation.success(Expr.Error(error))
           }
         case _ =>
           val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
