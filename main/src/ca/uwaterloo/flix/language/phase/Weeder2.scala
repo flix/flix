@@ -1680,8 +1680,9 @@ object Weeder2 {
         case k :: v :: Nil => Validation.success((k, v))
         // case: k =>
         case k :: Nil =>
-          val err = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.toSoftFailure((k, Expr.Error(err)), err)
+          val error = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          sctx.errors.add(error)
+          Validation.success((k, Expr.Error(error)))
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
     }
