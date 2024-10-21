@@ -1268,12 +1268,12 @@ object Weeder2 {
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
-              flatMapN(pickQName(exprs(1))) {
-                case qname if qname.isUnqualified => Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+              mapN(pickQName(exprs(1))) {
+                case qname if qname.isUnqualified => Expr.InstanceOf(e1, qname.ident, tree.loc)
                 case _ =>
                   val error = IllegalQualifiedName(exprs(1).loc)
                   sctx.errors.add(error)
-                  Validation.success(Expr.Error(error))
+                  Expr.Error(error)
               }
             // UNRECOGNIZED
             case id =>
