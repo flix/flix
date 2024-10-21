@@ -1432,8 +1432,9 @@ object Weeder2 {
                   Validation.success(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic))
               }
             case other =>
-              val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-              Validation.toSoftFailure(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)), e)
+              val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
+              sctx.errors.add(error)
+              Validation.success(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)))
           }
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
         case other =>
