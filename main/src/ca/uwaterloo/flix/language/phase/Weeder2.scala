@@ -1448,8 +1448,9 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ForApplicative)
       flatMapN(pickForFragments(tree), pickExpr(tree)) {
         case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
+          val error = EmptyForFragment(tree.loc)
+          sctx.errors.add(error)
+          Validation.success(Expr.Error(error))
         case (fragments, expr) =>
           // Check that there are only generators
           val (generators, nonGeneratorFragments) = fragments.partition {
