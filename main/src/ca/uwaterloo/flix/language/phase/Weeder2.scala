@@ -757,7 +757,11 @@ object Weeder2 {
     }
 
     private def visitModifier(token: Token, allowed: Set[TokenKind])(implicit sctx: SharedContext): Validation[Modifier, CompilationMessage] = {
-      val mod = token.kind match {
+      if (!allowed.contains(token.kind)) {
+        val error = IllegalModifier(token.mkSourceLocation())
+        sctx.errors.add(error)
+      }
+      token.kind match {
         // TODO: there is no Modifier for 'inline'
         case TokenKind.KeywordSealed => Validation.success(Modifier.Sealed)
         case TokenKind.KeywordLawful => Validation.success(Modifier.Lawful)
@@ -766,11 +770,6 @@ object Weeder2 {
         case TokenKind.KeywordOverride => Validation.success(Modifier.Override)
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
-      if (!allowed.contains(token.kind)) {
-        val error = IllegalModifier(token.mkSourceLocation())
-        sctx.errors.add(error)
-      }
-      mod
     }
 
     def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
