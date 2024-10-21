@@ -523,7 +523,7 @@ object Weeder2 {
       }
     }
 
-    private def visitStructField(tree: Tree): Validation[StructField, CompilationMessage] = {
+    private def visitStructField(tree: Tree)(implicit sctx: SharedContext): Validation[StructField, CompilationMessage] = {
       expect(tree, TreeKind.StructField)
       mapN(
         pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut)),
@@ -730,11 +730,11 @@ object Weeder2 {
       TokenKind.KeywordMut,
       TokenKind.KeywordInline)
 
-    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false): Validation[Modifiers, CompilationMessage] = {
+    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit sctx: SharedContext): Validation[Modifiers, CompilationMessage] = {
       tryPick(TreeKind.ModifierList, tree) match {
         case None => Validation.success(Modifiers(List.empty))
         case Some(modTree) =>
-          var errors: List[CompilationMessage] = List.empty
+          var errors: List[CompilationMessage & Recoverable] = List.empty
           val tokens = pickAllTokens(modTree)
           // Check if pub is missing
           if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
@@ -749,9 +749,9 @@ object Weeder2 {
             val loc2 = pair._2.mkSourceLocation()
             DuplicateModifier(name, loc2, loc1)
           })
+          errors.foreach(sctx.errors.add)
 
           val mods = traverse(tokens)(visitModifier(_, allowed))
-            .withSoftFailures(errors)
           mapN(mods)(Modifiers(_))
       }
     }
@@ -780,7 +780,7 @@ object Weeder2 {
       loc
     )
 
-    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required): Validation[List[FormalParam], CompilationMessage] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Validation[List[FormalParam], CompilationMessage] = {
       val paramTree = tryPick(TreeKind.ParameterList, tree)
       paramTree.map(
         t => {
@@ -806,7 +806,7 @@ object Weeder2 {
       )
     }
 
-    private def visitParameter(tree: Tree, presence: Presence): Validation[FormalParam, CompilationMessage] = {
+    private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
       expect(tree, TreeKind.Parameter)
       flatMapN(
         pickNameIdent(tree),
