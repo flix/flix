@@ -216,7 +216,7 @@ object Safety {
     * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
   private def isAllowedEffect(defn: Def): Boolean = {
-    defn.spec.eff.effects.iterator forall {
+    defn.spec.eff.effects.forall {
       case Symbol.Env => true
       case Symbol.Exec => true
       case Symbol.FileRead => true
