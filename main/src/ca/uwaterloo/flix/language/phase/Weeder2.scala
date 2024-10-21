@@ -1270,8 +1270,9 @@ object Weeder2 {
               flatMapN(pickQName(exprs(1))) {
                 case qname if qname.isUnqualified => Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
                 case _ =>
-                  val m = IllegalQualifiedName(exprs(1).loc)
-                  Validation.toSoftFailure(Expr.Error(m), m)
+                  val error = IllegalQualifiedName(exprs(1).loc)
+                  sctx.errors.add(error)
+                  Validation.success(Expr.Error(error))
               }
             // UNRECOGNIZED
             case id =>
