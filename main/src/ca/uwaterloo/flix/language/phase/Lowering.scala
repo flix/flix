@@ -408,11 +408,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.Let(sym, e1, e2, t, eff, loc)
+      LoweredAst.Expr.Let(bnd.sym, e1, e2, t, eff, loc)
 
     case TypedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)

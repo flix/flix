@@ -41,6 +41,7 @@ object HoverProvider {
     case tpe: Type => hoverKind(tpe)
     case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
     case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
+    case Binder(sym, tpe) => hoverType(tpe, sym.loc)
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)

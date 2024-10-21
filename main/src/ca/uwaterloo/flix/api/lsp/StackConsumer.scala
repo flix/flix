@@ -46,6 +46,7 @@ case class StackConsumer() extends Consumer {
   override def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = push(tdefn)
   override def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = push(tsig)
   override def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = push(symUse)
+  override def consumeBinder(bnd: Binder): Unit = push(bnd)
   override def consumeCase(cse: Case): Unit = push(cse)
   override def consumeCaseSymUse(sym: CaseSymUse): Unit = push(sym)
   override def consumeCatchRule(rule: CatchRule): Unit = push(rule)

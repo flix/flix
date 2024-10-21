@@ -169,9 +169,10 @@ object TypeReconstruction {
     case KindedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
+      val bnd = TypedAst.Binder(sym, e1.tpe)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
       val fps = fparams.map(visitFormalParam(_, subst))
