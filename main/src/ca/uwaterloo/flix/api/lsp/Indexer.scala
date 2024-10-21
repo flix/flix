@@ -251,8 +251,8 @@ object Indexer {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(bnd.sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       // We construct the type manually here, since we do not have immediate access to it

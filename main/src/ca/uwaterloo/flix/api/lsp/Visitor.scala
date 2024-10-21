@@ -53,6 +53,7 @@ object Visitor {
     def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
     def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
     def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
+    def consumeBinder(bnd: Binder): Unit = ()
     def consumeCase(cse: Case): Unit = ()
     def consumeCaseSymUse(sym: CaseSymUse): Unit = ()
     def consumeCatchRule(rule: CatchRule): Unit = ()
@@ -453,8 +454,8 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Let(varSym, exp1, exp2, _, _, _) =>
-        visitVarBinder(varSym, exp1.tpe)
+      case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+        visitBinder(bnd)
         visitExpr(exp1)
         visitExpr(exp2)
 
@@ -677,6 +678,12 @@ object Visitor {
 
       case Expr.Error(_, _, _) => ()
     }
+  }
+
+  private def visitBinder(bnd: Binder)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(bnd.sym.loc)) { return }
+
+    c.consumeBinder(bnd)
   }
 
   private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
