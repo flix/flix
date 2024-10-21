@@ -15,14 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
 
@@ -95,6 +94,7 @@ object Visitor {
     def consumeType(tpe: Type): Unit = ()
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
     def consumeTypeParam(tparam: TypeParam): Unit = ()
+    def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = ()
   }
 
   /**
@@ -212,10 +212,12 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, _, _, loc) = cse
+    val Case(_, tpe, _, loc) = cse
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
+
+    visitType(tpe)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -451,7 +453,8 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Let(_, exp1, exp2, _, _, _) =>
+      case Expr.Let(varSym, exp1, exp2, _, _, _) =>
+        visitVarBinder(varSym, exp1.tpe)
         visitExpr(exp1)
         visitExpr(exp2)
 
@@ -462,7 +465,8 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(_, regionVar, exp, _, _, _) =>
+      case Expr.Scope(varSym, regionVar, exp, _, _, _) =>
+        visitVarBinder(varSym, regionVar)
         visitType(regionVar)
         visitExpr(exp)
 
@@ -675,6 +679,12 @@ object Visitor {
     }
   }
 
+  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(varSym.loc)) { return }
+
+    c.consumeVarBinder(varSym, tpe)
+  }
+
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
@@ -729,23 +739,25 @@ object Visitor {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val SelectChannelRule(_, chan, exp) = rule
+    val SelectChannelRule(varSym, chan, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
     val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeSelectChannelRule(rule)
 
+    visitVarBinder(varSym, chan.tpe)
     visitExpr(chan)
     visitExpr(exp)
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(_, _, tpe, _, loc) = fparam
+    val FormalParam(varSym, _, tpe, _, loc) = fparam
     if (!a.accept(loc)) { return }
 
     c.consumeFormalParam(fparam)
 
+    visitVarBinder(varSym, tpe)
     visitType(tpe)
   }
 
@@ -844,10 +856,12 @@ object Visitor {
   }
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val ConstraintParam(_, _, loc) = cparam
+    val ConstraintParam(varSym, tpe, loc) = cparam
     if (!a.accept(loc)) { return }
 
     c.consumeConstraintParam(cparam)
+
+    visitVarBinder(varSym, tpe)
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -870,7 +884,7 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(_, _, _) => ()
+    	case Var(varSym, tpe, _) => visitVarBinder(varSym, tpe)
     	case Cst(_, _, _) => ()
     	case Tag(sym, pat, _, _) =>
     	  visitCaseSymUse(sym)
@@ -908,8 +922,6 @@ object Visitor {
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    if(!loc.isReal) { return false }
-
     val sameSource = uri == loc.source.name
     if (!sameSource) { return false }
 
