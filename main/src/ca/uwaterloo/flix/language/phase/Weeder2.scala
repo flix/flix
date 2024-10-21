@@ -965,7 +965,8 @@ object Weeder2 {
       // Check for empty interpolation
       if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
         val error = EmptyInterpolatedExpression(tree.loc)
-        return Validation.toSoftFailure(Expr.Error(error), error)
+        sctx.errors.add(error)
+        return Validation.success(Expr.Error(error))
       }
 
       Validation.fold(tree.children, init: WeededAst.Expr) {
