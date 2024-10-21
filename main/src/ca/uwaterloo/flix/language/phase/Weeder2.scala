@@ -789,7 +789,7 @@ object Weeder2 {
           if (params.isEmpty) {
             Validation.success(List(unitFormalParameter(t.loc)))
           } else {
-            flatMapN(traverse(params)(visitParameter(_, presence))) {
+            mapN(traverse(params)(visitParameter(_, presence))) {
               params =>
                 // Check for duplicates
                 val paramsWithoutWildcards = params.filter(!_.ident.isWild)
@@ -798,7 +798,7 @@ object Weeder2 {
                 errors.foreach(sctx.errors.add)
 
                 // Check missing or illegal type ascription
-                Validation.success(params)
+                params
             }
           }
         case None =>
