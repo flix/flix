@@ -1310,11 +1310,10 @@ object Weeder2 {
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Annotations(as) =>
           // Check for annotations
-          val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
-            errors += IllegalAnnotation(a.loc)
+            sctx.errors.add(IllegalAnnotation(a.loc))
           }
-          Validation.toSuccessOrSoftFailure(Annotations(as), errors)
+          Validation.success(Annotations(as))
       }
 
       val exprs = flatMapN(pickExpr(tree)) {
