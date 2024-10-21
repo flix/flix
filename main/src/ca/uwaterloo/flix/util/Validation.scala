@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.errors.{Unrecoverable}
 import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.collection.mutable
@@ -103,7 +102,7 @@ object Validation {
   /**
     * Returns a [[Validation.HardFailure]] with the error `e`.
     */
-  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.HardFailure(Chain(e))
+  def toHardFailure[T, E](e: E): Validation[T, E] = Validation.HardFailure(Chain(e))
 
   /**
     * Represents a successful validation with the empty list.
