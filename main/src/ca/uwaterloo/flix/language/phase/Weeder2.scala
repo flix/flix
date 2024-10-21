@@ -2226,7 +2226,7 @@ object Weeder2 {
       }
     }
 
-    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident]): Validation[Pattern, CompilationMessage] = {
+    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Variable)
       flatMapN(pickNameIdent(tree))(
         ident => {
@@ -2234,10 +2234,10 @@ object Weeder2 {
             Validation.success(Pattern.Wild(tree.loc))
           else {
             seen.get(ident.name) match {
-              case Some(other) => Validation.toSoftFailure(
-                Pattern.Var(ident, tree.loc),
-                NonLinearPattern(ident.name, other.loc, tree.loc)
-              )
+              case Some(other) =>
+                val error = NonLinearPattern(ident.name, other.loc, tree.loc)
+                sctx.errors.add(error)
+                Validation.success(Pattern.Var(ident, tree.loc))
               case None =>
                 seen += (ident.name -> ident)
                 Validation.success(Pattern.Var(ident, tree.loc))
