@@ -1458,8 +1458,10 @@ object Weeder2 {
             case _ => false
           }
           if (nonGeneratorFragments.nonEmpty) {
-            val err = IllegalForAFragment(nonGeneratorFragments.head.loc)
-            Validation.success(Expr.Error(err)).withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(f.loc)))
+            val errors = nonGeneratorFragments.map(f => IllegalForAFragment(f.loc))
+            errors.foreach(sctx.errors.add)
+            val error = IllegalForAFragment(nonGeneratorFragments.head.loc)
+            Validation.success(Expr.Error(error))
           } else {
             Validation.success(Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc))
           }
