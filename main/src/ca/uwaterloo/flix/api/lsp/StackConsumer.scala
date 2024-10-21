@@ -87,5 +87,5 @@ case class StackConsumer() extends Consumer {
   override def consumeType(tpe: Type): Unit = push(tpe)
   override def consumeTypeAlias(alias: TypeAlias): Unit = push(alias)
   override def consumeTypeParam(tparam: TypeParam): Unit = push(tparam)
-  override def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = push(varSym)
+  override def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = push((varSym, tpe))
 }
