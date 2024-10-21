@@ -669,33 +669,33 @@ object Weeder2 {
               DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
             })
             errors.foreach(sctx.errors.add)
-            traverse(tokens)(visitAnnotation)
+            tokens.toList.map(visitAnnotation)
           })
-        .getOrElse(Validation.success(List.empty))
+        .getOrElse(List.empty)
 
-      mapN(annotations)(Annotations(_))
+      Validation.success(Annotations(annotations))
     }
 
-    private def visitAnnotation(token: Token)(implicit sctx: SharedContext): Validation[Annotation, CompilationMessage] = {
+    private def visitAnnotation(token: Token)(implicit sctx: SharedContext): Annotation = {
       val loc = token.mkSourceLocation()
       import Annotation.*
       token.text match {
-        case "@Deprecated" => Validation.success(Deprecated(loc))
-        case "@Experimental" => Validation.success(Experimental(loc))
-        case "@Export" => Validation.success(Export(loc))
-        case "@Internal" => Validation.success(Internal(loc))
-        case "@Parallel" => Validation.success(Parallel(loc))
-        case "@ParallelWhenPure" => Validation.success(ParallelWhenPure(loc))
-        case "@Lazy" => Validation.success(Lazy(loc))
-        case "@LazyWhenPure" => Validation.success(LazyWhenPure(loc))
-        case "@MustUse" => Validation.success(MustUse(loc))
-        case "@Skip" => Validation.success(Skip(loc))
-        case "@Test" | "@test" => Validation.success(Test(loc))
-        case "@TailRec" => Validation.success(TailRecursive(loc))
+        case "@Deprecated" => Deprecated(loc)
+        case "@Experimental" => Experimental(loc)
+        case "@Export" => Export(loc)
+        case "@Internal" => Internal(loc)
+        case "@Parallel" => Parallel(loc)
+        case "@ParallelWhenPure" => ParallelWhenPure(loc)
+        case "@Lazy" => Lazy(loc)
+        case "@LazyWhenPure" => LazyWhenPure(loc)
+        case "@MustUse" => MustUse(loc)
+        case "@Skip" => Skip(loc)
+        case "@Test" | "@test" => Test(loc)
+        case "@TailRec" => TailRecursive(loc)
         case other =>
           val error = UndefinedAnnotation(other, loc)
           sctx.errors.add(error)
-          Validation.success(Annotation.Error(other.stripPrefix("@"), loc))
+          Annotation.Error(other.stripPrefix("@"), loc)
       }
     }
 
