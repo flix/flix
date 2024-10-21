@@ -2256,7 +2256,9 @@ object Weeder2 {
             sctx.errors.add(error)
             Validation.success(WeededAst.Pattern.Error(tree.loc))
           case Constant.Regex(_) =>
-            Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalRegexPattern(tree.loc))
+            val error = IllegalRegexPattern(tree.loc)
+            sctx.errors.add(error)
+            Validation.success(WeededAst.Pattern.Error(tree.loc))
           case c => Validation.success(Pattern.Cst(c, tree.loc))
         }
         // Avoid double reporting errors
