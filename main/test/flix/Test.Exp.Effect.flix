@@ -110,4 +110,13 @@ mod Test.Exp.Effect {
     }
 
     pub enum Do[ef: Eff](Unit -> Unit \ ef)
+
+    // Testing effect parsing and set semantics
+    pub eff A
+    pub eff B
+    pub eff C
+    def f(): Unit \ {A, B, C} - {B} + {C} = ???
+    pub def g(): Unit \ ({A, B, C} - {B}) + {C} = f()
+    // TODO: enable with set effects
+    // pub def h(): Unit \ {A, C} = f()
 }
