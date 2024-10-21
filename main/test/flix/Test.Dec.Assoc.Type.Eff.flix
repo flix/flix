@@ -20,13 +20,13 @@ mod Test.Dec.Assoc.Type.Eff {
     instance Runner[Int32] {
         pub type E = OutInt32
         pub def run(x: Int32): Unit \ OutInt32 =
-            do OutInt32.toStream(x)
+            OutInt32.toStream(x)
     }
 
     instance Runner[String] {
         pub type E = OutString
         pub def run(x: String): Unit \ OutString =
-            do OutString.toStream(x)
+            OutString.toStream(x)
     }
 
     instance Runner[Vector[a]] with Runner[a] {
@@ -63,11 +63,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceInt32_02(x: Int32): Unit \ OutInt32 =
-        do OutInt32.toStream(x)
+        OutInt32.toStream(x)
 
     pub def runTwiceInt32_02(x: Int32): Unit \ OutInt32 = {
-        do OutInt32.toStream(x);
-        do OutInt32.toStream(x)
+        OutInt32.toStream(x);
+        OutInt32.toStream(x)
     }
 
     // String
@@ -81,11 +81,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceString02(x: String): Unit \ OutString =
-        do OutString.toStream(x)
+        OutString.toStream(x)
 
     pub def runTwiceString02(x: String): Unit \ OutString = {
-        do OutString.toStream(x);
-        do OutString.toStream(x)
+        OutString.toStream(x);
+        OutString.toStream(x)
     }
 
     // Vector[Int32]
@@ -99,11 +99,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceVectorInt32_02(x: Vector[Int32]): Unit \ OutInt32 =
-        foreach (a <- x) do OutInt32.toStream(a)
+        foreach (a <- x) OutInt32.toStream(a)
 
     pub def runTwiceVectorInt32_02(x: Vector[Int32]): Unit \ OutInt32 = {
-        foreach (a <- x) do OutInt32.toStream(a);
-        foreach (a <- x) do OutInt32.toStream(a)
+        foreach (a <- x) OutInt32.toStream(a);
+        foreach (a <- x) OutInt32.toStream(a)
     }
 
     // Vector[String]
@@ -117,11 +117,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceVectorString02(x: Vector[String]): Unit \ OutString =
-        foreach (a <- x) do OutString.toStream(a)
+        foreach (a <- x) OutString.toStream(a)
 
     pub def runTwiceVectorString02(x: Vector[String]): Unit \ OutString = {
-        foreach (a <- x) do OutString.toStream(a);
-        foreach (a <- x) do OutString.toStream(a)
+        foreach (a <- x) OutString.toStream(a);
+        foreach (a <- x) OutString.toStream(a)
     }
 
     // Vector[Vector[Int32]]
@@ -135,11 +135,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceVectorVectorInt32_02(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
+        foreach (a <- x) foreach (b <- a) OutInt32.toStream(b)
 
     pub def runTwiceVectorVectorInt32_02(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b);
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
+        foreach (a <- x) foreach (b <- a) OutInt32.toStream(b);
+        foreach (a <- x) foreach (b <- a) OutInt32.toStream(b)
     }
 
     // Vector[Vector[String]]
@@ -153,11 +153,11 @@ mod Test.Dec.Assoc.Type.Eff {
     }
 
     pub def runOnceVectorVectorString02(x: Vector[Vector[String]]): Unit \ OutString =
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b)
+        foreach (a <- x) foreach (b <- a) OutString.toStream(b)
 
     pub def runTwiceVectorVectorString02(x: Vector[Vector[String]]): Unit \ OutString = {
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b);
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b)
+        foreach (a <- x) foreach (b <- a) OutString.toStream(b);
+        foreach (a <- x) foreach (b <- a) OutString.toStream(b)
     }
 
 

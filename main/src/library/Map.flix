@@ -50,7 +50,7 @@ instance Indexable[Map[k, v]] with Order[k] {
     type Aef = KeyNotFound
     pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
         case Some(v) => v
-        case None    => do KeyNotFound.keyNotFound("key not found")
+        case None    => KeyNotFound.keyNotFound("key not found")
     }
 }
 

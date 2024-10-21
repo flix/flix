@@ -29,7 +29,7 @@ instance Indexable[MutMap[k, v, r]] with Order[k] {
     pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
         match MutMap.get(i, t) {
             case Some(v) => v
-            case None => do KeyNotFound.keyNotFound("key not found")
+            case None => KeyNotFound.keyNotFound("key not found")
         }
     }
 }

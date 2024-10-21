@@ -28,7 +28,7 @@ instance Indexable[Vector[a]] {
 
     pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
         if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
-        else do OutOfBounds.outOfBounds(
+        else OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
         )
     }
