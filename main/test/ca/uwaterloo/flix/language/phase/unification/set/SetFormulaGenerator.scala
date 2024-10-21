@@ -59,6 +59,13 @@ object SetFormulaGenerator {
 
   }
 
+  object Options {
+
+    /** The default [[Options]]. */
+    val default: Options = Options(maxConnectiveWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3)
+
+  }
+
   /**
     * Generate a random [[SetFormula]] of a given `size` and a `maxDepth`.
     *

@@ -243,7 +243,6 @@ object BenchmarkCompilerOld {
     */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
   }
 
   /**
