@@ -1116,19 +1116,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](compile(input, Options.TestWithLibNix))
   }
 
-  test("TestCaseSetAnnotation.04") {
-    val input =
-      """
-        |restrictable enum Color[s] {
-        |    case Red, Green, Blue
-        |}
-        |
-        |// Wrong minus parsing
-        |def isRed(c: Color[s rvsub <Color.Red> rvadd <Color.Green>]): Color[(s rvsub <Color.Red>) rvadd <Color.Green>] = c
-        |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
-  }
-
   test("TestLetRec.01") {
     val input =
       """

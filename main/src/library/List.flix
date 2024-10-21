@@ -351,14 +351,11 @@ mod List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => {
-                let y = f(x);
-                loop(xs, ys -> k(y :: ys))
-            }
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x) :: acc)
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Return the singleton list with element `x`.
