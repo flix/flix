@@ -1836,8 +1836,9 @@ object Weeder2 {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
               Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
             case _ =>
-              val m = IllegalQualifiedName(tree.loc)
-              Validation.toSoftFailure(Expr.Error(m), m)
+              val error = IllegalQualifiedName(tree.loc)
+              sctx.errors.add(error)
+              Validation.success(Expr.Error(error))
           }
       }
     }
