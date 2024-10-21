@@ -1120,21 +1120,22 @@ object Weeder2 {
 
     private def visitArgumentNamed(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.ArgumentNamed)
-      flatMapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
+      val expsVal = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      mapN(expsVal) {
         case e1 :: e2 :: Nil =>
           // First expression must be a name
           e1 match {
             case Expr.Ambiguous(qname, _) =>
-              Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
+              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc)
             case _ =>
               val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
               sctx.errors.add(error)
-              Validation.success(Expr.Error(error))
+              Expr.Error(error)
           }
         case _ =>
           val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.Error(error))
+          Expr.Error(error)
       }
     }
 
