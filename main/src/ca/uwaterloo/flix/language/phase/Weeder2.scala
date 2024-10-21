@@ -2252,7 +2252,9 @@ object Weeder2 {
       flatMapN(Exprs.visitLiteralExpr(tree)) {
         case Expr.Cst(cst, _) => cst match {
           case Constant.Null =>
-            Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalNullPattern(tree.loc))
+            val error = IllegalNullPattern(tree.loc)
+            sctx.errors.add(error)
+            Validation.success(WeededAst.Pattern.Error(tree.loc))
           case Constant.Regex(_) =>
             Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalRegexPattern(tree.loc))
           case c => Validation.success(Pattern.Cst(c, tree.loc))
