@@ -821,8 +821,9 @@ object Weeder2 {
               sctx.errors.add(error)
               Validation.success(FormalParam(ident, mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
-              val e = IllegalFormalParamAscription(tree.loc)
-              Validation.toSoftFailure(FormalParam(ident, mods, None, tree.loc), e)
+              val error = IllegalFormalParamAscription(tree.loc)
+              sctx.errors.add(error)
+              Validation.success(FormalParam(ident, mods, None, tree.loc))
             case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
             case (None, _) => Validation.success(FormalParam(ident, mods, None, tree.loc))
           }
