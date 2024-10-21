@@ -1292,7 +1292,8 @@ object Weeder2 {
           }
         case _ =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
-          Validation.toSoftFailure(Expr.Error(error), error)
+          sctx.errors.add(error)
+          Validation.success(Expr.Error(error))
       }
     }
 
