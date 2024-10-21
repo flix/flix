@@ -980,7 +980,8 @@ object Weeder2 {
             Validation.success(acc)
           } else {
             val (processed, errors) = Constants.visitChars(lit, loc)
-            val cst = Validation.success(Expr.Cst(Constant.Str(processed), loc)).withSoftFailures(errors)
+            errors.foreach(sctx.errors.add)
+            val cst = Validation.success(Expr.Cst(Constant.Str(processed), loc))
             mapN(cst) {
               cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
             }
@@ -2448,9 +2449,9 @@ object Weeder2 {
       }
     }
 
-    def visitChars(str: String, loc: SourceLocation): (String, List[CompilationMessage]) = {
+    def visitChars(str: String, loc: SourceLocation): (String, List[CompilationMessage & Recoverable]) = {
       @tailrec
-      def visit(chars: List[Char], acc: List[Char], accErr: List[CompilationMessage]): (String, List[CompilationMessage]) = {
+      def visit(chars: List[Char], acc: List[Char], accErr: List[CompilationMessage & Recoverable]): (String, List[CompilationMessage & Recoverable]) = {
         chars match {
           // Case 1: End of the sequence
           case Nil => (acc.reverse.mkString, accErr)
@@ -2487,7 +2488,7 @@ object Weeder2 {
         }
       }
 
-      def visitHex(d1: Char, d2: Char, d3: Char, d4: Char): Result[Char, CompilationMessage] = {
+      def visitHex(d1: Char, d2: Char, d3: Char, d4: Char): Result[Char, CompilationMessage & Recoverable] = {
         try {
           Result.Ok(Integer.parseInt(s"$d1$d2$d3$d4", 16).toChar)
         } catch {
