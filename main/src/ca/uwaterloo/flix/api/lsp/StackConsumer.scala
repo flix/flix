@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Annotation
@@ -87,4 +87,5 @@ case class StackConsumer() extends Consumer {
   override def consumeType(tpe: Type): Unit = push(tpe)
   override def consumeTypeAlias(alias: TypeAlias): Unit = push(alias)
   override def consumeTypeParam(tparam: TypeParam): Unit = push(tparam)
+  override def consumeVarBinder(varSym: Symbol.VarSym): Unit = push(varSym)
 }
