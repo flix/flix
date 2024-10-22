@@ -97,7 +97,6 @@ object Main {
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
-      xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -349,7 +348,6 @@ object Main {
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnoboolunif: Boolean = false,
-                     xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
@@ -563,10 +561,6 @@ object Main {
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-qmc
-      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
-        text("[experimental] disables Quine McCluskey when using BDDs.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).

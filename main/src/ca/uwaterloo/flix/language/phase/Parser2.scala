@@ -3055,9 +3055,9 @@ object Parser2 {
         assert(left == TokenKind.Eof)
         return true
       }
-      // This >= rather than > makes it so that operators with equal precedence are left-associative.
+      // This > rather than >= makes it so that operators with equal precedence are left-associative.
       // IE. 't + eff1 + eff2' becomes '(t + eff1) + eff2' rather than 't + (eff1 + eff2)'
-      rt >= lt
+      rt > lt
     }
 
     def arguments()(implicit s: State): Mark.Closed = {

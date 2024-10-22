@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Annotation
@@ -46,6 +46,7 @@ case class StackConsumer() extends Consumer {
   override def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = push(tdefn)
   override def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = push(tsig)
   override def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = push(symUse)
+  override def consumeBinder(bnd: Binder): Unit = push(bnd)
   override def consumeCase(cse: Case): Unit = push(cse)
   override def consumeCaseSymUse(sym: CaseSymUse): Unit = push(sym)
   override def consumeCatchRule(rule: CatchRule): Unit = push(rule)
@@ -87,4 +88,5 @@ case class StackConsumer() extends Consumer {
   override def consumeType(tpe: Type): Unit = push(tpe)
   override def consumeTypeAlias(alias: TypeAlias): Unit = push(alias)
   override def consumeTypeParam(tparam: TypeParam): Unit = push(tparam)
+  override def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = push((varSym, tpe))
 }
