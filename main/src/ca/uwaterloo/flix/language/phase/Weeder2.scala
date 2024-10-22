@@ -1049,7 +1049,7 @@ object Weeder2 {
           case TokenKind.KeywordNull => Validation.success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
           case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
-          case TokenKind.LiteralString => Constants.toStringCst(token)
+          case TokenKind.LiteralString => Validation.success(Constants.toStringCst(token))
           case TokenKind.LiteralChar => Validation.success(Constants.toChar(token))
           case TokenKind.LiteralInt8 => Validation.success(Constants.toInt8(token))
           case TokenKind.LiteralInt16 => Validation.success(Constants.toInt16(token))
@@ -2557,12 +2557,12 @@ object Weeder2 {
       }
     }
 
-    def toStringCst(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def toStringCst(token: Token)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
       errors.foreach(sctx.errors.add)
-      Validation.success(Expr.Cst(Constant.Str(processed), loc))
+      Expr.Cst(Constant.Str(processed), loc)
     }
   }
 
