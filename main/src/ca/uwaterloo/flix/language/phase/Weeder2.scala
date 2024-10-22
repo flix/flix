@@ -2380,14 +2380,15 @@ object Weeder2 {
   }
 
   private object Constants {
-    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Validation[Expr, CompilationMessage]): Validation[Expr, CompilationMessage] = {
+    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Validation[Expr, CompilationMessage])(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       try {
         after(token.text.filterNot(_ == '_'), loc)
       } catch {
         case _: NumberFormatException =>
-          val err = MalformedFloat(loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+          val error = MalformedFloat(loc)
+          sctx.errors.add(error)
+          Validation.success(WeededAst.Expr.Error(error))
       }
     }
 
@@ -2407,7 +2408,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a float32.
       */
-    def toFloat32(token: Token): Validation[Expr, CompilationMessage] =
+    def toFloat32(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc))
       )
@@ -2415,7 +2416,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a float32.
       */
-    def toFloat64(token: Token): Validation[Expr, CompilationMessage] =
+    def toFloat64(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc))
       )
@@ -2423,7 +2424,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a big decimal.
       */
-    def toBigDecimal(token: Token): Validation[Expr, CompilationMessage] =
+    def toBigDecimal(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
         Validation.success(Expr.Cst(Constant.BigDecimal(bigDecimal), loc))
