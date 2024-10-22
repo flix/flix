@@ -36,14 +36,14 @@ mod Clock {
     ///
     /// Equivalent to `currentTime(TimeUnit.Milliseconds)`.
     ///
-    pub def now(): Int64 \ Clock = do Clock.currentTime(TimeUnit.Milliseconds)
+    pub def now(): Int64 \ Clock = Clock.currentTime(TimeUnit.Milliseconds)
 
     ///
     /// Runs the `Clock` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Clock) + IO = {
+    pub def run(f: Unit -> a \ ef): a \ ef - Clock + IO = {
         // Currently try-with typing is broken, so fix it with checked_ecast
         checked_ecast(try {
             f()

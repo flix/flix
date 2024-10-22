@@ -5,7 +5,7 @@ mod Test.Handler.Ask.Int64 {
     }
 
     def generator(x: Int64): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1i64)
+        Ask.ask(x); generator(x + 1i64)
 
     def sample(limit: Int64): List[Int64] =
         try {

@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifiers, Polarity, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
@@ -171,20 +172,20 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, exp0) =>
+    case TypedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
       val exp = visitExp(exp0)(Scope.Top, root, flix)
-      LoweredAst.Def(sym, spec, exp)
+      LoweredAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Lowers the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Sig = sig0 match {
-    case TypedAst.Sig(sym, spec0, exp0) =>
+    case TypedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
       val impl = exp0.map(visitExp(_)(Scope.Top, root, flix))
-      LoweredAst.Sig(sym, spec, impl)
+      LoweredAst.Sig(sym, spec, impl, loc)
   }
 
   /**
@@ -260,8 +261,8 @@ object Lowering {
   /**
     * Lowers `sym` from a restrictable case sym use into a regular case sym use.
     */
-  private def visitRestrictableCaseSymUse(sym: Ast.RestrictableCaseSymUse): Ast.CaseSymUse = {
-    Ast.CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
+  private def visitRestrictableCaseSymUse(sym: RestrictableCaseSymUse): CaseSymUse = {
+    CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
   }
 
   /**
@@ -283,9 +284,9 @@ object Lowering {
     * Lowers the given `op`.
     */
   private def visitOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Op = op match {
-    case TypedAst.Op(sym, spec0) =>
+    case TypedAst.Op(sym, spec0, loc) =>
       val spec = visitSpec(spec0)
-      LoweredAst.Op(sym, spec)
+      LoweredAst.Op(sym, spec, loc)
   }
 
   /**
@@ -326,11 +327,11 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs, loc) => // TODO ASSOC-TYPES econstrs needed in lowering?
+    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs) => // TODO ASSOC-TYPES econstrs needed in lowering?
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs, loc)
+      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs)
   }
 
   /**
@@ -379,18 +380,18 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyClo(e, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
 
-    case TypedAst.Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, arrowTpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplySig(Ast.SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)
@@ -407,11 +408,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.Let(sym, e1, e2, t, eff, loc)
+      LoweredAst.Expr.Let(bnd.sym, e1, e2, t, eff, loc)
 
     case TypedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)

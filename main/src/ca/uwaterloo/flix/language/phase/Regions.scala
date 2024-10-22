@@ -34,13 +34,12 @@ import scala.collection.immutable.SortedSet
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[TypeError]) = flix.phaseNew("Regions") {
     val defErrors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
     val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
     val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
-
-    Validation.toSuccessOrSoftFailure((), defErrors ++ sigErrors ++ instanceErrors)
-  }(DebugValidation()(DebugNoOp()))
+    ((), (defErrors ++ sigErrors ++ instanceErrors).toList)
+  }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)

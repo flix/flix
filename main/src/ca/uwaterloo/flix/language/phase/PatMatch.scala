@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -108,8 +109,8 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatMatch") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
+    flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
 
       val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
@@ -122,8 +123,8 @@ object PatMatch {
 
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
-      Validation.toSuccessOrSoftFailure(root, errors)
-    }(DebugValidation())
+      ((), errors.toList)
+    }
 
   /**
     * Check that all patterns in an expression are exhaustive
@@ -405,7 +406,7 @@ object PatMatch {
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), exp, _, _) =>
+      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exp, _, _) =>
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
@@ -715,7 +716,7 @@ object PatMatch {
     case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, _), pat, _, _) =>
       val args = pat match {
         case Pattern.Cst(Constant.Unit, _, _) => List.empty[TyCon]
         case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)

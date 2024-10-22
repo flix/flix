@@ -31,34 +31,34 @@ mod Logger {
     ///
     /// Logs the message `m` at the `Trace` level.
     ///
-    pub def trace(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Trace, "${m}")
+    pub def trace(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Trace, "${m}")
 
     ///
     /// Logs the message `m` at the `Debug` level.
     ///
-    pub def debug1(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Debug, "${m}")
+    pub def debug(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Debug, "${m}")
 
     ///
     /// Logs the message `m` at the `Info` level.
     ///
-    pub def info(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Info, "${m}")
+    pub def info(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Info, "${m}")
 
     ///
     /// Logs the message `m` at the `Warn` level.
     ///
-    pub def warn(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Warn, "${m}")
+    pub def warn(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Warn, "${m}")
 
     ///
     /// Logs the message `m` at the `Fatal` level.
     ///
-    pub def fatal(m: a): Unit \ Logger with ToString[a] = do Logger.log(Severity.Fatal, "${m}")
+    pub def fatal(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Fatal, "${m}")
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Logger) + IO = {
+    pub def run(f: Unit -> a \ ef): a \ ef - Logger + IO = {
         // Currently try-with typing is broken, so fix it with checked_ecast
         checked_ecast(try {
             f()

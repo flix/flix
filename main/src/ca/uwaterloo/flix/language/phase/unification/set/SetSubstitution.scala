@@ -173,7 +173,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       sb.append(f)
       sb.append("\n")
     }
-    sb.append("}")
+    sb.append("}\n")
     sb.toString()
   }
 

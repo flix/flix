@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 sealed trait Purity
@@ -113,8 +114,8 @@ object Purity {
 
   /**
     * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
-    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for the
-    * effect constant of [[Symbol.IO]], and [[ControlImpure]] otherwise.
+    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for an
+    * effect only containing base effects, and [[ControlImpure]] otherwise.
     *
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
@@ -122,7 +123,7 @@ object Purity {
   def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.forall(Symbol.isBaseEff) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }

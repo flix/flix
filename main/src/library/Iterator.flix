@@ -53,7 +53,7 @@ mod Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = constant(Done);
+        let f = _ ->  checked_ecast(Done);
         Iterator(rc, f)
 
     ///
@@ -426,7 +426,7 @@ mod Iterator {
             case Done   => k(s)
 
         };
-        loop(eidentity)
+        loop(x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -616,7 +616,7 @@ mod Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = constant(Done);
+        let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
 

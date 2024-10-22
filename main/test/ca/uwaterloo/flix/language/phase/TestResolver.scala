@@ -64,7 +64,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |
          |mod B {
-         |  def g(): A.Color = A/Color.Red
+         |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -87,6 +87,59 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleRestrictableEnum.01") {
+    val input =
+      s"""
+         |mod A {
+         |  restrictable enum Color[a] {
+         |    case Blu
+         |    case Red
+         |  }
+         |}
+         |
+         |mod B {
+         |  def g(): A.Color[a] = A.Color[a].Red
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
+  }
+
+  test("InaccessibleRestrictableEnum.02") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): A.B.C.Color[a] = A.B.C.Color[a].Blu
+         |
+         |  mod B.C {
+         |    restrictable enum Color[a] {
+         |      case Blu
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
+  }
+
+  test("InaccessibleRestrictableEnum.03") {
+    val input =
+      s"""
+         |mod A {
+         |  restrictable enum Color[a] {
+         |    case Blu
+         |    case Red
+         |  }
+         |}
+         |
+         |def g(): A.Color[a] = A.Color[a].Red
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
   }
 
   test("InaccessibleStruct.01") {
@@ -1760,161 +1813,173 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("ResolutionError.TooFewFields.01") {
-    val input = """
-                  |struct S[r] {
-                  |    a: Int32
-                  |}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc { }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooFewFields.02") {
-    val input = """
-                  |struct S[r] {
-                  |    a: Int32
-                  |}
-                  |struct S2[r] { }
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc { }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |struct S2[r] { }
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooFewFields.03") {
-    val input = """
-                  |struct S[r] {
-                  |    a: Int32,
-                  |    b: Int32,
-                  |    c: Int32
-                  |}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc { a = 4, c = 2 }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32,
+        |    b: Int32,
+        |    c: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { a = 4, c = 2 }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.01") {
-    val input = """
-                  |struct S[r] {
-                  |    a: Int32
-                  |}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc { a = 4, b = "hello" }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { a = 4, b = "hello" }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.02") {
-    val input = """
-                  |struct S[r] {
-                  |    a: Int32
-                  |    b: Int32
-                  |    c: Int32
-                  |}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc {b = 4, c = 3, a = 2, extra = 5}
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |    b: Int32
+        |    c: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {b = 4, c = 3, a = 2, extra = 5}
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.03") {
-    val input = """
-                  |struct S[r] { }
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc {a = 3}
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] { }
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {a = 3}
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
   test("ResolutionError.MutateImmutableField.01") {
-    val input = """
-                  |mod S {
-                  |    struct S[r] {f: Int32}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f = 3};
-                  |        s->f = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |mod S {
+        |    struct S[r] {f: Int32}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f = 3};
+        |        s->f = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
   test("ResolutionError.MutateImmutableField.02") {
-    val input = """
-                  |mod S {
-                  |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f1 = 3, f2 = 4, f3 = 5};
-                  |        s->f2 = 2;
-                  |        s->f1 = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |mod S {
+        |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f1 = 3, f2 = 4, f3 = 5};
+        |        s->f2 = 2;
+        |        s->f1 = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
   test("ResolutionError.MutateImmutableField.03") {
-    val input = """
-                  |mod S {
-                  |    struct S[v, r] {f: Int32, mut f2: v}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
-                  |        s->f2->f = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |mod S {
+        |    struct S[v, r] {f: Int32, mut f2: v}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
+        |        s->f2->f = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.01") {
-    val input = """
-                  |struct S[r] {a: Int32, b: Int32}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc {b = 3, a = 4}
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {a: Int32, b: Int32}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {b = 3, a = 4}
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.02") {
-    val input = """
-                  |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc {f = 3, l = 4, x = 2, i = 9}
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {f = 3, l = 4, x = 2, i = 9}
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.03") {
-    val input = """
-                  |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
-                  |def f(rc: Region): S[r] = {
-                  |    new S @ rc {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"}
-                  |}
-                  |""".stripMargin
+    val input =
+      """
+        |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"}
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }

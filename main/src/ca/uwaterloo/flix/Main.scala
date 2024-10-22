@@ -94,11 +94,9 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
-      xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -346,12 +344,10 @@ object Main {
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
-                     xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnoboolunif: Boolean = false,
-                     xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
@@ -554,10 +550,6 @@ object Main {
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
 
-      // Xbdd-threshold
-      opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
-        text("[experimental] sets the threshold for when to use BDDs.")
-
       // Xno-bool-cache
       opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
         text("[experimental] disables Boolean caches.")
@@ -569,10 +561,6 @@ object Main {
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-qmc
-      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
-        text("[experimental] disables Quine McCluskey when using BDDs.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).

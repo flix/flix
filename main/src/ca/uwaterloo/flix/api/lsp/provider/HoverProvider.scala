@@ -16,77 +16,44 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
-import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
-import scala.annotation.tailrec
-
 object HoverProvider {
 
-  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+    val consumer = StackConsumer()
+    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
 
-      case Some(entity) => hoverEntity(entity, uri, pos)
+    consumer.getStack.headOption match {
+      case None => mkNotFound(uri, pos)
+      case Some(head) => hoverAny(head, uri, pos)
     }
   }
 
-  @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
-
-    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
-
-    case Entity.StructField(field) => hoverType(field.tpe, field.sym.loc)
-
-    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc)
-
-    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc)
-
-    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.StructFieldUse(_, _, parent) => hoverEntity(parent, uri, pos)
-
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
-
-    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
-
-    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
-
-    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc)
-
-    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
-
-    case Entity.Type(t) => hoverKind(t)
-
-    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc)
-
-    case Entity.Trait(_) => mkNotFound(uri, pos)
-    case Entity.Def(_) => mkNotFound(uri, pos)
-    case Entity.Effect(_) => mkNotFound(uri, pos)
-    case Entity.Enum(_) => mkNotFound(uri, pos)
-    case Entity.Struct(_) => mkNotFound(uri, pos)
-    case Entity.TypeAlias(_) => mkNotFound(uri, pos)
-    case Entity.AssocType(_) => mkNotFound(uri, pos)
-    case Entity.Label(_) => mkNotFound(uri, pos)
-    case Entity.Op(_) => mkNotFound(uri, pos)
-    case Entity.Sig(_) => mkNotFound(uri, pos)
-    case Entity.TypeVar(_) => mkNotFound(uri, pos)
+  private def hoverAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
+    case tpe: Type => hoverKind(tpe)
+    case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
+    case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
+    case Binder(sym, tpe) => hoverType(tpe, sym.loc)
+    case DefSymUse(sym, loc) => hoverDef(sym, loc)
+    case SigSymUse(sym, loc) => hoverSig(sym, loc)
+    case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
+    case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
+    case _ => mkNotFound(uri, pos)
   }
 
   private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
-    val minTpe = minimizeType(tpe)
-    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(root)
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
-         |${FormatType.formatType(minTpe)}$lowerAndUpperBounds
+         |${FormatType.formatType(tpe)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -96,11 +63,9 @@ object HoverProvider {
   }
 
   private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): JObject = {
-    val minEff = minimizeType(eff)
-    val minTpe = minimizeType(tpe)
     val markup =
       s"""```flix
-         |${formatTypAndEff(minTpe, minEff)}
+         |${formatTypAndEff(tpe, eff)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)

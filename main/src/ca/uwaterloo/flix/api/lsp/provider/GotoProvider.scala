@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -49,7 +50,7 @@ object GotoProvider {
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
+          case Pattern.Tag(CaseSymUse(sym, loc), _, _, _) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)

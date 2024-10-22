@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for derivation errors.
   */
-sealed trait DerivationError extends CompilationMessage {
+sealed trait DerivationError extends CompilationMessage with Recoverable {
   val kind: String = "Derivation Error"
 }
 

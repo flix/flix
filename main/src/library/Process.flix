@@ -36,7 +36,7 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Process) + Exec = {
+    pub def run(f: Unit -> a \ ef): a \ ef - Process + Exec = {
         // Currently try-with typing is broken, so fix it with checked_ecast
         checked_ecast(try {
             f()

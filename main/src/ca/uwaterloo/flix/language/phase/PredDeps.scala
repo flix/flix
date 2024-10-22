@@ -17,15 +17,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Label, LabelledEdge, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The [[PredDeps]] class computes the [[LabelledPrecedenceGraph]] of the whole program,
@@ -35,7 +34,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("PredDeps") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
@@ -46,8 +45,8 @@ object PredDeps {
       case (acc, d) => acc + visitExp(d)
     }, _ + _)
 
-    Validation.success(root.copy(precedenceGraph = g))
-  }(DebugValidation())
+    root.copy(precedenceGraph = g)
+  }
 
   /**
     * Returns the term types of the given relational or latticenal type.
