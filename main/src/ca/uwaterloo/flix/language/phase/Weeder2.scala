@@ -2327,19 +2327,19 @@ object Weeder2 {
     private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern.Record.RecordLabelPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.RecordFieldFragment)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
-      flatMapN(pickNameIdent(tree), traverseOpt(maybePattern)(visitPattern(_, seen))) {
+      mapN(pickNameIdent(tree), traverseOpt(maybePattern)(visitPattern(_, seen))) {
         case (ident, None) =>
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc))
+              Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
             case Some(other) =>
               val error = NonLinearPattern(ident.name, other.loc, ident.loc)
               sctx.errors.add(error)
-              val pat = Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
-              Validation.success(pat)
+              Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
           }
-        case (ident, pat) => Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc))
+        case (ident, pat) =>
+          Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc)
       }
     }
 
