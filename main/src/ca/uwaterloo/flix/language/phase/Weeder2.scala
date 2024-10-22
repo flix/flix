@@ -1674,14 +1674,14 @@ object Weeder2 {
     private def visitKeyValuePair(tree: Tree)(implicit sctx: SharedContext): Validation[(Expr, Expr), CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralMapKeyValueFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      flatMapN(traverse(exprs)(visitExpr)) {
+      mapN(traverse(exprs)(visitExpr)) {
         // case: k => v
-        case k :: v :: Nil => Validation.success((k, v))
+        case k :: v :: Nil => (k, v)
         // case: k =>
         case k :: Nil =>
           val error = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
-          Validation.success((k, Expr.Error(error)))
+          (k, Expr.Error(error))
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
     }
