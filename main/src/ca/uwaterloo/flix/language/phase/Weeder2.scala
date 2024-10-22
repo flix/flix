@@ -1316,12 +1316,12 @@ object Weeder2 {
           }
       }
 
-      val exprs = flatMapN(pickExpr(tree)) {
-        case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
+      val exprs = mapN(pickExpr(tree)) {
+        case Expr.Stm(exp1, exp2, _) => (exp1, exp2)
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
           val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
-          Validation.success((e, Expr.Error(error)))
+          (e, Expr.Error(error))
       }
 
       mapN(
