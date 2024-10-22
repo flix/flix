@@ -712,27 +712,29 @@ object ConstraintGen {
         (resultTpe, resultEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
-        // try e with Eff { def f1(.., k1): r1 = e1, def f2(.., k2): r2 = e2 } : res \ eff
-        // e: e_t \ e_f
-        // ei: e_t \ ei_f
-        // ki: ri -> e_t \ k_f
-        // k_f = (e_f - Eff) + Union_i(ei_f)
-        // res = e_t
-        // eff = k_f
+        //
+        //     Γ ⊢ e: e_t \ e_ef
+        // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
+        //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
+        // -------------------------------------------------------------------------------------------------
+        // Γ ⊢ try e with Eff { def op1(op1x1, .., k1) = e1, def op2(op2x1, .., k2) = e2, .. }: e_t \ k_ef
+        //
+        // where:
+        // eff Eff {
+        //  def op1(op1x1: op1t1, ..): op1t
+        //  def op2(op2x1: op2t2, ..): op2t
+        // }
+        //
         val (tpe, eff) = visitExp(exp)
-        val continuationEffect = Type.freshVar(Kind.Eff, loc)
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffect, loc)).unzip
+        val continuationEffectVar = Type.freshVar(Kind.Eff, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
         c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
         val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
-        // We subtract the handled effect from the body
-        val correctedBodyEff = Type.mkDifference(eff, handledEffect, effUse.loc)
-
-        // The continuation effect is the effect of all the rule bodies, plus the effect of the try-body
-        val cont_eff = Type.mkUnion(Type.mkUnion(effs, loc), correctedBodyEff, loc)
-        c.unifyType(continuationEffect, cont_eff, loc)
+        // Subtract the effect from the body effect and add the handler effects.
+        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        c.unifyType(continuationEffectVar, continuationEffect, loc)
         val resultTpe = tpe
-
         val resultEff = continuationEffect
         (resultTpe, resultEff)
 
