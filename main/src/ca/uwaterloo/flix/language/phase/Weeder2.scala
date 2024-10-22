@@ -2303,8 +2303,11 @@ object Weeder2 {
         case (x :: xs, Some(Pattern.Var(v, l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc))
         // Pattern { x, ... | _ }
         case (x :: xs, Some(Pattern.Wild(l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc))
-        // Illegal pattern: { | r}
-        case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
+        // Illegal pattern: { | r }
+        case (Nil, Some(r)) =>
+          val error = EmptyRecordExtensionPattern(r.loc)
+          sctx.errors.add(error)
+          Validation.success(r)
         // Illegal pattern: { x, ... | (1, 2, 3) }
         case (_, Some(r)) => Validation.toSoftFailure(Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
       }
