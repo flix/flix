@@ -1639,12 +1639,12 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.LiteralArray)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
-        case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
+      mapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
+        case (exprs, Some(scope)) => Expr.ArrayLit(exprs, scope, tree.loc)
         case (exprs, None) =>
           val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.ArrayLit(exprs, Expr.Error(error), tree.loc))
+          Expr.ArrayLit(exprs, Expr.Error(error), tree.loc)
       }
     }
 
