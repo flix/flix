@@ -2605,8 +2605,10 @@ object Weeder2 {
           flatMapN(exprs, maybeLatTerm) {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
-              val isIllegal = polarity == Polarity.Negative && fixity == Fixity.Fixed
-              if (isIllegal) {
+              val isNegativePolarity = polarity == Polarity.Negative
+              val isFixedFixity = fixity == Fixity.Fixed
+              val isIllegalFixedAtom = isNegativePolarity && isFixedFixity
+              if (isIllegalFixedAtom) {
                 val error = IllegalFixedAtom(tree.loc)
                 sctx.errors.add(error)
               }
