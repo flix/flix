@@ -2602,7 +2602,7 @@ object Weeder2 {
         (ident, tree) => {
           val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, tree))(tree => Patterns.visitPattern(tree))
           val maybeLatTerm = tryPickLatticeTermPattern(tree)
-          flatMapN(exprs, maybeLatTerm) {
+          mapN(exprs, maybeLatTerm) {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
               val isNegativePolarity = polarity == Polarity.Negative
@@ -2612,10 +2612,10 @@ object Weeder2 {
                 val error = IllegalFixedAtom(tree.loc)
                 sctx.errors.add(error)
               }
-              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc))
+              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
 
             case (pats, Some(term)) =>
-              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
+              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc)
           }
         })
     }
