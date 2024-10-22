@@ -1489,20 +1489,20 @@ object Weeder2 {
 
     private def visitForMonadicExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForMonadic)
-      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+      mapN(pickForFragments(tree), pickExpr(tree)) {
         case (Nil, _) =>
           val error = EmptyForFragment(tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.Error(error))
+          Expr.Error(error)
         case (fragments, expr) =>
           // It's okay to do head rather than headOption here because we check for Nil above.
           fragments.head match {
             // Check that fragments start with a generator.
-            case _: ForFragment.Generator => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
+            case _: ForFragment.Generator => Expr.MonadicFor(fragments, expr, tree.loc)
             case f =>
               val error = IllegalForFragment(f.loc)
               sctx.errors.add(error)
-              Validation.success(Expr.Error(error))
+              Expr.Error(error)
           }
       }
     }
