@@ -2476,13 +2476,14 @@ object Weeder2 {
     /**
       * Attempts to compile the given regular expression into a Pattern.
       */
-    def toRegex(token: Token): Validation[Expr, CompilationMessage] = {
+    def toRegex(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
+      errors.foreach(sctx.errors.add)
       try {
         val pattern = JPattern.compile(processed)
-        Validation.success(Expr.Cst(Constant.Regex(pattern), loc)).withSoftFailures(errors)
+        Validation.success(Expr.Cst(Constant.Regex(pattern), loc))
       } catch {
         case ex: PatternSyntaxException =>
           val err = MalformedRegex(token.text, ex.getMessage, loc)
