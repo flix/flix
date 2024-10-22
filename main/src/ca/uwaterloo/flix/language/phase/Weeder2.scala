@@ -1829,15 +1829,15 @@ object Weeder2 {
 
     private def visitInvokeConstructor2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
-      flatMapN(Types.pickType(tree), pickRawArguments(tree, synctx = SyntacticContext.Expr.New)) {
+      mapN(Types.pickType(tree), pickRawArguments(tree, synctx = SyntacticContext.Expr.New)) {
         (tpe, exps) =>
           tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
-              Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+              Expr.InvokeConstructor2(qname.ident, exps, tree.loc)
             case _ =>
               val error = IllegalQualifiedName(tree.loc)
               sctx.errors.add(error)
-              Validation.success(Expr.Error(error))
+              Expr.Error(error)
           }
       }
     }
