@@ -1445,11 +1445,11 @@ object Weeder2 {
 
     private def visitForApplicativeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForApplicative)
-      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+      mapN(pickForFragments(tree), pickExpr(tree)) {
         case (Nil, _) =>
           val error = EmptyForFragment(tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.Error(error))
+          Expr.Error(error)
         case (fragments, expr) =>
           // Check that there are only generators
           val (generators, nonGeneratorFragments) = fragments.partition {
@@ -1460,9 +1460,9 @@ object Weeder2 {
             val errors = nonGeneratorFragments.map(f => IllegalForAFragment(f.loc))
             errors.foreach(sctx.errors.add)
             val error = IllegalForAFragment(nonGeneratorFragments.head.loc)
-            Validation.success(Expr.Error(error))
+            Expr.Error(error)
           } else {
-            Validation.success(Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc))
+            Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc)
           }
       }
     }
