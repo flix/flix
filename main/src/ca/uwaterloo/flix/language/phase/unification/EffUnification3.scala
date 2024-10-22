@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.Options
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
@@ -34,45 +34,32 @@ object EffUnification3 {
     * @param renv  the rigidity environment.
     * @param loc   the source location of the entire equation system, e.g. the entire function body.
     */
-  def unifyAll(l: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv, loc: SourceLocation, opts: Options = Options.default): Result[Substitution, UnificationError] = {
+  def unifyAll(l: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv, loc: SourceLocation, opts: Options = Options.default): (List[(Type, Type, SourceLocation)], Substitution) = {
     // Compute a bi-directional map from type variables to integers.
-    implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(l)
+    implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(l)(scope, renv)
 
-    // Translate all unification problems from equations on types to equations on terms.
-    val equations = l.map {
+    // Translate all unification problems from equations on types to equations on formula.
+    // We could solve all the valid equations but we just give up if any equation is inconvertible.
+    val equations = try l.map {
       case (tpe1, tpe2, loc) => toEquation(tpe1, tpe2, loc)(scope, renv, bimap)
+    } catch {
+      case InvalidType => return (l, Substitution.empty)
     }
 
     // Compute the most-general unifier of all the equations.
-    SetUnification.solve(equations)(SetUnification.SolverListener.doNothing, opts) match {
-      case (Nil, subst) =>
-        Result.Ok(fromSetSubst(subst))
-
-      case (eq :: _, _) =>
-        // Equations are leftover.
-        eq.status match {
-          case Status.Pending => throw InternalCompilerException(s"Unexpected pending formula $eq", eq.loc)
-          case Status.Unsolvable =>
-            val tpe1 = fromSetFormula(eq.f1, eq.loc)
-            val tpe2 = fromSetFormula(eq.f2, eq.loc)
-            Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
-          case Status.Timeout(msg) =>
-            Result.Err(UnificationError.TooComplex(msg, eq.loc))
-        }
-    }
+    val (setEqs, setSubst) = SetUnification.solve(equations)(SetUnification.SolverListener.doNothing, opts)
+    val eqs = setEqs.map(eq => (fromSetFormula(eq.f1, eq.loc), fromSetFormula(eq.f2, eq.loc), eq.loc))
+    val subst = fromSetSubst(setSubst)
+    (eqs, subst)
   }
 
   def unify(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
-    implicit val bimap: Bimap[Atom, Int] = try {
-      mkBidirectionalVarMap(tpe1, tpe2)
-    } catch {
-      case InternalCompilerException(_, _) => return Result.Ok(None)
-    }
+    implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(tpe1, tpe2)(scope, renv)
 
     val equation = try {
       toEquation(tpe1, tpe2, tpe1.loc)(scope, renv, bimap)
     } catch {
-      case InternalCompilerException(_, _) => return Result.Ok(None)
+      case InvalidType => return Result.Ok(None)
     }
 
     SetUnification.solve(List(equation))(SetUnification.SolverListener.doNothing, Options.default) match {
@@ -81,12 +68,11 @@ object EffUnification3 {
 
       case (eq :: _, _) =>
         // Equations are leftover.
-        eq.status match {
+        val Equation(f1, f2, status, loc) = eq
+        status match {
           case Status.Pending => throw InternalCompilerException(s"Unexpected pending formula $eq", eq.loc)
           case Status.Unsolvable =>
-            val tpe1 = fromSetFormula(eq.f1, eq.loc)
-            val tpe2 = fromSetFormula(eq.f2, eq.loc)
-            Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+            Result.Err(UnificationError.MismatchedEffects(fromSetFormula(f1, loc), fromSetFormula(f2, loc)))
           case Status.Timeout(msg) =>
             Result.Err(UnificationError.TooComplex(msg, eq.loc))
         }
@@ -98,7 +84,7 @@ object EffUnification3 {
     * Returns a bi-directional map from type variables to ints computed from the given list of
     * unification equations `l`.
     */
-  private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Atom, Int] = {
+  private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): Bimap[Atom, Int] = {
     // Find all atoms that occur in anywhere in `l`.
     val atoms = l.foldLeft(Set.empty[Atom]) {
       case (acc, (t1, t2, _)) => acc ++ getAtoms(t1) ++ getAtoms(t2)
@@ -108,43 +94,40 @@ object EffUnification3 {
     mkBidirectionalVarMap(atoms)
   }
 
-  private def mkBidirectionalVarMap(tpe1: Type, tpe2: Type): Bimap[Atom, Int] = {
+  private def mkBidirectionalVarMap(tpe1: Type, tpe2: Type)(implicit scope: Scope, renv: RigidityEnv): Bimap[Atom, Int] =
     mkBidirectionalVarMap(getAtoms(tpe1) ++ getAtoms(tpe2))
-  }
 
-
-  private def mkBidirectionalVarMap(atoms: Set[Atom]): Bimap[Atom, Int] = {
+  private def mkBidirectionalVarMap(atoms: Set[Atom]): Bimap[Atom, Int] =
     Bimap.from(atoms.toList.zipWithIndex)
-  }
 
-  /** Returns the set of atoms that occur in the given type. */
-  private def getAtoms(t: Type): Set[Atom] = t match {
-    case Type.Var(sym, _) => Set(Atom.Var(sym))
+  /**
+    * Returns the set of [[Atom]] that occur in the given [[Type]] or throws [[InvalidType]].
+    *
+    * This should collect atoms top-down according to [[Atom.fromType]] and ignore everything else.
+    */
+  private def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Set[Atom] = t match {
+    case Type.Var(sym, _) if renv.isRigid(sym) => Set(Atom.RigidVar(sym))
+    case Type.Var(sym, _) => Set(Atom.FlexVar(sym))
     case Type.Cst(TypeConstructor.Effect(sym), _) => Set(Atom.Eff(sym))
     case Type.Cst(TypeConstructor.Error(id, kind), _) => Set(Atom.Error(id, kind))
-    case Type.Cst(_, _) => Set.empty
     case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
     case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-    case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) => Set(Atom.Assoc(sym, getAssocArg(arg), kind))
-    case Type.JvmToEff(_, loc) => throw InternalCompilerException("dont know", loc)
-    case Type.JvmToType(_, loc) => throw InternalCompilerException("dont know", loc)
-    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("dont know", loc)
+    case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).toSet
+    case _ => Set.empty
+  }
+
+  private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
+    case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.RigidVar(sym))
+    case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) =>
+      getAssocAtoms(arg).map(Atom.Assoc(sym, _, kind))
+    case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
+    case _ => None
   }
 
   /**
-    * Returns a atom corresponding to the type t.
+    * Translates the given unification equation on [[Type]] `p` into a unification equation on [[SetFormula]].
     *
-    * Fails if t is not a valid argument to a simplified associated typed.
-    */
-  private def getAssocArg(t: Type): Atom = t match {
-    case Type.Var(sym, _) => Atom.Var(sym)
-    case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) => Atom.Assoc(sym, getAssocArg(arg), kind)
-    case Type.Alias(_, _, tpe, _) => getAssocArg(tpe)
-    case tpe => throw InternalCompilerException(s"unexpected associate type argument: $tpe", tpe.loc)
-  }
-
-  /**
-    * Translates the given unification equation on types `p` into a unification equation on terms.
+    * Throws [[InvalidType]] for invalid types.
     */
   private def toEquation(p: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Atom, Int]): Equation = {
     val (tpe1, tpe2, loc) = p
@@ -152,68 +135,54 @@ object EffUnification3 {
   }
 
   /**
-    * Returns the given type `t` as term.
+    * Returns the given type `t` as [[SetFormula]].
     *
-    * Uses the given bimap `m` to map type variables to term variables.
+    * Uses the given bimap `m` to map type variables to formula variables.
     *
-    * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
+    * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to formula variables.
+    *
+    * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Atom, Int]): SetFormula = Type.eraseTopAliases(t) match {
+  private def toSetFormula(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
-    case tpe@Type.Var(sym, _) => m.getForward(toAtom(tpe)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
-      case Some(x) => renv.get(sym) match {
-        case Rigidity.Flexible => SetFormula.Var(x) // A flexible variable is a real variable.
-        case Rigidity.Rigid => SetFormula.Cst(x) // A rigid variable is a constant.
+    case tpe@Type.Var(_, _) =>
+      val atom = Atom.fromType(tpe)
+      m.getForward(atom) match {
+        case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
+        case Some(x) => atom match {
+          case Atom.FlexVar(_) => SetFormula.Var(x) // A flexible variable is a real variable.
+          case Atom.RigidVar(_) => SetFormula.Cst(x) // A rigid variable is a constant.
+          case _ => throw InternalCompilerException(s"Unexpected atom rep. ($atom) of variable ($tpe)", tpe.loc)
+        }
       }
-    }
 
-    case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(toAtom(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$t'.", t.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
-    case tpe: Type.AssocType => m.getForward(toAtom(tpe)) match {
+    case tpe@Type.AssocType(_, _, _, _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound associated type: '$t'.", t.loc)
       case Some(x) => SetFormula.Cst(x)
     }
 
-    case tpe@Type.Cst(TypeConstructor.Error(_, _), _) => m.getForward(toAtom(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.Error(_, _), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound error type: '$t'.", t.loc)
       case Some(x) => SetFormula.Var(x)
     }
 
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => SetFormula.mkCompl(toSetFormula(tpe1))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => SetFormula.mkUnion(toSetFormula(tpe1), toSetFormula(tpe2))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) =>
+      SetFormula.mkCompl(toSetFormula(tpe1))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
-  }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
+      SetFormula.mkUnion(toSetFormula(tpe1), toSetFormula(tpe2))
 
-  /** Returns the Atom representation of the given Type. */
-  private def toAtom(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => Atom.Var(sym)
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-      val arg = rigidToAtom(arg0)
-      Atom.Assoc(sym, arg, kind)
-    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
-    case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
-  }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
+      SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
-  /** Returns the Atom representation of the given Type. */
-  private def rigidToAtom(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
-    case tpe@Type.Var(sym, _) =>
-      if (renv.isRigid(sym)) Atom.Var(sym)
-      else throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-      val arg = rigidToAtom(arg0)
-      Atom.Assoc(sym, arg, kind)
-    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
-    case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
+    case _ => throw InvalidType
   }
 
   /** Returns a regular type substitution obtained from the given Boolean substitution `s`. */
@@ -223,7 +192,7 @@ object EffUnification3 {
       case (macc, (k, v)) =>
         m.getBackward(k).get match {
           // Case 1: A proper var. Add it to the substitution.
-          case Atom.Var(sym) =>
+          case Atom.FlexVar(sym) =>
             macc + (sym -> fromSetFormula(v, sym.loc))
           // Case 2: An error type. Don't add it to the substitution.
           case Atom.Error(_, _) =>
@@ -246,57 +215,71 @@ object EffUnification3 {
   private def fromSetFormula(t: SetFormula, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = t match {
     case SetFormula.Univ => Type.Univ
     case SetFormula.Empty => Type.Pure
-    case SetFormula.Cst(c) => fromAtom(m.getBackward(c).get, loc) // Safe: We never introduce new variables.
-    case SetFormula.Var(x) => fromAtom(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
-    case SetFormula.ElemSet(x) => Type.mkUnion(x.toList.map(m.getBackward(_).get).map(fromAtom(_, loc)), loc)
+    case SetFormula.Cst(c) => Atom.toType(m.getBackward(c).get, loc) // Safe: We never introduce new variables.
+    case SetFormula.Var(x) => Atom.toType(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
+    case SetFormula.ElemSet(x) => Type.mkUnion(x.toList.map(m.getBackward(_).get).map(Atom.toType(_, loc)), loc)
     case SetFormula.Compl(t) => Type.mkComplement(fromSetFormula(t, loc), loc)
-    case SetFormula.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      val ts = posElem.iterator.map(fromSetFormula(_, loc)) ++
-        posCsts.iterator.map(fromSetFormula(_, loc)) ++
-        posVars.iterator.map(fromSetFormula(_, loc)) ++
-        negElem.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        negCsts.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        negVars.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        rest.iterator.map(fromSetFormula(_, loc))
-      Type.mkIntersection(ts.toList, loc)
-    case SetFormula.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      val ts = posElem.iterator.map(fromSetFormula(_, loc)) ++
-        posCsts.iterator.map(fromSetFormula(_, loc)) ++
-        posVars.iterator.map(fromSetFormula(_, loc)) ++
-        negElem.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        negCsts.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        negVars.iterator.map(SetFormula.mkCompl(_)).map(fromSetFormula(_, loc)) ++
-        rest.iterator.map(fromSetFormula(_, loc))
-      Type.mkUnion(ts.toList, loc)
-  }
-
-  /** Returns the Type represented by the given Atom. */
-  private def fromAtom(s: Atom, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = s match {
-    case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-    case Atom.Var(sym) => Type.Var(sym, loc)
-    case Atom.Assoc(sym, arg0, kind) =>
-      val arg = fromAtom(arg0, loc)
-      Type.AssocType(AssocTypeConstructor(sym, loc), arg, kind, loc)
-    case Atom.Error(id, kind) => Type.Cst(TypeConstructor.Error(id, kind), loc)
+    case inter@SetFormula.Inter(_, _, _, _, _, _, _) =>
+      Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
+    case union@SetFormula.Union(_, _, _, _, _, _, _) =>
+      Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
   }
 
   /**
     * Atomic terms that may appear in the algebra of effects when associated types are fully reduced.
+    *
+    * atom ::= VarFlex | VarRigid | Eff | Error | atomAssoc
+    * atomAssoc ::= Assoc atomAssoc | VarRigid
     */
   private sealed trait Atom
 
   private object Atom {
-    /** An atom representing a variable. */
-    case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
+    /** Representing a flexible variable. */
+    case class FlexVar(sym: Symbol.KindedTypeVarSym) extends Atom
 
-    /** An atom representing an effect constant. */
+    /** Representing a rigid variable. */
+    case class RigidVar(sym: Symbol.KindedTypeVarSym) extends Atom
+
+    /** Representing an effect constant. */
     case class Eff(sym: Symbol.EffectSym) extends Atom
 
-    /** An atom representing an associated effect. */
+    /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom, kind: Kind) extends Atom
 
-    /** An atom representing an invalid type. */
+    /** Represents an error type. */
     case class Error(id: Int, kind: Kind) extends Atom
+
+    /** Returns the [[Atom]] representation of the given [[Type]] or throws [[InvalidType]]. */
+    def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => Atom.RigidVar(sym)
+      case Type.Var(sym, _) => Atom.FlexVar(sym)
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
+      case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
+      case Type.Alias(_, _, tpe, _) => fromType(tpe)
+      case _ => throw InvalidType
+    }
+
+    /** Returns the [[Atom]] representation of the given [[Type]] or throws [[InvalidType]]. */
+    private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => Atom.RigidVar(sym)
+      case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) => Atom.Assoc(sym, assocFromType(arg), kind)
+      case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
+      case _ => throw InvalidType
+    }
+
+
+    /** Returns the [[Type]] represented by the given [[Atom]]. */
+    def toType(s: Atom, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = s match {
+      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Atom.RigidVar(sym) => Type.Var(sym, loc)
+      case Atom.FlexVar(sym) => Type.Var(sym, loc)
+      case Atom.Assoc(sym, arg0, kind) =>
+        Type.AssocType(AssocTypeConstructor(sym, loc), toType(arg0, loc), kind, loc)
+      case Atom.Error(id, kind) => Type.Cst(TypeConstructor.Error(id, kind), loc)
+    }
   }
+
+  private case object InvalidType extends RuntimeException
 
 }
