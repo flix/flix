@@ -1050,7 +1050,7 @@ object Weeder2 {
           case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
           case TokenKind.LiteralString => Constants.toStringCst(token)
-          case TokenKind.LiteralChar => Constants.toChar(token)
+          case TokenKind.LiteralChar => Validation.success(Constants.toChar(token))
           case TokenKind.LiteralInt8 => Validation.success(Constants.toInt8(token))
           case TokenKind.LiteralInt16 => Validation.success(Constants.toInt16(token))
           case TokenKind.LiteralInt32 => Validation.success(Constants.toInt32(token))
@@ -2543,7 +2543,7 @@ object Weeder2 {
       visit(str.toList, Nil, Nil)
     }
 
-    def toChar(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def toChar(token: Token)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("\'").stripSuffix("\'")
       val (processed, errors) = visitChars(text, loc)
@@ -2551,9 +2551,9 @@ object Weeder2 {
       if (processed.length != 1) {
         val error = MalformedChar(processed, loc)
         sctx.errors.add(error)
-        Validation.success(Expr.Error(error))
+        Expr.Error(error)
       } else {
-        Validation.success(Expr.Cst(Constant.Char(processed.head), loc))
+        Expr.Cst(Constant.Char(processed.head), loc)
       }
     }
 
