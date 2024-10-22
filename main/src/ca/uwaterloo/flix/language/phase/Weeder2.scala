@@ -1056,9 +1056,9 @@ object Weeder2 {
           case TokenKind.LiteralInt32 => Constants.toInt32(token)
           case TokenKind.LiteralInt64 => Constants.toInt64(token)
           case TokenKind.LiteralBigInt => Constants.toBigInt(token)
-          case TokenKind.LiteralFloat32 => Constants.toFloat32(token)
-          case TokenKind.LiteralFloat64 => Constants.toFloat64(token)
-          case TokenKind.LiteralBigDecimal => Constants.toBigDecimal(token)
+          case TokenKind.LiteralFloat32 => Validation.success(Constants.toFloat32(token))
+          case TokenKind.LiteralFloat64 => Validation.success(Constants.toFloat64(token))
+          case TokenKind.LiteralBigDecimal => Validation.success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Constants.toRegex(token)
           case TokenKind.NameLowerCase
                | TokenKind.NameUpperCase
@@ -2380,7 +2380,7 @@ object Weeder2 {
   }
 
   private object Constants {
-    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Validation[Expr, CompilationMessage])(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Expr)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       try {
         after(token.text.filterNot(_ == '_'), loc)
@@ -2388,7 +2388,7 @@ object Weeder2 {
         case _: NumberFormatException =>
           val error = MalformedFloat(loc)
           sctx.errors.add(error)
-          Validation.success(WeededAst.Expr.Error(error))
+          WeededAst.Expr.Error(error)
       }
     }
 
@@ -2408,26 +2408,26 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a float32.
       */
-    def toFloat32(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toFloat32(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseFloat(token,
-        (text, loc) => Validation.success(Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc))
+        (text, loc) => Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc)
       )
 
     /**
       * Attempts to parse the given tree to a float32.
       */
-    def toFloat64(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toFloat64(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseFloat(token,
-        (text, loc) => Validation.success(Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc))
+        (text, loc) => Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc)
       )
 
     /**
       * Attempts to parse the given tree to a big decimal.
       */
-    def toBigDecimal(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toBigDecimal(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
-        Validation.success(Expr.Cst(Constant.BigDecimal(bigDecimal), loc))
+        Expr.Cst(Constant.BigDecimal(bigDecimal), loc)
       })
 
     /**
