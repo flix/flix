@@ -2938,20 +2938,20 @@ object Weeder2 {
         case None => Validation.success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
-          flatMapN(traverse(parameters)(visitParameter)) {
+          mapN(traverse(parameters)(visitParameter)) {
             tparams =>
               val kinded = tparams.collect { case t: TypeParam.Kinded => t }
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only unkinded type parameters
-                case (Nil, _ :: _) => Validation.success(tparams)
+                case (Nil, _ :: _) => tparams
                 // Only kinded type parameters
-                case (_ :: _, Nil) => Validation.success(tparams)
+                case (_ :: _, Nil) => tparams
                 // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
                   val error = MismatchedTypeParameters(tparamsTree.loc)
                   sctx.errors.add(error)
-                  Validation.success(tparams)
+                  tparams
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }
