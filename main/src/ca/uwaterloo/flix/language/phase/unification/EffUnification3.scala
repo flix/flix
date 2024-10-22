@@ -109,7 +109,7 @@ object EffUnification3 {
     case Type.Var(sym, _) if renv.isRigid(sym) => Set(Atom.RigidVar(sym))
     case Type.Var(sym, _) => Set(Atom.FlexVar(sym))
     case Type.Cst(TypeConstructor.Effect(sym), _) => Set(Atom.Eff(sym))
-    case Type.Cst(TypeConstructor.Error(id, kind), _) => Set(Atom.Error(id, kind))
+    case Type.Cst(TypeConstructor.Error(id, _), _) => Set(Atom.Error(id))
     case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
     case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).toSet
@@ -118,8 +118,8 @@ object EffUnification3 {
 
   private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.RigidVar(sym))
-    case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) =>
-      getAssocAtoms(arg).map(Atom.Assoc(sym, _, kind))
+    case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) =>
+      getAssocAtoms(arg).map(Atom.Assoc(sym, _))
     case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
     case _ => None
   }
@@ -195,7 +195,7 @@ object EffUnification3 {
           case Atom.FlexVar(sym) =>
             macc + (sym -> fromSetFormula(v, sym.loc))
           // Case 2: An error type. Don't add it to the substitution.
-          case Atom.Error(_, _) =>
+          case Atom.Error(_) =>
             macc
           // Case 3: An invalid atom. Crash.
           case other => throw InternalCompilerException(s"unexpected non-variable mapped to variable: $other", SourceLocation.Unknown)
@@ -244,10 +244,10 @@ object EffUnification3 {
     case class Eff(sym: Symbol.EffectSym) extends Atom
 
     /** Represents an associated effect. */
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom, kind: Kind) extends Atom
+    case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
     /** Represents an error type. */
-    case class Error(id: Int, kind: Kind) extends Atom
+    case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of the given [[Type]] or throws [[InvalidType]]. */
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
@@ -255,7 +255,7 @@ object EffUnification3 {
       case Type.Var(sym, _) => Atom.FlexVar(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
-      case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
+      case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
       case _ => throw InvalidType
     }
@@ -263,7 +263,7 @@ object EffUnification3 {
     /** Returns the [[Atom]] representation of the given [[Type]] or throws [[InvalidType]]. */
     private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.RigidVar(sym)
-      case Type.AssocType(AssocTypeConstructor(sym, _), arg, kind, _) => Atom.Assoc(sym, assocFromType(arg), kind)
+      case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
       case _ => throw InvalidType
     }
@@ -274,9 +274,9 @@ object EffUnification3 {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
       case Atom.RigidVar(sym) => Type.Var(sym, loc)
       case Atom.FlexVar(sym) => Type.Var(sym, loc)
-      case Atom.Assoc(sym, arg0, kind) =>
-        Type.AssocType(AssocTypeConstructor(sym, loc), toType(arg0, loc), kind, loc)
-      case Atom.Error(id, kind) => Type.Cst(TypeConstructor.Error(id, kind), loc)
+      case Atom.Assoc(sym, arg0) =>
+        Type.AssocType(AssocTypeConstructor(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+      case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
   }
 
