@@ -2605,14 +2605,15 @@ object Weeder2 {
           flatMapN(exprs, maybeLatTerm) {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
-              val errors = (polarity, fixity) match {
-                case (Polarity.Negative, Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
-                case _ => None
+              val isIllegal = polarity == Polarity.Negative && fixity == Fixity.Fixed
+              if (isIllegal) {
+                val error = IllegalFixedAtom(tree.loc)
+                sctx.errors.add(error)
               }
-              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
-                )
-                .withSoftFailures(errors)
-            case (pats, Some(term)) => Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
+              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc))
+
+            case (pats, Some(term)) =>
+              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
           }
         })
     }
