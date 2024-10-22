@@ -2486,8 +2486,9 @@ object Weeder2 {
         Validation.success(Expr.Cst(Constant.Regex(pattern), loc))
       } catch {
         case ex: PatternSyntaxException =>
-          val err = MalformedRegex(token.text, ex.getMessage, loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+          val error = MalformedRegex(token.text, ex.getMessage, loc)
+          sctx.errors.add(error)
+          Validation.success(WeededAst.Expr.Error(error))
       }
     }
 
