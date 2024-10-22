@@ -2553,7 +2553,7 @@ object Weeder2 {
         sctx.errors.add(error)
         Validation.success(Expr.Error(error))
       } else {
-        Validation.success(Expr.Cst(Constant.Char(processed.head), loc)).withSoftFailures(errors)
+        Validation.success(Expr.Cst(Constant.Char(processed.head), loc))
       }
     }
 
