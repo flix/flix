@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -28,11 +29,11 @@ import ca.uwaterloo.flix.util.ParOps
   *
   * (a) The main function is always reachable.
   *
-  * (b) A function marked with @benchmark or @test is reachable.
+  * (b) A function marked with @test is reachable.
   *
   * (c) Appears in a function which itself is reachable.
   *
-  * (d) Is an instance of a class whose signature(s) appear in a reachable function.
+  * (d) Is an instance of a trait whose signature(s) appear in a reachable function.
   * Monomorph will erase unused instances so this phase must check all instances
   * for the monomorph to work.
   *
@@ -62,7 +63,7 @@ object TreeShaker1 {
     * Returns the symbols that are always reachable.
     */
   private def initReachable(root: Root): Set[ReachableSym] = {
-    root.reachable.map(ReachableSym.DefnSym)
+    root.reachable.map(ReachableSym.DefnSym.apply)
   }
 
   /**
@@ -72,9 +73,9 @@ object TreeShaker1 {
     *
     * (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
     *
-    * (b) The class symbol of a reachable sig symbol.
+    * (b) The trait symbol of a reachable sig symbol.
     *
-    * (c) Every expression in a class instance of a reachable class symbol is reachable.
+    * (c) Every expression in a trait instance of a reachable trait symbol is reachable.
     *
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
@@ -83,11 +84,11 @@ object TreeShaker1 {
 
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
-      Set(ReachableSym.ClassSym(sig.sym.clazz)) ++
+      Set(ReachableSym.TraitSym(sig.sym.trt)) ++
         sig.exp.map(visitExp).getOrElse(Set.empty)
 
-    case ReachableSym.ClassSym(classSym) =>
-      root.instances(classSym).foldLeft(Set.empty[ReachableSym]) {
+    case ReachableSym.TraitSym(traitSym) =>
+      root.instances(traitSym).foldLeft(Set.empty[ReachableSym]) {
         case (acc, s) => visitExps(s.defs.map(_.exp)) ++ acc
       }
   }
@@ -102,25 +103,28 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Def(sym, _, _) =>
-      Set(ReachableSym.DefnSym(sym))
-
-    case Expr.Sig(sym, _, _) =>
-      Set(ReachableSym.SigSym(sym))
-
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ApplySig(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Scope(_, _, exp, _, _, _) =>
@@ -176,7 +180,7 @@ object TreeShaker1 {
 
 
   /**
-    * A common super-type for reachable symbols (defs, classes, sigs)
+    * A common super-type for reachable symbols (defs, traits, sigs)
     */
   sealed trait ReachableSym
 
@@ -184,7 +188,7 @@ object TreeShaker1 {
 
     case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-    case class ClassSym(sym: Symbol.ClassSym) extends ReachableSym
+    case class TraitSym(sym: Symbol.TraitSym) extends ReachableSym
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 

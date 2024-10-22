@@ -17,11 +17,13 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.reflect.{Field, Method}
 import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
@@ -45,6 +47,7 @@ object JvmOps {
     */
   def getJvmType(tpe: MonoType): JvmType = tpe match {
     // Primitives
+    case MonoType.Void => JvmType.Object
     case MonoType.AnyType => JvmType.Object
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
@@ -60,14 +63,15 @@ object JvmOps {
     case MonoType.String => JvmType.String
     case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
+    case MonoType.Null => JvmType.Object
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Ref(elmType) => JvmType.Reference(BackendObjType.Ref(BackendType.asErasedBackendType(elmType)).jvmName)
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.Enum(_) => JvmType.Object
+    case MonoType.Enum(_, _) => JvmType.Object
+    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -79,7 +83,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -89,9 +93,11 @@ object JvmOps {
       case Int16 => JvmType.PrimShort
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
-           RecordEmpty |RecordExtend(_, _, _) | Native(_) => JvmType.Object
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
+        JvmType.Object
     }
   }
 
@@ -101,7 +107,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def asErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -112,9 +118,10 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
@@ -227,10 +234,10 @@ object JvmOps {
     *
     * For example:
     *
-    * <root>      =>  Ns
-    * Foo         =>  Foo.Ns
-    * Foo.Bar     =>  Foo.Bar.Ns
-    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    * <root>      =>  Root$
+    * Foo         =>  Foo
+    * Foo.Bar     =>  Foo.Bar
+    * Foo.Bar.Baz =>  Foo.Bar.Baz
     */
   def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
     getNamespaceName(ns.ns)
@@ -244,8 +251,9 @@ object JvmOps {
   }
 
   private def getNamespaceName(ns: List[String]): JvmName = {
-    val name = JvmName.mkClassName("Ns")
-    JvmName(ns, name)
+    val last = ns.lastOption.getOrElse(s"Root${Flix.Delimiter}")
+    val nsFixed = ns.dropRight(1)
+    JvmName(nsFixed, last)
   }
 
   /**
@@ -256,7 +264,14 @@ object JvmOps {
     * find      =>  m_find
     * length    =>  m_length
     */
-  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
+  def getDefMethodNameInNamespaceClass(defn: ReducedAst.Def): String = {
+    /**
+      * Exported names are checked in [[ca.uwaterloo.flix.language.phase.Safety]]
+      * so no mangling is needed.
+      */
+    if (defn.ann.isExport) defn.sym.name
+    else "m_" + mangle(defn.sym.name)
+  }
 
   def getTagName(sym: Symbol.CaseSym): String = mangle(sym.name)
 
@@ -288,15 +303,6 @@ object JvmOps {
         NamespaceInfo(ns, defs)
     }.toSet
   }
-
-  /**
-    * Returns the set of erased ref types in `types` without searching recursively.
-    */
-  def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
-    types.foldLeft(Set.empty[BackendObjType.Ref]) {
-      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.asErasedBackendType(tpe))
-      case (acc, _) => acc
-    }
 
   /**
     * Returns the set of erased lazy types in `types` without searching recursively.
@@ -334,6 +340,16 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased struct types in `types` without searching recursively.
+    */
+  def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
+    types.foldLeft(Set.empty[BackendObjType.Struct]) {
+      case (acc, MonoType.Struct(_, elms, targs)) =>
+        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 

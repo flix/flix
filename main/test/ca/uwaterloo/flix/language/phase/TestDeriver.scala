@@ -43,10 +43,27 @@ class TestDeriver extends AnyFunSuite with TestUtils {
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
+  test("DerivationError.EmptyEnum.Coerce") {
+    val compiled = compile("enum E with Coerce", Options.TestWithLibAll)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
+  }
+
+  test("DerivationError.MultiEnum.Coerce") {
+    val input =
+      """
+        |enum E with Coerce {
+        |    case C1
+        |    case C2
+        |}
+        |""".stripMargin
+    val compiled = compile("enum E with Coerce", Options.TestWithLibAll)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
+  }
+
   test("IllegalDerivation.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |enum E with C {
         |    case E

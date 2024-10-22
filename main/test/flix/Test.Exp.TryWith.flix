@@ -18,7 +18,7 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith01(): Unit = {
         try {
-            do Test.Exp.TryWith.Print.doIt()
+            Test.Exp.TryWith.Print.doIt()
         } with Print {
             def doIt(_cont) = ()
         }
@@ -27,11 +27,11 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith02(): Unit = {
         try {
-            do Test.Exp.TryWith.Print.doIt()
+            Test.Exp.TryWith.Print.doIt()
         } with Print {
             def doIt(_cont) = {
                 try {
-                    do Test.Exp.TryWith.Print2.doIt2()
+                    Test.Exp.TryWith.Print2.doIt2()
                 } with Print2 {
                     def doIt2(_cont) = ()
                 }
@@ -41,7 +41,7 @@ mod Test.Exp.TryWith {
 
     @Test
     def testTryWith03(): Unit = {
-        let letsDoIt = () -> do Test.Exp.TryWith.Print.doIt();
+        let letsDoIt = () -> Test.Exp.TryWith.Print.doIt();
         try {
             letsDoIt()
         } with Print {
@@ -52,7 +52,7 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith04(): Unit = {
         try {
-            do Test.Exp.TryWith.Greet.greet("Alice")
+            Test.Exp.TryWith.Greet.greet("Alice")
         } with Greet {
             def greet(_, _cont) = ()
         }
@@ -61,11 +61,11 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith05(): Unit = {
         try {
-            do Test.Exp.TryWith.Greet.greet("Duchess")
+            Test.Exp.TryWith.Greet.greet("Duchess")
         } with Greet {
             def greet(name, _cont) = {
                 try {
-                    do Test.Exp.TryWith.Greet2.greet2(name)
+                    Test.Exp.TryWith.Greet2.greet2(name)
                 } with Greet2 {
                     def greet2(_, _cont) = ()
                 }
@@ -78,7 +78,7 @@ mod Test.Exp.TryWith {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
             case hd :: tl => {
-                do Test.Exp.TryWith.Greet.greet(hd);
+                Test.Exp.TryWith.Greet.greet(hd);
                 greetAll(tl)
             }
         };
@@ -93,7 +93,7 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith07(): Unit = {
         try {
-            do Test.Exp.TryWith.Print.doIt()
+            Test.Exp.TryWith.Print.doIt()
         } with Print {
             def doIt(_cont) = ()
         } with Print {
@@ -104,11 +104,11 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith08(): Unit = {
         try {
-            do Test.Exp.TryWith.Print.doIt()
+            Test.Exp.TryWith.Print.doIt()
         } with Print {
             def doIt(_cont) = {
                 try {
-                    do Test.Exp.TryWith.Print2.doIt2()
+                    Test.Exp.TryWith.Print2.doIt2()
                 } with Print2 {
                     def doIt2(_cont) = ()
                 } with Print2 {
@@ -122,7 +122,7 @@ mod Test.Exp.TryWith {
 
     @Test
     def testTryWith09(): Unit = {
-        let f = () -> do Test.Exp.TryWith.Print.doIt();
+        let f = () -> Test.Exp.TryWith.Print.doIt();
         try {
             f()
         } with Print {
@@ -135,7 +135,7 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith10(): Unit = {
         try {
-            do Test.Exp.TryWith.Greet.greet("Alice")
+            Test.Exp.TryWith.Greet.greet("Alice")
         } with Greet {
             def greet(_, _cont) = ()
         } with Greet {
@@ -146,11 +146,11 @@ mod Test.Exp.TryWith {
     @Test
     def testTryWith11(): Unit = {
         try {
-            do Test.Exp.TryWith.Greet.greet("Duchess")
+            Test.Exp.TryWith.Greet.greet("Duchess")
         } with Greet {
             def greet(name, _cont) = {
                 try {
-                    do Test.Exp.TryWith.Greet2.greet2(name)
+                    Test.Exp.TryWith.Greet2.greet2(name)
                 } with Greet2 {
                     def greet2(_, _cont) = ()
                 }
@@ -165,7 +165,7 @@ mod Test.Exp.TryWith {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
             case hd :: tl => {
-                do Test.Exp.TryWith.Greet.greet(hd);
+                Test.Exp.TryWith.Greet.greet(hd);
                 greetAll(tl)
             }
         };

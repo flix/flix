@@ -72,10 +72,10 @@ mod Fixpoint.Ast.Ram {
                 case RelOp.Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Query(var, ramSym, prefixQuery, body) =>
-                    let query = Vector.joinWith(match (i, term) -> {
+                    let qry = Vector.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
-                    "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
+                    "query {${var} ∈ ${ramSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(rowVar, _, terms, body) =>
                     "loop(${rowVar} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, ramSym) =>

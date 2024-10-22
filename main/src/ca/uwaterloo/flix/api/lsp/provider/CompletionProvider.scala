@@ -16,18 +16,17 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion._
-import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
+import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
-import ca.uwaterloo.flix.language.fmt.FormatScheme
-import ca.uwaterloo.flix.language.phase.Parser.Letters
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
+import ca.uwaterloo.flix.language.phase.Lexer
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
-import org.parboiled2.CharPredicate
+import org.json4s.JsonDSL.*
 
 /**
   * CompletionProvider
@@ -44,216 +43,89 @@ import org.parboiled2.CharPredicate
   */
 object CompletionProvider {
 
-  //
-  // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
-  // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  // are boosted if the cursor is preceded by a ":")
-  //
-  // 1: High: completions which are only available within a very specific context
-  // 2: Boost: completions which are normally low priority, but the context makes them more likely
-  // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
-  // 5: Local: local variables
-  // 7: Normal: completions that are relevant within no particular context
-  // 9: Low: completions that are unlikely to be relevant unless within a specific context
-  //
-  object Priority {
-    def high(name: String): String = "1" + name
+  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+    getCompletionContext(source, uri, pos, currentErrors) match {
+      case None =>
+        // We were not able to compute the completion context. Return no suggestions.
+        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, Nil).toJSON)
 
-    def boost(name: String): String = "2" + name
-
-    def snippet(name: String): String = "4" + name
-
-    def local(name: String): String = "5" + name
-
-    def normal(name: String): String = "7" + name
-
-    def low(name: String): String = "9" + name
-  }
-
-  /**
-    * Process a completion request.
-    */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): JObject = {
-    val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
-    // If we are currently on a hole the only useful completion is a hole completion.
-    if (holeCompletions.nonEmpty) {
-      return ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
-    }
-
-    //
-    // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
-    // (what would having no source even mean?) or if the position represented by pos was invalid with respect
-    // to the source (which would imply a bug in VSCode?).
-    //
-    val completions = source.flatMap(getContext(_, uri, pos, currentErrors)) match {
-      case None => Nil
-      case Some(context) =>
-        root match {
-          case Some(nonOptionRoot) =>
-            // Get all completions
-            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
-
-            // Find the best completion
-            val best = CompletionRanker.findBest(completions)(context, index, deltaContext)
-            boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
-          case None => Nil
-        }
-    }
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
-  }
-
-  /**
-    * Gets completions for when the cursor position is on a hole expression with an expression
-    */
-  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: Option[TypedAst.Root])(implicit flix: Flix): Iterable[CompletionItem] = {
-    if (root.isEmpty) return Nil
-    val entity = index.query(uri, pos)
-    entity match {
-      case Some(Entity.Exp(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc))) =>
-        HoleCompletion.candidates(sourceType, targetType, root.get)
-          .map(root.get.defs(_))
-          .filter(_.spec.mod.isPublic)
-          .zipWithIndex
-          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", loc, sym, decl) }
-      case _ => Nil
+      case Some(ctx) =>
+        // We were able to compute the completion context. Compute suggestions.
+        val completions = getCompletions(ctx)(flix, index, root)
+        val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
+        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
     }
   }
 
-  /**
-    * Creates a completion item from a hole with expression and a def.
-    */
-  private def holeDefCompletion(priority: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def)(implicit flix: Flix): CompletionItem = {
-    val name = decl.sym.toString
-    val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
-    } ::: sym.text :: Nil
-    val params = args.mkString(", ")
-    val snippet = s"$name($params)"
-    CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      filterText = Some(s"${sym.text}?$name"),
-      sortText = priority,
-      textEdit = TextEdit(Range.from(loc), snippet),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Function)
-  }
-
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    context.sctx match {
+  private def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+    ctx.sctx match {
       //
       // Expressions.
       //
-      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
-      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
-      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, ctx)
+      case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
+      case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
+      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
 
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl =>
-        KeywordOtherCompleter.getCompletions(context) ++
-          InstanceCompleter.getCompletions(context) ++
-          SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
       //
       // Imports.
       //
-      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
+      case SyntacticContext.Import => ImportCompleter.getCompletions(ctx)
 
       //
       // Types.
       //
-      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context)
+      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(ctx)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx) ++ EffSymCompleter.getCompletions(ctx)
 
       //
       // Patterns.
       //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(context) ++
-        EnumCompleter.getCompletions(context) ++ EnumTagCompleter.getCompletions(context)
+      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++
+        EnumCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
       //
       // Uses.
       //
-      case SyntacticContext.Use => UseCompleter.getCompletions(context)
+      case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
       //
       // With.
       //
       case SyntacticContext.WithClause =>
         // A with context could also be just a type context.
-        TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
+        TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
 
       //
-      // Fallthrough.
+      // Try-with handler.
+      //
+      case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
+
+      //
+      // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
       //
       case SyntacticContext.Unknown =>
-        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+        // Special case: A program with a hole is correct, but we should offer some completion suggestions.
+        HoleCompletion.getHoleCompletion(ctx, index, root)
     }
-  }
-
-  /**
-    * Boosts a best completion to the top of the pop-up-pane.
-    *
-    * @param comp the completion to boost.
-    * @return nil, if no we have no completion to boost,
-    *         otherwise a List consisting only of the boosted completion as CompletionItem.
-    */
-  private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
-    comp match {
-      case None =>
-        // No best completion to boost
-        Nil
-      case Some(best) =>
-        // We have a better completion, boost that to top priority
-        val compForBoost = best.toCompletionItem(context)
-        // Change documentation to include "Best pick"
-        val bestPickDocu = compForBoost.documentation match {
-          case Some(oldDocu) =>
-            // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
-            // visible to the user, that it's the best pick.
-            "Best pick \n\n" + oldDocu
-          case None => "Best pick"
-        }
-        // Boosting by changing priority in sortText
-        // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
-          documentation = Some(bestPickDocu))
-        List(boostedComp)
-    }
-  }
-
-  /**
-    * Characters that constitute a word.
-    * This is more permissive than the parser, but that's OK.
-    */
-  private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-    Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
-
-  /**
-    * Returns the word at the end of a string, discarding trailing whitespace first
-    */
-  private def getLastWord(s: String): String = {
-    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-  }
-
-  /**
-    * Returns the second-to-last word at the end of a string, *not* discarding
-    * trailing whitespace first.
-    */
-  private def getSecondLastWord(s: String): String = {
-    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
+  private def getCompletionContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
+    // Use zero-indexed lines and characters.
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
@@ -271,10 +143,48 @@ object CompletionProvider {
         case None => ""
         case Some(s) => getLastWord(s)
       }
-      val range = Range(Position(y, start), Position(y, end))
+      // Remember positions are one-indexed.
+      val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
       val sctx = getSyntacticContext(uri, pos, errors)
       CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }
+  }
+
+  /**
+    * Characters that constitute a word.
+    */
+  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
+
+  /**
+    * Characters that may appear in a word.
+    */
+  private def isLetter(c: Char) = c match {
+    case c if c >= 'a' && c <= 'z' => true
+    case c if c >= 'A' && c <= 'Z' => true
+    case c if c >= '0' && c <= '9' => true
+    // We also include some special symbols. This is more permissive than the lexer, but that's OK.
+    case '_' => true
+    case '!' => true
+    case '@' => true
+    case '/' => true
+    case '.' => true
+    case '#' => true
+    case _ => false
+  }
+
+  /**
+    * Returns the word at the end of a string, discarding trailing whitespace first
+    */
+  private def getLastWord(s: String): String = {
+    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+  }
+
+  /**
+    * Returns the second-to-last word at the end of a string, *not* discarding
+    * trailing whitespace first.
+    */
+  private def getSecondLastWord(s: String): String = {
+    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
@@ -284,12 +194,28 @@ object CompletionProvider {
     */
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errors.filter({
-      case err => pos.line <= err.loc.beginLine
-    }).collectFirst({
-      case ParseError(_, ctx, _) => ctx
-      case WeederError.MalformedIdentifier(_, _) => SyntacticContext.Import
-      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
-      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
-    }).getOrElse(SyntacticContext.Unknown)
+      case err =>
+        uri == err.loc.source.name && pos.line <= err.loc.beginLine
+    }).map({
+      // We can have multiple errors, so we rank them, and pick the highest priority.
+      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
+      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
+      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
+      case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
+      case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
+      case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
+      case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
+      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
+      case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
+      case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
+      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
+      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
+      case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
+      case err: ParseError => (5, err.sctx)
+      case _ => (999, SyntacticContext.Unknown)
+    }).minByOption(_._1) match {
+      case None => SyntacticContext.Unknown
+      case Some((_, sctx)) => sctx
+    }
 
 }

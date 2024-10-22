@@ -24,6 +24,11 @@ instance UpperBound[Int8] {
 
 mod Int8 {
 
+    import java.lang.Byte
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
+    import java.math.BigInteger
+
     ///
     /// Returns the number of bits used to represent an `Int8`.
     ///
@@ -121,10 +126,10 @@ mod Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
-        if (x < 0i8 and Int32.remainder(dist.dist, 32) != 0)
-            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
+        if (x < 0i8 and Int32.remainder(dist#dist, 32) != 0)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist#dist - 1)
         else
-            rightShift(x, dist.dist)
+            rightShift(x, dist#dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -141,7 +146,7 @@ mod Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
@@ -150,7 +155,7 @@ mod Int8 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
@@ -252,28 +257,28 @@ mod Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
-        if (rightShift(x, pos.pos) `remainder` 2i8 == 0i8) 0 else 1
+        if (rightShift(x, pos#pos) `remainder` 2i8 == 0i8) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos.pos))
+    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos.pos)))
+    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos.pos))
+    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos#pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -332,11 +337,9 @@ mod Int8 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int8] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Byte.parseByte(String): Int8 \ {};
-        Some(s |> strip |> parseByte)
+        Some(unsafe Byte.parseByte(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -345,9 +348,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt16(x: Int8): Int16 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        import java.lang.Byte.shortValue(): Int16 \ {};
-        (valueOf(x) |> shortValue)
+        unsafe Byte.valueOf(x).shortValue()
 
     ///
     /// Convert `x` to an Int32.
@@ -355,9 +356,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int8): Int32 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        import java.lang.Byte.intValue(): Int32 \ {};
-        (valueOf(x) |> intValue)
+        unsafe Byte.valueOf(x).intValue()
 
     ///
     /// Convert `x` to an Int64.
@@ -365,9 +364,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int8): Int64 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        import java.lang.Byte.longValue(): Int64 \ {};
-        (valueOf(x) |> longValue)
+        unsafe Byte.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -375,10 +372,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {} as i8ValueOf;
-        import java.lang.Byte.longValue(): Int64 \ {};
-        import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
-        (i8ValueOf(x) |> longValue |> asBigInt)
+        unsafe BigInteger.valueOf(Byte.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -386,9 +380,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int8): Float32 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        import java.lang.Byte.floatValue(): Float32 \ {};
-        (valueOf(x) |> floatValue)
+        unsafe Byte.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -396,9 +388,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int8): Float64 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        import java.lang.Byte.doubleValue(): Float64 \ {};
-        (valueOf(x) |> doubleValue)
+        unsafe Byte.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -406,27 +396,24 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
-        Int8.toInt32(x) |> fromInt32
+        unsafe new BigDecimal(Int8.toInt32(x))
 
     ///
-    /// Get the primitive Int8 value from its object representation (i.e. ##java.lang.Byte).
+    /// Get the primitive Int8 value from its object representation (i.e. Byte).
     ///
     /// This function is expected to be used when marshaling Int8s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Byte`.
+    /// code you should not need to use `Byte`.
     ///
-    pub def byteValue(i: ##java.lang.Byte): Int8 =
-        import java.lang.Byte.byteValue(): Int8 \ {};
-        byteValue(i)
+    pub def byteValue(i: Byte): Int8 =
+        unsafe i.byteValue()
 
     ///
-    /// Convert an Int8 value to its object representation (i.e. ##java.lang.Byte).
+    /// Convert an Int8 value to its object representation (i.e. Byte).
     ///
     /// This function is expected to be used when marshaling Int8s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Byte`.
+    /// code you should not need to use `Byte`.
     ///
-    pub def valueOf(i: Int8): ##java.lang.Byte =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
-        valueOf(i)
+    pub def valueOf(i: Int8): Byte =
+        unsafe Byte.valueOf(i)
 
 }

@@ -83,6 +83,15 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
         case Type.AssocType(cst, args0, kind, loc) =>
           val args = args0.map(visit)
           Type.AssocType(cst, args, kind, loc)
+        case Type.JvmToType(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToType(tpe, loc)
+        case Type.JvmToEff(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToEff(tpe, loc)
+        case Type.UnresolvedJvmType(member0, loc) =>
+          val member = member0.map(visit)
+          Type.UnresolvedJvmType(member, loc)
 
       }
 
@@ -98,7 +107,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given type constraint `tc`.
     */
-  def apply(tc: Ast.TypeConstraint): Ast.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+  def apply(tc: Ast.TraitConstraint): Ast.TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Applies `this` substitution to the given type scheme `sc`.

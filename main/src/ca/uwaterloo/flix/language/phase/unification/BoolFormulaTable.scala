@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.*
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 
@@ -24,6 +24,7 @@ import java.io.IOException
 import java.util.zip.ZipInputStream
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 /**
   * A Boolean minimization technique that uses on pre-computed tables of minimal formulas.
@@ -276,6 +277,9 @@ object BoolFormulaTable {
     // Split the string into lines.
     val lines = allLines.split("\n")
 
+    // A cache used to canonicalize formulas.
+    implicit val cache: mutable.Map[BoolFormula, BoolFormula] = mutable.Map.empty
+
     // Parse each line into a formula.
     val formulas = lines.map(parseLine)
 
@@ -316,24 +320,57 @@ object BoolFormulaTable {
     * and(x3,or(and(x0,x1),x2))
     *
     */
-  private def parseLine(l: String): BoolFormula = {
+  private def parseLine(l: String)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
     @tailrec
     def parse(input: List[Char], stack: List[BoolFormula]): BoolFormula = (input, stack) match {
       case (Nil, formula :: Nil) => formula
       case ('T' :: rest, stack) => parse(rest, True :: stack)
       case ('F' :: rest, stack) => parse(rest, False :: stack)
-      case ('0' :: rest, stack) => parse(rest, Var(0) :: stack)
-      case ('1' :: rest, stack) => parse(rest, Var(1) :: stack)
-      case ('2' :: rest, stack) => parse(rest, Var(2) :: stack)
-      case ('3' :: rest, stack) => parse(rest, Var(3) :: stack)
-      case ('n' :: rest, f :: stack) => parse(rest, Not(f) :: stack)
-      case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, And(f1, f2) :: stack)
-      case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, Or(f1, f2) :: stack)
+      case ('0' :: rest, stack) => parse(rest, mkVar(0) :: stack)
+      case ('1' :: rest, stack) => parse(rest, mkVar(1) :: stack)
+      case ('2' :: rest, stack) => parse(rest, mkVar(2) :: stack)
+      case ('3' :: rest, stack) => parse(rest, mkVar(3) :: stack)
+      case ('n' :: rest, f :: stack) => parse(rest, mkNot(f) :: stack)
+      case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, mkAnd(f1, f2) :: stack)
+      case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, mkOr(f1, f2) :: stack)
       case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.", SourceLocation.Unknown)
     }
 
     parse(l.trim().toList, Nil)
   }
+
+  /**
+    * Returns the *canonical* representation of the given variable `x`.
+    */
+  private def mkVar(x: Int)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
+    val f = Var(x)
+    cache.getOrElseUpdate(f, f)
+  }
+
+  /**
+    * Returns the canonical representation of the negation of the given formula `f1`.
+    */
+  private def mkNot(f1: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
+    val f = Not(f1)
+    cache.getOrElseUpdate(f, f)
+  }
+
+  /**
+    * Returns the canonical representation of the conjunction of the given formulas `f1` and `f2`.
+    */
+  private def mkAnd(f1: BoolFormula, f2: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
+    val f = And(f1, f2)
+    cache.getOrElseUpdate(f, f)
+  }
+
+  /**
+    * Returns the canonical representation of the disjunction of the given formulas `f1` and `f2`.
+    */
+  private def mkOr(f1: BoolFormula, f2: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
+    val f = Or(f1, f2)
+    cache.getOrElseUpdate(f, f)
+  }
+
 
   /**
     * Formats the given int `i` as a bit string with `n` bits.

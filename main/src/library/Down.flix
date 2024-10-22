@@ -27,7 +27,8 @@ instance Eq[Down[a]] with Eq[a] {
     }
 }
 
-instance Coerce[Down] {
+instance Coerce[Down[a]] {
+    type Out = a
     pub def coerce(x: Down[a]): a = match x {
         case Down.Down(xx) => xx
     }

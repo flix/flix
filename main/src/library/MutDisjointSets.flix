@@ -39,8 +39,8 @@ mod MutDisjointSets {
     ///
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
-    pub def new(rc: Region[r]): MutDisjointSets[t, r] \ r =
-        MutDisjointSets({ rc = rc, forest = MutMap.new(rc) })
+    pub def empty(rc: Region[r]): MutDisjointSets[t, r] \ r =
+        MutDisjointSets({ rc = rc, forest = MutMap.empty(rc) })
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
@@ -48,7 +48,7 @@ mod MutDisjointSets {
     ///
     pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
-            Node.Node({ rc = rc, value = y, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
+            Node.Node({ rc = rc, value = y, parent = Ref.fresh(rc, None), rank = Ref.fresh(rc, 0) })
         };
         let MutDisjointSets({ rc, forest }) = s;
         if (not memberOf(x, s)) {
@@ -61,7 +61,7 @@ mod MutDisjointSets {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    pub def makeSets(m: m[t], s: MutDisjointSets[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
+    pub def makeSets(m: m, s: MutDisjointSets[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 

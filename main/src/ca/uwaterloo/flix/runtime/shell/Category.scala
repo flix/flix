@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.language.ast.Ast
-import ca.uwaterloo.flix.language.phase.Parser
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.phase.Lexer
 
 /**
   * A common super-type for the syntactic category of a source code fragment.
@@ -43,19 +43,20 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Ast.Input.Text("<shell>", s, stable = false)
-    val source = Ast.Source(input, s.toCharArray, stable = false)
-    val parser = new Parser(source)
+    val input = Input.Text("<shell>", s, stable = false, SecurityContext.AllPermissions)
+    val source = Source(input, s.toCharArray)
 
-    val isDecl = parser.DeclarationEOI.run().isSuccess
-    val isExpr = parser.ExpressionEOI.run().isSuccess
-
-    if (isDecl && !isExpr)
-      Category.Decl
-    else if (!isDecl && isExpr)
-      Category.Expr
-    else
+    // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
+    val (tokens, errors) = Lexer.lex(source)
+    if (errors.isEmpty) {
+      val start = tokens(0).kind
+      (start.isFirstDecl, start.isFirstExpr) match {
+        case (true, _) => Category.Decl
+        case (_, true) => Category.Expr
+        case _ => Category.Unknown
+      }
+    } else {
       Category.Unknown
+    }
   }
-
 }

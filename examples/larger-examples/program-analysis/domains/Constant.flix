@@ -1,6 +1,6 @@
-/**
- * An implementation of the constant propagation lattice.
- */
+///
+/// An implementation of the constant propagation lattice.
+///
 mod Domain.Constant {
 
     ///
@@ -66,9 +66,9 @@ mod Domain.Constant {
     ///
     pub def alpha(i: Int32): Constant = Constant.Cst(i)
 
-    /**
-     * Over-approximates integer `increment`.
-     */
+    ///
+    /// Over-approximates integer `increment`.
+    ///
 //    #safe1(x -> x + 1)
 //    #strict1 #monotone1
     pub def inc(e: Constant): Constant =
@@ -172,7 +172,7 @@ mod Domain.Constant {
     ///
 //    #safe2((x, y) -> x &&& y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Constant, e2: Constant): Constant =
+    pub def band(e1: Constant, e2: Constant): Constant =
         match (e1, e2) {
             case (Constant.Bot, _)                    => Constant.Bot
             case (_, Constant.Bot)                    => Constant.Bot
@@ -185,7 +185,7 @@ mod Domain.Constant {
     ///
 //    #safe2((x, y) -> x ||| y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Constant, e2: Constant): Constant =
+    pub def bor(e1: Constant, e2: Constant): Constant =
         match (e1, e2) {
             case (Constant.Bot, _)                    => Constant.Bot
             case (_, Constant.Bot)                    => Constant.Bot
@@ -198,7 +198,7 @@ mod Domain.Constant {
     ///
 //    #safe2((x, y) -> x ^^^ y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Constant, e2: Constant): Constant =
+    pub def bxor(e1: Constant, e2: Constant): Constant =
         match (e1, e2) {
             case (Constant.Bot, _)                    => Constant.Bot
             case (_, Constant.Bot)                    => Constant.Bot

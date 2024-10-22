@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, MonoDefs}
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
 
 /**
@@ -26,7 +27,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent an unconstrained type after monomorphization.
     */
-  @IntroducedBy(MonoDefs.getClass)
+  @IntroducedBy(Monomorpher.getClass)
   case object AnyType extends TypeConstructor {
     override def kind: Kind = Kind.Star
   }
@@ -230,6 +231,12 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+   * A type constructor that represents the type of structs.
+   */
+  @IntroducedBy(Kinder.getClass)
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
@@ -238,8 +245,29 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of JVM classes.
     */
-  case class Native(clazz: Class[_]) extends TypeConstructor {
+  case class Native(clazz: Class[?]) extends TypeConstructor {
     def kind: Kind = Kind.Star
+  }
+
+  /**
+   * A type constructor that represents the type of a Java constructor.
+   * */
+  case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+   * A type constructor that represents the type of a Java method.
+   */
+  case class JvmMethod(method: Method) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+    * A type constructor that represents the type of a Java field.
+    */
+  case class JvmField(field: Field) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
   }
 
   /**
@@ -257,19 +285,9 @@ object TypeConstructor {
     */
   case object Vector extends TypeConstructor {
     /**
-      * The shape of an array is `Array[t]`.
+      * The shape of a vector is `Vector[t]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Star
-  }
-
-  /**
-    * A type constructor that represent the type of references.
-    */
-  case object Ref extends TypeConstructor {
-    /**
-      * The shape of a reference is `Ref[t, l]`.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**
@@ -414,6 +432,6 @@ object TypeConstructor {
   /**
     * A type constructor which represents an erroneous type of the given `kind`.
     */
-  case class Error(kind: Kind) extends TypeConstructor
+  case class Error(id: Int, kind: Kind) extends TypeConstructor
 
 }

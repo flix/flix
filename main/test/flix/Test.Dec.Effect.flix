@@ -12,7 +12,7 @@ mod Test.Dec.Effect {
     }
 
     pub eff Threading {
-        pub def yield(): Unit
+        pub def yield_(): Unit
         pub def spawn_(f: Unit -> Unit): Unit
     }
 

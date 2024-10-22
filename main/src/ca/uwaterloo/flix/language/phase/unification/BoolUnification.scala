@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
@@ -53,8 +53,8 @@ object BoolUnification {
 
     // Check for Type.Error
     (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.Error(_), _), _) => return Ok((Substitution.empty, Nil))
-      case (_, Type.Cst(TypeConstructor.Error(_), _)) => return Ok((Substitution.empty, Nil))
+      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Ok((Substitution.empty, Nil))
+      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Ok((Substitution.empty, Nil))
       case _ => // fallthrough
     }
 

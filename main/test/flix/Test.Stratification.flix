@@ -388,8 +388,7 @@ mod Test.Stratification {
         let res = query #{
             A506(1, 1). A506(2, 2). A506(3, 6).
             A506(1, 5). A506(2, 1). A506(3, 9).
-            // TODO: removed type annotation once bug #3190 is fixed
-            B506(x: Int32; y) :- A506(x, y).
+            B506(x; y) :- A506(x, y).
             C506(;x) :- B506(_; x).
             R506(x) :- fix C506(;x).
         } select x from R506(x) |> Vector.toSet;
@@ -645,7 +644,7 @@ mod Test.Stratification {
             let p = #{
                 C1000("a"; 12).
                 B1000(12; -14). C1000("a"; -14).
-                A1000(15; x: Int32) :- fix B1000(12; x), C1000("a"; x).
+                A1000(15; x) :- fix B1000(12; x), C1000("a"; x).
                 B1000(12; 12). C1000("a"; 24).
             };
             let arr = query p select x from A1000(15; x);

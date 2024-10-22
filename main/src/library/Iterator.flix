@@ -53,7 +53,7 @@ mod Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = constant(Done);
+        let f = _ ->  checked_ecast(Done);
         Iterator(rc, f)
 
     ///
@@ -82,12 +82,12 @@ mod Iterator {
     /// Returns an empty iterator if `b >= e`.
     ///
     pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ r =
-        let pos = ref b @ rc;
+        let pos = Ref.fresh(rc, b);
         if (e <= b)
             empty(rc)
         else {
-            let iterF = () -> match (deref pos) {
-                case i if i < e => pos := i+1; Ans(i)
+            let iterF = () -> match (Ref.get(pos)) {
+                case i if i < e => Ref.put(i + 1, pos); Ans(i)
                 case _          => Done
             };
             Iterator(rc, iterF)
@@ -99,13 +99,13 @@ mod Iterator {
     /// Returns an empty iterator if `n < 0`.
     ///
     pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ r =
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         let iterF = () -> {
-            let i = deref ix;
+            let i = Ref.get(ix);
             if (i < 1)
                 Done
             else {
-                ix := i-1;
+                Ref.put(i - 1, ix);
                 Ans(x)
             }
         };
@@ -133,7 +133,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
-        let m = MutList.new(rc1);
+        let m = MutList.empty(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
     }
@@ -144,7 +144,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
-        let m = MutList.new(rc);
+        let m = MutList.empty(rc);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toVector(m)
     }
@@ -198,7 +198,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
@@ -277,9 +277,9 @@ mod Iterator {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         let step = x -> match x {
-            case Ans(a) => { let i = deref ix; ix := i + 1; Ans(f(i, a)) }
+            case Ans(a) => { let i = Ref.get(ix); Ref.put(i + 1, ix); Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };
@@ -287,12 +287,12 @@ mod Iterator {
         Iterator(rc, iterF1)
 
     ///
-    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    /// Returns an iterator with every occurrence of `src` replaced by `dst` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == from.from) to.to else a, iter)
+    pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+        map(a -> if (a == src#src) dst#dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
@@ -386,8 +386,8 @@ mod Iterator {
     ///
     pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
-        let ix = ref 0 @ rc;
-        map(x -> {let i = deref ix; ix:= i + 1; (i, x)}, iter)
+        let ix = Ref.fresh(rc, 0);
+        map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
     /// Alias for `zipWithIndex`.
@@ -426,7 +426,7 @@ mod Iterator {
             case Done   => k(s)
 
         };
-        loop(eidentity)
+        loop(x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -489,10 +489,10 @@ mod Iterator {
     ///
     pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         def loop() = {
-            let i = deref ix;
-            ix := i - 1;
+            let i = Ref.get(ix);
+            Ref.put(i - 1, ix);
             match iterF() {
                 case Ans(a)  => if (i > 0) loop() else Ans(a)
                 case Skip    => loop()
@@ -514,14 +514,14 @@ mod Iterator {
     ///
     pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         def loop() = {
-            let i = deref ix;
+            let i = Ref.get(ix);
             if (i < 1)
                 Done
             else
                 match iterF() {
-                    case Ans(a) => {ix := i-1; Ans(a)}
+                    case Ans(a) => Ref.put(i - 1, ix); Ans(a)
                     case Skip   => Skip
                     case Done   => Done
                 }
@@ -555,16 +555,16 @@ mod Iterator {
     ///
     pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         def loop() = match iterF() {
             case Ans(a) =>
-                if (deref start) {
-                    if (f(a)) Skip else { start:= false; Ans(a) }
+                if (Ref.get(start)) {
+                    if (f(a)) Skip else { Ref.put(false, start); Ans(a) }
                 } else {
                     Ans(a)
                 }
-            case Skip    => Skip
-            case Done    => Done
+            case Skip => Skip
+            case Done => Done
         };
         let iter1F = () -> loop();
         Iterator(rc, iter1F)
@@ -578,10 +578,10 @@ mod Iterator {
     ///
     pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ r =
         let Iterator(rc, iterF) = ma;
-        let innerIter = ref polymorphicEmpty(rc) @ rc;
-        let inside = ref false @ rc;
+        let innerIter = Ref.fresh(rc, polymorphicEmpty(rc));
+        let inside = Ref.fresh(rc, false);
         def innerLoop() = {
-            let Iterator(_, innerF) = deref innerIter;
+            let Iterator(_, innerF) = Ref.get(innerIter);
             match innerF() {
                 case Ans(b) => Ans(b)
                 case Skip   => innerLoop()
@@ -589,18 +589,17 @@ mod Iterator {
             }
         };
         def outerLoop() = {
-            if (deref inside) {
+            if (Ref.get(inside)) {
                 match innerLoop() {
-                    case Done => {inside := false; outerLoop()}
+                    case Done => Ref.put(false, inside); outerLoop()
                     case ans  => ans
                 }
             } else {
                 match iterF() {
-                    case Ans(a) => {
-                        inside := true;
-                        innerIter := f(a);
+                    case Ans(a) =>
+                        Ref.put(true, inside);
+                        Ref.put(f(a), innerIter);
                         outerLoop()
-                    }
                     case Skip   => outerLoop()
                     case Done   => Done
                 }
@@ -617,7 +616,7 @@ mod Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = constant(Done);
+        let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
 
@@ -628,10 +627,10 @@ mod Iterator {
     ///
     pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, _) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         let step = x ->
-            if (deref start) {
-                start := false;
+            if (Ref.get(start)) {
+                Ref.put(false, start);
                 singleton(rc, x)
             } else {
                 cons(sep, singleton(rc, x))
@@ -647,13 +646,13 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ r with Foldable[t] =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
         let Iterator(rc, _) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         let sepL = Foldable.toList(sep);
         let step = innerIter -> {
-            if (deref start) {
-                start := false;
+            if (Ref.get(start)) {
+                Ref.put(false, start);
                 innerIter
             } else {
                 append(ofList(rc, sepL), innerIter)
@@ -667,12 +666,12 @@ mod Iterator {
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
     /// then `intercalate` fails.
     ///
-    def ofList(rc: Region[r], xs: List[a]): Iterator[a, Pure, r] \ r =
-        let ls = ref xs @ rc;
+    def ofList(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => Done
-                case x :: rs => ls := rs; Ans(x)
+                case x :: rs => Ref.put(rs, ls); Ans(x)
             }
         };
         Iterator(rc, next)
@@ -693,7 +692,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, r } = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         match next(iter) {
             case Some(a) => {
                 StringBuilder.append!(f(a), sb);
@@ -735,10 +734,10 @@ mod Iterator {
     ///
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let first = ref true @ rc;
+        let first = Ref.fresh(rc, true);
         let f = () ->  {
-            if (deref first) {
-                first := false;
+            if (Ref.get(first)) {
+                Ref.put(false, first);
                 Ans(x)
             }
             else

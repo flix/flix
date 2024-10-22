@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 
+import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -51,11 +52,16 @@ sealed trait Type {
   lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
 
-    case Type.Cst(tc, _) => SortedSet.empty
+    case Type.Cst(_, _) => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.typeVars
+    case Type.JvmToEff(tpe, _) => tpe.typeVars
+
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
   /**
@@ -70,6 +76,11 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.effects
+    case Type.JvmToEff(tpe, _) => tpe.effects
+
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -84,6 +95,10 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.cases
+    case Type.JvmToEff(tpe, _) => tpe.cases
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
   /**
@@ -97,6 +112,26 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
     case Type.Alias(_, _, tpe, _) => tpe.assocs
+
+    case Type.JvmToType(tpe, _) => tpe.assocs
+    case Type.JvmToEff(tpe, _) => tpe.assocs
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+  }
+
+  /**
+   * Returns all the JvmToEffs in the given type.
+   */
+  def jvmToEffs: Set[Type.JvmToEff] = this match {
+    case t: Type.JvmToEff => Set(t)
+
+    case _: Type.Var => Set.empty
+    case _: Type.Cst => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.jvmToEffs ++ tpe2.jvmToEffs
+    case Type.Alias(_, _, tpe, _) => tpe.jvmToEffs
+    case Type.AssocType(_, arg, _, _) => arg.jvmToEffs
+    case Type.JvmToType(tpe, _) => tpe.jvmToEffs
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.JvmToEff])((acc, t) => acc ++ t.jvmToEffs)
   }
 
   /**
@@ -125,6 +160,9 @@ sealed trait Type {
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
+    case Type.JvmToType(_, _) => None
+    case Type.JvmToEff(_, _) => None
+    case Type.UnresolvedJvmType(_, _) => None
   }
 
   /**
@@ -152,6 +190,9 @@ sealed trait Type {
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
+    case Type.JvmToType(_, _) => Nil
+    case Type.JvmToEff(_, _) => Nil
+    case Type.UnresolvedJvmType(_, _) => Nil
   }
 
   /**
@@ -176,13 +217,40 @@ sealed trait Type {
 
   /**
     * Applies `f` to every type variable in `this` type.
+    *
+    * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
     */
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
+
     case Type.Cst(_, _) => this
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
-    case Type.AssocType(sym, args, kind, loc) => Type.AssocType(sym, args.map(_.map(f)), kind, loc)
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = tpe1.map(f)
+      val t2 = tpe2.map(f)
+      // Performance: Reuse this, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2)) {
+        this
+      } else {
+        Type.Apply(t1, t2, loc)
+      }
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      // Performance: Few aliases, not worth optimizing.
+      Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+
+    case Type.AssocType(sym, args, kind, loc) =>
+      // Performance: Few associated types, not worth optimizing.
+      Type.AssocType(sym, args.map(_.map(f)), kind, loc)
+
+    case Type.JvmToType(tpe, loc) =>
+      Type.JvmToType(tpe.map(f), loc)
+
+    case Type.JvmToEff(tpe, loc) =>
+      Type.JvmToEff(tpe.map(f), loc)
+
+    case Type.UnresolvedJvmType(member, loc) =>
+      Type.UnresolvedJvmType(member.map(t => t.map(f)), loc)
   }
 
   /**
@@ -224,6 +292,9 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
+    case Type.JvmToType(tpe, _) => tpe.size + 1
+    case Type.JvmToEff(tpe, _) => tpe.size + 1
+    case Type.UnresolvedJvmType(member, loc) => member.getTypeArguments.map(_.size).sum + 1
   }
 
   /**
@@ -346,6 +417,21 @@ object Type {
     * Represents the IO effect.
     */
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+
+  /**
+   * Represents the Net effect.
+   */
+  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
+
+  /**
+    * Represents the NonDet effect.
+    */
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+
+  /**
+    * Represents the Sys effect.
+    */
+  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.
@@ -473,7 +559,7 @@ object Type {
     lazy val kind: Kind = {
       tpe1.kind match {
         case Kind.Arrow(_, k2) => k2
-        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.", loc)
+        case _ => Kind.Error
       }
     }
 
@@ -497,6 +583,76 @@ object Type {
     */
   case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
 
+  /**
+    * A type which must be reduced by finding the correct JVM constructor, method, or field.
+    */
+  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Star
+  }
+
+  /**
+    * An effect which must be reduced by finding the correct JVM constructor or method.
+    */
+  case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Eff
+  }
+
+  /**
+    * An unresolved Java type. Once the type variables are resolved, this can be reduced to a normal type.
+    */
+  case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Jvm
+  }
+
+  /**
+    * An enumeration of the unresolved Java types.
+    */
+  sealed trait JvmMember {
+
+    /**
+      * Returns all the types in `this`.
+      */
+    def getTypeArguments: List[Type] = this match {
+      case JvmMember.JvmConstructor(_, tpes) => tpes
+      case JvmMember.JvmField(tpe, _) => List(tpe)
+      case JvmMember.JvmMethod(tpe, _, tpes) => tpe :: tpes
+      case JvmMember.JvmStaticMethod(_, _, tpes) => tpes
+    }
+
+    /**
+      * Transforms `this` by executing `f` on all the types in `this`.
+      */
+    def map(f: Type => Type): JvmMember = this match {
+      case JvmMember.JvmConstructor(clazz, tpes) => JvmMember.JvmConstructor(clazz, tpes.map(f))
+      case JvmMember.JvmField(tpe, name) => JvmMember.JvmField(f(tpe), name)
+      case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
+      case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
+    }
+  }
+
+  object JvmMember {
+
+    /**
+      * A Java constructor, defined by its class and argument types.
+      */
+    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmMember
+
+    /**
+      * A Java field, defined by the receiver type and the field name.
+      */
+    case class JvmField(tpe: Type, name: Name.Ident) extends JvmMember
+
+    /**
+      * A Java method, defined by the receiver type, the method name, and the argument types.
+      */
+    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmMember
+
+    /**
+      * A Java static method, defined by the class, the method name, and the argument types.
+      */
+    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmMember
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
   /////////////////////////////////////////////////////////////////////////////
@@ -504,9 +660,17 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit level: Level, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
+  }
+
+  /**
+    * Returns a fresh error type of the given kind `k`.
+    */
+  def freshError(k: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
+    val id = flix.genSym.freshId()
+    Type.Cst(TypeConstructor.Error(id, k), loc)
   }
 
   /**
@@ -629,12 +793,6 @@ object Type {
     Apply(Cst(TypeConstructor.Vector, loc), tpe, loc)
 
   /**
-    * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
-    */
-  def mkRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Ref, loc), tpe, loc), reg, loc)
-
-  /**
     * Constructs the pure arrow type A -> B.
     */
   def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
@@ -707,6 +865,13 @@ object Type {
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
 
   /**
+    * Construct the struct type `Sym[ts]`
+    */
+  def mkStruct(sym: Symbol.StructSym, ts: List[Type], loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
+  }
+
+  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type], loc: SourceLocation): Type = {
@@ -731,7 +896,7 @@ object Type {
   /**
     * Constructs the a native type.
     */
-  def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+  def mkNative(clazz: Class[?], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
 
   /**
     * Constructs a RecordExtend type.
@@ -985,6 +1150,9 @@ object Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
+    case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
+    case Type.JvmToEff(tpe, loc) => Type.JvmToEff(eraseAliases(tpe), loc)
+    case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(eraseAliases), loc)
   }
 
   /**
@@ -1007,67 +1175,124 @@ object Type {
     case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
+    case JvmToType(tpe, _) => hasAssocType(tpe)
+    case JvmToEff(tpe, _) => hasAssocType(tpe)
+    case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
   }
 
   /**
-    * Returns the Flix Type of a Java Class
+    * Returns true if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]] somewhere within it.
     */
-  def getFlixType(c: Class[_]): Type = {
+  def hasJvmType(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.JvmToType(_, _) => true
+    case Type.JvmToEff(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
+  }
+
+  /**
+    * Returns true if the given type contains [[TypeConstructor.Error]].
+    */
+  def hasError(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Error(_, _) => true
+      case _ => false
+    }
+    case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasError(tpe)
+    case Type.AssocType(_, arg, _, _) => hasError(arg)
+    case Type.JvmToType(_, _) => false
+    case Type.JvmToEff(_, _) => false
+    case Type.UnresolvedJvmType(_, _) => false
+  }
+
+  /**
+    * Returns the Flix Type of a Java Class.
+    *
+    * Arrays are returned with the [[Type.IO]] region.
+    *
+    * Returns a [[TypeConstructor.Native]] of `c` if nothing more specific is found.
+    */
+  def getFlixType(c: Class[?]): Type = {
     if (c == java.lang.Boolean.TYPE) {
       Type.Bool
-    }
-    else if (c == java.lang.Byte.TYPE) {
+    }  else if (c == java.lang.Byte.TYPE) {
       Type.Int8
-    }
-    else if (c == java.lang.Short.TYPE) {
+    }  else if (c == java.lang.Short.TYPE) {
       Type.Int16
-    }
-    else if (c == java.lang.Integer.TYPE) {
+    }  else if (c == java.lang.Integer.TYPE) {
       Type.Int32
-    }
-    else if (c == java.lang.Long.TYPE) {
+    }  else if (c == java.lang.Long.TYPE) {
       Type.Int64
-    }
-    else if (c == java.lang.Character.TYPE) {
+    }  else if (c == java.lang.Character.TYPE) {
       Type.Char
-    }
-    else if (c == java.lang.Float.TYPE) {
+    }  else if (c == java.lang.Float.TYPE) {
       Type.Float32
-    }
-    else if (c == java.lang.Double.TYPE) {
+    }  else if (c == java.lang.Double.TYPE) {
       Type.Float64
-    }
-    else if (c == classOf[java.math.BigDecimal]) {
+    }  else if (c == classOf[java.math.BigDecimal]) {
       Type.BigDecimal
-    }
-    else if (c == classOf[java.math.BigInteger]) {
+    }  else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt
-    }
-    else if (c == classOf[java.lang.String]) {
+    }  else if (c == classOf[java.lang.String]) {
       Type.Str
-    }
-    else if (c == classOf[java.util.regex.Pattern]) {
+    }  else if (c == classOf[java.util.regex.Pattern]) {
       Type.Regex
-    }
-    else if (c == java.lang.Void.TYPE) {
+    }  else if (c == java.lang.Void.TYPE) {
       Type.Unit
-    }
-    // handle arrays of types
-    else if (c.isArray) {
+    } else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
       Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
-    }
-    // otherwise native type
-    else {
+    } else {
       Type.mkNative(c, SourceLocation.Unknown)
     }
   }
 
   /**
+    * Returns the [[Class]] object of `tpe`, if it exists.
+    *
+    * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
+    */
+  def classFromFlixType(tpe: Type): Option[Class[?]] = tpe match {
+    case Type.Bool =>
+      Some(java.lang.Boolean.TYPE)
+    case Type.Int8 =>
+      Some(java.lang.Byte.TYPE)
+    case Type.Int16 =>
+      Some(java.lang.Short.TYPE)
+    case Type.Int32 =>
+      Some(java.lang.Integer.TYPE)
+    case Type.Int64 =>
+      Some(java.lang.Long.TYPE)
+    case Type.Char =>
+      Some(java.lang.Character.TYPE)
+    case Type.Float32 =>
+      Some(java.lang.Float.TYPE)
+    case Type.Float64 =>
+      Some(java.lang.Double.TYPE)
+    case Type.Cst(TypeConstructor.BigDecimal, _) =>
+      Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.BigInt, _) =>
+      Some(classOf[java.math.BigInteger])
+    case Type.Cst(TypeConstructor.Str, _) =>
+      Some(classOf[String])
+    case Type.Cst(TypeConstructor.Regex, _) =>
+      Some(classOf[java.util.regex.Pattern])
+    case Type.Cst(TypeConstructor.Native(clazz), _) =>
+      Some(clazz)
+    case _ => None
+  }
+
+  /**
     * Returns the type of the given constant.
     */
-  def constantType(cst: Ast.Constant): Type = cst match {
+  def constantType(cst: Constant): Type = cst match {
     case Constant.Unit => Type.Unit
     case Constant.Null => Type.Null
     case Constant.Bool(_) => Type.Bool

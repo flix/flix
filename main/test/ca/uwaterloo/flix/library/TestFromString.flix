@@ -21,67 +21,67 @@ mod TestFromString {
     def testFromStringUnitGood(): Bool = fromString("()") == Some(())
 
     @test
-    def testFromStringUnitBad(): Bool = fromString(")(") == None: Option[Unit]
+    def testFromStringUnitBad(): Bool = fromString(")(") == (None: Option[Unit])
 
     @test
     def testFromStringTrueGood(): Bool = fromString("true") == Some(true)
 
     @test
-    def testFromStringTrueBad(): Bool = fromString("fue") == None: Option[Bool]
+    def testFromStringTrueBad(): Bool = fromString("fue") == (None: Option[Bool])
 
     @test
     def testFromStringFalseGood(): Bool = fromString("false") == Some(false)
 
     @test
-    def testFromStringFalseBad(): Bool = fromString("tralse") == None: Option[Bool]
+    def testFromStringFalseBad(): Bool = fromString("tralse") == (None: Option[Bool])
 
     @test
     def testFromStringCharGood(): Bool = fromString("Q") == Some('Q')
 
     @test
-    def testFromStringCharBad(): Bool = fromString("ABC") == None: Option[Char]
+    def testFromStringCharBad(): Bool = fromString("ABC") == (None: Option[Char])
 
     @test
     def testFromStringFloat32Good(): Bool = fromString("123.0") == Some(123.0f32)
 
     @test
-    def testFromStringFloat32Bad(): Bool = fromString("ABC") == None: Option[Float32]
+    def testFromStringFloat32Bad(): Bool = fromString("ABC") == (None: Option[Float32])
 
     @test
     def testFromStringFloat64Good(): Bool = fromString("123.0") == Some(123.0f64)
 
     @test
-    def testFromStringFloat64Bad(): Bool = fromString("ABC") == None: Option[Float64]
+    def testFromStringFloat64Bad(): Bool = fromString("ABC") == (None: Option[Float64])
 
     @test
     def testFromStringBigDecimalGood(): Bool = fromString("123.0") == Some(123.0ff)
 
     @test
-    def testFromStringBigDecimalBad(): Bool = fromString("ABC") == None: Option[BigDecimal]
+    def testFromStringBigDecimalBad(): Bool = fromString("ABC") == (None: Option[BigDecimal])
 
     @test
     def testFromStringInt8Good(): Bool = fromString("123") == Some(123i8)
 
     @test
-    def testFromStringInt8Bad(): Bool = fromString("ABC") == None: Option[Int8]
+    def testFromStringInt8Bad(): Bool = fromString("ABC") == (None: Option[Int8])
 
     @test
     def testFromStringInt16Good(): Bool = fromString("123") == Some(123i16)
 
     @test
-    def testFromStringInt16Bad(): Bool = fromString("ABC") == None: Option[Int16]
+    def testFromStringInt16Bad(): Bool = fromString("ABC") == (None: Option[Int16])
 
     @test
     def testFromStringInt32Good(): Bool = fromString("123") == Some(123i32)
 
     @test
-    def testFromStringInt32Bad(): Bool = fromString("ABC") == None: Option[Int32]
+    def testFromStringInt32Bad(): Bool = fromString("ABC") == (None: Option[Int32])
 
     @test
     def testFromStringInt64Good(): Bool = fromString("123") == Some(123i64)
 
     @test
-    def testFromStringInt64Bad(): Bool = fromString("ABC") == None: Option[Int64]
+    def testFromStringInt64Bad(): Bool = fromString("ABC") == (None: Option[Int64])
 
     @test
     def testFromStringStringGood(): Bool = fromString("abcd") == Some("abcd")
@@ -90,6 +90,6 @@ mod TestFromString {
     def testFromStringBigIntGood(): Bool = fromString("123") == Some(123ii)
 
     @test
-    def testFromStringBigIntBad(): Bool = fromString("ABC") == None: Option[BigInt]
+    def testFromStringBigIntBad(): Bool = fromString("ABC") == (None: Option[BigInt])
 
 }

@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
-import org.parboiled2.ParserInput
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source}
 
 /**
   * Companion object for the [[SourceLocation]] class.
@@ -13,13 +12,7 @@ object SourceLocation {
     *
     * Must only be used if *absolutely necessary*.
     */
-  val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
-
-  /**
-    * Returns the source location constructed from the source positions `b` and `e.`
-    */
-  def mk(b: SourcePosition, e: SourcePosition, k: SourceKind = SourceKind.Real): SourceLocation =
-    SourceLocation(b.input, b.source, k, b.line, b.col, e.line, e.col)
+  val Unknown: SourceLocation = SourceLocation(isReal = true, SourcePosition.Unknown, SourcePosition.Unknown)
 
   implicit object Order extends Ordering[SourceLocation] {
 
@@ -34,15 +27,42 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
-  * @param input        the parser input.
-  * @param source       the source input.
-  * @param locationKind the source location kind.
-  * @param beginLine    the line number where the entity begins.
-  * @param beginCol     the column number where the entity begins.
-  * @param endLine      the line number where the entity ends.
-  * @param endCol       the column number where the entity ends.
+  * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosition) {
+
+  // Invariant: Ensure that sp1 and sp2 come from the same source.
+  assert(sp1.source eq sp2.source)
+
+  /**
+    * Returns the source associated with the source location.
+    */
+  def source: Source = sp1.source
+
+  /**
+   * Returns the security context associated with the source location.
+   */
+  def security: SecurityContext = sp1.source.input.security
+
+  /**
+    * Returns the line where the entity begins.
+    */
+  def beginLine: Int = sp1.line
+
+  /**
+    * Returns the column where the entity begins.
+    */
+  def beginCol: Int = sp1.col
+
+  /**
+    * Returns the line where the entity ends.
+    */
+  def endLine: Int = sp2.line
+
+  /**
+    * Returns the column where the entity ends.
+    */
+  def endCol: Int = sp2.col
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -50,34 +70,19 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def isSingleLine: Boolean = beginLine == endLine
 
   /**
-    * Returns `true` if this source location spans more than one line.
-    */
-  def isMultiLine: Boolean = !isSingleLine
-
-  /**
     * Returns `true` if this source location is synthetic.
     */
-  def isSynthetic: Boolean = locationKind == SourceKind.Synthetic
+  def isSynthetic: Boolean = !isReal
 
   /**
     * Returns `this` source location but as a synthetic kind.
     */
-  def asSynthetic: SourceLocation = copy(locationKind = SourceKind.Synthetic)
+  def asSynthetic: SourceLocation = copy(isReal = false)
 
   /**
     * Returns `this` source location but as a real kind.
     */
-  def asReal: SourceLocation = copy(locationKind = SourceKind.Real)
-
-  /**
-    * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
-    */
-  def sp1: SourcePosition = SourcePosition(source, beginLine, beginCol, input)
-
-  /**
-    * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
-    */
-  def sp2: SourcePosition = SourcePosition(source, endLine, endCol, input)
+  def asReal: SourceLocation = copy(isReal = true)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
@@ -89,13 +94,9 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     *
     * The line does not have to refer to `this` source location.
     */
-  def lineAt(line: Int): String = input match {
-    case None => ""
-    case Some(input) =>
-      input.getLine(line)
-        .replaceAll("\n", "")
-        .replaceAll("\r", "")
-  }
+  def lineAt(line: Int): String = source.getLine(line)
+    .replaceAll("\n", "")
+    .replaceAll("\r", "")
 
   /**
     * Returns a string representation of `this` source location with the line number.
@@ -111,13 +112,13 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     * Returns the source text of the source location.
     */
   def text: Option[String] = {
-    if (isMultiLine) {
-      None
-    } else {
+    if (isSingleLine) {
       val line = lineAt(beginLine)
       val b = Math.min(beginCol - 1, line.length)
       val e = Math.min(endCol - 1, line.length)
       Some(line.substring(b, e))
+    } else {
+      None
     }
   }
 

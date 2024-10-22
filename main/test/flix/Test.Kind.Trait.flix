@@ -54,7 +54,7 @@ mod Test.Kind.Trait {
         mod Law {
             mod FormalParams {
                 trait CStar1[a] {
-                    law star: forall(x: a) . ???
+                    law star: forall(x: a) ???
                 }
             }
 
@@ -62,7 +62,7 @@ mod Test.Kind.Trait {
                 trait CStar[a: Type]
 
                 trait CStar1[a] {
-                    law star: forall(x: a) with CStar[a] . ???
+                    law star: forall(x: a) with CStar[a] ???
                 }
             }
 
@@ -70,13 +70,13 @@ mod Test.Kind.Trait {
                 pub enum EStar[_a: Type]
 
                 trait CStar1[a] {
-                    law star: forall(x: EStar[a]) . ???
+                    law star: forall(x: EStar[a]) ???
                 }
             }
 
             mod Exp {
                 trait CStar1[a] {
-                    law star: forall(x: a) . { ???: a; ??? }
+                    law star: forall(x: a) { (???: a); ??? }
                 }
             }
         }
@@ -127,7 +127,7 @@ mod Test.Kind.Trait {
                 }
 
                 trait CBoolToStar1[a: Eff -> Type] {
-                    pub def boolToStar(x: a[Pure]): Int32 with CBoolToStar[a] = ???
+                    pub def boolToStar(x: a[{}]): Int32 with CBoolToStar[a] = ???
                 }
             }
 
@@ -154,11 +154,11 @@ mod Test.Kind.Trait {
         mod Law {
             mod FormalParams {
                 trait CStar1[a: Type] {
-                    law star: forall(x: a) . ???
+                    law star: forall(x: a) ???
                 }
 
                 trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int32]) . ???
+                    law starToStar: forall(x: a[Int32]) ???
                 }
             }
 
@@ -168,15 +168,15 @@ mod Test.Kind.Trait {
                 trait CBoolToStar[a: Eff -> Type]
 
                 trait CStar1[a: Type] {
-                    law star: forall(x: a) with CStar[a] . ???
+                    law star: forall(x: a) with CStar[a] ???
                 }
 
                 trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int32]) with CStarToStar[a] . ???
+                    law starToStar: forall(x: a[Int32]) with CStarToStar[a] ???
                 }
 
                 trait CBoolToStar1[a: Eff -> Type] {
-                    law boolToStar: forall(x: a[Pure]) with CBoolToStar[a] . ???
+                    law boolToStar: forall(x: a[{}]) with CBoolToStar[a] ???
                 }
             }
 
@@ -185,17 +185,17 @@ mod Test.Kind.Trait {
                 pub enum EStarToStar[_a: Type -> Type]
 
                 trait CStar1[a: Type] {
-                    law star: forall(x: EStar[a]) . ???
+                    law star: forall(x: EStar[a]) ???
                 }
 
                 trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: EStarToStar[a]) . ???
+                    law starToStar: forall(x: EStarToStar[a]) ???
                 }
             }
 
             mod Exp {
                 trait CStar1[a: Type] {
-                    law star: forall(x: a) . { ???: a; ??? }
+                    law star: forall(x: a) { (???: a); ??? }
                 }
             }
         }

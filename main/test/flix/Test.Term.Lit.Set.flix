@@ -3,8 +3,8 @@ mod Test.Term.Lit.Set {
     @test
     def testLitSet01(): Bool =
         let p = #{
-            A(Set#{}: Set[Int32]).
-            B(Set#{}: Set[Int32]).
+            A((Set#{}: Set[Int32])).
+            B((Set#{}: Set[Int32])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);

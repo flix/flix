@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 sealed trait Purity
@@ -23,9 +24,9 @@ sealed trait Purity
 /**
   * Represents the purity of an expression.
   *
-  * - Pure expressions are treated as mathematical functions.
-  * - Impure expressions can use mutation or interact with the system.
-  * - Control-Impure expressions can do all the above but also use unhandled
+  *   - Pure expressions are treated as mathematical functions.
+  *   - Impure expressions can use mutation or interact with the system.
+  *   - Control-Impure expressions can do all the above but also use unhandled
   *   algebraic effects.
   *
   * In terms of the set of expressions that is allowed under each effect the
@@ -113,8 +114,8 @@ object Purity {
 
   /**
     * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
-    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for the
-    * effect constant of [[Symbol.IO]], and [[ControlImpure]] otherwise.
+    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for an
+    * effect only containing base effects, and [[ControlImpure]] otherwise.
     *
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
@@ -122,7 +123,7 @@ object Purity {
   def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.forall(Symbol.isBaseEff) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
@@ -170,6 +171,12 @@ object Purity {
     case Type.Alias(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.AssocType(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.JvmToType(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.JvmToEff(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.UnresolvedJvmType(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 

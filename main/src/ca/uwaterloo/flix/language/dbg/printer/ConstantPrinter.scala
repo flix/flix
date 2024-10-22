@@ -16,29 +16,29 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression
+import ca.uwaterloo.flix.language.ast.shared.Constant
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 
 object ConstantPrinter {
 
   /**
-    * Returns the [[Expression]] representation of `cst`.
+    * Returns the [[Expr]] representation of `cst`.
     */
-  def print(cst: Constant): Expression = cst match {
-    case Constant.Unit => Expression.Unit
-    case Constant.Null => Expression.AsIs("null")
-    case Constant.Bool(lit) => Expression.AsIs(lit.toString)
-    case Constant.Char(lit) => Expression.AsIs("'''" + lit.toString + "'''")
-    case Constant.Float32(lit) => Expression.AsIs(s"${lit}f32")
-    case Constant.Float64(lit) => Expression.AsIs(s"${lit}f64")
-    case Constant.BigDecimal(lit) => Expression.AsIs(s"${lit}ff")
-    case Constant.Int8(lit) => Expression.AsIs(s"${lit}i8")
-    case Constant.Int16(lit) => Expression.AsIs(s"${lit}i16")
-    case Constant.Int32(lit) => Expression.AsIs(s"${lit}i32")
-    case Constant.Int64(lit) => Expression.AsIs(s"${lit}i64")
-    case Constant.BigInt(lit) => Expression.AsIs(s"${lit}ii")
-    case Constant.Str(lit) => Expression.AsIs("\"\"\"" + lit + "\"\"\"")
-    case Constant.Regex(lit) => Expression.Regex(lit)
+  def print(cst: Constant): Expr = cst match {
+    case Constant.Unit => Expr.Unit
+    case Constant.Null => Expr.AsIs("null")
+    case Constant.Bool(lit) => Expr.AsIs(lit.toString)
+    case Constant.Char(lit) => Expr.AsIs("'''" + lit.toString + "'''")
+    case Constant.Float32(lit) => Expr.AsIs(s"${lit}f32")
+    case Constant.Float64(lit) => Expr.AsIs(s"${lit}f64")
+    case Constant.BigDecimal(lit) => Expr.AsIs(s"${lit}ff")
+    case Constant.Int8(lit) => Expr.AsIs(s"${lit}i8")
+    case Constant.Int16(lit) => Expr.AsIs(s"${lit}i16")
+    case Constant.Int32(lit) => Expr.AsIs(s"${lit}i32")
+    case Constant.Int64(lit) => Expr.AsIs(s"${lit}i64")
+    case Constant.BigInt(lit) => Expr.AsIs(s"${lit}ii")
+    case Constant.Str(lit) => Expr.AsIs("\"\"\"" + lit + "\"\"\"")
+    case Constant.Regex(lit) => Expr.Regex(lit)
   }
 
 }

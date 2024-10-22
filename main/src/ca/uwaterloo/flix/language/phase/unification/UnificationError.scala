@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.Unrecoverable
 
 /**
@@ -31,7 +31,7 @@ object UnificationError {
     * @param tpe1 the first type.
     * @param tpe2 the second type.
     */
-  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
+  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError with Unrecoverable
 
   /**
     * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
@@ -118,7 +118,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
+  case class NoMatchingInstance(tconstr: Ast.TraitConstraint) extends UnificationError with Unrecoverable
 
   /**
     * A unification error resulting from an equality constraint that is not supported by the context.
@@ -137,11 +137,11 @@ object UnificationError {
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
   /**
-    * A unification error resulting from a unification equation that is too complex to solve.
+    * A unification error resulting from an equation system that is too complex to solve.
     *
-    * @param tpe1 the lhs of the unification equation that is too complex.
-    * @param tpe2 the rhs of the unification equation that is too complex.
+    * @param msg the error message.
+    * @param loc the source location of the entire equation system, e.g. the function body.
     */
-  case class TooComplex(tpe1: Type, tpe2: Type) extends UnificationError
+  case class TooComplex(msg: String, loc: SourceLocation) extends UnificationError
 
 }

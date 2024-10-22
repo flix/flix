@@ -153,12 +153,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xbenchmarkThroughput)
   }
 
-  test("--Xbdd-threshold") {
-    val args = Array("--Xbdd-threshold", "42", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbddthreshold.contains(42))
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -189,22 +183,10 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnoboolspecialcases)
   }
 
-  test("--Xno-bool-table") {
-    val args = Array("--Xno-bool-table")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnobooltable)
-  }
-
   test("--Xno-bool-unif") {
     val args = Array("--Xno-bool-unif")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnoboolunif)
-  }
-
-  test("--Xno-qmc") {
-    val args = Array("--Xno-qmc")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoqmc)
   }
 
   test("--explain") {
@@ -213,16 +195,16 @@ class TestMain extends AnyFunSuite {
     assert(opts.explain)
   }
 
+  test("--Xno-deprecated") {
+    val args = Array("--Xno-deprecated")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnodeprecated)
+  }
+
   test("--Xsummary") {
     val args = Array("--Xsummary")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xsummary)
-  }
-
-  test("--Xparser") {
-    val args = Array("--Xparser")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xparser)
   }
 
 }

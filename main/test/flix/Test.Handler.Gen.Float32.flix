@@ -5,11 +5,11 @@ mod Test.Handler.Gen.Float32 {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Float32): List[Float32] =
         region rc {
-            let counter = ref 0.0f32 @ rc;
+            let counter = Ref.fresh(rc, 0.0f32);
             try {
                 generator(); Nil
             } with Gen {
@@ -20,8 +20,8 @@ mod Test.Handler.Gen.Float32 {
         }
 
     def getAndInc(r: Ref[Float32, r]): Float32 \ r =
-        let i = deref r;
-        r := (i + 1.0f32);
+        let i = Ref.get(r);
+        Ref.put(i + 1.0f32, r);
         i
 
     def range(a: Float32, b: Float32): List[Float32] =

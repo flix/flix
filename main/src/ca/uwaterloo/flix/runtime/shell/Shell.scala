@@ -20,10 +20,11 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -197,16 +198,16 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
-    val classSym = Symbol.mkClassSym(s)
+    val traitSym = Symbol.mkTraitSym(s)
     val defnSym = Symbol.mkDefnSym(s)
     val enumSym = Symbol.mkEnumSym(s)
     val aliasSym = Symbol.mkTypeAliasSym(s)
 
     root match {
       case Some(r) =>
-        if (r.classes.contains(classSym)) {
-          val classDecl = r.classes(classSym)
-          w.println(FormatDoc.asMarkDown(classDecl.doc))
+        if (r.traits.contains(traitSym)) {
+          val traitDecl = r.traits(traitSym)
+          w.println(FormatDoc.asMarkDown(traitDecl.doc))
         } else if (r.defs.contains(defnSym)) {
           val defDecl = r.defs(defnSym)
           w.println(FormatSignature.asMarkDown(defDecl))
@@ -286,7 +287,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addSourceCode(name, s)
+        flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
 
         // And try to compile!
         compile(progress = false).toHardResult match {
@@ -311,7 +312,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           s"""def ${main.name}(): Unit \\ IO =
              |unchecked_cast(println($s) as _ \\ IO)
              |""".stripMargin
-        flix.addSourceCode("<shell>", src)
+        flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
         flix.remSourceCode("<shell>")

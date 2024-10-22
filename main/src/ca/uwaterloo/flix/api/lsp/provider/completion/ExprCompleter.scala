@@ -17,20 +17,25 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{KeywordCompleter, ExprSnippetCompleter}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object ExprCompleter extends Completer {
+object ExprCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
-      KeywordExprCompleter.getCompletions(context) ++
+      KeywordCompleter.getExprKeywords ++
       MatchCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context) ++
+      ExprSnippetCompleter.getCompletions() ++
       EnumCompleter.getCompletions(context) ++
-      ModuleCompleter.getCompletions(context)
+      StructCompleter.getCompletions(context) ++
+      ModuleCompleter.getCompletions(context) ++
+      HoleCompletion.getHoleCompletion(context, index, root) ++
+      OpCompleter.getCompletions(context)
   }
+
 }

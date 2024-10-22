@@ -17,13 +17,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Label, LabelledEdge, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The [[PredDeps]] class computes the [[LabelledPrecedenceGraph]] of the whole program,
@@ -33,18 +34,18 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("PredDeps") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
-    val classExps = root.classes.values.flatMap(c => c.laws.map(_.exp) ++ c.sigs.flatMap(_.exp))
-    val allExps = defExps ++ instanceExps ++ classExps
+    val traitExps = root.traits.values.flatMap(t => t.laws.map(_.exp) ++ t.sigs.flatMap(_.exp))
+    val allExps = defExps ++ instanceExps ++ traitExps
 
     val g = ParOps.parAgg(allExps, LabelledPrecedenceGraph.empty)({
       case (acc, d) => acc + visitExp(d)
     }, _ + _)
 
-    Validation.success(root.copy(precedenceGraph = g))
+    root.copy(precedenceGraph = g)
   }
 
   /**
@@ -62,10 +63,10 @@ object PredDeps {
         case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
-    case _: Type.Var =>
-      // This could occur when querying or projecting a non-existent predicate
+    case _ =>
+      // Resilience: We would want a relation or lattice, but type inference may have failed.
+      // If so, we simply return the empty list of term types with a relational denotation.
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**
@@ -76,11 +77,7 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Def(_, _, _) => LabelledPrecedenceGraph.empty
-
-    case Expr.Sig(_, _, _) => LabelledPrecedenceGraph.empty
-
-    case Expr.Hole(_, _, _) => LabelledPrecedenceGraph.empty
+    case Expr.Hole(_, _, _, _) => LabelledPrecedenceGraph.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       visitExp(exp)
@@ -94,9 +91,24 @@ object PredDeps {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       val init = visitExp(exp)
       exps.foldLeft(init) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
+    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }
 
@@ -106,10 +118,10 @@ object PredDeps {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) + visitExp(exp2)
 
     case Expr.Region(_, _) =>
@@ -186,6 +198,17 @@ object PredDeps {
     case Expr.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) + visitExp(index) + visitExp(elm)
 
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.foldLeft(visitExp(region)) {
+        case (acc, (_, e)) => acc + visitExp(e)
+      }
+
+    case Expr.StructGet(e, _, _, _, _) =>
+      visitExp(e)
+
+    case Expr.StructPut(e1, _, e2, _, _, _) =>
+      visitExp(e1) + visitExp(e2)
+
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)
@@ -196,15 +219,6 @@ object PredDeps {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -228,6 +242,9 @@ object PredDeps {
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
@@ -327,7 +344,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
   }
 
   /**

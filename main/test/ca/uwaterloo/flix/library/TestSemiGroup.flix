@@ -174,7 +174,7 @@ mod TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineOption01(): Bool = combine(None, None) == None: Option[String]
+    def combineOption01(): Bool = combine(None, None) == (None: Option[String])
 
     @test
     def combineOption02(): Bool = combine(Some("a"), None) == Some("a")
@@ -190,7 +190,7 @@ mod TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineList01(): Bool = combine(Nil, Nil) == Nil: List[Int32]
+    def combineList01(): Bool = combine(Nil, Nil) == (Nil: List[Int32])
 
     @test
     def combineList02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
@@ -209,7 +209,7 @@ mod TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}: Map[Int32, String]
+    def combineMap01(): Bool = combine(Map#{}, Map#{}) == (Map#{}: Map[Int32, String])
 
     @test
     def combineMap02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
@@ -228,16 +228,16 @@ mod TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineValidation01(): Bool = combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String] == Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
+    def combineValidation01(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String]) == Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
 
     @test
-    def combineValidation02(): Bool = combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String] == Validation.Failure(Nec.singleton("e1"))
+    def combineValidation02(): Bool = (combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
 
     @test
-    def combineValidation03(): Bool = combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String] == Validation.Failure(Nec.singleton("e1"))
+    def combineValidation03(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
 
     @test
-    def combineValidation04(): Bool = combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String] == Validation.Success("a1")
+    def combineValidation04(): Bool = (combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String]) == Validation.Success("a1")
 
     /////////////////////////////////////////////////////////////////////////////
     // 2-Tuple                                                                 //
@@ -456,6 +456,6 @@ mod TestSemiGroup {
     def operator02(): Bool = ("abc" ++ "def") == "abcdef"
 
     @test
-    def operator03(): Bool = (1 :: 2 :: Nil ++ 3 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+    def operator03(): Bool = ((1 :: 2 :: Nil) ++ (3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: 4 :: Nil
 
 }

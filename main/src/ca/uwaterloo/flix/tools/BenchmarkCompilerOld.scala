@@ -1,10 +1,11 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 /**
@@ -242,13 +243,13 @@ object BenchmarkCompilerOld {
     */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
   }
 
   /**
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))

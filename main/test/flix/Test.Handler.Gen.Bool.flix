@@ -5,11 +5,11 @@ mod Test.Handler.Gen.Bool {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[Bool] =
         region rc {
-            let counter = ref (0, true) @ rc;
+            let counter = Ref.fresh(rc, (0, true));
             try {
                 generator(); Nil
             } with Gen {
@@ -20,8 +20,8 @@ mod Test.Handler.Gen.Bool {
         }
 
     def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
-        let (i, b) = deref r;
-        r := (i + 1, not b);
+        let (i, b) = Ref.get(r);
+        Ref.put((i + 1, not b), r);
         (i, b)
 
     def range(a: Int32, b: Int32): List[Bool] =

@@ -15,5 +15,5 @@ def main(): Unit \ IO =
     case Ok(subpaths) => {
       println("All files or directories in ${dir} is: '${subpaths}'.")
     }
-    case Err(msg)     => println("An error occurred with message: ${msg}")
+    case Err(msg) => println("An error occurred with message: ${msg}")
   }

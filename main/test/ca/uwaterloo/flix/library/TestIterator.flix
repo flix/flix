@@ -23,7 +23,7 @@ mod TestIterator {
 
     @test
     def next01(): Bool = region rc {
-        Iterator.empty(rc) |> Iterator.next == None: Option[Int32]
+        Iterator.empty(rc) |> Iterator.next == (None: Option[Int32])
     }
 
     @test
@@ -183,7 +183,7 @@ mod TestIterator {
 
     @test
     def toList01(): Bool = region rc {
-        Nil: List[Int32] |> List.iterator(rc) |> Iterator.toList == Nil
+        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
@@ -208,7 +208,7 @@ mod TestIterator {
 
     @test
     def toChain01(): Bool = region rc {
-        Nil: List[Int32] |> List.iterator(rc) |> Iterator.toChain == Chain.empty()
+        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toChain == Chain.empty()
     }
 
     @test
@@ -233,7 +233,7 @@ mod TestIterator {
 
     @test
     def toArray01(): Bool = region rc {
-        Nil: List[Int32] |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` Array#{} @ rc
+        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` Array#{} @ rc
     }
 
     @test
@@ -277,7 +277,7 @@ mod TestIterator {
 
     @test
     def toMap01(): Bool = region rc {
-        Map.empty() |> Map.iterator(rc) |> Iterator.toMap == Map.empty(): Map[Int32, Int32]
+        Map.empty() |> Map.iterator(rc) |> Iterator.toMap == (Map.empty(): Map[Int32, Int32])
     }
 
     @test
@@ -297,15 +297,15 @@ mod TestIterator {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let iter = Iterator.empty(rc): Iterator[Int32, rc, rc];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let iter = (Iterator.empty(rc): Iterator[Int32, rc, rc]);
+        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -313,7 +313,7 @@ mod TestIterator {
     @test
     def toMutDeque03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -321,7 +321,7 @@ mod TestIterator {
     @test
     def toMutDeque04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -333,7 +333,7 @@ mod TestIterator {
 
     @test
     def toNel01(): Bool = region rc {
-        Nil |> List.iterator(rc) |> Iterator.toNel == None: Option[Nel[Int32]]
+        Nil |> List.iterator(rc) |> Iterator.toNel == (None: Option[Nel[Int32]])
     }
 
     @test
@@ -353,7 +353,7 @@ mod TestIterator {
 
     @test
     def toNec01(): Bool = region rc {
-        let iter = List.iterator(rc, Nil: List[Unit]);
+        let iter = List.iterator(rc, (Nil: List[Unit]));
         Iterator.toNec(iter) == None
     }
 
@@ -388,7 +388,7 @@ mod TestIterator {
 
     @test
     def toSet01(): Bool = region rc {
-        Set.empty() |> Set.iterator(rc) |> Iterator.toSet == Set.empty(): Set[Int32]
+        Set.empty() |> Set.iterator(rc) |> Iterator.toSet == (Set.empty(): Set[Int32])
     }
 
     @test
@@ -547,18 +547,18 @@ mod TestIterator {
 
     @test
     def forEach01(): Bool = region rc {
-        let res = ref 21 @ rc;
+        let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
-            Iterator.forEach(x -> res := x);
-        21 == deref res
+            Iterator.forEach(x -> Ref.put(x, res));
+        21 == Ref.get(res)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let res = ref 21 @ rc;
+        let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.forEach(x -> res := x);
-        3 == deref res
+            Iterator.forEach(x -> Ref.put(x, res));
+        3 == Ref.get(res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -567,18 +567,18 @@ mod TestIterator {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let res = ref 21 @ rc;
+        let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
-            Iterator.forEachWithIndex((i, _) -> res := i);
-        21 == deref res
+            Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
+        21 == Ref.get(res)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let res = ref 21 @ rc;
+        let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.forEachWithIndex((i, _) -> res := i);
-        2 == deref res
+            Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
+        2 == Ref.get(res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -588,49 +588,49 @@ mod TestIterator {
     @test
     def replace01(): Bool = region rc {
         List.iterator(rc, Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == Nil
     }
 
     @test
     def replace02(): Bool = region rc {
         List.iterator(rc, 1 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def replace03(): Bool = region rc {
         List.iterator(rc, 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace04(): Bool = region rc {
         List.iterator(rc, 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace05(): Bool = region rc {
         List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def replace06(): Bool = region rc {
         List.iterator(rc, 1 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 4 :: Nil
     }
 
     @test
     def replace07(): Bool = region rc {
         List.iterator(rc, 3 :: 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     @test
     def replace08(): Bool = region rc {
         List.iterator(rc, 3 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -639,8 +639,8 @@ mod TestIterator {
 
     @test
     def append01(): Bool = region rc {
-        let iter1 = List.iterator(rc, Nil: List[Unit]);
-        let iter2 = List.iterator(rc, Nil: List[Unit]);
+        let iter1 = List.iterator(rc, (Nil: List[Unit]));
+        let iter2 = List.iterator(rc, (Nil: List[Unit]));
         Iterator.append(iter1, iter2) |> Iterator.toList == Nil
     }
 
@@ -710,14 +710,14 @@ mod TestIterator {
 
     @test
     def zip01(): Bool = region rc {
-        let iterA = Nil: List[Int32] |> List.iterator(rc);
+        let iterA = (Nil: List[Int32]) |> List.iterator(rc);
         let iterB = Iterator.repeat(rc, 1000, "b");
         Iterator.zip(iterA, iterB) |> Iterator.toList == Nil
     }
 
     @test
     def zip02(): Bool = region rc {
-        let iterA = Nil: List[Int32] |> List.iterator(rc);
+        let iterA = (Nil: List[Int32]) |> List.iterator(rc);
         let iterB = Iterator.repeat(rc, 1000, "b");
         Iterator.zip(iterB, iterA) |> Iterator.toList == Nil
     }
@@ -823,7 +823,7 @@ mod TestIterator {
 
     @test
     def zipWithIndex01(): Bool = region rc {
-        Iterator.zipWithIndex(Iterator.empty(rc): Iterator[Int32, rc, rc]) |> Iterator.toList == Nil
+        Iterator.zipWithIndex((Iterator.empty(rc): Iterator[Int32, rc, rc])) |> Iterator.toList == Nil
     }
 
     @test
@@ -970,7 +970,7 @@ mod TestIterator {
 
     @test
     def reduceLeft01(): Bool = region rc {
-        let iter = List.iterator(rc, Nil: List[Int32]);
+        let iter = List.iterator(rc, (Nil: List[Int32]));
         Iterator.reduceLeft((a, b) -> a - b, iter) == None
     }
 
@@ -1005,7 +1005,7 @@ mod TestIterator {
 
     @test
     def takeWhile01(): Bool = region rc {
-        List.iterator(rc, Nil: List[Int32]) |>
+        List.iterator(rc, (Nil: List[Int32])) |>
             Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
@@ -1111,7 +1111,7 @@ mod TestIterator {
 
     @test
     def flatMap01(): Bool = region rc {
-        List.iterator(rc, Nil): Iterator[Int32, _, _] |>
+        (List.iterator(rc, Nil): Iterator[Int32, _, _]) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
             Iterator.toList == Nil
     }
@@ -1217,7 +1217,7 @@ mod TestIterator {
     def intercalate01(): Bool = region rc {
         let sep: List[Int32] = Nil;
         let iter = Nil |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |> Iterator.toList == Nil: List[Int32]
+        Iterator.intercalate(sep, iter) |> Iterator.toList == (Nil: List[Int32])
     }
 
     @test
@@ -1275,7 +1275,7 @@ mod TestIterator {
     @test
     def unfoldWithOk01(): Bool = region rc {
         let iter = Iterator.unfoldWithOk(rc, () -> Err(0));
-        Iterator.toList(iter) == Nil: List[Int32]
+        Iterator.toList(iter) == (Nil: List[Int32])
     }
 
     @test
@@ -1341,17 +1341,17 @@ mod TestIterator {
 
     @test
     def take01(): Bool = region rc {
-        List.iterator(rc, Nil: List[Unit]) |> Iterator.take(-1) |> Iterator.toList == Nil
+        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(-1) |> Iterator.toList == Nil
     }
 
     @test
     def take02(): Bool = region rc {
-        List.iterator(rc, Nil: List[Unit]) |> Iterator.take(0) |> Iterator.toList == Nil
+        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(0) |> Iterator.toList == Nil
     }
 
     @test
     def take03(): Bool = region rc {
-        List.iterator(rc, Nil: List[Unit]) |> Iterator.take(1) |> Iterator.toList == Nil
+        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(1) |> Iterator.toList == Nil
     }
 
     @test
@@ -1496,13 +1496,13 @@ mod TestIterator {
 
     @test
     def cons02(): Bool = region rc {
-        (2 :: Nil: List[Int32]) |> List.iterator(rc) |>
+        (2 :: (Nil: List[Int32])) |> List.iterator(rc) |>
             Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def cons03(): Bool = region rc {
-        (3 :: Nil: List[Int32]) |> List.iterator(rc) |>
+        (3 :: (Nil: List[Int32])) |> List.iterator(rc) |>
             Iterator.cons(2) |> Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
