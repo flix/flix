@@ -2392,7 +2392,7 @@ object Weeder2 {
       }
     }
 
-    private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr): Validation[Expr, CompilationMessage] = {
+    private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       try {
         val radix = if (token.text.contains("0x")) 16 else 10
@@ -2400,8 +2400,9 @@ object Weeder2 {
         Validation.success(after(radix, digits, loc))
       } catch {
         case _: NumberFormatException =>
-          val err = MalformedInt(loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+          val error = MalformedInt(loc)
+          sctx.errors.add(error)
+          Validation.success(WeededAst.Expr.Error(error))
       }
     }
 
@@ -2433,7 +2434,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int8.
       */
-    def toInt8(token: Token): Validation[Expr, CompilationMessage] =
+    def toInt8(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i8", (radix, digits, loc) =>
         Expr.Cst(Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
@@ -2441,7 +2442,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int16.
       */
-    def toInt16(token: Token): Validation[Expr, CompilationMessage] = {
+    def toInt16(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
         Expr.Cst(Constant.Int16(JShort.parseShort(digits, radix)), loc)
       )
@@ -2450,7 +2451,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int32.
       */
-    def toInt32(token: Token): Validation[Expr, CompilationMessage] =
+    def toInt32(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i32", (radix, digits, loc) =>
         Expr.Cst(Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
@@ -2458,7 +2459,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    def toInt64(token: Token): Validation[Expr, CompilationMessage] = {
+    def toInt64(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
         Expr.Cst(Constant.Int64(JLong.parseLong(digits, radix)), loc)
       )
@@ -2467,7 +2468,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    def toBigInt(token: Token): Validation[Expr, CompilationMessage] =
+    def toBigInt(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "ii", (radix, digits, loc) =>
         Expr.Cst(Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
