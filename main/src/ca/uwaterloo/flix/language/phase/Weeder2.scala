@@ -2334,8 +2334,10 @@ object Weeder2 {
               seen += (ident.name -> ident)
               Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc))
             case Some(other) =>
+              val error = NonLinearPattern(ident.name, other.loc, ident.loc)
+              sctx.errors.add(error)
               val pat = Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
-              Validation.toSoftFailure(pat, NonLinearPattern(ident.name, other.loc, ident.loc))
+              Validation.success(pat)
           }
         case (ident, pat) => Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc))
       }
