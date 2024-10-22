@@ -716,13 +716,18 @@ object ConstraintGen {
         //     Γ ⊢ e: e_t \ e_ef
         // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
         //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
-        // -------------------------------------------------------------------------------------------------
-        // Γ ⊢ try e with Eff { def op1(op1x1, .., k1) = e1, def op2(op2x1, .., k2) = e2, .. }: e_t \ k_ef
+        // ---------------------------------------------------------------------
+        // Γ ⊢ try e with Eff {
+        //   def op1(op1x1, .., k1) = e1
+        //   def op2(op2x1, .., k2) = e2
+        //   ..
+        // }: e_t \ k_ef
         //
         // where:
         // eff Eff {
         //  def op1(op1x1: op1t1, ..): op1t
         //  def op2(op2x1: op2t2, ..): op2t
+        //  ..
         // }
         //
         val (tpe, eff) = visitExp(exp)
