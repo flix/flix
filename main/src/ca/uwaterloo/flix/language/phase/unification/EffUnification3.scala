@@ -15,18 +15,14 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.Options
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
-import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetSubstitution, SetUnification}
+import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-
-import scala.io.AnsiColor
 
 object EffUnification3 {
 
@@ -212,13 +208,11 @@ object EffUnification3 {
     case tpe@Type.Var(sym, _) =>
       if (renv.isRigid(sym)) Atom.Var(sym)
       else throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
-    // This is omitted to align with the "wrong" behaviour of the existing solver
-    //
-    //    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-    //    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-    //      val arg = rigidToAtom(arg0)
-    //      Atom.Assoc(sym, arg, kind)
-    //    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
+    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
+      val arg = rigidToAtom(arg0)
+      Atom.Assoc(sym, arg, kind)
+    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
 
