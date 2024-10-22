@@ -1059,7 +1059,7 @@ object Weeder2 {
           case TokenKind.LiteralFloat32 => Validation.success(Constants.toFloat32(token))
           case TokenKind.LiteralFloat64 => Validation.success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.success(Constants.toBigDecimal(token))
-          case TokenKind.LiteralRegex => Constants.toRegex(token)
+          case TokenKind.LiteralRegex => Validation.success(Constants.toRegex(token))
           case TokenKind.NameLowerCase
                | TokenKind.NameUpperCase
                | TokenKind.NameMath
@@ -2476,19 +2476,19 @@ object Weeder2 {
     /**
       * Attempts to compile the given regular expression into a Pattern.
       */
-    def toRegex(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def toRegex(token: Token)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
       errors.foreach(sctx.errors.add)
       try {
         val pattern = JPattern.compile(processed)
-        Validation.success(Expr.Cst(Constant.Regex(pattern), loc))
+        Expr.Cst(Constant.Regex(pattern), loc)
       } catch {
         case ex: PatternSyntaxException =>
           val error = MalformedRegex(token.text, ex.getMessage, loc)
           sctx.errors.add(error)
-          Validation.success(WeededAst.Expr.Error(error))
+          WeededAst.Expr.Error(error)
       }
     }
 
