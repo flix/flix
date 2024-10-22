@@ -2309,7 +2309,10 @@ object Weeder2 {
           sctx.errors.add(error)
           Validation.success(r)
         // Illegal pattern: { x, ... | (1, 2, 3) }
-        case (_, Some(r)) => Validation.toSoftFailure(Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
+        case (_, Some(r)) =>
+          val error = IllegalRecordExtensionPattern(r.loc)
+          sctx.errors.add(error)
+          Validation.success(Pattern.Error(r.loc))
       }
     }
 
