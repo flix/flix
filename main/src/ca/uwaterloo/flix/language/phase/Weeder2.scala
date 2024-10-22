@@ -2557,11 +2557,12 @@ object Weeder2 {
       }
     }
 
-    def toStringCst(token: Token): Validation[Expr, CompilationMessage] = {
+    def toStringCst(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
-      Validation.success(Expr.Cst(Constant.Str(processed), loc)).withSoftFailures(errors)
+      errors.foreach(sctx.errors.add)
+      Validation.success(Expr.Cst(Constant.Str(processed), loc))
     }
   }
 
