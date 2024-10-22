@@ -1051,11 +1051,11 @@ object Weeder2 {
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
           case TokenKind.LiteralString => Constants.toStringCst(token)
           case TokenKind.LiteralChar => Constants.toChar(token)
-          case TokenKind.LiteralInt8 => Constants.toInt8(token)
-          case TokenKind.LiteralInt16 => Constants.toInt16(token)
-          case TokenKind.LiteralInt32 => Constants.toInt32(token)
-          case TokenKind.LiteralInt64 => Constants.toInt64(token)
-          case TokenKind.LiteralBigInt => Constants.toBigInt(token)
+          case TokenKind.LiteralInt8 => Validation.success(Constants.toInt8(token))
+          case TokenKind.LiteralInt16 => Validation.success(Constants.toInt16(token))
+          case TokenKind.LiteralInt32 => Validation.success(Constants.toInt32(token))
+          case TokenKind.LiteralInt64 => Validation.success(Constants.toInt64(token))
+          case TokenKind.LiteralBigInt => Validation.success(Constants.toBigInt(token))
           case TokenKind.LiteralFloat32 => Validation.success(Constants.toFloat32(token))
           case TokenKind.LiteralFloat64 => Validation.success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.success(Constants.toBigDecimal(token))
@@ -2392,17 +2392,17 @@ object Weeder2 {
       }
     }
 
-    private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       try {
         val radix = if (token.text.contains("0x")) 16 else 10
         val digits = token.text.replaceFirst("0x", "").stripSuffix(suffix).filterNot(_ == '_')
-        Validation.success(after(radix, digits, loc))
+        after(radix, digits, loc)
       } catch {
         case _: NumberFormatException =>
           val error = MalformedInt(loc)
           sctx.errors.add(error)
-          Validation.success(WeededAst.Expr.Error(error))
+          WeededAst.Expr.Error(error)
       }
     }
 
@@ -2434,7 +2434,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int8.
       */
-    def toInt8(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toInt8(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseInt(token, "i8", (radix, digits, loc) =>
         Expr.Cst(Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
@@ -2442,7 +2442,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int16.
       */
-    def toInt16(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def toInt16(token: Token)(implicit sctx: SharedContext): Expr = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
         Expr.Cst(Constant.Int16(JShort.parseShort(digits, radix)), loc)
       )
@@ -2451,7 +2451,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int32.
       */
-    def toInt32(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toInt32(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseInt(token, "i32", (radix, digits, loc) =>
         Expr.Cst(Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
@@ -2459,7 +2459,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    def toInt64(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def toInt64(token: Token)(implicit sctx: SharedContext): Expr = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
         Expr.Cst(Constant.Int64(JLong.parseLong(digits, radix)), loc)
       )
@@ -2468,7 +2468,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    def toBigInt(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] =
+    def toBigInt(token: Token)(implicit sctx: SharedContext): Expr =
       tryParseInt(token, "ii", (radix, digits, loc) =>
         Expr.Cst(Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
