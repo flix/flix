@@ -2296,23 +2296,31 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Record)
       val fields = pickAll(TreeKind.Pattern.RecordFieldFragment, tree)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
-      flatMapN(traverse(fields)(visitRecordField(_, seen)), traverseOpt(maybePattern)(visitPattern(_, seen))) {
+      mapN(traverse(fields)(visitRecordField(_, seen)), traverseOpt(maybePattern)(visitPattern(_, seen))) {
+
         // Pattern { ... }
-        case (fs, None) => Validation.success(Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc))
+        case (fs, None) =>
+          Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc)
+
         // Pattern { x, ... | r }
-        case (x :: xs, Some(Pattern.Var(v, l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc))
+        case (x :: xs, Some(Pattern.Var(v, l))) =>
+          Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc)
+
         // Pattern { x, ... | _ }
-        case (x :: xs, Some(Pattern.Wild(l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc))
+        case (x :: xs, Some(Pattern.Wild(l))) =>
+          Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc)
+
         // Illegal pattern: { | r }
         case (Nil, Some(r)) =>
           val error = EmptyRecordExtensionPattern(r.loc)
           sctx.errors.add(error)
-          Validation.success(r)
+          r
+
         // Illegal pattern: { x, ... | (1, 2, 3) }
         case (_, Some(r)) =>
           val error = IllegalRecordExtensionPattern(r.loc)
           sctx.errors.add(error)
-          Validation.success(Pattern.Error(r.loc))
+          Pattern.Error(r.loc)
       }
     }
 
