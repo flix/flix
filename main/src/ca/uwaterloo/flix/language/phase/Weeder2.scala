@@ -2933,7 +2933,7 @@ object Weeder2 {
       mapN(derivations)(Derivations(_, loc))
     }
 
-    def pickParameters(tree: Tree): Validation[List[TypeParam], CompilationMessage] = {
+    def pickParameters(tree: Tree)(implicit sctx: SharedContext): Validation[List[TypeParam], CompilationMessage] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
         case None => Validation.success(Nil)
         case Some(tparamsTree) =>
@@ -2949,7 +2949,9 @@ object Weeder2 {
                 case (_ :: _, Nil) => Validation.success(tparams)
                 // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
-                  toSoftFailure(tparams, MismatchedTypeParameters(tparamsTree.loc))
+                  val error = MismatchedTypeParameters(tparamsTree.loc)
+                  sctx.errors.add(error)
+                  Validation.success(tparams)
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }
