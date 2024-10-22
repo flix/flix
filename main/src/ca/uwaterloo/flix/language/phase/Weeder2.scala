@@ -2543,13 +2543,15 @@ object Weeder2 {
       visit(str.toList, Nil, Nil)
     }
 
-    def toChar(token: Token): Validation[Expr, CompilationMessage] = {
+    def toChar(token: Token)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("\'").stripSuffix("\'")
       val (processed, errors) = visitChars(text, loc)
+      errors.foreach(sctx.errors.add)
       if (processed.length != 1) {
         val error = MalformedChar(processed, loc)
-        Validation.toSoftFailure(Expr.Error(error), error).withSoftFailures(errors)
+        sctx.errors.add(error)
+        Validation.success(Expr.Error(error))
       } else {
         Validation.success(Expr.Cst(Constant.Char(processed.head), loc)).withSoftFailures(errors)
       }
