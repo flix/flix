@@ -372,9 +372,9 @@ object SemanticTokensProvider {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      val o = getSemanticTokenType(bnd.sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
