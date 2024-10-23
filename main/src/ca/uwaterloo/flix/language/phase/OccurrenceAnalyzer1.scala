@@ -136,6 +136,7 @@ object OccurrenceAnalyzer1 {
     }
     val defContext = DefContext(isDirectCall, oi.get(defn0.sym), oi.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
+    // TODO: Move fparams to spec
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext, defn0.loc), oi)
   }
 
@@ -162,8 +163,18 @@ object OccurrenceAnalyzer1 {
   }
 
   private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = {
-    // TODO: Add impl
-    ???
+    structs0.map { case (sym, struct) => sym -> visitStruct(struct) }
+  }
+
+  private def visitStruct(struct0: MonoAst.Struct): OccurrenceAst1.Struct = struct0 match {
+    case MonoAst.Struct(doc, ann, mod, sym, tparams, fields, loc) =>
+      val fs = fields.map(visitStructField)
+      OccurrenceAst1.Struct(doc, ann, mod, sym, tparams, fs, loc)
+  }
+
+  private def visitStructField(field0: MonoAst.StructField): OccurrenceAst1.StructField = field0 match {
+    case MonoAst.StructField(sym, tpe, loc) =>
+      OccurrenceAst1.StructField(sym, tpe, loc)
   }
 
   /**
