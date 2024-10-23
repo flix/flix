@@ -43,7 +43,7 @@ object SetUnification {
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(10, 10, 3500, 0)
+    val default: Options = Options(10, 10, 10_000, 0)
   }
 
   /** Represents the running mutable state of the solver. */
