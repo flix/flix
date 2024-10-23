@@ -117,15 +117,17 @@ object OccurrenceAnalyzer1 {
       * Returns true iff `expr0` is a function call to a different function
       */
     def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
-      case OccurrenceAst1.Expr.ApplyDef(sym, _, _, _, _, _) => sym != defn0.sym
-      case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
+      case OccurrenceAst1.Expr.ApplyDef(_sym, _exps, _, _, _, _) => true
+      // sym != defn0.sym // && exps.forall(isTrivial)
+
+      case OccurrenceAst1.Expr.ApplyClo(clo, _exps, _, _, _) =>
         clo match {
-          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) => sym != defn0.sym
+          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_sym), _, _, _, _) => true
+          // sym != defn0.sym // && exps.forall(isTrivial)
           case _ => false
         }
       case _ => false
     }
-
 
     // TODO: Clean this up
     val (exp, occurInfo) = visitExp(defn0.sym, defn0.exp)

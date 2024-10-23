@@ -200,6 +200,8 @@ object OccurrenceAst1 {
   }
 
   /**
+    * // TODO: Before doing the TODO below, check that the invariant is maintained in [[ca.uwaterloo.flix.language.phase.Inliner1]].
+    * // TODO: Either update this documentation or maintain the invariant in [[ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer1]].
     * `OccurDef` contains information that indicates whether or not a def should be inlined
     * A def is `isDirectCall` if
     * the expression consist of a single (non-self) call with trivial arguments
