@@ -423,7 +423,8 @@ object SetUnification {
       // ---
       // {},
       // [x1 -> x2]
-      case (x@Var(_), y@Var(_)) =>
+      case (x0@Var(_), y0@Var(_)) =>
+        val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
         Some(Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
