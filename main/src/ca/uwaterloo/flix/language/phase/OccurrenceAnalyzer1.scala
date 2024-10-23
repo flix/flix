@@ -90,10 +90,10 @@ object OccurrenceAnalyzer1 {
 
   /**
     * Performs occurrence analysis on every entry in `defs0` in parallel.
-    * Sets the occurrence of each `def` based on the occurrence found in `defOccur`. TODO: What does this mean?
+    * Decorates each Def with occurrence information, i.e., how it appears in the program or if it is unused.
     */
   private def visitDefs(defs0: Map[DefnSym, MonoAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst1.Def] = {
-    val (ds, os) = ParOps.parMap(defs0.values)((d: MonoAst.Def) => visitDef(d)).unzip
+    val (ds, os) = ParOps.parMap(defs0.values)(visitDef).unzip
 
     // Combine all `defOccurrences` into one map.
     val defOccur = combineAll(os)
