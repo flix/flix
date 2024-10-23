@@ -48,7 +48,7 @@ object EffUnification3 {
 
     // Convert type equations into formula equations.
     val equations = try {
-      eqs.map(toEquation(_))
+      eqs.map(toEquation)
     } catch {
       // If any equation is not convertible to formulas, then give up for the whole system.
       // A more lenient approach would be to solve the convertible equations and give the rest back
