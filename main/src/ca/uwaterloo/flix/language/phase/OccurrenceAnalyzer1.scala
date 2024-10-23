@@ -185,7 +185,7 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
       case MonoAst.Expr.Var(sym, tpe, loc) =>
-        (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
+        (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo.One + (sym -> Once))
 
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val fps = visitFormalParam(fparam)
