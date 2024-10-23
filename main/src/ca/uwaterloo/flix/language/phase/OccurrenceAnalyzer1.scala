@@ -48,7 +48,7 @@ object OccurrenceAnalyzer1 {
     * The occurrence of `defs` and `vars` inside the body of a `def`
     * `size` represents the number of expressions in the body of a `def`
     */
-  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) // TODO: Maybe add LocalDefs
+  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int)
 
   private def increment(occurInfo: OccurInfo): OccurInfo = {
     occurInfo.copy(size = occurInfo.size + 1)
@@ -168,19 +168,14 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val (es, o) = visitExps(exps)
-        val o1 = visitAtomicOp(sym0, op, o)
+        val o1 = combineAtomicOpInfo(sym0, op, o)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, purity, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (es, o2) = visitExps(exps)
         val o3 = combineAllSeq(o1, o2)
-        val o4 = exp match {
-          case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
-            val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
-            combineAllSeq(o3, o4)
-          case _ => o3
-        }
+        val o4 = combineApplyCloInfo(o3, exp)
         (OccurrenceAst1.Expr.ApplyClo(e, es, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
@@ -303,7 +298,16 @@ object OccurrenceAnalyzer1 {
   }
 
 
-  private def visitAtomicOp(sym0: DefnSym, op0: AtomicOp, occurInfo0: OccurInfo) = {
+  private def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr) = {
+    exp0 match {
+      case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
+        val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
+        combineAllSeq(occurInfo, o4)
+      case _ => occurInfo
+    }
+  }
+
+  private def combineAtomicOpInfo(sym0: DefnSym, op0: AtomicOp, occurInfo0: OccurInfo) = {
     op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" => occurInfo0.copy(defs = occurInfo0.defs + (sym0 -> DontInline))
       case _ => occurInfo0
