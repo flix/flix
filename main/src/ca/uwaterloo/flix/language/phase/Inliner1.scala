@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Purity, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -378,9 +378,11 @@ object Inliner1 {
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
   private def applySubst(exp0: OccurrenceAst1.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
-    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) => MonoAst.Expr.Cst(cst, tpe, loc)
+    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
+      MonoAst.Expr.Cst(cst, tpe, loc)
 
-    case OccurrenceAst1.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
+    case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
+      MonoAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
     case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
       val fps = visitFormalParam(fparam)
@@ -404,12 +406,6 @@ object Inliner1 {
       val es = exps.map(applySubst(_, env0))
       MonoAst.Expr.ApplyLocalDef(env0.getOrElse(sym, sym), es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = applySubst(exp1, env0)
-      val e2 = applySubst(exp2, env0)
-      val e3 = applySubst(exp3, env0)
-      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
-
     case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
       val freshVar = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshVar)
@@ -423,14 +419,20 @@ object Inliner1 {
       val e2 = applySubst(exp2, env0)
       MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
+    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+      val e = applySubst(exp, env0)
+      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = applySubst(exp1, env0)
+      val e2 = applySubst(exp2, env0)
+      val e3 = applySubst(exp3, env0)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
     case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = applySubst(exp1, env0)
       val e2 = applySubst(exp2, env0)
       MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
-
-    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
-      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = applySubst(exp, env0)
