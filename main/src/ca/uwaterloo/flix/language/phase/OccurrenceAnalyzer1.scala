@@ -56,6 +56,10 @@ object OccurrenceAnalyzer1 {
     def +(kv: (VarSym, Occur)): OccurInfo = {
       this.copy(vars = this.vars + kv)
     }
+
+    def -(varSym: VarSym): OccurInfo = {
+      this.copy(vars = this.vars - varSym)
+    }
   }
 
   private def increment(occurInfo: OccurInfo): OccurInfo = {
@@ -201,7 +205,7 @@ object OccurrenceAnalyzer1 {
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
         val occur = o3.vars.getOrElse(sym, Dead)
-        val o4 = o3.copy(vars = o3.vars - sym)
+        val o4 = o3 - sym
         (OccurrenceAst1.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
 
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
@@ -211,7 +215,7 @@ object OccurrenceAnalyzer1 {
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
         val occur = o3.vars.getOrElse(sym, Dead)
-        val o4 = o3.copy(vars = o3.vars - sym)
+        val o4 = o3 - sym
         (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o4))
 
       case MonoAst.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
