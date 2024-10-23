@@ -252,12 +252,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
-        val (rs, o2) = rules.map {
-          case MonoAst.HandlerRule(op, fparams, exp) =>
-            val (e, o3) = visit(exp)
-            val fps = fparams.map(visitFormalParam)
-            (OccurrenceAst1.HandlerRule(op, fps, e), o3)
-        }.unzip
+        val (rs, o2) = visitTryWithRules(rules)
         val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
         val o5 = o4.copy(defs = o4.defs + (sym0 -> DontInline))
         (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o5))
@@ -285,21 +280,14 @@ object OccurrenceAnalyzer1 {
       */
     def visitExps(exps: List[MonoAst.Expr]): (List[OccurrenceAst1.Expr], OccurInfo) = {
       val (es, o1) = exps.map(visit).unzip
-      val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
+      val o2 = o1.foldLeft(OccurInfo.Empty)(combineAllSeq)
       (es, o2)
     }
 
-
-    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], List[OccurInfo]) = rules0.map {
-      case MonoAst.CatchRule(sym, clazz, exp) =>
-        val (e, o3) = visit(exp)
-        (OccurrenceAst1.CatchRule(sym, clazz, e), o3)
-    }.unzip
-
     def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
       case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
-        val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
-        combineAllSeq(occurInfo, o4)
+        val o = OccurInfo(Map(sym -> Once), Map.empty, 0)
+        combineAllSeq(occurInfo, o)
       case _ => occurInfo
     }
 
@@ -308,7 +296,23 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
+    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], List[OccurInfo]) = rules0.map {
+      case MonoAst.CatchRule(sym, clazz, exp) =>
+        val (e, o) = visit(exp)
+        (OccurrenceAst1.CatchRule(sym, clazz, e), o)
+    }.unzip
+
+    def visitTryWithRules(rules0: List[MonoAst.HandlerRule]): (List[OccurrenceAst1.HandlerRule], List[OccurInfo]) = {
+      rules0.map {
+        case MonoAst.HandlerRule(op, fparams, exp) =>
+          val (e, o) = visit(exp)
+          val fps = fparams.map(visitFormalParam)
+          (OccurrenceAst1.HandlerRule(op, fps, e), o)
+      }.unzip
+    }
+
     visit(exp00)
+
   }
 
   /**
