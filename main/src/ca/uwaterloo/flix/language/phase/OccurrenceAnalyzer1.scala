@@ -261,13 +261,7 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.Do(op, es, tpe, eff, loc), increment(o))
 
       case MonoAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-        val (ms, o1) = methods.map { // TODO: add helper function
-          case MonoAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
-            val f = fparams.map(visitFormalParam)
-            val (c, o) = visit(clo)
-            (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, purity, loc), increment(o))
-
-        }.unzip
+        val (ms, o1) = visitJvmMethods(methods)
         val o2 = o1.foldLeft(OccurInfo.Empty)(combineAllSeq)
         (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, purity, ms, loc), increment(o2))
 
@@ -301,14 +295,19 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.CatchRule(sym, clazz, e), o)
     }.unzip
 
-    def visitTryWithRules(rules0: List[MonoAst.HandlerRule]): (List[OccurrenceAst1.HandlerRule], List[OccurInfo]) = {
-      rules0.map {
-        case MonoAst.HandlerRule(op, fparams, exp) =>
-          val (e, o) = visit(exp)
-          val fps = fparams.map(visitFormalParam)
-          (OccurrenceAst1.HandlerRule(op, fps, e), o)
-      }.unzip
-    }
+    def visitTryWithRules(rules0: List[MonoAst.HandlerRule]): (List[OccurrenceAst1.HandlerRule], List[OccurInfo]) = rules0.map {
+      case MonoAst.HandlerRule(op, fparams, exp) =>
+        val (e, o) = visit(exp)
+        val fps = fparams.map(visitFormalParam)
+        (OccurrenceAst1.HandlerRule(op, fps, e), o)
+    }.unzip
+
+    def visitJvmMethods(methods0: List[MonoAst.JvmMethod]): (List[OccurrenceAst1.JvmMethod], List[OccurInfo]) = methods0.map {
+      case MonoAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+        val f = fparams.map(visitFormalParam)
+        val (c, o) = visit(clo)
+        (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, purity, loc), increment(o))
+    }.unzip
 
     visit(exp00)
 
