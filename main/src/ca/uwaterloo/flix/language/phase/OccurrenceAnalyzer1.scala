@@ -140,7 +140,6 @@ object OccurrenceAnalyzer1 {
     }
     val defContext = DefContext(isDirectCall, oi.get(defn0.sym), oi.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
-    // TODO: Move fparams to spec
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext, defn0.loc), oi)
   }
 
