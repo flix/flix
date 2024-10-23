@@ -112,20 +112,23 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
-    // TODO: Clean this up
-    val (exp, occurInfo) = visitExp(defn0.sym, defn0.exp)
-    val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> occurInfo.get(p.sym))
-    // Def consists of a single direct call to a def
-    val isDirectCall = exp match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
-      case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
+
+    /**
+      * Returns true iff `expr0` is a function call to a different function
+      */
+    def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
+      case OccurrenceAst1.Expr.ApplyDef(sym, _, _, _, _, _) => sym != defn0.sym
       case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
         clo match {
-          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
+          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) => sym != defn0.sym
           case _ => false
         }
       case _ => false
-
     }
+
+
+    // TODO: Clean this up
+    val (exp, occurInfo) = visitExp(defn0.sym, defn0.exp)
     val isSelfRecursive = occurInfo.defs.get(defn0.sym) match {
       case None => false
       case Some(o) => o match {
@@ -138,8 +141,9 @@ object OccurrenceAnalyzer1 {
         case Occur.DontInline => false
       }
     }
-    val defContext = DefContext(isDirectCall, occurInfo.get(defn0.sym), occurInfo.size, isSelfRecursive)
+    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
+    val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> occurInfo.get(p.sym))
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, exp, defContext, defn0.loc), occurInfo)
   }
 
