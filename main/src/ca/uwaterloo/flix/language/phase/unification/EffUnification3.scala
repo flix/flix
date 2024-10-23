@@ -182,6 +182,8 @@ object EffUnification3 {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
+    case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
+
     case _ => throw InvalidType
   }
 
