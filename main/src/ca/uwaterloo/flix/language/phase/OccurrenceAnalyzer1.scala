@@ -113,10 +113,10 @@ object OccurrenceAnalyzer1 {
     */
   private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
     // TODO: Clean this up
-    val (e, oi) = visitExp(defn0.sym, defn0.exp)
+    val (exp, oi) = visitExp(defn0.sym, defn0.exp)
     val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> oi.get(p.sym))
     // Def consists of a single direct call to a def
-    val isDirectCall = e match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
+    val isDirectCall = exp match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
       case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
       case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
         clo match {
@@ -140,7 +140,7 @@ object OccurrenceAnalyzer1 {
     }
     val defContext = DefContext(isDirectCall, oi.get(defn0.sym), oi.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
-    (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext, defn0.loc), oi)
+    (OccurrenceAst1.Def(defn0.sym, fparams, spec, exp, defContext, defn0.loc), oi)
   }
 
   private def visitEffects(effects0: Map[Symbol.EffectSym, MonoAst.Effect]): Map[Symbol.EffectSym, OccurrenceAst1.Effect] = {
