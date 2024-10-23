@@ -275,7 +275,9 @@ object OccurrenceAnalyzer1 {
         val (e, o) = visit(exp)
         (OccurrenceAst1.Expr.Ascribe(e, tpe, eff, loc), increment(o))
 
-      case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+      case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+        val (e, o) = visit(exp)
+        (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o))
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
