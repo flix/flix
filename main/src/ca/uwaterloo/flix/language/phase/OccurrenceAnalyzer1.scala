@@ -181,7 +181,6 @@ object OccurrenceAnalyzer1 {
       * Local visitor that captures `sym0` since it never changes.
       */
     def visit(exp0: MonoAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
-      // TODO: Refactor (OccurrenceAst1.Expr, OccurInfo) into distinct type (in this phase) called OccurExpr so we can write val e = visitExp(exp)
       case MonoAst.Expr.Cst(cst, tpe, loc) =>
         (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
