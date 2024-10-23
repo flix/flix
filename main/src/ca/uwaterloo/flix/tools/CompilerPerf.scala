@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
@@ -393,8 +392,6 @@ object CompilerPerf {
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
@@ -409,8 +406,6 @@ object CompilerPerf {
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
@@ -427,8 +422,6 @@ object CompilerPerf {
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
     (0 until N).map { _ =>
-      flushCaches()
-
       addInputs(flix)
       runSingle(flix)
     }
@@ -485,13 +478,6 @@ object CompilerPerf {
     * Returns the given time `l` in milliseconds.
     */
   private def milliseconds(l: Double): Double = l / 1_000_000.0
-
-  /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-  }
 
   /**
     * Adds test code to the benchmarking suite.

@@ -94,7 +94,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnooptimizer = cmdOpts.xnooptimizer,
@@ -345,7 +344,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnooptimizer: Boolean = false,
@@ -549,10 +547,6 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
-
-      // Xno-bool-cache
-      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
-        text("[experimental] disables Boolean caches.")
 
       // Xno-bool-specialcases
       opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
