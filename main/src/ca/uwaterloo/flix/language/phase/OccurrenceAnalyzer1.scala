@@ -50,6 +50,20 @@ object OccurrenceAnalyzer1 {
     */
   case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) // TODO: Maybe add LocalDefs
 
+  /**
+    * Represents an expression along with its occurrence information [[OccurInfo]].
+    */
+  private case class OccurExpr(expr: OccurrenceAst1.Expr, info: OccurInfo)
+
+  /**
+    * Increments the info in `expr` by one.
+    */
+  private def increment(expr: OccurExpr): OccurExpr = expr match {
+    case OccurExpr(exp, info) =>
+      val updatedInfo = info.copy(size = info.size + 1)
+      OccurExpr(exp, updatedInfo)
+  }
+
   private def increment(occurInfo: OccurInfo): OccurInfo = {
     occurInfo.copy(size = occurInfo.size + 1)
   }
