@@ -190,9 +190,7 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val fps = visitFormalParam(fparam)
         val (e, o) = visit(exp)
-        val o1 = update(o) {
-          case Once => OnceInLambda
-        }
+        val o1 = captureInLambda(o)
         (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o1))
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -227,7 +225,8 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
         val fps = fparams.map(visitFormalParam)
-        val (e1, o1) = visit(exp1) // TODO: Map every Once to OnceInLocalDef unless they are bound by formal params
+        val (e1, o10) = visit(exp1)
+        val o1 = captureInLocalDef(o10)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
         val occur = o3.get(sym)
@@ -416,6 +415,18 @@ object OccurrenceAnalyzer1 {
     case (ManyBranch, Once) => ManyBranch
     case (ManyBranch, ManyBranch) => ManyBranch
     case _ => Many
+  }
+
+  private def captureInLambda(occurInfo: OccurInfo): OccurInfo = {
+    update(occurInfo) {
+      case Once => OnceInLambda
+    }
+  }
+
+  private def captureInLocalDef(occurInfo: OccurInfo): OccurInfo = {
+    update(occurInfo) {
+      case Once => OnceInLocalDef
+    }
   }
 
   private def update(occurInfo: OccurInfo)(f: PartialFunction[Occur, Occur]): OccurInfo = {
