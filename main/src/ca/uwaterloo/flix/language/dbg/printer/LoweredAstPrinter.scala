@@ -34,7 +34,7 @@ object LoweredAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _), exp, _) =>
         DocAst.Def(
           ann,
           mod,
@@ -54,7 +54,6 @@ object LoweredAstPrinter {
   def print(e: LoweredAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
     case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
-    case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Sig(sym)
     case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.ApplyClo(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)

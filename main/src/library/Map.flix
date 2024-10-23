@@ -50,7 +50,7 @@ instance Indexable[Map[k, v]] with Order[k] {
     type Aef = KeyNotFound
     pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
         case Some(v) => v
-        case None    => do KeyNotFound.keyNotFound("key not found")
+        case None    => KeyNotFound.keyNotFound("key not found")
     }
 }
 
@@ -135,16 +135,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Map#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///

@@ -22,7 +22,7 @@ instance Indexable[Array[a, r]] {
 
     pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.get(i, t)
-        else do OutOfBounds.outOfBounds(
+        else OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
         )
     }
@@ -33,7 +33,7 @@ instance IndexableMut[Array[a, r]] {
 
     pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
-        else do OutOfBounds.outOfBounds(
+        else OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
         )
     }
@@ -96,7 +96,7 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///

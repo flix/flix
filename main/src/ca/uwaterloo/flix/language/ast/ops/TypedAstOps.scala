@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.SigSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 
 object TypedAstOps {
@@ -38,7 +39,6 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
-    case Expr.Sig(sym, _, _) => Set(sym)
     case Expr.Hole(_, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
@@ -47,7 +47,7 @@ object TypedAstOps {
     case Expr.ApplyClo(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -133,8 +133,6 @@ object TypedAstOps {
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expr.Sig(_, _, _) => Map.empty
-
     case Expr.Hole(_, _, _, _) => Map.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
@@ -175,8 +173,8 @@ object TypedAstOps {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      (freeVars(exp1) ++ freeVars(exp2)) - sym
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.sym)

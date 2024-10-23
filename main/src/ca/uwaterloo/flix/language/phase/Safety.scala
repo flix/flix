@@ -30,7 +30,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
+  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseNew("Safety") {
     //
     // Collect all errors.
     //
@@ -44,8 +44,8 @@ object Safety {
     //
     // Check if any errors were found.
     //
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }(DebugValidation())
+    ((), errors.toList)
+  }
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
@@ -121,11 +121,11 @@ object Safety {
     val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
     val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
     val types = if (isPolymorphic(defn)) {
-      List(SafetyError.IllegalExportPolymorphism(defn.spec.loc))
+      List(SafetyError.IllegalExportPolymorphism(defn.loc))
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -216,11 +216,15 @@ object Safety {
     * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
   private def isAllowedEffect(defn: Def): Boolean = {
-    defn.spec.eff match {
-      case Type.Pure => true
-      case Type.IO => true
-      case Type.NonDet => true
-      case Type.Sys => true
+    defn.spec.eff.effects.forall {
+      case Symbol.Env => true
+      case Symbol.Exec => true
+      case Symbol.FileRead => true
+      case Symbol.FileWrite => true
+      case Symbol.IO => true
+      case Symbol.Net => true
+      case Symbol.NonDet => true
+      case Symbol.Sys => true
       case _ => false
     }
   }
@@ -235,8 +239,6 @@ object Safety {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
-
-      case Expr.Sig(_, _, _) => Nil
 
       case Expr.Hole(_, _, _, _) => Nil
 
@@ -372,7 +374,7 @@ object Safety {
       case Expr.InstanceOf(exp, _, _) =>
         visit(exp)
 
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      case Expr.CheckedCast(cast, exp, tpe, _, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val from = Type.eraseAliases(exp.tpe)
@@ -381,8 +383,6 @@ object Safety {
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
-            val from = Type.eraseAliases(exp.eff)
-            val to = Type.eraseAliases(eff)
             visit(exp)
         }
 
@@ -545,7 +545,14 @@ object Safety {
           default.map(visit).getOrElse(Nil)
 
       case Expr.Spawn(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        val ctrlEffs = getControlEffs(exp1.eff)
+        val illegalSpawnEffect =
+          if (ctrlEffs.isEmpty)
+            Nil
+          else
+            List(IllegalSpawnEffect(exp1.eff, exp1.loc))
+
+        illegalSpawnEffect ++ visit(exp1) ++ visit(exp2)
 
       case Expr.ParYield(frags, exp, _, _, _) =>
         frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)
@@ -947,7 +954,7 @@ object Safety {
     */
   private def checkThrow(exp: Expr): List[SafetyError] = {
     val valid = exp.tpe match {
-      case Type.Cst(TypeConstructor.Native(clazz), loc) => classOf[Throwable].isAssignableFrom(clazz)
+      case Type.Cst(TypeConstructor.Native(clazz), _) => classOf[Throwable].isAssignableFrom(clazz)
       case _ => false
     }
     if (valid) {
@@ -960,7 +967,7 @@ object Safety {
   /**
     * Ensures that `methods` fully implement `clazz`
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[?], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
+  private def checkObjectImplementation(clazz: java.lang.Class[?], tpe: Type, methods: List[JvmMethod], loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
@@ -1018,7 +1025,12 @@ object Safety {
     val extra = implemented diff canImplement
     val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
 
-    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
+    //
+    // Check that methods are pure or only have base effects.
+    //
+    val methodErrors = methods.filter(m => getControlEffs(m.eff).nonEmpty).map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc))
+
+    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors ++ methodErrors
   }
 
   /**
@@ -1074,5 +1086,14 @@ object Safety {
     */
   private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isAbstract(m.getModifiers)
+
+  /**
+    * Returns the control-effects inside `tpe`.
+    */
+  private def getControlEffs(tpe: Type): Set[Symbol.EffectSym] =
+    tpe.typeConstructors.foldLeft(Set.empty[Symbol.EffectSym]) {
+      case (acc, TypeConstructor.Effect(sym)) if !Symbol.isBaseEff(sym) => acc + sym
+      case (acc, _) => acc
+    }
 
 }

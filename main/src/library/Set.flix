@@ -116,16 +116,7 @@ mod Set {
     /// Returns a string representation of the given set `s`.
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Set#{", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-        }, s);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
     }
 
     ///

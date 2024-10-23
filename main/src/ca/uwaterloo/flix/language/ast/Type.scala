@@ -419,6 +419,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+   * Represents the Net effect.
+   */
+  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
+
+  /**
     * Represents the NonDet effect.
     */
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
@@ -1187,6 +1192,23 @@ object Type {
     case Type.JvmToType(_, _) => true
     case Type.JvmToEff(_, _) => true
     case Type.UnresolvedJvmType(_, _) => true
+  }
+
+  /**
+    * Returns true if the given type contains [[TypeConstructor.Error]].
+    */
+  def hasError(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Error(_, _) => true
+      case _ => false
+    }
+    case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasError(tpe)
+    case Type.AssocType(_, arg, _, _) => hasError(arg)
+    case Type.JvmToType(_, _) => false
+    case Type.JvmToEff(_, _) => false
+    case Type.UnresolvedJvmType(_, _) => false
   }
 
   /**

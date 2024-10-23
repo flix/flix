@@ -27,27 +27,27 @@ object TypeReconstruction {
     * Reconstructs types in the given def.
     */
   def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
-    case KindedAst.Def(sym, spec0, exp0) =>
+    case KindedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0, subst)
       val exp = visitExp(exp0)(subst)
-      TypedAst.Def(sym, spec, exp)
+      TypedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
   def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
-    case KindedAst.Sig(sym, spec0, exp0) =>
+    case KindedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0, subst)
       val exp = exp0.map(visitExp(_)(subst))
-      TypedAst.Sig(sym, spec, exp)
+      TypedAst.Sig(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given spec.
     */
   private def visitSpec(spec: KindedAst.Spec, subst: Substitution): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam)
       val fparams = fparams0.map(visitFormalParam(_, subst))
       val tpe = subst(tpe0)
@@ -55,7 +55,7 @@ object TypeReconstruction {
       val tconstrs = tconstrs0.map(subst.apply)
       val econstrs = econstrs0.map(subst.apply)
       val sc = sc0 // TODO ASSOC-TYPES get rid of type visits here and elsewhere that only go over rigid tvars
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -78,9 +78,9 @@ object TypeReconstruction {
     * Reconstructs types in the given operation.
     */
   def visitOp(op: KindedAst.Op): TypedAst.Op = op match {
-    case KindedAst.Op(sym, spec0) =>
+    case KindedAst.Op(sym, spec0, loc) =>
       val spec = visitSpec(spec0, Substitution.empty)
-      TypedAst.Op(sym, spec)
+      TypedAst.Op(sym, spec, loc)
   }
 
   /**
@@ -89,9 +89,6 @@ object TypeReconstruction {
   private def visitExp(exp0: KindedAst.Expr)(implicit subst: Substitution): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
-
-    case KindedAst.Expr.Sig(sym, tvar, loc) =>
-      TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
     case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
       TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
@@ -172,9 +169,10 @@ object TypeReconstruction {
     case KindedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
+      val bnd = TypedAst.Binder(sym, e1.tpe)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
       val fps = fparams.map(visitFormalParam(_, subst))

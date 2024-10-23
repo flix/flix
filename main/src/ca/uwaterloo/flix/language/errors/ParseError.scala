@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 /**
   * A common super-type for parser errors.
   */
-sealed trait ParseError extends CompilationMessage {
+sealed trait ParseError extends CompilationMessage with Recoverable {
   val kind = "Parse Error"
   val sctx: SyntacticContext
 }

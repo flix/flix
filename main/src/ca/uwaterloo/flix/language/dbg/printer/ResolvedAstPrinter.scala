@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Ast, ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
@@ -26,7 +27,7 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: ResolvedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case ResolvedAst.Declaration.Def(sym, spec, exp) =>
+      case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
         DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
     }.toList
     DocAst.Program(Nil, defs)
@@ -35,16 +36,15 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
   private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
     case Expr.Var(sym, _) => printVarSym(sym)
-    case Expr.Sig(sym, _) => DocAst.Expr.AsIs(sym.name)
     case Expr.Hole(sym, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
     case Expr.ApplyClo(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
-    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
-    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
-    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))

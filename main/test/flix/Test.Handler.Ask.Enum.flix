@@ -5,7 +5,7 @@ mod Test.Handler.Ask.Enum {
     }
 
     def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+        Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Option[Int32]] =
         try {

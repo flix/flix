@@ -3,6 +3,23 @@
     "java.lang.Process": "Exec",
     "java.lang.ProcessBuilder": "Exec",
     "java.lang.ProcessHandle": "Exec",
-    "java.lang.reflect.Method": "Sys"
+    "java.lang.reflect.Method": "Sys",
+    "java.net.Authenticator": "Net, IO",
+    "java.net.DatagramSocket": "Net, IO",
+    "java.net.HttpURLConnection": "Net, IO",
+    "java.net.InetAddress": "Net, IO",
+    "java.net.MulticastSocket": "Net, IO",
+    "java.net.NetMulticastSocket": "Net, IO",
+    "java.net.NetworkInterface": "Net, IO",
+    "java.net.ProxySelector": "Net, IO",
+    "java.net.ResponseCache": "Net, IO",
+    "java.net.ServerSocket": "Net, IO",
+    "java.net.Socket": "Net, IO",
+    "java.net.URL": "Net, IO",
+    "java.net.URLClassLoader": "Net, Sys, IO",
+    "java.net.URLConnection": "Net, IO",
+    "java.net.URLStreamHandler": "Net, IO",
+    "java.net.spi.InetAddressResolverProvider": "Net, IO",
+    "java.net.spi.URLStreamHandlerProvider": "Net, IO"
   }
 }

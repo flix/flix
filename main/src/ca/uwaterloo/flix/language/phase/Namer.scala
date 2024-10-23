@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
@@ -36,8 +36,8 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] =
-    flix.phase("Namer") {
+  def run(program: DesugaredAst.Root)(implicit flix: Flix): (NamedAst.Root, List[NameError]) =
+    flix.phaseNew("Namer") {
 
       // Construct a new shared context.
       implicit val sctx: SharedContext = SharedContext.mk()
@@ -60,8 +60,9 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
-    }(DebugValidation())
+
+      (NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala.toList)
+    }
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
@@ -123,10 +124,10 @@ object Namer {
     case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
       addInstanceToTable(table0, ns, clazz.ident.name, inst)
 
-    case NamedAst.Declaration.Sig(sym, _, _) =>
+    case NamedAst.Declaration.Sig(sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Def(sym, _, _) =>
+    case NamedAst.Declaration.Def(sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
@@ -155,7 +156,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       ops.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Op(sym, _) =>
+    case NamedAst.Declaration.Op(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
@@ -484,8 +485,8 @@ object Namer {
       val e = exp.map(visitExp(_, ns0)(Scope.Top, sctx, flix))
 
       val sym = Symbol.mkSigSym(traitSym, ident)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
-      NamedAst.Declaration.Sig(sym, spec, e)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
+      NamedAst.Declaration.Sig(sym, spec, e, loc)
   }
 
   /**
@@ -515,8 +516,8 @@ object Namer {
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
-      NamedAst.Declaration.Def(sym, spec, e)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
+      NamedAst.Declaration.Def(sym, spec, e, loc)
   }
 
   /**
@@ -546,8 +547,8 @@ object Namer {
       val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
       val sym = Symbol.mkOpSym(effSym, ident)
-      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
-      NamedAst.Declaration.Op(sym, spec)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs)
+      NamedAst.Declaration.Op(sym, spec, loc)
   }
 
   /**
@@ -1452,15 +1453,15 @@ object Namer {
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
-    case NamedAst.Declaration.Def(sym, _, _) => sym.loc
+    case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
+    case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
-    case NamedAst.Declaration.Op(sym, _) => sym.loc
+    case NamedAst.Declaration.Op(sym, _, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc

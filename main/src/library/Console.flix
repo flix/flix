@@ -32,7 +32,7 @@ eff Console {
     ///
     /// Prints the given string `s` to the standard err.
     ///
-    pub def printErr(s: String): Unit
+    pub def eprint(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard out followed by a new line.
@@ -42,7 +42,7 @@ eff Console {
     ///
     /// Prints the given string `s` to the standard err followed by a new line.
     ///
-    pub def printlnErr(s: String): Unit
+    pub def eprintln(s: String): Unit
 
 }
 
@@ -62,9 +62,9 @@ mod Console {
         } with Console {
             def readln(k)        = k(System.console().readLine())
             def print(s, k)      = { System.out.print(s); System.out.flush(); k() }
-            def printErr(s, k)   = { System.err.print(s); System.err.flush(); k() }
+            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
             def println(s, k)    = { System.out.println(s); System.out.flush(); k() }
-            def printlnErr(s, k) = { System.err.println(s); System.err.flush(); k() }
+            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
         })
     }
 
