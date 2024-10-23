@@ -159,7 +159,10 @@ object OccurrenceAnalyzer1 {
       OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff)
   }
 
-  private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = ???
+  private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = {
+    // TODO: Add impl
+    ???
+  }
 
   /**
     * Translates the given formal param `p` to the OccurrenceAst1.
