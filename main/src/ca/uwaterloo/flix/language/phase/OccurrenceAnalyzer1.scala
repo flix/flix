@@ -145,10 +145,13 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
-    * Performs occurrence analysis on `exp0`
+    * Performs occurrence analysis on `exp00`
     */
   private def visitExp(sym0: Symbol.DefnSym, exp00: MonoAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = {
 
+    /**
+      * Local visitor that captures `sym0` since it never changes.
+      */
     def visit(exp0: MonoAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
       // TODO: Refactor (OccurrenceAst1.Expr, OccurInfo) into distinct type (in this phase) called OccurExpr so we can write val e = visitExp(exp)
       case MonoAst.Expr.Cst(cst, tpe, loc) =>
@@ -291,6 +294,7 @@ object OccurrenceAnalyzer1 {
 
     /**
       * Performs occurrence analysis on a list of expressions `exps` and merges occurrences.
+      * Captures `sym0`.
       */
     def visitExps(exps: List[MonoAst.Expr]): (List[OccurrenceAst1.Expr], OccurInfo) = {
       val (es, o1) = exps.map(visit).unzip
