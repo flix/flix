@@ -242,7 +242,7 @@ object OccurrenceAnalyzer1 {
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val (e3, o3) = visit(exp3)
-        val o4 = combineInfo(o1, combinBranchInfo(o2, o3))
+        val o4 = combineInfo(o1, combineInfoBranch(o2, o3))
         (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
@@ -255,7 +255,14 @@ object OccurrenceAnalyzer1 {
         val (e, o) = visit(exp)
         (OccurrenceAst1.Expr.Discard(e, eff, loc), increment(o))
 
-      case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) => ??? // TODO: Remember to combineBranch
+      case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+        val (e, o1) = visit(exp)
+        val (rs, o2) = rules.map {
+          case MonoAst.MatchRule(pat, guard, exp) => ???
+        }.unzip
+        val o3 = o2.foldLeft(OccurInfo.Empty)(combineInfoBranch)
+        val o4 = combineInfo(o1, o3)
+        (OccurrenceAst1.Expr.Match(e, rs, tpe, eff, loc), increment(o4))
 
       case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
@@ -362,7 +369,7 @@ object OccurrenceAnalyzer1 {
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combinBranchInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+  private def combineInfoBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineBranch)
   }
 
