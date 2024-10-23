@@ -193,7 +193,7 @@ object OccurrenceAnalyzer1 {
         val o1 = update(o) {
           case Once => OnceInLambda
         }
-        (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o))
+        (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o1))
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val (es, o) = visitExps(exps)
