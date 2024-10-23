@@ -267,9 +267,13 @@ object OccurrenceAnalyzer1 {
         val o3 = combineInfo(o1, o2)
         (OccurrenceAst1.Expr.VectorLoad(e1, e2, tpe, eff, loc), increment(o3))
 
-      case MonoAst.Expr.VectorLength(exp, loc) => ???
+      case MonoAst.Expr.VectorLength(exp, loc) =>
+        val (e, o) = visit(exp)
+        (OccurrenceAst1.Expr.VectorLength(e, loc), increment(o))
 
-      case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) => ???
+      case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+        val (e, o) = visit(exp)
+        (OccurrenceAst1.Expr.Ascribe(e, tpe, eff, loc), increment(o))
 
       case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
 
