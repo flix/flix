@@ -201,38 +201,38 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       if (isDead(occur)) {
         if (isPure(exp1.eff)) {
-          /// Case 1:
-          /// If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
-          /// Both code size and runtime are reduced
+          // Case 1:
+          // If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
+          // Both code size and runtime are reduced
           visitExp(exp2, subst0)
         } else {
-          /// Case 2:
-          /// If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
+          // Case 2:
+          // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
           MonoAst.Expr.Stm(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, eff, loc)
         }
       } else {
-        /// Case 3:
-        /// If `exp1` occurs once and it is pure, then it is safe to inline.
-        /// There is a small decrease in code size and runtime.
+        // Case 3:
+        // If `exp1` occurs once and it is pure, then it is safe to inline.
+        // There is a small decrease in code size and runtime.
         val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
         if (wantToPreInline) {
           val subst1 = subst0 + (sym -> Expr.OccurrenceExp(exp1))
           visitExp(exp2, subst1)
         } else {
           val e1 = visitExp(exp1, subst0)
-          /// Case 4:
-          /// If `e1` is trivial and pure, then it is safe to inline.
+          // Case 4:
+          // If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
           val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline
           if (wantToPostInline) {
-            /// If `e1` is to be inlined:
-            /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
+            // If `e1` is to be inlined:
+            // Add map `sym` to `e1` and return `e2` without constructing the let expression.
             val subst1 = subst0 + (sym -> Expr.SimplifiedExp(e1))
             visitExp(exp2, subst1)
           } else {
-            /// Case 5:
-            /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
-            /// Code size and runtime are not impacted
+            // Case 5:
+            // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
+            // Code size and runtime are not impacted
             val e2 = visitExp(exp2, subst0)
             MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
           }
@@ -248,9 +248,9 @@ object Inliner1 {
       MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      /// Case 1:
-      /// If `exp1` is pure, so it has no side effects, then it is safe to remove
-      /// Both code size and runtime are reduced
+      // Case 1:
+      // If `exp1` is pure, so it has no side effects, then it is safe to remove
+      // Both code size and runtime are reduced
       if (isPure(exp1.eff)) {
         visitExp(exp2, subst0)
       } else {
