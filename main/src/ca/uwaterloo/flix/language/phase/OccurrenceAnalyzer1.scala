@@ -160,15 +160,15 @@ object OccurrenceAnalyzer1 {
       // TODO: Map every Once occurrence to OnceInLambda
       val fps = visitFormalParam(fparam)
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), o)
+      (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), o.increaseSizeByOne())
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
       val o1 = op match {
-        case AtomicOp.Is(sym) if sym.name == "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne()
-        case _ => o.increaseSizeByOne()
+        case AtomicOp.Is(sym) if sym.name == "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline))
+        case _ => o
       }
-      (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, purity, loc), o1)
+      (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, purity, loc), o1.increaseSizeByOne())
 
     case MonoAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
@@ -192,7 +192,7 @@ object OccurrenceAnalyzer1 {
       val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map.empty, Map(sym -> Once), 1)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), o3)
+      (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), o3.increaseSizeByOne())
 
     case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
@@ -256,8 +256,8 @@ object OccurrenceAnalyzer1 {
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
       val withSym0 = o4.defs + (sym0 -> DontInline)
-      val o5 = o4.copy(defs = withSym0).increaseSizeByOne()
-      (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), o5)
+      val o5 = o4.copy(defs = withSym0)
+      (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), o5.increaseSizeByOne())
 
     case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
@@ -268,7 +268,8 @@ object OccurrenceAnalyzer1 {
           (OccurrenceAst1.HandlerRule(op, fps, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
+      val o5 = o4.copy(defs = o4.defs + (sym0 -> DontInline))
+      (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), o5.increaseSizeByOne())
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val (es, o1) = visitExps(sym0, exps)
