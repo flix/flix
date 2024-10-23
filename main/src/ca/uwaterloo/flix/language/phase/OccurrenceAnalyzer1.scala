@@ -188,9 +188,11 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
-        // TODO: Map every Once occurrence to OnceInLambda
         val fps = visitFormalParam(fparam)
         val (e, o) = visit(exp)
+        val o1 = update(o) {
+          case Once => OnceInLambda
+        }
         (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o))
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -414,6 +416,24 @@ object OccurrenceAnalyzer1 {
     case (ManyBranch, Once) => ManyBranch
     case (ManyBranch, ManyBranch) => ManyBranch
     case _ => Many
+  }
+
+  private def update(occurInfo: OccurInfo)(f: PartialFunction[Occur, Occur]): OccurInfo = {
+    val defs = occurInfo.defs.map {
+      case (k, v) =>
+        if (f.isDefinedAt(v))
+          (k, f(v))
+        else
+          (k, v)
+    }
+    val vars = occurInfo.vars.map {
+      case (k, v) =>
+        if (f.isDefinedAt(v))
+          (k, f(v))
+        else
+          (k, v)
+    }
+    occurInfo.copy(defs = defs, vars = vars)
   }
 }
 
