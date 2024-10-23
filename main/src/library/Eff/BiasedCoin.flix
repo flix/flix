@@ -29,24 +29,27 @@ mod Eff {
 
     mod BiasedCoin {
 
-        import java.util.Random
+        import java.util.{Random => JRandom}
+
+        ///
+        /// Handles the `BiasedCoin` effect of the given function `f`.
+        ///
+        /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
+        ///
+        pub def handle(f: a -> b \ ef): (a -> b \ (ef - BiasedCoin) + IO) \ IO =
+            let rnd = new JRandom();
+            x -> try {
+                f(x)
+            } with BiasedCoin {
+                def flip(p, k) = k(rnd.nextDouble() <= p)
+            }
 
         ///
         /// Runs the `BiasedCoin` effect of the given function `f`.
         ///
         /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ ef - BiasedCoin + IO = {
-            // Currently try-with typing is broken, so fix it with checked_ecast
-            checked_ecast(try {
-                f()
-            } with BiasedCoin {
-                def flip(p, k) = unsafe {
-                    let rnd = new Random();
-                    k(rnd.nextDouble() <= p)
-                }
-            })
-        }
+        pub def run(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = handle(f)()
 
     }
 
