@@ -252,9 +252,9 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryWithRules(rules)
-        val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-        val o5 = o4.copy(defs = o4.defs + (sym0 -> DontInline))
-        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o5))
+        val o3 = o2.foldLeft(o1)(combineAllSeq)
+        val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
+        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
