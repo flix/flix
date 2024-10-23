@@ -488,6 +488,7 @@ object OccurrenceAnalyzer1 {
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
   private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    // TODO: Update with OnceInLambda and OnceInLocalDef
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -497,9 +498,12 @@ object OccurrenceAnalyzer1 {
 
   /**
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
-    * ManyBranches can be IfThenElse, Branches, and SelectChannel
+    * ManyBranches can be
+    * - [[OccurrenceAst1.Expr.IfThenElse]]
+    * - [[OccurrenceAst1.Expr.Match]]
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    // TODO: Update with OnceInLambda and OnceInLocalDef
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -511,18 +515,21 @@ object OccurrenceAnalyzer1 {
     case _ => Many
   }
 
+  // TODO: Add doc
   private def captureInLambda(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
       case Once => OnceInLambda
     }
   }
 
+  // TODO: Add doc
   private def captureInLocalDef(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
       case Once => OnceInLocalDef
     }
   }
 
+  // TODO: Add doc
   private def update(occurInfo: OccurInfo)(f: PartialFunction[Occur, Occur]): OccurInfo = {
     val defs = occurInfo.defs.map {
       case (k, v) =>
