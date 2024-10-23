@@ -60,6 +60,14 @@ object OccurrenceAnalyzer1 {
     def -(varSym: VarSym): OccurInfo = {
       this.copy(vars = this.vars - varSym)
     }
+
+    def getOrElse(defnSym: DefnSym, default: => Occur): Occur = {
+      this.defs.getOrElse(defnSym, default)
+    }
+
+    def getOrElse(varSym: VarSym, default: => Occur): Occur = {
+      this.vars.getOrElse(varSym, default)
+    }
   }
 
   private def increment(occurInfo: OccurInfo): OccurInfo = {
@@ -88,7 +96,11 @@ object OccurrenceAnalyzer1 {
 
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     ds.foldLeft(Map.empty[DefnSym, OccurrenceAst1.Def]) {
-      case (macc, defn) => macc + (defn.sym -> defn.copy(context = defn.context.copy(occur = defOccur.getOrElse(defn.sym, Dead))))
+      case (macc, defn) =>
+        val occur = defOccur.getOrElse(defn.sym, Dead)
+        val newContext = defn.context.copy(occur = occur)
+        val defWithContext = defn.copy(context = newContext)
+        macc + (defn.sym -> defWithContext)
     }
   }
 
@@ -97,7 +109,7 @@ object OccurrenceAnalyzer1 {
     */
   private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
     val (e, oi) = visitExp(defn0.sym, defn0.exp)
-    val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> oi.vars.getOrElse(p.sym, Dead))
+    val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> oi.getOrElse(p.sym, Dead))
     // Def consists of a single direct call to a def
     val isDirectCall = e match { // TODO: Refactor into function, these are base cases along with ApplyLocalDef, add recursive case for LocalDef
       case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
@@ -119,7 +131,7 @@ object OccurrenceAnalyzer1 {
         case Occur.DontInline => false
       }
     }
-    val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn0.sym, Dead), oi.size, isSelfRecursive)
+    val defContext = DefContext(isDirectCall, oi.getOrElse(defn0.sym, Dead), oi.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext, defn0.loc), oi)
   }
@@ -204,7 +216,7 @@ object OccurrenceAnalyzer1 {
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
-        val occur = o3.vars.getOrElse(sym, Dead)
+        val occur = o3.getOrElse(sym, Dead)
         val o4 = o3 - sym
         (OccurrenceAst1.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
 
@@ -214,7 +226,7 @@ object OccurrenceAnalyzer1 {
         val (e1, o1) = visit(exp1) // TODO: Map every Once to OnceInLocalDef unless they are bound by formal params
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
-        val occur = o3.vars.getOrElse(sym, Dead)
+        val occur = o3.getOrElse(sym, Dead)
         val o4 = o3 - sym
         (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o4))
 
