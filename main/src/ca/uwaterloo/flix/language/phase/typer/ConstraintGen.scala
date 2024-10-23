@@ -683,9 +683,9 @@ object ConstraintGen {
 
       case Expr.Without(exp, effSymUse, _) =>
         //
-        // e: tpe \ eff - effSymUse
+        // e: tpe \ eff - effSym
         // -------------------------
-        // e without effSymUse : tpe
+        // e without effSym : tpe
         //
         val (tpe, eff) = visitExp(exp)
         val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
