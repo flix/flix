@@ -188,7 +188,7 @@ object OccurrenceAst1 {
     case object Many extends Occur
 
     /**
-      * Represents a variable that occurs in more than one branch, e.g. match cases.
+      * Represents a variable that occurs in more than one branch, e.g., match cases, but never inside a lambda abstraction or local def.
       */
     case object ManyBranch extends Occur
 
