@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, MonoAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -245,7 +245,7 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryCatchRules(rules)
-        val o3 = o2.foldLeft(o1)(combineInfo)
+        val o3 = combineInfo(o1, o2)
         val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
         (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o4))
 
@@ -288,11 +288,15 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
-    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], List[OccurInfo]) = rules0.map {
-      case MonoAst.CatchRule(sym, clazz, exp) =>
-        val (e, o) = visit(exp)
-        (OccurrenceAst1.CatchRule(sym, clazz, e), o)
-    }.unzip
+    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], OccurInfo) = {
+      val (rs, o) = rules0.map {
+        case MonoAst.CatchRule(sym, clazz, exp) =>
+          val (e, o) = visit(exp)
+          (OccurrenceAst1.CatchRule(sym, clazz, e), o)
+      }.unzip
+      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
+      (rs, o1)
+    }
 
     def visitTryWithRules(rules0: List[MonoAst.HandlerRule]): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
       val (rs, o) = rules0.map {
@@ -331,7 +335,7 @@ object OccurrenceAnalyzer1 {
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
   private def combineInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
-    combineAll(o1, o2, combineSeq)
+    combineAll(o1, o2, combine)
   }
 
   /**
@@ -360,13 +364,13 @@ object OccurrenceAnalyzer1 {
     * Combines all [[OccurInfo]] in `os` and maps each [[DefnSym]] to its corresponding [[OccurInfo]].
     */
   private def combineAll(os: Iterable[OccurInfo]): Map[DefnSym, Occur] = {
-    os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
+    os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
   }
 
   /**
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
-  private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+  private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
