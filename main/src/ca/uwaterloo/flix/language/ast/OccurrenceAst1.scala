@@ -30,6 +30,7 @@ object OccurrenceAst1 {
 
   case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
+  /** Formal parameters have been moved out since [[Def]] and [[Op]] now have different types of formal parameters. */
   case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, functionType: Type, retTpe: Type, eff: Type)
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
