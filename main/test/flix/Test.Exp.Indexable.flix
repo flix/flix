@@ -3,37 +3,37 @@ mod Test.Exp.Indexable {
     @Test
     def array01(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> a[0] == 1)
+        handler(() -> a[0] == 1)
     }
 
     @Test
     def array02(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> a[1] == 2)
+        handler(() -> a[1] == 2)
     }
 
     @Test
     def array03(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> a[2] == 3)
+        handler(() -> a[2] == 3)
     }
 
     @Test
     def array04(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> a[3] == 4)
+        handler(() -> a[3] == 4)
     }
 
     @Test
     def array05(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not regionedHandler(rc, () -> a[4] == -1)
+        not handler(() -> a[4] == -1)
     }
 
     @Test
     def array06(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not regionedHandler(rc, () -> a[-1] == -1)
+        not handler(() -> a[-1] == -1)
     }
 
     @Test
@@ -124,13 +124,13 @@ mod Test.Exp.Indexable {
     @Test
     def multiple02(): Bool = region rc {
         let v = Vector#{Vector#{Array#{1, 2, 3, 4} @ rc}};
-        regionedHandler(rc, () -> v[0][0][2] == 3)
+        handler(() -> v[0][0][2] == 3)
     }
 
     @Test
     def multiple03(): Bool = region rc {
         let v = Vector#{Array#{Map#{0 => 1, 1 => 2, 2 => 3, 4 => 4}} @ rc};
-        regionedHandler(rc, () -> v[0][0][2] == 3)
+        handler(() -> v[0][0][2] == 3)
     }
 
     @Test
@@ -142,17 +142,7 @@ mod Test.Exp.Indexable {
             v = Vector#{() -> Vector#{{ r = { g = () -> Map#{0 => 1, 2 => 3} } }}}
         }
 
-    def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound - a): Bool = {
-        try {
-            f()
-        } with OutOfBounds {
-            def outOfBounds(_, _) = false
-        } with KeyNotFound {
-            def keyNotFound(_, _) = false
-        }
-    }
-
-    def regionedHandler(_: Region[rc], f: Unit -> Bool \ rc + OutOfBounds + KeyNotFound - a): Bool = {
+    def handler(f: Unit -> Bool \ ef): Bool \ ef - OutOfBounds - KeyNotFound = {
         try {
             f()
         } with OutOfBounds {

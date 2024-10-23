@@ -681,10 +681,15 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Without(exp, _, _) =>
-        // We ignore the `without` here.
-        // TODO EFF-MIGRATION Use set subtraction when we have set effects.
+      case Expr.Without(exp, effSymUse, _) =>
+        //
+        // e: tpe \ eff - effSym
+        // -------------------------
+        // e without effSym : tpe
+        //
         val (tpe, eff) = visitExp(exp)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
+        c.unifyType(eff, effWithoutSym, effSymUse.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -707,24 +712,35 @@ object ConstraintGen {
         (resultTpe, resultEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
+        //
+        //     Γ ⊢ e: e_t \ e_ef
+        // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
+        //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
+        // ---------------------------------------------------------------------
+        // Γ ⊢ try e with Eff {
+        //   def op1(op1x1, .., k1) = e1
+        //   def op2(op2x1, .., k2) = e2
+        //   ..
+        // }: e_t \ k_ef
+        //
+        // where:
+        // eff Eff {
+        //  def op1(op1x1: op1t1, ..): op1t
+        //  def op2(op2x1: op2t2, ..): op2t
+        //  ..
+        // }
+        //
         val (tpe, eff) = visitExp(exp)
-        val continuationEffect = Type.freshVar(Kind.Eff, loc)
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffect, loc)).unzip
+        val continuationEffectVar = Type.freshVar(Kind.Eff, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
         c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
-
-        // TODO ASSOC-TYPES The types used here are not correct.
-        // TODO ASSOC-TYPES We should use set subtraction instead.
-        // We subtract the handled effect from the body
-        // Note: Does not work for polymorphic effects.
-        val correctedBodyEff = c.purifyEff(effUse.sym, eff)
-
-        // The continuation effect is the effect of all the rule bodies, plus the effect of the try-body
-        c.unifyType(continuationEffect, Type.mkUnion(effs, loc), loc) // TODO temp simplification: ignoring try-body
+        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        // Subtract the effect from the body effect and add the handler effects.
+        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        c.unifyType(continuationEffectVar, continuationEffect, loc)
         val resultTpe = tpe
-
-        // TODO ASSOC-TYPES should be continuationEffect
-        val resultEff = Type.mkUnion(effs, loc) // TODO temp simplification
+        val resultEff = continuationEffect
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
