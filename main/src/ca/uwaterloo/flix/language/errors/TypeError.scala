@@ -591,12 +591,12 @@ object TypeError {
     *
     * @param loc the location where the error occurred.
     */
-  case class TooComplex(loc: SourceLocation) extends TypeError {
-    def summary: String = s"Type inference too complex."
+  case class TooComplex(msg: String, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Type inference too complex: $msg"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> ${red("Type inference failed due to too complex unification.")}'.
+      s""">> ${red(s"Type inference failed due to too complex unification: $msg")}'.
          |
          |Try to break your function into smaller functions.
          |

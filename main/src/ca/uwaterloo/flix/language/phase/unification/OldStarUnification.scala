@@ -85,7 +85,10 @@ object OldStarUnification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-    case (Kind.Eff, Kind.Eff) => EffUnification.unify(tpe1, tpe2, renv)
+    case (Kind.Eff, Kind.Eff) => EffUnification3.unify(tpe1, tpe2, scope, renv).map {
+      case Some(subst) => (subst, Nil)
+      case None => (Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
+    }
 
     case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 

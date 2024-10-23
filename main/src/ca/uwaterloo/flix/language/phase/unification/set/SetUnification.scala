@@ -424,8 +424,7 @@ object SetUnification {
       // {},
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
-        // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
+        val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
         Some(Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
