@@ -212,7 +212,7 @@ object ConstraintSolver {
 
     while (progress) {
       if (count >= flix.options.xiterations) {
-        return Result.Err(TypeError.TooComplex(constrs.head.loc))
+        return Result.Err(TypeError.TooComplex(s"more than ${flix.options.xiterations} iterations", constrs.head.loc))
       }
 
       count += 1
@@ -660,8 +660,8 @@ object ConstraintSolver {
       case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
         TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
 
-      case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-        TypeError.TooComplex(loc)
+      case (UnificationError.TooComplex(msg, _), Provenance.Match(_, _, loc)) =>
+        TypeError.TooComplex(msg, loc)
 
       case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
         TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
