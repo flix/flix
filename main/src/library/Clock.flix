@@ -43,12 +43,11 @@ mod Clock {
     ///
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ ef - Clock + IO = {
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
+    pub def run(f: Unit -> a \ ef): a \ (ef - Clock) + IO =
+        try {
             f()
         } with Clock {
-            def currentTime(u, k) = unsafe {
+            def currentTime(u, k) = {
                 let time = System.currentTimeMillis();
                 let ns = JTimeUnit.MILLISECONDS;
                 match u {
@@ -61,7 +60,6 @@ mod Clock {
                     case TimeUnit.Seconds       => k(ns.toSeconds(time))
                 }
             }
-        })
-    }
+        }
 
 }
