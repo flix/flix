@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
+import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException}
 
 import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -436,10 +436,10 @@ object SetFormula {
     // univ ∩ es1 ∩ !es2 ∩ es3 ∩ !es4 ∩ ..       (neutral intersection formula)
     // = (univ ∩ es1 ∩ es3 ∩ !es2 ∩ !es4) ∩ ..   (intersection associativity)
     // = (univ ∩ es1 ∩ es3 - es2 - es4) ∩ ..
-    // So we keep one CofiniteIntSet that represents both element sets -
+    // So we keep one CofiniteSet that represents both element sets -
     // intersecting positive elems and differencing negative elements.
 
-    var elemPos0 = CofiniteIntSet.universe
+    var elemPos0: CofiniteSet[Int] = CofiniteSet.universe
     val cstsPos = mutable.Set.empty[Cst]
     val varsPos = mutable.Set.empty[Var]
     val cstsNeg = mutable.Set.empty[Cst]
@@ -462,10 +462,10 @@ object SetFormula {
           if (cstsPos.contains(c)) return Empty
           cstsNeg += c
         case ElemSet(s) =>
-          elemPos0 = CofiniteIntSet.intersection(elemPos0, s)
+          elemPos0 = CofiniteSet.intersection(elemPos0, s)
           if (elemPos0.isEmpty) return Empty
         case Compl(ElemSet(s)) =>
-          elemPos0 = CofiniteIntSet.difference(elemPos0, s)
+          elemPos0 = CofiniteSet.difference(elemPos0, s)
           if (elemPos0.isEmpty) return Empty
         case x@Var(_) =>
           if (varsNeg.contains(x)) return Empty
@@ -476,7 +476,7 @@ object SetFormula {
         case Inter(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
           // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
-            elemPos0 = CofiniteIntSet.difference(elemPos0, e.s)
+            elemPos0 = CofiniteSet.difference(elemPos0, e.s)
             if (elemPos0.isEmpty) return Empty
           }
           for (x <- cstsNeg1) {
@@ -497,7 +497,7 @@ object SetFormula {
     }
     // Split into pos/neg elements.
     val (elemPos, elemNeg) = elemPos0 match {
-      case CofiniteIntSet.Set(s) =>
+      case CofiniteSet.Set(s) =>
         if (s.isEmpty) {
           // empty ∩ ..
           // = empty       (idempotent intersection formula)
@@ -508,7 +508,7 @@ object SetFormula {
           // s ∩ ..
           (Some(ElemSet(s)), None)
         }
-      case CofiniteIntSet.Compl(s) =>
+      case CofiniteSet.Compl(s) =>
         if (s.isEmpty) {
           // !empty ∩ ..
           // = univ ∩ ..   (complement distribution)
@@ -561,12 +561,12 @@ object SetFormula {
     // = (empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ ..   (intersection associativity)
     // = !!(empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ .. (double complement)
     // = !(univ ∩ !es1 ∩ !es3 ∩ es2 ∩ es4) ∪ .. (double complement)
-    // So we keep one CofiniteIntSet that represents both element sets -
+    // So we keep one CofiniteSet that represents both element sets -
     // differencing positive elems and intersecting negative elements.
 
     val cstsPos = mutable.Set.empty[Cst]
     val varsPos = mutable.Set.empty[Var]
-    var elemNeg0 = CofiniteIntSet.universe
+    var elemNeg0: CofiniteSet[Int] = CofiniteSet.universe
     val cstsNeg = mutable.Set.empty[Cst]
     val varsNeg = mutable.Set.empty[Var]
     val other = mutable.ListBuffer.empty[SetFormula]
@@ -590,10 +590,10 @@ object SetFormula {
           if (cstsPos.contains(x)) return Univ
           cstsNeg += x
         case ElemSet(s) =>
-          elemNeg0 = CofiniteIntSet.difference(elemNeg0, s)
+          elemNeg0 = CofiniteSet.difference(elemNeg0, s)
           if (elemNeg0.isEmpty) return Univ
         case Compl(ElemSet(s)) =>
-          elemNeg0 = CofiniteIntSet.intersection(elemNeg0, s)
+          elemNeg0 = CofiniteSet.intersection(elemNeg0, s)
           if (elemNeg0.isEmpty) return Univ
         case x@Var(_) =>
           if (varsNeg.contains(x)) return Univ
@@ -604,7 +604,7 @@ object SetFormula {
         case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
           // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
-            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, e.s)
+            elemNeg0 = CofiniteSet.intersection(elemNeg0, e.s)
             if (elemNeg0.isEmpty) return Univ
           }
           for (x <- cstsNeg1) {
@@ -625,7 +625,7 @@ object SetFormula {
     }
     // Split into pos/neg elements.
     val (elemPos, elemNeg) = elemNeg0 match {
-      case CofiniteIntSet.Set(s) =>
+      case CofiniteSet.Set(s) =>
         if (s.isEmpty) {
           // !empty ∪ ..
           // = univ ∪ ..   (complement distribution)
@@ -637,7 +637,7 @@ object SetFormula {
           // !s ∪ ..
           (None, Some(ElemSet(s)))
         }
-      case CofiniteIntSet.Compl(s) =>
+      case CofiniteSet.Compl(s) =>
         if (s.isEmpty) {
           // !!empty ∪ ..
           // = empty ∪ ..  (double complement)
@@ -967,11 +967,11 @@ object SetFormula {
   }
 
   /**
-    * Returns the [[CofiniteIntSet]] evaluation of `f`, interpreting unknowns in `univUnknowns` as
+    * Returns the [[CofiniteSet]] evaluation of `f`, interpreting unknowns in `univUnknowns` as
     * [[Univ]] and the rest as [[Empty]].
     */
-  private def evaluate(t: SetFormula, univUnknowns: SortedSet[Int]): CofiniteIntSet = {
-    import ca.uwaterloo.flix.util.CofiniteIntSet as CISet
+  private def evaluate(t: SetFormula, univUnknowns: SortedSet[Int]): CofiniteSet[Int] = {
+    import ca.uwaterloo.flix.util.CofiniteSet as CISet
     t match {
       case Univ => CISet.universe
       case Empty => CISet.empty
@@ -982,7 +982,7 @@ object SetFormula {
 
       case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
         // Evaluate the subformulas, exiting early in case the running set is `empty`.
-        var running = CISet.universe
+        var running: CISet[Int] = CISet.universe
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
           running = CISet.intersection(running, evaluate(t, univUnknowns))
           if (running.isEmpty) return CISet.empty
@@ -999,7 +999,7 @@ object SetFormula {
 
       case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
         // Evaluate the subformulas, exiting early in case the running set is `univ`.
-        var running = CISet.empty
+        var running: CISet[Int] = CISet.empty
         for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
           running = CISet.union(running, evaluate(t, univUnknowns))
           if (running.isUniverse) return CISet.universe

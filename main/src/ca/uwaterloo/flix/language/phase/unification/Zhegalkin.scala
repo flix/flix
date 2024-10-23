@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Inter, Union, Var}
-import ca.uwaterloo.flix.util.CofiniteIntSet
+import ca.uwaterloo.flix.util.CofiniteSet
 
 import scala.collection.immutable.SortedSet
 
@@ -31,23 +31,23 @@ object Zhegalkin {
   }
 
   /** Represents a set Zhegalkin constant (i.e. a set or co-set) */
-  case class ZhegalkinConstant(s: CofiniteIntSet) {
-    def compl: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.complement(s))
-    def union(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.union(s, that.s))
-    def inter(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.intersection(s, that.s))
+  case class ZhegalkinConstant(s: CofiniteSet[Int]) {
+    def compl: ZhegalkinConstant = ZhegalkinConstant(CofiniteSet.complement(s))
+    def union(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteSet.union(s, that.s))
+    def inter(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteSet.intersection(s, that.s))
 
     override def toString: String = {
       if (s.isEmpty) "Ø"
       else if (s.isUniverse) "𝓤"
       else s match {
-        case CofiniteIntSet.Set(xs) => s"{${xs.mkString(", ")}}"
-        case CofiniteIntSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
+        case CofiniteSet.Set(xs) => s"{${xs.mkString(", ")}}"
+        case CofiniteSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
       }
     }
   }
 
-  private val ZEmpty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
-  private val ZUniverse: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
+  private val ZEmpty: ZhegalkinConstant = ZhegalkinConstant(CofiniteSet.empty)
+  private val ZUniverse: ZhegalkinConstant = ZhegalkinConstant(CofiniteSet.universe)
 
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
   case class ZhegalkinTerm(cst: ZhegalkinConstant, vars: SortedSet[ZhegalkinVar]) {
@@ -155,7 +155,7 @@ object Zhegalkin {
     case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c))))) // We treat uninterpreted constants as vars.
     case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x)))))
     case ElemSet(s) =>
-      ZhegalkinExpr(ZhegalkinConstant(CofiniteIntSet.mkSet(s)), Nil)
+      ZhegalkinExpr(ZhegalkinConstant(CofiniteSet.mkSet(s)), Nil)
     case Compl(f) => zmkCompl(toZhegalkin(f))
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
