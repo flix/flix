@@ -257,7 +257,9 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) => ??? // TODO: Remember to combineBranch
 
-      case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) => ???
+      case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+        val (es, o) = visitExps(exps)
+        (OccurrenceAst1.Expr.VectorLit(es, tpe, eff, loc), increment(o))
 
       case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
 
@@ -299,15 +301,15 @@ object OccurrenceAnalyzer1 {
       (es, o2)
     }
 
-    def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
+    def combineApplyCloInfo(occurInfo0: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
       case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
-        val o = OccurInfo(Map(sym -> Once), Map.empty, 0)
-        combineInfo(occurInfo, o)
-      case _ => occurInfo
+        occurInfo0 :+ sym -> Once
+      case _ => occurInfo0
     }
 
     def combineAtomicOpInfo(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
-      case AtomicOp.Is(sym) if sym.name == "Choice" => occurInfo0.copy(defs = occurInfo0.defs + (sym0 -> DontInline))
+      case AtomicOp.Is(sym) if sym.name == "Choice" =>
+        occurInfo0 :+ sym0 -> DontInline
       case _ => occurInfo0
     }
 
