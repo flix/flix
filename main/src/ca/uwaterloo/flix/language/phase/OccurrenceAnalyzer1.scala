@@ -127,6 +127,8 @@ object OccurrenceAnalyzer1 {
       case Some(o) => o match {
         case Occur.Dead => false
         case Occur.Once => true
+        case Occur.OnceInLambda => false
+        case Occur.OnceInLocalDef => false
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
