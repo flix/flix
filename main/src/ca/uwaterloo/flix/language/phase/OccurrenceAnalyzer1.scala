@@ -255,7 +255,7 @@ object OccurrenceAnalyzer1 {
         val (e, o) = visit(exp)
         (OccurrenceAst1.Expr.Discard(e, eff, loc), increment(o))
 
-      case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) => ???
+      case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) => ??? // TODO: Remember to combineBranch
 
       case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) => ???
 
