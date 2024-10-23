@@ -110,7 +110,7 @@ object OccurrenceAnalyzer1 {
     }
     val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn0.sym, Dead), oi.size, isSelfRecursive)
     val spec = visitSpec(defn0.spec)
-    (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext), oi)
+    (OccurrenceAst1.Def(defn0.sym, fparams, spec, e, defContext, defn0.loc), oi)
   }
 
   private def visitEffects(effects0: Map[Symbol.EffectSym, MonoAst.Effect]): Map[Symbol.EffectSym, OccurrenceAst1.Effect] = {
@@ -124,15 +124,15 @@ object OccurrenceAnalyzer1 {
   }
 
   private def visitEffectOp(op0: MonoAst.Op): OccurrenceAst1.Op = op0 match {
-    case MonoAst.Op(sym, spec) =>
+    case MonoAst.Op(sym, spec, loc) =>
       val sp = visitSpec(spec)
       val fps = spec.fparams.map(visitFormalParam)
-      OccurrenceAst1.Op(sym, fps, sp)
+      OccurrenceAst1.Op(sym, fps, sp, loc)
   }
 
   private def visitSpec(spec0: MonoAst.Spec): OccurrenceAst1.Spec = spec0 match {
-    case MonoAst.Spec(doc, ann, mod, _, functionType, retTpe, eff, loc) =>
-      OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff, loc)
+    case MonoAst.Spec(doc, ann, mod, _, functionType, retTpe, eff) =>
+      OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff)
   }
 
   private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = ???

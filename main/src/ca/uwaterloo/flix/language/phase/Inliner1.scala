@@ -74,16 +74,16 @@ object Inliner1 {
     * Converts definition from [[OccurrenceAst1]] to [[MonoAst]].
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
-    case OccurrenceAst1.Def(sym, fparams, spec, exp, _) =>
+    case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
       val e = visitExp(exp, Map.empty)(root, flix)
       val sp = visitSpec(spec, fparams.map(_._1))
-      MonoAst.Def(sym, sp, e)
+      MonoAst.Def(sym, sp, e, loc)
   }
 
   private def visitSpec(spec0: OccurrenceAst1.Spec, fparams0: List[OccurrenceAst1.FormalParam]): MonoAst.Spec = spec0 match {
-    case OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff, loc) =>
+    case OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff) =>
       val fps = fparams0.map(visitFormalParam)
-      MonoAst.Spec(doc, ann, mod, fps, functionType, retTpe, eff, loc)
+      MonoAst.Spec(doc, ann, mod, fps, functionType, retTpe, eff)
   }
 
   private def visitStruct(struct0: OccurrenceAst1.Struct): MonoAst.Struct = struct0 match {
@@ -104,9 +104,9 @@ object Inliner1 {
   }
 
   private def visitEffectOp(op: OccurrenceAst1.Op): MonoAst.Op = op match {
-    case OccurrenceAst1.Op(sym0, fparams0, spec0) =>
+    case OccurrenceAst1.Op(sym0, fparams0, spec0, loc) =>
       val spec = visitSpec(spec0, fparams0)
-      MonoAst.Op(sym0, spec)
+      MonoAst.Op(sym0, spec, loc)
   }
 
   /**
