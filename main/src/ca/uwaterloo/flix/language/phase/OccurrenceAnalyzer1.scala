@@ -149,6 +149,7 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on `exp0`
     */
   private def visitExp(sym0: Symbol.DefnSym, exp0: MonoAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match { // TODO (refactor): Add local function `visit` that captures `sym0`
+    // TODO: Refactor (OccurrenceAst1.Expr, OccurInfo) into distinct type (in this phase) called OccurExpr so we can write val e = visitExp(exp)
     case MonoAst.Expr.Cst(cst, tpe, loc) =>
       (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
