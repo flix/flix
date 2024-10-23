@@ -264,6 +264,20 @@ object Inliner1 {
         MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
       }
 
+    case OccurrenceAst1.Expr.Discard(exp, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLength(exp, loc) => ???
+
+    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, subst0)
       val rs = rules.map {
@@ -433,6 +447,20 @@ object Inliner1 {
       val e1 = applySubst(exp1, env0)
       val e2 = applySubst(exp2, env0)
       MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Discard(exp, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.VectorLength(exp, loc) => ???
+
+    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) => ???
+
+    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = applySubst(exp, env0)
