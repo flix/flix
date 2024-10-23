@@ -231,7 +231,9 @@ object OccurrenceAnalyzer1 {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst1.Expr.Stm(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case MonoAst.Expr.Discard(exp, eff, loc) => ???
+    case MonoAst.Expr.Discard(exp, eff, loc) =>
+      val (e, o) = visitExp(sym0, exp)
+      (OccurrenceAst1.Expr.Discard(e, eff, loc), o.increaseSizeByOne())
 
     case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) => ???
 
