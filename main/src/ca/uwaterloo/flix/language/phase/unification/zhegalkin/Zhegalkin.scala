@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
