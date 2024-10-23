@@ -168,7 +168,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val (es, o) = visitExps(exps)
-        val o1 = combineAtomicOpInfo(sym0, op, o)
+        val o1 = combineAtomicOpInfo(op, o)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, purity, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
@@ -245,19 +245,14 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
-        val (rs, o2) = rules.map { // TODO: add helper function
-          case MonoAst.CatchRule(sym, clazz, exp) =>
-            val (e, o3) = visit(exp)
-            (OccurrenceAst1.CatchRule(sym, clazz, e), o3)
-        }.unzip
-        val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-        val withSym0 = o4.defs + (sym0 -> DontInline)
-        val o5 = o4.copy(defs = withSym0)
-        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o5))
+        val (rs, o2) = visitTryCatchRules(rules)
+        val o3 = o2.foldLeft(o1)(combineAllSeq)
+        val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
+        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
-        val (rs, o2) = rules.map { // TODO: add helper function
+        val (rs, o2) = rules.map {
           case MonoAst.HandlerRule(op, fparams, exp) =>
             val (e, o3) = visit(exp)
             val fps = fparams.map(visitFormalParam)
@@ -294,24 +289,26 @@ object OccurrenceAnalyzer1 {
       (es, o2)
     }
 
-    visit(exp00)
-  }
 
+    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], List[OccurInfo]) = rules0.map {
+      case MonoAst.CatchRule(sym, clazz, exp) =>
+        val (e, o3) = visit(exp)
+        (OccurrenceAst1.CatchRule(sym, clazz, e), o3)
+    }.unzip
 
-  private def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr) = {
-    exp0 match {
+    def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
       case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
         val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
         combineAllSeq(occurInfo, o4)
       case _ => occurInfo
     }
-  }
 
-  private def combineAtomicOpInfo(sym0: DefnSym, op0: AtomicOp, occurInfo0: OccurInfo) = {
-    op0 match {
+    def combineAtomicOpInfo(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" => occurInfo0.copy(defs = occurInfo0.defs + (sym0 -> DontInline))
       case _ => occurInfo0
     }
+
+    visit(exp00)
   }
 
   /**
