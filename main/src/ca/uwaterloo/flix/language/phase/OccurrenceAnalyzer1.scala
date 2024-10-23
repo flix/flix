@@ -273,19 +273,10 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.Discard(e, eff, loc), increment(o))
 
       case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) =>
-        val (e, o11) = visit(exp)
-        val (rs, o22) = rules.map {
-          case MonoAst.MatchRule(pat, guard, exp) =>
-            val (g, o1) = guard.map(visit).unzip
-            val (e, o2) = visit(exp)
-            val o3 = o1.map(combineInfo(_, o2)).getOrElse(o2) // TODO: refactor to combineInfoOpt
-            val (p, syms) = visitPattern(pat, o3)
-            val o4 = o3 -- syms
-            (OccurrenceAst1.MatchRule(p, g, e), o4)
-        }.unzip
-        val o3 = o22.foldLeft(OccurInfo.Empty)(combineInfoBranch)
-        val o4 = combineInfo(o11, o3)
-        (OccurrenceAst1.Expr.Match(e, rs, tpe, eff, loc), increment(o4))
+        val (e, o1) = visit(exp)
+        val (rs, o2) = visitMatchRules(rules)
+        val o3 = combineInfo(o1, o2)
+        (OccurrenceAst1.Expr.Match(e, rs, tpe, eff, loc), increment(o3))
 
       case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
@@ -351,6 +342,20 @@ object OccurrenceAnalyzer1 {
       case AtomicOp.Is(sym) if sym.name == "Choice" =>
         occurInfo0 :+ sym0 -> DontInline
       case _ => occurInfo0
+    }
+
+    def visitMatchRules(rules0: List[MonoAst.MatchRule]): (List[OccurrenceAst1.MatchRule], OccurInfo) = {
+      val (rs, o) = rules0.map {
+        case MonoAst.MatchRule(pat, guard, exp) =>
+          val (g, o1) = guard.map(visit).unzip
+          val (e, o2) = visit(exp)
+          val o3 = o1.map(combineInfo(_, o2)).getOrElse(o2) // TODO: refactor to combineInfoOpt
+          val (p, syms) = visitPattern(pat, o3)
+          val o4 = o3 -- syms
+          (OccurrenceAst1.MatchRule(p, g, e), o4)
+      }.unzip
+      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
+      (rs, o1)
     }
 
     def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], OccurInfo) = {
