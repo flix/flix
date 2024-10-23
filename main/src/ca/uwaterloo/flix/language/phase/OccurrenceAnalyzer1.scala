@@ -53,7 +53,7 @@ object OccurrenceAnalyzer1 {
       this.copy(defs = this.defs + kv)
     }
 
-    def +:(kv: (VarSym, Occur)): OccurInfo = {
+    def +(kv: (VarSym, Occur)): OccurInfo = {
       this.copy(vars = this.vars + kv)
     }
   }
@@ -188,15 +188,13 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, o1) = visitExps(exps)
-        val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
-        val o3 = combineInfo(o1, o2)
-        (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o3))
+        val o2 = o1 :+ sym -> Once
+        (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o2))
 
       case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
         val (es, o1) = visitExps(exps)
-        val o2 = OccurInfo(Map.empty, Map(sym -> Once), 1)
-        val o3 = combineInfo(o1, o2)
-        (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), increment(o3))
+        val o2 = o1 + (sym -> Once)
+        (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), increment(o2))
 
       case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
@@ -218,7 +216,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
-        val o2 = o1.copy(defs = o1.defs + (sym0 -> DontInline))
+        val o2 = o1 :+ sym0 -> DontInline
         (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), increment(o2))
 
       case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -253,16 +251,14 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryCatchRules(rules)
-        val o3 = combineInfo(o1, o2)
-        val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
-        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o4))
+        val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
+        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o3))
 
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryWithRules(rules)
-        val o3 = combineInfo(o1, o2)
-        val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
-        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o4))
+        val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
+        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o3))
 
       case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
