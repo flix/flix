@@ -108,6 +108,7 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
+    // TODO: Clean this up
     val (e, oi) = visitExp(defn0.sym, defn0.exp)
     val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> oi.get(p.sym))
     // Def consists of a single direct call to a def
