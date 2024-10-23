@@ -349,7 +349,7 @@ object OccurrenceAnalyzer1 {
         case MonoAst.MatchRule(pat, guard, exp) =>
           val (g, o1) = guard.map(visit).unzip
           val (e, o2) = visit(exp)
-          val o3 = o1.map(combineInfo(_, o2)).getOrElse(o2) // TODO: refactor to combineInfoOpt
+          val o3 = combineInfoOpt(o1, o2)
           val (p, syms) = visitPattern(pat, o3)
           val o4 = o3 -- syms
           (OccurrenceAst1.MatchRule(p, g, e), o4)
@@ -447,6 +447,14 @@ object OccurrenceAnalyzer1 {
   private def combineInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combine)
   }
+
+  /**
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    */
+  private def combineInfoOpt(o1: Option[OccurInfo], o2: OccurInfo): OccurInfo = {
+    o1.map(combineInfo(_, o2)).getOrElse(o2)
+  }
+
 
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
