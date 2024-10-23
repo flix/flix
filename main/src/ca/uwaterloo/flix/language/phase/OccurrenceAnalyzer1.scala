@@ -114,7 +114,7 @@ object OccurrenceAnalyzer1 {
   private def visitDef(defn0: MonoAst.Def): (OccurrenceAst1.Def, OccurInfo) = {
 
     /**
-      * Returns true iff `expr0` is a function call to a different function
+      * Returns true if `expr0` is a function call.
       */
     def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
       case OccurrenceAst1.Expr.ApplyDef(_sym, _exps, _, _, _, _) => true
@@ -129,21 +129,24 @@ object OccurrenceAnalyzer1 {
       case _ => false
     }
 
-    // TODO: Clean this up
-    val (exp, occurInfo) = visitExp(defn0.sym, defn0.exp)
-    val isSelfRecursive = occurInfo.defs.get(defn0.sym) match {
+    /**
+      * Returns true if `def0` occurs in `occurInfo` without being captured.
+      */
+    def isSelfRecursive(occurInfo: OccurInfo): Boolean = occurInfo.defs.get(defn0.sym) match {
       case None => false
       case Some(o) => o match {
         case Occur.Dead => false
         case Occur.Once => true
-        case Occur.OnceInLambda => false
+        case Occur.OnceInLambda => false // TODO: Is it allowed to be captured? If, so update doc and these two cases.
         case Occur.OnceInLocalDef => false
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
       }
     }
-    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, isSelfRecursive)
+
+    val (exp, occurInfo) = visitExp(defn0.sym, defn0.exp)
+    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, isSelfRecursive(occurInfo))
     val spec = visitSpec(defn0.spec)
     val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> occurInfo.get(p.sym))
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, exp, defContext, defn0.loc), occurInfo)
