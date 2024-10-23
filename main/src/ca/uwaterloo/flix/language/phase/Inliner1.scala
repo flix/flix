@@ -121,7 +121,8 @@ object Inliner1 {
     * Returns a [[MonoAst.Expr]]
     */
   private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
-    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) => MonoAst.Expr.Cst(cst, tpe, loc)
+    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
+      MonoAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
       subst0.get(sym) match {
@@ -192,12 +193,6 @@ object Inliner1 {
       val es = exps.map(visitExp(_, subst0))
       MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      val e3 = visitExp(exp3, subst0)
-      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
-
     case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       if (isDead(occur)) {
         if (isPure(exp1.eff)) {
@@ -247,6 +242,16 @@ object Inliner1 {
       val e2 = visitExp(exp2, subst0)
       MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
+    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+      val e = visitExp(exp, subst0)
+      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      val e3 = visitExp(exp3, subst0)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
     case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       // Case 1:
       // If `exp1` is pure, so it has no side effects, then it is safe to remove
@@ -258,10 +263,6 @@ object Inliner1 {
         val e2 = visitExp(exp2, subst0)
         MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
       }
-
-    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, subst0)
