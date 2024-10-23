@@ -38,14 +38,21 @@ mod Clock {
     ///
     pub def now(): Int64 \ Clock = Clock.currentTime(TimeUnit.Milliseconds)
 
-    ///
+   ///
     /// Runs the `Clock` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Clock) + IO =
+    pub def run(f: Unit -> a \ ef): a \ (ef - Clock) + IO = handle(f)()
+
+    ///
+    /// Handles the `Clock` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Clock` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Clock) + IO = x ->
         try {
-            f()
+            f(x)
         } with Clock {
             def currentTime(u, k) = {
                 let time = System.currentTimeMillis();
