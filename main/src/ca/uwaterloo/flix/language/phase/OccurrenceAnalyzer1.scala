@@ -174,26 +174,26 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (es, o2) = visitExps(exps)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         val o4 = combineApplyCloInfo(o3, exp)
         (OccurrenceAst1.Expr.ApplyClo(e, es, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, o1) = visitExps(exps)
         val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o3))
 
       case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
         val (es, o1) = visitExps(exps)
         val o2 = OccurInfo(Map.empty, Map(sym -> Once), 1)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), increment(o3))
 
       case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         val occur = o3.vars.getOrElse(sym, Dead)
         val o4 = o3.copy(vars = o3.vars - sym)
         (OccurrenceAst1.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
@@ -203,7 +203,7 @@ object OccurrenceAnalyzer1 {
         val fps = fparams.map(visitFormalParam)
         val (e1, o1) = visit(exp1) // TODO: Map every Once to OnceInLocalDef unless they are bound by formal params
         val (e2, o2) = visit(exp2)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         val occur = o3.vars.getOrElse(sym, Dead)
         val o4 = o3.copy(vars = o3.vars - sym)
         (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o4))
@@ -217,13 +217,13 @@ object OccurrenceAnalyzer1 {
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val (e3, o3) = visit(exp3)
-        val o4 = combineAllSeq(o1, combineAllBranch(o2, o3))
+        val o4 = combineInfo(o1, combineAllBranch(o2, o3))
         (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         (OccurrenceAst1.Expr.Stm(e1, e2, tpe, purity, loc), increment(o3))
 
       case MonoAst.Expr.Discard(exp, eff, loc) =>
@@ -245,14 +245,14 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryCatchRules(rules)
-        val o3 = o2.foldLeft(o1)(combineAllSeq)
+        val o3 = o2.foldLeft(o1)(combineInfo)
         val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
         (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o4))
 
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryWithRules(rules)
-        val o3 = combineAllSeq(o1, o2)
+        val o3 = combineInfo(o1, o2)
         val o4 = o3.copy(defs = o3.defs + (sym0 -> DontInline))
         (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o4))
 
@@ -272,14 +272,14 @@ object OccurrenceAnalyzer1 {
       */
     def visitExps(exps: List[MonoAst.Expr]): (List[OccurrenceAst1.Expr], OccurInfo) = {
       val (es, o1) = exps.map(visit).unzip
-      val o2 = o1.foldLeft(OccurInfo.Empty)(combineAllSeq)
+      val o2 = o1.foldLeft(OccurInfo.Empty)(combineInfo)
       (es, o2)
     }
 
     def combineApplyCloInfo(occurInfo: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
       case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
         val o = OccurInfo(Map(sym -> Once), Map.empty, 0)
-        combineAllSeq(occurInfo, o)
+        combineInfo(occurInfo, o)
       case _ => occurInfo
     }
 
@@ -301,7 +301,7 @@ object OccurrenceAnalyzer1 {
           val fps = fparams.map(visitFormalParam)
           (OccurrenceAst1.HandlerRule(op, fps, e), o)
       }.unzip
-      val o1 = o.foldLeft(OccurInfo.Empty)(combineAllSeq)
+      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
       (rs, o1)
     }
 
@@ -312,7 +312,7 @@ object OccurrenceAnalyzer1 {
           val (c, o) = visit(clo)
           (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, purity, loc), increment(o))
       }.unzip
-      val o1 = o.foldLeft(OccurInfo.Empty)(combineAllSeq)
+      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
       (ms, o1)
     }
 
@@ -330,7 +330,7 @@ object OccurrenceAnalyzer1 {
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combineAllSeq(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+  private def combineInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineSeq)
   }
 
