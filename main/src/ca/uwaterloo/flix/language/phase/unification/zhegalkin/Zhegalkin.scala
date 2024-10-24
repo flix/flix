@@ -24,8 +24,15 @@ import scala.collection.immutable.SortedSet
 object Zhegalkin {
 
   /** Represents a variable. */
-  case class ZhegalkinVar(v: Int) extends Ordered[ZhegalkinVar] {
-    override def toString: String = s"x$v"
+  case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
+    override def toString: String = if (flexible) s"x$v" else s"!x$v"
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: ZhegalkinVar => this.v == that.v
+      case _ => false
+    }
+
+    override def hashCode(): Int = v
 
     override def compare(that: ZhegalkinVar): Int = this.v.compare(that.v)
   }
@@ -184,8 +191,8 @@ object Zhegalkin {
   def toZhegalkin(f: SetFormula): ZhegalkinExpr = f match {
     case SetFormula.Univ => ZhegalkinExpr(ZUniverse, Nil)
     case SetFormula.Empty => ZhegalkinExpr(ZEmpty, Nil)
-    case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c))))) // We treat uninterpreted constants as vars.
-    case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x)))))
+    case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinConstant(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => zmkCompl(toZhegalkin(f))
@@ -197,6 +204,35 @@ object Zhegalkin {
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
       polys.reduce(mkUnion)
+  }
+
+  /**
+    * Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula.
+    */
+  def toSetFormula(z: ZhegalkinExpr): SetFormula = z match {
+    case ZhegalkinExpr(cst, terms) => terms.foldLeft(toSetFormula(cst)) {
+      case (acc, term) => SetFormula.mkXor(acc, toSetFormula(term))
+    }
+  }
+
+  /**
+    * Returns the given Zhegalkin term `c ∩ x1 ∩ x2 ∩ ... ∩ xn` as SetFormula.
+    */
+  def toSetFormula(t: ZhegalkinTerm): SetFormula = t match {
+    case ZhegalkinTerm(cst, vars) => vars.foldLeft(toSetFormula(cst)) {
+      case (acc, x) if x.flexible => SetFormula.mkInter(acc, SetFormula.Var(x.v))
+      case (acc, x) => SetFormula.mkInter(acc, SetFormula.Cst(x.v))
+    }
+  }
+
+  /**
+    * Returns the given Zhegalkin constant as a SetFormula.
+    */
+  def toSetFormula(c: ZhegalkinConstant): SetFormula = c match {
+    case ZhegalkinConstant(s) => s match {
+      case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
+      case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
+    }
   }
 
 }
