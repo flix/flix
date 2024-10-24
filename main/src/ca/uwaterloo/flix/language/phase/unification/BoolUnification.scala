@@ -17,8 +17,10 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolSubstitution, SveAlgorithm}
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 /**
  * An implementation of Boolean Unification is for the `Bool` kind.
@@ -65,63 +67,29 @@ object BoolUnification {
     //
     // Run the expensive Boolean unification algorithm.
     //
-    booleanUnification(f1, f2, renv) match {
+    SveAlgorithm.unify(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => subst.toTypeSubstitution(env).toOk
+      case Some(subst) => toTypeSubstitution(subst, env).toOk
     }
   }
 
   /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+   * Converts this formula substitution into a type substitution
    */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
-                                   (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
-    // The boolean expression we want to show is 0.
-    val query = alg.mkXor(tpe1, tpe2)
-
-    // Compute the variables in the query.
-    val typeVars = alg.freeVars(query).toList
-
-    // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filterNot(renv.contains)
-
-    // Determine the order in which to eliminate the variables.
-    val freeVars = computeVariableOrder(flexibleTypeVars)
-
-    // Eliminate all variables.
-    try {
-      Some(successiveVariableElimination(query, freeVars))
-    } catch {
-      case _: BoolUnificationException => None
+  def toTypeSubstitution[F](s: BoolSubstitution[F], env: Bimap[BoolFormula.IrreducibleEff, Int])(implicit alg: BoolAlg[F]): Substitution = {
+    val map = s.m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
+        val tvar = k match {
+          case BoolFormula.IrreducibleEff.Var(sym) => sym
+          case BoolFormula.IrreducibleEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.IrreducibleEff.Assoc(sym, arg) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.IrreducibleEff.JvmToEff(t) => throw InternalCompilerException(s"unexpected substituted effect: ${t}", SourceLocation.Unknown)
+        }
+        val v = alg.toType(v0, env)
+        (tvar, v)
     }
-  }
-
-  /**
-   * Determine the variable order.
-   */
-  private def computeVariableOrder(l: List[Int]): List[Int] = l
-
-  /**
-   * Performs success variable elimination on the given boolean expression `f`.
-   *
-   * `flexvs` is the list of remaining flexible variables in the expression.
-   */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
-    case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!alg.satisfiable(f))
-        BoolSubstitution.empty
-      else
-        throw BoolUnificationException()
-
-    case x :: xs =>
-      val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
-      val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(f)
-      val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
-
-      val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
-      val st = BoolSubstitution.singleton(x, f1)
-      st ++ se
+    Substitution(map)
   }
 
 }

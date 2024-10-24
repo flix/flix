@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.phase.unification.set.{TestSetFormula, TestSet
 import org.scalatest.Suites
 
 class UnificationSuite extends Suites(
-  new TestBoolFormulaTable,
   new TestFastBoolUnification,
   new TestIncremental,
   new TestSetFormula,
