@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
@@ -24,8 +25,15 @@ import scala.collection.immutable.SortedSet
 object Zhegalkin {
 
   /** Represents a variable. */
-  case class ZhegalkinVar(v: Int) extends Ordered[ZhegalkinVar] {
-    override def toString: String = s"x$v"
+  case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
+    override def toString: String = if (flexible) s"x$v" else s"!x$v"
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: ZhegalkinVar => this.v == that.v
+      case _ => false
+    }
+
+    override def hashCode(): Int = v
 
     override def compare(that: ZhegalkinVar): Int = this.v.compare(that.v)
   }
@@ -146,8 +154,6 @@ object Zhegalkin {
     mkXor(mkXor(a, b), mkInter(a, b))
   }
 
-  def map(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = mapExpr(f, z)
-
   //
   // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
   //
@@ -184,8 +190,8 @@ object Zhegalkin {
   def toZhegalkin(f: SetFormula): ZhegalkinExpr = f match {
     case SetFormula.Univ => ZhegalkinExpr(ZUniverse, Nil)
     case SetFormula.Empty => ZhegalkinExpr(ZEmpty, Nil)
-    case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c))))) // We treat uninterpreted constants as vars.
-    case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x)))))
+    case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinConstant(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => zmkCompl(toZhegalkin(f))
@@ -197,6 +203,57 @@ object Zhegalkin {
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
       polys.reduce(mkUnion)
+  }
+
+  /**
+    * Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula.
+    */
+  def toSetFormula(z: ZhegalkinExpr): SetFormula = z match {
+    case ZhegalkinExpr(cst, terms) => terms.foldLeft(toSetFormula(cst)) {
+      case (acc, term) => SetFormula.mkXor(acc, toSetFormula(term))
+    }
+  }
+
+  /**
+    * Returns the given Zhegalkin term `c ∩ x1 ∩ x2 ∩ ... ∩ xn` as SetFormula.
+    */
+  def toSetFormula(t: ZhegalkinTerm): SetFormula = t match {
+    case ZhegalkinTerm(cst, vars) => vars.foldLeft(toSetFormula(cst)) {
+      case (acc, x) if x.flexible => SetFormula.mkInter(acc, SetFormula.Var(x.v))
+      case (acc, x) => SetFormula.mkInter(acc, SetFormula.Cst(x.v))
+    }
+  }
+
+  /**
+    * Returns the given Zhegalkin constant as a SetFormula.
+    */
+  def toSetFormula(c: ZhegalkinConstant): SetFormula = c match {
+    case ZhegalkinConstant(s) => s match {
+      case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
+      case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
+    }
+  }
+
+  object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
+    override def isVar(f: ZhegalkinExpr): Boolean = ??? // TODO
+
+    override def isEquivBot(f: ZhegalkinExpr): Boolean = ??? // TODO
+
+    override def mkBot: ZhegalkinExpr = ZhegalkinExpr(ZEmpty, Nil)
+
+    override def mkTop: ZhegalkinExpr = ZhegalkinExpr(ZUniverse, Nil)
+
+    override def mkVar(id: Int): ZhegalkinExpr = ??? // TODO
+
+    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ??? // TODO
+
+    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = mkUnion(f1, f2)
+
+    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ??? // TODO
+
+    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = ??? // TODO
+
+    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = mapExpr(fn, f) // TODO
   }
 
 }
