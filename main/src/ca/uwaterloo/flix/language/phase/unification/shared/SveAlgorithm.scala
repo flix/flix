@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase.unification.shared
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.unification.BoolAlg
 
 object SveAlgorithm {
 
@@ -57,7 +56,7 @@ object SveAlgorithm {
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F], flix: Flix): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!alg.satisfiable(f))
+      if (!alg.isSatisfiable(f))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()
@@ -67,7 +66,7 @@ object SveAlgorithm {
       val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(alg)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
-      val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
+      val f1 = alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }

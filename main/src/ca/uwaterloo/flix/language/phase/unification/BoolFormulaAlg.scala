@@ -15,10 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 
 import scala.collection.immutable.SortedSet
 
@@ -36,7 +34,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => false
   }
 
-  override def satisfiable(f: BoolFormula): Boolean = f match {
+  override def isSatisfiable(f: BoolFormula): Boolean = f match {
     case BoolFormula.True => true
     case BoolFormula.False => false
     case BoolFormula.Var(_) => true
@@ -216,24 +214,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Var(sym) => fn(sym)
   }
 
-  override def toType(f: BoolFormula, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = f match {
-    case BoolFormula.True => Type.True
-    case BoolFormula.False => Type.False
-    case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
-    case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
-    case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
-    case BoolFormula.Var(id) => env.getBackward(id) match {
-      case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
-      case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
-    }
-  }
-
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
-
-  override def minimize(f: BoolFormula): BoolFormula = f
 
   /**
     * Enumerates all assignments to `f` and checks if one of them is satisfiable.
