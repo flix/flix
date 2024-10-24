@@ -60,17 +60,26 @@ object SetUnification {
     *   - `onEnterPhase(phaseName: String, state: State): Unit`
     *   - `enExitPhase(state: State): Unit`
     */
-  final case class SolverListener(onEnterPhase: (String, State) => Unit, onExitPhase: (State, Boolean) => Unit)
+  final case class SolverListener(
+                                   onEnterPhase: (String, State) => Unit,
+                                   onExitPhase: (State, Boolean) => Unit,
+                                   onSveRecCall: SetFormula => Unit
+                                 )
 
   final object SolverListener {
 
     /** The [[SolverListener]] that does nothing. */
-    val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
+    val doNothing: SolverListener = SolverListener(
+      (_, _) => (),
+      (_, _) => (),
+      _ => ()
+    )
 
     def stringListener(p: String => Unit): SolverListener = {
       SolverListener(
         onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
-        onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst))
+        onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst)),
+        onSveRecCall = f => p(s"sve call: $f")
       )
     }
   }
@@ -177,7 +186,7 @@ object SetUnification {
   }
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
-  private def svePermutations(eqs0: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def svePermutations(eqs0: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val eqs = eqs0.map{
       case Equation(f1, f2, status, loc) =>
         Equation.mk(minn(f1), minn(f2), loc, status)
@@ -507,7 +516,7 @@ object SetUnification {
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  private def sve(eq: Equation)(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList
     try {
@@ -531,7 +540,7 @@ object SetUnification {
     * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
     * checking.
     */
-  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit opts: Options): SetSubstitution = fvs match {
+  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): SetSubstitution = fvs match {
     case Nil =>
       // `fvs` is empty so `f` has no variables.
       // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
@@ -543,6 +552,7 @@ object SetUnification {
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
       val recFormula = propagation(mkInter(f0, f1))
+      listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
       val xFormula = minn(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))

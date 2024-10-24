@@ -33,13 +33,13 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
     * Applies this substitution tree to the given type constraint.
     */
   def apply(constr: TypeConstraint2): TypeConstraint2 = constr match {
-    case TypeConstraint2.Equality(tpe1, tpe2) => TypeConstraint2.Equality(root(tpe1), root(tpe2))
-    case TypeConstraint2.Trait(sym, tpe) => TypeConstraint2.Trait(sym, root(tpe))
-    case TypeConstraint2.Purification(sym, eff1, eff2, nested) =>
+    case TypeConstraint2.Equality(tpe1, tpe2, loc) => TypeConstraint2.Equality(root(tpe1), root(tpe2), loc)
+    case TypeConstraint2.Trait(sym, tpe, loc) => TypeConstraint2.Trait(sym, root(tpe), loc)
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
       // Use the root substitution for the external effects.
       // Use the appropriate branch substitution for the nested constraints.
       // MATT what to do if sym not in branches?
-      TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply))
+      TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply), loc)
   }
 
   /**

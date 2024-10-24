@@ -25,8 +25,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
-import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.Subeffecting.Disabled
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -198,7 +197,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
@@ -642,7 +641,7 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.eff == eff && flix.options.xsubeffecting == Disabled)
+          if (exp.eff == eff && flix.options.xsubeffecting.isEmpty)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)
