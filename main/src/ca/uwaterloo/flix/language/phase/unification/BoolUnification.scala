@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.collection.immutable.SortedSet
+
 /**
  * An implementation of Boolean Unification is for the `Bool` kind.
  */
@@ -57,11 +59,11 @@ object BoolUnification {
     //
     // Translate the types into formulas.
     //
-    val env = alg.getEnv(List(tpe1, tpe2))
+    val env = getEnv(List(tpe1, tpe2))
     val f1 = fromType(tpe1, env)
     val f2 = fromType(tpe2, env)
 
-    val renv = alg.liftRigidityEnv(renv0, env)
+    val renv = liftRigidityEnv(renv0, env)
 
     //
     // Run the expensive Boolean unification algorithm.
@@ -70,6 +72,41 @@ object BoolUnification {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) => toTypeSubstitution(subst, env).toOk
     }
+  }
+
+  /**
+   * Returns an environment built from the given types mapping between type variables and formula variables.
+   *
+   * This environment should be used in the functions [[toType]] and [[fromType]].
+   */
+  def getEnv(fs: List[Type]): Bimap[BoolFormula.IrreducibleEff, Int] = {
+    // Compute the variables in `tpe`.
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+        .toList.map(BoolFormula.IrreducibleEff.Var.apply)
+
+    val effs =
+      fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
+        .toList.map(BoolFormula.IrreducibleEff.Eff.apply)
+
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.IrreducibleEff, Int]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
+    }
+  }
+
+  /**
+   * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+   */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.IrreducibleEff, Int]): SortedSet[Int] = {
+    val rigidVars = renv.s.flatMap {
+      case tvar => env.getForward(BoolFormula.IrreducibleEff.Var(tvar))
+    }
+    val effs = env.m1.collect {
+      case (BoolFormula.IrreducibleEff.Eff(_), i) => i
+    }
+    rigidVars ++ effs
   }
 
   /**
