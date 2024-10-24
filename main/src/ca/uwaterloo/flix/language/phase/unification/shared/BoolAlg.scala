@@ -23,16 +23,6 @@ import scala.collection.immutable.SortedSet
 trait BoolAlg[F] {
 
   /**
-   * Returns `true` if `f` represents TRUE.
-   */
-  def isTrue(f: F): Boolean
-
-  /**
-   * Returns `true` if `f` represents FALSE.
-   */
-  def isFalse(f: F): Boolean
-
-  /**
    * Returns `true` if `f` represents a variable.
    */
   def isVar(f: F): Boolean

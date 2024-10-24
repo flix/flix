@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 
 import scala.annotation.tailrec
@@ -76,29 +75,9 @@ object BoolFormula {
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
-   * An irreducible effect.
-   */
-  sealed trait IrreducibleEff
-
-  object IrreducibleEff {
-
-    case class Var(sym: Symbol.KindedTypeVarSym) extends IrreducibleEff
-
-    case class Eff(sym: Symbol.EffectSym) extends IrreducibleEff
-
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends IrreducibleEff
-
-    case class JvmToEff(tpe: Type.JvmToEff) extends IrreducibleEff
-  }
-
-  /**
    * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
    */
   object BoolFormulaAlg extends BoolAlg[BoolFormula] {
-
-    override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
-
-    override def isFalse(f: BoolFormula): Boolean = f == BoolFormula.False
 
     override def isVar(f: BoolFormula): Boolean = f match {
       case Var(_) => true
