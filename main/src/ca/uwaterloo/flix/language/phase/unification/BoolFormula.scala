@@ -15,43 +15,16 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.Bimap
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
  * A common super-type for Boolean algebras.
  */
 sealed trait BoolFormula {
-
-  /**
-   * Returns the free variables in `this` expression.
-   */
-  final def freeVars: SortedSet[Int] = this match {
-    case BoolFormula.True => SortedSet.empty
-    case BoolFormula.False => SortedSet.empty
-    case BoolFormula.Var(x) => SortedSet(x)
-    case BoolFormula.Not(f) => f.freeVars
-    case BoolFormula.And(f1, f2) => f1.freeVars ++ f2.freeVars
-    case BoolFormula.Or(f1, f2) => f1.freeVars ++ f2.freeVars
-  }
-
-  /**
-   * Returns the size of `this` expression.
-   *
-   * The size is the number of joins and meets
-   */
-  final def size: Int = this match {
-    case BoolFormula.True => 0
-    case BoolFormula.False => 0
-    case BoolFormula.Var(_) => 0
-    case BoolFormula.Not(t) => t.size
-    case BoolFormula.And(t1, t2) => t1.size + t2.size + 1
-    case BoolFormula.Or(t1, t2) => t1.size + t2.size + 1
-  }
 
   /**
    * Returns a human-readable string representation of `this` expression.
@@ -101,122 +74,6 @@ object BoolFormula {
    * Represents f1 ⊔ f2
    */
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
-
-  /**
-   * Substitutes all variables in `f` using the substitution map `m`.
-   *
-   * The map `m` must bind each free variable in `f` to a (new) variable.
-   */
-  def substitute(f: BoolFormula, m: Bimap[Int, Int]): BoolFormula = f match {
-    case True => True
-    case False => False
-    case Var(x) => m.getForward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
-      case Some(y) => Var(y)
-    }
-    case Not(f1) => Not(substitute(f1, m))
-    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
-    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
-  }
-
-  /**
-   * Converts the given type `tpe` to a Boolean algebra expression under the given variable substitution map `m`.
-   *
-   * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
-   */
-  def fromEffType(tpe: Type, m: Bimap[IrreducibleEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(IrreducibleEff.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
-    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(IrreducibleEff.Eff(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
-    case Type.Pure => True
-    case Type.Univ => False
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), arg, _, _) => m.getForward(IrreducibleEff.Assoc(sym, arg)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound associated effect: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
-    case t: Type.JvmToEff => m.getForward(IrreducibleEff.JvmToEff(t)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound JvmToEff", t.loc)
-      case Some(x) => Var(x)
-    }
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-  }
-
-  /**
-   * Converts the given type `tpe` to a Boolean algebra expression under the given variable substitution map `m`.
-   *
-   * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
-   */
-  def fromBoolType(tpe: Type, m: Bimap[IrreducibleEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(IrreducibleEff.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
-    case Type.True => True
-    case Type.False => False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Not(fromBoolType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-  }
-
-  /**
-   * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
-   *
-   * The map `m` must bind each free variable in `f` to a type variable.
-   */
-  def toType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
-    case Kind.Eff => toEffType(f, m, loc)
-    case Kind.Bool => toBoolType(f, m, loc)
-    case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
-  }
-
-  /**
-   * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
-   *
-   * The map `m` must bind each free variable in `f` to a type variable.
-   */
-  private def toEffType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.Pure
-    case False => Type.Univ
-    case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Some(IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, Kind.Eff, loc)
-      case Some(IrreducibleEff.JvmToEff(t)) => t
-    }
-    case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
-    case And(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
-    case Or(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
-  }
-
-  /**
-   * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
-   *
-   * The map `m` must bind each free variable in `f` to a type variable.
-   */
-  private def toBoolType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.True
-    case False => Type.False
-    case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(IrreducibleEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect in Boolean type: '$sym'.'", loc)
-      case Some(IrreducibleEff.Assoc(sym, arg)) => throw InternalCompilerException(s"Unexpected associated effect in Boolean type: '$sym'.'", loc)
-      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
-    }
-    case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
-    case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-  }
 
   /**
    * An irreducible effect.
@@ -282,6 +139,7 @@ object BoolFormula {
       case _ => BoolFormula.Not(f)
     }
 
+    @tailrec
     override def mkAnd(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∧ x => x
       case (BoolFormula.True, _) =>
@@ -365,6 +223,7 @@ object BoolFormula {
       case _ => BoolFormula.And(f1, f2)
     }
 
+    @tailrec
     override def mkOr(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∨ x => T
       case (BoolFormula.True, _) =>
@@ -428,7 +287,14 @@ object BoolFormula {
       case Var(sym) => fn(sym)
     }
 
-    override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
+    override def freeVars(f: BoolFormula): SortedSet[Int] = f match {
+      case BoolFormula.True => SortedSet.empty
+      case BoolFormula.False => SortedSet.empty
+      case BoolFormula.Var(x) => SortedSet(x)
+      case BoolFormula.Not(f) => freeVars(f)
+      case BoolFormula.And(f1, f2) => freeVars(f1) ++ freeVars(f2)
+      case BoolFormula.Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
+    }
 
     /**
      * Enumerates all assignments to `f` and checks if one of them is satisfiable.
@@ -456,6 +322,5 @@ object BoolFormula {
     }
 
   }
-
 
 }
