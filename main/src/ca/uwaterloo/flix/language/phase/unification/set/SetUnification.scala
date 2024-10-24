@@ -189,7 +189,7 @@ object SetUnification {
   private def svePermutations(eqs0: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val eqs = eqs0.map{
       case Equation(f1, f2, status, loc) =>
-        Equation.mk(minn(f1), minn(f2), loc, status)
+        Equation.mk(selectiveExponentialForm(f1), selectiveExponentialForm(f2), loc, status)
     }
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
@@ -218,11 +218,6 @@ object SetUnification {
     }
     if (noPreviousPermutation()) None
     else Some(bestEqs, bestSubst)
-  }
-
-  private def minn(f: SetFormula): SetFormula = {
-    val unknowns = f.unknowns.size
-    if (f.size / (1.0 max (unknowns * math.pow(2, unknowns))) >= 5) tableForm(f) else f
   }
 
   /** Run a unification rule on an equation system in a fixpoint. */
@@ -555,7 +550,7 @@ object SetUnification {
       listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
-      val xFormula = minn(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
+      val xFormula = selectiveExponentialForm(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
       // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
       // each variable of `fvs` once (which is assumed to have no duplicates).
       // `se`, `x`, and `xFormula` therefore have disjoint variables.
