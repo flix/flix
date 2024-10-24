@@ -548,7 +548,7 @@ object SetUnification {
     if (opts.sveRecSizeThreshold > 0) {
       val fSize = f.size
       if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
-        s"SetFormula size ($fSize) is over recursive SVE threshold ($opts.sveRecSizeThreshold)."
+        s"SetFormula size ($fSize) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
       )
     }
   }

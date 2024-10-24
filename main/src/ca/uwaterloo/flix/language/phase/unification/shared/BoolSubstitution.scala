@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.shared
 
-import ca.uwaterloo.flix.language.phase.unification.BoolAlg
-
 /**
  * Companion object for the [[BoolSubstitution]] class.
  */

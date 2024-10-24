@@ -50,6 +50,7 @@ object Options {
     xsubeffecting = Subeffecting.Disabled,
     XPerfN = None,
     XPerfFrontend = false,
+    XPerfPar = false,
     xiterations = 5000
   )
 
@@ -91,10 +92,6 @@ object Options {
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
   * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xprintphases        prints all ASTs to the build folder after each phase.
-  * @param xsummary            prints a summary of the compiled modules.
-  * @param xnodeprecated       disables deprecated features.
-  * @param xfuzzer             enables compiler fuzzing.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -120,6 +117,7 @@ case class Options(lib: LibLevel,
                    xverifyeffects: Boolean,
                    xsubeffecting: Subeffecting,
                    XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
                    XPerfN: Option[Int],
                    xiterations: Int,
                   )
