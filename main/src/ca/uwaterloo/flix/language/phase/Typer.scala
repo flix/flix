@@ -163,7 +163,7 @@ object Typer {
       mapN(ParOps.parTraverseValues(staleDefs) {
         case defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-          val enableSubeffects = flix.options.xsubeffecting == Subeffecting.ModDefs
+          val enableSubeffects = flix.options.xsubeffecting.contains(Subeffecting.ModDefs)
 
           visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
       })(_ ++ freshDefs)
@@ -238,12 +238,9 @@ object Typer {
         val constrs = context.getTypeConstraints
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
-        val eff = flix.options.xsubeffecting match {
-          case Subeffecting.ModDefs =>
-            // A small optimization: If the signature is pure there is no room for subeffecting.
-            if (sig.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
-          case _ => eff0
-        }
+        // A small optimization: If the signature is pure there is no room for subeffecting.
+        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.ModDefs) && sig.spec.eff != Type.Pure
+        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
         val infResult = ConstraintSolver.InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
