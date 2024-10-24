@@ -94,8 +94,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnoboolunif = cmdOpts.xnoboolunif,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -344,8 +342,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnoboolspecialcases: Boolean = false,
-                     xnoboolunif: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
@@ -547,14 +543,6 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
-
-      // Xno-bool-specialcases
-      opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
-        text("[experimental] disables hardcoded Boolean unification special cases.")
-
-      // Xno-bool-unif
-      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
-        text("[experimental] disables Boolean unification. (DO NOT USE).")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).

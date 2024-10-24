@@ -41,8 +41,6 @@ object Options {
     loadClassFiles = true,
     assumeYes = false,
     xnoverify = false,
-    xnoboolspecialcases = false,
-    xnoboolunif = false,
     xnooptimizer = false,
     xprintphases = false,
     xnodeprecated = false,
@@ -94,10 +92,6 @@ object Options {
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
   * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache        disable Boolean caches.
-  * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xprintphases        prints all ASTs to the build folder after each phase.
   * @param xsummary            prints a summary of the compiled modules.
   * @param xnodeprecated       disables deprecated features.
@@ -118,8 +112,6 @@ case class Options(lib: LibLevel,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xnoverify: Boolean,
-                   xnoboolspecialcases: Boolean,
-                   xnoboolunif: Boolean,
                    xnooptimizer: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
