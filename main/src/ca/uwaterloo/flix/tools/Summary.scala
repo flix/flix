@@ -29,11 +29,11 @@ object Summary {
     *
     * Example with markdown rendering (just a single data row):
     * {{{
-    * |               Module |  lines |  defs |  Pure |  IO | Eff. Poly. |
-    * | -------------------- | ------ | ----- | ----- | --- | ---------- |
-    * |         Adaptor.flix |    242 |    21 |     8 |   5 |          8 |
-    * |                  ... |    ... |   ... |   ... | ... |        ... |
-    * |               Totals | 37,877 | 3,519 | 1,998 | 149 |      1,372 |
+    * |               Module |  lines |  defs |  Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda sub. Eff. var |
+    * | -------------------- | ------ | ----- | ----- | ----------- | ---------- | ------------- | -------------- | -------------------- |
+    * |         Adaptor.flix |    237 |    21 |     8 |           5 |          8 |             0 |            -21 |                  -21 |
+    * |                  ... |    ... |   ... |   ... |         ... |        ... |           ... |            ... |                  ... |
+    * |               Totals | 37,569 | 3,547 | 2,027 |         133 |      1,387 |            59 |         -3,547 |               -3,547 |
     * }}}
     *
     * @param root the root to create data for
@@ -63,7 +63,9 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    DefSummary(fun, eff, ecasts)
+    val totalEffVars = -1
+    val lambdaSubEffVars = -1
+    DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars)
   }
 
   /** Returns a function summary for a signature, if it has implementation */
@@ -73,7 +75,9 @@ object Summary {
       val fun = FunctionSym.TraitFunWithExp(sig.sym)
       val eff = resEffect(sig.spec.eff)
       val ecasts = countCheckedEcasts(exp)
-      Some(DefSummary(fun, eff, ecasts))
+      val totalEffVars = -1
+      val lambdaSubEffVars = -1
+      Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars))
   }
 
   /** Returns a function summary for every function */
@@ -95,7 +99,9 @@ object Summary {
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     val ecasts = sum.checkedEcasts
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts)
+    val totalEffVars = sum.totalEffVars
+    val lambdaSubEffVars = sum.lambdaSubEffVars
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, totalEffVars, lambdaSubEffVars)
   }
 
   /** Combines function summaries into file data. */
@@ -282,7 +288,16 @@ object Summary {
   }
 
   /** debugSrc is just for consistency checking exceptions */
-  private sealed case class FileData(debugSrc: Option[Source], lines: Int, defs: Int, pureDefs: Int, groundNonPureDefs: Int, polyDefs: Int, checkedEcasts: Int) {
+  private sealed case class FileData(
+                                      debugSrc: Option[Source],
+                                      lines: Int, defs: Int,
+                                      pureDefs: Int,
+                                      groundNonPureDefs: Int,
+                                      polyDefs: Int,
+                                      checkedEcasts: Int,
+                                      totalEffVars: Int,
+                                      lambdaSubEffVars: Int
+                                    ) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
@@ -303,7 +318,17 @@ object Summary {
           SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
         )
       }
-      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts)
+      FileData(
+        debugSrc.orElse(other.debugSrc),
+        lines,
+        defs + other.defs,
+        pureDefs + other.pureDefs,
+        groundNonPureDefs + other.groundNonPureDefs,
+        polyDefs + other.polyDefs,
+        checkedEcasts + other.checkedEcasts,
+        totalEffVars + other.totalEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
+      )
     }
 
     /**
@@ -311,14 +336,33 @@ object Summary {
       * different files to compute a total of a folder fx.
       */
     def naiveSum(other: FileData): FileData = {
-      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts)
+      FileData(
+        debugSrc.orElse(other.debugSrc),
+        lines + other.lines,
+        defs + other.defs,
+        pureDefs + other.pureDefs,
+        groundNonPureDefs + other.groundNonPureDefs,
+        polyDefs + other.polyDefs,
+        checkedEcasts + other.checkedEcasts,
+        totalEffVars + other.totalEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
+      )
     }
 
-    def toRow: List[String] = List(lines, defs, pureDefs, groundNonPureDefs, polyDefs, checkedEcasts).map(format)
+    def toRow: List[String] = List(
+      lines,
+      defs,
+      pureDefs,
+      groundNonPureDefs,
+      polyDefs,
+      checkedEcasts,
+      totalEffVars,
+      lambdaSubEffVars
+    ).map(format)
   }
 
   private object FileData {
-    val zero: FileData = FileData(None, 0, 0, 0, 0, 0, 0)
+    val zero: FileData = FileData(None, 0, 0, 0, 0, 0, 0, 0, 0)
 
     /**
       * Combines a list of partial FileData from the same file. Line count is
@@ -333,7 +377,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast")
+    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast", "total Eff. var", "lambda sub. Eff. var")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -344,7 +388,13 @@ object Summary {
     def header: List[String] = List("Module") ++ FileData.header
   }
 
-  private sealed case class DefSummary(fun: FunctionSym, eff: ResEffect, checkedEcasts: Int) {
+  private sealed case class DefSummary(
+                                        fun: FunctionSym,
+                                        eff: ResEffect,
+                                        checkedEcasts: Int,
+                                        totalEffVars: Int,
+                                        lambdaSubEffVars: Int
+                                      ) {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
