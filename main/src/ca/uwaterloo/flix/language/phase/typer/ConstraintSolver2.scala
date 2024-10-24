@@ -327,7 +327,7 @@ object ConstraintSolver2 {
     case c@TypeConstraint2.Equality(tpe1, tpe2) if tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff =>
       EffUnification3.unify(tpe1, tpe2, scope, renv) match {
         case Result.Ok(Some(subst)) => (Nil, SubstitutionTree(subst, Map()))
-        case Result.Err(e) => (List(c), SubstitutionTree.empty)
+        case _ => (List(c), SubstitutionTree.empty)
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0) =>
