@@ -28,9 +28,9 @@ trait BoolAlg[F] {
   def isVar(f: F): Boolean
 
   /**
-   * Returns `true` if formula is satisfiable and `false` otherwise.
+   * Returns `true` if the given formula `f` is equivalent to the bottom element.
    */
-  def isSatisfiable(f: F): Boolean
+  def isEquivBot(f: F): Boolean
 
   /**
     * Returns a representation of bottom (i.e., false, the empty set, ...)

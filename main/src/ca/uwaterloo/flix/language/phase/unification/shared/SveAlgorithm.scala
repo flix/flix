@@ -56,7 +56,7 @@ object SveAlgorithm {
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F], flix: Flix): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!alg.isSatisfiable(f))
+      if (alg.isEquivBot(f))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()

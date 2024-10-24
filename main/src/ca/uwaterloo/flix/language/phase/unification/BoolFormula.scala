@@ -84,12 +84,7 @@ object BoolFormula {
       case _ => false
     }
 
-    override def isSatisfiable(f: BoolFormula): Boolean = f match {
-      case BoolFormula.True => true
-      case BoolFormula.False => false
-      case BoolFormula.Var(_) => true
-      case _ => evaluateAll(f, freeVars(f).toList, List.empty)
-    }
+    override def isEquivBot(f: BoolFormula): Boolean = !isSat(f)
 
     override def mkBot: BoolFormula = False
 
@@ -273,6 +268,16 @@ object BoolFormula {
       case BoolFormula.Not(f) => freeVars(f)
       case BoolFormula.And(f1, f2) => freeVars(f1) ++ freeVars(f2)
       case BoolFormula.Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
+    }
+
+    /**
+      * Returns `true` if `f` is satisfiable.
+      */
+    private def isSat(f: BoolFormula): Boolean = f match {
+      case BoolFormula.True => true
+      case BoolFormula.False => false
+      case BoolFormula.Var(_) => true
+      case _ => evaluateAll(f, freeVars(f).toList, List.empty)
     }
 
     /**
