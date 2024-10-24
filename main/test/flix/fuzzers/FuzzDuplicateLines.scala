@@ -48,7 +48,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
-  ignore("ford-fulkerson") {
+  test("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
