@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.language.phase.unification.shared
 
 import scala.collection.immutable.SortedSet
 
@@ -36,6 +36,11 @@ trait BoolAlg[F] {
    * Returns `true` if `f` represents a variable.
    */
   def isVar(f: F): Boolean
+
+  /**
+   * Returns `true` if formula is satisfiable and `false` otherwise.
+   */
+  def isSatisfiable(f: F): Boolean
 
   /**
    * Returns a representation of TRUE.
@@ -81,10 +86,5 @@ trait BoolAlg[F] {
    * Applies the function `fn` to every variable in `f`.
    */
   def map(f: F)(fn: Int => F): F
-
-  /**
-   * Returns `true` if formula is satisfiable and `false` otherwise.
-   */
-  def satisfiable(f: F): Boolean
 
 }

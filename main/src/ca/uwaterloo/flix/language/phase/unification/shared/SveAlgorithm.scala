@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase.unification.shared
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.unification.BoolAlg
 
 object SveAlgorithm {
 
@@ -57,7 +56,7 @@ object SveAlgorithm {
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F], flix: Flix): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!alg.satisfiable(f))
+      if (!alg.isSatisfiable(f))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()

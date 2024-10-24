@@ -15,10 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 
 import scala.collection.immutable.SortedSet
 
@@ -36,7 +34,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => false
   }
 
-  override def satisfiable(f: BoolFormula): Boolean = f match {
+  override def isSatisfiable(f: BoolFormula): Boolean = f match {
     case BoolFormula.True => true
     case BoolFormula.False => false
     case BoolFormula.Var(_) => true
