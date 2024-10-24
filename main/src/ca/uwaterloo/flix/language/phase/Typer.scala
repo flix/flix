@@ -179,8 +179,11 @@ object Typer {
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
-    // If open is set and the annotated effect is not pure, use a sub-effecting
+
+    // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
+    // A small optimization: If the signature is pure there is no room for subeffecting.
     val eff = if (!open || defn.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
+
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
