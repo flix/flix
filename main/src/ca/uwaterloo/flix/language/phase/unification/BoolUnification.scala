@@ -58,7 +58,7 @@ object BoolUnification {
       case _ => // fallthrough
     }
 
-    implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
+    implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
 
     val result = lookupOrSolve(tpe1, tpe2, renv0)
     result.map(subst => (subst, Nil))
