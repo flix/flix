@@ -47,7 +47,7 @@ object Options {
     xfuzzer = false,
     xprinttyper = None,
     xverifyeffects = false,
-    xsubeffecting = Subeffecting.Disabled,
+    xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
@@ -115,7 +115,7 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
                    xverifyeffects: Boolean,
-                   xsubeffecting: Subeffecting,
+                   xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
@@ -160,11 +160,6 @@ object LibLevel {
 sealed trait Subeffecting
 
 object Subeffecting {
-
-  /**
-    * Disable sub-effecting.
-    */
-  case object Disabled extends Subeffecting
 
   /**
     * Enable sub-effecting for module-level definitions.

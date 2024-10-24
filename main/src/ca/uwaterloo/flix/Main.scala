@@ -349,7 +349,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xsubeffecting: Subeffecting = Subeffecting.Disabled,
+                     xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
@@ -411,7 +411,6 @@ object Main {
     }
 
     implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
-      case "disabled" => Subeffecting.Disabled
       case "mod-defs" => Subeffecting.ModDefs
       case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
@@ -566,7 +565,7 @@ object Main {
         text("[experimental] verifies consistency of effects after typechecking")
 
       // Xsubeffecting
-      opt[Subeffecting]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
 
       // Xiterations
