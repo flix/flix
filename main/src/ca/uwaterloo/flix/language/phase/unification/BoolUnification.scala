@@ -29,23 +29,6 @@ object BoolUnification {
    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
    */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-
-    // TODO: Levels
-    // We cannot enforce that all variables should belong to the same level.
-    // Consider the equation X^1 and Y^1 ~ Z^0 or W^2 with levels indicated by superscripts.
-    // The minimum level is 0, so we could set the level of X, Y, Z, and W to 0, but this is incorrect.
-    // The reason is that there is the following unifier:
-    //
-    // w -> (w ∨ ¬z) ∧ (z ∨ (x ∧ y))
-    // x ->	x ∨ z
-    // y -> y ∨ z
-    // z -> z
-    //
-    // which satisfies the levels!
-    //
-    // It is not yet clear how to enforce this, hence we unsoundly do not
-    //
-
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
       return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
@@ -58,7 +41,7 @@ object BoolUnification {
       case _ => // fallthrough
     }
 
-    implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
+    implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
 
     val result = lookupOrSolve(tpe1, tpe2, renv0)
     result.map(subst => (subst, Nil))
