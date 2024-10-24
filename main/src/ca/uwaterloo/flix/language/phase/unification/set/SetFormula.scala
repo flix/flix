@@ -919,7 +919,7 @@ object SetFormula {
     */
   def selectiveExponentialForm(f: SetFormula): SetFormula = {
     val unknowns = f.unknowns.size
-    if (f.size / (1.0 max (unknowns * math.pow(2, unknowns))) >= 5) tableForm(f) else f
+    if (f.size / (1.0 max (unknowns * math.pow(2, unknowns))) >= 3) tableForm(f) else f
   }
 
   /**

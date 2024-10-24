@@ -546,7 +546,7 @@ object SetUnification {
     case x :: xs =>
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
-      val recFormula = propagation(mkInter(f0, f1))
+      val recFormula = selectiveExponentialForm(propagation(mkInter(f0, f1)))
       listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
@@ -562,7 +562,7 @@ object SetUnification {
     if (opts.sveRecSizeThreshold > 0) {
       val fSize = f.size
       if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
-        s"SetFormula size ($fSize) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
+        s"SetFormula size ($fSize, ${f.unknowns.size} unknowns) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
       )
     }
   }
