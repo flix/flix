@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Type, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 sealed trait TypeConstraint2
 
@@ -26,7 +26,7 @@ object TypeConstraint2 {
     *   tpe1 ~ tpe2
     * }}}
     */
-  case class Equality(tpe1: Type, tpe2: Type) extends TypeConstraint2
+  case class Equality(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeConstraint2
 
   /**
     * A constraint indicating that the given type is a member of the given trait.
@@ -34,7 +34,7 @@ object TypeConstraint2 {
     *   sym[tpe]
     * }}}
     */
-  case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint2
+  case class Trait(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeConstraint2
 
   /**
     * A constraint indicating that:
@@ -49,5 +49,5 @@ object TypeConstraint2 {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, nested: List[TypeConstraint2]) extends TypeConstraint2
+  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, nested: List[TypeConstraint2], loc: SourceLocation) extends TypeConstraint2
 }

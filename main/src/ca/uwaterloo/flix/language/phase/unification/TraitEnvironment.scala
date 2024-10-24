@@ -111,7 +111,7 @@ object TraitEnvironment {
     */
   private def byInst(tconstr: Ast.TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[Ast.TraitConstraint], UnificationError] = tconstr match {
     case Ast.TraitConstraint(head, arg, loc) =>
-      val matchingInstances = traitEnv.m.get(head.sym).map(_.instances).getOrElse(Nil)
+      val matchingInstances = traitEnv.getInstancesOpt(head.sym).getOrElse(Nil)
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
@@ -156,7 +156,7 @@ object TraitEnvironment {
   private def bySuper(tconstr: Ast.TraitConstraint, traitEnv: TraitEnv): List[Ast.TraitConstraint] = {
 
     // Get the traits that are directly super traits of the trait in `tconstr`
-    val directSupers = traitEnv.m.get(tconstr.head.sym).map(_.superTraits).getOrElse(Nil)
+    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.head.sym).getOrElse(Nil)
 
     // Walk the super trait tree.
     // There may be duplicates, but this will terminate since super traits must be acyclic.
