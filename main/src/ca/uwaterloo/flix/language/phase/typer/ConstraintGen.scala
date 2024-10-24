@@ -139,9 +139,7 @@ object ConstraintGen {
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val redundant = exp match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) =>
-              println("bang")
-              true
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
           enabled && !redundant
@@ -383,9 +381,7 @@ object ConstraintGen {
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val redundant = exp1 match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) =>
-              println("bang")
-              true
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
           enabled && !redundant
