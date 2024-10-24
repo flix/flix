@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Instance, TraitContext}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.Ast.Instance
+import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -439,8 +439,8 @@ object ConstraintSolver2 {
   /**
     * Converts a syntactic type constraint into a semantic type constraint.
     */
-  def traitConstraintToTypeConstraint(constr: Ast.TraitConstraint): TypeConstraint2 = constr match {
-    case Ast.TraitConstraint(head, arg, loc) => TypeConstraint2.Trait(head.sym, arg, loc)
+  def traitConstraintToTypeConstraint(constr: TraitConstraint): TypeConstraint2 = constr match {
+    case TraitConstraint(head, arg, loc) => TypeConstraint2.Trait(head.sym, arg, loc)
   }
 
   /**

@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TraitEnv, UnificationError}
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TraitEnv}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
 
@@ -46,7 +46,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (List[Ast.TraitConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (List[TraitConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -107,9 +107,9 @@ object Scheme {
     val newBase = visitType(baseType)
 
     val newTconstrs = sc.tconstrs.map {
-      case Ast.TraitConstraint(head, tpe0, loc) =>
+      case TraitConstraint(head, tpe0, loc) =>
         val tpe = tpe0.map(visitType)
-        Ast.TraitConstraint(head, tpe, loc)
+        TraitConstraint(head, tpe, loc)
     }
 
     val newEconstrs = sc.econstrs.map {
@@ -123,7 +123,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: Scope): Scheme = {
+  def generalize(tconstrs: List[TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: Scope): Scheme = {
     val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
@@ -168,10 +168,10 @@ object Scheme {
     }
     val tpe2 = subst(tpe2_0)
     val cconstrs2 = cconstrs2_0.map {
-      case Ast.TraitConstraint(head, arg, loc) =>
+      case TraitConstraint(head, arg, loc) =>
         // should never fail
         val (t, _) = TypeReduction.simplify(subst(arg), RigidityEnv.empty, loc)(scope, eenv0, flix).get
-        Ast.TraitConstraint(head, t, loc)
+        TraitConstraint(head, t, loc)
     }
 
     // Add sc2's constraints to the environment
@@ -186,7 +186,7 @@ object Scheme {
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
-    val cconstrs = sc1.tconstrs.map { case Ast.TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
+    val cconstrs = sc1.tconstrs.map { case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
     val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(scope, cenv, eenv, flix) match {
@@ -202,7 +202,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

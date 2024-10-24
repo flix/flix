@@ -16,12 +16,12 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
-import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
+import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations, EqualityConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.Annotation
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
   * Consumer that collects every visited AST nodes on a stack where the head is the last element visited.
