@@ -195,8 +195,6 @@ object WeededAst {
 
     case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
-    case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
-
     case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
