@@ -137,8 +137,8 @@ sealed trait SetFormula {
 
     /** Updates `counter` and `workList` given intersection or union subformulas. */
     def countSetFormulas(
-                          elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
-                          elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
+                          elemPos: Option[ElemSet], cstsPos: SortedSet[Cst], varsPos: SortedSet[Var],
+                          elemNeg: Option[ElemSet], cstsNeg: SortedSet[Cst], varsNeg: SortedSet[Var],
                           other: List[SetFormula]
                         ): Unit = {
       val negElemSize = elemNeg.size
@@ -195,6 +195,9 @@ sealed trait SetFormula {
 }
 
 object SetFormula {
+
+  private implicit val ordCst: Ordering[Cst] = Ordering.by(_.c)
+  private implicit val ordVar: Ordering[Var] = Ordering.by(_.x)
 
   /** Skip invariant checks if `false`. */
   private val CHECK_INVARIANTS: Boolean = true
@@ -283,8 +286,8 @@ object SetFormula {
     */
   @nowarn
   final case class Inter private(
-                                  elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
-                                  elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
+                                  elemPos: Option[ElemSet], cstsPos: SortedSet[Cst], varsPos: SortedSet[Var],
+                                  elemNeg: Option[ElemSet], cstsNeg: SortedSet[Cst], varsNeg: SortedSet[Var],
                                   other: List[SetFormula]
                                 ) extends SetFormula {
     if (CHECK_INVARIANTS) {
@@ -331,8 +334,8 @@ object SetFormula {
     */
   @nowarn
   final case class Union private(
-                                  elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
-                                  elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
+                                  elemPos: Option[ElemSet], cstsPos: SortedSet[Cst], varsPos: SortedSet[Var],
+                                  elemNeg: Option[ElemSet], cstsNeg: SortedSet[Cst], varsNeg: SortedSet[Var],
                                   other: List[SetFormula]
                                 ) extends SetFormula {
     if (CHECK_INVARIANTS) {
@@ -527,7 +530,15 @@ object SetFormula {
       case one :: Nil => return one
       case _ => ()
     }
-    Inter(elemPos, cstsPos.toSet, varsPos.toSet, elemNeg, cstsNeg.toSet, varsNeg.toSet, other.toList)
+    Inter(
+      elemPos,
+      SortedSet.from(cstsPos),
+      SortedSet.from(varsPos),
+      elemNeg,
+      SortedSet.from(cstsNeg),
+      SortedSet.from(varsNeg),
+      other.toList
+    )
   }
 
   /**
@@ -657,7 +668,15 @@ object SetFormula {
       case one :: Nil => return one
       case _ => ()
     }
-    Union(elemPos, cstsPos.toSet, varsPos.toSet, elemNeg, cstsNeg.toSet, varsNeg.toSet, other.toList)
+    Union(
+      elemPos,
+      SortedSet.from(cstsPos),
+      SortedSet.from(varsPos),
+      elemNeg,
+      SortedSet.from(cstsNeg),
+      SortedSet.from(varsNeg),
+      other.toList
+    )
   }
 
   /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */
@@ -749,10 +768,10 @@ object SetFormula {
       var currentInsts = insts ++
         setElemOneOpt(elemPos, Univ) ++
         setElemOneOpt(elemNeg, Empty) ++
-        cstsPos.map(_.c -> Univ) ++
-        cstsNeg.map(_.c -> Empty) ++
-        varsPos.map(_.x -> Univ) ++
-        varsNeg.map(_.x -> Empty)
+        cstsPos.iterator.map(_.c -> Univ) ++
+        cstsNeg.iterator.map(_.c -> Empty) ++
+        varsPos.iterator.map(_.x -> Univ) ++
+        varsNeg.iterator.map(_.x -> Empty)
 
       // Recursively instantiate `other` while collecting further instantiations as we go.
       val other = mutable.ListBuffer.empty[SetFormula]
@@ -827,10 +846,10 @@ object SetFormula {
       var currentInsts = insts ++
         setElemOneOpt(elemPos, Empty) ++
         setElemOneOpt(elemNeg, Univ) ++
-        cstsPos.map(_.c -> Empty) ++
-        cstsNeg.map(_.c -> Univ) ++
-        varsPos.map(_.x -> Empty) ++
-        varsNeg.map(_.x -> Univ)
+        cstsPos.iterator.map(_.c -> Empty) ++
+        cstsNeg.iterator.map(_.c -> Univ) ++
+        varsPos.iterator.map(_.x -> Empty) ++
+        varsNeg.iterator.map(_.x -> Univ)
 
       // Recursively instantiate `other` while collecting further instantiations as we go.
       val other = mutable.ListBuffer.empty[SetFormula]
