@@ -92,11 +92,6 @@ trait BoolAlg[F] {
   def satisfiable(f: F): Boolean
 
   /**
-    * Returns a representation equivalent to `f` (but potentially smaller).
-    */
-  def minimize(f: F): F
-
-  /**
     * Returns an environment built from the given types mapping between type variables and formula variables.
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].

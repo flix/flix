@@ -67,7 +67,7 @@ object SveAlgorithm {
       val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(alg)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
-      val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
+      val f1 = alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
