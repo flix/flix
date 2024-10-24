@@ -103,6 +103,7 @@ object Main {
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xiterations = cmdOpts.xiterations,
     )
@@ -351,6 +352,7 @@ object Main {
                      xsubeffecting: Subeffecting = Subeffecting.Disabled,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     XPerfPar: Boolean = false,
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
@@ -458,6 +460,9 @@ object Main {
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
           .text("benchmark only frontend"),
+        opt[Unit]("par")
+          .action((_, c) => c.copy(XPerfPar = true))
+          .text("benchmark only parallel evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")

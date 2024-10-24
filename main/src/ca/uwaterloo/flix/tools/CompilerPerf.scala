@@ -218,9 +218,9 @@ object CompilerPerf {
     val N = o.XPerfN.getOrElse(DefaultN)
 
     // Run the experiments.
-    val baseline = aggregate(perfBaseLine(N, o))
+    val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
     val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-    val baselineWithParInc = aggregate(perfBaseLineWithParInc(N, o))
+    val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
 
     // Find the number of lines of source code.
     val lines = baselineWithPar.lines.toLong
@@ -455,7 +455,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
+      return Runs(0, List(0), Nil)
     }
 
     val lines = l.head.lines
