@@ -31,21 +31,26 @@ mod Exit {
     import java.lang.System
 
     ///
+    /// Handles the `Exit` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Exit` effect using the `Sys` effect.
+    ///
+    /// Note: The returned function can still return normally if `exit` is never called by `f`.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + Sys = x ->
+        try {
+            f(x)
+        } with Exit {
+            def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)
+        }
+
+    ///
     /// Runs the `Exit` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Exit` effect using the `Sys` effect.
     ///
     /// Note: This function can still return normally if `exit` is never called by `f`.
     ///
-    pub def run(f: Unit -> a \ ef): a \ ef - Exit + Sys  = {
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        unchecked_cast(try {
-            f()
-        } with Exit {
-            def exit(ec, _k) = unsafe {
-                unchecked_cast(System.exit(ec) as a)
-            }
-        } as a \ (ef - Exit) + Sys)
-    }
+    pub def run(f: Unit -> a \ ef): a \ (ef - Exit) + Sys  = handle(f)()
 
 }

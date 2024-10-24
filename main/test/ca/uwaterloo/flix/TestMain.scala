@@ -171,24 +171,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
-  test("--Xno-bool-cache") {
-    val args = Array("--Xno-bool-cache")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolcache)
-  }
-
-  test("--Xno-bool-specialcases") {
-    val args = Array("--Xno-bool-specialcases")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolspecialcases)
-  }
-
-  test("--Xno-bool-unif") {
-    val args = Array("--Xno-bool-unif")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolunif)
-  }
-
   test("--explain") {
     val args = Array("--explain")
     val opts = Main.parseCmdOpts(args).get

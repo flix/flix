@@ -101,8 +101,8 @@ object EqualityEnvironment {
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
-        Unification.unifyTypes(arg, inst.arg, renv).toOption.map {
-          case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
+        Unification.unifyTypesIgnoreLeftoverAssocs(arg, inst.arg, renv, eqEnv).map {
+          case subst => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {
       case None => Result.Err(UnificationError.IrreducibleAssocType(cst.sym, arg))
