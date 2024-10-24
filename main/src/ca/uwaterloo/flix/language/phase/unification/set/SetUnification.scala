@@ -508,7 +508,7 @@ object SetUnification {
     * [[Equation.Status.Timeout]].
     */
   private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    val query = mkEmptyQuery(eq.f1, eq.f2)
+    val query = SetFormula.propagation(mkEmptyQuery(eq.f1, eq.f2))
     val fvs = query.variables.toList
     try {
       val subst = successiveVariableElimination(query, fvs)
