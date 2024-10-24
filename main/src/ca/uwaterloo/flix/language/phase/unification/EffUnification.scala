@@ -158,7 +158,6 @@ object EffUnification {
 
         val substRes = {
           implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
-          implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
           lookupOrSolve(t1, t2, renv)
         }
 
@@ -228,7 +227,7 @@ object EffUnification {
     * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
   private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
-                              (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
+                              (implicit flix: Flix, alg: BoolAlg[F]): Result[Substitution, UnificationError] = {
     //
     // Translate the types into formulas.
     //
@@ -239,27 +238,11 @@ object EffUnification {
     val renv = alg.liftRigidityEnv(renv0, env)
 
     //
-    // Lookup the query to see if it is already in unification cache.
-    //
-    if (!flix.options.xnoboolcache) {
-      cache.lookup(f1, f2, renv) match {
-        case None => // cache miss: must compute the unification.
-        case Some(subst) =>
-          // cache hit: return the found substitution.
-          return subst.toTypeSubstitution(env).toOk
-      }
-    }
-
-    //
     // Run the expensive Boolean unification algorithm.
     //
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedEffects(tpe1, tpe2).toErr
-      case Some(subst) =>
-        if (!flix.options.xnoboolcache) {
-          cache.put(f1, f2, renv, subst)
-        }
-        subst.toTypeSubstitution(env).toOk
+      case Some(subst) => subst.toTypeSubstitution(env).toOk
     }
   }
 
