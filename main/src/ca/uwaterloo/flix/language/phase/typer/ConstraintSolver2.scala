@@ -290,7 +290,7 @@ object ConstraintSolver2 {
     case c@TypeConstraint2.Trait(sym, tpe) =>
 
       // Get all the instances from the context
-      val TraitContext(supers, insts) = trenv.m(sym)
+      val insts = trenv.getInstances(sym)
 
       // Find the instance that matches
       val matches = insts.flatMap {

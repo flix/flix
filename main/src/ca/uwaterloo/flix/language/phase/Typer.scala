@@ -49,7 +49,7 @@ object Typer {
       case (traits, instances, defs) =>
         val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.m, eqEnv, root.names, precedenceGraph)
+        TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.names, precedenceGraph)
     }
 
   }(DebugValidation())
