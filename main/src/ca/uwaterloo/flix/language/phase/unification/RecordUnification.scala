@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
+import ca.uwaterloo.flix.language.phase.unification.OldStarUnification.unifyTypes
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -31,9 +31,9 @@ object RecordUnification {
     */
   def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
-    case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv)
+    case (tvar: Type.Var, tpe) => OldStarUnification.unifyVar(tvar, tpe, renv)
 
-    case (tpe, tvar: Type.Var) => Unification.unifyVar(tvar, tpe, renv)
+    case (tpe, tvar: Type.Var) => OldStarUnification.unifyVar(tvar, tpe, renv)
 
     case (Type.RecordRowEmpty, Type.RecordRowEmpty) => Ok((Substitution.empty, Nil))
 
