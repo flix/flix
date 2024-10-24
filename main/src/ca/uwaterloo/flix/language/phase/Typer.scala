@@ -162,9 +162,10 @@ object Typer {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
         case defn =>
-          // Use sub-effecting for defs if the appropriate option is set
-          val open = flix.options.xsubeffecting >= SubEffectLevel.LambdasAndDefs
-          visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, open)
+          // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
+          val enableSubeffects = flix.options.xsubeffecting == Subeffecting.ModDefs
+
+          visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
       })(_ ++ freshDefs)
     }
 
@@ -178,8 +179,11 @@ object Typer {
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
-    // If open is set and the annotated effect is not pure, use a sub-effecting
+
+    // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
+    // A small optimization: If the signature is pure there is no room for subeffecting.
     val eff = if (!open || defn.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
+
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
@@ -232,9 +236,15 @@ object Typer {
         val (tpe, eff0) = ConstraintGen.visitExp(exp)
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
-        // If defs should have sub-effecting and the annotated effect is not pure, use a sub-effecting
-        val open = flix.options.xsubeffecting >= SubEffectLevel.LambdasAndDefs
-        val eff = if (!open || sig.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
+
+        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
+        val eff = flix.options.xsubeffecting match {
+          case Subeffecting.ModDefs =>
+            // A small optimization: If the signature is pure there is no room for subeffecting.
+            if (sig.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
+          case _ => eff0
+        }
+
         val infResult = ConstraintSolver.InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         mapN(substVal) {
@@ -277,9 +287,11 @@ object Typer {
         case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
           TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
-      // Use sub-effecting for instance defs if the appropriate option is set
-      val open = flix.options.xsubeffecting >= SubEffectLevel.LambdasAndInstances
-      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, renv, root, traitEnv, eqEnv, open))
+
+      // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+      val enableSubeffects = flix.options.xsubeffecting == Subeffecting.InsDefs
+
+      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, renv, root, traitEnv, eqEnv, enableSubeffects))
       mapN(defsVal) {
         case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
       }

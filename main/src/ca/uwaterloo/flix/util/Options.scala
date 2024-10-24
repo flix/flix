@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 
 import java.nio.file.Path
 
@@ -48,7 +47,7 @@ object Options {
     xfuzzer = false,
     xprinttyper = None,
     xverifyeffects = false,
-    xsubeffecting = SubEffectLevel.Nothing,
+    xsubeffecting = Subeffecting.Disabled,
     XPerfN = None,
     XPerfFrontend = false,
     xiterations = 5000
@@ -119,7 +118,7 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
                    xverifyeffects: Boolean,
-                   xsubeffecting: SubEffectLevel,
+                   xsubeffecting: Subeffecting,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
                    xiterations: Int,
@@ -160,43 +159,28 @@ object LibLevel {
 
 }
 
-/**
-  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
-  */
-sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
-  override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
-}
+sealed trait Subeffecting
 
-object SubEffectLevel {
+object Subeffecting {
 
   /**
-    * Do not use sub-effecting anywhere.
+    * Disable sub-effecting.
     */
-  case object Nothing extends SubEffectLevel
+  case object Disabled extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas.
+    * Enable sub-effecting for module-level definitions.
     */
-  case object Lambdas extends SubEffectLevel
+  case object ModDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas and instance def bodies
+    * Enable sub-effecting for instance-level defs.
     */
-  case object LambdasAndInstances extends SubEffectLevel
+  case object InsDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas and def bodies
+    * Enable sub-effecting for lambda expressions.
     */
-  case object LambdasAndDefs extends SubEffectLevel
-
-  /**
-    * Returns an integer where a larger number means more sub-effecting.
-    */
-  def toInt(level: SubEffectLevel): Int = level match {
-    case Nothing => 0
-    case Lambdas => 1
-    case LambdasAndInstances => 2
-    case LambdasAndDefs => 3
-  }
+  case object Lambdas extends Subeffecting
 
 }

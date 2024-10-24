@@ -348,7 +348,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
+                     xsubeffecting: Subeffecting = Subeffecting.Disabled,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      xiterations: Int = 1000,
@@ -408,12 +408,12 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
-    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
-      case "nothing" => SubEffectLevel.Nothing
-      case "lambdas" => SubEffectLevel.Lambdas
-      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
-      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are 'nothing', 'lambdas', 'lambdas-and-instances', and 'lambdas-and-defs'.")
+    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
+      case "disabled" => Subeffecting.Disabled
+      case "mod-defs" => Subeffecting.ModDefs
+      case "ins-defs" => Subeffecting.InsDefs
+      case "lambdas" => Subeffecting.Lambdas
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -561,7 +561,7 @@ object Main {
         text("[experimental] verifies consistency of effects after typechecking")
 
       // Xsubeffecting
-      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+      opt[Subeffecting]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
         text("[experimental] enables sub-effecting in select places")
 
       // Xiterations
