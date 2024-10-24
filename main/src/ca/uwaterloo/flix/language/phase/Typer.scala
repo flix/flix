@@ -164,6 +164,7 @@ object Typer {
         case defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
           val enableSubeffects = flix.options.xsubeffecting == Subeffecting.ModDefs
+
           visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
       })(_ ++ freshDefs)
     }
@@ -233,7 +234,7 @@ object Typer {
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
 
-        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
+        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         val eff = flix.options.xsubeffecting match {
           case Subeffecting.ModDefs =>
             // A small optimization: If the signature is pure there is no room for subeffecting.
@@ -283,8 +284,10 @@ object Typer {
         case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
           TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
+
       // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
       val enableSubeffects = flix.options.xsubeffecting == Subeffecting.InsDefs
+
       val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, renv, root, traitEnv, eqEnv, enableSubeffects))
       mapN(defsVal) {
         case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
