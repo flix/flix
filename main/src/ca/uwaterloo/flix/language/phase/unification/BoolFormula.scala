@@ -91,9 +91,9 @@ object BoolFormula {
       case _ => evaluateAll(f, freeVars(f).toList, List.empty)
     }
 
-    override def mkTrue: BoolFormula = True
+    override def mkTop: BoolFormula = True
 
-    override def mkFalse: BoolFormula = False
+    override def mkBot: BoolFormula = False
 
     override def mkVar(id: Int): BoolFormula = Var(id)
 

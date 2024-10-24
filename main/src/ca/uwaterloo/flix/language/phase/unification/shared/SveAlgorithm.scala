@@ -62,8 +62,8 @@ object SveAlgorithm {
         throw BoolUnificationException()
 
     case x :: xs =>
-      val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(alg)(f)
-      val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(alg)(f)
+      val t0 = BoolSubstitution.singleton(x, alg.mkBot)(alg)(f)
+      val t1 = BoolSubstitution.singleton(x, alg.mkTop)(alg)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
       val f1 = alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1))))

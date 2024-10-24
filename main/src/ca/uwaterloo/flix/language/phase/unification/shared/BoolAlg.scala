@@ -33,14 +33,14 @@ trait BoolAlg[F] {
   def isSatisfiable(f: F): Boolean
 
   /**
-   * Returns a representation of TRUE.
-   */
-  def mkTrue: F
+    * Returns a representation of bottom (i.e., false, the empty set, ...)
+    */
+  def mkBot: F
 
   /**
-   * Returns a representation of FALSE.
+   * Returns a representation of top (i.e., true, the universe, ...)
    */
-  def mkFalse: F
+  def mkTop: F
 
   /**
    * Returns a representation of the variable with the given `id`.
