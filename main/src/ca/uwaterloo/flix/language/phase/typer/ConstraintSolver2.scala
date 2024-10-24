@@ -325,8 +325,8 @@ object ConstraintSolver2 {
     */
   private def effectUnification(constr: TypeConstraint2)(implicit progress: Progress, scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case c@TypeConstraint2.Equality(tpe1, tpe2) if tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff =>
-      EffUnification.unify(tpe1, tpe2, renv) match {
-        case Result.Ok((subst, newConstrs)) => (newConstrs.map(broadEqualityConstraintToTypeConstraint), SubstitutionTree(subst, Map()))
+      EffUnification3.unify(tpe1, tpe2, scope, renv) match {
+        case Result.Ok(Some(subst)) => (Nil, SubstitutionTree(subst, Map()))
         case Result.Err(e) => (List(c), SubstitutionTree.empty)
       }
 
