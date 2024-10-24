@@ -17,6 +17,8 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
+import scala.collection.immutable.SortedSet
+
 
 /**
   * A constraint generated via type inference.
@@ -52,6 +54,15 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
+  }
+
+  def vars: SortedSet[Type.Var] = this match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) =>
+      tpe1.typeVars ++ tpe2.typeVars
+    case TypeConstraint.Trait(_, tpe, _) =>
+      tpe.typeVars
+    case TypeConstraint.Purification(_, eff1, eff2, _, nested) =>
+      eff1.typeVars ++ eff2.typeVars ++ nested.map(_.vars).reduceLeftOption(_ ++ _).getOrElse(SortedSet.empty[Type.Var])
   }
 
   def loc: SourceLocation

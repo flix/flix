@@ -17,12 +17,16 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable
 
 object Summary {
+
+  val totalEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
+  val lambdaSubEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
 
   /**
     * Returns a table of the file data of the root
@@ -63,8 +67,8 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    val totalEffVars = -1
-    val lambdaSubEffVars = -1
+    val totalEffVars = totalEffVarsTracker.get(defn.sym)
+    val lambdaSubEffVars = lambdaSubEffVarsTracker.get(defn.sym)
     DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars)
   }
 
@@ -75,8 +79,8 @@ object Summary {
       val fun = FunctionSym.TraitFunWithExp(sig.sym)
       val eff = resEffect(sig.spec.eff)
       val ecasts = countCheckedEcasts(exp)
-      val totalEffVars = -1
-      val lambdaSubEffVars = -1
+      val totalEffVars = totalEffVarsTracker.get(sig.sym)
+      val lambdaSubEffVars = lambdaSubEffVarsTracker.get(sig.sym)
       Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars))
   }
 
