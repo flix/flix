@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.mutable
 
@@ -28,22 +29,31 @@ object SetUnification {
     *
     * @param sizeThreshold if positive, [[solve]] will give up before SVE if there are more
     *                      equations than this
-    * @param permutationLimit if positive, the maximum number of permutations that
-    *                         [[svePermutations]] will try
+    * @param sveEquationPermutationLimit if positive, the maximum number of equation permutations
+    *                                    that [[svePermutations]] will try.
+    * @param sveVariablePermutationLimit if positive, the maximum number of variable permutations
+    *                                    that [[sve]] will try.
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
     * @param svePermutationExitSize [[svePermutations]] will stop searching early if it finds a
     *                               substitution smaller than this
     */
   final case class Options(
                             sizeThreshold: Int,
-                            permutationLimit: Int,
+                            sveEquationPermutationLimit: Int,
+                            sveVariablePermutationLimit: Int,
                             sveRecSizeThreshold: Int,
                             svePermutationExitSize: Int
                           )
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(10, 10, 100_000, 0)
+    val default: Options = Options(
+      sizeThreshold = 10,
+      sveEquationPermutationLimit = 3,
+      sveVariablePermutationLimit = 2,
+      sveRecSizeThreshold = 100_000,
+      svePermutationExitSize = 0
+    )
   }
 
   /** Represents the running mutable state of the solver. */
@@ -189,7 +199,7 @@ object SetUnification {
   private def svePermutations(eqs: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
-    val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
+    val permutations = if (opts.sveEquationPermutationLimit > 0) eqs.permutations.take(opts.sveEquationPermutationLimit) else eqs.permutations
     var bestEqs: List[Equation] = Nil
     var bestSubst = SetSubstitution.empty
     var bestSize = -1
@@ -509,14 +519,34 @@ object SetUnification {
     */
   private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val query = mkEmptyQuery(eq.f1, eq.f2)
-    val fvs = query.variables.toList
-    try {
-      val subst = successiveVariableElimination(query, fvs)
-      Some(Nil, subst)
-    } catch {
-      case NoSolutionException() => Some(List(eq.toUnsolvable), SetSubstitution.empty)
-      case ComplexException(msg) => Some(List(eq.toTimeout(msg)), SetSubstitution.empty)
+    val fvsPerms =
+      if (opts.sveVariablePermutationLimit > 0)
+        query.variables.toList.permutations.take(opts.sveVariablePermutationLimit)
+      else query.variables.toList.permutations
+    var bestSubst = SetSubstitution.empty
+    var bestSize = -1
+    var prevErr: Option[SveException] = None
+
+    def noPreviousPermutation(): Boolean = bestSize == -1
+
+    // Go through the permutations, tracking the best one.
+    for (res <- fvsPerms.map(successiveVariableEliminationRes(query, _))) res match {
+      case Result.Ok(s) =>
+        val sSize = s.totalFormulaSize
+        val smallestSubstitution = sSize < bestSize
+        if (noPreviousPermutation() || smallestSubstitution) {
+          bestSize = sSize
+          bestSubst = s
+        }
+      case Result.Err(ex) => prevErr = Some(ex)
     }
+    if (noPreviousPermutation()) {
+      prevErr match {
+        case Some(NoSolutionException()) => Some(List(eq.toUnsolvable), SetSubstitution.empty)
+        case Some(ComplexException(msg)) => Some(List(eq.toTimeout(msg)), SetSubstitution.empty)
+        case None => throw InternalCompilerException("Unreachble state", SourceLocation.Unknown)
+      }
+    } else Some(Nil, bestSubst)
   }
 
   /**
@@ -553,6 +583,16 @@ object SetUnification {
       se.unsafeExtend(x, xFormula)
   }
 
+  /** Like [[successiveVariableElimination]] but does not throw exceptions. */
+  private def successiveVariableEliminationRes(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): Result[SetSubstitution, SveException] = {
+    try {
+      Result.Ok(successiveVariableElimination(f, fvs))
+    } catch {
+      case ex: NoSolutionException => Result.Err(ex)
+      case ex: ComplexException => Result.Err(ex)
+    }
+  }
+
   /** Throws [[ComplexException]] if `f` is larger than [[Options.sveRecSizeThreshold]]. */
   private def assertSveRecSize(f: SetFormula)(implicit opts: Options): Unit = {
     if (opts.sveRecSizeThreshold > 0) {
@@ -563,14 +603,16 @@ object SetUnification {
     }
   }
 
+  private sealed trait SveException extends RuntimeException
+
   /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
-  private case class NoSolutionException() extends RuntimeException
+  private case class NoSolutionException() extends SveException
 
   /**
     * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
     * big.
     */
-  private case class ComplexException(msg: String) extends RuntimeException
+  private case class ComplexException(msg: String) extends SveException
 
   //
   // Checking and Debugging.
