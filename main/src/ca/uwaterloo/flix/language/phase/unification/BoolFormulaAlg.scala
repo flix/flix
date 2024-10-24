@@ -233,8 +233,6 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
-  override def minimize(f: BoolFormula): BoolFormula = f
-
   /**
     * Enumerates all assignments to `f` and checks if one of them is satisfiable.
     */
