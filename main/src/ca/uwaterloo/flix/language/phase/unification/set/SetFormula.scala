@@ -913,6 +913,24 @@ object SetFormula {
     }
   }
 
+  def tableForm(f: SetFormula): SetFormula = {
+    val variables = f.variables
+    val unknowns = f.unknowns
+    val disjs = unknowns.subsets().map(pos => {
+      val insts = unknowns.iterator.map(i => {
+        val base = if (variables.contains(i)) Var(i) else Cst(i)
+        if (pos.contains(i)) base else mkCompl(base)
+      }).toList
+      mkInterAll(fromCofiniteIntSet(evaluate(f, pos)) :: insts)
+    })
+    mkUnionAll(disjs.toList)
+  }
+
+  private def fromCofiniteIntSet(s: CofiniteIntSet): SetFormula = s match {
+    case CofiniteIntSet.Set(s) => mkElemSet(s)
+    case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
+  }
+
   /**
     * Returns `true` if `f` is equivalent to [[Empty]].
     * Exponential time in the number of unknowns.
