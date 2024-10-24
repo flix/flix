@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
+import ca.uwaterloo.flix.util.Subeffecting.Disabled
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -641,7 +642,7 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.eff == eff)
+          if (exp.eff == eff && flix.options.xsubeffecting == Disabled)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)

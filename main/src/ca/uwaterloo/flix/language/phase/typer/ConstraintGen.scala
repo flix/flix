@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
@@ -135,8 +135,11 @@ object ConstraintGen {
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
-        // Use sub-effecting for lambdas if the appropriate option is set
-        val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
+        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
+        val eff = flix.options.xsubeffecting match {
+          case Subeffecting.Lambdas => Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
+          case _ => eff0
+        }
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -369,7 +372,11 @@ object ConstraintGen {
       case Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
-        val defEff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff1 else Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
+        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
+        val defEff = flix.options.xsubeffecting match {
+          case Subeffecting.Lambdas => Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
+          case _ => eff1
+        }
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
