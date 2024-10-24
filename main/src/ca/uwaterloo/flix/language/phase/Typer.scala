@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{LabelledPrecedenceGraph, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
@@ -185,7 +185,7 @@ object Typer {
     // A small optimization: If the signature is pure there is no room for subeffecting.
     val eff = if (!open || defn.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
 
-    val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
+    val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
     mapN(substVal, assocVal) {
@@ -243,7 +243,7 @@ object Typer {
         val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.ModDefs) && sig.spec.eff != Type.Pure
         val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
-        val infResult = ConstraintSolver.InfResult(constrs, tpe, eff, renv)
+        val infResult = InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         mapN(substVal) {
           case subst => TypeReconstruction.visitSig(sig, subst)
