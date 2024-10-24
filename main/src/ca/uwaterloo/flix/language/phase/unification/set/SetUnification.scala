@@ -222,7 +222,7 @@ object SetUnification {
 
   private def minn(f: SetFormula): SetFormula = {
     val unknowns = f.unknowns.size
-    if ((unknowns * 1.5 + 5) * (2 ^ unknowns) <= f.size) tableForm(f) else f
+    if (f.size / (1.0 max (unknowns * math.pow(2, unknowns))) >= 5) tableForm(f) else f
   }
 
   /** Run a unification rule on an equation system in a fixpoint. */
