@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
@@ -153,8 +154,6 @@ object Zhegalkin {
     mkXor(mkXor(a, b), mkInter(a, b))
   }
 
-  def map(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = mapExpr(f, z)
-
   //
   // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
   //
@@ -233,6 +232,28 @@ object Zhegalkin {
       case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
       case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
     }
+  }
+
+  object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
+    override def isVar(f: ZhegalkinExpr): Boolean = ??? // TODO
+
+    override def isEquivBot(f: ZhegalkinExpr): Boolean = ??? // TODO
+
+    override def mkBot: ZhegalkinExpr = ZhegalkinExpr(ZEmpty, Nil)
+
+    override def mkTop: ZhegalkinExpr = ZhegalkinExpr(ZUniverse, Nil)
+
+    override def mkVar(id: Int): ZhegalkinExpr = ??? // TODO
+
+    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ??? // TODO
+
+    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = mkUnion(f1, f2)
+
+    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ??? // TODO
+
+    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = ??? // TODO
+
+    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = mapExpr(fn, f) // TODO
   }
 
 }
