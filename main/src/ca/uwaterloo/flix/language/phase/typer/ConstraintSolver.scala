@@ -21,11 +21,13 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, Source
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
 /**
   * Constraint resolution works by iteratively building up a substitution from the constraints.
@@ -47,7 +49,7 @@ object ConstraintSolver {
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(defn.sym, spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
@@ -59,13 +61,13 @@ object ConstraintSolver {
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(sig.sym, spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(sym: Symbol, spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -96,6 +98,7 @@ object ConstraintSolver {
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
+      Summary.totalEffVarsTracker.put(sym, constrs.map(_.vars).reduceLeftOption(_ ++ _).getOrElse(SortedSet.empty[Type.Var]).count(_.kind == Kind.Eff))
 
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
