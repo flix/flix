@@ -47,9 +47,10 @@ object Options {
     xfuzzer = false,
     xprinttyper = None,
     xverifyeffects = false,
-    xsubeffecting = Subeffecting.Disabled,
+    xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
+    XPerfPar = false,
     xiterations = 5000
   )
 
@@ -91,10 +92,6 @@ object Options {
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
   * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xprintphases        prints all ASTs to the build folder after each phase.
-  * @param xsummary            prints a summary of the compiled modules.
-  * @param xnodeprecated       disables deprecated features.
-  * @param xfuzzer             enables compiler fuzzing.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -118,8 +115,9 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
                    xverifyeffects: Boolean,
-                   xsubeffecting: Subeffecting,
+                   xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
                    XPerfN: Option[Int],
                    xiterations: Int,
                   )
@@ -162,11 +160,6 @@ object LibLevel {
 sealed trait Subeffecting
 
 object Subeffecting {
-
-  /**
-    * Disable sub-effecting.
-    */
-  case object Disabled extends Subeffecting
 
   /**
     * Enable sub-effecting for module-level definitions.

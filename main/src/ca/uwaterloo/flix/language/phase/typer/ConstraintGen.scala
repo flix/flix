@@ -136,10 +136,8 @@ object ConstraintGen {
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val eff = flix.options.xsubeffecting match {
-          case Subeffecting.Lambdas => Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
-          case _ => eff0
-        }
+        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -373,10 +371,8 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val defEff = flix.options.xsubeffecting match {
-          case Subeffecting.Lambdas => Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
-          case _ => eff1
-        }
+        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
