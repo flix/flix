@@ -914,6 +914,38 @@ object SetFormula {
   }
 
   /**
+    * Returns an equivalent formula that has exponential size in the number of
+    * [[SetFormula.unknowns]] if deemed smaller.
+    */
+  def selectiveExponentialForm(f: SetFormula): SetFormula = {
+    val unknowns = f.unknowns.size
+    if (f.size / (1.0 max (unknowns * math.pow(2, unknowns))) >= 3) tableForm(f) else f
+  }
+
+  /**
+    * Returns a exponential size CNF formula equivalent to `f`, based on exhaustive instantiation of
+    * [[SetFormula.unknowns]].
+    */
+  def tableForm(f: SetFormula): SetFormula = {
+    val variables = f.variables
+    val unknowns = f.unknowns
+    val disjs = unknowns.subsets().map(pos => {
+      val insts = unknowns.iterator.map(i => {
+        val base = if (variables.contains(i)) Var(i) else Cst(i)
+        if (pos.contains(i)) base else mkCompl(base)
+      }).toList
+      mkInterAll(fromCofiniteIntSet(evaluate(f, pos)) :: insts)
+    })
+    mkUnionAll(disjs.toList)
+  }
+
+  /** Returns the [[SetFormula]] representation of `s`. */
+  private def fromCofiniteIntSet(s: CofiniteIntSet): SetFormula = s match {
+    case CofiniteIntSet.Set(s) => mkElemSet(s)
+    case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
+  }
+
+  /**
     * Returns `true` if `f` is equivalent to [[Empty]].
     * Exponential time in the number of unknowns.
     */

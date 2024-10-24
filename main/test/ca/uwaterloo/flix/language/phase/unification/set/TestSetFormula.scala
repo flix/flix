@@ -36,4 +36,19 @@ class TestSetFormula extends AnyFunSuite with TestUtils {
     }
   }
 
+  test("TestSetFormula.Tableform") {
+    val seed = System.currentTimeMillis()
+    val r = new Random(seed)
+    // Always print seed to ensure the ability to reproduce failing tests.
+    println(s"Testing with seed $seed")
+
+    for (i <- 0 until 500) {
+      val opts = SetFormulaGenerator.Options(maxConnectiveWidth = 3, varDomSize = 3, cstDomSize = 3, elemDomSize = 3)
+      println()
+      val f = SetFormulaGenerator.generate(i, -1)(r, opts)
+      val fProp = SetFormula.tableForm(f)
+      assert(SetFormula.isEquivalent(f, fProp), s"Formulas not equivalent (seed: $seed): $f ~ $fProp")
+    }
+  }
+
 }

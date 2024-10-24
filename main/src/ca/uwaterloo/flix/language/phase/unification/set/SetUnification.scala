@@ -186,7 +186,11 @@ object SetUnification {
   }
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
-  private def svePermutations(eqs: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def svePermutations(eqs0: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    val eqs = eqs0.map{
+      case Equation(f1, f2, status, loc) =>
+        Equation.mk(selectiveExponentialForm(f1), selectiveExponentialForm(f2), loc, status)
+    }
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
@@ -542,11 +546,11 @@ object SetUnification {
     case x :: xs =>
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
-      val recFormula = propagation(mkInter(f0, f1))
+      val recFormula = selectiveExponentialForm(propagation(mkInter(f0, f1)))
       listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
-      val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
+      val xFormula = selectiveExponentialForm(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
       // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
       // each variable of `fvs` once (which is assumed to have no duplicates).
       // `se`, `x`, and `xFormula` therefore have disjoint variables.
@@ -558,7 +562,7 @@ object SetUnification {
     if (opts.sveRecSizeThreshold > 0) {
       val fSize = f.size
       if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
-        s"SetFormula size ($fSize) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
+        s"SetFormula size ($fSize, ${f.unknowns.size} unknowns) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
       )
     }
   }
