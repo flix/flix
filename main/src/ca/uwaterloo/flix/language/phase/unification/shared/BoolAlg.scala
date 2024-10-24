@@ -23,34 +23,24 @@ import scala.collection.immutable.SortedSet
 trait BoolAlg[F] {
 
   /**
-   * Returns `true` if `f` represents TRUE.
-   */
-  def isTrue(f: F): Boolean
-
-  /**
-   * Returns `true` if `f` represents FALSE.
-   */
-  def isFalse(f: F): Boolean
-
-  /**
    * Returns `true` if `f` represents a variable.
    */
   def isVar(f: F): Boolean
 
   /**
-   * Returns `true` if formula is satisfiable and `false` otherwise.
+   * Returns `true` if the given formula `f` is equivalent to the bottom element.
    */
-  def isSatisfiable(f: F): Boolean
+  def isEquivBot(f: F): Boolean
 
   /**
-   * Returns a representation of TRUE.
-   */
-  def mkTrue: F
+    * Returns a representation of bottom (i.e., false, the empty set, ...)
+    */
+  def mkBot: F
 
   /**
-   * Returns a representation of FALSE.
+   * Returns a representation of top (i.e., true, the universe, ...)
    */
-  def mkFalse: F
+  def mkTop: F
 
   /**
    * Returns a representation of the variable with the given `id`.
