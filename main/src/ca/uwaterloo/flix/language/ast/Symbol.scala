@@ -32,6 +32,7 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
@@ -44,6 +45,7 @@ object Symbol {
     * Returns `true` if the given effect symbol is a base effect.
     */
   def isBaseEff(sym: EffectSym): Boolean = sym match {
+    case Env => true
     case Exec => true
     case FileRead => true
     case FileWrite => true
@@ -60,6 +62,7 @@ object Symbol {
     * The String must be a valid name of a base effect.
     */
   def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Env" => Env
     case "Exec" => Exec
     case "FileRead" => FileRead
     case "FileWrite" => FileWrite

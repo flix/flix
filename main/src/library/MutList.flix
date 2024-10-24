@@ -96,7 +96,7 @@ mod MutList {
         if (0 <= i and i < v->length)
             Array.get(i, v->values)
         else
-            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
+            OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
 
     ///
     /// Stores the value `x` at position `i` in the mutable list `v`.
@@ -105,7 +105,7 @@ mod MutList {
         if (0 <= i and i < v->length)
             Array.put(x, i, v->values)
         else
-            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
+            OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.

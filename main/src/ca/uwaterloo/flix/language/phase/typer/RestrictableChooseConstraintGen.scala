@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ConstraintGen.visitExp
 import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.SymUse.RestrictableEnumSymUse
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
@@ -283,7 +284,7 @@ object RestrictableChooseConstraintGen {
   def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     exp0 match {
-      case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
+      case KindedAst.Expr.OpenAs(RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
         val `enum` = root.restrictableEnums(sym)
 
         val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)

@@ -6,7 +6,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do AskTell.askTell(false);
+        def f1() = AskTell.askTell(false);
         let result = try {
             f1()
         } with AskTell {
@@ -16,7 +16,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do AskTell.askTell(false);
+        def f1() = AskTell.askTell(false);
         def f2() = f1();
         let result = try {
             f2()
@@ -27,7 +27,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do AskTell.askTell(false);
+        def f1() = AskTell.askTell(false);
         def f2() = f1();
         def f3() = f2();
         let result = try {
@@ -39,7 +39,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do AskTell.askTell(false);
+        def f() = AskTell.askTell(false);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
@@ -50,7 +50,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do AskTell.askTell(false);
+        def f() = AskTell.askTell(false);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
@@ -61,7 +61,7 @@ mod Test.Handler.OneShot.Bool {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do AskTell.askTell(false);
+        def f1() = AskTell.askTell(false);
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
@@ -115,7 +115,7 @@ mod Test.Handler.OneShot.Bool {
         };
         Assert.eq(true, result)
 
-    def f(): Bool \ AskTell = do AskTell.askTell(false)
+    def f(): Bool \ AskTell = AskTell.askTell(false)
 
     def mutual1(x: Int32): Bool \ AskTell =
         if (x == 0) f() else mutual2(x - 1)

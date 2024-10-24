@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object TypedAstPrinter {
@@ -34,12 +35,12 @@ object TypedAstPrinter {
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.ApplyClo(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
-    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
-    case Expr.ApplyLocalDef(Ast.LocalDefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
-    case Expr.ApplySig(Ast.SigSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
-    case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LocalDef(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))

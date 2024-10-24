@@ -23,9 +23,8 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.errors.{ParseError, Recoverable, WeederError}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -95,7 +94,7 @@ object Parser2 {
       * Note that there is data-duplication, but not in the happy case.
       * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
       */
-    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+    val errors: ArrayBuffer[CompilationMessage & Recoverable] = ArrayBuffer.empty
   }
 
   private sealed trait Mark
@@ -119,7 +118,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = flix.phase("Parser2") {
+  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage & Recoverable]) = flix.phaseNew("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -135,11 +134,10 @@ object Parser2 {
 
     // Join refreshed syntax trees with the already fresh ones.
     val result = SyntaxTree.Root(refreshed.toMap ++ fresh)
-    Validation.success(result).withSoftFailures(errors.flatten.toList)
-  }(DebugValidation())
+    (result, errors.flatten.toList)
+  }
 
-
-  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage]) = {
+  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage & Recoverable]) = {
     implicit val s: State = new State(tokens, src)
     // Call the top-most grammar rule to gather all events into state.
     root()
@@ -287,7 +285,7 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage & Recoverable, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
     token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
@@ -299,7 +297,7 @@ object Parser2 {
   /**
     * Wrap the next token in an error.
     */
-  private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+  private def advanceWithError(error: CompilationMessage & Recoverable, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
     val m = mark.getOrElse(open())
     nth(0) match {
       // Avoid double reporting lexer errors.
@@ -2543,8 +2541,8 @@ object Parser2 {
     private def doExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDo))
       val mark = open()
-      expect(TokenKind.KeywordDo, SyntacticContext.Expr.Do)
-      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
+      expect(TokenKind.KeywordDo, SyntacticContext.Expr.OtherExpr)
+      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
       arguments()
       close(mark, TreeKind.Expr.Do)
     }
@@ -3057,9 +3055,9 @@ object Parser2 {
         assert(left == TokenKind.Eof)
         return true
       }
-      // This >= rather than > makes it so that operators with equal precedence are left-associative.
+      // This > rather than >= makes it so that operators with equal precedence are left-associative.
       // IE. 't + eff1 + eff2' becomes '(t + eff1) + eff2' rather than 't + (eff1 + eff2)'
-      rt >= lt
+      rt > lt
     }
 
     def arguments()(implicit s: State): Mark.Closed = {

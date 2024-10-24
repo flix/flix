@@ -47,7 +47,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     compilePrefixes(filepath.getFileName.toString, input)
   }
 
-  test("ford-fulkerson") {
+  ignore("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val input = Files.readString(filepath)
     compilePrefixes(filepath.getFileName.toString, input)

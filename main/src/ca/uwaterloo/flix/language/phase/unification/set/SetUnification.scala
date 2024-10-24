@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
-import ca.uwaterloo.flix.language.phase.unification.Zhegalkin
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.util.Result
 
@@ -43,8 +42,8 @@ object SetUnification {
                           )
 
   final object Options {
-    /** The default options. */
-    val default: Options = Options(10, 10, 3500, 0)
+    /** The default [[Options]]. */
+    val default: Options = Options(10, 10, 100_000, 0)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -67,6 +66,13 @@ object SetUnification {
 
     /** The [[SolverListener]] that does nothing. */
     val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
+
+    def stringListener(p: String => Unit): SolverListener = {
+      SolverListener(
+        onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
+        onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst))
+      )
+    }
   }
 
   /**
@@ -98,22 +104,24 @@ object SetUnification {
     runWithState(state, svePermutations, "SVE")
 
     // Experiment with Zhegalkin polynomials.
-    //    for ((_, f) <- state.subst.m) {
-    //      f match {
-    //        case SetFormula.Empty => // nop
-    //        case SetFormula.Var(_) => // nop
-    //        case SetFormula.ElemSet(_) => // nop
-    //        case SetFormula.Cst(_) => // nop
-    //        case _ =>
-    //          def withBound(s: String, b: Int): String =
-    //            if (s.length < b) s else s.substring(0, b - 3) + "..."
+    //        for ((_, f) <- state.subst.m) {
+    //          f match {
+    //            case SetFormula.Empty => // nop
+    //            case SetFormula.Var(_) => // nop
+    //            case SetFormula.ElemSet(_) => // nop
+    //            case SetFormula.Cst(_) => // nop
+    //            case _ =>
+    //              def withBound(s: String, b: Int): String = {
+    //                val len = s.length
+    //                if (len < b) s else s.substring(0, b - 3) + s"... ${len - (b + 3)} more"
+    //              }
     //
-    //          val z = Zhegalkin.toZhegalkin(f)
-    //          val s1 = withBound(f.toString, 100)
-    //          val s2 = withBound(z.toString, 100)
-    //          println(f"$s1%100s -- $s2")
-    //      }
-    //    }
+    //              val z = Zhegalkin.toZhegalkin(f)
+    //              val s1 = withBound(f.toString, 100)
+    //              val s2 = withBound(z.toString, 100)
+    //              println(f"$s1%100s -- $s2")
+    //          }
+    //        }
 
     (state.eqs, state.subst)
   }
@@ -176,6 +184,7 @@ object SetUnification {
     var bestEqs: List[Equation] = Nil
     var bestSubst = SetSubstitution.empty
     var bestSize = -1
+
     def noPreviousPermutation(): Boolean = bestSize == -1
 
     // Go through the permutations, tracking the best one.
@@ -415,8 +424,7 @@ object SetUnification {
       // {},
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
-        // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
+        val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
         Some(Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
@@ -582,5 +590,15 @@ object SetUnification {
       }
     }
     Result.Ok(())
+  }
+
+  /** Returns a multiline string of the given [[Equation]]s and [[SetSubstitution]]. */
+  def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
+    val sb = new StringBuilder()
+    sb.append("Equations:\n")
+    for (eq <- eqs) sb.append(s"  $eq\n")
+    sb.append(subst)
+    sb.append("\n")
+    sb.toString
   }
 }

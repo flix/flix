@@ -129,16 +129,9 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String with ToString[a] = {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Nel(${x}, ", sb);
-
-        let list = List.toString(xs);
-        StringBuilder.appendString!(list, sb);
-        StringBuilder.appendString!(")", sb);
-
-        StringBuilder.toString(sb)
+        "Nel(${x}, ${xs})"
     }
 
     ///
@@ -415,7 +408,7 @@ mod Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, eidentity)
+        loop(x :: xs, z -> checked_ecast(z))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.

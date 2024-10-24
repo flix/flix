@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -54,7 +55,7 @@ object RenameProvider {
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => renameVar(sym, newName)
-          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
+          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 

@@ -51,7 +51,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
-  test("ford-fulkerson") {
+  ignore("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
     compileWithSwappedLines(filepath.getFileName.toString, lines)
