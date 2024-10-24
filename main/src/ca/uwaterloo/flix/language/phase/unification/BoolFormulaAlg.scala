@@ -216,21 +216,6 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Var(sym) => fn(sym)
   }
 
-  override def toType(f: BoolFormula, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = f match {
-    case BoolFormula.True => Type.True
-    case BoolFormula.False => Type.False
-    case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
-    case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
-    case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
-    case BoolFormula.Var(id) => env.getBackward(id) match {
-      case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
-      case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
-    }
-  }
-
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
   /**

@@ -126,25 +126,4 @@ trait BoolAlg[F] {
     rigidVars ++ effs
   }
 
-  /**
-    * Converts the given formula f into a type.
-    */
-  def toType(f: F, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type
-
-  /**
-    * Converts the given type t into a formula.
-    */
-  def fromType(t: Type, env: Bimap[BoolFormula.IrreducibleEff, Int]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(BoolFormula.IrreducibleEff.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
-      case Some(x) => mkVar(x)
-    }
-    case Type.True => mkTrue
-    case Type.False => mkFalse
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => mkNot(fromType(tpe1, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
-  }
-
 }
