@@ -220,7 +220,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
-        val o1 = combineAtomicOpInfo(op, o)
+        val o1 = visitAtomicOp(op, o)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
@@ -346,7 +346,7 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
-    def combineAtomicOpInfo(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
+    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" =>
         occurInfo0 :+ sym0 -> DontInline
       case _ => occurInfo0
