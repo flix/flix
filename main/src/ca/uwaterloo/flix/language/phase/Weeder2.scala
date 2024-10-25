@@ -2313,7 +2313,7 @@ object Weeder2 {
         case (Nil, Some(r)) =>
           val error = EmptyRecordExtensionPattern(r.loc)
           sctx.errors.add(error)
-          r
+          Pattern.Error(r.loc)
 
         // Illegal pattern: { x, ... | (1, 2, 3) }
         case (_, Some(r)) =>
