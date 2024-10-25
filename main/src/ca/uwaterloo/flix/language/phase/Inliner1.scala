@@ -78,7 +78,7 @@ object Inliner1 {
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
       val e = visitExp(exp, Map.empty)(root, flix)
-      val sp = visitSpec(spec, fparams.map(_._1))
+      val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
       MonoAst.Def(sym, sp, e, loc)
   }
 
@@ -491,9 +491,11 @@ object Inliner1 {
       MonoAst.Expr.Let(freshVar, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst1 = subst0 + (sym -> freshVarSym)
       val fps = fparams.map(visitFormalParam)
-      val e1 = applySubst(exp1, subst0)
-      val e2 = applySubst(exp2, subst0)
+      val e1 = applySubst(exp1, subst1)
+      val e2 = applySubst(exp2, subst1)
       MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
