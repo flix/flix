@@ -28,10 +28,7 @@ object SveAlgorithm {
     val typeVars = alg.freeVars(query).toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filterNot(renv.contains)
-
-    // Determine the order in which to eliminate the variables.
-    val freeVars = computeVariableOrder(flexibleTypeVars)
+    val freeVars = typeVars.filterNot(renv.contains)
 
     // Eliminate all variables.
     try {
@@ -40,11 +37,6 @@ object SveAlgorithm {
       case _: BoolUnificationException => None
     }
   }
-
-  /**
-    * Determine the variable order.
-    */
-  private def computeVariableOrder(l: List[Int]): List[Int] = l
 
   /**
     * Performs success variable elimination on the given boolean expression `f`.
