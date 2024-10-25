@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{LabelledPrecedenceGraph, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, LabelledPrecedenceGraph, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
@@ -164,8 +164,7 @@ object Typer {
       mapN(ParOps.parTraverseValues(staleDefs) {
         case defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-          val enableSubeffects = flix.options.xsubeffecting.contains(Subeffecting.ModDefs)
-
+          val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
           visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
       })(_ ++ freshDefs)
     }
@@ -182,8 +181,7 @@ object Typer {
     val infTconstrs = context.getTypeConstraints
 
     // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
-    // A small optimization: If the signature is pure there is no room for subeffecting.
-    val eff = if (!open || defn.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
+    val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
@@ -240,8 +238,8 @@ object Typer {
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         // A small optimization: If the signature is pure there is no room for subeffecting.
-        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.ModDefs) && sig.spec.eff != Type.Pure
-        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
+        val open = shouldSubeffect(exp, sig.spec.eff, Subeffecting.ModDefs)
+        val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
@@ -286,10 +284,11 @@ object Typer {
           TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
 
-      // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-      val enableSubeffects = flix.options.xsubeffecting == Subeffecting.InsDefs
-
-      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, renv, root, traitEnv, eqEnv, enableSubeffects))
+      val defsVal = Validation.traverse(defs0)(defn => {
+        // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+        val open = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.InsDefs)
+        visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
+      })
       mapN(defsVal) {
         case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
       }
@@ -458,6 +457,20 @@ object Typer {
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
     }
+  }
+
+  /**
+    * Returns `true` if if `subeffecting` is enabled by [[Flix]] and it is not redundant for a
+    * function with `body` and `eff`.
+    */
+  private def shouldSubeffect(body: KindedAst.Expr, eff: Type, subeffecting: Subeffecting)(implicit flix: Flix): Boolean = {
+    val enabled = flix.options.xsubeffecting.contains(subeffecting)
+    val useless = eff == Type.Pure
+    val redundant = body match {
+      case KindedAst.Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+      case _ => false
+    }
+    enabled && !useless && !redundant
   }
 
 }
