@@ -374,8 +374,8 @@ object ConstraintGen {
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
         val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
-        if (shouldSubeffect) Summary.lambdaSubEffVarsTracker.compute(sym, (_, i) => i + 1)
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
+        if (shouldSubeffect) Summary.lambdaSubEffVarsTracker.compute(sym, (_, i) => i + 1)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)

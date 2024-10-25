@@ -27,6 +27,8 @@ object Summary {
 
   val totalEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
   val lambdaSubEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
+  val modDefSubEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
+  val insDefSubEffVarsTracker: ConcurrentHashMap[Symbol, Int] = new ConcurrentHashMap
 
   /**
     * Returns a table of the file data of the root
@@ -69,8 +71,8 @@ object Summary {
     val ecasts = countCheckedEcasts(defn.exp)
     val totalEffVars = totalEffVarsTracker.get(defn.sym)
     val lambdaSubEffVars = lambdaSubEffVarsTracker.get(defn.sym)
-    val modDefSubEffVars = -1
-    val insDefSubEffVars = -1
+    val modDefSubEffVars = modDefSubEffVarsTracker.get(defn.sym)
+    val insDefSubEffVars = insDefSubEffVarsTracker.get(defn.sym)
     DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
   }
 
@@ -83,8 +85,8 @@ object Summary {
       val ecasts = countCheckedEcasts(exp)
       val totalEffVars = totalEffVarsTracker.get(sig.sym)
       val lambdaSubEffVars = lambdaSubEffVarsTracker.get(sig.sym)
-      val modDefSubEffVars = -1
-      val insDefSubEffVars = -1
+      val modDefSubEffVars = modDefSubEffVarsTracker.get(sig.sym)
+      val insDefSubEffVars = insDefSubEffVarsTracker.get(sig.sym)
       Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
   }
 
