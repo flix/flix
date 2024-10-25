@@ -296,7 +296,9 @@ object Inliner1 {
       val e = visitExp(exp, subst0)
       MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = visitExp(exp, subst0)
+      MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, subst0)
