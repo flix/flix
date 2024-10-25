@@ -288,9 +288,13 @@ object Inliner1 {
       val e2 = visitExp(exp2, subst0)
       MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLength(exp, loc) => ???
+    case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
+      val e = visitExp(exp, subst0)
+      MonoAst.Expr.VectorLength(e, loc)
 
-    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, subst0)
+      MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
 
