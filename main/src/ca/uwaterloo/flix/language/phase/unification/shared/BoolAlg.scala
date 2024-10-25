@@ -23,11 +23,6 @@ import scala.collection.immutable.SortedSet
 trait BoolAlg[F] {
 
   /**
-   * Returns `true` if `f` represents a variable.
-   */
-  def isVar(f: F): Boolean
-
-  /**
    * Returns `true` if the given formula `f` is equivalent to the bottom element.
    */
   def isEquivBot(f: F): Boolean
@@ -43,7 +38,12 @@ trait BoolAlg[F] {
   def mkTop: F
 
   /**
-   * Returns a representation of the variable with the given `id`.
+    * Returns a representation of the rigid variable with the given `id`.
+    */
+  def mkCst(id: Int): F
+
+  /**
+   * Returns a representation of the flexible variable with the given `id`.
    */
   def mkVar(id: Int): F
 

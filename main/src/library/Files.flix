@@ -746,7 +746,7 @@ mod Files {
             let javaIter = javaStream.iterator();
 
             let iter: Iterator[Path, _, _] = fromJavaIter(rc, javaIter);
-            Iterator.map(x -> unsafe x.toString(), iter)
+            Iterator.map(x -> unchecked_cast ((x.toString(): _ \ IO) as _ \ r), iter)
         })
 
     ///
@@ -764,7 +764,7 @@ mod Files {
             let javaIter = javaStream.iterator();
 
             let iter: Iterator[Path, _, _] = fromJavaIter(rc, javaIter);
-            Iterator.map(x -> unsafe x.toString(), iter)
+            Iterator.map(x -> unchecked_cast ((x.toString(): _ \ IO) as _ \ r), iter)
         })
 
     ///
