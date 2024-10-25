@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.util.CofiniteIntSet
+import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
 
 import scala.collection.immutable.SortedSet
 
@@ -70,6 +71,12 @@ object Zhegalkin {
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
   case class ZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]) {
+    private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
+
+    if (grouped.exists(_._2.length > 1)) {
+      throw InternalCompilerException("Invariant violated: Duplicate term", SourceLocation.Unknown)
+    }
+
     override def toString: String =
       if (terms.isEmpty)
         cst.toString
@@ -93,8 +100,19 @@ object Zhegalkin {
   private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = (z1, z2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = mkXor(c1, c2)
-      val ts = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
-      mkZhegalkinExpr(c, ts)
+      // Eliminate duplicates: t ⊕ t = 0
+      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+
+      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
+      val grouped = tsr1.groupBy(_.vars).toList
+      val resTerms = grouped.map {
+        case (vars, l) =>
+          val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
+            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+          }
+          ZhegalkinTerm(mergedCst, vars)
+      }
+      mkZhegalkinExpr(c, resTerms)
   }
 
   /** Returns the complement of the Zhegalkin expr. */
