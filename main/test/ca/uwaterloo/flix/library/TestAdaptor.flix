@@ -247,19 +247,19 @@ mod TestAdaptor {
 
     @test
     def fromCollectionToIterator01(): Bool \ {} = region rc {
-        let col = checked_cast(unsafe JList.of());
+        let col = unsafe JList.of();
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == (Nil : List[String])
     }
 
     @test
     def fromCollectionToIterator02(): Bool \ {} = region rc {
-        let col = checked_cast(unsafe JList.of("hello"));
+        let col = unsafe JList.of("hello");
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: Nil
     }
 
     @test
     def fromCollectionToIterator03(): Bool \ {} = region rc {
-        let col = checked_cast(unsafe JList.of("hello", "world"));
+        let col = unsafe JList.of("hello", "world");
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: "world" :: Nil
     }
 
@@ -270,12 +270,12 @@ mod TestAdaptor {
     @test
     def toOptional01(): Bool \ IO =
         let o = Adaptor.toOptional(None);
-        o.equals(unsafe Optional.empty())
+        o.equals(Optional.empty())
 
     @test
     def toOptional02(): Bool \ IO =
         let o = Adaptor.toOptional(Some("hello"));
-        o.equals(unsafe Optional.of("hello"))
+        o.equals(Optional.of("hello"))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMapEntry                                                              //
@@ -284,7 +284,7 @@ mod TestAdaptor {
     @test
     def toMapEntry01(): Bool \ IO =
         let e = Adaptor.toMapEntry(("hello", "world"));
-        e.equals(unsafe JMap.entry("hello", "world"))
+        e.equals(JMap.entry("hello", "world"))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -293,17 +293,17 @@ mod TestAdaptor {
     @test
     def toList01(): Bool \ IO =
         let l = Adaptor.toList(Nil);
-        unsafe JList.of().equals(l)
+        JList.of().equals(l)
 
     @test
     def toList02(): Bool \ IO =
         let l = Adaptor.toList(List#{"hello"});
-        unsafe JList.of("hello").equals(l)
+        JList.of("hello").equals(l)
 
     @test
     def toList03(): Bool \ IO =
         let l = Adaptor.toList(List#{"hello", "world"});
-        unsafe JList.of("hello", "world").equals(l)
+        JList.of("hello", "world").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // toArrayList                                                             //
@@ -312,7 +312,7 @@ mod TestAdaptor {
     @test
     def toArrayList01(): Bool \ IO =
         let l = Adaptor.toArrayList(Nil);
-        new ArrayList(unsafe JList.of()).equals(l)
+        new ArrayList(JList.of()).equals(l)
 
     @test
     def toArrayList02(): Bool \ IO =
@@ -369,7 +369,7 @@ mod TestAdaptor {
     @test
     def toTreeSet01(): Bool \ IO =
         let s = Adaptor.toTreeSet((Set#{} : Set[String]));
-        new TreeSet(unsafe JList.of()).equals(s)
+        new TreeSet(JList.of()).equals(s)
 
     @test
     def toTreeSet02(): Bool \ IO =
@@ -388,17 +388,17 @@ mod TestAdaptor {
     @test
     def toMap01(): Bool \ IO =
         let m = Adaptor.toMap((Map#{} : Map[String, String]));
-        unsafe JMap.of().equals(m)
+        JMap.of().equals(m)
 
     @test
     def toMap02(): Bool \ IO =
         let m = Adaptor.toMap(Map#{"a" => "hello"});
-        unsafe JMap.of("a", "hello").equals(m)
+        JMap.of("a", "hello").equals(m)
 
     @test
     def toMap03(): Bool \ IO =
         let m = Adaptor.toMap(Map#{"a" => "hello", "b" => "world"});
-        unsafe JMap.of("a", "hello", "b", "world").equals(m)
+        JMap.of("a", "hello", "b", "world").equals(m)
 
     /////////////////////////////////////////////////////////////////////////////
     // toTreeMap                                                               //
@@ -407,17 +407,17 @@ mod TestAdaptor {
     @test
     def toTreeMap01(): Bool \ IO =
         let m = Adaptor.toTreeMap((Map#{} : Map[String, String]));
-        new TreeMap(unsafe JMap.of()).equals(m)
+        new TreeMap(JMap.of()).equals(m)
 
     @test
     def toTreeMap02(): Bool \ IO =
         let m = Adaptor.toTreeMap(Map#{"a" => "hello"});
-        new TreeMap(unsafe JMap.of("a", "hello")).equals(m)
+        new TreeMap(JMap.of("a", "hello")).equals(m)
 
     @test
     def toTreeMap03(): Bool \ IO =
         let m = Adaptor.toTreeMap(Map#{"a" => "hello", "b" => "world"});
-        new TreeMap(unsafe JMap.of("a", "hello", "b", "world")).equals(m)
+        new TreeMap(JMap.of("a", "hello", "b", "world")).equals(m)
 
 
 }
