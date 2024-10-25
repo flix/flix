@@ -235,8 +235,6 @@ object Zhegalkin {
   }
 
   object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
-    override def isVar(f: ZhegalkinExpr): Boolean = ??? // TODO
-
     override def isEquivBot(f: ZhegalkinExpr): Boolean = ??? // TODO
 
     override def mkBot: ZhegalkinExpr = ZhegalkinExpr(ZEmpty, Nil)

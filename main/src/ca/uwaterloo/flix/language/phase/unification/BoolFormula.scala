@@ -79,11 +79,6 @@ object BoolFormula {
    */
   object BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
-    override def isVar(f: BoolFormula): Boolean = f match {
-      case Var(_) => true
-      case _ => false
-    }
-
     override def isEquivBot(f: BoolFormula): Boolean = !isSat(f)
 
     override def mkBot: BoolFormula = False

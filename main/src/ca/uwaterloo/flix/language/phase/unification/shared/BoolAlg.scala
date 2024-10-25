@@ -23,11 +23,6 @@ import scala.collection.immutable.SortedSet
 trait BoolAlg[F] {
 
   /**
-   * Returns `true` if `f` represents a variable.
-   */
-  def isVar(f: F): Boolean
-
-  /**
    * Returns `true` if the given formula `f` is equivalent to the bottom element.
    */
   def isEquivBot(f: F): Boolean
