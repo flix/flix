@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -84,6 +86,8 @@ object BoolFormula {
     override def mkBot: BoolFormula = False
 
     override def mkTop: BoolFormula = True
+
+    override def mkCst(id: Int): BoolFormula = throw InternalCompilerException("Unsupported", SourceLocation.Unknown)
 
     override def mkVar(id: Int): BoolFormula = Var(id)
 

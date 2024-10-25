@@ -250,7 +250,10 @@ object Zhegalkin {
 
     override def mkTop: ZhegalkinExpr = ZhegalkinExpr(ZUniverse, Nil)
 
-    // TODO: Add mkCst?
+    override def mkCst(id: Int): ZhegalkinExpr = {
+      val x = ZhegalkinVar(id, flexible = false)
+      mkZhegalkinExpr(ZUniverse, List(ZhegalkinTerm(ZUniverse, SortedSet(x))))
+    }
 
     override def mkVar(id: Int): ZhegalkinExpr = {
       val x = ZhegalkinVar(id, flexible = true)
