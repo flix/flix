@@ -852,7 +852,7 @@ object Lowering {
         case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val p1 = visitPat(pat1)
           val t1 = visitType(tpe1)
-          LoweredAst.Pattern.Record.RecordLabelPattern(label, t1, p1, loc1)
+          LoweredAst.Pattern.Record.RecordLabelPattern(label, p1, t1, loc1)
       }
       val patVal = visitPat(pat)
       val t = visitType(tpe)

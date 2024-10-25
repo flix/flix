@@ -634,7 +634,7 @@ object Monomorpher {
       (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
-        case LoweredAst.Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+        case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val (p1, env1) = visitPat(pat1, subst)
           (MonoAst.Pattern.Record.RecordLabelPattern(label, subst(tpe1), p1, loc1), env1)
       }.unzip
