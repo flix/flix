@@ -694,7 +694,7 @@ object TypeReconstruction2 {
     case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
       val ps = pats.map {
         case KindedAst.Pattern.Record.RecordLabelPattern(field, pat1, tvar1, loc1) =>
-          TypedAst.Pattern.Record.RecordLabelPattern(field, subst(tvar1), visitPattern(pat1), loc1)
+          TypedAst.Pattern.Record.RecordLabelPattern(field, visitPattern(pat1), subst(tvar1), loc1)
       }
       val p = visitPattern(pat)
       TypedAst.Pattern.Record(ps, p, subst(tvar), loc)
