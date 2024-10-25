@@ -144,16 +144,10 @@ object ConstraintSolver {
     * }}}
     */
   def expandTraitEnv(tenv: TraitEnv, tconstrs: List[Ast.TraitConstraint]): TraitEnv = {
-    val m = tconstrs.flatMap(withSupers(_, tenv)).foldLeft(tenv.m) {
+    tconstrs.foldLeft(tenv) {
       case (acc, Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, _), arg, loc)) =>
-        val inst = Ast.Instance(arg, Nil)
-        val context = acc.get(sym) match {
-          case Some(Ast.TraitContext(supers, insts)) => Ast.TraitContext(supers, inst :: insts)
-          case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", loc)
-        }
-        acc + (sym -> context)
+        acc.addInstance(sym, arg)
     }
-    TraitEnv(m)
   }
 
   /**
@@ -451,7 +445,7 @@ object ConstraintSolver {
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
             val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
-            val insts = tenv.m(trt).instances
+            val insts = tenv.getInstances(trt)
             // find the first (and only) instance that matches
             val tconstrsOpt = ListOps.findMap(insts) {
               inst =>
@@ -526,7 +520,7 @@ object ConstraintSolver {
     * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
     */
   def withSupers(tconstr: Ast.TraitConstraint, tenv: TraitEnv): List[Ast.TraitConstraint] = {
-    val superSyms = tenv.m(tconstr.head.sym).superTraits
+    val superSyms = tenv.getSuperTraits(tconstr.head.sym)
     val directSupers = superSyms.map {
       case sym => Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
     }
@@ -684,17 +678,6 @@ object ConstraintSolver {
       case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
     }
   }
-
-  /**
-    *
-    * A result of performing type inference.
-    *
-    * @param constrs constraints inferred for the expression
-    * @param tpe     the inferred type of the expression
-    * @param eff     the inferred effect of the expression
-    * @param renv    the inferred rigidity environment for the expression (marking region variables)
-    */
-  case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
 
   /**
     * The result of constraint resolution.
