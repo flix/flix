@@ -17,6 +17,9 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
@@ -508,6 +511,24 @@ object SetUnification {
     * [[Equation.Status.Timeout]].
     */
   private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+
+    if (false) {
+      implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
+      val f1 = Zhegalkin.toZhegalkin(eq.f1)
+      val f2 = Zhegalkin.toZhegalkin(eq.f2)
+      val q = alg.mkXor(f1, f2)
+      val fvs = alg.freeVars(q).toList
+      try {
+        val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
+        println("SUCCESS: " + subst)
+      } catch {
+        case _: BoolUnificationException =>
+        println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
+      }
+    }
+
+
+
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList
     try {

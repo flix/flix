@@ -43,6 +43,11 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
   }
 
   /**
+    * Applies the substitution at the root of the substitution tree to the given type.
+    */
+  def apply(t: Type): Type = root.apply(t)
+
+  /**
     * Composes this substitution tree with the given substitution tree.
     */
   def @@(that: SubstitutionTree): SubstitutionTree = that match {
