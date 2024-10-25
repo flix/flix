@@ -170,11 +170,6 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     System.out.println(x |> ToString.toString)
 
 ///
-/// Touches the given region capability `rc`.
-///
-pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
-
-///
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
