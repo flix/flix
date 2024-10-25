@@ -510,19 +510,42 @@ object Inliner1 {
       val e2 = applySubst(exp2, env0)
       MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Discard(exp, eff, loc) => ???
+    case OccurrenceAst1.Expr.Discard(exp, eff, loc) =>
+      val e = applySubst(exp, env0)
+      MonoAst.Expr.Discard(e, eff, loc)
 
-    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = applySubst(exp, env0)
+      val rs = rules.map {
+        case OccurrenceAst1.MatchRule(pat, guard, exp) =>
+          val (p, env1) = applySubstPattern(pat)
+          val env2 = env0 ++ env1
+          val g = guard.map(applySubst(_, env2))
+          val e = applySubst(exp, env2)
+          MonoAst.MatchRule(p, g, e)
+      }
+      MonoAst.Expr.Match(e, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(applySubst(_, env0))
+      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = applySubst(exp1, env0)
+      val e2 = applySubst(exp2, env0)
+      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLength(exp, loc) => ???
+    case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
+      val e = applySubst(exp, env0)
+      MonoAst.Expr.VectorLength(e, loc)
 
-    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = applySubst(exp, env0)
+      MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = applySubst(exp, env0)
+      MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = applySubst(exp, env0)
