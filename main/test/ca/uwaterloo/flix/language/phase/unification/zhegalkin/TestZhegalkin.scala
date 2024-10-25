@@ -13,7 +13,7 @@ class TestZhegalkin extends AnyFunSuite with TestUtils {
     val f1 = alg.mkBot
     val f2 = alg.mkBot
 
-    SveAlgorithm.unify(f1, f2, Set.empty).get
+    println(SveAlgorithm.unify(f1, f2, Set.empty).get)
   }
 
 }
