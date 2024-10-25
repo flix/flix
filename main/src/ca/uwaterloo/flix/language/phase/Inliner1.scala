@@ -40,6 +40,8 @@ object Inliner1 {
 
   }
 
+  private type VarSubst = Map[Symbol.VarSym, Symbol.VarSym]
+
   /**
     * A function below the soft threshold is typically inlined.
     */
@@ -49,8 +51,6 @@ object Inliner1 {
     * A function above the hard threshold is never inlined.
     */
   private val HardInlineThreshold: Int = 8
-
-  private type Subst = Map[Symbol.VarSym, Symbol.VarSym]
 
   /**
     * Returns `true` if `def0` should be inlined.
@@ -454,7 +454,7 @@ object Inliner1 {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def applySubst(exp0: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
+  private def applySubst(exp0: OccurrenceAst1.Expr, subst0: VarSubst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
@@ -585,9 +585,9 @@ object Inliner1 {
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  private def applySubstPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, Subst) = {
+  private def applySubstPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, VarSubst) = {
 
-    def visit(pattern0: OccurrenceAst1.Pattern): (MonoAst.Pattern, Subst) = pattern0 match {
+    def visit(pattern0: OccurrenceAst1.Pattern): (MonoAst.Pattern, VarSubst) = pattern0 match {
       case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
         (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
 
@@ -618,7 +618,7 @@ object Inliner1 {
         (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
     }
 
-    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, Subst) = pattern0 match {
+    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
       case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
         val (p, subst) = visit(pat)
         (MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, p, loc), subst)
