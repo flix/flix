@@ -30,12 +30,14 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   */
 object Inliner1 {
 
-  sealed trait Expr
+  sealed private trait SubstRange
 
-  object Expr {
-    case class SimplifiedExp(exp: MonoAst.Expr) extends Expr
+  private object SubstRange {
 
-    case class OccurrenceExp(exp: OccurrenceAst1.Expr) extends Expr
+    case class DoneExp(exp: MonoAst.Expr) extends SubstRange
+
+    case class SuspendedExp(exp: OccurrenceAst1.Expr) extends SubstRange
+
   }
 
   /**
@@ -122,7 +124,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
+  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, SubstRange])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
@@ -136,9 +138,9 @@ object Inliner1 {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expr.SimplifiedExp(exp) => exp
+            case SubstRange.DoneExp(exp) => exp
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case SubstRange.SuspendedExp(exp) => visitExp(exp, subst0)
           }
       }
 
@@ -211,7 +213,7 @@ object Inliner1 {
         // There is a small decrease in code size and runtime.
         val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
         if (wantToPreInline) {
-          val subst1 = subst0 + (sym -> Expr.OccurrenceExp(exp1))
+          val subst1 = subst0 + (sym -> SubstRange.SuspendedExp(exp1))
           visitExp(exp2, subst1)
         } else {
           val e1 = visitExp(exp1, subst0)
@@ -222,7 +224,7 @@ object Inliner1 {
           if (wantToPostInline) {
             // If `e1` is to be inlined:
             // Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = subst0 + (sym -> Expr.SimplifiedExp(e1))
+            val subst1 = subst0 + (sym -> SubstRange.DoneExp(e1))
             visitExp(exp2, subst1)
           } else {
             // Case 5:
