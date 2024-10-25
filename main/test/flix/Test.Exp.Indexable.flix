@@ -69,32 +69,32 @@ mod Test.Exp.Indexable {
     @Test
     def map01(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        handler(() -> checked_ecast (m[0] == 1))
+        handler(() -> m[0] == 1)
 
     @Test
     def map02(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        handler(() -> checked_ecast (m[1] == 2))
+        handler(() -> m[1] == 2)
 
     @Test
     def map03(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        handler(() -> checked_ecast (m[2] == 3))
+        handler(() -> m[2] == 3)
 
     @Test
     def map04(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        handler(() -> checked_ecast (m[3] == 4))
+        handler(() -> m[3] == 4)
 
     @Test
     def map05(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        not handler(() -> checked_ecast (m[4] == -1))
+        not handler(() -> m[4] == -1)
 
     @Test
     def map06(): Bool =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        not handler(() -> checked_ecast (m[-1] == -1))
+        not handler(() -> m[-1] == -1)
 
     @Test
     def record01(): Bool =
