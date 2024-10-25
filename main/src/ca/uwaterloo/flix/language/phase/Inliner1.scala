@@ -272,7 +272,7 @@ object Inliner1 {
       val e = visitExp(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst1.MatchRule(pat, guard, exp) =>
-          val p = ??? // visitPattern(pat)
+          val p = visitPattern(pat)
           val g = guard.map(visitExp(_, subst0))
           val e = visitExp(exp, subst0)
           MonoAst.MatchRule(p, g, e)
@@ -332,6 +332,20 @@ object Inliner1 {
       }
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
 
+  }
+
+  private def visitPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
+    def visit(pattern0: OccurrenceAst1.Pattern): MonoAst.Pattern = pattern0 match {
+      case OccurrenceAst1.Pattern.Wild(tpe, loc) => ???
+      case OccurrenceAst1.Pattern.Var(sym, tpe, occur, loc) => ???
+      case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) => ???
+      case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) => ???
+      case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) => ???
+      case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) => ???
+      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) => ???
+    }
+
+    visit(pattern00)
   }
 
   private def isPure(eff0: Type): Boolean = {
