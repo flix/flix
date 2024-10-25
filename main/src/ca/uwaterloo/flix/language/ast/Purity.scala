@@ -159,6 +159,11 @@ object Purity {
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
       t1.intersect(t2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b) = (a ∪ b) ∩ (U - (a ∩ b))
+      t1.union(t2).intersect(universe.diff(t1.intersect(t2)))
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
       val t = evaluateFormula(tpe)
       universe.diff(t)
