@@ -346,9 +346,15 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
-    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
+    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo)(implicit letBinding: Option[VarSym]): OccurInfo = op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" =>
         occurInfo0 :+ sym0 -> DontInline
+
+      case AtomicOp.HoleError(_) => letBinding match {
+        case Some(varSym) => occurInfo0 + (varSym -> DontInline)
+        case None => occurInfo0
+      }
+
       case _ => occurInfo0
     }
 
