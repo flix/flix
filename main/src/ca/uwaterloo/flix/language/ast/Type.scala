@@ -666,6 +666,19 @@ object Type {
   }
 
   /**
+    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
+    */
+  def freshSubEffectVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+    import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
+    val offset = -10_000_000
+    val text = Ast.VarText.Absent
+    val kind = Kind.Eff
+    val isRegion = false
+    val sym = new KindedTypeVarSym(flix.genSym.freshId() + offset, text, kind, isRegion, scope, loc)
+    Type.Var(sym, loc)
+  }
+
+  /**
     * Returns a fresh error type of the given kind `k`.
     */
   def freshError(k: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {

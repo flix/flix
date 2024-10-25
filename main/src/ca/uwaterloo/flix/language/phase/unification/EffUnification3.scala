@@ -114,7 +114,11 @@ object EffUnification3 {
 
   /** Returns a [[Bimap]] with each [[Atom]] having a unique number. */
   private def mkBidirectionalVarMap(atoms: Set[Atom]): Bimap[Atom, Int] =
-    Bimap.from(atoms.toList.zipWithIndex)
+    Bimap.from(atoms.toList.zipWithIndex.map {
+      case (a@Atom.VarFlex(sym), _) if sym.id < 0 => a -> sym.id
+      case (a@Atom.VarFlex(sym), _) => a -> (sym.id + 10_000_000)
+      case (atom, idx) => atom -> idx
+    })
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
   private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): Set[Atom] = {
