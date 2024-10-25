@@ -1940,7 +1940,7 @@ object Weeder2 {
           sequenceOpt(rules) match {
             case Some(rs) => Expr.SelectChannel(rs, maybeDefault, tree.loc)
             case None =>
-              val error = ???
+              val error = InvalidSelectChannelRuleFunction(None, tree.loc)
               Expr.Error(error)
           }
       }
@@ -1954,7 +1954,7 @@ object Weeder2 {
           if (qname.toString == "Channel.recv") {
             Validation.success(Some(SelectChannelRule(ident, channel, body)))
           } else {
-            val error = ???
+            val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
             Validation.toSoftFailure(None, error)
           }
         case _ => // Unreachable
