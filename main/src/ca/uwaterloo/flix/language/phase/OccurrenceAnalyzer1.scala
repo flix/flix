@@ -235,10 +235,10 @@ object OccurrenceAnalyzer1 {
         val o2 = o1 :+ sym -> Once
         (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o2))
 
-      case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, o1) = visitExps(exps)
         val o2 = o1 + (sym -> Once)
-        (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, purity, loc), increment(o2))
+        (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), increment(o2))
 
       case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
