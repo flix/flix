@@ -335,14 +335,40 @@ object Inliner1 {
   }
 
   private def visitPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
+
+    // TODO: Remove local visitor if redundant
+    // TODO: Figure out what to do with occurrence information in Pattern.Var
     def visit(pattern0: OccurrenceAst1.Pattern): MonoAst.Pattern = pattern0 match {
-      case OccurrenceAst1.Pattern.Wild(tpe, loc) => ???
-      case OccurrenceAst1.Pattern.Var(sym, tpe, occur, loc) => ???
-      case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) => ???
-      case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) => ???
-      case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) => ???
-      case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) => ???
-      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) => ???
+      case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
+        MonoAst.Pattern.Wild(tpe, loc)
+
+      case OccurrenceAst1.Pattern.Var(sym, tpe, _, loc) =>
+        MonoAst.Pattern.Var(sym, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
+        MonoAst.Pattern.Cst(cst, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) =>
+        val p = visit(pat)
+        MonoAst.Pattern.Tag(sym, p, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
+        val ps = pats.map(visit)
+        MonoAst.Pattern.Tuple(ps, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) =>
+        val ps = pats.map(visitRecordLabelPattern)
+        val p = visit(pat)
+        MonoAst.Pattern.Record(ps, p, tpe, loc)
+
+      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
+        MonoAst.Pattern.RecordEmpty(tpe, loc)
+    }
+
+    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
+        val p = visit(pat)
+        MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, p, loc)
     }
 
     visit(pattern00)
