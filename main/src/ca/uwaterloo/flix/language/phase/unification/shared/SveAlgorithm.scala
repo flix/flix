@@ -15,14 +15,12 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.shared
 
-import ca.uwaterloo.flix.api.Flix
-
 object SveAlgorithm {
 
   /**
    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
    */
-  def unify[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
+  def unify[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkXor(tpe1, tpe2)
 
@@ -53,7 +51,7 @@ object SveAlgorithm {
    *
    * `flexvs` is the list of remaining flexible variables in the expression.
    */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F], flix: Flix): BoolSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (alg.isEquivBot(f))
