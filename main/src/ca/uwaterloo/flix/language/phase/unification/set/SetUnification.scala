@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
-import ca.uwaterloo.flix.language.phase.unification.Zhegalkin
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
@@ -43,8 +45,8 @@ object SetUnification {
                           )
 
   final object Options {
-    /** The default options. */
-    val default: Options = Options(10, 10, 3500, 0)
+    /** The default [[Options]]. */
+    val default: Options = Options(10, 10, 100_000, 0)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -61,12 +63,28 @@ object SetUnification {
     *   - `onEnterPhase(phaseName: String, state: State): Unit`
     *   - `enExitPhase(state: State): Unit`
     */
-  final case class SolverListener(onEnterPhase: (String, State) => Unit, onExitPhase: (State, Boolean) => Unit)
+  final case class SolverListener(
+                                   onEnterPhase: (String, State) => Unit,
+                                   onExitPhase: (State, Boolean) => Unit,
+                                   onSveRecCall: SetFormula => Unit
+                                 )
 
   final object SolverListener {
 
     /** The [[SolverListener]] that does nothing. */
-    val doNothing: SolverListener = SolverListener((_, _) => (), (_, _) => ())
+    val doNothing: SolverListener = SolverListener(
+      (_, _) => (),
+      (_, _) => (),
+      _ => ()
+    )
+
+    def stringListener(p: String => Unit): SolverListener = {
+      SolverListener(
+        onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
+        onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst)),
+        onSveRecCall = f => p(s"sve call: $f")
+      )
+    }
   }
 
   /**
@@ -98,24 +116,24 @@ object SetUnification {
     runWithState(state, svePermutations, "SVE")
 
     // Experiment with Zhegalkin polynomials.
-//        for ((_, f) <- state.subst.m) {
-//          f match {
-//            case SetFormula.Empty => // nop
-//            case SetFormula.Var(_) => // nop
-//            case SetFormula.ElemSet(_) => // nop
-//            case SetFormula.Cst(_) => // nop
-//            case _ =>
-//              def withBound(s: String, b: Int): String = {
-//                val len = s.length
-//                if (len < b) s else s.substring(0, b - 3) + s"... ${len - (b + 3)} more"
-//              }
-//
-//              val z = Zhegalkin.toZhegalkin(f)
-//              val s1 = withBound(f.toString, 100)
-//              val s2 = withBound(z.toString, 100)
-//              println(f"$s1%100s -- $s2")
-//          }
-//        }
+    //        for ((_, f) <- state.subst.m) {
+    //          f match {
+    //            case SetFormula.Empty => // nop
+    //            case SetFormula.Var(_) => // nop
+    //            case SetFormula.ElemSet(_) => // nop
+    //            case SetFormula.Cst(_) => // nop
+    //            case _ =>
+    //              def withBound(s: String, b: Int): String = {
+    //                val len = s.length
+    //                if (len < b) s else s.substring(0, b - 3) + s"... ${len - (b + 3)} more"
+    //              }
+    //
+    //              val z = Zhegalkin.toZhegalkin(f)
+    //              val s1 = withBound(f.toString, 100)
+    //              val s2 = withBound(z.toString, 100)
+    //              println(f"$s1%100s -- $s2")
+    //          }
+    //        }
 
     (state.eqs, state.subst)
   }
@@ -171,13 +189,14 @@ object SetUnification {
   }
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
-  private def svePermutations(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def svePermutations(eqs: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
     var bestEqs: List[Equation] = Nil
     var bestSubst = SetSubstitution.empty
     var bestSize = -1
+
     def noPreviousPermutation(): Boolean = bestSize == -1
 
     // Go through the permutations, tracking the best one.
@@ -417,8 +436,7 @@ object SetUnification {
       // {},
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
-        // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
+        val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
         Some(Nil, SetSubstitution.singleton(x.x, y))
 
       // !x1 ~ !x1
@@ -492,7 +510,31 @@ object SetUnification {
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  private def sve(eq: Equation)(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
+  private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+
+    if (false) {
+      implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
+      val f1 = Zhegalkin.toZhegalkin(eq.f1)
+      val f2 = Zhegalkin.toZhegalkin(eq.f2)
+      val q = alg.mkXor(f1, f2)
+      val fvs = alg.freeVars(q).toList
+      try {
+        val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
+        println("SUCCESS: " + subst)
+        val m = subst.m.toList.map {
+          case (x, e) => x -> Zhegalkin.toSetFormula(e)
+        }.toMap
+        println(m)
+        println()
+        //return Some(Nil, SetSubstitution(m))
+      } catch {
+        case _: BoolUnificationException =>
+        println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
+      }
+    }
+
+
+
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList
     try {
@@ -516,7 +558,7 @@ object SetUnification {
     * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
     * checking.
     */
-  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit opts: Options): SetSubstitution = fvs match {
+  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): SetSubstitution = fvs match {
     case Nil =>
       // `fvs` is empty so `f` has no variables.
       // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
@@ -528,6 +570,7 @@ object SetUnification {
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
       val recFormula = propagation(mkInter(f0, f1))
+      listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
       val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
@@ -542,7 +585,7 @@ object SetUnification {
     if (opts.sveRecSizeThreshold > 0) {
       val fSize = f.size
       if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
-        s"SetFormula size ($fSize) is over recursive SVE threshold ($opts.sveRecSizeThreshold)."
+        s"SetFormula size ($fSize) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
       )
     }
   }
@@ -584,5 +627,15 @@ object SetUnification {
       }
     }
     Result.Ok(())
+  }
+
+  /** Returns a multiline string of the given [[Equation]]s and [[SetSubstitution]]. */
+  def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
+    val sb = new StringBuilder()
+    sb.append("Equations:\n")
+    for (eq <- eqs) sb.append(s"  $eq\n")
+    sb.append(subst)
+    sb.append("\n")
+    sb.toString
   }
 }

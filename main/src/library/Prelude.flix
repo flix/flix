@@ -6,6 +6,11 @@ import java.lang.System
 pub type alias Static = IO
 
 ///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {

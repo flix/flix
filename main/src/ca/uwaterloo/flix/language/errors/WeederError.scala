@@ -332,7 +332,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEnum(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEnum(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected enum format."
 
     def message(formatter: Formatter): String = {

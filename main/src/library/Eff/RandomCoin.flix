@@ -29,24 +29,27 @@ mod Eff {
 
     mod RandomCoin {
 
-        import java.util.Random
+        import java.util.{Random => JRandom}
+
+        ///
+        /// Handles the `RandomCoin` effect of the given function `f`.
+        ///
+        /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
+        ///
+        pub def handle(f: a -> b \ ef): (a -> b \ (ef - RandomCoin) + IO) \ IO =
+            let rnd = new JRandom();
+            x -> try {
+                f(x)
+            } with RandomCoin {
+                def flip(k) = k(rnd.nextBoolean())
+            }
 
         ///
         /// Runs the `RandomCoin` effect of the given function `f`.
         ///
         /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = {
-            // Currently try-with typing is broken, so fix it with checked_ecast
-            checked_ecast(try {
-                f()
-            } with RandomCoin {
-                def flip(k) = unsafe {
-                    let rnd = new Random();
-                    k(rnd.nextBoolean())
-                }
-            })
-        }
+        pub def run(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = handle(f)()
 
     }
 

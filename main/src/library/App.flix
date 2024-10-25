@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Magnus Madsen
+ *  Copyright 2024 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,9 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
+mod App {
 
-/**
-  * An exception thrown to indicate that boolean unification failed.
-  */
-case class BoolUnificationException() extends RuntimeException
+    ///
+    /// Runs the given function `f` handling the `Clock`, `Console`, and `Logger` effects.
+    ///
+    pub def run(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Logger}) + IO =
+        let r = f |>
+            Clock.handle |>
+            Console.handle |>
+            Logger.handle;
+        r()
+
+}

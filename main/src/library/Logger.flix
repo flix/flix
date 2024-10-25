@@ -54,20 +54,22 @@ mod Logger {
     pub def fatal(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Fatal, "${m}")
 
     ///
+    /// Handles the `Logger` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Logger) + IO = x ->
+        try {
+            f(x)
+        } with Logger {
+            def log(s, m, k) = { println("[${s}] ${m}"); k() }
+        }
+
+    ///
     /// Runs the `Logger` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Logger) + IO = {
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
-            f()
-        } with Logger {
-            def log(s, m, k) = unsafe {
-                println("[${s}] ${m}");
-                k()
-            }
-        })
-    }
+    pub def run(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
 }
