@@ -636,7 +636,7 @@ object Monomorpher {
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val (p1, env1) = visitPat(pat1, subst)
-          (MonoAst.Pattern.Record.RecordLabelPattern(label, subst(tpe1), p1, loc1), env1)
+          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
       }.unzip
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
