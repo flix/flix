@@ -142,7 +142,11 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          enabled && !redundant
+          val hasCheckedCast = exp match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && !redundant && !hasCheckedCast
         }
         val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
@@ -384,7 +388,11 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          enabled && !redundant
+          val hasCheckedCast = exp1 match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && !redundant && !hasCheckedCast
         }
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
