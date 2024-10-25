@@ -876,7 +876,7 @@ object Kinder {
         case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
           val pat = visitPattern(pat1, kenv, root)
-          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, pat, loc1)
+          KindedAst.Pattern.Record.RecordLabelPattern(label, pat, tvar, loc1)
       }
       val pat = visitPattern(pat0, kenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
