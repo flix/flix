@@ -683,17 +683,6 @@ object ConstraintSolver {
   }
 
   /**
-    *
-    * A result of performing type inference.
-    *
-    * @param constrs constraints inferred for the expression
-    * @param tpe     the inferred type of the expression
-    * @param eff     the inferred effect of the expression
-    * @param renv    the inferred rigidity environment for the expression (marking region variables)
-    */
-  case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
-
-  /**
     * The result of constraint resolution.
     *
     * @param subst    a substitution

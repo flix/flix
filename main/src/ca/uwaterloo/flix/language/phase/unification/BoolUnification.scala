@@ -25,13 +25,13 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import scala.collection.immutable.SortedSet
 
 /**
- * An implementation of Boolean Unification is for the `Bool` kind.
- */
+  * An implementation of Boolean Unification is for the `Bool` kind.
+  */
 object BoolUnification {
 
   /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-   */
+    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
@@ -51,8 +51,8 @@ object BoolUnification {
 
 
   /**
-   * Lookup the unifier of `tpe1` and `tpe2` or solve them.
-   */
+    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
+    */
   private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
 
@@ -75,52 +75,52 @@ object BoolUnification {
   }
 
   /**
-   * Returns an environment built from the given types mapping between type variables and formula variables.
-   *
-   * This environment should be used in the functions [[toType]] and [[fromType]].
-   */
-  def getEnv(fs: List[Type]): Bimap[BoolFormula.IrreducibleEff, Int] = {
+    * Returns an environment built from the given types mapping between type variables and formula variables.
+    *
+    * This environment should be used in the functions [[toType]] and [[fromType]].
+    */
+  def getEnv(fs: List[Type]): Bimap[IrreducibleEff, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
-        .toList.map(BoolFormula.IrreducibleEff.Var.apply)
+        .toList.map(IrreducibleEff.Var.apply)
 
     val effs =
       fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
-        .toList.map(BoolFormula.IrreducibleEff.Eff.apply)
+        .toList.map(IrreducibleEff.Eff.apply)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.IrreducibleEff, Int]) {
+    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[IrreducibleEff, Int]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
 
   /**
-   * Returns a rigidity environment on formulas that is equivalent to the given one on types.
-   */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.IrreducibleEff, Int]): SortedSet[Int] = {
+    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[IrreducibleEff, Int]): SortedSet[Int] = {
     val rigidVars = renv.s.flatMap {
-      case tvar => env.getForward(BoolFormula.IrreducibleEff.Var(tvar))
+      case tvar => env.getForward(IrreducibleEff.Var(tvar))
     }
     val effs = env.m1.collect {
-      case (BoolFormula.IrreducibleEff.Eff(_), i) => i
+      case (IrreducibleEff.Eff(_), i) => i
     }
     rigidVars ++ effs
   }
 
   /**
-   * Converts this formula substitution into a type substitution
-   */
-  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[BoolFormula.IrreducibleEff, Int]): Substitution = {
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[IrreducibleEff, Int]): Substitution = {
     val map = s.m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
         val tvar = k match {
-          case BoolFormula.IrreducibleEff.Var(sym) => sym
-          case BoolFormula.IrreducibleEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
-          case BoolFormula.IrreducibleEff.Assoc(sym, arg) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
-          case BoolFormula.IrreducibleEff.JvmToEff(t) => throw InternalCompilerException(s"unexpected substituted effect: ${t}", SourceLocation.Unknown)
+          case IrreducibleEff.Var(sym) => sym
+          case IrreducibleEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: $sym", SourceLocation.Unknown)
+          case IrreducibleEff.Assoc(sym, _) => throw InternalCompilerException(s"unexpected substituted effect: $sym", SourceLocation.Unknown)
+          case IrreducibleEff.JvmToEff(t) => throw InternalCompilerException(s"unexpected substituted effect: $t", SourceLocation.Unknown)
         }
         val v = toType(v0, env)
         (tvar, v)
@@ -129,34 +129,50 @@ object BoolUnification {
   }
 
   /**
-   * Converts the given type t into a formula.
-   */
-  private def fromType[F](t: Type, env: Bimap[BoolFormula.IrreducibleEff, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(BoolFormula.IrreducibleEff.Var(sym)) match {
+    * Converts the given type t into a formula.
+    */
+  private def fromType[F](t: Type, env: Bimap[IrreducibleEff, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => alg.mkVar(x)
     }
-    case Type.True => alg.mkTrue
-    case Type.False => alg.mkFalse
+    case Type.True => alg.mkTop
+    case Type.False => alg.mkBot
     case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => alg.mkNot(fromType(tpe1, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => alg.mkAnd(fromType(tpe1, env), fromType(tpe2, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => alg.mkOr(fromType(tpe1, env), fromType(tpe2, env))
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
-  private def toType(f: BoolFormula, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = f match {
+  private def toType(f: BoolFormula, env: Bimap[IrreducibleEff, Int]): Type = f match {
     case BoolFormula.True => Type.True
     case BoolFormula.False => Type.False
     case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
     case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
     case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
     case BoolFormula.Var(id) => env.getBackward(id) match {
-      case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
-      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
+      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case Some(IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+      case Some(IrreducibleEff.JvmToEff(t)) => t
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
+  }
+
+  /**
+    * An irreducible effect.
+    */
+  sealed trait IrreducibleEff
+
+  object IrreducibleEff {
+
+    case class Var(sym: Symbol.KindedTypeVarSym) extends IrreducibleEff
+
+    case class Eff(sym: Symbol.EffectSym) extends IrreducibleEff
+
+    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends IrreducibleEff
+
+    case class JvmToEff(tpe: Type.JvmToEff) extends IrreducibleEff
   }
 
 }

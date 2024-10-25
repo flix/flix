@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
 
 import scala.annotation.tailrec
@@ -76,45 +75,20 @@ object BoolFormula {
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
-   * An irreducible effect.
-   */
-  sealed trait IrreducibleEff
-
-  object IrreducibleEff {
-
-    case class Var(sym: Symbol.KindedTypeVarSym) extends IrreducibleEff
-
-    case class Eff(sym: Symbol.EffectSym) extends IrreducibleEff
-
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends IrreducibleEff
-
-    case class JvmToEff(tpe: Type.JvmToEff) extends IrreducibleEff
-  }
-
-  /**
    * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
    */
   object BoolFormulaAlg extends BoolAlg[BoolFormula] {
-
-    override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
-
-    override def isFalse(f: BoolFormula): Boolean = f == BoolFormula.False
 
     override def isVar(f: BoolFormula): Boolean = f match {
       case Var(_) => true
       case _ => false
     }
 
-    override def isSatisfiable(f: BoolFormula): Boolean = f match {
-      case BoolFormula.True => true
-      case BoolFormula.False => false
-      case BoolFormula.Var(_) => true
-      case _ => evaluateAll(f, freeVars(f).toList, List.empty)
-    }
+    override def isEquivBot(f: BoolFormula): Boolean = !isSat(f)
 
-    override def mkTrue: BoolFormula = True
+    override def mkBot: BoolFormula = False
 
-    override def mkFalse: BoolFormula = False
+    override def mkTop: BoolFormula = True
 
     override def mkVar(id: Int): BoolFormula = Var(id)
 
@@ -294,6 +268,16 @@ object BoolFormula {
       case BoolFormula.Not(f) => freeVars(f)
       case BoolFormula.And(f1, f2) => freeVars(f1) ++ freeVars(f2)
       case BoolFormula.Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
+    }
+
+    /**
+      * Returns `true` if `f` is satisfiable.
+      */
+    private def isSat(f: BoolFormula): Boolean = f match {
+      case BoolFormula.True => true
+      case BoolFormula.False => false
+      case BoolFormula.Var(_) => true
+      case _ => evaluateAll(f, freeVars(f).toList, List.empty)
     }
 
     /**
