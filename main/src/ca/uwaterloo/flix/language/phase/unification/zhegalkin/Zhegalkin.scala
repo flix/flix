@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.util.CofiniteIntSet
+import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
 
 import scala.collection.immutable.SortedSet
 
@@ -73,7 +74,7 @@ object Zhegalkin {
     private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
 
     if (grouped.exists(_._2.length > 1)) {
-      ???
+      throw InternalCompilerException("Invariant violated: Duplicate term", SourceLocation.Unknown)
     }
 
     override def toString: String =
