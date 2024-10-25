@@ -907,7 +907,7 @@ object Visitor {
   }
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
-    val RecordLabelPattern(_, _, p, loc) = pat
+    val RecordLabelPattern(_, p, _, loc) = pat
     if (!a.accept(loc)) { return }
     c.consumeRecordLabelPattern(pat)
     visitPattern(p)

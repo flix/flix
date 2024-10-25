@@ -152,7 +152,7 @@ object TypedAstPrinter {
     */
   private def printRecordPattern(pats: List[Record.RecordLabelPattern], pat: Pattern): DocAst.Expr = {
     pats.foldRight(printPattern(pat)) {
-      case (TypedAst.Pattern.Record.RecordLabelPattern(label, _, pat, _), acc) =>
+      case (TypedAst.Pattern.Record.RecordLabelPattern(label, pat, _, _), acc) =>
         DocAst.Expr.RecordExtend(label, printPattern(pat), acc)
     }
   }
