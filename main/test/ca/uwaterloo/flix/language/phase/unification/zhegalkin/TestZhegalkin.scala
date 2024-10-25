@@ -9,11 +9,25 @@ class TestZhegalkin extends AnyFunSuite with TestUtils {
 
   implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
 
-  test("Test.Zhegalkin.01") {
+  test("Test.Zhegalkin.Success.01") {
     val f1 = alg.mkBot
     val f2 = alg.mkBot
 
-    println(SveAlgorithm.unify(f1, f2, Set.empty).get)
+    SveAlgorithm.unify(f1, f2, Set.empty).get
+  }
+
+  test("Test.Zhegalkin.Success.02") {
+    val f1 = alg.mkVar(1)
+    val f2 = alg.mkBot
+
+    SveAlgorithm.unify(f1, f2, Set.empty).get
+  }
+
+  test("Test.Zhegalkin.Failure.01") {
+    val f1 = alg.mkBot
+    val f2 = alg.mkTop
+
+    assert(SveAlgorithm.unify(f1, f2, Set.empty).isEmpty)
   }
 
 }
