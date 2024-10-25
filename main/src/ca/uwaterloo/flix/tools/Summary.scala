@@ -64,6 +64,14 @@ object Summary {
     table
   }
 
+  def defSummaryTable(root: Root): Table = {
+    val sums = defSummaries(root)
+    val table = new Table()
+    table.addRow(DefSummary.header)
+    sums.sortBy(-_.baseEffVars).map(_.toRow).foreach(table.addRow)
+    table
+  }
+
   /** Returns a function summary for a def or an instance, depending on the flag */
   private def defSummary(defn: TypedAst.Def, isInstance: Boolean): DefSummary = {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
@@ -398,7 +406,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline Vars", "SE-Lam Vars", "SE-Defs Vars", "SE-Inst Vars")
+    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline EVars", "SE-Lam EVars", "SE-Defs EVars", "SE-Inst EVars")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -421,6 +429,20 @@ object Summary {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
+
+    def toRow: List[String] = List(
+      fun.genericSym.toString,
+      eff.toString,
+      format(checkedEcasts),
+      format(baseEffVars),
+      format(lambdaSubEffVars),
+      format(modDefSubEffVars),
+      format(insDefSubEffVars)
+    )
+  }
+
+  private object DefSummary {
+    def header: List[String] = List("Fun", "Eff", "checked_ecast", "Baseline EVars", "SE-Lam EVars", "SE-Defs EVars", "SE-Inst EVars")
   }
 
   /**
@@ -447,6 +469,8 @@ object Summary {
     *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
+    def genericSym: Symbol
+
     def loc: SourceLocation
   }
 
@@ -455,14 +479,20 @@ object Summary {
     import ca.uwaterloo.flix.language.ast.Symbol
 
     case class Def(sym: Symbol.DefnSym) extends FunctionSym {
+      val genericSym: Symbol = sym
+
       val loc: SourceLocation = sym.loc
     }
 
     case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym {
+      val genericSym: Symbol = sym
+
       val loc: SourceLocation = sym.loc
     }
 
     case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym {
+      val genericSym: Symbol = sym
+
       val loc: SourceLocation = sym.loc
     }
   }

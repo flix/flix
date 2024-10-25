@@ -551,7 +551,8 @@ class Flix {
     // Print summary?
     if (options.xsummary) {
       result.map(root => {
-        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+//        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+        val table = Summary.defSummaryTable(root)
         table.getMarkdownLines.foreach(println)
       })
     }
