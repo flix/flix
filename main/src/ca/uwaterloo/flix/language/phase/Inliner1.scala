@@ -466,7 +466,8 @@ object Inliner1 {
       // to avoid duplicating a symbol globally
       val substSym = subst0.getOrElse(sym, Symbol.freshVarSym(sym))
       val fp = MonoAst.FormalParam(substSym, mod, fptpe, src, fploc)
-      val e = applySubst(exp, subst0)
+      val subst1 = subst0 + (sym -> substSym)
+      val e = applySubst(exp, subst1)
       MonoAst.Expr.Lambda(fp, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
