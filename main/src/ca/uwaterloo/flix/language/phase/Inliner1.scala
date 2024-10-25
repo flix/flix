@@ -48,6 +48,8 @@ object Inliner1 {
     */
   private val HardInlineThreshold: Int = 8
 
+  private type Subst = Map[Symbol.VarSym, Symbol.VarSym]
+
   /**
     * Returns `true` if `def0` should be inlined.
     */
@@ -336,7 +338,6 @@ object Inliner1 {
 
   private def visitPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
 
-    // TODO: Remove local visitor if redundant
     // TODO: Figure out what to do with occurrence information in Pattern.Var
     def visit(pattern0: OccurrenceAst1.Pattern): MonoAst.Pattern = pattern0 match {
       case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
@@ -453,7 +454,7 @@ object Inliner1 {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def applySubst(exp0: OccurrenceAst1.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
+  private def applySubst(exp0: OccurrenceAst1.Expr, env0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
@@ -580,6 +581,47 @@ object Inliner1 {
           MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
       }
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+  }
 
+  private def applySubstPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, Subst) = {
+
+    def visit(pattern0: OccurrenceAst1.Pattern): (MonoAst.Pattern, Subst) = pattern0 match {
+      case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
+        (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
+
+      case OccurrenceAst1.Pattern.Var(sym, tpe, _, loc) =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val subst = Map(sym -> freshVarSym)
+        (MonoAst.Pattern.Var(freshVarSym, tpe, loc), subst)
+
+      case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
+        (MonoAst.Pattern.Cst(cst, tpe, loc), Map.empty)
+
+      case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) =>
+        val (p, subst) = visit(pat)
+        (MonoAst.Pattern.Tag(sym, p, tpe, loc), subst)
+
+      case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
+        val (ps, substs) = pats.map(visit).unzip
+        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+        (MonoAst.Pattern.Tuple(ps, tpe, loc), subst)
+
+      case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) =>
+        val (ps, substs) = pats.map(visitRecordLabelPattern).unzip
+        val (p, subst0) = visit(pat)
+        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _) ++ subst0
+        (MonoAst.Pattern.Record(ps, p, tpe, loc), subst)
+
+      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
+        (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
+    }
+
+    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, Subst) = pattern0 match {
+      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
+        val (p, subst) = visit(pat)
+        (MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, p, loc), subst)
+    }
+
+    visit(pattern00)
   }
 }
