@@ -51,21 +51,26 @@ mod Console {
     import java.lang.System
 
     ///
+    /// Handles the `Console` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Console` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
+        try {
+            f(x)
+        } with Console {
+            def readln(k)      = { k(System.console().readLine()) }
+            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
+            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
+        }
+
+    ///
     /// Runs the `Console` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Console) + IO = {
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
-            f()
-        } with Console {
-            def readln(k)        = k(System.console().readLine())
-            def print(s, k)      = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k)    = { System.out.println(s); System.out.flush(); k() }
-            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
-        })
-    }
+    pub def run(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
 
 }

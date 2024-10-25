@@ -32,14 +32,13 @@ mod Process {
     import java.lang.Runtime
 
     ///
-    /// Runs the `Process` effect of the given function `f`.
+    /// Handles the `Process` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ ef - Process + Exec = {
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
-            f()
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Process) + Exec = x ->
+        try {
+            f(x)
         } with Process {
             def exec(cmd, args, k) = region rc {
                 let arr = List.toArray(rc, cmd :: args);
@@ -47,7 +46,13 @@ mod Process {
                 pb.start();
                 k()
             }
-        })
-    }
+        }
+
+    ///
+    /// Runs the `Process` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    ///
+    pub def run(f: Unit -> a \ ef): a \ (ef - Process) + Exec = handle(f)()
 
 }

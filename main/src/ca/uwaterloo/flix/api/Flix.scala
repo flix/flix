@@ -258,12 +258,12 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
+    "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
     "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
     "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
-
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
     "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),

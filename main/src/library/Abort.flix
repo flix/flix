@@ -31,16 +31,25 @@ pub eff Abort {
 mod Abort {
 
     ///
+    /// Handle the `Abort` effect of the given function `f`.
+    ///
+    /// Returns a function that
+    ///     - returns `Ok(f())` if the computation completes successfully without aborting.
+    ///     - returns `Err(m)`  if the computation aborts with error message `m`.
+    ///
+    pub def handle(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
+        try {
+            Ok(f(x))
+        } with Abort {
+            def abort(m, _k) = Result.Err(m)
+        }
+
+    ///
     /// Runs the `Abort` effect of the given function `f`.
     ///
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def run(f: Unit -> a \ Abort): Result[String, a] =
-        try {
-            Ok(f())
-        } with Abort {
-            def abort(m, _k) = Result.Err(m)
-        }
+    pub def run(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handle(f)()
 
 }

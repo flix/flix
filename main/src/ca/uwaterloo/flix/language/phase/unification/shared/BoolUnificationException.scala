@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Magnus Madsen
+ *  Copyright 2022 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.language.phase.unification.shared
 
-import ca.uwaterloo.flix.language.phase.TestIncremental
-import ca.uwaterloo.flix.language.phase.unification.set.{TestSetFormula, TestSetUnification}
-import org.scalatest.Suites
-
-class UnificationSuite extends Suites(
-  new TestFastBoolUnification,
-  new TestIncremental,
-  new TestSetFormula,
-  new TestSetUnification
-)
+/**
+ * An exception thrown to indicate that boolean unification failed.
+ */
+case class BoolUnificationException() extends RuntimeException

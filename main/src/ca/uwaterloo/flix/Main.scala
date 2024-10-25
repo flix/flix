@@ -94,9 +94,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xnoboolcache = cmdOpts.xnoboolcache,
-      xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnoboolunif = cmdOpts.xnoboolunif,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -106,6 +103,7 @@ object Main {
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xiterations = cmdOpts.xiterations,
     )
@@ -345,18 +343,16 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnoboolcache: Boolean = false,
-                     xnoboolspecialcases: Boolean = false,
-                     xnoboolunif: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
+                     xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     XPerfPar: Boolean = false,
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
@@ -414,12 +410,11 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
-    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
-      case "nothing" => SubEffectLevel.Nothing
-      case "lambdas" => SubEffectLevel.Lambdas
-      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
-      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are 'nothing', 'lambdas', 'lambdas-and-instances', and 'lambdas-and-defs'.")
+    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
+      case "mod-defs" => Subeffecting.ModDefs
+      case "ins-defs" => Subeffecting.InsDefs
+      case "lambdas" => Subeffecting.Lambdas
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -464,6 +459,9 @@ object Main {
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
           .text("benchmark only frontend"),
+        opt[Unit]("par")
+          .action((_, c) => c.copy(XPerfPar = true))
+          .text("benchmark only parallel evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
@@ -550,18 +548,6 @@ object Main {
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
 
-      // Xno-bool-cache
-      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
-        text("[experimental] disables Boolean caches.")
-
-      // Xno-bool-specialcases
-      opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
-        text("[experimental] disables hardcoded Boolean unification special cases.")
-
-      // Xno-bool-unif
-      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
-        text("[experimental] disables Boolean unification. (DO NOT USE).")
-
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
@@ -579,7 +565,7 @@ object Main {
         text("[experimental] verifies consistency of effects after typechecking")
 
       // Xsubeffecting
-      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
 
       // Xiterations

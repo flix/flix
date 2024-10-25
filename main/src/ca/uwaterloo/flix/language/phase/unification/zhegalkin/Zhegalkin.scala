@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
@@ -145,6 +145,38 @@ object Zhegalkin {
     /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
     mkXor(mkXor(a, b), mkInter(a, b))
   }
+
+  def map(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = mapExpr(f, z)
+
+  //
+  // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
+  //
+  private def mapExpr(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+    case ZhegalkinExpr(_, Nil) => z
+
+    case ZhegalkinExpr(cst, terms) => terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
+      case (acc, term) => mkXor(acc, mapTerm(f, term))
+    }
+  }
+
+  //
+  // map(f, c ∩ x1 ∩ x2 ∩ ... ∩ xn) = c ∩ map(f, x1) ∩ map(f, x2) ∩ ... ∩ map(f, xn)
+  //
+  private def mapTerm(f: Int => ZhegalkinExpr, t: ZhegalkinTerm): ZhegalkinExpr = t match {
+    case ZhegalkinTerm(cst, vars) => vars.foldLeft(ZhegalkinExpr(cst, Nil)) {
+      case (acc, x) => mkInter(f(x.v), acc)
+    }
+  }
+
+  private def isEmpty(z: ZhegalkinExpr): Boolean = z match {
+    case ZhegalkinExpr(cst, Nil) => cst == ZEmpty
+    case _ => false
+  }
+
+  private def isSatisfiable(z: ZhegalkinExpr): Boolean = !isEmpty(z)
+
+  // TODO: Need to distinguish free and rigid variables.
+  private def freeVars(z: ZhegalkinExpr): SortedSet[Int] = ???
 
   /**
     * Returns the given set formula as a Zhegalkin polynomial.
