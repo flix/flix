@@ -355,6 +355,11 @@ object OccurrenceAnalyzer1 {
         case None => occurInfo0
       }
 
+      case AtomicOp.MatchError => letBinding match {
+        case Some(varSym) => occurInfo0 + (varSym -> DontInline)
+        case None => occurInfo0
+      }
+
       case _ => occurInfo0
     }
 
