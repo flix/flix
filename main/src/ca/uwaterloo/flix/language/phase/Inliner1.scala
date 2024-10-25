@@ -496,7 +496,7 @@ object Inliner1 {
       val fps = fparams.map(visitFormalParam)
       val e1 = applySubst(exp1, subst1)
       val e2 = applySubst(exp2, subst1)
-      MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
+      MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
       val e = applySubst(exp, subst0)
