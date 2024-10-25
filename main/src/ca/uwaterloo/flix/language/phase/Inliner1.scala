@@ -461,10 +461,13 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(subst0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
-      val fps = visitFormalParam(fparam)
+    case OccurrenceAst1.Expr.Lambda(OccurrenceAst1.FormalParam(sym, mod, fptpe, src, fploc), exp, tpe, loc) =>
+      // Lookup the substitution symbol or generate a fresh symbol
+      // to avoid duplicating a symbol globally
+      val substSym = subst0.getOrElse(sym, Symbol.freshVarSym(sym))
+      val fp = MonoAst.FormalParam(substSym, mod, fptpe, src, fploc)
       val e = applySubst(exp, subst0)
-      MonoAst.Expr.Lambda(fps, e, tpe, loc)
+      MonoAst.Expr.Lambda(fp, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(applySubst(_, subst0))
