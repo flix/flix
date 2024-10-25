@@ -58,6 +58,13 @@ class TestZhegalkin extends AnyFunSuite with TestUtils {
     SveAlgorithm.unify(f1, f2, Set.empty).get
   }
 
+  test("Test.Zhegalkin.Success.08") {
+    val f1 = alg.mkOr(alg.mkVar(1), alg.mkVar(2))
+    val f2 = alg.mkOr(alg.mkOr(alg.mkVar(3), alg.mkVar(4)), alg.mkVar(5))
+
+    SveAlgorithm.unify(f1, f2, Set.empty).get
+  }
+
   test("Test.Zhegalkin.Failure.01") {
     val f1 = alg.mkBot
     val f2 = alg.mkTop
