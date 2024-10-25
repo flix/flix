@@ -167,8 +167,7 @@ object Inliner1 {
       e match {
         case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
-          // If `def1` is a single non-self call or
-          // it is trivial
+          // If `def1` is a single non-self call or is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
@@ -182,8 +181,7 @@ object Inliner1 {
     case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
-      // If `def1` is a single non-self call or
-      // it is trivial
+      // If `def1` is a single non-self call or is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
         bindFormals(def1.exp, def1.fparams, es, Map.empty)
