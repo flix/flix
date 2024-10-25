@@ -1955,7 +1955,8 @@ object Weeder2 {
             Validation.success(Some(SelectChannelRule(ident, channel, body)))
           } else {
             val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
-            Validation.toSoftFailure(None, error)
+            sctx.errors.add(error)
+            Validation.success(None)
           }
         case _ => // Unreachable
           throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
