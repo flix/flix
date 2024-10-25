@@ -35,11 +35,11 @@ object Summary {
     *
     * Example with markdown rendering (just a single data row):
     * {{{
-|            Module | lines | defs | Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda<: Eff. var | def<: Eff. var | ins<: Eff. var |
-| ----------------- | ----- | ---- | ---- | ----------- | ---------- | ------------- | -------------- | ----------------- | -------------- | -------------- |
-|           Eq.flix |   242 |   37 |   37 |           0 |          0 |             0 |            -37 |               -37 |            -37 |            -37 |
-|               ... |   ... |  ... |  ... |         ... |        ... |           ... |            ... |               ... |            ... |            ... |
-|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
+    *|               Module |  Lines |  Defs |  Pure | Effectful |  Poly | checked_ecast | Baseline Vars | SE-Lam Vars | SE-Defs Vars | SE-Inst Vars |
+    *| -------------------- | ------ | ----- | ----- | --------- | ----- | ------------- | ------------- | ----------- | ------------ | ------------ |
+    *|         Adaptor.flix |    238 |    21 |     6 |         5 |    10 |             0 |           137 |           0 |            0 |            0 |
+    *|                  ... |    ... |   ... |   ... |       ... |   ... |           ... |           ... |         ... |          ... |          ... |
+    *|               Totals | 37,557 | 3,544 | 2,024 |       133 | 1,387 |            46 |        22,940 |           0 |            0 |            0 |
     * }}}
     *
     * @param root the root to create data for
@@ -87,7 +87,8 @@ object Summary {
       val lambdaSubEffVars = lambdaSubEffVarsTracker.get(sig.sym)
       val modDefSubEffVars = modDefSubEffVarsTracker.get(sig.sym)
       val insDefSubEffVars = insDefSubEffVarsTracker.get(sig.sym)
-      Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
+      val baseEffVars = totalEffVars - lambdaSubEffVars - modDefSubEffVars - insDefSubEffVars
+      Some(DefSummary(fun, eff, ecasts, baseEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
   }
 
   /** Returns a function summary for every function */
@@ -109,11 +110,11 @@ object Summary {
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     val ecasts = sum.checkedEcasts
-    val totalEffVars = sum.totalEffVars
+    val baseEffVars = sum.baseEffVars
     val lambdaSubEffVars = sum.lambdaSubEffVars
     val modDefSubEffVars = sum.modDefSubEffVars
     val insDefSubEffVars = sum.insDefSubEffVars
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, baseEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
   }
 
   /** Combines function summaries into file data. */
@@ -307,7 +308,7 @@ object Summary {
                                       groundNonPureDefs: Int,
                                       polyDefs: Int,
                                       checkedEcasts: Int,
-                                      totalEffVars: Int,
+                                      baseEffVars: Int,
                                       lambdaSubEffVars: Int,
                                       modDefSubEffVars: Int,
                                       insDefSubEffVars: Int
@@ -340,7 +341,7 @@ object Summary {
         groundNonPureDefs + other.groundNonPureDefs,
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
+        baseEffVars + other.baseEffVars,
         lambdaSubEffVars + other.lambdaSubEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
         insDefSubEffVars + other.insDefSubEffVars
@@ -360,7 +361,7 @@ object Summary {
         groundNonPureDefs + other.groundNonPureDefs,
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
+        baseEffVars + other.baseEffVars,
         lambdaSubEffVars + other.lambdaSubEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
         insDefSubEffVars + other.insDefSubEffVars
@@ -374,7 +375,7 @@ object Summary {
       groundNonPureDefs,
       polyDefs,
       checkedEcasts,
-      totalEffVars,
+      baseEffVars,
       lambdaSubEffVars,
       modDefSubEffVars,
       insDefSubEffVars
@@ -397,7 +398,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast", "total Eff. var", "lambda<: Eff. var", "def<: Eff. var", "ins<: Eff. var")
+    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline Vars", "SE-Lam Vars", "SE-Defs Vars", "SE-Inst Vars")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -412,7 +413,7 @@ object Summary {
                                         fun: FunctionSym,
                                         eff: ResEffect,
                                         checkedEcasts: Int,
-                                        totalEffVars: Int,
+                                        baseEffVars: Int,
                                         lambdaSubEffVars: Int,
                                         modDefSubEffVars: Int,
                                         insDefSubEffVars: Int
