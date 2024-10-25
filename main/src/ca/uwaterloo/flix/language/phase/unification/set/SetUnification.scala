@@ -512,7 +512,7 @@ object SetUnification {
     */
   private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
 
-    if (true) {
+    if (false) {
       implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
       val f1 = Zhegalkin.toZhegalkin(eq.f1)
       val f2 = Zhegalkin.toZhegalkin(eq.f2)
