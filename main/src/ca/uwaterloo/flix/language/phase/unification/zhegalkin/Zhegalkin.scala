@@ -26,7 +26,7 @@ object Zhegalkin {
 
   /** Represents a variable. */
   case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
-    override def toString: String = if (flexible) s"x$v" else s"!x$v"
+    override def toString: String = if (flexible) s"x$v" else s"x!$v"
 
     override def equals(obj: Any): Boolean = obj match {
       case that: ZhegalkinVar => this.v == that.v
