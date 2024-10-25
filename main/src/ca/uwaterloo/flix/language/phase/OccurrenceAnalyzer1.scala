@@ -204,6 +204,8 @@ object OccurrenceAnalyzer1 {
 
     /**
       * Local visitor that captures `sym0` since it never changes.
+      * The implicit parameter `letBinding` is `Some(sym)` if visiting the right-hand side
+      * of a let-binding, i.e., in `let sym = exp` it recurses on `exp` with `Some(sym)`.
       */
     def visit(exp0: MonoAst.Expr)(implicit letBinding: Option[VarSym]): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
       case MonoAst.Expr.Cst(cst, tpe, loc) =>
