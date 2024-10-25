@@ -968,12 +968,10 @@ object Desugar {
     * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
     */
   private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
-    case WeededAst.SelectChannelRule.Rule(ident, exp1, exp2) =>
+    case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       DesugaredAst.SelectChannelRule(ident, e1, e2)
-
-    case WeededAst.SelectChannelRule.Error => ???
   }
 
   /**

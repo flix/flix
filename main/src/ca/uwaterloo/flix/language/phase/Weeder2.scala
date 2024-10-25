@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.regex.{PatternSyntaxException, Pattern as JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -79,7 +80,7 @@ object Weeder2 {
         mapN(traverse(uses)(visitUse), traverse(imports)(visitImport)) {
           (uses, imports) => uses.flatten ++ imports.flatten
         }
-      }
+    }
     mapN(maybeUsesAndImports) {
       case Some(usesAndImports) => usesAndImports
       case None => List.empty
@@ -1935,20 +1936,26 @@ object Weeder2 {
       val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
       val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
       mapN(rules, maybeDefault) {
-        (rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc)
+        (rules, maybeDefault) =>
+          sequenceOpt(rules) match {
+            case Some(rs) => Expr.SelectChannel(rs, maybeDefault, tree.loc)
+            case None =>
+              val error = ???
+              Expr.Error(error)
+          }
       }
     }
 
-    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[SelectChannelRule, CompilationMessage] = {
+    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[SelectChannelRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       flatMapN(pickNameIdent(tree), pickQName(tree), exprs) {
         case (ident, qname, channel :: body :: Nil) => // Shape is correct
           if (qname.toString == "Channel.recv") {
-            Validation.success(SelectChannelRule.Rule(ident, channel, body))
+            Validation.success(Some(SelectChannelRule(ident, channel, body)))
           } else {
-            val error = ??? // Name was incorrect
-            Validation.toSoftFailure(SelectChannelRule.Error, error)
+            val error = ???
+            Validation.toSoftFailure(None, error)
           }
         case _ => // Unreachable
           throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
@@ -3321,6 +3328,19 @@ object Weeder2 {
       } yield (x, y)
     })
     List.from(pairs.flatten)
+  }
+
+  private def sequenceOpt[A](l: List[Option[A]]): Option[List[A]] = {
+    val result = mutable.ArrayBuffer.empty[A]
+    // TODO: also cover errors with Result instead of Option
+    for (x <- l) {
+      x match {
+        case None => return None
+        case Some(v) =>
+          result += v
+      }
+    }
+    Some(result.toList)
   }
 
   /**
