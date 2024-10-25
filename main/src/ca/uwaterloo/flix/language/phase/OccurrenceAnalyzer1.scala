@@ -118,12 +118,12 @@ object OccurrenceAnalyzer1 {
       */
     def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
       case OccurrenceAst1.Expr.ApplyDef(_sym, _exps, _, _, _, _) => true
-      // sym != defn0.sym // && exps.forall(isTrivial)
+      // sym != defn0.sym // && exps.forall(isTrivial) // see doc comment for DefContext
 
       case OccurrenceAst1.Expr.ApplyClo(clo, _exps, _, _, _) =>
         clo match {
           case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_sym), _, _, _, _) => true
-          // sym != defn0.sym // && exps.forall(isTrivial)
+          // sym != defn0.sym // && exps.forall(isTrivial) // see doc comment for DefContext
           case _ => false
         }
       case _ => false
