@@ -247,19 +247,19 @@ mod TestAdaptor {
 
     @test
     def fromCollectionToIterator01(): Bool \ {} = region rc {
-        let col = unsafe JList.of();
+        let col = checked_cast (unsafe JList.of());
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == (Nil : List[String])
     }
 
     @test
     def fromCollectionToIterator02(): Bool \ {} = region rc {
-        let col = unsafe JList.of("hello");
+        let col = checked_cast (unsafe JList.of("hello"));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: Nil
     }
 
     @test
     def fromCollectionToIterator03(): Bool \ {} = region rc {
-        let col = unsafe JList.of("hello", "world");
+        let col = checked_cast (unsafe JList.of("hello", "world"));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: "world" :: Nil
     }
 
