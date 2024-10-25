@@ -279,9 +279,14 @@ object Inliner1 {
       }
       MonoAst.Expr.Match(e, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.VectorLength(exp, loc) => ???
 
