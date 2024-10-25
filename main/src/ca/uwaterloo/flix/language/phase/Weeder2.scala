@@ -1950,9 +1950,8 @@ object Weeder2 {
             val error = ??? // Name was incorrect
             Validation.toSoftFailure(SelectChannelRule.Error, error)
           }
-        case _ =>
-          val error = ???
-          Validation.toSoftFailure(SelectChannelRule.Error, error)
+        case _ => // Unreachable
+          throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
       }
     }
 
