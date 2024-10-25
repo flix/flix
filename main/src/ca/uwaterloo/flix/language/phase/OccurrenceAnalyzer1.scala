@@ -218,10 +218,10 @@ object OccurrenceAnalyzer1 {
         val o1 = captureInLambda(o)
         (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o1))
 
-      case MonoAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
         val o1 = combineAtomicOpInfo(op, o)
-        (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, purity, loc), increment(o1))
+        (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val (e, o1) = visit(exp)
