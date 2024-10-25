@@ -521,6 +521,12 @@ object SetUnification {
       try {
         val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
         println("SUCCESS: " + subst)
+        val m = subst.m.toList.map {
+          case (x, e) => x -> Zhegalkin.toSetFormula(e)
+        }.toMap
+        println(m)
+        println()
+        //return Some(Nil, SetSubstitution(m))
       } catch {
         case _: BoolUnificationException =>
         println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
