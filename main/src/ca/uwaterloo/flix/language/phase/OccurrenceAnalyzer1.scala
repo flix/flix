@@ -263,18 +263,18 @@ object OccurrenceAnalyzer1 {
         val o2 = o1 :+ sym0 -> DontInline
         (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), increment(o2))
 
-      case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val (e3, o3) = visit(exp3)
         val o4 = combineInfo(o1, combineInfoBranch(o2, o3))
-        (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc), increment(o4))
+        (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), increment(o4))
 
-      case MonoAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+      case MonoAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
-        (OccurrenceAst1.Expr.Stm(e1, e2, tpe, purity, loc), increment(o3))
+        (OccurrenceAst1.Expr.Stm(e1, e2, tpe, eff, loc), increment(o3))
 
       case MonoAst.Expr.Discard(exp, eff, loc) =>
         val (e, o) = visit(exp)
@@ -308,25 +308,25 @@ object OccurrenceAnalyzer1 {
         val (e, o) = visit(exp)
         (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o))
 
-      case MonoAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+      case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryCatchRules(rules)
         val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
-        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, purity, loc), increment(o3))
+        (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
 
-      case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryWithRules(rules)
         val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
-        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, purity, loc), increment(o3))
+        (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, eff, loc), increment(o3))
 
       case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
         (OccurrenceAst1.Expr.Do(op, es, tpe, eff, loc), increment(o))
 
-      case MonoAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, o) = visitJvmMethods(methods)
-        (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, purity, ms, loc), increment(o))
+        (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, ms, loc), increment(o))
 
     }
 
@@ -389,10 +389,10 @@ object OccurrenceAnalyzer1 {
 
     def visitJvmMethods(methods0: List[MonoAst.JvmMethod]): (List[OccurrenceAst1.JvmMethod], OccurInfo) = {
       val (ms, o) = methods0.map {
-        case MonoAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+        case MonoAst.JvmMethod(ident, fparams, clo, retTpe, eff, loc) =>
           val f = fparams.map(visitFormalParam)
           val (c, o) = visit(clo)
-          (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, purity, loc), increment(o))
+          (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, eff, loc), increment(o))
       }.unzip
       val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
       (ms, o1)
