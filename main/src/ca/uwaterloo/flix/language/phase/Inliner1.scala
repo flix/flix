@@ -454,73 +454,73 @@ object Inliner1 {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def applySubst(exp0: OccurrenceAst1.Expr, env0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
+  private def applySubst(exp0: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
-      MonoAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
+      MonoAst.Expr.Var(subst0.getOrElse(sym, sym), tpe, loc)
 
     case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
       val fps = visitFormalParam(fparam)
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.Lambda(fps, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(applySubst(_, env0))
+      val es = exps.map(applySubst(_, subst0))
       MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
-      val es = exps.map(applySubst(_, env0))
+      val e = applySubst(exp, subst0)
+      val es = exps.map(applySubst(_, subst0))
       MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      val es = exps.map(applySubst(_, env0))
+      val es = exps.map(applySubst(_, subst0))
       MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(applySubst(_, env0))
-      MonoAst.Expr.ApplyLocalDef(env0.getOrElse(sym, sym), es, tpe, eff, loc)
+      val es = exps.map(applySubst(_, subst0))
+      MonoAst.Expr.ApplyLocalDef(subst0.getOrElse(sym, sym), es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
       val freshVar = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> freshVar)
+      val env1 = subst0 + (sym -> freshVar)
       val e1 = applySubst(exp1, env1)
       val e2 = applySubst(exp2, env1)
       MonoAst.Expr.Let(freshVar, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
       val fps = fparams.map(visitFormalParam)
-      val e1 = applySubst(exp1, env0)
-      val e2 = applySubst(exp2, env0)
+      val e1 = applySubst(exp1, subst0)
+      val e2 = applySubst(exp2, subst0)
       MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = applySubst(exp1, env0)
-      val e2 = applySubst(exp2, env0)
-      val e3 = applySubst(exp3, env0)
+      val e1 = applySubst(exp1, subst0)
+      val e2 = applySubst(exp2, subst0)
+      val e3 = applySubst(exp3, subst0)
       MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = applySubst(exp1, env0)
-      val e2 = applySubst(exp2, env0)
+      val e1 = applySubst(exp1, subst0)
+      val e2 = applySubst(exp2, subst0)
       MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Discard(exp, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.Discard(e, eff, loc)
 
     case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst1.MatchRule(pat, guard, exp) =>
           val (p, env1) = applySubstPattern(pat)
-          val env2 = env0 ++ env1
+          val env2 = subst0 ++ env1
           val g = guard.map(applySubst(_, env2))
           val e = applySubst(exp, env2)
           MonoAst.MatchRule(p, g, e)
@@ -528,56 +528,56 @@ object Inliner1 {
       MonoAst.Expr.Match(e, rs, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(applySubst(_, env0))
+      val es = exps.map(applySubst(_, subst0))
       MonoAst.Expr.VectorLit(es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = applySubst(exp1, env0)
-      val e2 = applySubst(exp2, env0)
+      val e1 = applySubst(exp1, subst0)
+      val e2 = applySubst(exp2, subst0)
       MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.VectorLength(e, loc)
 
     case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
           val freshVar = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshVar)
+          val env1 = subst0 + (sym -> freshVar)
           val e = applySubst(exp, env1)
           MonoAst.CatchRule(freshVar, clazz, e)
       }
       MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-      val e = applySubst(exp, env0)
+      val e = applySubst(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
           val fps = fparams.map(visitFormalParam)
-          val e = applySubst(exp, env0)
+          val e = applySubst(exp, subst0)
           MonoAst.HandlerRule(op, fps, e)
       }
       MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(applySubst(_, env0))
+      val es = exps.map(applySubst(_, subst0))
       MonoAst.Expr.Do(op, es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map {
         case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
           val fps = fparams.map(visitFormalParam)
-          val e = applySubst(exp, env0)
+          val e = applySubst(exp, subst0)
           MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
       }
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
