@@ -536,7 +536,7 @@ object SetUnification {
 
 
     val query = mkEmptyQuery(eq.f1, eq.f2)
-    val fvs = query.variables.toList
+    val fvs = query.variables.toList.reverse
     try {
       val subst = successiveVariableElimination(query, fvs)
       Some(Nil, subst)
