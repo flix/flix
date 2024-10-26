@@ -1944,7 +1944,7 @@ object Weeder2 {
       }
     }
 
-    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, InvalidSelectChannelRuleFunction], CompilationMessage] = {
+    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, UnexpectedSelectChannelRuleFunction], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       mapN(pickNameIdent(tree), pickQName(tree), exprs) {
@@ -1953,7 +1953,7 @@ object Weeder2 {
           if (isRecvFunction) {
             Result.Ok(SelectChannelRule(ident, channel, body))
           } else {
-            val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
+            val error = UnexpectedSelectChannelRuleFunction(Some(qname), qname.loc)
             sctx.errors.add(error)
             Result.Err(error)
           }

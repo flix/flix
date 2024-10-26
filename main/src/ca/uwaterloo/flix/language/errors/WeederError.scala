@@ -384,27 +384,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an invalid function call in a select rule.
-    *
-    * @param qname the name of the function being called
-    */
-  case class InvalidSelectChannelRuleFunction(qname: Option[Name.QName], loc: SourceLocation) extends WeederError with Recoverable {
-    override def summary: String = {
-      val name = qname.map(_.toString).mkString(" '", "", "' ")
-      s"Unexpected channel function$name."
-    }
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected channel function.
-         |
-         |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an invalid escape sequence.
     *
     * @param char the invalid escape character.
@@ -1072,6 +1051,27 @@ object WeederError {
       s""">> Unapplied intrinsic '${red(intrinsic)}'.
          |
          |${code(loc, "unapplied intrinsic.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an invalid function call in a select rule.
+    *
+    * @param qname the name of the function being called
+    */
+  case class UnexpectedSelectChannelRuleFunction(qname: Option[Name.QName], loc: SourceLocation) extends WeederError with Recoverable {
+    override def summary: String = {
+      val name = qname.map(_.toString).mkString(" '", "", "' ")
+      s"Unexpected channel function$name."
+    }
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected channel function.
+         |
+         |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
+         |
          |""".stripMargin
     }
   }

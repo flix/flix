@@ -812,7 +812,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidSelectChannelRuleFunction](result)
+    expectError[WeederError.UnexpectedSelectChannelRuleFunction](result)
   }
 
   test("IllegalTraitConstraintParameter.01") {
