@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
@@ -24,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -34,7 +36,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("PredDeps") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[CompilationMessage & Recoverable]) = flix.phaseNew("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
@@ -45,7 +47,7 @@ object PredDeps {
       case (acc, d) => acc + visitExp(d)
     }, _ + _)
 
-    root.copy(precedenceGraph = g)
+    (root.copy(precedenceGraph = g), List.empty)
   }
 
   /**

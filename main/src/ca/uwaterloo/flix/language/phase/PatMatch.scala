@@ -109,7 +109,7 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
+  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
     flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
 
@@ -123,7 +123,7 @@ object PatMatch {
 
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
-      ((), errors.toList)
+      (root, errors.toList)
     }
 
   /**
