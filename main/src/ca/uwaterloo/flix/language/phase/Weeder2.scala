@@ -1951,7 +1951,8 @@ object Weeder2 {
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       flatMapN(pickNameIdent(tree), pickQName(tree), exprs) {
         case (ident, qname, channel :: body :: Nil) => // Shape is correct
-          if (qname.toString == "Channel.recv") {
+          val isChannelRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
+          if (isChannelRecvFunction) {
             Validation.success(Some(SelectChannelRule(ident, channel, body)))
           } else {
             val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
