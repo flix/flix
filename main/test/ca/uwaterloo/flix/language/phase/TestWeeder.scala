@@ -804,6 +804,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
+  test("IllegalSelectChannelRuleFunctionCall.01") {
+    val input =
+      """
+        |def f(): Int32 = select {
+        |    case x <- NotChannel.NotRecv(a) => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidSelectChannelRuleFunction](result)
+  }
+
   test("IllegalTraitConstraintParameter.01") {
     val input =
       """
