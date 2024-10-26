@@ -1949,15 +1949,15 @@ object Weeder2 {
     private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[SelectChannelRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      flatMapN(pickNameIdent(tree), pickQName(tree), exprs) {
+      mapN(pickNameIdent(tree), pickQName(tree), exprs) {
         case (ident, qname, channel :: body :: Nil) => // Shape is correct
           val isChannelRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
           if (isChannelRecvFunction) {
-            Validation.success(Some(SelectChannelRule(ident, channel, body)))
+            Some(SelectChannelRule(ident, channel, body))
           } else {
             val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
             sctx.errors.add(error)
-            Validation.success(None)
+            None
           }
         case _ => // Unreachable
           throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
