@@ -557,7 +557,6 @@ object SimpleType {
           }
 
         case TypeConstructor.SymmetricDiff =>
-          // collapse into a chain of symmetric differences
           val args = t.typeArguments.map(visit)
           SymmetricDiff(args)
 
