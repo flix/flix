@@ -1953,7 +1953,7 @@ object Weeder2 {
           if (isRecvFunction) {
             Result.Ok(SelectChannelRule(ident, channel, body))
           } else {
-            val error = UnexpectedSelectChannelRuleFunction(Some(qname), qname.loc)
+            val error = UnexpectedSelectChannelRuleFunction(qname)
             sctx.errors.add(error)
             Result.Err(error)
           }

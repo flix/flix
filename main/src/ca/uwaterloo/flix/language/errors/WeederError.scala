@@ -1060,11 +1060,11 @@ object WeederError {
     *
     * @param qname the name of the function being called
     */
-  case class UnexpectedSelectChannelRuleFunction(qname: Option[Name.QName], loc: SourceLocation) extends WeederError with Recoverable {
-    override def summary: String = {
-      val name = qname.map(_.toString).mkString(" '", "", "' ")
-      s"Unexpected channel function$name."
-    }
+  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError with Recoverable {
+
+    val loc: SourceLocation = qname.loc
+
+    override def summary: String = s"Unexpected channel function $qname."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
