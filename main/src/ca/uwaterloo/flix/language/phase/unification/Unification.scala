@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint2}
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
-
-import scala.runtime.AbstractFunction3
 
 /**
   * A proxy for implementations of unification as we transition to the new solver.
@@ -31,26 +30,32 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    OldStarUnification.unifyVar(x, tpe, renv)
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+    implicit val t: Progress = Progress()
+    implicit val r: RigidityEnv = renv
+    val (leftovers, subst) = ConstraintSolver2.makeSubstitution(TypeConstraint2.Equality(x, tpe, SourceLocation.Unknown))
+    Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
   }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    OldStarUnification.unifyTypes(tpe1, tpe2, renv)
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+    implicit val r: RigidityEnv = renv
+    implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
+    val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown)))
+    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), true)) // MATT hack: assuming progress
   }
 
   /**
     * Fully unifies the given types, returning None if there are unresolvable constraints.
     */
   def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
-    OldStarUnification.unifyTypes(tpe1, tpe2, renv) match {
-      case Result.Ok((subst, constrs)) => EqualityEnvironment.entailAll(Nil, constrs, renv, eqEnv).toHardResult.toOption.map {
-        case entailSubst => entailSubst @@ subst
-      }
-      case Result.Err(_) => None
+    implicit val r: RigidityEnv = renv
+    implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
+    ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown))) match {
+      case (Nil, subst) => Some(subst)
+      case (_ :: _, _) => None
     }
   }
 
@@ -58,16 +63,29 @@ object Unification {
     * Unifies the given types, but ignores any unresolved constraints from associated types.
     */
   def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
-    OldStarUnification.unifyTypes(tpe1, tpe2, renv).toOption.map {
-      case (subst, _) => subst
+    implicit val r: RigidityEnv = renv
+    implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
+    ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown))) match {
+      case (cs, subst) =>
+        if (cs.forall(isAssocConstraint)) {
+          Some(subst)
+        } else {
+          None
+        }
     }
+  }
+
+  def isAssocConstraint(constr: TypeConstraint2): Boolean = constr match {
+    case TypeConstraint2.Equality(_: Type.AssocType, _, _) => true
+    case TypeConstraint2.Equality(_, _: Type.AssocType, _) => true
+    case _ => false
   }
 
   /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
-    OldStarUnification.unifiesWith(tpe1, tpe2, renv, eqEnv)
+    fullyUnifyTypes(tpe1, tpe2, renv, eqEnv).isDefined
   }
 
 }

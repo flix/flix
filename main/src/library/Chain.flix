@@ -123,7 +123,8 @@ instance ToJava[Chain[a]] {
 instance FromJava[Chain[a]] {
     type In = JList
     pub def fromJava(l: JList): Chain[a] = region rc {
-        unsafe l.iterator() |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }
 

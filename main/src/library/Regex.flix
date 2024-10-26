@@ -552,7 +552,7 @@ mod Regex {
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
-        Matcher(checked_ecast(unsafe rgx.matcher(s)))
+        Matcher(unchecked_cast ((rgx.matcher(s): _ \ IO) as _ \ r))
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.
@@ -574,7 +574,7 @@ mod Regex {
     ///
     def find!(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
-        checked_ecast(unsafe m1.find())
+        unchecked_cast ((m1.find(): _ \ IO) as _ \ r)
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -586,7 +586,7 @@ mod Regex {
     def findFrom!(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe m1.find(pos))
+            unchecked_cast ((m1.find(pos): _ \ IO) as _ \ r)
         }) |> Result.getWithDefault(false)
 
 
@@ -625,7 +625,7 @@ mod Regex {
     def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe discard m1.₹region(start#start, end#end))
+            unchecked_cast ((discard m1.₹region(start#start, end#end): _ \ IO) as _ \ r)
         })
 
 
@@ -635,7 +635,7 @@ mod Regex {
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe m1.start())
+            unchecked_cast ((m1.start(): _ \ IO) as _ \ r)
         })
 
     ///
@@ -644,7 +644,7 @@ mod Regex {
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe m1.end())
+            unchecked_cast ((m1.end(): _ \ IO) as _ \ r)
         })
 
     ///
@@ -662,7 +662,7 @@ mod Regex {
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe m1.group())
+            unchecked_cast ((m1.group(): _ \ IO) as _ \ r)
         })
 
     ///

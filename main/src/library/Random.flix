@@ -55,15 +55,14 @@ mod Random {
     import java.util.{Random => JRandom}
 
     ///
-    /// Runs the `Random` effect of the given function `f`.
+    /// Handles the `Random` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Random` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Random) + IO = {
-        let rnd = new JRandom();
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
-            f()
+    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
+        let rnd = new JRandom(); // Reuse Random instance.
+        x -> try {
+            f(x)
         } with Random {
             def randomBool(k)       = k(rnd.nextBoolean())
             def randomFloat32(k)    = k(rnd.nextFloat())
@@ -71,19 +70,24 @@ mod Random {
             def randomInt32(k)      = k(rnd.nextInt())
             def randomInt64(k)      = k(rnd.nextLong())
             def randomGaussian(k)   = k(rnd.nextGaussian())
-        })
-    }
+        }
+
+    ///
+    /// Runs the `Random` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Random` effect using the `IO` effect.
+    ///
+    pub def run(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ ef - Random = unchecked_cast(({
-        let rnd = new JRandom(seed);
-        // Currently try-with typing is broken, so fix it with checked_ecast
-        checked_ecast(try {
-            f()
+    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
+        let rnd = new JRandom(seed); // Reuse Random instance.
+        x -> try {
+            f(x)
         } with Random {
             def randomBool(k)       = k(rnd.nextBoolean())
             def randomFloat32(k)    = k(rnd.nextFloat())
@@ -91,7 +95,13 @@ mod Random {
             def randomInt32(k)      = k(rnd.nextInt())
             def randomInt64(k)      = k(rnd.nextLong())
             def randomGaussian(k)   = k(rnd.nextGaussian())
-        })
-    }: _ \ (ef - Random) + IO) as _ \ ef - Random)
+        }
+
+    ///
+    /// Runs the `Random` effect of the given function `f` from an initial seed.
+    ///
+    /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
+    ///
+    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ (ef - Random) + IO = handleWithSeed(seed, f)()
 
 }
