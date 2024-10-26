@@ -1933,31 +1933,29 @@ object Weeder2 {
 
     private def visitSelectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Select)
-      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
-      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
-      mapN(rules, maybeDefault) {
+      val rules0 = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
+      val maybeDefault0 = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
+      mapN(rules0, maybeDefault0) {
         (rules, maybeDefault) =>
-          sequenceOpt(rules) match {
-            case Some(rs) => Expr.SelectChannel(rs, maybeDefault, tree.loc)
-            case None =>
-              val error = InvalidSelectChannelRuleFunction(None, tree.loc)
-              Expr.Error(error)
+          Result.sequence(rules) match {
+            case Result.Ok(rs) => Expr.SelectChannel(rs, maybeDefault, tree.loc)
+            case Result.Err(error) => Expr.Error(error)
           }
       }
     }
 
-    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[SelectChannelRule], CompilationMessage] = {
+    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, InvalidSelectChannelRuleFunction], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       mapN(pickNameIdent(tree), pickQName(tree), exprs) {
         case (ident, qname, channel :: body :: Nil) => // Shape is correct
-          val isChannelRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
-          if (isChannelRecvFunction) {
-            Some(SelectChannelRule(ident, channel, body))
+          val isRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
+          if (isRecvFunction) {
+            Result.Ok(SelectChannelRule(ident, channel, body))
           } else {
             val error = InvalidSelectChannelRuleFunction(Some(qname), qname.loc)
             sctx.errors.add(error)
-            None
+            Result.Err(error)
           }
         case _ => // Unreachable
           throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
@@ -3330,19 +3328,6 @@ object Weeder2 {
       } yield (x, y)
     })
     List.from(pairs.flatten)
-  }
-
-  private def sequenceOpt[A](l: List[Option[A]]): Option[List[A]] = {
-    val result = mutable.ArrayBuffer.empty[A]
-    // TODO: also cover errors with Result instead of Option
-    for (x <- l) {
-      x match {
-        case None => return None
-        case Some(v) =>
-          result += v
-      }
-    }
-    Some(result.toList)
   }
 
   /**
