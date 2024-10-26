@@ -1037,6 +1037,15 @@ object Type {
   }
 
   /**
+    * Returns the type `Xor(tpe1, tpe2)`.
+    */
+  def mkSymmetricDiff(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, loc), tpe1, loc), tpe2, loc)
+  }
+
+  /**
     * Returns the type `tpe1 - tpe2`.
     */
   def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
