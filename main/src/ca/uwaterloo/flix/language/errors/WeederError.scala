@@ -1117,16 +1117,4 @@ object WeederError {
          |""".stripMargin
     }
   }
-
-  case class UnexpectedIdent(name: String, loc: SourceLocation, expected: Option[String] = None) extends WeederError with Recoverable {
-    override def summary: String = s"Unexpected identifier '$name''" + expected.map(s => s", expected '$s'.").getOrElse("")
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> $summary
-         |
-         |${code(loc, "Unexpected identifier.")}
-         |""".stripMargin
-    }
-  }
 }
