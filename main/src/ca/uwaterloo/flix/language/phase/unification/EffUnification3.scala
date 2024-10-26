@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, S
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.collection.immutable.SortedSet
+
 object EffUnification3 {
 
   /**
@@ -117,8 +119,8 @@ object EffUnification3 {
     Bimap.from(atoms.toList.zipWithIndex)
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
-  private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): Set[Atom] = {
-    eqs.foldLeft(Set.empty[Atom]) {
+  private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
+    eqs.foldLeft(SortedSet.empty[Atom]) {
       case (acc, (t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
     }
   }
@@ -239,7 +241,26 @@ object EffUnification3 {
     * atom ::= VarFlex | VarRigid | Eff | Error | atomAssoc
     * atomAssoc ::= Assoc atomAssoc | VarRigid
     */
-  private sealed trait Atom
+  private sealed trait Atom extends Ordered[Atom] {
+    override def compare(that: Atom): Int = (this, that) match {
+      case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
+      case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
+      case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
+      case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
+          val symCmp = sym1.compare(sym2)
+          if (symCmp != 0) symCmp else arg1.compare(arg2)
+      case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
+      case _ =>
+        def ordinal(a: Atom): Int = a match {
+          case Atom.VarFlex(_) => 0
+          case Atom.VarRigid(_) => 1
+          case Atom.Eff(_) => 2
+          case Atom.Assoc(_, _) => 3
+          case Atom.Error(_) => 4
+        }
+        ordinal(this) - ordinal(that)
+    }
+  }
 
   private object Atom {
     /** Representing a flexible variable. */
@@ -290,15 +311,18 @@ object EffUnification3 {
       *     false for `ef`)
       *   - `getAtoms(Indexable.Aef[Error]) = Set.empty`
       */
-    def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Set[Atom] = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => Set(Atom.VarRigid(sym))
-      case Type.Var(sym, _) => Set(Atom.VarFlex(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Set(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.Error(id, _), _) => Set(Atom.Error(id))
+    def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = t match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
+      case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
+      case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).toSet
-      case _ => Set.empty
+      case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc) match {
+        case None => SortedSet.empty
+        case Some(a) => SortedSet(a)
+      }
+      case _ => SortedSet.empty
     }
 
     /**
