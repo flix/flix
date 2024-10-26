@@ -1064,7 +1064,7 @@ object WeederError {
 
     val loc: SourceLocation = qname.loc
 
-    override def summary: String = s"Unexpected channel function $qname."
+    override def summary: String = s"Unexpected channel function '$qname'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
