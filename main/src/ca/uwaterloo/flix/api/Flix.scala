@@ -539,7 +539,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      errors += lexerErrors ::: parserErrors ::: namerErrors ::: kinderErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      errors ++= lexerErrors ::: parserErrors ::: namerErrors ::: kinderErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
       afterStratifier
     }
 
