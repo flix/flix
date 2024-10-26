@@ -200,7 +200,8 @@ object Validation {
 
     // Check whether we were successful or not.
     if (isFatal) {
-      HardFailure(failureStream.foldLeft(Chain.empty)(_ ++ _))
+      val empty: Chain[E] = Chain.empty
+      HardFailure(failureStream.foldLeft(empty)(_ ++ _))
     }
     else {
       Success(successValues.toList)
