@@ -505,7 +505,7 @@ object Indexer {
     */
   private def visitPat(pat0: Pattern): Index = pat0 match {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Var(sym, tpe, _) =>
+    case Pattern.Var(Binder(sym, _), tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
     case Pattern.Tag(CaseSymUse(sym, loc), pat, _, _) =>

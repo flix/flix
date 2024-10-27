@@ -1020,7 +1020,7 @@ object Redundancy {
     */
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
-    case Pattern.Var(sym, _, _) => Set(sym)
+    case Pattern.Var(Binder(sym, _), _, _) => Set(sym)
     case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {

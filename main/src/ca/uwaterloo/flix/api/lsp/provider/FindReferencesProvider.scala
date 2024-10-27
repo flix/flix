@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
@@ -69,7 +69,7 @@ object FindReferencesProvider {
         case Entity.FormalParam(param) => findVarReferences(param.bnd.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => findVarReferences(sym)
+          case Pattern.Var(Binder(sym, _), _, _) => findVarReferences(sym)
           case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => findCaseReferences(sym)
           case _ => mkNotFound(uri, pos)
         }

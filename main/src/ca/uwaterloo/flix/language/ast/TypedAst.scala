@@ -282,7 +282,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 

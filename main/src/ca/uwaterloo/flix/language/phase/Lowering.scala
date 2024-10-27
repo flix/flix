@@ -830,7 +830,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Pattern.Wild(t, loc)
 
-    case TypedAst.Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(TypedAst.Binder(sym, _), tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Pattern.Var(sym, t, loc)
 
@@ -1126,7 +1126,7 @@ object Lowering {
     case TypedAst.Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case TypedAst.Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(TypedAst.Binder(sym, _), tpe, loc) =>
       if (isQuantifiedVar(sym, cparams0)) {
         // Case 1: Quantified variable.
         mkBodyTermVar(sym)

@@ -634,7 +634,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
 
-    case Pattern.Var(sym, tpe, loc) =>
+    case Pattern.Var(Binder(sym, _), tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

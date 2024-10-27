@@ -138,7 +138,7 @@ object TypedAstPrinter {
     */
   private def printPattern(pattern: TypedAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
-    case Pattern.Var(sym, _, _) => printVar(sym)
+    case Pattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(sym, pat, _, _) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))

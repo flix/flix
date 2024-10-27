@@ -17,7 +17,7 @@ object TypedAstOps {
     */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(tpe, loc) => Map.empty
-    case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
+    case Pattern.Var(Binder(sym, _), tpe, loc) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -400,7 +400,7 @@ object TypedAstOps {
     */
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
-    case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
+    case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(elms, _, _) =>
