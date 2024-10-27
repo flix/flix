@@ -269,7 +269,7 @@ object Indexer {
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expr.Scope(sym, _, exp, _, _, loc) =>
+    case Expr.Scope(Binder(sym, _), _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 

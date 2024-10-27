@@ -187,7 +187,8 @@ object TypeReconstruction2 {
       val e = visitExp(exp)(subst.branches(regionVar.sym))
       val tpe = e.tpe
       val eff = subst(evar)
-      TypedAst.Expr.Scope(sym, regionVar, e, tpe, eff, loc)
+      val bnd = TypedAst.Binder(sym, eff)
+      TypedAst.Expr.Scope(bnd, regionVar, e, tpe, eff, loc)
 
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
