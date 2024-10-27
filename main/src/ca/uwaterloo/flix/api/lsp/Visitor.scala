@@ -812,13 +812,14 @@ object Visitor {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(sym, tpe, exp) = rule
+    val TypeMatchRule(bnd, tpe, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeTypeMatchRule(rule)
 
+    visitBinder(bnd)
     visitType(tpe)
     visitExpr(exp)
   }

@@ -292,7 +292,7 @@ object Indexer {
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
-        case TypeMatchRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitType(tpe) ++ visitExp(exp)
+        case TypeMatchRule(bnd, tpe, exp) => Index.occurrenceOf(bnd.sym, tpe) ++ visitType(tpe) ++ visitExp(exp)
       }
       i0 ++ i1
 

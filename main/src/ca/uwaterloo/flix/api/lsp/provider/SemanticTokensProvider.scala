@@ -411,9 +411,9 @@ object SemanticTokensProvider {
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, TypeMatchRule(sym, tpe, exp)) =>
-          val o = getSemanticTokenType(sym, tpe)
-          val t = SemanticToken(o, Nil, sym.loc)
+        case (acc, TypeMatchRule(bnd, tpe, exp)) =>
+          val o = getSemanticTokenType(bnd.sym, tpe)
+          val t = SemanticToken(o, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 

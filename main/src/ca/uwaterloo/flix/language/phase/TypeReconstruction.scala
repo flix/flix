@@ -209,7 +209,8 @@ object TypeReconstruction {
         case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
           val t = subst(tpe0)
           val b = visitExp(exp)
-          TypedAst.TypeMatchRule(sym, t, b)
+          val bnd = TypedAst.Binder(sym, t)
+          TypedAst.TypeMatchRule(bnd, t, b)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
