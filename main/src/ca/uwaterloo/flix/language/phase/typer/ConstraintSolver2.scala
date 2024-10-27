@@ -72,6 +72,16 @@ object ConstraintSolver2 {
       * Returns the constraints and the root substitution of the substitution tree.
       */
     def getShallow: (List[TypeConstraint2], Substitution) = (constrs, tree.root)
+
+    /**
+      * Sorts the constraints using some heuristics.
+      */
+    def sort(): Soup = {
+
+      val cs = constrs
+
+      new Soup(cs, tree)
+    }
   }
 
   object Soup {
@@ -164,6 +174,7 @@ object ConstraintSolver2 {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
+      .sort()
       .map(reduceTypes)
       .flatMapSubst(effectUnification)
       .flatMapSubst(makeSubstitution)
