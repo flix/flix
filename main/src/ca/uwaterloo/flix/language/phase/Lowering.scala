@@ -1012,7 +1012,7 @@ object Lowering {
     * Lowers the given select channel rule `rule0`.
     */
   private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
-    case TypedAst.SelectChannelRule(sym, chan, exp) =>
+    case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp) =>
       val c = visitExp(chan)
       val e = visitExp(exp)
       LoweredAst.SelectChannelRule(sym, c, e)
