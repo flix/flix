@@ -309,7 +309,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends VarOrWild
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends VarOrWild
 
     case class Tag(sym: RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
