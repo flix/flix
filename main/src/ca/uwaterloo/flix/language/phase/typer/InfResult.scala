@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jonathan Lindegaard Starup
+ * Copyright 2024 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.phase.typer
 
-///
-/// Indicates that an index was out of bounds.
-/// Useful for instances of `Index` or `IndexMut`.
-///
-eff OutOfBounds {
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
 
-    /// Stops execution with an error message.
-    pub def outOfBounds(msg: String): Void
-
-}
-
-mod OutOfBounds {
-
-    /// Turns the `OutOfBounds` effect into `Err(msg)`.
-    @Experimental
-    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - OutOfBounds) = {
-        x -> try Ok(f(x)) with OutOfBounds {
-            def outOfBounds(msg, _) = Err(msg)
-        }
-    }
-
-}
+/**
+  *
+  * A result of performing type inference.
+  *
+  * @param constrs constraints inferred for the expression
+  * @param tpe     the inferred type of the expression
+  * @param eff     the inferred effect of the expression
+  * @param renv    the inferred rigidity environment for the expression (marking region variables)
+  */
+case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type, renv: RigidityEnv)

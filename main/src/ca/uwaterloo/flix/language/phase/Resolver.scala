@@ -82,7 +82,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError & Recoverable]) = flix.phaseNew("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -100,7 +100,7 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
         val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
@@ -126,7 +126,9 @@ object Resolver {
                 )
             }
         }
-    }.withSoftFailures(sctx.errors.asScala)
+    }
+
+    (resolvedRoot, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
@@ -1680,8 +1682,8 @@ object Resolver {
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
-      // Assemble the lambda expressions.
-      ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
+      // Assemble the lambda expression (we know this must be pure).
+      mkPureLambda(freshParam, tagExp, loc)
     }
   }
 
@@ -1710,8 +1712,8 @@ object Resolver {
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
-      // Assemble the lambda expressions.
-      ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
+      // Assemble the lambda expression (we know this must be pure).
+      mkPureLambda(freshParam, tagExp, loc)
     }
   }
 
@@ -1750,8 +1752,9 @@ object Resolver {
 
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
-    val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
-      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
+    // For typing performance we make pure lambdas for all except the last.
+    val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
+      case (fp, (acc, first)) => if (first) (ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic), false) else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -3684,6 +3687,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -4156,6 +4160,11 @@ object Resolver {
     */
   def freshVarSym(name: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym =
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
+
+  /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), loc)
+  }
 
   /**
     * Companion object for [[SharedContext]]

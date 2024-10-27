@@ -29,18 +29,20 @@ mod Environment {
     /// Returns the arguments passed to the program via the command line.
     ///
     pub def getArgs(): List[String] =
-        unsafe Array.toList(unsafe Global.getArgs())
+        unsafe Array.toList(Global.getArgs())
 
     ///
     /// Returns an map of the current system environment.
     ///
-    pub def getEnv(): Map[String, String] =
+    pub def getEnv(): Map[String, String] = region rc {
         try {
-            let iter = unsafe System.getenv().entrySet().iterator();
+            let _ = rc;
+            let iter = unchecked_cast ((System.getenv().entrySet().iterator(): _ \ IO) as _ \ rc);
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
         }
+    }
 
     ///
     /// Returns the value of the specified environment variable.

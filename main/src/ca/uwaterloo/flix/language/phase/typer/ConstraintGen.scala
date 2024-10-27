@@ -136,7 +136,18 @@ object ConstraintGen {
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+        val shouldSubeffect = {
+          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+          val useless = exp match {
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case _ => false
+          }
+          val redundant = exp match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && !useless && !redundant
+        }
         val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -371,7 +382,18 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val shouldSubeffect = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+        val shouldSubeffect = {
+          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+          val useless = exp1 match {
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case _ => false
+          }
+          val redundant = exp1 match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && !useless && !redundant
+        }
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
@@ -1032,7 +1054,7 @@ object ConstraintGen {
     * Returns the label, pattern type, and location of the pattern.
     */
   private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
-    case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
+    case KindedAst.Pattern.Record.RecordLabelPattern(label, p, tvar, loc) =>
       // { Label = Pattern ... }
       val tpe = visitPattern(p)
       c.unifyType(tpe, tvar, loc)

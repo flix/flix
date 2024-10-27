@@ -72,6 +72,34 @@ object ConstraintSolver2 {
       * Returns the constraints and the root substitution of the substitution tree.
       */
     def getShallow: (List[TypeConstraint2], Substitution) = (constrs, tree.root)
+
+    /**
+      * Sorts the constraints using some heuristics.
+      */
+    def sort(): Soup = {
+      def rank(c: TypeConstraint2): (Int, Int) = c match {
+        case TypeConstraint2.Purification(_, _, _, _, _) => (0, 0)
+        case TypeConstraint2.Equality(_: Type.Var, Type.Pure, _) => (0, 0)
+        case TypeConstraint2.Equality(Type.Pure, _: Type.Var, _) => (0, 0)
+        case TypeConstraint2.Equality(tpe1, tpe2, _) if tpe1.typeVars.isEmpty && tpe2.typeVars.isEmpty => (0, 0)
+        case TypeConstraint2.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0)
+        case TypeConstraint2.Equality(tvar1: Type.Var, tpe2, _) if !tpe2.typeVars.contains(tvar1) => (1, 0)
+        case TypeConstraint2.Equality(tpe1, tvar2: Type.Var, _) if !tpe1.typeVars.contains(tvar2) => (1, 0)
+        case TypeConstraint2.Equality(tpe1, tpe2, _) =>
+          // We want to resolve type variables to types before looking at effects.
+          // Hence, we punish effect variable by a factor 5.
+          val punishment = 5
+
+          val tvs1 = tpe1.typeVars.count(_.kind == Kind.Star)
+          val tvs2 = tpe2.typeVars.count(_.kind == Kind.Star)
+          val evs1 = tpe1.typeVars.count(_.kind == Kind.Eff)
+          val evs2 = tpe2.typeVars.count(_.kind == Kind.Eff)
+          (2, (tvs1 + tvs2) + punishment * (evs1 + evs2))
+        case TypeConstraint2.Trait(_, _, _) => (3, 0)
+      }
+
+      new Soup(constrs.sortBy(rank), tree)
+    }
   }
 
   object Soup {
@@ -164,6 +192,7 @@ object ConstraintSolver2 {
     Soup.of(constrs)
       .flatMap(breakDownConstraints)
       .flatMap(eliminateIdentities)
+      .sort()
       .map(reduceTypes)
       .flatMapSubst(effectUnification)
       .flatMapSubst(makeSubstitution)

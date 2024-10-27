@@ -876,7 +876,7 @@ object Kinder {
         case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
           val pat = visitPattern(pat1, kenv, root)
-          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, pat, loc1)
+          KindedAst.Pattern.Record.RecordLabelPattern(label, pat, tvar, loc1)
       }
       val pat = visitPattern(pat0, kenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1558,6 +1558,7 @@ object Kinder {
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
     case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), arg, _) => Type.mkSymmetricDiff(arg, t2, loc)
     case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 
     case t => Type.Apply(t, t2, loc)

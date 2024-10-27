@@ -1954,12 +1954,13 @@ object Weeder2 {
     private def visitSpawnExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Spawn)
       val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
-        case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
+      mapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
+        case (expr1, Some(expr2)) =>
+          Expr.Spawn(expr1, expr2, tree.loc)
         case (expr1, None) =>
           val error = MissingScope(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.Spawn(expr1, Expr.Error(error), tree.loc))
+          Expr.Spawn(expr1, Expr.Error(error), tree.loc)
       }
     }
 
@@ -2313,7 +2314,7 @@ object Weeder2 {
         case (Nil, Some(r)) =>
           val error = EmptyRecordExtensionPattern(r.loc)
           sctx.errors.add(error)
-          r
+          Pattern.Error(r.loc)
 
         // Illegal pattern: { x, ... | (1, 2, 3) }
         case (_, Some(r)) =>

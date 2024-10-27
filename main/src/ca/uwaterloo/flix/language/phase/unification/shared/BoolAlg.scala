@@ -23,37 +23,27 @@ import scala.collection.immutable.SortedSet
 trait BoolAlg[F] {
 
   /**
-   * Returns `true` if `f` represents TRUE.
+   * Returns `true` if the given formula `f` is equivalent to the bottom element.
    */
-  def isTrue(f: F): Boolean
+  def isEquivBot(f: F): Boolean
 
   /**
-   * Returns `true` if `f` represents FALSE.
-   */
-  def isFalse(f: F): Boolean
+    * Returns a representation of bottom (i.e., false, the empty set, ...)
+    */
+  def mkBot: F
 
   /**
-   * Returns `true` if `f` represents a variable.
+   * Returns a representation of top (i.e., true, the universe, ...)
    */
-  def isVar(f: F): Boolean
+  def mkTop: F
 
   /**
-   * Returns `true` if formula is satisfiable and `false` otherwise.
-   */
-  def isSatisfiable(f: F): Boolean
+    * Returns a representation of the rigid variable with the given `id`.
+    */
+  def mkCst(id: Int): F
 
   /**
-   * Returns a representation of TRUE.
-   */
-  def mkTrue: F
-
-  /**
-   * Returns a representation of FALSE.
-   */
-  def mkFalse: F
-
-  /**
-   * Returns a representation of the variable with the given `id`.
+   * Returns a representation of the flexible variable with the given `id`.
    */
   def mkVar(id: Int): F
 
