@@ -292,7 +292,7 @@ object TypedAstOps {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
+        case (acc, CatchRule(bnd, _, exp)) => acc ++ freeVars(exp) - bnd.sym
       }
 
     case Expr.Throw(exp, _, _, _) => freeVars(exp)

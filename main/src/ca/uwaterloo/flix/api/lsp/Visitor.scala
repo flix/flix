@@ -841,13 +841,14 @@ object Visitor {
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val CatchRule(sym, _, exp) = rule
+    val CatchRule(bnd, _, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeCatchRule(rule)
 
+    visitBinder(bnd)
     visitExpr(exp)
   }
 

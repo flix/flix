@@ -417,7 +417,7 @@ object Safety {
       case Expr.TryCatch(exp, rules, _, _, loc) =>
         val nestedTryCatchError = if (inTryCatch) List(IllegalNestedTryCatch(loc)) else Nil
         nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
-          rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
+          rules.flatMap { case CatchRule(bnd, clazz, e) => checkCatchClass(clazz, bnd.sym.loc) ++ visit(e) }
 
       case Expr.Throw(exp, _, _, loc) =>
         val res = visit(exp) ++ checkThrow(exp)

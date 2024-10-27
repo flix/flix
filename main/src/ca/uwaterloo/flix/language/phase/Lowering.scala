@@ -973,9 +973,9 @@ object Lowering {
     * Lowers the given catch rule `rule0`.
     */
   private def visitCatchRule(rule0: TypedAst.CatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.CatchRule = rule0 match {
-    case TypedAst.CatchRule(sym, clazz, exp) =>
+    case TypedAst.CatchRule(bnd, clazz, exp) =>
       val e = visitExp(exp)
-      LoweredAst.CatchRule(sym, clazz, e)
+      LoweredAst.CatchRule(bnd.sym, clazz, e)
   }
 
   /**

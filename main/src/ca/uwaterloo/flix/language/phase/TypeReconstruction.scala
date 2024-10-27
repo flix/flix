@@ -403,7 +403,8 @@ object TypeReconstruction {
       val rs = rules map {
         case KindedAst.CatchRule(sym, clazz, body) =>
           val b = visitExp(body)
-          TypedAst.CatchRule(sym, clazz, b)
+          val bnd = TypedAst.Binder(sym, Type.getFlixType(clazz))
+          TypedAst.CatchRule(bnd, clazz, b)
       }
       val tpe = rs.head.exp.tpe
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)

@@ -508,8 +508,8 @@ object SemanticTokensProvider {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
-        case (acc, CatchRule(sym, _, exp)) =>
-          val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+        case (acc, CatchRule(bnd, _, exp)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
