@@ -1353,16 +1353,6 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.Do(op, exps, loc) =>
-      val opVal = lookupOp(op, env0, ns0, root)
-      val expsVal = traverse(exps)(resolveExp(_, env0))
-      mapN(opVal, expsVal) {
-        case (o, es) =>
-          checkOpArity(o, exps.length, loc)
-          val opUse = OpSymUse(o.sym, op.loc)
-          ResolvedAst.Expr.Do(opUse, es, loc)
-      }
-
     case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val esVal = traverse(exps)(resolveExp(_, env0))
       flatMapN(esVal) {

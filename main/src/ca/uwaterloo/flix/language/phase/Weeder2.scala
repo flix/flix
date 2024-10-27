@@ -902,7 +902,6 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
-        case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
@@ -1817,13 +1816,6 @@ object Weeder2 {
     private def visitThrow(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Throw)
       mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
-    }
-
-    private def visitDoExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)) {
-        (op, args) => Expr.Do(op, args, tree.loc)
-      }
     }
 
     private def visitInvokeConstructor2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
