@@ -82,7 +82,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError & Recoverable]) = flix.phaseNew("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -100,7 +100,7 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
         val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
@@ -126,7 +126,9 @@ object Resolver {
                 )
             }
         }
-    }.withSoftFailures(sctx.errors.asScala)
+    }
+
+    (resolvedRoot, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
@@ -3685,6 +3687,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))

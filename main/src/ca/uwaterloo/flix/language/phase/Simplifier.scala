@@ -355,6 +355,7 @@ object Simplifier {
           case TypeConstructor.Complement => MonoType.Unit
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit
+          case TypeConstructor.SymmetricDiff => MonoType.Unit
           case TypeConstructor.Effect(_) => MonoType.Unit
           case TypeConstructor.CaseSet(_, _) => MonoType.Unit
           case TypeConstructor.CaseComplement(_) => MonoType.Unit

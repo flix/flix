@@ -688,7 +688,12 @@ object Monomorpher {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.text == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv)
+            if (defn.sym.text == sig.sym.name) {
+              val declaredType = defn.spec.declaredScheme.base
+              fastCanMaybeUnify(declaredType, tpe) && Unification.unifiesWith(declaredType, tpe, RigidityEnv.empty, root.eqEnv)
+            } else {
+              false
+            }
         }
     }
 
@@ -701,6 +706,26 @@ object Monomorpher {
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // Case 4: No matching defs and no default. Should have been caught previously.
       case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
+    }
+  }
+
+  /**
+    * Returns `false` if it is *impossible* for `tpe1` and `tpe2` to unify.
+    *
+    * For example, the two function types: `Option[a] -> Unit` and `Bool -> b` cannot possibly unify.
+    *
+    * If the function returns `true` it does not reveal any information: the two types may unify, or they may not unify.
+    */
+  private def fastCanMaybeUnify(tpe1: Type, tpe2: Type): Boolean = {
+    // We only inspect star-types.
+    if (tpe1.kind != Kind.Star || tpe2.kind != Kind.Star) {
+      return true // No information -- may or may not unify.
+    }
+
+    (tpe1, tpe2) match {
+      case (Type.Cst(tc1, _), Type.Cst(tc2, _)) => tc1 == tc2
+      case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) => fastCanMaybeUnify(tpe11, tpe21) && fastCanMaybeUnify(tpe12, tpe22)
+      case _ => true // No information -- may or may not unify.
     }
   }
 
@@ -828,6 +853,7 @@ object Monomorpher {
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y) => Type.mkSymmetricDiff(x, y, loc)
 
       // Simplify case equations.
       case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)

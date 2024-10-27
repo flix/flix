@@ -51,7 +51,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): List[RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -67,7 +67,7 @@ object Redundancy {
     }, _ ++ _).errors.toList
 
     // Check for unused symbols.
-    errorsFromDefs ++
+    val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
       checkUnusedDefs()(sctx, root) ++
@@ -77,7 +77,9 @@ object Redundancy {
       checkUnusedStructsAndFields()(sctx, root) ++
       checkUnusedTypeParamsStructs()(root) ++
       checkRedundantTraitConstraints()(root, flix)
-  }(DebugNoOp())
+
+    (root, errors)
+  }
 
   /**
     * Checks for unused definition symbols.
