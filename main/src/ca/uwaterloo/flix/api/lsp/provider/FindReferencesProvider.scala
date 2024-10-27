@@ -66,7 +66,7 @@ object FindReferencesProvider {
 
         case Entity.Label(label) => findLabelReferences(label)
 
-        case Entity.FormalParam(param) => findVarReferences(param.sym)
+        case Entity.FormalParam(param) => findVarReferences(param.bnd.sym)
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => findVarReferences(sym)

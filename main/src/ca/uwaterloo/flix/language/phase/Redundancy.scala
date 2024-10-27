@@ -211,7 +211,7 @@ object Redundancy {
     implicit val lctx: LocalContext = LocalContext.mk()
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.bnd.sym), RecursionContext.ofDef(defn.sym))
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
@@ -240,7 +240,7 @@ object Redundancy {
     val usedExp = sig.exp match {
       case None => Used.empty
       case Some(exp) =>
-        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.bnd.sym), RecursionContext.ofSig(sig.sym))
     }
 
     // Check for unused parameters and remove all variable symbols.
@@ -264,7 +264,7 @@ object Redundancy {
     */
   private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
     fparams.collect {
-      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+      case fparam if deadVarSym(fparam.bnd.sym, used) => UnusedFormalParam(fparam.bnd.sym)
     }
   }
 
@@ -323,19 +323,19 @@ object Redundancy {
 
     case Expr.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
-      val env1 = env0 + fparam.sym
+      val env1 = env0 + fparam.bnd.sym
 
       // Visit the expression with the extended environment.
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check if the formal parameter is shadowing.
-      val shadowedVar = shadowing(fparam.sym.text, fparam.sym.loc, env0)
+      val shadowedVar = shadowing(fparam.bnd.sym.text, fparam.bnd.sym.loc, env0)
 
       // Check if the lambda parameter symbol is dead.
-      if (deadVarSym(fparam.sym, innerUsed))
-        innerUsed ++ shadowedVar - fparam.sym + UnusedFormalParam(fparam.sym)
+      if (deadVarSym(fparam.bnd.sym, innerUsed))
+        innerUsed ++ shadowedVar - fparam.bnd.sym + UnusedFormalParam(fparam.bnd.sym)
       else
-        innerUsed ++ shadowedVar - fparam.sym
+        innerUsed ++ shadowedVar - fparam.bnd.sym
 
     case Expr.ApplyClo(exp, exps, _, _, _) =>
       val us1 = visitExp(exp, env0, rc)
@@ -395,7 +395,7 @@ object Redundancy {
       // Visit the two expressions under the extended environment.
       // Also add fparams to env1 in the first expression.
       // Add the variable to the recursion context only in the first expression.
-      val innerUsed1 = visitExp(exp1, env1 ++ fparams.map(_.sym), rc.withVar(sym))
+      val innerUsed1 = visitExp(exp1, env1 ++ fparams.map(_.bnd.sym), rc.withVar(sym))
       val innerUsed2 = visitExp(exp2, env1, rc)
       val used = innerUsed1 ++ innerUsed2
 
@@ -408,7 +408,7 @@ object Redundancy {
         (used ++ shadowedVar) - sym
 
       // Check if the fparams are dead in exp1
-      val fparamVars = fparams.map(_.sym)
+      val fparamVars = fparams.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
       fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
@@ -692,7 +692,7 @@ object Redundancy {
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
           val usedBody = visitExp(body, env0, rc)
-          val syms = fparams.map(_.sym)
+          val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
@@ -727,7 +727,7 @@ object Redundancy {
       methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
-          val env1 = env0 ++ fparams.map(_.sym)
+          val env1 = env0 ++ fparams.map(_.bnd.sym)
           val used = visitExp(exp, env1, rc)
           val unusedFParams = findUnusedFormalParameters(fparams, used)
           acc ++ used ++ unusedFParams

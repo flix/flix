@@ -145,7 +145,7 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expr.Lambda(fparam, exp, _, _) =>
-      freeVars(exp) - fparam.sym
+      freeVars(exp) - fparam.bnd.sym
 
     case Expr.ApplyClo(exp, exps, _, _, _) =>
       exps.foldLeft(freeVars(exp)) {
@@ -177,7 +177,7 @@ object TypedAstOps {
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
-      val bound = sym :: fparams.map(_.sym)
+      val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
     case Expr.Region(_, _) =>
@@ -299,7 +299,7 @@ object TypedAstOps {
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
+        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.Do(_, exps, _, _, _) =>
@@ -334,7 +334,7 @@ object TypedAstOps {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
+        case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.NewChannel(exp1, exp2, _, _, _) =>

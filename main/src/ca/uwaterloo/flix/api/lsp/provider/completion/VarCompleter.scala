@@ -30,7 +30,7 @@ object VarCompleter {
     // Find all local variables in the current uri with a given range.
     index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
       case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe)
-      case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.sym, fparam.tpe)
+      case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.bnd.sym, fparam.tpe)
     }.filter(comp => matchesVar(comp.sym, context.word))
   }
 

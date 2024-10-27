@@ -232,7 +232,7 @@ object EntryPoint {
       ann = Annotations.Empty,
       mod = Modifiers.Empty,
       tparams = Nil,
-      fparams = List(TypedAst.FormalParam(argSym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
+      fparams = List(TypedAst.FormalParam(TypedAst.Binder(argSym, Type.Unit), Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
       eff = Type.IO,

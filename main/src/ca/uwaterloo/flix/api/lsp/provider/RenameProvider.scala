@@ -61,7 +61,7 @@ object RenameProvider {
 
         case Entity.Pred(pred, _) => renamePred(pred, newName)
 
-        case Entity.FormalParam(fparam) => renameVar(fparam.sym, newName)
+        case Entity.FormalParam(fparam) => renameVar(fparam.bnd.sym, newName)
 
         case Entity.LocalVar(sym, _) => renameVar(sym, newName)
 

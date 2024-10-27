@@ -63,7 +63,7 @@ object HighlightProvider {
 
         case Entity.Label(label) => highlightLabel(uri, label)
 
-        case Entity.FormalParam(fparam) => highlightVar(uri, fparam.sym)
+        case Entity.FormalParam(fparam) => highlightVar(uri, fparam.bnd.sym)
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => highlightVar(uri, sym)

@@ -824,9 +824,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(sym, _, tpe, _, _) =>
-      val o = getSemanticTokenType(sym, tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
+    case FormalParam(bnd, _, tpe, _, _) =>
+      val o = getSemanticTokenType(bnd.sym, tpe)
+      val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 

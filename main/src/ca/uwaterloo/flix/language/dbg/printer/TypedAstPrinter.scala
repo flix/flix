@@ -168,8 +168,8 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
     */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.Ascription = {
-    val TypedAst.FormalParam(sym, _, tpe, _, _) = fp
-    DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
+    val TypedAst.FormalParam(bnd, _, tpe, _, _) = fp
+    DocAst.Expr.Ascription(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
   }
 
   /**

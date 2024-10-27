@@ -759,12 +759,12 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(varSym, _, tpe, _, loc) = fparam
+    val FormalParam(bnd, _, tpe, _, loc) = fparam
     if (!a.accept(loc)) { return }
 
     c.consumeFormalParam(fparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
     visitType(tpe)
   }
 

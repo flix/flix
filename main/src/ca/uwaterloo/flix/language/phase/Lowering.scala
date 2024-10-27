@@ -939,9 +939,9 @@ object Lowering {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: TypedAst.FormalParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.FormalParam = fparam0 match {
-    case TypedAst.FormalParam(sym, mod, tpe, src, loc) =>
+    case TypedAst.FormalParam(bnd, mod, tpe, src, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(sym, mod, t, src, loc)
+      LoweredAst.FormalParam(bnd.sym, mod, t, src, loc)
   }
 
   /**
