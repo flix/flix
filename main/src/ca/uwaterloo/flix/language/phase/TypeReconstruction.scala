@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
-import ca.uwaterloo.flix.language.ast.{KindedAst, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -405,7 +405,7 @@ object TypeReconstruction {
       val rs = rules map {
         case KindedAst.CatchRule(sym, clazz, body) =>
           val b = visitExp(body)
-          val bnd = TypedAst.Binder(sym, Type.getFlixType(clazz))
+          val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
           TypedAst.CatchRule(bnd, clazz, b)
       }
       val tpe = rs.head.exp.tpe
