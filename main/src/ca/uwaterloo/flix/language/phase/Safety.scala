@@ -727,7 +727,7 @@ object Safety {
     //
     // A lexically bound variable does not appear in this set and is never free.
     //
-    val quantVars = c0.cparams.map(_.sym).toSet
+    val quantVars = c0.cparams.map(_.bnd.sym).toSet
 
     //
     // Check that all negative atoms only use positively defined variable symbols

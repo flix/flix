@@ -653,7 +653,9 @@ object TypeReconstruction {
 
     val cparams = cparams0.map {
       case KindedAst.ConstraintParam(sym, l) =>
-        TypedAst.ConstraintParam(sym, subst(sym.tvar), l)
+        val tpe = subst(sym.tvar)
+        val bnd = TypedAst.Binder(sym, tpe)
+        TypedAst.ConstraintParam(bnd, tpe, l)
     }
 
     TypedAst.Constraint(cparams, head, body, loc)

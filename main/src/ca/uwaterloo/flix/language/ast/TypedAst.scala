@@ -355,7 +355,7 @@ object TypedAst {
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
+  case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
   case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 

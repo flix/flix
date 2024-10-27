@@ -437,7 +437,7 @@ object TypedAstOps {
     */
   private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
     case Constraint(cparams0, head, body, _) =>
-      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
+      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.bnd.sym)
   }
 
   /**

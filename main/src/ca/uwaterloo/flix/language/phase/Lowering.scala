@@ -1847,7 +1847,7 @@ object Lowering {
     * That is, the variable symbol is *NOT* lexically bound.
     */
   private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
-    cparams0.exists(p => p.sym == sym)
+    cparams0.exists(p => p.bnd.sym == sym)
 
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.

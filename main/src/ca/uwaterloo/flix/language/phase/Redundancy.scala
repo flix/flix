@@ -914,7 +914,7 @@ object Redundancy {
     }
     val total = head ++ body
 
-    total -- c0.cparams.map(_.sym)
+    total -- c0.cparams.map(_.bnd.sym)
   }
 
   /**

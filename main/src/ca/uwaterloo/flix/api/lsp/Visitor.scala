@@ -864,12 +864,12 @@ object Visitor {
   }
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val ConstraintParam(varSym, tpe, loc) = cparam
+    val ConstraintParam(bnd, _, loc) = cparam
     if (!a.accept(loc)) { return }
 
     c.consumeConstraintParam(cparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
