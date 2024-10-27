@@ -710,16 +710,23 @@ object Monomorpher {
   }
 
   /**
-    * Returns `false` if `tpe1` and `tpe2` is *impossible* for the two given types to unify.
+    * Returns `false` if it is *impossible* for `tpe1` and `tpe2` to unify.
     *
-    * For example, the two function types: `Option[Int32] -> Unit` and `Bool -> String` cannot possibly unify.
+    * For example, the two function types: `Option[a] -> Unit` and `Bool -> b` cannot possibly unify.
     *
-    * If the function returns `true` it does not reveal any function: the two types may unify or they may not unify.
+    * If the function returns `true` it does not reveal any information: the two types may unify, or they may not unify.
     */
-  private def fastCanMaybeUnify(tpe1: Type, tpe2: Type): Boolean = (tpe1, tpe2) match {
-    case (Type.Cst(tc1, _), Type.Cst(tc2, _)) => tc1 == tc2
-    case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) => fastCanMaybeUnify(tpe11, tpe21) && fastCanMaybeUnify(tpe12, tpe22)
-    case _ => false
+  private def fastCanMaybeUnify(tpe1: Type, tpe2: Type): Boolean = {
+    // We only inspect star-types.
+    if (tpe1.kind != Kind.Star || tpe2.kind != Kind.Star) {
+      return true // No information -- may or may not unify.
+    }
+
+    (tpe1, tpe2) match {
+      case (Type.Cst(tc1, _), Type.Cst(tc2, _)) => tc1 == tc2
+      case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) => fastCanMaybeUnify(tpe11, tpe21) && fastCanMaybeUnify(tpe12, tpe22)
+      case _ => true // No information -- may or may not unify.
+    }
   }
 
   /**
