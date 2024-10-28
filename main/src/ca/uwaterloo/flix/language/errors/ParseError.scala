@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 /**
   * A common super-type for parser errors.
   */
-sealed trait ParseError extends CompilationMessage {
+sealed trait ParseError extends CompilationMessage with Recoverable {
   val kind = "Parse Error"
   val sctx: SyntacticContext
 }
@@ -166,7 +166,7 @@ object ParseError {
     def summary: String = s"Misplaced comment(s)."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Misplaced comment(s).
          |
          |${code(loc, s"Here")}
@@ -187,7 +187,7 @@ object ParseError {
     def summary: String = s"Misplaced doc-comment(s)."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Misplaced doc-comment(s).
          |
          |${code(loc, s"Here")}
@@ -209,7 +209,7 @@ object ParseError {
     def summary: String = s"Expected scope on ${token.display}."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected ${red("scope")} on ${cyan(token.display)}.
          |
          |${code(loc, s"Here")}
@@ -253,7 +253,7 @@ object ParseError {
     def summary: String = s"Trailing ${separator.display}."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
          |${code(loc, s"Here")}

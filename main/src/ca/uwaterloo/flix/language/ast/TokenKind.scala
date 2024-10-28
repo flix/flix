@@ -70,12 +70,11 @@ sealed trait TokenKind {
       case TokenKind.KeywordCheckedECast => "'checked_ecast'"
       case TokenKind.KeywordChoose => "'choose'"
       case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDebug => "'debug'"
-      case TokenKind.KeywordDebugBang => "'debug!'"
-      case TokenKind.KeywordDebugBangBang => "'debug!'"
+      case TokenKind.KeywordDebug => "'dbg'"
+      case TokenKind.KeywordDebugBang => "'dbg!'"
+      case TokenKind.KeywordDebugBangBang => "'dbg!!'"
       case TokenKind.KeywordDef => "'def'"
       case TokenKind.KeywordDiscard => "'discard'"
-      case TokenKind.KeywordDo => "'do'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
       case TokenKind.KeywordEnum => "'enum'"
@@ -231,7 +230,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordDiscard => true
-    case TokenKind.KeywordDo => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
     case TokenKind.KeywordEnum => true
@@ -430,7 +428,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
-         | TokenKind.KeywordDo
          | TokenKind.KeywordNew
          | TokenKind.KeywordStaticUppercase
          | TokenKind.KeywordSelect
@@ -704,8 +701,6 @@ object TokenKind {
   case object KeywordDef extends TokenKind
 
   case object KeywordDiscard extends TokenKind
-
-  case object KeywordDo extends TokenKind
 
   case object KeywordEff extends TokenKind
 

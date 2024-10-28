@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{KeywordCompleter, ExprSnippetCompleter}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ExprCompleter {
@@ -29,9 +30,12 @@ object ExprCompleter {
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context) ++
+      ExprSnippetCompleter.getCompletions() ++
       EnumCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context) ++
-      ModuleCompleter.getCompletions(context)
+      ModuleCompleter.getCompletions(context) ++
+      HoleCompletion.getHoleCompletion(context, index, root) ++
+      OpCompleter.getCompletions(context)
   }
+
 }

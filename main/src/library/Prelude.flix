@@ -6,6 +6,11 @@ import java.lang.System
 pub type alias Static = IO
 
 ///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {
@@ -85,17 +90,6 @@ pub eff NonDet
 /// The `Sys` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff Sys
-
-///
-/// The uninterpretable `Time` effect.
-///
-/// The `Time` effect represents the actions required to access the current time (including the system clock).
-///
-/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
-///
-/// The `Time` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Time
 
 ///
 /// The pure identity function.

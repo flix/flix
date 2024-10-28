@@ -17,16 +17,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Polarity, Scope}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -48,7 +48,7 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[StratificationError]) = flix.phaseNew("Stratifier") {
     // Construct a new shared context.
     implicit val sctx: SharedContext = SharedContext.mk()
 
@@ -60,8 +60,8 @@ object Stratifier {
     val is = ParOps.parMapValues(root.instances)(is0 => is0.map(visitInstance))
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
-    Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
-  }(DebugValidation())
+    (root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala.toList)
+  }
 
   /**
     * Performs Stratification of the given trait `t0`.
@@ -104,10 +104,6 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Def(_, _, _) => exp0
-
-    case Expr.Sig(_, _, _) => exp0
-
     case Expr.Hole(_, _, _, _) => exp0
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
@@ -126,14 +122,22 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      Expr.Apply(e, es, tpe, eff, loc)
+      Expr.ApplyClo(e, es, tpe, eff, loc)
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.ApplyDef(symUse, es, itpe, tpe, eff, loc)
+
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
+
+    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplySig(symUse, es, itpe, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -144,15 +148,15 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      Expr.Let(sym, e1, e2, tpe, eff, loc)
 
-    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
+      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
 
     case Expr.Region(_, _) => exp0
 

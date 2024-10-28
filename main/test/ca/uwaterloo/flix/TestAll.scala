@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.api.ApiSuite
 import ca.uwaterloo.flix.language.LanguageSuite
 import ca.uwaterloo.flix.library.LibrarySuite
 import ca.uwaterloo.flix.tools.ToolsSuite
@@ -26,6 +27,7 @@ import flix.fuzzers.FuzzerSuite
 import org.scalatest.Suites
 
 class TestAll extends Suites(
+  new ApiSuite,
   new BenchmarkSuite,
   new CompilerSuite,
   new FuzzerSuite,

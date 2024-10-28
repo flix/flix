@@ -16,318 +16,13 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.errors.ResolutionError
-
-import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Companion object of [[Annotations]].
-    */
-  object Annotations {
-    /**
-      * The empty sequence of annotations.
-      */
-    val Empty: Annotations = Annotations(Nil)
-  }
-
-  /**
-    * A sequence of annotations.
-    */
-  case class Annotations(annotations: List[Annotation]) {
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
-      */
-    def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Experimental` annotation.
-      */
-    def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Export` annotation.
-      */
-    def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Internal` annotation.
-      */
-    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Lazy` annotation.
-      */
-    def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
-      */
-    def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
-      */
-    def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Parallel` annotation.
-      */
-    def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation.
-      */
-    def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Skip` annotation.
-      */
-    def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Test` annotation.
-      */
-    def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-  }
-
-  /**
-    * A common super-type that represents an expression position (tail position or not).
-    */
-  sealed trait ExpPosition
-
-  object ExpPosition {
-    /**
-      * Represents an expression in tail position.
-      */
-    case object Tail extends ExpPosition
-
-    /**
-      * Represents an expression in non-tail position.
-      */
-    case object NonTail extends ExpPosition
-  }
-
-  /**
-    * Documentation.
-    *
-    * @param lines the lines of the comments.
-    * @param loc   the source location of the text.
-    */
-  case class Doc(lines: List[String], loc: SourceLocation) {
-    def text: String = lines.
-      dropWhile(_.trim.isEmpty).
-      map(_.trim).
-      mkString("\n")
-
-    /**
-      * Returns a string representation that hides the internals.
-      */
-    override def toString: String = "Doc(...)"
-  }
-
-  /**
-    * Companion object of [[Modifiers]].
-    */
-  object Modifiers {
-    /**
-      * The empty sequence of modifiers.
-      */
-    val Empty: Modifiers = Modifiers(Nil)
-  }
-
-  /**
-    * A sequence of modifiers.
-    */
-  case class Modifiers(mod: List[Modifier]) {
-
-    /**
-      * Returns a new modifier sequence with `pub` added.
-      */
-    def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
-
-    /**
-      * Returns `true` if these modifiers contain the lawful modifier.
-      */
-    def isLawful: Boolean = mod contains Modifier.Lawful
-
-   /**
-     * Returns `true` if these modifiers contain the mutable modifier.
-     */
-    def isMutable: Boolean = mod contains Modifier.Mutable
-
-    /**
-      * Returns `true` if these modifiers contain the override modifier.
-      */
-    def isOverride: Boolean = mod contains Modifier.Override
-
-    /**
-      * Returns `true` if these modifiers contain the public modifier.
-      */
-    def isPublic: Boolean = mod contains Modifier.Public
-
-    /**
-      * Returns `true` if these modifiers contain the sealed modifier.
-      */
-    def isSealed: Boolean = mod contains Modifier.Sealed
-
-    /**
-      * Returns `true` if these modifiers contain the synthetic modifier.
-      */
-    def isSynthetic: Boolean = mod contains Modifier.Synthetic
-
-    /**
-      * Returns a string representation that hides the internals.
-      */
-    override def toString: String = "Modifiers(...)"
-
-  }
-
-  /**
-    * A common super-type for modifiers.
-    */
-  sealed trait Modifier
-
-  object Modifier {
-
-    /**
-      * The lawful modifier.
-      */
-    case object Lawful extends Modifier
-
-   /**
-     * The mutable modifier.
-     */
-
-    case object Mutable extends Modifier
-
-    /**
-      * The override modifier.
-      */
-    case object Override extends Modifier
-
-    /**
-      * The public modifier.
-      */
-    case object Public extends Modifier
-
-    /**
-      * The sealed modifier.
-      */
-    case object Sealed extends Modifier
-
-    /**
-      * The synthetic modifier.
-      */
-    case object Synthetic extends Modifier
-
-  }
-
-  /**
-    * Represents a positive or negative labelled dependency edge.
-    *
-    * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
-    */
-  case class LabelledEdge(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
-
-  /**
-    * Represents a label in the labelled graph.
-    */
-  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
-
-  /**
-    * Represents a labelled graph; the dependency graph with additional labels
-    * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
-    * add dependency edges `B -x> A` and `C -> A`. The labelled graph can then
-    * add labels that allow the two edges to be filtered out together. If we
-    * look at a program consisting of A, B, and D. then the rule `C -> A`
-    * cannot be relevant, but by remembering that B occurred together with A,
-    * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
-    * and `C -[B]-> A`.
-    */
-  object LabelledPrecedenceGraph {
-    /**
-      * The empty labelled graph.
-      */
-    val empty: LabelledPrecedenceGraph = LabelledPrecedenceGraph(Vector.empty)
-  }
-
-  case class LabelledPrecedenceGraph(edges: Vector[LabelledEdge]) {
-    /**
-      * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
-      */
-    def +(that: LabelledPrecedenceGraph): LabelledPrecedenceGraph = {
-      if (this eq LabelledPrecedenceGraph.empty)
-        that
-      else if (that eq LabelledPrecedenceGraph.empty)
-        this
-      else
-        LabelledPrecedenceGraph(this.edges ++ that.edges)
-    }
-
-    /**
-      * Returns `this` labelled graph including only the edges where all its labels are in
-      * `syms` and the labels match according to `'`labelEq`'`.
-      *
-      * A rule like `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
-      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEq(syms(A), la)` etc.
-      */
-    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledPrecedenceGraph = {
-      def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
-
-      LabelledPrecedenceGraph(edges.filter {
-        case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
-      })
-    }
-  }
-
-  object Stratification {
-    /**
-      * Represents the empty stratification.
-      */
-    val empty: Stratification = Stratification(Map.empty)
-  }
-
-  /**
-    * Represents a stratification that maps every predicate symbol to its stratum.
-    */
-  case class Stratification(m: Map[Name.Pred, Int])
-
-  /**
-    * Represents that the annotated element is introduced by the class `clazz`.
-    */
-  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
-
-  /**
-    * Represents that the annotated element is eliminated by the class `clazz`.
-    */
-  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
-
-  case object TraitConstraint {
-    /**
-      * Represents the head (located class) of a type constraint.
-      */
-    case class Head(sym: Symbol.TraitSym, loc: SourceLocation)
-  }
-
-  /**
-    * Represents that the type `arg` must belong to trait `sym`.
-    */
-  case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
-    override def equals(o: Any): Boolean = o match {
-      case that: TraitConstraint =>
-        this.head.sym == that.head.sym && this.arg == that.arg
-      case _ => false
-    }
-
-    override def hashCode(): Int = Objects.hash(head.sym, arg)
-  }
 
   /**
     * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
@@ -341,55 +36,9 @@ object Ast {
   case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
 
   /**
-    * Represents a use of an effect sym.
-    */
-  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of an effect operation sym.
-    */
-  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of an enum case sym.
-    */
-  case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of a struct field sym.
-    */
-  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of a restrictable enum case sym.
-    */
-  case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of a restrictable enum sym.
-    */
-  case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of a defn sym.
-    */
-  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
-
-
-  /**
-    * Represents a use of a class sym.
-    */
-  case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)
-
-  /**
-    * Represents a use of an associated type sym.
-    */
-  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
-
-  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
+  case class Instance(tpe: Type, tconstrs: List[TraitConstraint])
 
   /**
     * Represents the super traits and instances available for a particular traits.
@@ -457,6 +106,10 @@ object Ast {
       */
     case object Constraint extends BoundBy
 
+    /**
+      * Represents a variable that is bound by a local def.
+      */
+    case object LocalDef extends BoundBy
   }
 
   /**
@@ -535,7 +188,7 @@ object Ast {
     /**
       * An import of a Java class.
       */
-    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+    case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 
   /**
@@ -568,9 +221,9 @@ object Ast {
     object Expr {
       case object Constraint extends Expr
 
-      case object Do extends Expr
-
       case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
+      case object New extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 
@@ -598,6 +251,8 @@ object Ast {
     case object Use extends SyntacticContext
 
     case object WithClause extends SyntacticContext
+
+    case object WithHandler extends SyntacticContext
 
     case object Unknown extends SyntacticContext
 

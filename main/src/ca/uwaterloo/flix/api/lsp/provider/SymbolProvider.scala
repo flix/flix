@@ -86,7 +86,7 @@ object SymbolProvider {
     * Returns a Method DocumentSymbol from a Sig node.
     */
   private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
-    case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
+    case TypedAst.Sig(sym, spec, _, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
@@ -95,7 +95,7 @@ object SymbolProvider {
     * Returns a Method SymbolInformation from a Sig node.
     */
   private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
-    case TypedAst.Sig(sym, _, _) => SymbolInformation(
+    case TypedAst.Sig(sym, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
@@ -104,7 +104,7 @@ object SymbolProvider {
     * Returns a Function DocumentSymbol from a Def node.
     */
   private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
-    case TypedAst.Def(sym, spec, _) => DocumentSymbol(
+    case TypedAst.Def(sym, spec, _, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
@@ -113,7 +113,7 @@ object SymbolProvider {
     * Returns a Function SymbolInformation from a Def node.
     */
   private def mkDefSymbolInformation(d: TypedAst.Def): SymbolInformation = d match {
-    case TypedAst.Def(sym, _, _) => SymbolInformation(
+    case TypedAst.Def(sym, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
@@ -123,7 +123,7 @@ object SymbolProvider {
     * It navigates the AST and adds Cases of enum as children DocumentSymbols.
     */
   private def mkEnumDocumentSymbol(enum0: TypedAst.Enum): DocumentSymbol = enum0 match {
-    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, _, loc) => DocumentSymbol(
+    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, loc) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Enum,
@@ -148,7 +148,7 @@ object SymbolProvider {
     * It navigates the AST and returns also the Cases of the enum to the returned List.
     */
   private def mkEnumSymbolInformation(enum0: TypedAst.Enum): List[SymbolInformation] = enum0 match {
-    case TypedAst.Enum(_, _, _, sym, _, _, cases, _, loc) =>
+    case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
       cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
         sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
       )
@@ -191,7 +191,7 @@ object SymbolProvider {
     * Returns an Function SymbolInformation from an Op node.
     */
   private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
-    case TypedAst.Op(sym, _) =>
+    case TypedAst.Op(sym, _, _) =>
       SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
   }
 
@@ -199,7 +199,7 @@ object SymbolProvider {
     * Returns a Method DocumentSymbol from an Op node.
     */
   private def mkOpDocumentSymbol(s: TypedAst.Op): DocumentSymbol = s match {
-    case TypedAst.Op(sym, spec) => DocumentSymbol(
+    case TypedAst.Op(sym, spec, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }

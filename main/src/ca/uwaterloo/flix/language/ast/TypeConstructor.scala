@@ -1,8 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -246,14 +245,14 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of JVM classes.
     */
-  case class Native(clazz: Class[_]) extends TypeConstructor {
+  case class Native(clazz: Class[?]) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
+  case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 
@@ -382,6 +381,13 @@ object TypeConstructor {
     * A type constructor that represents the intersection of two effect sets.
     */
   case object Intersection extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the exclusive or (symmetric difference) of two effect sets.
+    */
+  case object SymmetricDiff extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
   }
 

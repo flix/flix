@@ -30,10 +30,9 @@ mod KeyNotFound {
     /// Turns the `KeyNotFound` effect into `Err(msg)`.
     @Experimental
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - KeyNotFound) = {
-        // TODO: remove annotations and casts once try-with typing works.
-        x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with KeyNotFound {
+        x -> try Ok(f(x)) with KeyNotFound {
             def keyNotFound(msg, _) = Err(msg)
-        }): _ \ ef - KeyNotFound)
+        }
     }
 
 }

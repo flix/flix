@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType.Mode
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 object FormatType {
   /**
@@ -31,10 +31,9 @@ object FormatType {
     * Performs alpha renaming if the rigidity environment is present.
     */
   def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
-    val minimized = TypeMinimization.minimizeType(tpe)
     val renamed = renv match {
-      case None => minimized
-      case Some(env) => alphaRename(minimized, env)
+      case None => tpe
+      case Some(env) => alphaRename(tpe, env)
     }
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }
@@ -154,6 +153,7 @@ object FormatType {
       case SimpleType.Or(_) => false
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
+      case SimpleType.SymmetricDiff(_) => false
       case SimpleType.Difference(_, _) => false
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
@@ -309,6 +309,9 @@ object FormatType {
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")
+      case SimpleType.SymmetricDiff(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" ⊕ ")
       case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>

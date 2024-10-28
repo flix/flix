@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -550,7 +550,7 @@ object UnkindedType {
   /**
     * Returns the Flix UnkindedType of a Java Class
     */
-  def getFlixType(c: Class[_]): UnkindedType = {
+  def getFlixType(c: Class[?]): UnkindedType = {
     if (c == java.lang.Boolean.TYPE) {
       UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
     }

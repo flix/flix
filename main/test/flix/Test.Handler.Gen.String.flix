@@ -5,7 +5,7 @@ mod Test.Handler.Gen.String {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: String): List[String] =
         region rc {

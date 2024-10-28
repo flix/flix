@@ -27,35 +27,31 @@ object TypeReconstruction {
     * Reconstructs types in the given def.
     */
   def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
-    case KindedAst.Def(sym, spec0, exp0) =>
-      val spec = visitSpec(spec0, subst)
+    case KindedAst.Def(sym, spec0, exp0, loc) =>
+      val spec = visitSpec(spec0)
       val exp = visitExp(exp0)(subst)
-      TypedAst.Def(sym, spec, exp)
+      TypedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
   def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
-    case KindedAst.Sig(sym, spec0, exp0) =>
-      val spec = visitSpec(spec0, subst)
+    case KindedAst.Sig(sym, spec0, exp0, loc) =>
+      val spec = visitSpec(spec0)
       val exp = exp0.map(visitExp(_)(subst))
-      TypedAst.Sig(sym, spec, exp)
+      TypedAst.Sig(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given spec.
     */
-  private def visitSpec(spec: KindedAst.Spec, subst: Substitution): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+  private def visitSpec(spec: KindedAst.Spec): TypedAst.Spec = spec match {
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, tconstrs, econstrs) =>
       val tparams = tparams0.map(visitTypeParam)
-      val fparams = fparams0.map(visitFormalParam(_, subst))
-      val tpe = subst(tpe0)
-      val eff = subst(eff0)
-      val tconstrs = tconstrs0.map(subst.apply)
-      val econstrs = econstrs0.map(subst.apply)
-      val sc = sc0 // TODO ASSOC-TYPES get rid of type visits here and elsewhere that only go over rigid tvars
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+      val fparams = fparams0.map(visitFormalParam(_, Substitution.empty))
+      // We do not perform substitution on any of the types because they should all be rigid.
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -78,9 +74,9 @@ object TypeReconstruction {
     * Reconstructs types in the given operation.
     */
   def visitOp(op: KindedAst.Op): TypedAst.Op = op match {
-    case KindedAst.Op(sym, spec0) =>
-      val spec = visitSpec(spec0, Substitution.empty)
-      TypedAst.Op(sym, spec)
+    case KindedAst.Op(sym, spec0, loc) =>
+      val spec = visitSpec(spec0)
+      TypedAst.Op(sym, spec, loc)
   }
 
   /**
@@ -89,11 +85,6 @@ object TypeReconstruction {
   private def visitExp(exp0: KindedAst.Expr)(implicit subst: Substitution): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
-
-    case KindedAst.Expr.Def(sym, tvar, loc) => TypedAst.Expr.Def(sym, subst(tvar), loc)
-
-    case KindedAst.Expr.Sig(sym, tvar, loc) =>
-      TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
     case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
       TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
@@ -115,14 +106,25 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.Apply(exp, exps, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
-      TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyClo(e, es, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc2) =>
+    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc2)
+      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      val at = subst(arrowTvar)
+      val t = subst(tvar)
+      val ef = subst(evar)
+      TypedAst.Expr.ApplyLocalDef(symUse, es, at, t, ef, loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -160,19 +162,21 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.Discard(e, e.eff, loc)
 
-    case KindedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
+      val bnd = TypedAst.Binder(sym, e1.tpe)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
+      val fps = fparams.map(visitFormalParam(_, subst))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)
@@ -224,6 +228,7 @@ object TypeReconstruction {
                 case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
+            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar1), loc)
           }
           val body = visitExp(body0)
           TypedAst.RestrictableChooseRule(pat, body)
@@ -364,19 +369,11 @@ object TypeReconstruction {
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
-      // Omit the unchecked cast if the inferred type and effect are the same as the declared ones.
-      // Note: We do not aim to remove all redundant unchecked casts. That is not possible until monomorphization,
-      // due to both Boolean equivalence, record/schema equivalence, and associated types/effects.
-      // We only aim to remove unchecked casts which are syntactically identifiable as redundant.
-      (declaredType0.map(tpe => subst(tpe)), declaredEff0.map(eff => subst(eff))) match {
-        case (Some(tpe), None) if tpe == e.tpe => e
-        case (None, Some(eff)) if eff == e.eff => e
-        case (Some(tpe), Some(eff)) if tpe == e.tpe && eff == e.eff => e
-        case (declaredType, declaredEff) =>
-          val tpe = subst(tvar)
-          val eff = declaredEff0.getOrElse(e.eff)
-          TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
-      }
+      val declaredType = declaredType0.map(tpe => subst(tpe))
+      val declaredEff = declaredEff0.map(eff => subst(eff))
+      val tpe = subst(tvar)
+      val eff = declaredEff0.getOrElse(e.eff)
+      TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
       // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
@@ -687,8 +684,8 @@ object TypeReconstruction {
 
     case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
       val ps = pats.map {
-        case KindedAst.Pattern.Record.RecordLabelPattern(field, tvar1, pat1, loc1) =>
-          TypedAst.Pattern.Record.RecordLabelPattern(field, subst(tvar1), visitPattern(pat1), loc1)
+        case KindedAst.Pattern.Record.RecordLabelPattern(field, pat1, tvar1, loc1) =>
+          TypedAst.Pattern.Record.RecordLabelPattern(field, visitPattern(pat1), subst(tvar1), loc1)
       }
       val p = visitPattern(pat)
       TypedAst.Pattern.Record(ps, p, subst(tvar), loc)

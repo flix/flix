@@ -328,7 +328,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-
   test("IllegalEqualityConstraint.01") {
     val input =
       """
@@ -803,6 +802,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalSelectChannelRuleFunctionCall.01") {
+    val input =
+      """
+        |def f(): Int32 = select {
+        |    case x <- NotChannel.NotRecv(a) => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedSelectChannelRuleFunction](result)
   }
 
   test("IllegalTraitConstraintParameter.01") {

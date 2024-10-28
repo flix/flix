@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
-import coursier.{Dependency => CoursierDependency, Fetch, Resolve}
+import coursier.{Dependency as CoursierDependency, Fetch, Resolve}
 import coursier.cache.{Cache, FileCache}
 import coursier.util.Task
 

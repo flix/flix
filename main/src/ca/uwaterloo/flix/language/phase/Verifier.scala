@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import scala.annotation.tailrec
 
@@ -211,16 +211,30 @@ object Verifier {
 
         case AtomicOp.Is(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          t1 match {
+            case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
+            case _ => failMismatchedShape(t1, sym.enumSym.toString, loc)
+          }
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.Tag(sym) =>
-          val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+          val List(_) = ts
+          // Tag(Nil), ()) : List[t]
+          // Checking this requires instantiating the enum case
+          tpe match {
+            case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
+            case _ => failMismatchedShape(tpe, sym.enumSym.toString, loc)
+          }
+          tpe
 
         case AtomicOp.Untag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          // Untag(Nil): Unit
+          // Checking this requires instantiating the enum case
+          t1 match {
+            case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
+            case _ => failMismatchedShape(t1, sym.enumSym.toString, loc)
+          }
           tpe
 
         case AtomicOp.ArrayLength =>
@@ -480,12 +494,6 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       checkEq(bodyType, tpe, loc)
 
-    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
-      val env1 = env + (varSym -> exp1.tpe)
-      val letBoundType = visitExpr(exp1)(root, env1, lenv)
-      val bodyType = visitExpr(exp2)(root, env1, lenv)
-      checkEq(bodyType, tpe, loc)
-
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
       val firstType = visitExpr(exp1)
       val secondType = visitExpr(exp2)
@@ -576,7 +584,7 @@ object Verifier {
   /**
     * Asserts that the list of types `ts` matches the list of java classes `cs`
     */
-  private def checkJavaParameters(ts: List[MonoType], cs: List[Class[_]], loc: SourceLocation): Unit = {
+  private def checkJavaParameters(ts: List[MonoType], cs: List[Class[?]], loc: SourceLocation): Unit = {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
     ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
@@ -598,7 +606,7 @@ object Verifier {
   /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
-  private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
+  private def checkJavaSubtype(tpe: MonoType, klazz: Class[?], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
@@ -679,7 +687,7 @@ object Verifier {
     */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
+      s"Mismatched shape: expected = \'$expected\', found = $found", loc
     )
 
   /**
@@ -687,7 +695,7 @@ object Verifier {
     */
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+      s"Unexpected type: expected = $expected, found = $found", loc
     )
 
   /**
@@ -695,14 +703,14 @@ object Verifier {
     */
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
+      s"Mismatched types: tpe1 = $tpe1, tpe2 = $tpe2", loc
     )
 
   /**
     * Throw `InternalCompilerException` because `tpe` does not match `klazz`.
     */
-  private def failMismatchedTypes(tpe: MonoType, klazz: Class[_], loc: SourceLocation): Nothing =
+  private def failMismatchedTypes(tpe: MonoType, klazz: Class[?], loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"Mismatched types near ${loc.format}: tpe1 = $tpe, class = $klazz", loc
+      s"Mismatched types: tpe1 = $tpe, class = $klazz", loc
     )
 }

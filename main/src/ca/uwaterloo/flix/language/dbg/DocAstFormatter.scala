@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
-import ca.uwaterloo.flix.language.dbg.Doc._
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
-import ca.uwaterloo.flix.language.dbg.DocAst._
+import ca.uwaterloo.flix.language.dbg.Doc.*
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.language.dbg.DocAst.*
 
 import scala.annotation.tailrec
 
@@ -215,7 +215,7 @@ object DocAstFormatter {
     }
   }
 
-  private def formatJavaClass(clazz: Class[_]): Doc =
+  private def formatJavaClass(clazz: Class[?]): Doc =
     text("##" + clazz.getName)
 
   private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {

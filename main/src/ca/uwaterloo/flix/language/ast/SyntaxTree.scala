@@ -192,8 +192,6 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
-      case object Do extends Expr
-
       case object Index extends Expr
 
       case object IndexMut extends Expr
@@ -258,8 +256,6 @@ object SyntaxTree {
 
       case object LetMatch extends Expr
 
-      case object LetRecDef extends Expr
-
       case object Literal extends Expr
 
       case object LiteralArray extends Expr
@@ -279,6 +275,8 @@ object SyntaxTree {
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
+
+      case object LocalDef extends Expr
 
       case object Match extends Expr
 

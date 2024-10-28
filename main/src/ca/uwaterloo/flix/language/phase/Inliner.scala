@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -217,11 +217,6 @@ object Inliner {
         }
       }
 
-    case OccurrenceAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
     case OccurrenceAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       /// Case 1:
       /// If `exp1` is pure, so it has no side effects, then it is safe to remove
@@ -362,9 +357,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
+    case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
+      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case OccurrenceAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -387,13 +382,6 @@ object Inliner {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
-
-    case OccurrenceAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val freshVar = Symbol.freshVarSym(varSym)
-      val env1 = env0 + (varSym -> freshVar)
-      val e1 = substituteExp(exp1, env1)
-      val e2 = substituteExp(exp2, env1)
-      LiftedAst.Expr.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Source}
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
@@ -31,11 +32,11 @@ object SimplifiedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
 
   sealed trait Expr {
@@ -56,15 +57,9 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Def(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
-
-    case class Apply(exp: Expr, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     @IntroducedBy(ClosureConv.getClass)
     case class LambdaClosure(cparams: List[FormalParam], fparams: List[FormalParam], freeVars: List[FreeVar], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
@@ -73,11 +68,11 @@ object SimplifiedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    @IntroducedBy(ClosureConv.getClass)
     case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    @IntroducedBy(ClosureConv.getClass)
-    case class ApplyDef(symUse: Symbol.DefnSym, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -89,27 +84,27 @@ object SimplifiedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Do(op: OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: MonoType) extends Ordered[FreeVar] {
     override def compare(that: FreeVar): Int = this.sym.compare(that.sym)

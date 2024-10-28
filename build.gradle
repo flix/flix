@@ -24,9 +24,6 @@ dependencies {
     implementation('com.google.guava:guava:33.2.0-jre')
     implementation 'org.apache.commons:commons-lang3:3.17.0'
 
-    // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
-    implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
-
     implementation('io.get-coursier:coursier_2.13:2.1.4')
 
     // Note: The tomlj library determines the antlr library.
@@ -85,6 +82,7 @@ jar {
 
     from('main') {
         include '**/*.flix'
+        include '**/*.json'
         include '**/*.zip'
         include '**/ClassList.txt'
     }

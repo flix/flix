@@ -70,7 +70,7 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.Enum(_) => JvmType.Object
+    case MonoType.Enum(_, _) => JvmType.Object
     case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
@@ -83,7 +83,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -94,8 +94,9 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
         JvmType.Object
     }
   }
@@ -106,7 +107,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def asErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -118,8 +119,9 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }

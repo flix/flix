@@ -1,0 +1,8 @@
+{
+  "methods": {
+    "java.lang.Runtime::exec": "Exec",
+    "java.lang.System::exit": "Sys",
+    "java.net.CookieHandler::getDefault": "Net, IO",
+    "java.net.CookieHandler::setDefault": "Net, IO"
+  }
+}

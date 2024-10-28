@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 import java.nio.file.Path
@@ -219,9 +218,9 @@ object CompilerPerf {
     val N = o.XPerfN.getOrElse(DefaultN)
 
     // Run the experiments.
-    val baseline = aggregate(perfBaseLine(N, o))
+    val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
     val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-    val baselineWithParInc = aggregate(perfBaseLineWithParInc(N, o))
+    val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
 
     // Find the number of lines of source code.
     val lines = baselineWithPar.lines.toLong
@@ -393,8 +392,6 @@ object CompilerPerf {
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
@@ -409,8 +406,6 @@ object CompilerPerf {
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
@@ -427,8 +422,6 @@ object CompilerPerf {
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
     (0 until N).map { _ =>
-      flushCaches()
-
       addInputs(flix)
       runSingle(flix)
     }
@@ -462,7 +455,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
+      return Runs(0, List(0), Nil)
     }
 
     val lines = l.head.lines
@@ -485,14 +478,6 @@ object CompilerPerf {
     * Returns the given time `l` in milliseconds.
     */
   private def milliseconds(l: Double): Double = l / 1_000_000.0
-
-  /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
-  }
 
   /**
     * Adds test code to the benchmarking suite.

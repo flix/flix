@@ -100,16 +100,7 @@ instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Chain#{", sb);
-        Chain.forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-            }, c);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 
@@ -132,7 +123,8 @@ instance ToJava[Chain[a]] {
 instance FromJava[Chain[a]] {
     type In = JList
     pub def fromJava(l: JList): Chain[a] = region rc {
-        unsafe l.iterator() |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }
 
@@ -704,7 +696,7 @@ mod Chain {
             case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), eidentity)
+        loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
 
     ///

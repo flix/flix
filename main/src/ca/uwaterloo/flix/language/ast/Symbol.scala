@@ -32,30 +32,45 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val Exit: EffectSym = mkEffectSym(Name.RootNS, Ident("Exit", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
-  val Time: EffectSym = mkEffectSym(Name.RootNS, Ident("Time", SourceLocation.Unknown))
 
   /**
     * Returns `true` if the given effect symbol is a base effect.
     */
-  def isBaseEffect(sym: EffectSym): Boolean = sym match {
+  def isBaseEff(sym: EffectSym): Boolean = sym match {
+    case Env => true
     case Exec => true
-    case Exit => true
     case FileRead => true
     case FileWrite => true
     case IO => true
     case Net => true
     case NonDet => true
     case Sys => true
-    case Time => true
     case _ => false
+  }
+
+  /**
+    * Parses the given String `s` into an effect symbol.
+    *
+    * The String must be a valid name of a base effect.
+    */
+  def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Env" => Env
+    case "Exec" => Exec
+    case "FileRead" => FileRead
+    case "FileWrite" => FileWrite
+    case "IO" => IO
+    case "Net" => Net
+    case "NonDet" => NonDet
+    case "Sys" => Sys
+    case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
   }
 
   /**
@@ -321,7 +336,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.", loc)
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
     }
 
     /**
@@ -769,7 +784,13 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[AssocTypeSym] {
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = trt.namespace :+ trt.name
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -784,20 +805,31 @@ object Symbol {
     override val hashCode: Int = Objects.hash(trt, name)
 
     /**
+      * Compares `this` and `that` assoc type sym.
+      */
+    override def compare(that: AssocTypeSym): Int = {
+      val s1 = this.namespace.mkString(".") + "." + this.name
+      val s2 = that.namespace.mkString(".") + "." + that.name
+      s1.compare(s2)
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = trt.toString + "." + name
 
-    /**
-      * The symbol's namespace.
-      */
-    def namespace: List[String] = trt.namespace :+ trt.name
   }
 
   /**
     * Effect symbol.
     */
   final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol {
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Source = loc.source
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -812,21 +844,18 @@ object Symbol {
     override val hashCode: Int = Objects.hash(namespace, name)
 
     /**
+      * Compares `this` and `that` effect sym.
+      */
+    override def compare(that: EffectSym): Int = {
+      val s1 = this.namespace.mkString(".") + "." + this.name
+      val s2 = that.namespace.mkString(".") + "." + that.name
+      s1.compare(s2)
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
-
-    /**
-      * Returns the source of `this`.
-      */
-    override def src: Source = loc.source
-
-    /**
-      * Compares `this` and `that` effect sym.
-      *
-      * Fairly arbitrary comparison since the purpose is to allow for mapping the object.
-      */
-    override def compare(that: EffectSym): Int = this.toString.compare(that.toString)
   }
 
   /**

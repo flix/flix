@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalThrowType, IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalSpawnEffect, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -429,14 +429,86 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
-  test("TestIOEffectInTryWith.01") {
+  test("TestBaseEffectInTryWith.01") {
     val input =
       """
         |def f(): Unit =
         |    try println("Hello, World!") with IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IOEffectInTryWith](result)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with Exec {}
+        |
+        |def g(): Unit \ Exec = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with FileRead {}
+        |
+        |def g(): Unit \ FileRead = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with FileWrite {}
+        |
+        |def g(): Unit \ FileWrite = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.05") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with Net {}
+        |
+        |def g(): Unit \ Net = ???
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.06") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with NonDet {}
+        |
+        |def g(): Unit \ NonDet = ???
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.07") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with Sys {}
+        |
+        |def g(): Unit \ Sys = ???
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
   }
 
   test("UnableToDeriveSendable.01") {
@@ -897,7 +969,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |
         |@Test
-        |def foo(): Unit \ Print = do Print.println()
+        |def foo(): Unit \ Print = Print.println()
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1000,4 +1072,45 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
+
+  test("IllegalMethodEffect.01") {
+    val input =
+      """
+        |import java.lang.Runnable
+        |
+        |eff Ask {
+        |    pub def ask(): String
+        |}
+        |
+        |def newRunnable(): Runnable \ IO = new Runnable {
+        |    def run(_this: Runnable): Unit \ Ask =
+        |        Ask.ask(); ()
+        |}
+        |
+        |def main(): Unit \ IO =
+        |    import java.lang.Runnable.run(): Unit \ IO;
+        |    let r = newRunnable();
+        |    run(r)
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalMethodEffect](result)
+  }
+
+  test("IllegalSpawnEffect.01") {
+    val input =
+      """
+        |eff Ask {
+        |    pub def ask(): String
+        |}
+        |
+        |def main(): Unit \ IO =
+        |    region rc {
+        |        spawn Ask.ask() @ rc
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalSpawnEffect](result)
+  }
+
 }

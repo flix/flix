@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 
 import java.nio.file.Path
 
@@ -41,22 +40,18 @@ object Options {
     loadClassFiles = true,
     assumeYes = false,
     xnoverify = false,
-    xbddthreshold = None,
-    xnoboolcache = false,
-    xnoboolspecialcases = false,
-    xnoboolunif = false,
     xnooptimizer = false,
     xprintphases = false,
-    xnoqmc = false,
     xnodeprecated = false,
     xsummary = false,
     xfuzzer = false,
     xprinttyper = None,
     xverifyeffects = false,
-    xsubeffecting = SubEffectLevel.Nothing,
+    xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
-    xiterations = 1000
+    XPerfPar = false,
+    xiterations = 5000
   )
 
   /**
@@ -97,14 +92,6 @@ object Options {
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
   * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache        disable Boolean caches.
-  * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xprintphases        prints all ASTs to the build folder after each phase.
-  * @param xsummary            prints a summary of the compiled modules.
-  * @param xnodeprecated       disables deprecated features.
-  * @param xfuzzer             enables compiler fuzzing.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -121,11 +108,6 @@ case class Options(lib: LibLevel,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xnoverify: Boolean,
-                   xbddthreshold: Option[Int],
-                   xnoboolcache: Boolean,
-                   xnoboolspecialcases: Boolean,
-                   xnoboolunif: Boolean,
-                   xnoqmc: Boolean,
                    xnooptimizer: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
@@ -133,8 +115,9 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
                    xverifyeffects: Boolean,
-                   xsubeffecting: SubEffectLevel,
+                   xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
                    XPerfN: Option[Int],
                    xiterations: Int,
                   )
@@ -174,43 +157,23 @@ object LibLevel {
 
 }
 
-/**
-  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
-  */
-sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
-  override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
-}
+sealed trait Subeffecting
 
-object SubEffectLevel {
+object Subeffecting {
 
   /**
-    * Do not use sub-effecting anywhere.
+    * Enable sub-effecting for module-level definitions.
     */
-  case object Nothing extends SubEffectLevel
+  case object ModDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas.
+    * Enable sub-effecting for instance-level defs.
     */
-  case object Lambdas extends SubEffectLevel
+  case object InsDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas and instance def bodies
+    * Enable sub-effecting for lambda expressions.
     */
-  case object LambdasAndInstances extends SubEffectLevel
-
-  /**
-    * Allow sub-effecting on lambdas and def bodies
-    */
-  case object LambdasAndDefs extends SubEffectLevel
-
-  /**
-    * Returns an integer where a larger number means more sub-effecting.
-    */
-  def toInt(level: SubEffectLevel): Int = level match {
-    case Nothing => 0
-    case Lambdas => 1
-    case LambdasAndInstances => 2
-    case LambdasAndDefs => 3
-  }
+  case object Lambdas extends Subeffecting
 
 }

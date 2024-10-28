@@ -16,17 +16,17 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
-import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
@@ -258,12 +258,12 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
+    "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
     "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
     "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
-
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
     "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
@@ -504,27 +504,31 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
-      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet).withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-      afterNamer <- Namer.run(afterDesugar)
-      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
-      afterDeriver <- Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
-      _ = EffectVerifier.run(afterTyper)
-      _ <- Regions.run(afterTyper)
-      afterEntryPoint <- EntryPoint.run(afterTyper)
-      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterPredDeps <- PredDeps.run(afterEntryPoint)
-      afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
-      afterRedundancy <- Redundancy.run(afterPatMatch)
-      afterSafety <- Safety.run(afterRedundancy)
+      (afterNamer, namerErrors) = Namer.run(afterDesugar)
+      (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+      afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
+      (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
+      () = EffectVerifier.run(afterTyper)
+      (afterRegions, regionErrors) = Regions.run(afterTyper)
+      (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+      (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+      (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+      (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+      (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
+      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      output <- Validation.toSuccessOrSoftFailure(afterSafety, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -536,7 +540,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      afterSafety
+      output
     }
 
     // Shutdown fork-join thread pool.
@@ -571,12 +575,10 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
-    /** Remember to update [[AstPrinter]] about the list of phases. */
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val monoTypesAst = MonoTypes.run(monomorpherAst)
-    val simplifierAst = Simplifier.run(monoTypesAst)
+    val simplifierAst = Simplifier.run(monomorpherAst)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
     val optimizerAst = Optimizer.run(lambdaLiftAst)
@@ -612,6 +614,36 @@ class Flix {
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+    // Initialize the phase time object.
+    currentPhase = PhaseTime(phase, 0)
+
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
+
+    // Measure the execution time.
+    val t = System.nanoTime()
+    val (root, errs) = f
+    val e = System.nanoTime() - t
+
+    // Update the phase time.
+    currentPhase = currentPhase.copy(time = e)
+
+    // And add it to the list of executed phases.
+    phaseTimers += currentPhase
+
+    if (this.options.xprintphases) {
+      d.emit(phase, root)(this)
+    }
+
+    // Return the result computed by the phase.
+    (root, errs)
   }
 
   /**

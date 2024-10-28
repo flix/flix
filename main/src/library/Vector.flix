@@ -28,7 +28,7 @@ instance Indexable[Vector[a]] {
 
     pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
         if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
-        else do OutOfBounds.outOfBounds(
+        else OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
         )
     }
@@ -129,7 +129,8 @@ instance ToJava[Vector[a]] {
 instance FromJava[Vector[a]] {
     type In = JList
     pub def fromJava(l: JList): Vector[a] = region rc {
-        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
 
@@ -161,19 +162,7 @@ mod Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let first = Ref.fresh(rc, true);
-
-        StringBuilder.appendString!("Vector#{", sb);
-
-        let f = x -> {
-            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
-            StringBuilder.appendString!("${x}", sb)
-        };
-        forEach(f, v);
-
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
     }
 
     ///
@@ -540,7 +529,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -558,7 +547,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -584,7 +573,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///

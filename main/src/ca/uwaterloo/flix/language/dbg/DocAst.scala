@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.shared.Constant
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -26,9 +26,9 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
+  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
   case class Case(sym: Symbol.CaseSym, tpe: Type)
 
@@ -260,13 +260,13 @@ object DocAst {
     def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(d, ds)
 
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol}
@@ -59,14 +59,12 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
-
-    Validation.success(result)
+    OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {
@@ -200,12 +198,6 @@ object OccurrenceAnalyzer {
       val occur = o3.vars.getOrElse(sym, Dead)
       val o4 = o3.copy(vars = o3.vars - sym)
       (OccurrenceAst.Expr.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
-
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val (e1, o1) = visitExp(sym0, exp1)
-      val (e2, o2) = visitExp(sym0, exp2)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
