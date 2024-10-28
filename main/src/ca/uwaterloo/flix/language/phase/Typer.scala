@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
+import java.util.Locale
+
 object Typer {
 
   /**
@@ -58,7 +60,10 @@ object Typer {
         val min = diffs.minOption.getOrElse(0)
         val max = diffs.maxOption.getOrElse(0)
         val avg = diffs.sum / (1.0 max count)
-        println(f"$name%30s: $count% 8d [$min% 5d, $avg%5.0f, $max% 5d]")
+        val old = Locale.getDefault
+        Locale.setDefault(Locale.US)
+        println(f"$name%30s: $count% 8d [$min% 5d, $avg%5.1f, $max% 5d]")
+        Locale.setDefault(old)
     }
 
     result
