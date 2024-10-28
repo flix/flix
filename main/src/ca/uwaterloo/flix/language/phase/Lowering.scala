@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifiers, Polarity, Scope}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -302,10 +302,10 @@ object Lowering {
   /**
     * Lowers the given type constraint `tconstr0`.
     */
-  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint)(implicit root: TypedAst.Root, flix: Flix): Ast.TraitConstraint = tconstr0 match {
-    case Ast.TraitConstraint(head, tpe0, loc) =>
+  private def visitTraitConstraint(tconstr0: TraitConstraint)(implicit root: TypedAst.Root, flix: Flix): TraitConstraint = tconstr0 match {
+    case TraitConstraint(head, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Ast.TraitConstraint(head, tpe, loc)
+      TraitConstraint(head, tpe, loc)
   }
 
   /**
@@ -849,10 +849,10 @@ object Lowering {
 
     case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.map {
-        case TypedAst.Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val p1 = visitPat(pat1)
           val t1 = visitType(tpe1)
-          LoweredAst.Pattern.Record.RecordLabelPattern(label, t1, p1, loc1)
+          LoweredAst.Pattern.Record.RecordLabelPattern(label, p1, t1, loc1)
       }
       val patVal = visitPat(pat)
       val t = visitType(tpe)

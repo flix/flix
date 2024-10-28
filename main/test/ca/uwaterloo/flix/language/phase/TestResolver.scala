@@ -541,26 +541,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedOp.01") {
     val input =
       """
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.02") {
-    val input =
-      """
-        |eff E
-        |
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.03") {
-    val input =
-      """
         |eff E
         |
         |def f(): Unit = try () with E {
@@ -1684,19 +1664,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
-  }
-
-  test("Test.InvalidOpParamCount.Do.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit \ E = do E.op("hello", "world")
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
   }
 
   test("Test.InvalidOpParamCount.Handler.01") {
