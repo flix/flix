@@ -126,7 +126,7 @@ object TypeReconstruction {
       val ef = subst(evar)
       TypedAst.Expr.ApplyLocalDef(symUse, es, at, t, ef, loc)
 
-    case KindedAst.Expr.Lambda(fparam, exp, loc) =>
+    case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)
       val e = visitExp(exp)
       val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)

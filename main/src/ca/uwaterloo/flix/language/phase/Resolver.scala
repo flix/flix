@@ -942,7 +942,7 @@ object Resolver {
           val env = env0 ++ mkFormalParamEnv(List(p))
           val eVal = resolveExp(exp, env)
           mapN(eVal) {
-            case e => ResolvedAst.Expr.Lambda(p, e, loc)
+            case e => ResolvedAst.Expr.Lambda(p, e, isGenerated = false, loc)
           }
       }
 
@@ -1744,7 +1744,9 @@ object Resolver {
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
     // For typing performance we make pure lambdas for all except the last.
     val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
-      case (fp, (acc, first)) => if (first) (ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic), false) else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+      case (fp, (acc, first)) =>
+        if (first) (ResolvedAst.Expr.Lambda(fp, acc, isGenerated = true, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -4153,7 +4155,7 @@ object Resolver {
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
   private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), loc)
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), isGenerated = true, loc)
   }
 
   /**
