@@ -43,12 +43,7 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
         TypeConstraint2.Equality(t1, t2, loc)
 
     case TypeConstraint2.Trait(sym, tpe, loc) =>
-      // Performance: Reuse this, if possible.
-      val t = root(tpe)
-      if (t eq tpe)
-        constr
-      else
-        TypeConstraint2.Trait(sym, t, loc)
+      TypeConstraint2.Trait(sym, root(tpe), loc)
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
       // Use the root substitution for the external effects.
