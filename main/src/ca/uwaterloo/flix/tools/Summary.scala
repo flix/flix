@@ -339,17 +339,17 @@ object Summary {
     }
 
     def toRow: List[String] = List(
-      lines,
-      defs,
-      pureDefs,
-      groundNonPureDefs,
-      polyDefs,
-      checkedEcasts,
-      baseEffVars,
-      lambdaSubEffVars,
-      modDefSubEffVars,
-      insDefSubEffVars
-    ).map(format)
+      format(lines),
+      format(defs),
+      format(pureDefs),
+      format(groundNonPureDefs),
+      format(polyDefs),
+      format(checkedEcasts),
+      format(baseEffVars),
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
+    )
   }
 
   private object FileData {
@@ -397,9 +397,9 @@ object Summary {
       eff.toString,
       format(checkedEcasts),
       format(baseEffVars),
-      format(lambdaSubEffVars),
-      format(modDefSubEffVars),
-      format(insDefSubEffVars)
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
     )
   }
 
@@ -457,6 +457,8 @@ object Summary {
 
   /** Formats the given number `n`. */
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
+
+  private def formatSigned(n: Int): String = f"$n%+,d".replace(".", ",")
 
   /** Right-pads the given string `s` to length `l`. */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')
