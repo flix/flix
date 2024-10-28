@@ -40,9 +40,10 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
 
     constr match {
       case TypeConstraint2.Equality(tpe1, tpe2, loc) =>
+        // Check whether the substitution has to be applied.
+        val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
+        val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
         // Performance: Reuse this, if possible.
-        val t1 = root(tpe1)
-        val t2 = root(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2))
           constr
         else
