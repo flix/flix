@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -29,11 +29,11 @@ object Summary {
     *
     * Example with markdown rendering (just a single data row):
     * {{{
-|            Module | lines | defs | Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda<: Eff. var | def<: Eff. var | ins<: Eff. var |
-| ----------------- | ----- | ---- | ---- | ----------- | ---------- | ------------- | -------------- | ----------------- | -------------- | -------------- |
-|           Eq.flix |   242 |   37 |   37 |           0 |          0 |             0 |            -37 |               -37 |            -37 |            -37 |
-|               ... |   ... |  ... |  ... |         ... |        ... |           ... |            ... |               ... |            ... |            ... |
-|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
+    *|            Module | lines | defs | Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda<: Eff. var | def<: Eff. var | ins<: Eff. var |
+    *| ----------------- | ----- | ---- | ---- | ----------- | ---------- | ------------- | -------------- | ----------------- | -------------- | -------------- |
+    *|           Eq.flix |   242 |   37 |   37 |           0 |          0 |             0 |            -37 |               -37 |            -37 |            -37 |
+    *|               ... |   ... |  ... |  ... |         ... |        ... |           ... |            ... |               ... |            ... |            ... |
+    *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
     * @param root the root to create data for
@@ -63,11 +63,11 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    val totalEffVars = -1
+    val baseEffVars = -1
     val lambdaSubEffVars = -1
     val modDefSubEffVars = -1
     val insDefSubEffVars = -1
-    DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
   /** Returns a function summary for a signature, if it has implementation */
@@ -77,11 +77,11 @@ object Summary {
       val fun = FunctionSym.TraitFunWithExp(sig.sym)
       val eff = resEffect(sig.spec.eff)
       val ecasts = countCheckedEcasts(exp)
-      val totalEffVars = -1
+      val baseEffVars = -1
       val lambdaSubEffVars = -1
       val modDefSubEffVars = -1
       val insDefSubEffVars = -1
-      Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
+      Some(DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars))
   }
 
   /** Returns a function summary for every function */
@@ -103,11 +103,11 @@ object Summary {
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     val ecasts = sum.checkedEcasts
-    val totalEffVars = sum.totalEffVars
-    val lambdaSubEffVars = sum.lambdaSubEffVars
+    val baseEffVars = sum.baseEffVars
     val modDefSubEffVars = sum.modDefSubEffVars
     val insDefSubEffVars = sum.insDefSubEffVars
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    val lambdaSubEffVars = sum.lambdaSubEffVars
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
   /** Combines function summaries into file data. */
@@ -296,15 +296,16 @@ object Summary {
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
                                       debugSrc: Option[Source],
-                                      lines: Int, defs: Int,
+                                      lines: Int,
+                                      defs: Int,
                                       pureDefs: Int,
                                       groundNonPureDefs: Int,
                                       polyDefs: Int,
                                       checkedEcasts: Int,
-                                      totalEffVars: Int,
-                                      lambdaSubEffVars: Int,
+                                      baseEffVars: Int,
                                       modDefSubEffVars: Int,
-                                      insDefSubEffVars: Int
+                                      insDefSubEffVars: Int,
+                                      lambdaSubEffVars: Int
                                     ) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
@@ -326,19 +327,7 @@ object Summary {
           SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
         )
       }
-      FileData(
-        debugSrc.orElse(other.debugSrc),
-        lines,
-        defs + other.defs,
-        pureDefs + other.pureDefs,
-        groundNonPureDefs + other.groundNonPureDefs,
-        polyDefs + other.polyDefs,
-        checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
-        modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
-      )
+      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts, baseEffVars + other.baseEffVars, modDefSubEffVars + other.modDefSubEffVars, insDefSubEffVars + other.insDefSubEffVars, lambdaSubEffVars + other.lambdaSubEffVars)
     }
 
     /**
@@ -346,19 +335,7 @@ object Summary {
       * different files to compute a total of a folder fx.
       */
     def naiveSum(other: FileData): FileData = {
-      FileData(
-        debugSrc.orElse(other.debugSrc),
-        lines + other.lines,
-        defs + other.defs,
-        pureDefs + other.pureDefs,
-        groundNonPureDefs + other.groundNonPureDefs,
-        polyDefs + other.polyDefs,
-        checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
-        modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
-      )
+      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, groundNonPureDefs + other.groundNonPureDefs, polyDefs + other.polyDefs, checkedEcasts + other.checkedEcasts, baseEffVars + other.baseEffVars, modDefSubEffVars + other.modDefSubEffVars, insDefSubEffVars + other.insDefSubEffVars, lambdaSubEffVars + other.lambdaSubEffVars)
     }
 
     def toRow: List[String] = List(
@@ -368,7 +345,7 @@ object Summary {
       groundNonPureDefs,
       polyDefs,
       checkedEcasts,
-      totalEffVars,
+      baseEffVars,
       lambdaSubEffVars,
       modDefSubEffVars,
       insDefSubEffVars
@@ -391,7 +368,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast", "total Eff. var", "lambda<: Eff. var", "def<: Eff. var", "ins<: Eff. var")
+    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline EVars", "SE-Def EVars", "SE-Ins EVars", "SE-Lam EVars")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -406,14 +383,28 @@ object Summary {
                                         fun: FunctionSym,
                                         eff: ResEffect,
                                         checkedEcasts: Int,
-                                        totalEffVars: Int,
-                                        lambdaSubEffVars: Int,
+                                        baseEffVars: Int,
                                         modDefSubEffVars: Int,
-                                        insDefSubEffVars: Int
+                                        insDefSubEffVars: Int,
+                                        lambdaSubEffVars: Int
                                       ) {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
+
+    def toRow: List[String] = List(
+      fun.genericSym.toString,
+      eff.toString,
+      format(checkedEcasts),
+      format(baseEffVars),
+      format(lambdaSubEffVars),
+      format(modDefSubEffVars),
+      format(insDefSubEffVars)
+    )
+  }
+
+  private object DefSummary {
+    def header: List[String] = List("Fun", "Eff", "checked_ecast", "Baseline EVars", "SE-Lam EVars", "SE-Defs EVars", "SE-Inst EVars")
   }
 
   /**
@@ -440,24 +431,28 @@ object Summary {
     *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
-    def loc: SourceLocation
+    val genericSym: Symbol = this match {
+      case FunctionSym.Def(sym) => sym
+      case FunctionSym.TraitFunWithExp(sym) => sym
+      case FunctionSym.InstanceFun(sym) => sym
+    }
+
+    val loc: SourceLocation = this match {
+      case FunctionSym.Def(sym) => sym.loc
+      case FunctionSym.TraitFunWithExp(sym) => sym.loc
+      case FunctionSym.InstanceFun(sym) => sym.loc
+    }
   }
 
   private object FunctionSym {
 
     import ca.uwaterloo.flix.language.ast.Symbol
 
-    case class Def(sym: Symbol.DefnSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class Def(sym: Symbol.DefnSym) extends FunctionSym
 
-    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym
 
-    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym
   }
 
   /** Formats the given number `n`. */
