@@ -87,7 +87,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
             // Else just apply.
             case x =>
-              // Performance: Reuse this, if possible.
+              // Performance: Reuse t, if possible.
               if ((x eq t1) && (y eq t2))
                 t
               else
@@ -160,11 +160,44 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given provenance.
     */
+  // TODO: PERF: Do we really need to apply the subst. aggressively to provenance?
   def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
-    case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
-    case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
-    case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
-    case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
+    case Provenance.ExpectType(expected, actual, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectType(e, a, loc)
+
+    case Provenance.ExpectEffect(expected, actual, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectEffect(e, a, loc)
+
+    case Provenance.ExpectArgument(expected, actual, sym, num, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectArgument(e, a, sym, num, loc)
+
+    case Provenance.Match(tpe1, tpe2, loc) =>
+      val t1 = apply(tpe1)
+      val t2 = apply(tpe2)
+
+      // Performance: Reuse prov, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2))
+        prov
+      else
+        Provenance.Match(t1, t2, loc)
   }
 
   /**
