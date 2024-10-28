@@ -35,11 +35,11 @@ object Summary {
     *
     * Example with markdown rendering (just a single data row):
     * {{{
-    *|               Module |  Lines |  Defs |  Pure | Effectful |  Poly | checked_ecast | Baseline Vars | SE-Lam Vars | SE-Defs Vars | SE-Inst Vars |
-    *| -------------------- | ------ | ----- | ----- | --------- | ----- | ------------- | ------------- | ----------- | ------------ | ------------ |
-    *|         Adaptor.flix |    238 |    21 |     6 |         5 |    10 |             0 |           137 |           0 |            0 |            0 |
-    *|                  ... |    ... |   ... |   ... |       ... |   ... |           ... |           ... |         ... |          ... |          ... |
-    *|               Totals | 37,557 | 3,544 | 2,024 |       133 | 1,387 |            46 |        22,940 |           0 |            0 |            0 |
+    * |               Module |  Lines |  Defs |  Pure | Effectful |  Poly | checked_ecast | Baseline EVars | SE-Def EVars | SE-Ins EVars | SE-Lam EVars |
+    * | -------------------- | ------ | ----- | ----- | --------- | ----- | ------------- | -------------- | ------------ | ------------ | ------------ |
+    * |         Adaptor.flix |    238 |    21 |     6 |         5 |    10 |             0 |            148 |          +15 |           +0 |          +20 |
+    * |                  ... |    ... |   ... |   ... |       ... |   ... |           ... |            ... |          ... |          ... |          ... |
+    * |               Totals | 37,551 | 3,543 | 2,027 |       133 | 1,383 |            47 |         23,119 |       +1,389 |         +205 |       +2,412 |
     * }}}
     *
     * @param root the root to create data for
@@ -77,10 +77,11 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    val baseEffVars = totalEffVarsTracker.get(defn.sym)
-    val lambdaSubEffVars = lambdaSubEffVarsTracker.get(defn.sym)
+    val totalEffVars = totalEffVarsTracker.get(defn.sym)
     val modDefSubEffVars = modDefSubEffVarsTracker.get(defn.sym)
     val insDefSubEffVars = insDefSubEffVarsTracker.get(defn.sym)
+    val lambdaSubEffVars = lambdaSubEffVarsTracker.get(defn.sym)
+    val baseEffVars = totalEffVars - modDefSubEffVars - insDefSubEffVars - lambdaSubEffVars
     DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
@@ -385,9 +386,9 @@ object Summary {
       format(polyDefs),
       format(checkedEcasts),
       format(baseEffVars),
-      formatSigned(lambdaSubEffVars),
       formatSigned(modDefSubEffVars),
-      formatSigned(insDefSubEffVars)
+      formatSigned(insDefSubEffVars),
+      formatSigned(lambdaSubEffVars)
     )
   }
 
@@ -436,14 +437,14 @@ object Summary {
       eff.toString,
       format(checkedEcasts),
       format(baseEffVars),
-      formatSigned(lambdaSubEffVars),
       formatSigned(modDefSubEffVars),
-      formatSigned(insDefSubEffVars)
+      formatSigned(insDefSubEffVars),
+      formatSigned(lambdaSubEffVars)
     )
   }
 
   private object DefSummary {
-    def header: List[String] = List("Fun", "Eff", "checked_ecast", "Baseline EVars", "SE-Lam EVars", "SE-Defs EVars", "SE-Inst EVars")
+    def header: List[String] = List("Fun", "Eff", "checked_ecast", "Baseline EVars", "SE-Def EVars", "SE-Ins EVars", "SE-Lam EVars")
   }
 
   /**

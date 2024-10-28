@@ -1258,6 +1258,16 @@ object ConstraintGen {
       .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $sym in effect ${sym.eff}", loc))
   }
 
+// case TypeConstraint2.Equality(tpe1, tpe2, loc) =>
+//   reuse2(tpe1, tpe2, root.apply, constr, TypeConstraint2.Equality(_, _, loc))
+
+private def reuse2[T <: AnyRef, Out](x: T, y: T, f: T => T, reuse: Out, combine: (T, T) => Out): Out = {
+  val xF = f(x)
+  val yF = f(y)
+  if ((xF eq x) && (yF eq y)) reuse
+  else combine(xF, yF)
+}
+
   /**
     * Returns the type inferred for `do`ing the given op.
     *
