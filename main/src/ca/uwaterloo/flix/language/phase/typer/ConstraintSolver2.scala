@@ -98,7 +98,12 @@ object ConstraintSolver2 {
         case TypeConstraint2.Trait(_, _, _) => (3, 0)
       }
 
-      new Soup(constrs.sortBy(rank), tree)
+      // Performance: We want to avoid allocation if the soup is empty or has just one element.
+      constrs match {
+        case Nil => this
+        case _ :: Nil => this
+        case _ => new Soup(constrs.sortBy(rank), tree)
+      }
     }
   }
 
