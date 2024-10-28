@@ -64,7 +64,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       t match {
         case x: Type.Var => m.getOrElse(x.sym, x)
 
-        case Type.Cst(tc, _) => t
+        case Type.Cst(_, _) => t
 
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
@@ -80,13 +80,18 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
 
-            // Simplify set expressions
+            // Simplify set expressions.
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
 
-            // Else just apply
-            case x => Type.Apply(x, y, loc)
+            // Else just apply.
+            case x =>
+              // Performance: Reuse t, if possible.
+              if ((x eq t1) && (y eq t2))
+                t
+              else
+                Type.Apply(x, y, loc)
           }
 
         case Type.Alias(sym, args0, tpe0, loc) =>
@@ -155,11 +160,44 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given provenance.
     */
+  // TODO: PERF: Do we really need to apply the subst. aggressively to provenance?
   def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
-    case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
-    case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
-    case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
-    case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
+    case Provenance.ExpectType(expected, actual, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectType(e, a, loc)
+
+    case Provenance.ExpectEffect(expected, actual, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectEffect(e, a, loc)
+
+    case Provenance.ExpectArgument(expected, actual, sym, num, loc) =>
+      val e = apply(expected)
+      val a = apply(actual)
+      // Performance: Reuse prov, if possible.
+      if ((e eq expected) && (a eq actual))
+        prov
+      else
+        Provenance.ExpectArgument(e, a, sym, num, loc)
+
+    case Provenance.Match(tpe1, tpe2, loc) =>
+      val t1 = apply(tpe1)
+      val t2 = apply(tpe2)
+
+      // Performance: Reuse prov, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2))
+        prov
+      else
+        Provenance.Match(t1, t2, loc)
   }
 
   /**
