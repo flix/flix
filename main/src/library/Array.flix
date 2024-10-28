@@ -44,7 +44,7 @@ instance Iterable[Array[a, r]] {
     type Aef = r
 
     pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
-        Array.iterator(rc, a)
+        checked_ecast(Array.iterator(rc, a))
 }
 
 mod Array {
@@ -123,22 +123,22 @@ mod Array {
     ///
     /// Returns `true` if the given array `a` is empty.
     ///
-    pub def isEmpty(a: Array[a, r]): Bool \ r = length(a) == 0
+    pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
 
     ///
     /// Returns `true` if the given array `a` is non-empty.
     ///
-    pub def nonEmpty(a: Array[a, r]): Bool \ r = not isEmpty(a)
+    pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
 
     ///
     /// Returns the number of elements in the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
 
     ///
     /// Returns the number of elements in the array `a`.
     ///
-    pub def size(a: Array[a, r]): Int32 \ r = length(a)
+    pub def size(a: Array[a, r]): Int32 = length(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
@@ -690,7 +690,7 @@ mod Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def sumLengths(arrs: Array[Array[a, r1], r2]): Int32 \ {r1, r2} =
+    def sumLengths(arrs: Array[Array[a, r1], r2]): Int32 \ r2 =
         foldLeft((acc, a) -> acc + length(a), 0, arrs)
 
     ///
@@ -732,7 +732,7 @@ mod Array {
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a, r1], r2], l: Int32): Bool \ {r1, r2} =
+    def uniformHelper(a: Array[Array[a, r1], r2], l: Int32): Bool \ r2 =
         exists(x -> length(x) != l, a)
 
     ///
@@ -1424,7 +1424,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
@@ -1432,7 +1432,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ {r1, r2} =
+    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
         iterator(rc, a) |> Iterator.zipWithIndex
 
     ///

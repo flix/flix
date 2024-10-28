@@ -574,7 +574,7 @@ object ConstraintGen {
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
+        c.unifyType(evar, eff, loc)
         val resTpe = Type.Int32
         val resEff = evar
         (resTpe, resEff)
