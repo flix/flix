@@ -64,7 +64,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       t match {
         case x: Type.Var => m.getOrElse(x.sym, x)
 
-        case Type.Cst(tc, _) => t
+        case Type.Cst(_, _) => t
 
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
@@ -80,13 +80,18 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
 
-            // Simplify set expressions
+            // Simplify set expressions.
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
 
-            // Else just apply
-            case x => Type.Apply(x, y, loc)
+            // Else just apply.
+            case x =>
+              // Performance: Reuse this, if possible.
+              if ((x eq t1) && (y eq t2))
+                t
+              else
+                Type.Apply(x, y, loc)
           }
 
         case Type.Alias(sym, args0, tpe0, loc) =>
