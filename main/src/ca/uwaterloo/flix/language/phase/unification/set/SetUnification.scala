@@ -46,7 +46,7 @@ object SetUnification {
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(10, 10, 20_000, 0)
+    val default: Options = Options(10, 1, 10_000, 0)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -536,7 +536,7 @@ object SetUnification {
 
 
     val query = mkEmptyQuery(eq.f1, eq.f2)
-    val fvs = query.variables.toList
+    val fvs = query.variables.toList.reverse
     try {
       val subst = successiveVariableElimination(query, fvs)
       Some(Nil, subst)

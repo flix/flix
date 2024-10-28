@@ -77,11 +77,11 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    val totalEffVars = totalEffVarsTracker.get(defn.sym)
+    val baseEffVars = totalEffVarsTracker.get(defn.sym)
     val lambdaSubEffVars = lambdaSubEffVarsTracker.get(defn.sym)
     val modDefSubEffVars = modDefSubEffVarsTracker.get(defn.sym)
     val insDefSubEffVars = insDefSubEffVarsTracker.get(defn.sym)
-    DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
   /** Returns a function summary for a signature, if it has implementation */
@@ -92,11 +92,11 @@ object Summary {
       val eff = resEffect(sig.spec.eff)
       val ecasts = countCheckedEcasts(exp)
       val totalEffVars = totalEffVarsTracker.get(sig.sym)
-      val lambdaSubEffVars = lambdaSubEffVarsTracker.get(sig.sym)
       val modDefSubEffVars = modDefSubEffVarsTracker.get(sig.sym)
       val insDefSubEffVars = insDefSubEffVarsTracker.get(sig.sym)
-      val baseEffVars = totalEffVars - lambdaSubEffVars - modDefSubEffVars - insDefSubEffVars
-      Some(DefSummary(fun, eff, ecasts, baseEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
+      val lambdaSubEffVars = lambdaSubEffVarsTracker.get(sig.sym)
+      val baseEffVars = totalEffVars - modDefSubEffVars - insDefSubEffVars - lambdaSubEffVars
+      Some(DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars))
   }
 
   /** Returns a function summary for every function */
@@ -119,10 +119,10 @@ object Summary {
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     val ecasts = sum.checkedEcasts
     val baseEffVars = sum.baseEffVars
-    val lambdaSubEffVars = sum.lambdaSubEffVars
     val modDefSubEffVars = sum.modDefSubEffVars
     val insDefSubEffVars = sum.insDefSubEffVars
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, baseEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    val lambdaSubEffVars = sum.lambdaSubEffVars
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
   /** Combines function summaries into file data. */
@@ -311,15 +311,16 @@ object Summary {
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
                                       debugSrc: Option[Source],
-                                      lines: Int, defs: Int,
+                                      lines: Int,
+                                      defs: Int,
                                       pureDefs: Int,
                                       groundNonPureDefs: Int,
                                       polyDefs: Int,
                                       checkedEcasts: Int,
                                       baseEffVars: Int,
-                                      lambdaSubEffVars: Int,
                                       modDefSubEffVars: Int,
-                                      insDefSubEffVars: Int
+                                      insDefSubEffVars: Int,
+                                      lambdaSubEffVars: Int
                                     ) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
@@ -350,9 +351,9 @@ object Summary {
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
         baseEffVars + other.baseEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
+        insDefSubEffVars + other.insDefSubEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
       )
     }
 
@@ -370,24 +371,24 @@ object Summary {
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
         baseEffVars + other.baseEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
+        insDefSubEffVars + other.insDefSubEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
       )
     }
 
     def toRow: List[String] = List(
-      lines,
-      defs,
-      pureDefs,
-      groundNonPureDefs,
-      polyDefs,
-      checkedEcasts,
-      baseEffVars,
-      lambdaSubEffVars,
-      modDefSubEffVars,
-      insDefSubEffVars
-    ).map(format)
+      format(lines),
+      format(defs),
+      format(pureDefs),
+      format(groundNonPureDefs),
+      format(polyDefs),
+      format(checkedEcasts),
+      format(baseEffVars),
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
+    )
   }
 
   private object FileData {
@@ -406,7 +407,7 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline EVars", "SE-Lam EVars", "SE-Defs EVars", "SE-Inst EVars")
+    def header: List[String] = List("Lines", "Defs", "Pure", "Effectful", "Poly", "checked_ecast", "Baseline EVars", "SE-Def EVars", "SE-Ins EVars", "SE-Lam EVars")
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -422,9 +423,9 @@ object Summary {
                                         eff: ResEffect,
                                         checkedEcasts: Int,
                                         baseEffVars: Int,
-                                        lambdaSubEffVars: Int,
                                         modDefSubEffVars: Int,
-                                        insDefSubEffVars: Int
+                                        insDefSubEffVars: Int,
+                                        lambdaSubEffVars: Int
                                       ) {
     def src: Source = loc.source
 
@@ -435,9 +436,9 @@ object Summary {
       eff.toString,
       format(checkedEcasts),
       format(baseEffVars),
-      format(lambdaSubEffVars),
-      format(modDefSubEffVars),
-      format(insDefSubEffVars)
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
     )
   }
 
@@ -469,36 +470,34 @@ object Summary {
     *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
-    def genericSym: Symbol
+    val genericSym: Symbol = this match {
+      case FunctionSym.Def(sym) => sym
+      case FunctionSym.TraitFunWithExp(sym) => sym
+      case FunctionSym.InstanceFun(sym) => sym
+    }
 
-    def loc: SourceLocation
+    val loc: SourceLocation = this match {
+      case FunctionSym.Def(sym) => sym.loc
+      case FunctionSym.TraitFunWithExp(sym) => sym.loc
+      case FunctionSym.InstanceFun(sym) => sym.loc
+    }
   }
 
   private object FunctionSym {
 
     import ca.uwaterloo.flix.language.ast.Symbol
 
-    case class Def(sym: Symbol.DefnSym) extends FunctionSym {
-      val genericSym: Symbol = sym
+    case class Def(sym: Symbol.DefnSym) extends FunctionSym
 
-      val loc: SourceLocation = sym.loc
-    }
+    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym
 
-    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym {
-      val genericSym: Symbol = sym
-
-      val loc: SourceLocation = sym.loc
-    }
-
-    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym {
-      val genericSym: Symbol = sym
-
-      val loc: SourceLocation = sym.loc
-    }
+    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym
   }
 
   /** Formats the given number `n`. */
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
+
+  private def formatSigned(n: Int): String = f"$n%+,d".replace(".", ",")
 
   /** Right-pads the given string `s` to length `l`. */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')

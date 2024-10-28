@@ -92,7 +92,7 @@ object Zhegalkin {
 
   /** Returns the xor of the two Zhegalkin constants */
   private def mkXor(c1: ZhegalkinConstant, c2: ZhegalkinConstant): ZhegalkinConstant = {
-    // a ⊕ b = (a ⊕ b) - (a ∩ b) = (a ⊕ b) ∩ ¬(a ∩ b)
+    // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
     c1.union(c2).inter(c1.inter(c2).compl)
   }
 
