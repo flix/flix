@@ -85,6 +85,35 @@ object SetUnification {
         onSveRecCall = f => p(s"sve call: $f")
       )
     }
+
+    def phaseEqDiffTracker: (SolverListener, Unit => Unit, mutable.Map[String, List[Int]]) = {
+      val m = mutable.Map.empty[String, List[Int]]
+      var currentPhase = "Nothing"
+      var currentPhaseNumber = -1
+      var currentEqs = 0
+      val listener = SolverListener(
+        onEnterPhase = (phaseName, state) => {
+          currentPhaseNumber += 1
+          currentPhase = f"$currentPhaseNumber%02d " + phaseName
+//          println(s"enter: $currentPhase")
+          currentEqs = state.eqs.size
+        },
+        onExitPhase = (state, progress) => {
+//          if (progress) println(s" exit: $currentPhase")
+          if (progress) m.updateWith(currentPhase){
+            case None => Some(List(currentEqs - state.eqs.size))
+            case Some(prev) => Some((currentEqs - state.eqs.size) :: prev)
+          }
+        },
+        onSveRecCall = _ => ()
+      )
+      val reset = (_: Unit) => {
+        currentPhase = "Nothing"
+        currentPhaseNumber = -1
+        currentEqs = 0
+      }
+      (listener, reset, m)
+    }
   }
 
   /**

@@ -67,6 +67,8 @@ object EffUnification3 {
     (typeEqs, subst)
   }
 
+  lazy val (glistener, greset, gm) = SetUnification.SolverListener.phaseEqDiffTracker
+
   /**
     * Tries to unify the two effects: `eff1` and `eff2`.
     *
@@ -81,7 +83,8 @@ object EffUnification3 {
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
+    implicit val listener: SetUnification.SolverListener = glistener
+    greset.apply(())
 
     // Choose a unique number for each atom.
     implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))

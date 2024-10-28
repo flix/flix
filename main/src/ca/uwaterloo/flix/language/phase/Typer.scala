@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, LabelledPrecedenc
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -45,12 +45,23 @@ object Typer {
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
 
-    mapN(traitsVal, instancesVal, defsVal) {
+    val result = mapN(traitsVal, instancesVal, defsVal) {
       case (traits, instances, defs) =>
         val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
         TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.names, precedenceGraph)
     }
+
+    EffUnification3.gm.toList.sortBy(_._1).foreach{
+      case (name, diffs) =>
+        val count = diffs.length
+        val min = diffs.minOption.getOrElse(0)
+        val max = diffs.maxOption.getOrElse(0)
+        val avg = diffs.sum / (1.0 max count)
+        println(f"$name%30s: $count% 8d [$min% 5d, $avg%5.0f, $max% 5d]")
+    }
+
+    result
 
   }(DebugValidation())
 
