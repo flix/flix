@@ -456,9 +456,9 @@ object Summary {
   }
 
   /** Formats the given number `n`. */
-  private def format(n: Int): String = f"$n%,d".replace(".", ",")
+  private def format(n: Int): String = "%,d".formatLocal(java.util.Locale.US, n)
 
-  private def formatSigned(n: Int): String = f"$n%+,d".replace(".", ",")
+  private def formatSigned(n: Int): String = "%+,d".formatLocal(java.util.Locale.US, n)
 
   /** Right-pads the given string `s` to length `l`. */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')
