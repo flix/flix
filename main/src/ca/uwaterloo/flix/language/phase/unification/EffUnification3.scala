@@ -253,8 +253,8 @@ object EffUnification3 {
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
-          val symCmp = sym1.compare(sym2)
-          if (symCmp != 0) symCmp else arg1.compare(arg2)
+        val symCmp = sym1.compare(sym2)
+        if (symCmp != 0) symCmp else arg1.compare(arg2)
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
@@ -264,6 +264,7 @@ object EffUnification3 {
           case Atom.Assoc(_, _) => 3
           case Atom.Error(_) => 4
         }
+
         ordinal(this) - ordinal(that)
     }
   }
@@ -324,10 +325,7 @@ object EffUnification3 {
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc) match {
-        case None => SortedSet.empty
-        case Some(a) => SortedSet(a)
-      }
+      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
       case _ => SortedSet.empty
     }
 
