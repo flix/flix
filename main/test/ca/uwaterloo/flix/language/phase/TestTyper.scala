@@ -1471,7 +1471,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1491,7 +1491,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1511,7 +1511,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1533,7 +1533,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1554,7 +1554,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1576,7 +1576,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 
@@ -1597,7 +1597,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.DefaultTest)
     expectError[TypeError](result)
   }
 }

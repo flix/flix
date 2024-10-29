@@ -1049,7 +1049,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |def index(_index: Int32, _l: List[String]): String = ""
         |def indices(_n: List[Int32], _l: List[String]): String = ""
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectSuccess(result)
   }
 

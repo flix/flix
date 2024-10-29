@@ -38,7 +38,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _s: Object => "fail"
         |    }
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalCatchType](result)
   }
 
@@ -56,7 +56,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _e2: String => "not ok"
         |    }
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalCatchType](result)
   }
 
@@ -65,7 +65,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): String = throw "hello"
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalThrowType](result)
   }
 
@@ -75,7 +75,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |import java.io.IOException
         |def f(): String = throw (throw new IOException())
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalThrowType](result)
   }
 
@@ -85,7 +85,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |import java.io.IOException
         |pub def f(): String = throw None
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalThrowType](result)
   }
 
@@ -105,7 +105,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _e1: Exception => "ok"
         |    }
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalNestedTryCatch](result)
   }
 
@@ -1092,7 +1092,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    let r = newRunnable();
         |    run(r)
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalMethodEffect](result)
   }
 
@@ -1109,7 +1109,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.DefaultTestTest)
     expectError[IllegalSpawnEffect](result)
   }
 
