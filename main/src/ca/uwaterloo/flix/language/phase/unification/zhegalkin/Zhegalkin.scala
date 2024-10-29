@@ -260,7 +260,7 @@ object Zhegalkin {
   private def evaluate(z: ZhegalkinTerm, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
     val ZhegalkinTerm(cst, vars) = z
     def instVar(v: ZhegalkinVar): CofiniteIntSet = if (pos.contains(v)) CofiniteIntSet.universe else CofiniteIntSet.empty
-    (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection)
+    (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection(_, _: CofiniteIntSet))
   }
 
   /** Returns the [[SetFormula]] representation of `s`. */
