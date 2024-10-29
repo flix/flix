@@ -71,6 +71,10 @@ object Zhegalkin {
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
   case class ZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]) {
+    def vars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+      case (s, t) => s ++ t.vars
+    }
+
     private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
 
     if (grouped.exists(_._2.length > 1)) {
@@ -117,7 +121,7 @@ object Zhegalkin {
 
   /** Returns the complement of the Zhegalkin expr. */
   private def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
-    // ¬a = 1 ⊕ a
+  // ¬a = 1 ⊕ a
     mkXor(ZhegalkinExpr(ZUniverse, Nil), a)
 
   //
@@ -232,13 +236,37 @@ object Zhegalkin {
       polys.reduce(zmkUnion)
   }
 
-  /**
-    * Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula.
-    */
-  def toSetFormula(z: ZhegalkinExpr): SetFormula = z match {
-    case ZhegalkinExpr(cst, terms) => terms.foldLeft(toSetFormula(cst)) {
-      case (acc, term) => SetFormula.mkXor(acc, toSetFormula(term))
-    }
+  /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
+  def toSetFormula(z: ZhegalkinExpr): SetFormula = {
+    val variables = z.vars
+    val disjs = variables.subsets().map(pos => {
+      val insts = variables.iterator.map {
+        case zv@ZhegalkinVar(i, isFlexible) =>
+          val v = if (isFlexible) Var(i) else Cst(i)
+          if (pos.contains(zv)) v else mkCompl(v)
+      }.toList
+      mkInterAll(fromCofiniteIntSet(evaluate(z, pos)) :: insts)
+    })
+    mkUnionAll(disjs.toList)
+  }
+
+  /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
+  private def evaluate(z: ZhegalkinExpr, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
+    val ZhegalkinExpr(cst, terms) = z
+    (cst.s :: terms.map(evaluate(_, pos))).reduce(CofiniteIntSet.xor)
+  }
+
+  /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
+  private def evaluate(z: ZhegalkinTerm, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
+    val ZhegalkinTerm(cst, vars) = z
+    def instVar(v: ZhegalkinVar): CofiniteIntSet = if (pos.contains(v)) CofiniteIntSet.universe else CofiniteIntSet.empty
+    (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection)
+  }
+
+  /** Returns the [[SetFormula]] representation of `s`. */
+  private def fromCofiniteIntSet(s: CofiniteIntSet): SetFormula = s match {
+    case CofiniteIntSet.Set(s) => mkElemSet(s)
+    case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
   }
 
   /**
