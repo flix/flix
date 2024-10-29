@@ -62,11 +62,12 @@ object SetUnification {
     *
     *   - `onEnterPhase(phaseName: String, state: State): Unit`
     *   - `enExitPhase(state: State): Unit`
+    *   - `onSveCall(f: SetFormula): Unit`
     */
   final case class SolverListener(
                                    onEnterPhase: (String, State) => Unit,
                                    onExitPhase: (State, Boolean) => Unit,
-                                   onSveRecCall: SetFormula => Unit
+                                   onSveCall: SetFormula => Unit
                                  )
 
   final object SolverListener {
@@ -82,7 +83,7 @@ object SetUnification {
       SolverListener(
         onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
         onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst)),
-        onSveRecCall = f => p(s"sve call: $f")
+        onSveCall = f => p(s"sve call: $f")
       )
     }
   }
@@ -530,11 +531,9 @@ object SetUnification {
         //return Some(Nil, SetSubstitution(m))
       } catch {
         case _: BoolUnificationException =>
-        println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
+          println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
       }
     }
-
-
 
     val query = tableForm(mkEmptyQuery(eq.f1, eq.f2))
     val fvs = query.variables.toList.reverse
@@ -559,26 +558,28 @@ object SetUnification {
     * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
     * checking.
     */
-  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): SetSubstitution = fvs match {
-    case Nil =>
-      // `fvs` is empty so `f` has no variables.
-      // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
-      // Return the empty substitution if `f` is equivalent to `empty`.
-      if (isEmptyEquivalent(f)) SetSubstitution.empty
-      else throw NoSolutionException()
+  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): SetSubstitution = {
+    listener.onSveCall(f)
+    fvs match {
+      case Nil =>
+        // `fvs` is empty so `f` has no variables.
+        // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
+        // Return the empty substitution if `f` is equivalent to `empty`.
+        if (isEmptyEquivalent(f)) SetSubstitution.empty
+        else throw NoSolutionException()
 
-    case x :: xs =>
-      val f0 = SetSubstitution.singleton(x, Empty)(f)
-      val f1 = SetSubstitution.singleton(x, Univ)(f)
-      val recFormula = tableForm(propagation(mkInter(f0, f1)))
-      listener.onSveRecCall(recFormula)
-      assertSveRecSize(recFormula)
-      val se = successiveVariableElimination(recFormula, xs)
-      val xFormula = tableForm(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
-      // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
-      // each variable of `fvs` once (which is assumed to have no duplicates).
-      // `se`, `x`, and `xFormula` therefore have disjoint variables.
-      se.unsafeExtend(x, xFormula)
+      case x :: xs =>
+        val f0 = SetSubstitution.singleton(x, Empty)(f)
+        val f1 = SetSubstitution.singleton(x, Univ)(f)
+        val recFormula = tableForm(propagation(mkInter(f0, f1)))
+        assertSveRecSize(recFormula)
+        val se = successiveVariableElimination(recFormula, xs)
+        val xFormula = tableForm(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
+        // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
+        // each variable of `fvs` once (which is assumed to have no duplicates).
+        // `se`, `x`, and `xFormula` therefore have disjoint variables.
+        se.unsafeExtend(x, xFormula)
+    }
   }
 
   /** Throws [[ComplexException]] if `f` is larger than [[Options.sveRecSizeThreshold]]. */
