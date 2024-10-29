@@ -191,6 +191,7 @@ object SetUnification {
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
   private def svePermutations(eqs: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    if (opts.permutationLimit == 1 || eqs.sizeIs <= 1) return runRule(sve)(eqs)
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
