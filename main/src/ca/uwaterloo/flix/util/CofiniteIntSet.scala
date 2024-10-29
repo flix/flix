@@ -144,4 +144,8 @@ object CofiniteIntSet {
   def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
     difference(s1, mkSet(s2))
 
+  /** Returns the symmetric difference of `s1` and `s2`. */
+  def xor(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+    union(difference(s1, s2), difference(s2, s1))
+
 }
