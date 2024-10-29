@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint2}
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -40,7 +41,7 @@ object Unification {
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, listener: SolverListener, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
     val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown)))
@@ -50,7 +51,7 @@ object Unification {
   /**
     * Fully unifies the given types, returning None if there are unresolvable constraints.
     */
-  def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+  def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, listener: SolverListener, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
     ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown))) match {
@@ -62,7 +63,7 @@ object Unification {
   /**
     * Unifies the given types, but ignores any unresolved constraints from associated types.
     */
-  def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+  def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, listener: SolverListener, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
     ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown))) match {
@@ -84,7 +85,7 @@ object Unification {
   /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, listener: SolverListener, flix: Flix): Boolean = {
     fullyUnifyTypes(tpe1, tpe2, renv, eqEnv).isDefined
   }
 

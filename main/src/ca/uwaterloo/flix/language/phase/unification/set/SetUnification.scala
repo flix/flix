@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
@@ -60,11 +61,15 @@ object SetUnification {
   /**
     * A listener that observes the operations of [[solve]].
     *
+    *   - `onUnifyEffCall(eqs: List[(Type, Type, SourceLocation)]): Unit`
+    *   - `onUnifyEffFormCall(eqs: List[Equation]): Unit`
     *   - `onEnterPhase(phaseName: String, state: State): Unit`
     *   - `enExitPhase(state: State): Unit`
     *   - `onSveCall(f: SetFormula): Unit`
     */
   final case class SolverListener(
+                                   onUnifyEffCall: List[(Type, Type, SourceLocation)] => Unit,
+                                   onUnifyEffFormCall: List[Equation] => Unit,
                                    onEnterPhase: (String, State) => Unit,
                                    onExitPhase: (State, Boolean) => Unit,
                                    onSveCall: SetFormula => Unit
@@ -74,6 +79,8 @@ object SetUnification {
 
     /** The [[SolverListener]] that does nothing. */
     val doNothing: SolverListener = SolverListener(
+      _ => (),
+      _ => (),
       (_, _) => (),
       (_, _) => (),
       _ => ()
@@ -81,6 +88,8 @@ object SetUnification {
 
     def stringListener(p: String => Unit): SolverListener = {
       SolverListener(
+        onUnifyEffCall = _ => p("~~Unify Effects~~"),
+        onUnifyEffFormCall = _ => p("~~Unify Effect Formulas~~"),
         onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
         onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst)),
         onSveCall = f => p(s"sve call: $f")
@@ -102,6 +111,7 @@ object SetUnification {
     * will be derived from it.
     */
   def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
+    listener.onUnifyEffFormCall(l)
     val state = new State(l)
     val trivialPhaseName = "Trivial Equations"
 

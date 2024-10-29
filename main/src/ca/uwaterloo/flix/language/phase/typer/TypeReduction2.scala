@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -30,7 +31,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t

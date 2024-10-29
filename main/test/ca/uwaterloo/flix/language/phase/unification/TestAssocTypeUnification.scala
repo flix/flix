@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -28,6 +29,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
 
   private implicit val flix: Flix = new Flix()
   private implicit val scope: Scope = Scope.Top
+  private implicit val listener: SolverListener = SolverListener.doNothing
   private val loc: SourceLocation = SourceLocation.Unknown
   private val eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = ListMap.empty
   private val CollSym: Symbol.TraitSym = Symbol.mkTraitSym("Coll")

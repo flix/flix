@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, Source
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -42,7 +43,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit listener: SolverListener, flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -53,7 +54,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit listener: SolverListener, flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None, _) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
@@ -65,7 +66,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit listener: SolverListener, flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -101,7 +102,7 @@ object ConstraintSolver {
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
-      resolve(constrs, initialSubst, renv)(Scope.Top, cenv, eenv, flix) match {
+      resolve(constrs, initialSubst, renv)(Scope.Top, cenv, eenv, listener, flix) match {
         case Result.Ok(ResolutionResult(subst, deferred, _)) =>
           Debug.stopRecording()
 
@@ -187,7 +188,7 @@ object ConstraintSolver {
     *   - a substitution and leftover constraints, or
     *   - an error if resolution failed
     */
-  def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[ResolutionResult, TypeError] = {
 
     // We track changes to the resolution state through mutable variables.
 
@@ -235,7 +236,7 @@ object ConstraintSolver {
     *
     * Applies the initial substitution `subst0` before attempting to resolve.
     */
-  private def resolveOneOf(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolveOneOf(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[ResolutionResult, TypeError] = {
     def tryResolve(cs: List[TypeConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
       case hd :: tl => resolveOne(hd, renv, subst0).flatMap {
@@ -254,7 +255,7 @@ object ConstraintSolver {
   /**
     * Tries to resolve the given constraint.
     */
-  private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+  private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
       val prov = subst0(prov0)
       for {
@@ -276,7 +277,7 @@ object ConstraintSolver {
       }
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       // First reduce nested constraints under a new scope.
-      resolveOneOf(nested0, subst0, renv)(scope.enter(sym), tenv, eenv, flix).map {
+      resolveOneOf(nested0, subst0, renv)(scope.enter(sym), tenv, eenv, listener, flix).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
@@ -299,7 +300,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (t1.kind, t2.kind) match {
+  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[ResolutionResult, TypeError] = (t1.kind, t2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -358,7 +359,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // reflU
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
@@ -429,7 +430,7 @@ object ConstraintSolver {
     *   ToString[a -> b \ ef] ~> <ERROR>
     * }}}
     */
-  private def resolveTraitConstraint(trt: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
+  private def resolveTraitConstraint(trt: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, tenv: TraitEnv, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], listener: SolverListener, flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
     // redE
     TypeReduction.simplify(tpe0, renv0, loc).flatMap {
       case (t, progress) =>

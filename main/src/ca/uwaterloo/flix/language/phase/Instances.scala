@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
@@ -29,6 +30,9 @@ object Instances {
 
   // We use top scope everywhere here since we are only looking at declarations.
   private implicit val S: Scope = Scope.Top
+
+  // We don't care about unification metrics outside type inference.
+  private implicit val L: SolverListener = SolverListener.doNothing
 
   /**
     * Validates instances and traits in the given AST root.
@@ -178,7 +182,7 @@ object Instances {
           case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => List(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)
             if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, TraitEnv(root.traitEnv), root.eqEnv)) {
               // Case 5.1: the schemes match. Success!
               Nil

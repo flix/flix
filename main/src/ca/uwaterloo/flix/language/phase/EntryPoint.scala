@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -55,6 +56,9 @@ object EntryPoint {
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
+
+  // We don't care about unification metrics outside type inference.
+  private implicit val L: SolverListener = SolverListener.doNothing
 
   /**
     * The scheme of the entry point function.

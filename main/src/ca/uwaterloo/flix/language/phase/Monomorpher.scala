@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -84,6 +85,9 @@ object Monomorpher {
 
   // TODO levels trying top scope to get it to compile. Revisit.
   private implicit val S: Scope = Scope.Top
+
+  // We don't care about unification metrics outside type inference.
+  private implicit val L: SolverListener = SolverListener.doNothing
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are

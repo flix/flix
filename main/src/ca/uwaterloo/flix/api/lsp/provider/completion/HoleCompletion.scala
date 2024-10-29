@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 
 object HoleCompletion {
 
@@ -63,7 +64,7 @@ object HoleCompletion {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        Unification.fullyUnifyTypes(matchType, lastArrow, RigidityEnv.empty, root.eqEnv)(Scope.Top, flix) match {
+        Unification.fullyUnifyTypes(matchType, lastArrow, RigidityEnv.empty, root.eqEnv)(Scope.Top, SolverListener.doNothing, flix) match {
           case Some(subst) =>
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

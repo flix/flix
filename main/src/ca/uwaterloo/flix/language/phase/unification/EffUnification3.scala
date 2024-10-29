@@ -38,12 +38,13 @@ object EffUnification3 {
                 eqs: List[(Type, Type, SourceLocation)],
                 scope: Scope, renv: RigidityEnv,
                 opts: SetUnification.Options = SetUnification.Options.default
-              ): (List[(Type, Type, SourceLocation)], Substitution) = {
+              )(implicit listener: SetUnification.SolverListener): (List[(Type, Type, SourceLocation)], Substitution) = {
+    listener.onUnifyEffCall(eqs)
+
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = opts
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
@@ -76,12 +77,18 @@ object EffUnification3 {
     *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
     *     The returned substitution is a most general unifier.
     */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+  def unify(
+             eff1: Type,
+             eff2: Type,
+             scope: Scope,
+             renv: RigidityEnv
+           )(implicit listener: SetUnification.SolverListener): Result[Option[Substitution], UnificationError] = {
+    listener.onUnifyEffCall(List((eff1, eff2, eff1.loc)))
+
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
