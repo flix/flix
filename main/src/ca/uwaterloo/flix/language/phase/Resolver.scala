@@ -1673,7 +1673,7 @@ object Resolver {
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1703,7 +1703,7 @@ object Resolver {
       val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1746,7 +1746,7 @@ object Resolver {
     val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
       case (fp, (acc, first)) =>
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, loc.asSynthetic), allowSubeffecting = false, false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -4154,8 +4154,8 @@ object Resolver {
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
-  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting = false, loc)
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, allowSubeffecting: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting, loc)
   }
 
   /**
