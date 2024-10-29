@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Subeffecting}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
@@ -1598,6 +1598,70 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Def.01") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Def.02") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Lambda.01") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Lambda.02") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Instance.01") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Instance.02") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
     expectError[TypeError](result)
   }
 }

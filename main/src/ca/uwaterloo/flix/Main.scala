@@ -414,7 +414,7 @@ object Main {
       case "mod-defs" => Subeffecting.ModDefs
       case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
