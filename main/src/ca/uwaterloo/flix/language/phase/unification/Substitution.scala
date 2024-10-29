@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -236,28 +236,26 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Case 3: Merge the two substitutions.
 
-    // NB: Use of mutability improve performance.
+    // Performance: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
+    val mutMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
-      // minimize case set formulas if present
-      val tpe = x.kind match {
-        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
-        case Kind.Eff => this.apply(t)
-        case _ => this.apply(t)
-      }
-      newTypeMap.update(x, tpe)
+      val tpe = this.apply(t)
+      mutMap.update(x, tpe)
     }
+
+    // Performance: We now switch back to building the immutable map in `result`.
 
     // Add all bindings in `this` that are not in `that`.
+    var result = mutMap.toMap
     for ((x, t) <- this.m) {
       if (!that.m.contains(x)) {
-        newTypeMap.update(x, t)
+        result = result.updated(x, t)
       }
     }
 
-    Substitution(newTypeMap.toMap)
+    Substitution(result)
   }
 }
