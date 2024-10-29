@@ -132,7 +132,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Lambda(fparam, exp, isGenerated, loc) =>
+      case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
@@ -146,7 +146,7 @@ object ConstraintGen {
             case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
             case _ => false
           }
-          enabled && !isGenerated && !useless && !redundant
+          enabled && allowSubeffecting && !useless && !redundant
         }
         val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
