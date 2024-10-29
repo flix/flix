@@ -182,7 +182,7 @@ object Instances {
           case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => List(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
             if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, TraitEnv(root.traitEnv), root.eqEnv)) {
               // Case 5.1: the schemes match. Success!
               Nil
