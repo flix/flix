@@ -189,8 +189,7 @@ object SetUnification {
   }
 
   /** Solves `eqs` with [[sve]], trying multiple different orderings to minimize substitution size. */
-  private def svePermutations(eqs0: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    val eqs = eqs0.map(eq => Equation.mk(tableForm(eq.f1), tableForm(eq.f1), eq.loc))
+  private def svePermutations(eqs: List[Equation])(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     // We solve the first `permutationLimit` permutations of `eqs` and pick the one that
     // both successfully solves it and has the smallest substitution.
     val permutations = if (opts.permutationLimit > 0) eqs.permutations.take(opts.permutationLimit) else eqs.permutations
@@ -536,7 +535,7 @@ object SetUnification {
 
 
 
-    val query = tableForm(mkEmptyQuery(eq.f1, eq.f2))
+    val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList.reverse
     try {
       val subst = successiveVariableElimination(query, fvs)
@@ -570,11 +569,11 @@ object SetUnification {
     case x :: xs =>
       val f0 = SetSubstitution.singleton(x, Empty)(f)
       val f1 = SetSubstitution.singleton(x, Univ)(f)
-      val recFormula = tableForm(propagation(mkInter(f0, f1)))
+      val recFormula = propagation(mkInter(f0, f1))
       listener.onSveRecCall(recFormula)
       assertSveRecSize(recFormula)
       val se = successiveVariableElimination(recFormula, xs)
-      val xFormula = tableForm(propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1)))))
+      val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
       // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
       // each variable of `fvs` once (which is assumed to have no duplicates).
       // `se`, `x`, and `xFormula` therefore have disjoint variables.
