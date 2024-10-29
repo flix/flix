@@ -1604,7 +1604,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Subeffecting.Def.01") {
     val input =
       """
-        |def main(): Unit \ IO = ()
+        |def f(): Unit \ IO = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
     expectSuccess(result)
@@ -1613,7 +1613,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Subeffecting.Def.02") {
     val input =
       """
-        |def main(): Unit \ IO = ()
+        |def f(): Unit \ IO = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
     expectError[TypeError](result)
@@ -1623,7 +1623,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
-        |def main(): Unit \ IO =
+        |def f(): Unit \ IO =
         |  mustBeIO(() -> ())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
@@ -1634,7 +1634,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
-        |def main(): Unit \ IO =
+        |def f(): Unit \ IO =
         |  mustBeIO(() -> ())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
