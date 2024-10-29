@@ -37,6 +37,9 @@ object EffectVerifier {
   // We use top scope for simplicity. This is the most relaxed option.
   private implicit val S: Scope = Scope.Top
 
+  // We don't care about unification metrics outside type inference.
+  private implicit val L: SolverListener = SolverListener.doNothing
+
   /**
     * Verifies the effects in the given root.
     */
@@ -396,7 +399,7 @@ object EffectVerifier {
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
-    if (!Unification.unifiesWith(expected, actual, renv, eqEnv)(S, SolverListener.doNothing, flix)) {
+    if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }
