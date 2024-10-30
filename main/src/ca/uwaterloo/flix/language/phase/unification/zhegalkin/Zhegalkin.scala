@@ -39,15 +39,12 @@ object Zhegalkin {
     override def compare(that: ZhegalkinVar): Int = this.v.compare(that.v)
   }
 
-  object ZhegalkinConstant {
-    /**
-      * A constant that represents the empty set.
-      */
+  /** Companion object for [[ZhegalkinConstant]] */
+  private object ZhegalkinConstant {
+    /** A Zhegalkin constant that represents the empty set. */
     val empty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
 
-    /**
-      * A constant that represents the university.
-      */
+    /** A Zhegalkin constant that represents the university. */
     val universe: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
   }
 
@@ -76,6 +73,15 @@ object Zhegalkin {
         cst.toString
       else
         s"$cst ∩ ${vars.mkString(" ∩ ")}"
+  }
+
+  /** Companion object for [[ZhegalkinExpr]] */
+  private object ZhegalkinExpr {
+    /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
+    val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
+
+    /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
+    val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
   }
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
@@ -130,8 +136,8 @@ object Zhegalkin {
 
   /** Returns the complement of the Zhegalkin expr. */
   private def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
-  // ¬a = 1 ⊕ a
-    mkXor(ZhegalkinExpr(ZhegalkinConstant.universe, Nil), a)
+    // ¬a = 1 ⊕ a
+    mkXor(ZhegalkinExpr.one, a)
 
   //
   // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
@@ -207,11 +213,12 @@ object Zhegalkin {
     }
   }
 
-  // TODO: Just do eq check?
-  private def isEmpty(z: ZhegalkinExpr): Boolean = z match {
-    case ZhegalkinExpr(cst, Nil) => cst == ZhegalkinConstant.empty
-    case _ => false
-  }
+  /**
+    * Returns `true` if the given Zhegalkin expression `z` represents the empty set.
+    *
+    * Note: The representation of Zhegalkin polynomials is unique, hence we can use a simple equality check here.
+    */
+  private def isEmpty(z: ZhegalkinExpr): Boolean = z == ZhegalkinExpr.zero
 
   // TODO: Need to distinguish free and rigid variables.
   private def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
@@ -268,7 +275,9 @@ object Zhegalkin {
   /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
   private def evaluate(z: ZhegalkinTerm, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
     val ZhegalkinTerm(cst, vars) = z
+
     def instVar(v: ZhegalkinVar): CofiniteIntSet = if (pos.contains(v)) CofiniteIntSet.universe else CofiniteIntSet.empty
+
     (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection(_, _: CofiniteIntSet))
   }
 
@@ -301,9 +310,9 @@ object Zhegalkin {
   object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
     override def isEquivBot(f: ZhegalkinExpr): Boolean = isEmpty(f)
 
-    override def mkBot: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
+    override def mkBot: ZhegalkinExpr = ZhegalkinExpr.zero
 
-    override def mkTop: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
+    override def mkTop: ZhegalkinExpr = ZhegalkinExpr.one
 
     override def mkCst(id: Int): ZhegalkinExpr = {
       val x = ZhegalkinVar(id, flexible = false)
