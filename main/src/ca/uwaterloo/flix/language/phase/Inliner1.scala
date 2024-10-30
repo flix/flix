@@ -43,23 +43,11 @@ object Inliner1 {
   private type VarSubst = Map[Symbol.VarSym, Symbol.VarSym]
 
   /**
-    * A function below the soft threshold is typically inlined.
-    */
-  private val SoftInlineThreshold: Int = 4
-
-  /**
-    * A function above the hard threshold is never inlined.
-    */
-  private val HardInlineThreshold: Int = 8
-
-  /**
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(def0: OccurrenceAst1.Def): Boolean = {
     val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
-    val belowSoft = def0.context.size < SoftInlineThreshold
-    val belowHard = def0.context.size < HardInlineThreshold
-    val shouldInline = belowSoft || (def0.context.isDirectCall && belowHard) || (def0.context.occur == Once && belowHard)
+    val shouldInline = def0.context.isDirectCall || def0.context.occur == Once
     mayInline && shouldInline
   }
 
@@ -497,9 +485,14 @@ object Inliner1 {
     case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
-      val fps = fparams.map(visitFormalParam)
-      val e1 = applySubst(exp1, subst1)
-      val e2 = applySubst(exp2, subst1)
+      val e2 = applySubst(exp2, subst1) // e2 should not know about fparams
+      val freshFPVarSyms = fparams.map(fp => Symbol.freshVarSym(fp.sym))
+      val (subst2, fps) = fparams.zip(freshFPVarSyms).map {
+        case (OccurrenceAst1.FormalParam(oldSym, mod, tpe, src, loc), newSym) =>
+          (oldSym -> newSym, MonoAst.FormalParam(newSym, mod, tpe, src, loc))
+      }.unzip
+      val subst3 = subst1 ++ subst2
+      val e1 = applySubst(exp1, subst3)
       MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
