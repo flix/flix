@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -29,11 +29,11 @@ object Summary {
     *
     * Example with markdown rendering (just a single data row):
     * {{{
-|            Module | lines | defs | Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda<: Eff. var | def<: Eff. var | ins<: Eff. var |
-| ----------------- | ----- | ---- | ---- | ----------- | ---------- | ------------- | -------------- | ----------------- | -------------- | -------------- |
-|           Eq.flix |   242 |   37 |   37 |           0 |          0 |             0 |            -37 |               -37 |            -37 |            -37 |
-|               ... |   ... |  ... |  ... |         ... |        ... |           ... |            ... |               ... |            ... |            ... |
-|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
+    *|            Module | lines | defs | Pure | Ground Eff. | Eff. Poly. | checked_ecast | total Eff. var | lambda<: Eff. var | def<: Eff. var | ins<: Eff. var |
+    *| ----------------- | ----- | ---- | ---- | ----------- | ---------- | ------------- | -------------- | ----------------- | -------------- | -------------- |
+    *|           Eq.flix |   242 |   37 |   37 |           0 |          0 |             0 |            -37 |               -37 |            -37 |            -37 |
+    *|               ... |   ... |  ... |  ... |         ... |        ... |           ... |            ... |               ... |            ... |            ... |
+    *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
     * @param root the root to create data for
@@ -63,11 +63,11 @@ object Summary {
     val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     val ecasts = countCheckedEcasts(defn.exp)
-    val totalEffVars = -1
+    val baseEffVars = -1
     val lambdaSubEffVars = -1
     val modDefSubEffVars = -1
     val insDefSubEffVars = -1
-    DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars)
   }
 
   /** Returns a function summary for a signature, if it has implementation */
@@ -77,11 +77,11 @@ object Summary {
       val fun = FunctionSym.TraitFunWithExp(sig.sym)
       val eff = resEffect(sig.spec.eff)
       val ecasts = countCheckedEcasts(exp)
-      val totalEffVars = -1
+      val baseEffVars = -1
       val lambdaSubEffVars = -1
       val modDefSubEffVars = -1
       val insDefSubEffVars = -1
-      Some(DefSummary(fun, eff, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars))
+      Some(DefSummary(fun, eff, ecasts, baseEffVars, modDefSubEffVars, insDefSubEffVars, lambdaSubEffVars))
   }
 
   /** Returns a function summary for every function */
@@ -98,16 +98,28 @@ object Summary {
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
-    val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, SourcePosition(unknownSource, 0, 0), SourcePosition(unknownSource, 0, 0)))
+    val srcLoc = root.sources.getOrElse(src, unknownLocation)
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
     val ecasts = sum.checkedEcasts
-    val totalEffVars = sum.totalEffVars
-    val lambdaSubEffVars = sum.lambdaSubEffVars
+    val baseEffVars = sum.baseEffVars
     val modDefSubEffVars = sum.modDefSubEffVars
     val insDefSubEffVars = sum.insDefSubEffVars
-    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs, ecasts, totalEffVars, lambdaSubEffVars, modDefSubEffVars, insDefSubEffVars)
+    val lambdaSubEffVars = sum.lambdaSubEffVars
+    FileData(
+      Some(src),
+      srcLoc.endLine,
+      defs = 1,
+      pureDefs,
+      justIODefs,
+      polyDefs,
+      ecasts,
+      baseEffVars,
+      modDefSubEffVars,
+      insDefSubEffVars,
+      lambdaSubEffVars
+    )
   }
 
   /** Combines function summaries into file data. */
@@ -174,109 +186,109 @@ object Summary {
   }
 
   private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
-    case Expr.Cst(cst, tpe, loc) => 0
-    case Expr.Var(sym, tpe, loc) => 0
-    case Expr.Hole(sym, tpe, eff, loc) => 0
-    case Expr.HoleWithExp(exp, tpe, eff, loc) => 0
-    case Expr.OpenAs(symUse, exp, tpe, loc) => countCheckedEcasts(exp)
-    case Expr.Use(sym, alias, exp, loc) => countCheckedEcasts(exp)
-    case Expr.Lambda(fparam, exp, tpe, loc) => countCheckedEcasts(exp)
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
-    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.Unary(sop, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.Region(tpe, loc) => 0
-    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.Discard(exp, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Match(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.MatchRule(pat, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
+    case Expr.Cst(_, _, _) => 0
+    case Expr.Var(_, _, _) => 0
+    case Expr.Hole(_, _, _, _) => 0
+    case Expr.HoleWithExp(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
+    case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
+    case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
+    case Expr.ApplyClo(exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplySig(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Region(_, _) => 0
+    case Expr.Scope(_, _, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
+    case Expr.Match(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+      case TypedAst.MatchRule(_, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.TypeMatchRule(sym, tpe, exp) => countCheckedEcasts(exp)
+    case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+      case TypedAst.TypeMatchRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.RestrictableChooseRule(pat, exp) => countCheckedEcasts(exp)
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+      case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.Tag(sym, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Tuple(exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.RecordEmpty(tpe, loc) => 0
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ArrayLength(exp, eff, loc) => countCheckedEcasts(exp)
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => countCheckedEcasts(region) + fields.map {
-      case (sym, exp) => countCheckedEcasts(exp)
+    case Expr.Tag(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.RestrictableTag(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.RecordEmpty(_, _) => 0
+    case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.RecordRestrict(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.ArrayLit(exps, exp, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ArrayLength(exp, _, _) => countCheckedEcasts(exp)
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
+    case Expr.StructNew(_, fields, region, _, _, _) => countCheckedEcasts(region) + fields.map {
+      case (_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.StructGet(exp, sym, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.VectorLit(exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.VectorLength(exp, loc) => countCheckedEcasts(exp)
-    case Expr.Ascribe(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.InstanceOf(exp, clazz, loc) => countCheckedEcasts(exp)
-    case Expr.CheckedCast(CheckedCastType.EffectCast, exp, tpe, eff, loc) => 1 + countCheckedEcasts(exp)
-    case Expr.CheckedCast(CheckedCastType.TypeCast, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Without(exp, effUse, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.CatchRule(sym, clazz, exp) => countCheckedEcasts(exp)
+    case Expr.StructGet(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.StructPut(exp1, _, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.VectorLit(exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.VectorLength(exp, _) => countCheckedEcasts(exp)
+    case Expr.Ascribe(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.InstanceOf(exp, _, _) => countCheckedEcasts(exp)
+    case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
+    case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.UncheckedMaskingCast(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+      case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.Throw(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.HandlerRule(op, fparams, exp) => countCheckedEcasts(exp)
+    case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.TryWith(exp, _, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+      case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.Do(op, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => (exp :: exps).map(countCheckedEcasts).sum
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.map(countCheckedEcasts).sum
-    case Expr.GetField(field, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.GetStaticField(field, tpe, eff, loc) => 0
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => methods.map {
-      case TypedAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => countCheckedEcasts(exp)
+    case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.GetField(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.GetStaticField(_, _, _, _) => 0
+    case Expr.PutStaticField(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.NewObject(_, _, _, _, methods, _) => methods.map {
+      case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.GetChannel(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) => default.map(countCheckedEcasts).sum + rules.map {
-      case TypedAst.SelectChannelRule(sym, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
+    case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
+      case TypedAst.SelectChannelRule(_, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ParYield(frags, exp, tpe, eff, loc) => countCheckedEcasts(exp) + frags.map {
-      case TypedAst.ParYieldFragment(pat, exp, loc) => countCheckedEcasts(exp)
+    case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ParYield(frags, exp, _, _, _) => countCheckedEcasts(exp) + frags.map {
+      case TypedAst.ParYieldFragment(_, exp, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.Lazy(exp, tpe, loc) => countCheckedEcasts(exp)
-    case Expr.Force(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.map {
-      case TypedAst.Constraint(cparams, head, body, loc) =>
+    case Expr.Lazy(exp, _, _) => countCheckedEcasts(exp)
+    case Expr.Force(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointConstraintSet(cs, _, _) => cs.map {
+      case TypedAst.Constraint(_, head, body, _) =>
         (head match {
-          case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) => terms.map(countCheckedEcasts).sum
+          case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.map(countCheckedEcasts).sum
         }) + body.map {
-          case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => 0
-          case TypedAst.Predicate.Body.Functional(outVars, exp, loc) => countCheckedEcasts(exp)
-          case TypedAst.Predicate.Body.Guard(exp, loc) => countCheckedEcasts(exp)
+          case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => 0
+          case TypedAst.Predicate.Body.Functional(_, exp, _) => countCheckedEcasts(exp)
+          case TypedAst.Predicate.Body.Guard(exp, _) => countCheckedEcasts(exp)
         }.sum
     }.sum
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.FixpointSolve(exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => countCheckedEcasts(exp)
-    case Expr.Error(m, tpe, eff) => 0
+    case Expr.FixpointLambda(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.FixpointSolve(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointInject(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointProject(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Error(_, _, _) => 0
   }
 
   /**
@@ -289,22 +301,29 @@ object Summary {
     case _ => ResEffect.GroundNonPure
   }
 
-  private val unknownSource = {
+  private val unknownSource =
     Source(Input.Text("generated", "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
-  }
+
+  private val unknownPosition =
+    SourcePosition(unknownSource, 0, 0)
+
+  private val unknownLocation =
+    SourceLocation(isReal = false, unknownPosition, unknownPosition)
+
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
                                       debugSrc: Option[Source],
-                                      lines: Int, defs: Int,
+                                      lines: Int,
+                                      defs: Int,
                                       pureDefs: Int,
                                       groundNonPureDefs: Int,
                                       polyDefs: Int,
                                       checkedEcasts: Int,
-                                      totalEffVars: Int,
-                                      lambdaSubEffVars: Int,
+                                      baseEffVars: Int,
                                       modDefSubEffVars: Int,
-                                      insDefSubEffVars: Int
+                                      insDefSubEffVars: Int,
+                                      lambdaSubEffVars: Int
                                     ) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
@@ -334,10 +353,10 @@ object Summary {
         groundNonPureDefs + other.groundNonPureDefs,
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
+        baseEffVars + other.baseEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
+        insDefSubEffVars + other.insDefSubEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
       )
     }
 
@@ -354,25 +373,25 @@ object Summary {
         groundNonPureDefs + other.groundNonPureDefs,
         polyDefs + other.polyDefs,
         checkedEcasts + other.checkedEcasts,
-        totalEffVars + other.totalEffVars,
-        lambdaSubEffVars + other.lambdaSubEffVars,
+        baseEffVars + other.baseEffVars,
         modDefSubEffVars + other.modDefSubEffVars,
-        insDefSubEffVars + other.insDefSubEffVars
+        insDefSubEffVars + other.insDefSubEffVars,
+        lambdaSubEffVars + other.lambdaSubEffVars
       )
     }
 
     def toRow: List[String] = List(
-      lines,
-      defs,
-      pureDefs,
-      groundNonPureDefs,
-      polyDefs,
-      checkedEcasts,
-      totalEffVars,
-      lambdaSubEffVars,
-      modDefSubEffVars,
-      insDefSubEffVars
-    ).map(format)
+      format(lines),
+      format(defs),
+      format(pureDefs),
+      format(groundNonPureDefs),
+      format(polyDefs),
+      format(checkedEcasts),
+      format(baseEffVars),
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
+    )
   }
 
   private object FileData {
@@ -391,7 +410,18 @@ object Summary {
       */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
-    def header: List[String] = List("lines", "defs", "Pure", "Ground Eff.", "Eff. Poly.", "checked_ecast", "total Eff. var", "lambda<: Eff. var", "def<: Eff. var", "ins<: Eff. var")
+    def header: List[String] = List(
+      "Lines",
+      "Defs",
+      "Pure",
+      "Effectful",
+      "Poly",
+      "checked_ecast",
+      "Baseline EVars",
+      "SE-Def EVars",
+      "SE-Ins EVars",
+      "SE-Lam EVars"
+    )
   }
 
   private sealed case class FileSummary(src: Source, data: FileData) {
@@ -406,14 +436,36 @@ object Summary {
                                         fun: FunctionSym,
                                         eff: ResEffect,
                                         checkedEcasts: Int,
-                                        totalEffVars: Int,
-                                        lambdaSubEffVars: Int,
+                                        baseEffVars: Int,
                                         modDefSubEffVars: Int,
-                                        insDefSubEffVars: Int
+                                        insDefSubEffVars: Int,
+                                        lambdaSubEffVars: Int
                                       ) {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
+
+    def toRow: List[String] = List(
+      fun.genericSym.toString,
+      eff.toString,
+      format(checkedEcasts),
+      format(baseEffVars),
+      formatSigned(lambdaSubEffVars),
+      formatSigned(modDefSubEffVars),
+      formatSigned(insDefSubEffVars)
+    )
+  }
+
+  private object DefSummary {
+    def header: List[String] = List(
+      "Fun",
+      "Eff",
+      "checked_ecast",
+      "Baseline EVars",
+      "SE-Lam EVars",
+      "SE-Defs EVars",
+      "SE-Inst EVars"
+    )
   }
 
   /**
@@ -440,28 +492,34 @@ object Summary {
     *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
-    def loc: SourceLocation
+    val genericSym: Symbol = this match {
+      case FunctionSym.Def(sym) => sym
+      case FunctionSym.TraitFunWithExp(sym) => sym
+      case FunctionSym.InstanceFun(sym) => sym
+    }
+
+    val loc: SourceLocation = this match {
+      case FunctionSym.Def(sym) => sym.loc
+      case FunctionSym.TraitFunWithExp(sym) => sym.loc
+      case FunctionSym.InstanceFun(sym) => sym.loc
+    }
   }
 
   private object FunctionSym {
 
     import ca.uwaterloo.flix.language.ast.Symbol
 
-    case class Def(sym: Symbol.DefnSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class Def(sym: Symbol.DefnSym) extends FunctionSym
 
-    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym
 
-    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym {
-      val loc: SourceLocation = sym.loc
-    }
+    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym
   }
 
   /** Formats the given number `n`. */
-  private def format(n: Int): String = f"$n%,d".replace(".", ",")
+  private def format(n: Int): String = "%,d".formatLocal(java.util.Locale.US, n)
+
+  private def formatSigned(n: Int): String = "%+,d".formatLocal(java.util.Locale.US, n)
 
   /** Right-pads the given string `s` to length `l`. */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')

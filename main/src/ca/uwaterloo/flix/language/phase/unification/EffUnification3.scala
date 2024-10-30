@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -37,12 +38,12 @@ object EffUnification3 {
   def unifyAll(
                 eqs: List[(Type, Type, SourceLocation)],
                 scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options = SetUnification.Options.default
-              ): (List[(Type, Type, SourceLocation)], Substitution) = {
+                opts: SetUnification.Options
+              )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = opts
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
@@ -76,11 +77,11 @@ object EffUnification3 {
     *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
     *     The returned substitution is a most general unifier.
     */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Option[Substitution], UnificationError] = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
@@ -253,8 +254,8 @@ object EffUnification3 {
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
-          val symCmp = sym1.compare(sym2)
-          if (symCmp != 0) symCmp else arg1.compare(arg2)
+        val symCmp = sym1.compare(sym2)
+        if (symCmp != 0) symCmp else arg1.compare(arg2)
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
@@ -264,6 +265,7 @@ object EffUnification3 {
           case Atom.Assoc(_, _) => 3
           case Atom.Error(_) => 4
         }
+
         ordinal(this) - ordinal(that)
     }
   }
@@ -324,10 +326,7 @@ object EffUnification3 {
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc) match {
-        case None => SortedSet.empty
-        case Some(a) => SortedSet(a)
-      }
+      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
       case _ => SortedSet.empty
     }
 
