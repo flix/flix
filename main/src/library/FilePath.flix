@@ -159,21 +159,184 @@ pub eff FilePath {
 mod FilePath {
 
     import java.io.File
+    import java.io.IOException
+    import java.lang.Class
+    import java.lang.{String => JString}
+    import java.nio.charset.StandardCharsets
+    import java.nio.file.attribute.BasicFileAttributes
+    import java.nio.file.Files
+    import java.nio.file.LinkOption
+    import java.nio.file.Path
 
     ///
     /// Handles the `FilePath` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FilePath` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePath) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IOError, b] \ (ef - FilePath) + IO = x ->
         try {
-            f(x)
+            try {
+                Result.Ok(f(x))
+            } catch {
+                case ex: IOException =>
+                    Result.Err(IOError.Generic(ex.getMessage()))
+            }
         } with FilePath {
             def exists(f, k) = {
                 let file = new File(f);
                 let exists = file.exists();
                 k(exists)
             }
+
+            def isDirectory(f, k) = {
+                let file = new File(f);
+                let isDirectory = file.isDirectory();
+                k(isDirectory)
+            }
+
+            def isRegularFile(f, k) = {
+                let file = new File(f);
+                let isFile = file.isFile();
+                k(isFile)
+            }
+
+            def isReadable(f, k) = {
+                let file = new File(f);
+                let canRead = file.canRead();
+                k(canRead)
+            }
+
+            def isSymbolicLink(f, k) = {
+                let file = new File(f);
+                let isSymbolicLink = Files.isSymbolicLink(file.toPath());
+                k(isSymbolicLink)
+            }
+
+            def isWritable(f, k) = {
+                let file = new File(f);
+                let canWrite = file.canWrite();
+                k(canWrite)
+            }
+
+            def isExecutable(f, k) = {
+                let file = new File(f);
+                let canExecute = file.canExecute();
+                k(canExecute)
+            }
+
+            def accessTime(f, k) = {
+                let file = new File(f);
+                let attributes = fileAttributes(file.toPath());
+                let time = attributes.lastAccessTime();
+                k(time.toMillis())
+            }
+
+            def creationTime(f, k) = {
+                let file = new File(f);
+                let attributes = fileAttributes(file.toPath());
+                let time = attributes.creationTime();
+                k(time.toMillis())
+            }
+
+            def modificationTime(f, k) = {
+                let file = new File(f);
+                let attributes = fileAttributes(file.toPath());
+                let time = attributes.lastModifiedTime();
+                k(time.toMillis())
+            }
+
+            def size(f, k) = {
+                let file = new File(f);
+                let size = file.length();
+                k(size)
+            }
+
+            def read(f, k) = {
+                let file = new File(f);
+                let bytes = Files.readAllBytes(file.toPath());
+                let jstring = new JString(bytes, StandardCharsets.UTF_8);
+                let string = FromJava.fromJava(jstring);
+                k(string)
+            }
+
+            def readLines(f, k) = {
+                let file = new File(f);
+                let jlist = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+                let list = FromJava.fromJava(jlist);
+                k(list)
+            }
+
+//            ///
+//            /// Returns a vector of all the bytes in the given file `f`.
+//            ///
+//            pub def readBytes(f: String): Vector[Int8]
+//
+//            ///
+//            /// Writes `str` to the given file `f`.
+//            ///
+//            /// Creates file `f` if it does not exist. Overwrites it if it exists.
+//            ///
+//            pub def write(data: {str = String}, f: String): Unit
+//
+//            ///
+//            /// Writes `lines` to the given file `f`.
+//            ///
+//            /// Creates `f` if it does not exist. Overwrites it if it exists.
+//            ///
+//            pub def writeLines(data: {lines = List[String]}, f: String): Unit
+//
+//            ///
+//            /// Writes `data` to the given file `f`.
+//            ///
+//            /// Creates file `f` if it does not exist. Overwrites it if it exists.
+//            ///
+//            pub def writeBytes(data: Vector[Int8], f: String): Unit
+//
+//            ///
+//            /// Appends `str` to the given file `f`.
+//            ///
+//            /// Creates the file `f` if it does not exist.
+//            ///
+//            pub def append(data: {str = String}, f: String): Unit
+//
+//            ///
+//            /// Appends `lines` to the given file `f`.
+//            ///
+//            /// Creates the file `f` if it does not exist.
+//            ///
+//            pub def appendLines(data: {lines = List[String]}, f: String): Unit
+//
+//            ///
+//            /// Appends `data` to the given file `f`.
+//            ///
+//            /// Creates the file `f` if it does not exist.
+//            ///
+//            pub def appendBytes(data: Vector[Int8], f: String): Unit
+//
+//            ///
+//            /// Truncates the given file `f`.
+//            ///
+//            pub def truncate(f: String): Unit
+//
+//            ///
+//            /// Creates the directory `d`.
+//            ///
+//            pub def mkDir(d: String): Unit
+//
+//            ///
+//            /// Creates the directory `d` and all its parent directories.
+//            ///
+//            pub def mkdDirs(d: String): Unit
+//
+//            ///
+//            /// Returns a list with the names of all files and directories in the given directory `d`.
+//            ///
+//            pub def list(f: String): List[String]
+        }
+
+        def fileAttributes(path: Path): BasicFileAttributes \ IO = {
+            let varargs: Vector[LinkOption] = Vector.empty();
+            Files.readAttributes(path, Class.forName("java.nio.file.attribute.BasicFileAttributes"), varargs)
         }
 
 }
