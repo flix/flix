@@ -449,13 +449,10 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(subst0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(OccurrenceAst1.FormalParam(sym, mod, fptpe, src, fploc), exp, tpe, loc) =>
-      // Lookup the substitution symbol or generate a fresh symbol
-      // to avoid duplicating a symbol globally
-      val substSym = subst0.getOrElse(sym, Symbol.freshVarSym(sym))
-      val fp = MonoAst.FormalParam(substSym, mod, fptpe, src, fploc)
-      val subst1 = subst0 + (sym -> substSym)
-      val e = applySubst(exp, subst1)
+    case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
+      val (fp, subst1) = applySubstFormalParam(fparam)
+      val subst2 = subst0 ++ subst1
+      val e = applySubst(exp, subst2)
       MonoAst.Expr.Lambda(fp, e, tpe, loc)
 
     case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
@@ -486,13 +483,9 @@ object Inliner1 {
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
       val e2 = applySubst(exp2, subst1) // e2 should not know about fparams
-      val freshFPVarSyms = fparams.map(fp => Symbol.freshVarSym(fp.sym))
-      val (subst2, fps) = fparams.zip(freshFPVarSyms).map {
-        case (OccurrenceAst1.FormalParam(oldSym, mod, tpe, src, loc), newSym) =>
-          (oldSym -> newSym, MonoAst.FormalParam(newSym, mod, tpe, src, loc))
-      }.unzip
-      val subst3 = subst1 ++ subst2
-      val e1 = applySubst(exp1, subst3)
+      val (fps, substs) = fparams.map(applySubstFormalParam).unzip
+      val subst2 = subst1 ++ substs.flatten
+      val e1 = applySubst(exp1, subst2)
       MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
@@ -562,8 +555,9 @@ object Inliner1 {
       val e = applySubst(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
-          val fps = fparams.map(visitFormalParam)
-          val e = applySubst(exp, subst0)
+          val (fps, substs) = fparams.map(applySubstFormalParam).unzip
+          val subst1 = subst0 ++ substs.flatten
+          val e = applySubst(exp, subst1)
           MonoAst.HandlerRule(op, fps, e)
       }
       MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
@@ -575,8 +569,9 @@ object Inliner1 {
     case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map {
         case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-          val fps = fparams.map(visitFormalParam)
-          val e = applySubst(exp, subst0)
+          val (fps, substs) = fparams.map(applySubstFormalParam).unzip
+          val subst1 = subst0 ++ substs.flatten
+          val e = applySubst(exp, subst1)
           MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
       }
       MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
@@ -622,5 +617,12 @@ object Inliner1 {
     }
 
     visit(pattern00)
+  }
+
+  private def applySubstFormalParam(fp0: OccurrenceAst1.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
+    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst = Map(sym -> freshVarSym)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
   }
 }
