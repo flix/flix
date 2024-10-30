@@ -183,7 +183,7 @@ object Inliner1 {
         val e = visit(exp)
         val es = exps.map(visit)
         e match {
-          case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
+          case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) => // TODO Closure is never constructed at this point
             val def1 = root.defs.apply(sym)
             // If `def1` is a single non-self call or is trivial
             // then inline the body of `def1`
