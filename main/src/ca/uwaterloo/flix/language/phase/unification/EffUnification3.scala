@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -37,12 +38,12 @@ object EffUnification3 {
   def unifyAll(
                 eqs: List[(Type, Type, SourceLocation)],
                 scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options = SetUnification.Options.default
-              ): (List[(Type, Type, SourceLocation)], Substitution) = {
+                opts: SetUnification.Options
+              )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = opts
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
@@ -76,11 +77,11 @@ object EffUnification3 {
     *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
     *     The returned substitution is a most general unifier.
     */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Option[Substitution], UnificationError] = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
 
     // Choose a unique number for each atom.
