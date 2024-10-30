@@ -19,12 +19,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer1.OccurInfo
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -140,216 +138,221 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
-    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
-      MonoAst.Expr.Cst(cst, tpe, loc)
+  private def visitExp(exp00: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
 
-    case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
-      subst0.get(sym) match {
-        // Case 1:
-        // The variable `sym` is not in the substitution map and will not be inlined.
-        case None => MonoAst.Expr.Var(sym, tpe, loc)
-        // Case 2:
-        // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
-        case Some(e1) =>
-          e1 match {
-            // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case SubstRange.DoneExp(exp) => exp
-            // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case SubstRange.SuspendedExp(exp) => visitExp(exp, subst0)
-          }
-      }
+    def visit(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
+      case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
+        MonoAst.Expr.Cst(cst, tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
-      val fps = visitFormalParam(fparam)
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Lambda(fps, e, tpe, loc)
-
-    case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      op match {
-        case AtomicOp.Untag(_) =>
-          val List(e) = es
-          // Inline expressions of the form Untag(Tag(e)) => e
-          e match {
-            case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-            case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-          }
-
-        case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-      }
-
-    case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      val es = exps.map(visitExp(_, subst0))
-      e match {
-        case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
-          val def1 = root.defs.apply(sym)
-          // If `def1` is a single non-self call or is trivial
-          // then inline the body of `def1`
-          if (canInlineDef(def1)) {
-            // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.fparams, closureArgs ++ es, Map.empty)
-          } else {
-            MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
-          }
-        case _ => MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
-      }
-
-    case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      val def1 = root.defs.apply(sym)
-      // If `def1` is a single non-self call or is trivial
-      // then inline the body of `def1`
-      if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.fparams, es, Map.empty)
-      } else {
-        MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
-      }
-
-    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
-
-    case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
-      if (isDead(occur)) {
-        if (isPure(exp1.eff)) {
+      case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
+        subst0.get(sym) match {
           // Case 1:
-          // If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
-          // Both code size and runtime are reduced
-          visitExp(exp2, subst0)
-        } else {
+          // The variable `sym` is not in the substitution map and will not be inlined.
+          case None => MonoAst.Expr.Var(sym, tpe, loc)
           // Case 2:
-          // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
-          MonoAst.Expr.Stm(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, eff, loc)
+          // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
+          case Some(e1) =>
+            e1 match {
+              // If `e1` is a `LiftedExp` then `e1` has already been visited
+              case SubstRange.DoneExp(exp) => exp
+              // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
+              case SubstRange.SuspendedExp(exp) => visit(exp)
+            }
         }
-      } else {
-        // Case 3:
-        // If `exp1` occurs once and it is pure, then it is safe to inline.
-        // There is a small decrease in code size and runtime.
-        val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
-        if (wantToPreInline) {
-          val subst1 = subst0 + (sym -> SubstRange.SuspendedExp(exp1))
-          visitExp(exp2, subst1)
+
+      case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
+        val fps = visitFormalParam(fparam)
+        val e = visit(exp)
+        MonoAst.Expr.Lambda(fps, e, tpe, loc)
+
+      case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+        val es = exps.map(visit)
+        op match {
+          case AtomicOp.Untag(_) =>
+            val List(e) = es
+            // Inline expressions of the form Untag(Tag(e)) => e
+            e match {
+              case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
+              case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
+            }
+
+          case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
+        }
+
+      case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
+        val e = visit(exp)
+        val es = exps.map(visit)
+        e match {
+          case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
+            val def1 = root.defs.apply(sym)
+            // If `def1` is a single non-self call or is trivial
+            // then inline the body of `def1`
+            if (canInlineDef(def1)) {
+              // Map for substituting formal parameters of a function with the closureArgs currently in scope
+              bindFormals(def1.exp, def1.fparams, closureArgs ++ es, Map.empty)
+            } else {
+              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+            }
+          case _ => MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+        }
+
+      case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+        val es = exps.map(visit)
+        val def1 = root.defs.apply(sym)
+        // If `def1` is a single non-self call or is trivial
+        // then inline the body of `def1`
+        if (canInlineDef(def1)) {
+          bindFormals(def1.exp, def1.fparams, es, Map.empty)
         } else {
-          val e1 = visitExp(exp1, subst0)
-          // Case 4:
-          // If `e1` is trivial and pure, then it is safe to inline.
-          // Code size and runtime are not impacted, because only trivial expressions are inlined
-          val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline
-          if (wantToPostInline) {
-            // If `e1` is to be inlined:
-            // Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = subst0 + (sym -> SubstRange.DoneExp(e1))
+          MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+        }
+
+      case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+        val es = exps.map(visit)
+        MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+
+      case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
+        if (isDead(occur)) {
+          if (isPure(exp1.eff)) {
+            // Case 1:
+            // If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
+            // Both code size and runtime are reduced
+            visit(exp2)
+          } else {
+            // Case 2:
+            // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
+            MonoAst.Expr.Stm(visit(exp1), visit(exp2), tpe, eff, loc)
+          }
+        } else {
+          // Case 3:
+          // If `exp1` occurs once and it is pure, then it is safe to inline.
+          // There is a small decrease in code size and runtime.
+          val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
+          if (wantToPreInline) {
+            val subst1 = subst0 + (sym -> SubstRange.SuspendedExp(exp1))
             visitExp(exp2, subst1)
           } else {
-            // Case 5:
-            // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
-            // Code size and runtime are not impacted
-            val e2 = visitExp(exp2, subst0)
-            MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+            val e1 = visit(exp1)
+            // Case 4:
+            // If `e1` is trivial and pure, then it is safe to inline.
+            // Code size and runtime are not impacted, because only trivial expressions are inlined
+            val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline
+            if (wantToPostInline) {
+              // If `e1` is to be inlined:
+              // Add map `sym` to `e1` and return `e2` without constructing the let expression.
+              val subst1 = subst0 + (sym -> SubstRange.DoneExp(e1))
+              visitExp(exp2, subst1)
+            } else {
+              // Case 5:
+              // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
+              // Code size and runtime are not impacted
+              val e2 = visit(exp2)
+              MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+            }
           }
         }
-      }
 
-    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-      // TODO: Update this case if we want to inline
-      // Current impl is just placeholder
-      val fps = fparams.map(visitFormalParam)
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
+      case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+        // TODO: Update this case if we want to inline
+        // Current impl is just placeholder
+        val fps = fparams.map(visitFormalParam)
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
+      case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+        val e = visit(exp)
+        MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      val e3 = visitExp(exp3, subst0)
-      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      // Case 1:
-      // If `exp1` is pure, so it has no side effects, then it is safe to remove
-      // Both code size and runtime are reduced
-      if (isPure(exp1.eff)) {
-        visitExp(exp2, subst0)
-      } else {
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
-      }
+      case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+        // Case 1:
+        // If `exp1` is pure, so it has no side effects, then it is safe to remove
+        // Both code size and runtime are reduced
+        if (isPure(exp1.eff)) {
+          visit(exp2)
+        } else {
+          val e1 = visit(exp1)
+          val e2 = visit(exp2)
+          MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
+        }
 
-    case OccurrenceAst1.Expr.Discard(exp, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Discard(e, eff, loc)
+      case OccurrenceAst1.Expr.Discard(exp, eff, loc) =>
+        val e = visit(exp)
+        MonoAst.Expr.Discard(e, eff, loc)
 
-    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      val rs = rules.map {
-        case OccurrenceAst1.MatchRule(pat, guard, exp) =>
-          val p = visitPattern(pat)
-          val g = guard.map(visitExp(_, subst0))
-          val e = visitExp(exp, subst0)
-          MonoAst.MatchRule(p, g, e)
-      }
-      MonoAst.Expr.Match(e, rs, tpe, eff, loc)
+      case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case OccurrenceAst1.MatchRule(pat, guard, exp) =>
+            val p = visitPattern(pat)
+            val g = guard.map(visit)
+            val e = visit(exp)
+            MonoAst.MatchRule(p, g, e)
+        }
+        MonoAst.Expr.Match(e, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
+      case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
+        val es = exps.map(visit)
+        MonoAst.Expr.VectorLit(es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
+      case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.VectorLength(e, loc)
+      case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
+        val e = visit(exp)
+        MonoAst.Expr.VectorLength(e, loc)
 
-    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Ascribe(e, tpe, eff, loc)
+      case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
+        val e = visit(exp)
+        MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+      case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+        val e = visit(exp)
+        MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      val rs = rules.map {
-        case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
-          val e = visitExp(exp, subst0)
-          MonoAst.CatchRule(sym, clazz, e)
-      }
-      MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
+      case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
+            val e = visit(exp)
+            MonoAst.CatchRule(sym, clazz, e)
+        }
+        MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, subst0)
-      val rs = rules.map {
-        case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
-          val fps = fparams.map(visitFormalParam)
-          val e = visitExp(exp, subst0)
-          MonoAst.HandlerRule(op, fps, e)
-      }
-      MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+      case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
+            val fps = fparams.map(visitFormalParam)
+            val e = visit(exp)
+            MonoAst.HandlerRule(op, fps, e)
+        }
+        MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      MonoAst.Expr.Do(op, es, tpe, eff, loc)
+      case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
+        val es = exps.map(visit)
+        MonoAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
-      val methods = methods0.map {
-        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-          val fps = fparams.map(visitFormalParam)
-          val e = visitExp(exp, subst0)
-          MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
-      }
-      MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+      case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+        val methods = methods0.map {
+          case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+            val fps = fparams.map(visitFormalParam)
+            val e = visit(exp)
+            MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
+        }
+        MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
 
+    }
+
+    visit(exp00)
   }
 
   private def visitPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
