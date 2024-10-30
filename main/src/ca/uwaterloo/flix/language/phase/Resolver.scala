@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -33,10 +33,10 @@ import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 /**
   * The Resolver phase performs name resolution on the program.
@@ -82,7 +82,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError & Recoverable]) = flix.phaseNew("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -100,7 +100,7 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
         val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
@@ -126,7 +126,9 @@ object Resolver {
                 )
             }
         }
-    }.withSoftFailures(sctx.errors.asScala)
+    }
+
+    (resolvedRoot, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
@@ -311,7 +313,7 @@ object Resolver {
     *
     * The given aliases must be in resolution order.
     */
-  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (taenv, ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe0, loc)) =>
         mapN(finishResolveType(tpe0, taenv)) {
@@ -438,7 +440,7 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(List(tparam))
           // ignore the parameter of the super traits; we don't use it
           val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, env, taenv, ns0, root))
-          val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
           val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
           val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env)(ns0, taenv, sctx, root, flix))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
@@ -466,7 +468,7 @@ object Resolver {
           flatMapN(traitVal, tpeVal, tconstrsVal) {
             case (trt, tpe, tconstrs) =>
               val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, env, taenv, ns0, root, loc)
-              val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
+              val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
@@ -482,7 +484,7 @@ object Resolver {
     */
   private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
-      val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
+      val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
       flatMapN(specVal) {
         case spec =>
@@ -816,6 +818,7 @@ object Resolver {
       val exp = lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
@@ -828,6 +831,7 @@ object Resolver {
       val exp = lookupQName(name, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
@@ -904,6 +908,7 @@ object Resolver {
       lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Op(op) => visitApplyOp(op, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
@@ -917,6 +922,7 @@ object Resolver {
       lookupQName(qname, env0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Op(op) => visitApplyOp(op, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
@@ -936,7 +942,7 @@ object Resolver {
           val env = env0 ++ mkFormalParamEnv(List(p))
           val eVal = resolveExp(exp, env)
           mapN(eVal) {
-            case e => ResolvedAst.Expr.Lambda(p, e, loc)
+            case e => ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
           }
       }
 
@@ -1008,15 +1014,12 @@ object Resolver {
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.MatchRule(pat, guard, body) =>
-          val pVal = resolvePattern(pat, env0, ns0, root)
-          flatMapN(pVal) {
-            case p =>
-              val env = env0 ++ mkPatternEnv(p)
-              val gVal = traverseOpt(guard)(resolveExp(_, env))
-              val bVal = resolveExp(body, env)
-              mapN(gVal, bVal) {
-                case (g, b) => ResolvedAst.MatchRule(p, g, b)
-              }
+          val p = resolvePattern(pat, env0, ns0, root)
+          val env = env0 ++ mkPatternEnv(p)
+          val gVal = traverseOpt(guard)(resolveExp(_, env))
+          val bVal = resolveExp(body, env)
+          mapN(gVal, bVal) {
+            case (g, b) => ResolvedAst.MatchRule(p, g, b)
           }
       }
 
@@ -1147,44 +1150,41 @@ object Resolver {
 
     case NamedAst.Expr.StructNew(name, fields, region, loc) =>
       lookupStruct(name, env0, ns0, root) match {
-
         case Result.Ok(st0) =>
-          flatMapN(getStructIfAccessible(st0, ns0, loc)) {
-            case st =>
-              val fieldsVal = traverse(fields) {
-                case (f, e) =>
-                  val eVal = resolveExp(e, env0)
-                  val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
-                  val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
-                  val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
-                  mapN(eVal) {
-                    case e => (fieldSymUse, e)
-                  }
+          checkStructIsAccessible(st0, ns0, loc)
+          val fieldsVal = traverse(fields) {
+            case (f, e) =>
+              val eVal = resolveExp(e, env0)
+              val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
+              val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
+              val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
+              mapN(eVal) {
+                case e => (fieldSymUse, e)
               }
-              val regionVal = resolveExp(region, env0)
-              val structNew = mapN(fieldsVal, regionVal) {
-                case (fields, region) =>
-                  ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
-              }
-              // Potential errors
-              val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
-              val expectedFieldNames = st.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
-              val extraFields = providedFieldNames.diff(expectedFieldNames)
-              val missingFields = expectedFieldNames.diff(providedFieldNames)
-
-              val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
-              val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
-              val errors0 = extraFieldErrors ++ missingFieldErrors
-              val errors = if (errors0.nonEmpty) {
-                errors0
-              } else if (providedFieldNames != expectedFieldNames) {
-                List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
-              } else {
-                Nil
-              }
-              errors.foreach(sctx.errors.add)
-              structNew
           }
+          val regionVal = resolveExp(region, env0)
+          val structNew = mapN(fieldsVal, regionVal) {
+            case (fields, region) =>
+              ResolvedAst.Expr.StructNew(st0.sym, fields, region, loc)
+          }
+          // Potential errors
+          val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
+          val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
+          val extraFields = providedFieldNames.diff(expectedFieldNames)
+          val missingFields = expectedFieldNames.diff(providedFieldNames)
+
+          val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
+          val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
+          val errors0 = extraFieldErrors ++ missingFieldErrors
+          val errors = if (errors0.nonEmpty) {
+            errors0
+          } else if (providedFieldNames != expectedFieldNames) {
+            List(ResolutionError.IllegalFieldOrderInNew(st0.sym, providedFieldNames, expectedFieldNames, loc))
+          } else {
+            Nil
+          }
+          errors.foreach(sctx.errors.add)
+          structNew
         case Result.Err(error) =>
           sctx.errors.add(error)
           Validation.success(ResolvedAst.Expr.Error(error))
@@ -1309,12 +1309,11 @@ object Resolver {
     case NamedAst.Expr.Without(exp, eff, loc) =>
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
-          flatMapN(resolveExp(exp, env0)) {
-            case e => mapN(getEffectIfAccessible(decl, ns0, eff.loc)) {
-              case decl =>
-                val effUse = EffectSymUse(decl.sym, eff.loc)
-                ResolvedAst.Expr.Without(e, effUse, loc)
-            }
+          checkEffectIsAccessible(decl, ns0, eff.loc)
+          val effUse = EffectSymUse(decl.sym, eff.loc)
+          val expVal = resolveExp(exp, env0)
+          mapN(expVal) {
+            case e => ResolvedAst.Expr.Without(e, effUse, loc)
           }
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -1324,21 +1323,22 @@ object Resolver {
     case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
-          flatMapN(getEffectIfAccessible(decl, ns0, eff.loc), resolveExp(exp, env0)) {
-            case (f, e) =>
-              val effUse = EffectSymUse(f.sym, eff.loc)
+          checkEffectIsAccessible(decl, ns0, eff.loc)
+          val expVal = resolveExp(exp, env0)
+          flatMapN(expVal) {
+            case e =>
+              val effUse = EffectSymUse(decl.sym, eff.loc)
               val rulesVal = traverse(rules) {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
-                  val opVal = findOpInEffect(ident, f)
+                  val opVal = findOpInEffect(ident, decl)
                   val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
                   flatMapN(opVal, fparamsVal) {
                     case (o, fp) =>
                       val env = env0 ++ mkFormalParamEnv(fp)
-                      // ignore the continuation for checking arity
-                      val arityVal = checkOpArity(o, fp.length - 1, ident.loc)
+                      checkOpArity(o, fp.length - 1, ident.loc)
                       val bodyVal = resolveExp(body, env)
-                      mapN(arityVal, bodyVal) {
-                        case (_, b) =>
+                      mapN(bodyVal) {
+                        case b =>
                           val opUse = OpSymUse(o.sym, ident.loc)
                           ResolvedAst.HandlerRule(opUse, fp, b)
                       }
@@ -1351,18 +1351,6 @@ object Resolver {
         case Result.Err(error) =>
           sctx.errors.add(error)
           Validation.success(ResolvedAst.Expr.Error(error))
-      }
-
-    case NamedAst.Expr.Do(op, exps, loc) =>
-      val opVal = lookupOp(op, env0, ns0, root)
-      val expsVal = traverse(exps)(resolveExp(_, env0))
-      flatMapN(opVal, expsVal) {
-        case (o, es) =>
-          mapN(checkOpArity(o, exps.length, loc)) {
-            case _ =>
-              val opUse = OpSymUse(o.sym, op.loc)
-              ResolvedAst.Expr.Do(opUse, es, loc)
-          }
       }
 
     case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
@@ -1570,16 +1558,13 @@ object Resolver {
 
       val fragsVal = traverse(frags) {
         case NamedAst.ParYieldFragment(pat, e0, l0) =>
-          val pVal = resolvePattern(pat, env0, ns0, root)
-          flatMapN(pVal) {
-            case p =>
-              val patEnv = mkPatternEnv(p)
-              val env = env0 ++ patEnv
-              finalUenv = finalUenv ++ patEnv
-              val e0Val = resolveExp(e0, env)
-              mapN(e0Val) {
-                case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
-              }
+          val p = resolvePattern(pat, env0, ns0, root)
+          val patEnv = mkPatternEnv(p)
+          val env = env0 ++ patEnv
+          finalUenv = finalUenv ++ patEnv
+          val e0Val = resolveExp(e0, env)
+          mapN(e0Val) {
+            case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
           }
       }
 
@@ -1687,8 +1672,8 @@ object Resolver {
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
-      // Assemble the lambda expressions.
-      ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
+      // Assemble the lambda expression (we know this must be pure).
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1717,8 +1702,8 @@ object Resolver {
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
-      // Assemble the lambda expressions.
-      ResolvedAst.Expr.Lambda(freshParam, tagExp, loc)
+      // Assemble the lambda expression (we know this must be pure).
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1757,8 +1742,11 @@ object Resolver {
 
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
-    val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
-      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
+    // For typing performance we make pure lambdas for all except the last.
+    val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
+      case (fp, (acc, first)) =>
+        if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -1846,6 +1834,33 @@ object Resolver {
       es =>
         val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
         visitApplyFull(base, arity, es, outerLoc)
+    }
+  }
+
+  /**
+    * Returns a curried lambda and application of `defn`.
+    *
+    *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
+    */
+  private def visitOp(op: NamedAst.Declaration.Op, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val base = es => ResolvedAst.Expr.Do(OpSymUse(op.sym, loc), es, loc.asSynthetic)
+    visitApplyFull(base, op.spec.fparams.length, Nil, loc.asSynthetic)
+  }
+
+  /**
+    * Resolve the application expression, applying `op` to `exps`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es =>
+        val base = args => ResolvedAst.Expr.Do(OpSymUse(op.sym, innerLoc), args, outerLoc)
+        visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1964,49 +1979,46 @@ object Resolver {
   /**
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
-  private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+  private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
 
-    def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+    def visit(p0: NamedAst.Pattern): ResolvedAst.Pattern = p0 match {
       case NamedAst.Pattern.Wild(loc) =>
-        Validation.success(ResolvedAst.Pattern.Wild(loc))
+        ResolvedAst.Pattern.Wild(loc)
 
       case NamedAst.Pattern.Var(sym, loc) =>
-        Validation.success(ResolvedAst.Pattern.Var(sym, loc))
+        ResolvedAst.Pattern.Var(sym, loc)
 
       case NamedAst.Pattern.Cst(cst, loc) =>
-        Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+        ResolvedAst.Pattern.Cst(cst, loc)
 
       case NamedAst.Pattern.Tag(qname, pat, loc) =>
         lookupTag(qname, env, ns0, root) match {
-          case Result.Ok(c) => mapN(visit(pat)) {
-            case p => ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
-          }
-          case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
+          case Result.Ok(c) =>
+            val p = visit(pat)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            ResolvedAst.Pattern.Error(loc)
         }
 
       case NamedAst.Pattern.Tuple(elms, loc) =>
-        val esVal = traverse(elms)(visit)
-        mapN(esVal) {
-          es => ResolvedAst.Pattern.Tuple(es, loc)
-        }
+        val es = elms.map(visit)
+        ResolvedAst.Pattern.Tuple(es, loc)
 
       case NamedAst.Pattern.Record(pats, pat, loc) =>
-        val psVal = traverse(pats) {
+        val ps = pats.map {
           case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
-            mapN(visit(pat1)) {
-              case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
-            }
+            val p = visit(pat1)
+            ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
         }
-        val pVal = visit(pat)
-        mapN(psVal, pVal) {
-          case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
-        }
+        val p = visit(pat)
+        ResolvedAst.Pattern.Record(ps, p, loc)
 
       case NamedAst.Pattern.RecordEmpty(loc) =>
-        Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
+        ResolvedAst.Pattern.RecordEmpty(loc)
 
       case NamedAst.Pattern.Error(loc) =>
-        Validation.success(ResolvedAst.Pattern.Error(loc))
+        ResolvedAst.Pattern.Error(loc)
     }
 
     visit(pat0)
@@ -2169,7 +2181,7 @@ object Resolver {
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          val head = TraitConstraint.Head(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
@@ -2201,7 +2213,7 @@ object Resolver {
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          val head = TraitConstraint.Head(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
@@ -2299,6 +2311,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
       case decl@Resolution.Var(_) => decl
       case decl@Resolution.LocalDef(_, _) => decl
     } match {
@@ -2322,6 +2335,9 @@ object Resolver {
       //        // Multiple case matches. Error.
       //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
+
+      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        ResolvedQName.Op(op)
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedQName.Tag(caze)
       // TODO NS-REFACTOR check accessibility
@@ -2340,17 +2356,18 @@ object Resolver {
   /**
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupOp(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Op, ResolutionError] = {
+  private def lookupOp(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Op, ResolutionError] = {
     val opOpt = tryLookupName(qname, env, ns0, root)
 
     opOpt match {
-      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: Nil =>
-        if (isOpAccessible(op, ns0)) {
-          Validation.success(op)
-        } else {
-          Validation.toSoftFailure(op, ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
+      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        if (!isOpAccessible(op, ns0)) {
+          val error = ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc)
+          sctx.errors.add(error)
         }
-      case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
+        Validation.success(op)
+      case _ =>
+        Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
   }
 
@@ -2490,9 +2507,10 @@ object Resolver {
       case NamedAst.Type.Var(ident, loc) =>
         lookupTypeVar(ident, wildness, env) match {
           case Result.Ok(sym) => Validation.success(UnkindedType.Var(sym, loc))
-          case Result.Err(e) =>
+          case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
-            Validation.toSoftFailure(UnkindedType.Error(loc), e)
+            sctx.errors.add(error)
+            Validation.success(UnkindedType.Error(loc))
         }
 
       case NamedAst.Type.Unit(loc) => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
@@ -2524,30 +2542,34 @@ object Resolver {
         // Disambiguate type.
         case typeName =>
           lookupType(qname, env, ns0, root) match {
-            case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
-            case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
-            case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
-            case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-            case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+            case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
+            case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
+            case TypeLookupResult.RestrictableEnum(enum0) => Validation.success(getRestrictableEnumTypeIfAccessible(enum0, ns0, loc))
+            case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
+            case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
-            case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
+            case TypeLookupResult.AssocType(assoc) => Validation.success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
+              val error = ResolutionError.UndefinedType(qname, ns0, loc)
+              sctx.errors.add(error)
+              Validation.success(UnkindedType.Error(loc))
           }
       }
 
       case NamedAst.Type.Ambiguous(qname, loc) =>
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
-          case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
-          case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
-          case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
-          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+          case TypeLookupResult.Enum(enum0) => Validation.success(getEnumTypeIfAccessible(enum0, ns0, loc))
+          case TypeLookupResult.Struct(struct) => Validation.success(getStructTypeIfAccessible(struct, ns0, loc))
+          case TypeLookupResult.RestrictableEnum(enum0) => Validation.success(getRestrictableEnumTypeIfAccessible(enum0, ns0, loc))
+          case TypeLookupResult.TypeAlias(typeAlias) => Validation.success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
+          case TypeLookupResult.Effect(eff) => Validation.success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
-          case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
+          case TypeLookupResult.AssocType(assoc) => Validation.success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
+            val error = ResolutionError.UndefinedType(qname, ns0, loc)
+            sctx.errors.add(error)
+            Validation.success(UnkindedType.Error(loc))
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
@@ -2579,11 +2601,11 @@ object Resolver {
         // Lookup the type alias.
         flatMapN(lookupTypeAlias(qname, env, ns0, root)) {
           typeAlias =>
-            val tVal = getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+            val t = getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
             val tsVal = traverse(targs)(visit)
             val rVal = visit(rest)
-            mapN(tVal, tsVal, rVal) {
-              case (t, ts, r) =>
+            mapN(tsVal, rVal) {
+              case (ts, r) =>
                 val app = UnkindedType.mkApply(t, ts, loc)
                 UnkindedType.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
             }
@@ -2704,7 +2726,7 @@ object Resolver {
     *
     * Replaces type alias placeholders with the real type aliases.
     */
-  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]): Validation[UnkindedType, ResolutionError] = {
+  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Validation[UnkindedType, ResolutionError] = {
 
     /**
       * Performs beta-reduction on the given type alias.
@@ -2727,7 +2749,9 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedTypeAlias(sym, loc))
+          val error = ResolutionError.UnderAppliedTypeAlias(sym, loc)
+          sctx.errors.add(error)
+          Validation.success(UnkindedType.Error(loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
@@ -2741,7 +2765,10 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedAssocType(sym, loc))
+          case Nil =>
+            val error = ResolutionError.UnderAppliedAssocType(sym, loc)
+            sctx.errors.add(error)
+            Validation.success(UnkindedType.Error(loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
@@ -2754,7 +2781,9 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 Validation.success(UnkindedType.mkApply(assoc, targTl, tpe0.loc))
               case _ =>
-                Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
+                val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
+                sctx.errors.add(error)
+                Validation.success(UnkindedType.Error(loc))
             }
         }
 
@@ -2942,11 +2971,13 @@ object Resolver {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+  private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
-      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
+        checkTypeAliasIsAccessible(alias, ns0, qname.loc)
+        Validation.success(alias)
     }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
@@ -2957,7 +2988,9 @@ object Resolver {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
-      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
+        getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+        Validation.success(assoc)
     }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
@@ -3222,238 +3255,225 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
     * An enum is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  private def checkEnumIsAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (enum0.mod.isPublic)
-      return Validation.success(enum0)
+    val isPublic = enum0.mod.isPublic
 
     //
     // Check if the enum is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = enum0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(enum0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The enum is not accessible.
-    //
-    Validation.toSoftFailure(enum0, ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc))
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The enum is not accessible.
+      //
+      val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
   /**
-    * Successfully returns the given `struct0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether `struct0` is accessible from the given namespace `ns0`.
     *
     * A struct is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getStructIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Struct, ResolutionError] = {
+  private def checkStructIsAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (struct0.mod.isPublic)
-      return Validation.success(struct0)
+    val isPublic = struct0.mod.isPublic
 
     //
     // Check if the struct is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = struct0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(struct0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The struct is not accessible.
-    //
-    Validation.toSoftFailure(struct0, ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc))
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The struct is not accessible.
+      //
+      val error = ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
-    * Otherwise fails with a resolution error.
-    *
-    * An enum is accessible from a namespace `ns0` if:
+    * A restrictable enum is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+  private def checkRestrictableEnumIsAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (enum0.mod.isPublic)
-      return Validation.success(enum0)
-
+    val isPublic = enum0.mod.isPublic
 
     //
-    // Check if the enum is defined in `ns0` or in a parent of `ns0`.
+    // Check if the restrictable enum is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = enum0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(enum0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The enum is not accessible.
-    //
-    Validation.toHardFailure(ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc))
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The restrictable enum is not accessible.
+      //
+      val error = ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
 
   /**
-    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
-  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    mapN(getEnumIfAccessible(enum0, ns0, loc)) {
-      case enum0 => mkEnum(enum0.sym, loc)
-    }
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkEnumIsAccessible(enum0, ns0, loc)
+    mkEnum(enum0.sym, loc)
+  }
 
   /**
-    * Successfully returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
     */
-  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    mapN(getStructIfAccessible(struct0, ns0, loc)) {
-      case struct => mkStruct(struct.sym, loc)
-    }
+  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkStructIsAccessible(struct0, ns0, loc)
+    mkStruct(struct0.sym, loc)
+  }
 
   /**
-    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
-  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    mapN(getRestrictableEnumIfAccessible(enum0, ns0, loc)) {
-      case enum0 => mkRestrictableEnum(enum0.sym, loc)
-    }
+  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkRestrictableEnumIsAccessible(enum0, ns0, loc)
+    mkRestrictableEnum(enum0.sym, loc)
+  }
 
   /**
-    * Successfully returns the given type alias `alia0` if it is accessible from the given namespace `ns0`.
+    * Checks whether the given type alias `alias0` is accessible from the given namespace `ns0`.
     *
-    * Otherwise fails with a resolution error.
-    *
-    * An enum is accessible from a namespace `ns0` if:
+    * A type alias is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getTypeAliasIfAccessible(alia0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+  private def checkTypeAliasIsAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
     // Check if the definition is marked public.
     //
-    if (alia0.mod.isPublic)
-      return Validation.success(alia0)
+    val isPublic = alias0.mod.isPublic
 
     //
     // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
     //
-    val prefixNs = alia0.sym.namespace
+    val prefixNs = alias0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(alia0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The type alias is not accessible.
-    //
-    Validation.toSoftFailure(alia0, ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
-  }
+    val isAccessible = isPublic || isInScopeOfNS
 
-  /**
-    * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    */
-  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    mapN(getTypeAliasIfAccessible(alia0, ns0, loc)) {
-      alias => mkUnappliedTypeAlias(alias.sym, loc)
+    if (!isAccessible) {
+      //
+      // The type alias is not accessible.
+      //
+      val error = ResolutionError.InaccessibleTypeAlias(alias0.sym, ns0, loc)
+      sctx.errors.add(error)
     }
   }
 
   /**
-    * Successfully returns the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given type alias `alias0` if it is accessible from the given namespace `ns0`.
+    */
+  private def getTypeAliasTypeIfAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkTypeAliasIsAccessible(alias0, ns0, loc)
+    mkUnappliedTypeAlias(alias0.sym, loc)
+  }
+
+  /**
+    * Checks whether the given associated type `assoc0` it is accessible from the given namespace `ns0`.
     *
     * An associated type is accessible from a namespace `ns0` if:
     *
     * (a) its trait is marked public, or
     * (b) the trait is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
-    Validation.success(assoc0) // TODO ASSOC-TYPES check class accessibility
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): NamedAst.Declaration.AssocTypeSig = {
+    assoc0 // TODO ASSOC-TYPES check class accessibility
   }
 
   /**
-    * Successfully returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     */
-  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    mapN(getAssocTypeIfAccessible(assoc0, ns0, loc)) {
-      assoc => mkUnappliedAssocType(assoc0.sym, loc)
-    }
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): UnkindedType = {
+    getAssocTypeIfAccessible(assoc0, ns0, loc)
+    mkUnappliedAssocType(assoc0.sym, loc)
   }
 
   /**
-    * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Checks whether the given `eff0` is accessible from the given namespace `ns0`.
     *
     * An effect is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getEffectIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
+  private def checkEffectIsAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     //
-    // Check if the effect is marked public.
+    // Check if the definition is marked public.
     //
-    if (eff0.mod.isPublic)
-      return Validation.success(eff0)
+    val isPublic = eff0.mod.isPublic
 
     //
     // Check if the effect is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = eff0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return Validation.success(eff0)
+    val isInScopeOfNS = targetNs.startsWith(prefixNs)
 
-    //
-    // The effect is not accessible.
-    //
-    Validation.toSoftFailure(eff0, ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
+    val isAccessible = isPublic || isInScopeOfNS
+
+    if (!isAccessible) {
+      //
+      // The effect is not accessible.
+      //
+      val error = ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc)
+      sctx.errors.add(error)
+    }
   }
 
   /**
-    * Successfully returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
+    * Returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
     */
-  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    mapN(getEffectIfAccessible(eff0, ns0, loc)) {
-      alias => mkEffect(alias.sym, loc)
-    }
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
+    checkEffectIsAccessible(eff0, ns0, loc)
+    mkEffect(eff0.sym, loc)
   }
 
   /**
@@ -3659,6 +3679,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3996,11 +4017,10 @@ object Resolver {
   /**
     * Checks that the operator's arity matches the number of arguments given.
     */
-  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    if (op.spec.fparams.length == numArgs) {
-      Validation.success(())
-    } else {
-      Validation.toSoftFailure((), ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc))
+  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    if (op.spec.fparams.length != numArgs) {
+      val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
+      sctx.errors.add(error)
     }
   }
 
@@ -4032,6 +4052,8 @@ object Resolver {
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedQName
+
+    case class Op(op: NamedAst.Declaration.Op) extends ResolvedQName
 
     case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
 
@@ -4130,6 +4152,11 @@ object Resolver {
     */
   def freshVarSym(name: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym =
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
+
+  /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, allowSubeffecting: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting, loc)
+  }
 
   /**
     * Companion object for [[SharedContext]]

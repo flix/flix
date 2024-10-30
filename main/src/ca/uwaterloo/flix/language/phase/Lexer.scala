@@ -96,8 +96,8 @@ object Lexer {
   /**
     * Run the lexer on multiple `Source`s in parallel.
     */
-  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Source, Array[Token]], LexerError] =
-    flix.phase("Lexer") {
+  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, Array[Token]], List[LexerError]) =
+    flix.phaseNew("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
@@ -114,8 +114,8 @@ object Lexer {
 
       // Construct a map from each source to its tokens.
       val all = results ++ fresh
-      Validation.toSuccessOrSoftFailure(all.toMap, errors.flatten.toList)
-    }(DebugValidation()(DebugNoOp()))
+      (all.toMap, errors.flatten.toList)
+    }(DebugNoOp())
 
   /**
     * Lexes a single source (file) into an array of tokens.
@@ -407,7 +407,6 @@ object Lexer {
       case _ if isKeyword("dbg") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
-      case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("enum") => TokenKind.KeywordEnum

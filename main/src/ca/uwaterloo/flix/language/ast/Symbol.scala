@@ -32,6 +32,7 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
+  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
@@ -44,6 +45,7 @@ object Symbol {
     * Returns `true` if the given effect symbol is a base effect.
     */
   def isBaseEff(sym: EffectSym): Boolean = sym match {
+    case Env => true
     case Exec => true
     case FileRead => true
     case FileWrite => true
@@ -60,6 +62,7 @@ object Symbol {
     * The String must be a valid name of a base effect.
     */
   def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Env" => Env
     case "Exec" => Exec
     case "FileRead" => FileRead
     case "FileWrite" => FileWrite
@@ -781,7 +784,13 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[AssocTypeSym] {
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = trt.namespace :+ trt.name
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -796,20 +805,31 @@ object Symbol {
     override val hashCode: Int = Objects.hash(trt, name)
 
     /**
+      * Compares `this` and `that` assoc type sym.
+      */
+    override def compare(that: AssocTypeSym): Int = {
+      val s1 = this.namespace.mkString(".") + "." + this.name
+      val s2 = that.namespace.mkString(".") + "." + that.name
+      s1.compare(s2)
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = trt.toString + "." + name
 
-    /**
-      * The symbol's namespace.
-      */
-    def namespace: List[String] = trt.namespace :+ trt.name
   }
 
   /**
     * Effect symbol.
     */
   final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol {
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Source = loc.source
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -824,21 +844,18 @@ object Symbol {
     override val hashCode: Int = Objects.hash(namespace, name)
 
     /**
+      * Compares `this` and `that` effect sym.
+      */
+    override def compare(that: EffectSym): Int = {
+      val s1 = this.namespace.mkString(".") + "." + this.name
+      val s2 = that.namespace.mkString(".") + "." + that.name
+      s1.compare(s2)
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
-
-    /**
-      * Returns the source of `this`.
-      */
-    override def src: Source = loc.source
-
-    /**
-      * Compares `this` and `that` effect sym.
-      *
-      * Fairly arbitrary comparison since the purpose is to allow for mapping the object.
-      */
-    override def compare(that: EffectSym): Int = this.toString.compare(that.toString)
   }
 
   /**

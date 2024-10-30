@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 
 object Indexer {
 
@@ -251,8 +252,8 @@ object Indexer {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(bnd.sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       // We construct the type manually here, since we do not have immediate access to it
@@ -608,15 +609,15 @@ object Indexer {
   /**
     * Returns a reverse index for the given trait constraint `tconstr0`.
     */
-  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint): Index = tconstr0 match {
-    case Ast.TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tconstr0: TraitConstraint): Index = tconstr0 match {
+    case TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
     * Returns a reverse index for the given trait constraint `head`.
     */
-  private def visitTraitConstraintHead(head0: Ast.TraitConstraint.Head): Index = head0 match {
-    case Ast.TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Index = head0 match {
+    case TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
   /**

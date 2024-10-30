@@ -25,7 +25,7 @@ private object SetSubstitution {
   val empty: SetSubstitution = SetSubstitution(Map.empty)
 
   /** Returns the singleton substitution of `x` mapped to `t` (`[x -> t]`). */
-  def singleton(x: Int, t: SetFormula): SetSubstitution = SetSubstitution(Map(x -> t))
+  def singleton(x: Int, t: SetFormula): SetSubstitution = SetSubstitution(Map(x -> SetFormula.propagation(t)))
 
 }
 
@@ -45,7 +45,10 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
 
   /** Applies `this` substitution to `f`. Replaces [[SetFormula.Var]] according to `this`. */
   def apply(f: SetFormula): SetFormula =
-    if (m.isEmpty) f else applyInternal(f)
+    if (m.isEmpty) f else {
+      val fApp = applyInternal(f)
+      if (fApp eq f) f else SetFormula.propagation(fApp)
+    }
 
   /** Applies `this` substitution to `f`. */
   private def applyInternal(f: SetFormula): SetFormula = f match {
@@ -155,7 +158,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
     * OBS: The [[SetFormula.Var]] of `this`, `x`, and `f` must not overlap.
     */
   def unsafeExtend(x: Int, f: SetFormula): SetSubstitution =
-    SetSubstitution(m + (x -> f))
+    SetSubstitution(m + (x -> SetFormula.propagation(f)))
 
   /** Returns a multi-line, string representation of `this`. */
   override def toString: String = {
@@ -173,7 +176,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       sb.append(f)
       sb.append("\n")
     }
-    sb.append("}")
+    sb.append("}\n")
     sb.toString()
   }
 

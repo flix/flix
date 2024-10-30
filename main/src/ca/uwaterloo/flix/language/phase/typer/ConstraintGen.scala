@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
@@ -132,11 +132,23 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Lambda(fparam, exp, loc) =>
+      case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
-        // Use sub-effecting for lambdas if the appropriate option is set
-        val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
+        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
+        val shouldSubeffect = {
+          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+          val useless = exp match {
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case _ => false
+          }
+          val redundant = exp match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && allowSubeffecting && !useless && !redundant
+        }
+        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -369,7 +381,20 @@ object ConstraintGen {
       case Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
-        val defEff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff1 else Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
+        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
+        val shouldSubeffect = {
+          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
+          val useless = exp1 match {
+            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case _ => false
+          }
+          val redundant = exp1 match {
+            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
+            case _ => false
+          }
+          enabled && !useless && !redundant
+        }
+        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -549,7 +574,7 @@ object ConstraintGen {
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
+        c.unifyType(evar, eff, loc)
         val resTpe = Type.Int32
         val resEff = evar
         (resTpe, resEff)
@@ -681,10 +706,15 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Without(exp, _, _) =>
-        // We ignore the `without` here.
-        // TODO EFF-MIGRATION Use set subtraction when we have set effects.
+      case Expr.Without(exp, effSymUse, _) =>
+        //
+        // e: tpe \ eff - effSym
+        // -------------------------
+        // e without effSym : tpe
+        //
         val (tpe, eff) = visitExp(exp)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
+        c.unifyType(eff, effWithoutSym, effSymUse.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -707,24 +737,35 @@ object ConstraintGen {
         (resultTpe, resultEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
+        //
+        //     Γ ⊢ e: e_t \ e_ef
+        // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
+        //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
+        // ---------------------------------------------------------------------
+        // Γ ⊢ try e with Eff {
+        //   def op1(op1x1, .., k1) = e1
+        //   def op2(op2x1, .., k2) = e2
+        //   ..
+        // }: e_t \ k_ef
+        //
+        // where:
+        // eff Eff {
+        //  def op1(op1x1: op1t1, ..): op1t
+        //  def op2(op2x1: op2t2, ..): op2t
+        //  ..
+        // }
+        //
         val (tpe, eff) = visitExp(exp)
-        val continuationEffect = Type.freshVar(Kind.Eff, loc)
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffect, loc)).unzip
+        val continuationEffectVar = Type.freshVar(Kind.Eff, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
         c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
-
-        // TODO ASSOC-TYPES The types used here are not correct.
-        // TODO ASSOC-TYPES We should use set subtraction instead.
-        // We subtract the handled effect from the body
-        // Note: Does not work for polymorphic effects.
-        val correctedBodyEff = c.purifyEff(effUse.sym, eff)
-
-        // The continuation effect is the effect of all the rule bodies, plus the effect of the try-body
-        c.unifyType(continuationEffect, Type.mkUnion(effs, loc), loc) // TODO temp simplification: ignoring try-body
+        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        // Subtract the effect from the body effect and add the handler effects.
+        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        c.unifyType(continuationEffectVar, continuationEffect, loc)
         val resultTpe = tpe
-
-        // TODO ASSOC-TYPES should be continuationEffect
-        val resultEff = Type.mkUnion(effs, loc) // TODO temp simplification
+        val resultEff = continuationEffect
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
@@ -1013,7 +1054,7 @@ object ConstraintGen {
     * Returns the label, pattern type, and location of the pattern.
     */
   private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
-    case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
+    case KindedAst.Pattern.Record.RecordLabelPattern(label, p, tvar, loc) =>
       // { Label = Pattern ... }
       val tpe = visitPattern(p)
       c.unifyType(tpe, tvar, loc)

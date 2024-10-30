@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Int16 {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int16): List[Int16] =
         region rc {

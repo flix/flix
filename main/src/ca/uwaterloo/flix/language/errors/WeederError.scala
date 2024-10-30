@@ -113,14 +113,14 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate a struct contains duplicate fields
-   *
-   * @param structName the name of the struct
-   * @param fieldName the name of the field
-   * @param field1Loc the location of the first field
-   * @param field2Loc the location of the second field
-   * @param loc the location of the struct declaration
-   */
+    * An error raised to indicate a struct contains duplicate fields
+    *
+    * @param structName the name of the struct
+    * @param fieldName  the name of the field
+    * @param field1Loc  the location of the first field
+    * @param field2Loc  the location of the second field
+    * @param loc        the location of the struct declaration
+    */
   case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"struct has duplicate fields"
 
@@ -332,7 +332,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEnum(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEnum(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected enum format."
 
     def message(formatter: Formatter): String = {
@@ -1051,6 +1051,27 @@ object WeederError {
       s""">> Unapplied intrinsic '${red(intrinsic)}'.
          |
          |${code(loc, "unapplied intrinsic.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an invalid function call in a select rule.
+    *
+    * @param qname the name of the function being called
+    */
+  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError with Recoverable {
+
+    val loc: SourceLocation = qname.loc
+
+    override def summary: String = s"Unexpected channel function '$qname'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected channel function.
+         |
+         |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
+         |
          |""".stripMargin
     }
   }

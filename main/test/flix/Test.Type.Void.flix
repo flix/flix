@@ -6,14 +6,14 @@ mod Test.Type.Void {
         pub def raise(): Void
     }
 
-    pub def voidable01(): Void \ Exc = do Exc.raise()
+    pub def voidable01(): Void \ Exc = Exc.raise()
 
-    pub def voidable02(): a \ Exc = do Exc.raise()
+    pub def voidable02(): a \ Exc = Exc.raise()
 
     @Test
     pub def testVoid01(): Unit =
         try {
-            do Exc.raise()
+            Exc.raise()
         } with Exc {
             def raise(_k) = ()
         }
@@ -21,7 +21,7 @@ mod Test.Type.Void {
     @Test
     pub def testVoid02(): Unit =
         try {
-            if(do Exc.raise()) () else ()
+            if(Exc.raise()) () else ()
         } with Exc {
             def raise(_k) = ()
         }
@@ -29,7 +29,7 @@ mod Test.Type.Void {
     @Test
     pub def testVoid03(): Unit =
         try {
-            if(true) (do Exc.raise()) else ()
+            if(true) (Exc.raise()) else ()
         } with Exc {
             def raise(_k) = ()
         }
@@ -37,7 +37,7 @@ mod Test.Type.Void {
     @Test
     pub def testVoid04(): Unit =
         try {
-            discard (do Exc.raise() + 1); ()
+            discard (Exc.raise() + 1); ()
         } with Exc {
             def raise(_k) = ()
         }

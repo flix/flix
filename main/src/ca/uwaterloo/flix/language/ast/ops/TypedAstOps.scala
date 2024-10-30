@@ -173,8 +173,8 @@ object TypedAstOps {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      (freeVars(exp1) ++ freeVars(exp2)) - sym
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.sym)

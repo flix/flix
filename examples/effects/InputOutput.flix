@@ -30,9 +30,9 @@ mod InputOutputExample {
 
 
     pub def helloExample(): Unit \ InputOutput = {
-        do InputOutput.write("What is your name?");
-        let name = do InputOutput.read();
-        do InputOutput.write("Hello ${name}!")
+        InputOutput.write("What is your name?");
+        let name = InputOutput.read();
+        InputOutput.write("Hello ${name}!")
     }
 
 }

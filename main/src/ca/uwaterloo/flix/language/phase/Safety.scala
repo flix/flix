@@ -30,7 +30,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseNew("Safety") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     //
     // Collect all errors.
     //
@@ -44,7 +44,7 @@ object Safety {
     //
     // Check if any errors were found.
     //
-    ((), errors.toList)
+    (root, errors.toList)
   }
 
   /**
@@ -216,11 +216,15 @@ object Safety {
     * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
   private def isAllowedEffect(defn: Def): Boolean = {
-    defn.spec.eff match {
-      case Type.Pure => true
-      case Type.IO => true
-      case Type.NonDet => true
-      case Type.Sys => true
+    defn.spec.eff.effects.forall {
+      case Symbol.Env => true
+      case Symbol.Exec => true
+      case Symbol.FileRead => true
+      case Symbol.FileWrite => true
+      case Symbol.IO => true
+      case Symbol.Net => true
+      case Symbol.NonDet => true
+      case Symbol.Sys => true
       case _ => false
     }
   }

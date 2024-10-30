@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -372,9 +373,9 @@ object SemanticTokensProvider {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      val o = getSemanticTokenType(bnd.sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
@@ -649,7 +650,7 @@ object SemanticTokensProvider {
 
     case Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.flatMap {
-        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+        case Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val f = SemanticToken(SemanticTokenType.Property, Nil, loc1)
           Iterator(f) ++ visitType(tpe1) ++ visitPat(pat1)
       }.iterator
@@ -765,6 +766,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
+    case TypeConstructor.SymmetricDiff => false
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false

@@ -198,6 +198,11 @@ object SimpleType {
   case class Intersection(tpes: List[SimpleType]) extends SimpleType
 
   /**
+    * A chain of types connected by `⊕`.
+    */
+  case class SymmetricDiff(tpes: List[SimpleType]) extends SimpleType
+
+  /**
     * Difference of two types.
     */
   case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
@@ -550,6 +555,10 @@ object SimpleType {
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
+        case TypeConstructor.SymmetricDiff =>
+          val args = t.typeArguments.map(visit)
+          SymmetricDiff(args)
 
         case TypeConstructor.CaseSet(syms, _) =>
           val names = syms.toList.map(sym => SimpleType.Name(sym.name))

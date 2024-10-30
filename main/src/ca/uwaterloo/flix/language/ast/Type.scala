@@ -419,6 +419,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+   * Represents the Net effect.
+   */
+  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
+
+  /**
     * Represents the NonDet effect.
     */
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
@@ -1029,6 +1034,15 @@ object Type {
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Univ
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
+  }
+
+  /**
+    * Returns the type `Xor(tpe1, tpe2)`.
+    */
+  def mkSymmetricDiff(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, loc), tpe1, loc), tpe2, loc)
   }
 
   /**

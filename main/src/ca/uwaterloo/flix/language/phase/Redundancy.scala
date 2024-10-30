@@ -16,17 +16,17 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
-import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
@@ -51,7 +51,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): List[RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -67,7 +67,7 @@ object Redundancy {
     }, _ ++ _).errors.toList
 
     // Check for unused symbols.
-    errorsFromDefs ++
+    val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
       checkUnusedDefs()(sctx, root) ++
@@ -77,7 +77,9 @@ object Redundancy {
       checkUnusedStructsAndFields()(sctx, root) ++
       checkUnusedTypeParamsStructs()(root) ++
       checkRedundantTraitConstraints()(root, flix)
-  }(DebugNoOp())
+
+    (root, errors)
+  }
 
   /**
     * Checks for unused definition symbols.
@@ -192,12 +194,12 @@ object Redundancy {
   /**
     * Finds redundant trait constraints in `tconstrs`.
     */
-  private def redundantTraitConstraints(tconstrs: List[Ast.TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
@@ -369,7 +371,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(Binder(sym, _), exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -641,7 +643,7 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.eff == eff)
+          if (exp.eff == eff && flix.options.xsubeffecting.isEmpty)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)

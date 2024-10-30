@@ -30,10 +30,9 @@ mod OutOfBounds {
     /// Turns the `OutOfBounds` effect into `Err(msg)`.
     @Experimental
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - OutOfBounds) = {
-        // TODO: remove annotations and casts once try-with typing works.
-        x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with OutOfBounds {
+        x -> try Ok(f(x)) with OutOfBounds {
             def outOfBounds(msg, _) = Err(msg)
-        }): _ \ ef - OutOfBounds)
+        }
     }
 
 }
