@@ -109,8 +109,13 @@ object Zhegalkin {
   /**
     * A smart constructor to filter empty intersections.
     */
-  private def mkZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]): ZhegalkinExpr =
-    ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  private def mkZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+    case (ZhegalkinConstant.empty, Nil) => ZhegalkinExpr.zero
+    case (ZhegalkinConstant.universe, Nil) => ZhegalkinExpr.one
+    case _ =>
+      // Construct a new polynomial, but ignore skip any terms where the coefficient is the empty set.
+      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  }
 
   /** Returns the xor of the two Zhegalkin constants */
   private def mkXor(c1: ZhegalkinConstant, c2: ZhegalkinConstant): ZhegalkinConstant = {
@@ -119,22 +124,39 @@ object Zhegalkin {
   }
 
   /** Returns the xor of the two Zhegalkin expressions. */
-  private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = (z1, z2) match {
-    case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = mkXor(c1, c2)
-      // Eliminate duplicates: t ⊕ t = 0
-      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+  private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Performance: Special cases
+    // 0 ⊕ a = a (Identity Law)
+    if (z1 == ZhegalkinExpr.zero) {
+      return z2
+    }
+    // a ⊕ 0 = a (Identity Law)
+    if (z2 == ZhegalkinExpr.zero) {
+      return z1
+    }
+    // a ⊕ a = Ø (Identity Law)
+    if (z1 == z2) {
+      return ZhegalkinExpr.zero
+    }
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
-      val grouped = tsr1.groupBy(_.vars).toList
-      val resTerms = grouped.map {
-        case (vars, l) =>
-          val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
-            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
-          }
-          ZhegalkinTerm(mergedCst, vars)
-      }
-      mkZhegalkinExpr(c, resTerms)
+    // Otherwise: We have to perform the actual multiplication.
+    (z1, z2) match {
+      case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
+        val c = mkXor(c1, c2)
+        // Eliminate duplicates: t ⊕ t = 0
+        val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+
+        // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
+        val grouped = tsr1.groupBy(_.vars).toList
+        val resTerms = grouped.map {
+          case (vars, l) =>
+            val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
+              case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+            }
+            ZhegalkinTerm(mergedCst, vars)
+        }
+        mkZhegalkinExpr(c, resTerms)
+    }
   }
 
   /** Returns the complement of the Zhegalkin expr. */
