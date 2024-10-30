@@ -414,7 +414,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(bnd.sym, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

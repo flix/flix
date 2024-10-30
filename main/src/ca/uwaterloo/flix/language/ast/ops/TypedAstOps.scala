@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.ast.ops
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.SigSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
 
 object TypedAstOps {
 
@@ -176,7 +176,7 @@ object TypedAstOps {
     case Expr.Let(bnd, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 

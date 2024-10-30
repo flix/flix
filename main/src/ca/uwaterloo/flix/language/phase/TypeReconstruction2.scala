@@ -177,7 +177,9 @@ object TypeReconstruction2 {
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
+      val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
+      val bnd = TypedAst.Binder(sym, boundType)
+      TypedAst.Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)

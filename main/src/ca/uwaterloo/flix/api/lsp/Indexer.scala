@@ -254,7 +254,7 @@ object Indexer {
     case Expr.Let(bnd, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(bnd.sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // We construct the type manually here, since we do not have immediate access to it
       // like with normal defs.
       val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)

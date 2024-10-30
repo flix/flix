@@ -388,7 +388,7 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
