@@ -69,6 +69,7 @@ object TypeNormalization {
             case (Type.Univ, Type.Univ) => Type.Univ
             case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
+        case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), _, _) => throw InternalCompilerException("Not supported", SourceLocation.Unknown)
 
         // Simplify boolean formulas.
         case Type.Cst(TypeConstructor.Not, _) => t2 match {

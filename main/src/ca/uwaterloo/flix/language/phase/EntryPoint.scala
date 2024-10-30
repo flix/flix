@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -75,7 +75,7 @@ object EntryPoint {
     val newRoot = findOriginalEntryPoint(root) match {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        val entryPoint = visitEntryPoint(entryPoint0, root, root.traitEnv)
+        val entryPoint = visitEntryPoint(entryPoint0, root, TraitEnv(root.traitEnv))
         root.copy(
           defs = root.defs + (entryPoint.sym -> entryPoint),
           entryPoint = Some(entryPoint.sym),
@@ -138,7 +138,7 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     checkEntryPointArgs(defn, traitEnv)
     checkEntryPointResult(defn, root, traitEnv)
     mkEntryPoint(defn, root)
@@ -148,7 +148,7 @@ object EntryPoint {
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
 
       // First check that there's exactly one argument.
@@ -176,7 +176,7 @@ object EntryPoint {
   /**
     * Returns `true` iff `arg` is the Unit type.
     */
-  private def isUnitParameter(traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], arg: Type)(implicit flix: Flix) = {
+  private def isUnitParameter(traitEnv: TraitEnv, arg: Type)(implicit flix: Flix) = {
     val unitScheme = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
     Scheme.equal(unitScheme, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
   }
@@ -185,7 +185,7 @@ object EntryPoint {
     * Checks the entry point function result type.
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
+  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _), _, _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
@@ -202,7 +202,7 @@ object EntryPoint {
 
       // Case 2: XYZ -> a with ToString[a]
       val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-      val hasToStringConstraint = TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
+      val hasToStringConstraint = TraitEnvironment.holds(TraitConstraint(TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
 
       // Case 3: Bad result type. Error.
       val isBadResultType = !isUnitResult && !hasToStringConstraint

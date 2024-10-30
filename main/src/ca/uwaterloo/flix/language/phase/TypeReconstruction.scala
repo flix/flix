@@ -28,7 +28,7 @@ object TypeReconstruction {
     */
   def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0, loc) =>
-      val spec = visitSpec(spec0, subst)
+      val spec = visitSpec(spec0)
       val exp = visitExp(exp0)(subst)
       TypedAst.Def(sym, spec, exp, loc)
   }
@@ -38,7 +38,7 @@ object TypeReconstruction {
     */
   def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0, loc) =>
-      val spec = visitSpec(spec0, subst)
+      val spec = visitSpec(spec0)
       val exp = exp0.map(visitExp(_)(subst))
       TypedAst.Sig(sym, spec, exp, loc)
   }
@@ -46,15 +46,11 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given spec.
     */
-  private def visitSpec(spec: KindedAst.Spec, subst: Substitution): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc0, tpe0, eff0, tconstrs0, econstrs0) =>
+  private def visitSpec(spec: KindedAst.Spec): TypedAst.Spec = spec match {
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, tconstrs, econstrs) =>
       val tparams = tparams0.map(visitTypeParam)
-      val fparams = fparams0.map(visitFormalParam(_, subst))
-      val tpe = subst(tpe0)
-      val eff = subst(eff0)
-      val tconstrs = tconstrs0.map(subst.apply)
-      val econstrs = econstrs0.map(subst.apply)
-      val sc = sc0 // TODO ASSOC-TYPES get rid of type visits here and elsewhere that only go over rigid tvars
+      val fparams = fparams0.map(visitFormalParam(_, Substitution.empty))
+      // We do not perform substitution on any of the types because they should all be rigid.
       TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
@@ -79,7 +75,7 @@ object TypeReconstruction {
     */
   def visitOp(op: KindedAst.Op): TypedAst.Op = op match {
     case KindedAst.Op(sym, spec0, loc) =>
-      val spec = visitSpec(spec0, Substitution.empty)
+      val spec = visitSpec(spec0)
       TypedAst.Op(sym, spec, loc)
   }
 
@@ -130,7 +126,7 @@ object TypeReconstruction {
       val ef = subst(evar)
       TypedAst.Expr.ApplyLocalDef(symUse, es, at, t, ef, loc)
 
-    case KindedAst.Expr.Lambda(fparam, exp, loc) =>
+    case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)
       val e = visitExp(exp)
       val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)
@@ -373,19 +369,11 @@ object TypeReconstruction {
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
-      // Omit the unchecked cast if the inferred type and effect are the same as the declared ones.
-      // Note: We do not aim to remove all redundant unchecked casts. That is not possible until monomorphization,
-      // due to both Boolean equivalence, record/schema equivalence, and associated types/effects.
-      // We only aim to remove unchecked casts which are syntactically identifiable as redundant.
-      (declaredType0.map(tpe => subst(tpe)), declaredEff0.map(eff => subst(eff))) match {
-        case (Some(tpe), None) if tpe == e.tpe => e
-        case (None, Some(eff)) if eff == e.eff => e
-        case (Some(tpe), Some(eff)) if tpe == e.tpe && eff == e.eff => e
-        case (declaredType, declaredEff) =>
-          val tpe = subst(tvar)
-          val eff = declaredEff0.getOrElse(e.eff)
-          TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
-      }
+      val declaredType = declaredType0.map(tpe => subst(tpe))
+      val declaredEff = declaredEff0.map(eff => subst(eff))
+      val tpe = subst(tvar)
+      val eff = declaredEff0.getOrElse(e.eff)
+      TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
       // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
@@ -696,8 +684,8 @@ object TypeReconstruction {
 
     case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
       val ps = pats.map {
-        case KindedAst.Pattern.Record.RecordLabelPattern(field, tvar1, pat1, loc1) =>
-          TypedAst.Pattern.Record.RecordLabelPattern(field, subst(tvar1), visitPattern(pat1), loc1)
+        case KindedAst.Pattern.Record.RecordLabelPattern(field, pat1, tvar1, loc1) =>
+          TypedAst.Pattern.Record.RecordLabelPattern(field, visitPattern(pat1), subst(tvar1), loc1)
       }
       val p = visitPattern(pat)
       TypedAst.Pattern.Record(ps, p, subst(tvar), loc)

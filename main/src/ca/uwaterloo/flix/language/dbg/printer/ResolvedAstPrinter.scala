@@ -45,7 +45,7 @@ object ResolvedAstPrinter {
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
-    case Expr.Lambda(fparam, exp, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
+    case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.IfThenElse(exp1, exp2, exp3, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))

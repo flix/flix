@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
@@ -907,7 +907,7 @@ object Visitor {
   }
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
-    val RecordLabelPattern(_, _, p, loc) = pat
+    val RecordLabelPattern(_, p, _, loc) = pat
     if (!a.accept(loc)) { return }
     c.consumeRecordLabelPattern(pat)
     visitPattern(p)
