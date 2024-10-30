@@ -510,7 +510,6 @@ object OccurrenceAnalyzer1 {
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
   private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    // TODO: Update with OnceInLambda and OnceInLocalDef
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -525,15 +524,10 @@ object OccurrenceAnalyzer1 {
     * - [[OccurrenceAst1.Expr.Match]]
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    // TODO: Update with OnceInLambda and OnceInLocalDef
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
-    case (Once, Once) => ManyBranch
-    case (Once, ManyBranch) => ManyBranch
-    case (ManyBranch, Once) => ManyBranch
-    case (ManyBranch, ManyBranch) => ManyBranch
     case _ => Many
   }
 
