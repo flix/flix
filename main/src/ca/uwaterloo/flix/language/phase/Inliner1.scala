@@ -436,9 +436,9 @@ object Inliner1 {
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivialExp(exp0: MonoAst.Expr): Boolean = exp0 match {
-    // TODO: Add recursive case for Tag, i.e., if its args are trivial, then it is trivial
     case MonoAst.Expr.Cst(_, _, _) => true
     case MonoAst.Expr.Var(_, _, _) => true
+    case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case _ => false
   }
 
