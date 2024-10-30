@@ -93,7 +93,7 @@ object Inliner1 {
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
-      val e = visitExp(exp, Map.empty)(root, flix)
+      val e = visitExp(exp, Map.empty, Map.empty)(root, flix)
       val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
       MonoAst.Def(sym, sp, e, loc)
   }
@@ -138,7 +138,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp00: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def visitExp(exp00: OccurrenceAst1.Expr, subst0: Subst, inScopeSet0: InScopeSet)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
 
     def visit(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
       case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
@@ -230,7 +230,7 @@ object Inliner1 {
           val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
           if (wantToPreInline) {
             val subst1 = subst0 + (sym -> SubstRange.SuspendedExp(exp1))
-            visitExp(exp2, subst1)
+            visitExp(exp2, subst1, inScopeSet0)
           } else {
             val e1 = visit(exp1)
             // Case 4:
@@ -241,7 +241,7 @@ object Inliner1 {
               // If `e1` is to be inlined:
               // Add map `sym` to `e1` and return `e2` without constructing the let expression.
               val subst1 = subst0 + (sym -> SubstRange.DoneExp(e1))
-              visitExp(exp2, subst1)
+              visitExp(exp2, subst1, inScopeSet0)
             } else {
               // Case 5:
               // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
