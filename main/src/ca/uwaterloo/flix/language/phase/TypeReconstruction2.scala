@@ -228,7 +228,7 @@ object TypeReconstruction2 {
             case KindedAst.RestrictableChoosePattern.Tag(sym, pats, tvar, loc) =>
               val ps = pats.map {
                 case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
-                case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, tvar), subst(tvar), loc)
+                case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
                 case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
@@ -688,7 +688,7 @@ object TypeReconstruction2 {
     */
   private def visitPattern(pat0: KindedAst.Pattern)(implicit subst: SubstitutionTree): TypedAst.Pattern = pat0 match {
     case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst(tvar), loc)
-    case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, tvar), subst(tvar), loc)
+    case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
     case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
