@@ -89,7 +89,7 @@ object InstanceCompleter {
       * Formats the given formal parameters in `spec`.
       */
     def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
-      spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+      spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
 
     /**
       * Formats the given signature `sig`.
