@@ -75,7 +75,7 @@ object Inliner1 {
 
     case object CaseOrLambda extends Definition
 
-    case class LetBound(expr: OutExpr, occur: Occur, level: Int) extends Definition
+    case class LetBound(expr: OutExpr, occur: Occur) extends Definition
 
     case class NotAmong(cases: List[Const]) extends Definition
 
@@ -246,7 +246,8 @@ object Inliner1 {
               // Case 5:
               // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
               // Code size and runtime are not impacted
-              val e2 = visit(exp2)
+              val inScopeSet = inScopeSet0 + (sym -> Definition.LetBound(e1, occur))
+              val e2 = visitExp(exp2, subst0, inScopeSet)
               MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
             }
           }
