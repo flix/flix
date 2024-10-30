@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur
+import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
@@ -160,7 +160,7 @@ object Inliner1 {
             }
         }
 
-      case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
+      case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) =>
         val fps = visitFormalParam(fparam)
         val e = visit(exp)
         MonoAst.Expr.Lambda(fps, e, tpe, loc)
@@ -182,17 +182,19 @@ object Inliner1 {
       case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
         val e = visit(exp)
         val es = exps.map(visit)
-        e match {
-          case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) => // TODO Closure is never constructed at this point
-            val def1 = root.defs.apply(sym)
-            // If `def1` is a single non-self call or is trivial
-            // then inline the body of `def1`
-            if (canInlineDef(def1)) {
-              // Map for substituting formal parameters of a function with the closureArgs currently in scope
-              bindFormals(def1.exp, def1.fparams, closureArgs ++ es, Map.empty)
-            } else {
-              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+        exp match {
+          case OccurrenceAst1.Expr.Var(sym, _, _) =>
+            inScopeSet0.get(sym) match {
+              case Some(Definition.LetBound(lambda, occur)) if occur == Occur.OnceInAbstraction =>
+                MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
+
+              case _ =>
+                MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
             }
+
+          case OccurrenceAst1.Expr.Lambda(fparam, exp, _, _) =>
+            bindFormals(exp, List(fparam), es, Map.empty)
+
           case _ => MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
         }
 
@@ -201,7 +203,7 @@ object Inliner1 {
         val def1 = root.defs.apply(sym)
         // If `def1` is a single non-self call or is trivial
         // then inline the body of `def1`
-        if (canInlineDef(def1)) {
+        if (canInlineDef(def1.context)) {
           bindFormals(def1.exp, def1.fparams, es, Map.empty)
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -398,11 +400,11 @@ object Inliner1 {
   /**
     * Returns `true` if `def0` should be inlined.
     */
-  private def canInlineDef(def0: OccurrenceAst1.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
-    val shouldInline = def0.context.isDirectCall ||
-      def0.context.occur == Once ||
-      def0.context.occur == OnceInAbstraction // May duplicate work?
+  private def canInlineDef(ctx: DefContext): Boolean = {
+    val mayInline = ctx.occur != DontInline && !ctx.isSelfRecursive
+    val shouldInline = ctx.isDirectCall ||
+      ctx.occur == Once ||
+      ctx.occur == OnceInAbstraction // May duplicate work?
     mayInline && shouldInline
   }
 
@@ -494,7 +496,7 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(subst0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst1.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) =>
       val (fp, subst1) = applySubstFormalParam(fparam)
       val subst2 = subst0 ++ subst1
       val e = applySubst(exp, subst2)

@@ -57,7 +57,7 @@ object OccurrenceAst1 {
       def eff: Type = Type.Pure
     }
 
-    case class Lambda(fparam: FormalParam, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Lambda(fparam: (FormalParam, Occur), exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 

@@ -214,10 +214,12 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo.One + (sym -> Once))
 
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
-        val fps = visitFormalParam(fparam)
+        val fp = visitFormalParam(fparam)
         val (e, o) = visit(exp)
         val o1 = captureInLambda(o)
-        (OccurrenceAst1.Expr.Lambda(fps, e, tpe, loc), increment(o1))
+        val occur = o1.get(fp.sym)
+        val o2 = o1 - fp.sym
+        (OccurrenceAst1.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
