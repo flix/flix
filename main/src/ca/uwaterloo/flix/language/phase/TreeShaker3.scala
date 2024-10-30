@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Symbol}
+import ca.uwaterloo.flix.language.ast.LiftedAst.*
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
@@ -31,12 +32,12 @@ import ca.uwaterloo.flix.util.ParOps
   * (c) Appears in a function which itself is reachable.
   *
   */
-object TreeShaker2 {
+object TreeShaker3 {
 
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("TreeShaker2") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker3") {
     // Compute the symbols that are always reachable.
     val initReach = root.reachable
 
@@ -55,7 +56,7 @@ object TreeShaker2 {
   /**
     * Returns the symbols reachable from the given symbol `sym`.
     */
-  private def visitSym(sym: Symbol.DefnSym, root: MonoAst.Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
+  private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
     case None => Set.empty
     case Some(defn) => visitExp(defn.exp)
   }
@@ -63,77 +64,51 @@ object TreeShaker2 {
   /**
     * Returns the function symbols reachable from the given expression `e0`.
     */
-  private def visitExp(e0: MonoAst.Expr): Set[Symbol.DefnSym] = e0 match {
-    case MonoAst.Expr.Cst(_, _, _) =>
+  private def visitExp(e0: Expr): Set[Symbol.DefnSym] = e0 match {
+    case Expr.Cst(_, _, _) =>
       Set.empty
 
-    case MonoAst.Expr.Var(_, _, _) =>
+    case Expr.Var(_, _, _) =>
       Set.empty
 
-    case MonoAst.Expr.Lambda(_, exp, _, _) =>
-      visitExp(exp)
-
-    case MonoAst.Expr.ApplyAtomic(op, exps, _, _, _) =>
+    case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case MonoAst.Expr.ApplyClo(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case MonoAst.Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
 
-    case MonoAst.Expr.ApplyLocalDef(_, exps, _, _, _) =>
-      visitExps(exps)
-
-    case MonoAst.Expr.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case MonoAst.Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case MonoAst.Expr.Scope(_, _, exp, _, _, _) =>
-      visitExp(exp)
-
-    case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case MonoAst.Expr.Stm(exp1, exp2, _, _, _) =>
+    case Expr.Branch(exp, branches, _, _, _) =>
+      visitExp(exp) ++ visitExps(branches.values.toList)
+
+    case Expr.JumpTo(_, _, _, _) =>
+      Set.empty
+
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case MonoAst.Expr.Discard(exp, _, _) =>
-      visitExp(exp)
-
-    case MonoAst.Expr.Match(exp, rules, _, _, _) =>
-      visitExp(exp) ++
-        visitExps(rules.map(_.exp)) ++
-        visitExps(rules.flatMap(_.guard))
-
-    case MonoAst.Expr.VectorLit(exps, _, _, _) =>
-      visitExps(exps)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case MonoAst.Expr.VectorLength(exp, _) =>
+    case Expr.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case MonoAst.Expr.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
-
-    case MonoAst.Expr.Cast(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case MonoAst.Expr.TryCatch(exp, rules, _, _, _) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case MonoAst.Expr.TryWith(exp, _, rules, _, _, _) =>
+    case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case MonoAst.Expr.Do(_, exps, _, _, _) =>
+    case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case MonoAst.Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.exp))
+    case Expr.NewObject(_, _, _, _, methods, _) =>
+      visitExps(methods.map(_.clo))
 
   }
 
@@ -148,6 +123,6 @@ object TreeShaker2 {
   /**
     * Returns the function symbols reachable from `es`.
     */
-  private def visitExps(es: List[MonoAst.Expr]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+  private def visitExps(es: List[Expr]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
 
 }
