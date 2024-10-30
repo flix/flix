@@ -504,30 +504,31 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
-    val (afterReader, _) = Reader.run(getInputs, knownClassesAndInterfaces)
+    val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet).withSoftFailures(lexerErrors).withSoftFailures(parserErrors)
+      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet).withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       (afterNamer, namerErrors) = Namer.run(afterDesugar)
-      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet).withSoftFailures(namerErrors)
+      (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+      afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
-      _ = EffectVerifier.run(afterTyper)
-      (_, regionErrors) = Regions.run(afterTyper)
-      (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterTyper)
-      (_, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterPredDeps = PredDeps.run(afterEntryPoint)
+      () = EffectVerifier.run(afterTyper)
+      (afterRegions, regionErrors) = Regions.run(afterTyper)
+      (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+      (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
       (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
-      (_, patMatchErrors) = PatMatch.run(afterStratifier)
-      redundancyErrors = Redundancy.run(afterStratifier)
-      (_, safetyErrors) = Safety.run(afterStratifier)
-      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
-      output <- Validation.toSuccessOrSoftFailure(afterStratifier, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
+      (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+      (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+      (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
+      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      output <- Validation.toSuccessOrSoftFailure(afterSafety, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {

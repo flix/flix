@@ -109,7 +109,7 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Unit, List[NonExhaustiveMatchError]) =
+  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
     flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
 
@@ -123,7 +123,7 @@ object PatMatch {
 
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
-      ((), errors.toList)
+      (root, errors.toList)
     }
 
   /**
@@ -726,7 +726,7 @@ object PatMatch {
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
-        case TypedAst.Pattern.Record.RecordLabelPattern(label, _, pat1, _) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, _, _) =>
           (label, patToCtor(pat1))
       }
       val pVal = patToCtor(pat)

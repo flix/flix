@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.immutable.SortedSet
+import ca.uwaterloo.flix.language.ast.Symbol.EffectSym
 
 /**
   * Represents a finite or co-finite set with an infinite universe of integers.
@@ -25,12 +26,12 @@ import scala.collection.immutable.SortedSet
   *
   * No finite set is ever equivalent to universe.
   */
-sealed trait CofiniteIntSet {
+sealed trait CofiniteEffSet {
 
-  import CofiniteIntSet.{Compl, Set}
+  import CofiniteEffSet.{Compl, Set}
 
 
-  /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
+  /** Returns `true` if `this` is [[CofiniteEffSet.empty]]. */
   def isEmpty: Boolean = this match {
     case Set(s) if s.isEmpty => true
     case Set(_) => false
@@ -38,7 +39,7 @@ sealed trait CofiniteIntSet {
   }
 
   /**
-    * Returns `true` if `this` is [[CofiniteIntSet.universe]].
+    * Returns `true` if `this` is [[CofiniteEffSet.universe]].
     *
     * Remember that the universe is infinite, so no finite set is ever equivalent
     * to universe.
@@ -50,28 +51,28 @@ sealed trait CofiniteIntSet {
 
 }
 
-object CofiniteIntSet {
+object CofiniteEffSet {
 
   /** Represents a finite set of integers. */
-  case class Set(s: SortedSet[Int]) extends CofiniteIntSet
+  case class Set(s: SortedSet[EffectSym]) extends CofiniteEffSet
 
   /** Represents a co-finite set of integers. */
-  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
+  case class Compl(s: SortedSet[EffectSym]) extends CofiniteEffSet
 
   /** The empty set. */
-  val empty: CofiniteIntSet = Set(SortedSet.empty)
+  val empty: CofiniteEffSet = Set(SortedSet.empty)
 
   /** The universe set. */
-  val universe: CofiniteIntSet = Compl(SortedSet.empty)
+  val universe: CofiniteEffSet = Compl(SortedSet.empty)
 
   /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[Int]): CofiniteIntSet = Set(s)
+  def mkSet(s: SortedSet[EffectSym]): CofiniteEffSet = Set(s)
 
   /** Returns the singleton set of `i`. */
-  def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
+  def mkSet(i: EffectSym): CofiniteEffSet = Set(SortedSet(i))
 
   /** Returns the complement of `s` (`!s`). */
-  def complement(s: CofiniteIntSet): CofiniteIntSet = s match {
+  def complement(s: CofiniteEffSet): CofiniteEffSet = s match {
     case Set(s) =>
       // !s
       Compl(s)
@@ -82,7 +83,7 @@ object CofiniteIntSet {
   }
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
+  def union(s1: CofiniteEffSet, s2: CofiniteEffSet): CofiniteEffSet = (s1, s2) match {
     case (Set(x), Set(y)) =>
       // x ∪ y
       Set(x.union(y))
@@ -108,11 +109,11 @@ object CofiniteIntSet {
   }
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def union(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
     union(s1, mkSet(s2))
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
+  def intersection(s1: CofiniteEffSet, s2: CofiniteEffSet): CofiniteEffSet = (s1, s2) match {
     case (Set(x), Set(y)) =>
       // x ∩ y
       Set(x.intersect(y))
@@ -133,19 +134,15 @@ object CofiniteIntSet {
   }
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def intersection(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
     intersection(s1, mkSet(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+  def difference(s1: CofiniteEffSet, s2: CofiniteEffSet): CofiniteEffSet =
     intersection(s1, complement(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def difference(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
     difference(s1, mkSet(s2))
-
-  /** Returns the symmetric difference of `s1` and `s2`. */
-  def xor(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
-    union(difference(s1, s2), difference(s2, s1))
 
 }

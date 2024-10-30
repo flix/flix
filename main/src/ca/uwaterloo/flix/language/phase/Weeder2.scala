@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.regex.{PatternSyntaxException, Pattern as JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -79,7 +80,7 @@ object Weeder2 {
         mapN(traverse(uses)(visitUse), traverse(imports)(visitImport)) {
           (uses, imports) => uses.flatten ++ imports.flatten
         }
-      }
+    }
     mapN(maybeUsesAndImports) {
       case Some(usesAndImports) => usesAndImports
       case None => List.empty
@@ -901,7 +902,6 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
-        case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
@@ -1818,13 +1818,6 @@ object Weeder2 {
       mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
     }
 
-    private def visitDoExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)) {
-        (op, args) => Expr.Do(op, args, tree.loc)
-      }
-    }
-
     private def visitInvokeConstructor2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
       mapN(Types.pickType(tree), pickRawArguments(tree, synctx = SyntacticContext.Expr.New)) {
@@ -1932,34 +1925,45 @@ object Weeder2 {
 
     private def visitSelectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Select)
-      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
-      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
-      mapN(rules, maybeDefault) {
-        (rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc)
+      val rules0 = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
+      val maybeDefault0 = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
+      mapN(rules0, maybeDefault0) {
+        (rules, maybeDefault) =>
+          Result.sequence(rules) match {
+            case Result.Ok(rs) => Expr.SelectChannel(rs, maybeDefault, tree.loc)
+            case Result.Err(error) => Expr.Error(error)
+          }
       }
     }
 
-    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[SelectChannelRule, CompilationMessage] = {
+    private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, UnexpectedSelectChannelRuleFunction], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      flatMapN(pickNameIdent(tree), exprs) {
-        case (ident, channel :: body :: Nil) =>
-          Validation.success(SelectChannelRule(ident, channel, body))
-        case _ =>
-          val err = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.HardFailure(Chain(err))
+      mapN(pickNameIdent(tree), pickQName(tree), exprs) {
+        case (ident, qname, channel :: body :: Nil) => // Shape is correct
+          val isRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
+          if (isRecvFunction) {
+            Result.Ok(SelectChannelRule(ident, channel, body))
+          } else {
+            val error = UnexpectedSelectChannelRuleFunction(qname)
+            sctx.errors.add(error)
+            Result.Err(error)
+          }
+        case _ => // Unreachable
+          throw InternalCompilerException("unexpected invalid select channel rule", tree.loc)
       }
     }
 
     private def visitSpawnExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Spawn)
       val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
-        case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
+      mapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
+        case (expr1, Some(expr2)) =>
+          Expr.Spawn(expr1, expr2, tree.loc)
         case (expr1, None) =>
           val error = MissingScope(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
-          Validation.success(Expr.Spawn(expr1, Expr.Error(error), tree.loc))
+          Expr.Spawn(expr1, Expr.Error(error), tree.loc)
       }
     }
 
@@ -2313,7 +2317,7 @@ object Weeder2 {
         case (Nil, Some(r)) =>
           val error = EmptyRecordExtensionPattern(r.loc)
           sctx.errors.add(error)
-          r
+          Pattern.Error(r.loc)
 
         // Illegal pattern: { x, ... | (1, 2, 3) }
         case (_, Some(r)) =>

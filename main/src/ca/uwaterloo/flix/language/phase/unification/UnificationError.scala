@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.Unrecoverable
 
 /**
@@ -118,7 +119,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TraitConstraint) extends UnificationError with Unrecoverable
+  case class NoMatchingInstance(tconstr: TraitConstraint) extends UnificationError with Unrecoverable
 
   /**
     * A unification error resulting from an equality constraint that is not supported by the context.

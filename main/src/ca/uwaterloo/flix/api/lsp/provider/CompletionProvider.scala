@@ -51,14 +51,17 @@ object CompletionProvider {
 
       case Some(ctx) =>
         // We were able to compute the completion context. Compute suggestions.
-        val completions = getCompletions(ctx)(flix, index, root)
+        val sctx = getSyntacticContext(uri, pos, currentErrors)
+        val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, index, root)
+        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(flix, index, root)
+        val completions = syntacticCompletions ++ semanticCompletions
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
         ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
     }
   }
 
-  private def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
-    ctx.sctx match {
+  private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+    sctx match {
       //
       // Expressions.
       //
@@ -77,11 +80,6 @@ object CompletionProvider {
       case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
       case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
       case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-      //
-      // Imports.
-      //
-      case SyntacticContext.Import => ImportCompleter.getCompletions(ctx)
 
       //
       // Types.
@@ -118,7 +116,21 @@ object CompletionProvider {
       case SyntacticContext.Unknown =>
         // Special case: A program with a hole is correct, but we should offer some completion suggestions.
         HoleCompletion.getHoleCompletion(ctx, index, root)
+
+      case _ => Nil
     }
+  }
+
+  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
+
+      //
+      // Imports.
+      //
+      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err, ctx)
+
+      case _ => Nil
+    })
   }
 
   /**
@@ -146,7 +158,7 @@ object CompletionProvider {
       // Remember positions are one-indexed.
       val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
       val sctx = getSyntacticContext(uri, pos, errors)
-      CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
+      CompletionContext(uri, pos, range, word, previousWord, prefix)
     }
   }
 
@@ -193,18 +205,13 @@ object CompletionProvider {
     * We have to check that the syntax error occurs after the position of the completion.
     */
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
-    errors.filter({
-      case err =>
-        uri == err.loc.source.name && pos.line <= err.loc.beginLine
-    }).map({
+    errorsAt(uri, pos, errors).map({
       // We can have multiple errors, so we rank them, and pick the highest priority.
       case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
-      case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
@@ -217,5 +224,11 @@ object CompletionProvider {
       case None => SyntacticContext.Unknown
       case Some((_, sctx)) => sctx
     }
+
+  /**
+    * Filters the list of errors to only those that occur at the given position.
+    */
+  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
+    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
 
 }

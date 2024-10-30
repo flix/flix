@@ -17,15 +17,15 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -388,10 +388,10 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
       KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
-    case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
+    case ResolvedAst.Expr.Lambda(fparam0, exp0, allowSubeffecting, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.Lambda(fparam, exp, loc)
+      KindedAst.Expr.Lambda(fparam, exp, allowSubeffecting, loc)
 
     case ResolvedAst.Expr.Unary(sop, exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
@@ -876,7 +876,7 @@ object Kinder {
         case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
           val pat = visitPattern(pat1, kenv, root)
-          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, pat, loc1)
+          KindedAst.Pattern.Record.RecordLabelPattern(label, pat, tvar, loc1)
       }
       val pat = visitPattern(pat0, kenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1207,11 +1207,11 @@ object Kinder {
   /**
     * Performs kinding on the given trait constraint under the given kind environment.
     */
-  private def visitTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Ast.TraitConstraint = tconstr match {
+  private def visitTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): TraitConstraint = tconstr match {
     case ResolvedAst.TraitConstraint(head, tpe0, loc) =>
       val traitKind = getTraitKind(root.traits(head.sym))
       val t = visitType(tpe0, traitKind, kenv, taenv, root)
-      Ast.TraitConstraint(head, t, loc)
+      TraitConstraint(head, t, loc)
   }
 
   /**
@@ -1558,6 +1558,7 @@ object Kinder {
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
     case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), arg, _) => Type.mkSymmetricDiff(arg, t2, loc)
     case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 
     case t => Type.Apply(t, t2, loc)
