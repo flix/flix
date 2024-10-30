@@ -61,19 +61,19 @@ mod Test.Def.Generalization {
     def testGen20(): #{A(Int32)} = #{}
 
     @test
-    def testGen21(): #{A(Int32), B(Int32)} = #{A(21).}
+    def testGen21(): #{ A(Int32), B(Int32)} = #{A(21). }
 
     @test
-    def testGen22(): #{A(Int32), B(Int32), C(Int32)} = #{A(21). B(42).}
+    def testGen22(): #{ A(Int32), B(Int32), C(Int32)} = #{A(21). B(42). }
 
     @test
     def testGen23(): #{A(Int32) | r} = #{}
 
     @test
-    def testGen24(): #{A(Int32), B(Int32) | r} = #{A(21).}
+    def testGen24(): #{ A(Int32), B(Int32) | r} = #{A(21). }
 
     @test
-    def testGen25(): #{A(Int32), B(Int32), C(Int32) | r} = #{A(21). B(42).}
+    def testGen25(): #{ A(Int32), B(Int32), C(Int32) | r} = #{A(21). B(42). }
 
     // TODO: Broken
     //@test
@@ -143,10 +143,10 @@ mod Test.Def.Generalization {
     def testLeq21(): Int32 -> (Int32 -> Int32) = x -> (_ -> x)
 
     @test
-    def testLeq22(): {} -> {x = Int32} = r -> {+x = 21 | r}
+    def testLeq22(): {|} -> {x = Int32} = r -> {+x = 21 | r}
 
     @test
-    def testLeq23(): {x = Int32} -> {} = r -> {-x | r}
+    def testLeq23(): {x = Int32} -> {|} = r -> {-x | r}
 
     @test
     def testLeq24(): {x = Int32} -> {x = Int32} = r -> {x = 21 | r}

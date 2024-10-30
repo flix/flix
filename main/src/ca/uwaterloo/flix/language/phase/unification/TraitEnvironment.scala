@@ -17,21 +17,21 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.TraitContext
+import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Symbol, Type}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Result, Validation}
 
 import scala.annotation.tailrec
 
 object TraitEnvironment {
 
-
   /**
     * Returns success iff type constraints `tconstrs0` entail type constraint `tconstr`, under trait environment `instances`.
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
-  def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def entail(tconstrs0: List[TraitConstraint], tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Unit, UnificationError] = {
 
     val superTraits = tconstrs0.flatMap(bySuper(_, traitEnv))
 
@@ -40,8 +40,8 @@ object TraitEnvironment {
       Validation.success(())
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
-      Validation.flatMapN(byInst(tconstr, traitEnv)) {
-        case tconstrs => Validation.sequenceX(tconstrs.map(entail(tconstrs0, _, traitEnv)))
+      Validation.flatMapN(byInst(tconstr, traitEnv, eqEnv)) {
+        case tconstrs => Validation.sequenceX(tconstrs.map(entail(tconstrs0, _, traitEnv, eqEnv)))
       }
     }
   }
@@ -49,7 +49,7 @@ object TraitEnvironment {
   /**
     * Returns true iff type constraint `tconstr1` entails tconstr2 under trait environment `traitEnv`.
     */
-  def entails(tconstr1: Ast.TypeConstraint, tconstr2: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext]): Boolean = {
+  def entails(tconstr1: TraitConstraint, tconstr2: TraitConstraint, traitEnv: TraitEnv): Boolean = {
     val superTraits = bySuper(tconstr1, traitEnv)
     superTraits.contains(tconstr2)
   }
@@ -57,8 +57,8 @@ object TraitEnvironment {
   /**
     * Returns true iff the given type constraint holds under the given trait environment.
     */
-  def holds(tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Boolean = {
-    byInst(tconstr, traitEnv).toHardResult match {
+  def holds(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
+    byInst(tconstr, traitEnv, eqEnv).toHardResult match {
       case Result.Ok(_) => true
       case Result.Err(_) => false
     }
@@ -67,13 +67,13 @@ object TraitEnvironment {
   /**
     * Removes the type constraints which are entailed by the others in the list.
     */
-  private def simplify(tconstrs0: List[Ast.TypeConstraint], traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): List[Ast.TypeConstraint] = {
+  private def simplify(tconstrs0: List[TraitConstraint], traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): List[TraitConstraint] = {
 
     @tailrec
-    def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
+    def loop(tconstrs0: List[TraitConstraint], acc: List[TraitConstraint]): List[TraitConstraint] = tconstrs0 match {
       // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, traitEnv).toHardResult match {
+      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv).toHardResult match {
         // Case 1: `head` is entailed by the other type constraints, skip it
         case Result.Ok(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
@@ -87,40 +87,40 @@ object TraitEnvironment {
   /**
     * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
     */
-  def reduce(tconstrs0: List[Ast.TypeConstraint], traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
+  def reduce(tconstrs0: List[TraitConstraint], traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
-      case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
+      case TraitConstraint(head, tpe, loc) => TraitConstraint(head, Type.eraseAliases(tpe), loc)
     }
-    val normalization = Validation.sequence(tconstrs1.map(toHeadNormalForm(_, traitEnv)))
-    Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, traitEnv))
+    val normalization = Validation.sequence(tconstrs1.map(toHeadNormalForm(_, traitEnv, eqEnv)))
+    Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, traitEnv, eqEnv))
   }
 
   /**
     * Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`.
     */
-  private def toHeadNormalForm(tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, TraitContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
+  private def toHeadNormalForm(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = {
     if (isHeadNormalForm(tconstr.arg)) {
       Validation.success(List(tconstr))
     } else {
-      byInst(tconstr, traitEnv)
+      byInst(tconstr, traitEnv, eqEnv)
     }
   }
 
   /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
-  private def byInst(tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = tconstr match {
-    case Ast.TypeConstraint(head, arg, loc) =>
-      val matchingInstances = traitEnv.get(head.sym).map(_.instances).getOrElse(Nil)
+  private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
+    case TraitConstraint(head, arg, loc) =>
+      val matchingInstances = traitEnv.getInstancesOpt(head.sym).getOrElse(Nil)
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
-      def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
-        val substVal = Unification.unifyTypes(inst.tpe, arg, renv).toValidation
-        Validation.flatMapN(substVal) {
-          case (subst, Nil) => Validation.success(inst.tconstrs.map(subst.apply))
+      def tryInst(inst: Ast.Instance): Validation[List[TraitConstraint], UnificationError] = {
+        val substOpt = Unification.fullyUnifyTypes(inst.tpe, arg, renv, eqEnv)
+        substOpt match {
+          case Some(subst) => Validation.success(inst.tconstrs.map(subst.apply))
           // if there are leftover constraints, then we can't be sure that this is the right instance
-          case (_, _ :: _) => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
+          case None => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
         }
       }
 
@@ -145,24 +145,24 @@ object TraitEnvironment {
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super traits of the constraint.
     *
     * E.g. if we have 3 traits: `A`, `B`, `C` where
-    * - `A` extends `B`
-    * - `B` extends `C`
-    * Then for the constraint `t : A`, we return:
-    * - `t : A` (given)
-    * - `t : B` (because `B` is a super trait of `A`)
-    * - `t : C` (because `C` is a super trait of `B`, and transitively a super trait of `A`)
+    *   - `A` extends `B`
+    *   - `B` extends `C`
+    *     Then for the constraint `t : A`, we return:
+    *   - `t : A` (given)
+    *   - `t : B` (because `B` is a super trait of `A`)
+    *   - `t : C` (because `C` is a super trait of `B`, and transitively a super trait of `A`)
     *
     */
-  private def bySuper(tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext]): List[Ast.TypeConstraint] = {
+  private def bySuper(tconstr: TraitConstraint, traitEnv: TraitEnv): List[TraitConstraint] = {
 
     // Get the traits that are directly super traits of the trait in `tconstr`
-    val directSupers = traitEnv.get(tconstr.head.sym).map(_.superTraits).getOrElse(Nil)
+    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.head.sym).getOrElse(Nil)
 
     // Walk the super trait tree.
     // There may be duplicates, but this will terminate since super traits must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the super traits of each direct super trait
-      superTrait => bySuper(Ast.TypeConstraint(Ast.TypeConstraint.Head(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
+      superTrait => bySuper(TraitConstraint(TraitConstraint.Head(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
     }
   }
 

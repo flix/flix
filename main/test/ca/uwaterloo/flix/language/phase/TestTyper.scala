@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Subeffecting}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
@@ -417,7 +417,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(threads = 1)) // MATT
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -490,13 +490,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def print(): Unit
         |}
         |
-        |eff Throw {
-        |    pub def throw(): Unit
+        |eff Exc {
+        |    pub def raise(): Unit
         |}
         |
         |def f(): Unit =
-        |    do Print.print();
-        |    do Throw.throw()
+        |    Print.print();
+        |    Exc.raise()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -523,13 +523,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.UnexpectedEffect.08") {
     val input =
       """
+        |import java.lang.Object
+        |
         |eff IO
         |
         |def impureX(): String \ IO = checked_ecast("x")
         |
-        |def f(): ##java.lang.Object \ IO = {
-        |    let x = new ##java.lang.Object {
-        |        def toString(_this: ##java.lang.Object): String = impureX()
+        |def f(): Object \ IO = {
+        |    let x = new Object {
+        |        def toString(_this: Object): String = impureX()
         |    };
         |    x
         |}
@@ -565,14 +567,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -582,14 +584,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            (123, x)
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -599,14 +601,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            _w -> x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -616,9 +618,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            w -> {
-        |                discard deref x;
+        |                discard Ref.get(x);
         |                w
         |            }
         |        }
@@ -626,7 +628,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -639,9 +641,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(x), m);
         |        ()
         |    }
@@ -659,9 +661,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
@@ -678,7 +680,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def op(x: String): Unit
         |}
         |
-        |def foo(): Unit \ E = do E.op(123)
+        |def foo(): Unit \ E = E.op(123)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -692,7 +694,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def op(): Unit
         |}
         |
-        |def foo(): Unit = do E.op() without E
+        |def foo(): Unit = E.op() without E
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -708,7 +710,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def disjoint(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2 - ef1): Unit = ???
         |
-        |def foo(): Unit = disjoint(_ -> do E.op(), _ -> do E.op())
+        |def foo(): Unit = disjoint(_ -> E.op(), _ -> E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -735,12 +737,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.PossibleCheckedTypeCast.01") {
     val input =
       """
-        |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
-        |    import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
-        |    let x: ##dev.flix.test.TestClassWithDefaultConstructor = newObj();
+        |import dev.flix.test.TestClassWithDefaultConstructor
+        |import dev.flix.test.TestClassWithInheritedMethod
+        |
+        |def f(): TestClassWithDefaultConstructor \ IO =
+        |    import java_new TestClassWithInheritedMethod(): TestClassWithInheritedMethod as newObj;
+        |    let x: TestClassWithDefaultConstructor = newObj();
         |    x
       """.stripMargin
-
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
@@ -810,7 +814,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def noE(f: Unit -> Unit \ ef - E): Unit = ???
         |
-        |def foo(): Unit = noE(_ -> do E.op())
+        |def foo(): Unit = noE(_ -> E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -836,7 +840,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |trait A[a] {
         |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) . A.f(x, y)
+        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1112,19 +1116,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](compile(input, Options.TestWithLibNix))
   }
 
-  test("TestCaseSetAnnotation.04") {
-    val input =
-      """
-        |restrictable enum Color[s] {
-        |    case Red, Green, Blue
-        |}
-        |
-        |// Wrong minus parsing
-        |def isRed(c: Color[s rvsub <Color.Red> rvadd <Color.Green>]): Color[(s rvsub <Color.Red>) rvadd <Color.Green>] = c
-        |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
-  }
-
   test("TestLetRec.01") {
     val input =
       """
@@ -1258,7 +1249,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1274,11 +1265,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1298,8 +1289,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
@@ -1322,12 +1313,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
+        |    Gen.gen();
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1347,12 +1338,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do AskTell.askTell(42);
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1372,13 +1363,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
-        |        do AskTell.askTell(42)
+        |        Gen.gen();
+        |        AskTell.askTell(42)
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do Gen.gen();
-        |    do AskTell.askTell(42);
+        |    Gen.gen();
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1397,11 +1388,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do AskTell.askTell(42);
+        |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1421,9 +1412,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen()
+        |        Gen.gen()
         |    } with Gen {
-        |        def gen(k) = do AskTell.askTell(k("a"))
+        |        def gen(k) = AskTell.askTell(k("a"))
         |    };
         |    ()
         |""".stripMargin
@@ -1434,11 +1425,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestTryCatch.01") {
     val input =
       """
+        |import java.io.IOError
+        |
         |enum Res { case Err(String), case Ok }
         |
         |pub def catchIO(f: Unit -> Unit \ ef): Res = {
         |    try {f(); Res.Ok} catch {
-        |        case ex: ##java.io.IOError =>
+        |        case ex: IOError =>
         |            import java.lang.Throwable.getMessage(): String;
         |            Res.Err(getMessage(ex))
         |    }
@@ -1448,4 +1441,227 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+
+  test("TypeError.MissingConstraint.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.NewStruct.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = 3, b = 4, c = "hello"};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.02") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = (), b = "hi", c = "hello"};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.03") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = 3, b = "hi", c = new S @ rc {a = 4, b = 3, c = ()}};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
+        |            s->a + s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
+        |            s1->c + s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.01") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    mut a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
+        |            s->a = s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    mut c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
+        |            s1->c = s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Def.01") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Def.02") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Lambda.01") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Lambda.02") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Instance.01") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Instance.02") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
+    expectError[TypeError](result)
+  }
 }

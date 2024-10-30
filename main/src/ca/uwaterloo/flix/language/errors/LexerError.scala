@@ -26,17 +26,16 @@ sealed trait LexerError extends CompilationMessage with Recoverable {
 object LexerError {
 
   /**
-   * An error raised when block-comments are nested too deep.
-   *
-   * @param loc The location of the opening "\*".
-   */
+    * An error raised when block-comments are nested too deep.
+    *
+    * @param loc The location of the opening "\*".
+    */
   case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Block-comment nested too deep."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Block-comment nested too deep.
+      import formatter.*
+      s""">> Block-comment nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -47,18 +46,17 @@ object LexerError {
   }
 
   /**
-   * An error raised when more than one decimal dot is found in a number.
-   * For instance `123.456.78f32`.
-   *
-   * @param loc The location of the double dotted number literal.
-   */
+    * An error raised when more than one decimal dot is found in a number.
+    * For instance `123.456.78f32`.
+    *
+    * @param loc The location of the double dotted number literal.
+    */
   case class DoubleDottedNumber(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Number has two decimal dots."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two decimal dots.
+      import formatter.*
+      s""">> Number has two decimal dots.
          |
          |${code(loc, "Second decimal dot is here.")}
          |
@@ -69,17 +67,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when more than one `e` (used for scientific notation) is found in a number.
-   *
-   * @param loc The location of the double e number literal.
-   */
+    * An error raised when more than one `e` (used for scientific notation) is found in a number.
+    *
+    * @param loc The location of the double e number literal.
+    */
   case class DoubleEInNumber(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Number has two scientific notation indicators."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two scientific notation indicators.
+      import formatter.*
+      s""">> Number has two scientific notation indicators.
          |
          |${code(loc, "Second 'e' is here.")}
          |
@@ -90,17 +87,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when a number contains a sequence of underscores.
-   *
-   * @param loc The location of the number literal.
-   */
+    * An error raised when a number contains a sequence of underscores.
+    *
+    * @param loc The location of the number literal.
+    */
   case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Number has sequence of '_'"
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has sequence of '_'.
+      import formatter.*
+      s""">> Number has sequence of '_'.
          |
          |${code(loc, "Ending here")}
          |
@@ -111,17 +107,37 @@ object LexerError {
   }
 
   /**
-   * An error raised when a number ends on an underscore.
-   *
-   * @param loc The location of the number literal.
-   */
+    * An error raised when a period has whitespace before it.
+    * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
+    *
+    * @param loc The location of the '.'.
+    */
+  case class FreeDot(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"'.' has leading whitespace."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> '.' has leading whitespace.
+         |
+         |${code(loc, "here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a number ends on an underscore.
+    *
+    * @param loc The location of the number literal.
+    */
   case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Number ends on a '_'."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number ends on a '_'.
+      import formatter.*
+      s""">> Number ends on a '_'.
          |
          |${code(loc, "Here")}
          |
@@ -132,17 +148,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when the digits of a hex literal starts with an '_'
-   *
-   * @param loc The location of the number literal.
-   */
+    * An error raised when the digits of a hex literal starts with an '_'
+    *
+    * @param loc The location of the number literal.
+    */
   case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Hex literal starts on a '_'."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Hex literal starts on a '_'.
+      import formatter.*
+      s""">> Hex literal starts on a '_'.
          |
          |${code(loc, "Here")}
          |
@@ -153,17 +168,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when block-comments are nested too deep.
-   *
-   * @param loc The location of the opening "${".
-   */
+    * An error raised when block-comments are nested too deep.
+    *
+    * @param loc The location of the opening "${".
+    */
   case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"String interpolation nested too deep."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> String interpolation nested too deep.
+      import formatter.*
+      s""">> String interpolation nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -174,18 +188,17 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unexpected character, such as €, is encountered.
-   *
-   * @param s   the problematic character.
-   * @param loc the location of char.
-   */
+    * An error raised when an unexpected character, such as €, is encountered.
+    *
+    * @param s   the problematic character.
+    * @param loc the location of char.
+    */
   case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unexpected character '$s'."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected character '${red(s)}'.
+      import formatter.*
+      s""">> Unexpected character '${red(s)}'.
          |
          |${code(loc, "Unexpected character.")}
          |
@@ -196,17 +209,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated block comment is encountered.
-   *
-   * @param loc The location of the opening "/ *".
-   */
+    * An error raised when an unterminated block comment is encountered.
+    *
+    * @param loc The location of the opening "/ *".
+    */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated block-comment."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '*/' in block-comment.
+      import formatter.*
+      s""">> Missing '*/' in block-comment.
          |
          |${code(loc, "Block-comment starts here.")}
          |
@@ -217,17 +229,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated built-in function is encountered.
-   *
-   * @param loc The location of the opening "$".
-   */
+    * An error raised when an unterminated built-in function is encountered.
+    *
+    * @param loc The location of the opening "$".
+    */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '$$' in built-in.
+      import formatter.*
+      s""">> Missing '$$' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |
@@ -238,17 +249,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated char is encountered.
-   *
-   * @param loc The location of the opening `'`.
-   */
+    * An error raised when an unterminated char is encountered.
+    *
+    * @param loc The location of the opening `'`.
+    */
   case class UnterminatedChar(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated char."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `'` in char.
+      import formatter.*
+      s""">> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
          |
@@ -259,17 +269,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated infix function is encountered.
-   *
-   * @param loc The location of the opening '&#96;'.
-   */
+    * An error raised when an unterminated infix function is encountered.
+    *
+    * @param loc The location of the opening '&#96;'.
+    */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated infix function."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '`' in infix function.
+      import formatter.*
+      s""">> Missing '`' in infix function.
          |
          |${code(loc, "Infix function starts here.")}
          |
@@ -280,17 +289,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated regex is encountered.
-   *
-   * @param loc The location of the opening `"`.
-   */
+    * An error raised when an unterminated regex is encountered.
+    *
+    * @param loc The location of the opening `"`.
+    */
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated regex."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `"` in regex.
+      import formatter.*
+      s""">> Missing `"` in regex.
          |
          |${code(loc, "Regex starts here")}
          |
@@ -301,17 +309,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated string is encountered.
-   *
-   * @param loc The location of the opening `"`.
-   */
+    * An error raised when an unterminated string is encountered.
+    *
+    * @param loc The location of the opening `"`.
+    */
   case class UnterminatedString(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated string."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> missing '"' in string.
+      import formatter.*
+      s""">> Missing '"' in string.
          |
          |${code(loc, "String starts here.")}
          |
@@ -322,17 +329,16 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated string is encountered.
-   *
-   * @param loc The location of the opening `{`.
-   */
+    * An error raised when an unterminated string is encountered.
+    *
+    * @param loc The location of the opening `{`.
+    */
   case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError with Recoverable {
     override def summary: String = s"Unterminated string interpolation."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '}' in string interpolation.
+      import formatter.*
+      s""">> Missing '}' in string interpolation.
          |
          |${code(loc, "Interpolation starts here.")}
          |

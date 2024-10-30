@@ -1,6 +1,6 @@
-/**
- * An implementation of the reduced product of the Parity and Sign domains.
- */
+///
+/// An implementation of the reduced product of the Parity and Sign domains.
+///
 mod Domain.ParitySign {
 
     ///

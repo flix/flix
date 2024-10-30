@@ -1,30 +1,23 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
-import org.parboiled2.ParserInput
-
-import javax.annotation.Nullable
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
 
 object SourcePosition {
   /**
     * Represents an unknown source position.
     */
-  val Unknown: SourcePosition = SourcePosition(Source(Ast.Input.Text("<unknown>", "", stable = true), Array.emptyCharArray, stable = true), 0, 0, null)
+  val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray), 0, 0)
 }
 
 /**
   * A class that represent a physical source position inside a source input.
   *
-  * @param line  the line number.
-  * @param col   the column number.
-  * @param input the nullable parser input.
+  * A [[SourcePosition]] must always be one-indexed.
+  *
+  * @param line the line number. Must be one-indexed.
+  * @param col  the column number. Must be one-indexed.
   */
-case class SourcePosition(source: Source, line: Int, col: Short, @Nullable input: ParserInput) {
-
-  /**
-    * Returns the hashCode of `this` source position.
-    */
-  override def hashCode(): Int = source.hashCode() + line + col
+case class SourcePosition(source: Source, line: Int, col: Short) {
 
   /**
     * Returns `true` if `this` and `o` represent the same source position.
@@ -36,4 +29,10 @@ case class SourcePosition(source: Source, line: Int, col: Short, @Nullable input
         this.col == that.col
     case _ => false
   }
+
+  /**
+    * Returns the hashCode of `this` source position.
+    */
+  override def hashCode(): Int = source.hashCode() + line + col
+
 }

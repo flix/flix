@@ -52,7 +52,7 @@ mod Reachable.Imperative {
 }
 
 mod Reachable.Functional {
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] \ Foldable.Aef[f] with Foldable[f], Order[n] =
         // collect edge lists
         let edgeMap = (Map.empty(), edges) ||> Foldable.foldLeft(map -> match (start, end) -> {
             let startEdges = Map.getWithDefault(start, Nil, map);
@@ -76,7 +76,7 @@ mod Reachable.Functional {
 }
 
 mod Reachable.Logic {
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] \ Foldable.Aef[f] with Foldable[f], Order[n] =
         let edgeFacts = inject edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
         let reachable = #{

@@ -188,6 +188,22 @@ mod TestVector {
         Vector.length(Vector#{1, 2, 3}) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        Vector.size(Vector#{}) == 0
+
+    @test
+    def size02(): Bool =
+        Vector.size(Vector#{1}) == 1
+
+    @test
+    def size03(): Bool =
+        Vector.size(Vector#{1, 2, 3}) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // slice                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -3948,12 +3964,12 @@ mod TestVector {
         pub def eq(a: R, b: R): Bool =
             let R.R(x) = a;
             let R.R(y) = b;
-            x.i == y.i and x.s == y.s
+            x#i == y#i and x#s == y#s
     }
 
     @test
     def sortBy10(): Bool =
-        let geti = r -> {let R.R(x) = r; x.i};
+        let geti = r -> {let R.R(x) = r; x#i};
         Vector.sortBy(geti, Vector#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})})
             == Vector#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})}
 
@@ -4272,27 +4288,27 @@ mod TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let v = (Vector#{}: Vector[Int32]);
-        let v1 = Vector.shuffle(Random.fresh(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let v = Vector#{0};
-        let v1 = Vector.shuffle(Random.fresh(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let v = Vector#{0, 1, 2, 3};
-        let v1 = Vector.shuffle(Random.fresh(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        let v1 = Vector.shuffle(Random.fresh(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

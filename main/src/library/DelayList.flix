@@ -71,15 +71,15 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
+    redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
-    override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
-    override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+    redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+    redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
 instance Functor[DelayList] {
@@ -101,12 +101,12 @@ instance MonadZero[DelayList] {
 
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
-    pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
+    redef sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
 instance Filterable[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
+    redef filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
 
 instance Witherable[DelayList]
@@ -133,16 +133,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("DelayList(", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-            }, l);
-        StringBuilder.appendString!(")", sb);
-        StringBuilder.toString(sb)
+        "DelayList(" + (DelayList.iterator(rc, l) |> Iterator.join(", ")) + ")"
     }
 
     ///
@@ -215,7 +206,7 @@ mod DelayList {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     /// Forces the entire list `l`.
     ///
@@ -228,6 +219,14 @@ mod DelayList {
             case LList(xs)    => loop(force xs, acc)
         };
         loop(l, 0)
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def size(l: DelayList[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -586,7 +585,7 @@ mod DelayList {
     ///
     @Experimental @Lazy
     pub def replace(src: {src = a}, dst: {dst = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
-        map(e -> if (src.src == e) dst.dst else e, l)
+        map(e -> if (src#src == e) dst#dst else e, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
@@ -618,7 +617,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -665,8 +664,8 @@ mod DelayList {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
-        let ix = ref 0 @ rc;
-        let f1 = x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) };
+        let ix = Ref.fresh(rc, 0);
+        let f1 = x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) };
         forEach(f1, l)
     }
 
@@ -704,7 +703,7 @@ mod DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, eidentity))
+        if (isEmpty(l)) None else Some(loop(l, x -> checked_ecast(x)))
 
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
@@ -836,7 +835,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
@@ -1199,11 +1198,11 @@ mod DelayList {
     ///
     @Experimental @Lazy
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
-        let cursor = ref l @ rc;
-        let next = () -> match head(deref cursor) {
+        let cursor = Ref.fresh(rc, l);
+        let next = () -> match head(Ref.get(cursor)) {
             case None    => None
             case Some(x) =>
-                Ref.put(tail(deref cursor), cursor);
+                Ref.put(tail(Ref.get(cursor)), cursor);
                 Some(x)
         };
         Iterator.iterate(rc, next)
@@ -1340,8 +1339,8 @@ mod DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toDelayList
     }
 
 }

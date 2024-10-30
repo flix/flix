@@ -1,14 +1,12 @@
 mod Test.Handler.OneShot.AtomicInteger {
 
-    type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
+    import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import java_new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
-        mk(n)
+        unsafe new AtomicInteger(n)
 
     def toInt(n: AtomicInteger): Int32 =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
-        intValue(n)
+        unsafe n.intValue()
 
     eff Ask {
         pub def ask(x: AtomicInteger): AtomicInteger
@@ -16,7 +14,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         let result = try {
             f1()
         } with Ask {
@@ -26,7 +24,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
         let result = try {
             f2()
@@ -37,7 +35,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
         def f3() = f2();
         let result = try {
@@ -49,7 +47,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Ask.ask(newAtomicInteger(42));
+        def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
@@ -60,7 +58,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Ask.ask(newAtomicInteger(42));
+        def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
@@ -71,7 +69,7 @@ mod Test.Handler.OneShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do Ask.ask(newAtomicInteger(42));
+        def f1() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
@@ -125,7 +123,7 @@ mod Test.Handler.OneShot.AtomicInteger {
         };
         Assert.eq(84, toInt(result))
 
-    def f(): AtomicInteger \ Ask = do Ask.ask(newAtomicInteger(42))
+    def f(): AtomicInteger \ Ask = Ask.ask(newAtomicInteger(42))
 
     def mutual1(x: Int32): AtomicInteger \ Ask =
         if (x == 0) f() else mutual2(x - 1)

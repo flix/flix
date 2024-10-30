@@ -66,22 +66,22 @@ instance Foldable[RedBlackTree[k]] {
 
 instance UnorderedFoldable[RedBlackTree[k]] {
     pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
-    override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-    override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-    override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
+    redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+    redef exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
+    redef forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
 }
 
 instance Traversable[RedBlackTree[k]] {
     pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
         RedBlackTree.mapAWithKey((_, v) -> f(v), t)
 
-    pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+    redef sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
         RedBlackTree.mapAWithKey((_, v) -> v, t)
 }
 
 instance Filterable[RedBlackTree[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.filterMap(f, t)
-    pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
+    redef filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
 }
 
 instance Witherable[RedBlackTree[k]] with Order[k]
@@ -275,7 +275,7 @@ mod RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, eidentity)
+        loop(t, x -> checked_ecast(x))
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
@@ -291,7 +291,7 @@ mod RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, eidentity)
+        loop(t, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -470,11 +470,11 @@ mod RedBlackTree {
     /// Applies `f` to every key-value pair of `t` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         def loop(tt) = match tt {
             case Node(_, a, k, v, b) =>
                 loop(a);
-                let i = deref ix; f(i, k, v);
+                let i = Ref.get(ix); f(i, k, v);
                 Ref.put(i + 1, ix); loop(b)
             case _                   => ()
         };
@@ -830,7 +830,7 @@ mod RedBlackTree {
             case Node(color, left, key, v, right) => loop(left, kl -> {let ans = f(key, v); loop(right, kr -> k(nodeA(color, kl, key, ans, kr)))})
             case _                                => k(Applicative.point(Leaf))
         };
-        loop(t, eidentity)
+        loop(t, x -> checked_ecast(x))
 
 
     ///
@@ -973,8 +973,8 @@ mod RedBlackTree {
     ///
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
         let stack1 = leftmost(t, Nil);
-        let state = ref stack1 @ rc;
-        let next = () -> match deref state {
+        let state = Ref.fresh(rc, stack1);
+        let next = () -> match Ref.get(state) {
             case Nil                 => None
             case (k, v, rtree) :: es =>
                 Ref.put(leftmost(rtree, es), state);

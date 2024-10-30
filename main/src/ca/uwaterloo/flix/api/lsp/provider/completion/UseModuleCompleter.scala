@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
-object UseModuleCompleter extends Completer {
+object UseModuleCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
       case regex(word) =>

@@ -220,22 +220,6 @@ mod TestFloat64 {
     @test
     def toString08(): Bool = Float64.toString(Float64.negativeInfinity()) == "-Infinity"
 
-// TODO
-//    /////////////////////////////////////////////////////////////////////////////
-//    // toDecimalString                                                         //
-//    /////////////////////////////////////////////////////////////////////////////
-//    @test
-//    def toDecimalString01(): Bool = Float64.toDecimalString(2, 0.0f64) == "0"
-//
-//    @test
-//    def toDecimalString02(): Bool = Float64.toDecimalString(2, 3.14159f64) == "3.14"
-//
-//    @test
-//    def toDecimalString03(): Bool = Float64.toDecimalString(4, 3.14159f64) == "3.1416"
-//
-//    @test
-//    def toDecimalString04(): Bool = Float64.toDecimalString(2, Float64.nan()) == "NaN"
-
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -800,20 +784,17 @@ mod TestFloat64 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(0.0f64);
-        equals(d, checked_cast(Float64.valueOf(0.0f64)))
+        unsafe d.equals(Float64.valueOf(0.0f64))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(1.0f64);
-        equals(d, checked_cast(Float64.valueOf(1.0f64)))
+        unsafe d.equals(Float64.valueOf(1.0f64))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(-1.0f64);
-        equals(d, checked_cast(Float64.valueOf(-1.0f64)))
+        unsafe d.equals(Float64.valueOf(-1.0f64))
 
 }

@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
 import scala.annotation.tailrec
@@ -90,11 +91,6 @@ object VarOffsets {
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val i1 = setStackOffset(sym, exp1.tpe, i0)
-      val i2 = visitExp(exp1, i1)
-      visitExp(exp2, i2)
-
-    case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
-      val i1 = setStackOffset(varSym, exp1.tpe, i0)
       val i2 = visitExp(exp1, i1)
       visitExp(exp2, i2)
 

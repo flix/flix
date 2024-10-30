@@ -53,7 +53,7 @@ pub trait Group[a] with Monoid[a] {
     /// identity (neutral element) then
     /// `combine(x, y) == combine(y, x) == e`
     ///
-    law leftInvertible: forall(x: a) with Eq[a] . Group.combine(Group.inverse(x), x) == Group.empty()
+    law leftInvertible: forall(x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
 
     ///
     /// Combining the inverse of `x` with `x` yields the neutral element in the group.
@@ -62,7 +62,7 @@ pub trait Group[a] with Monoid[a] {
     /// identity (neutral element) then
     /// `combine(x, y) == combine(y, x) == e`
     ///
-    law rightInvertible: forall(x: a) with Eq[a] . Group.combine(x, Group.inverse(x)) == Group.empty()
+    law rightInvertible: forall(x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
 
 }
 
@@ -72,42 +72,42 @@ instance Group[Unit] {
 
 instance Group[Int8] {
     pub def inverse(x: Int8): Int8 = -x
-    override pub def remove(x: Int8, y: Int8): Int8 = x - y
+    redef remove(x: Int8, y: Int8): Int8 = x - y
 }
 
 instance Group[Int16] {
     pub def inverse(x: Int16): Int16 = -x
-    override pub def remove(x: Int16, y: Int16): Int16 = x - y
+    redef remove(x: Int16, y: Int16): Int16 = x - y
 }
 
 instance Group[Int32] {
     pub def inverse(x: Int32): Int32 = -x
-    override pub def remove(x: Int32, y: Int32): Int32 = x - y
+    redef remove(x: Int32, y: Int32): Int32 = x - y
 }
 
 instance Group[Int64] {
     pub def inverse(x: Int64): Int64 = -x
-    override pub def remove(x: Int64, y: Int64): Int64 = x - y
+    redef remove(x: Int64, y: Int64): Int64 = x - y
 }
 
 instance Group[BigInt] {
     pub def inverse(x: BigInt): BigInt = -x
-    override pub def remove(x: BigInt, y: BigInt): BigInt = x - y
+    redef remove(x: BigInt, y: BigInt): BigInt = x - y
 }
 
 instance Group[Float32] {
     pub def inverse(x: Float32): Float32 = -x
-    override pub def remove(x: Float32, y: Float32): Float32 = x - y
+    redef remove(x: Float32, y: Float32): Float32 = x - y
 }
 
 instance Group[Float64] {
     pub def inverse(x: Float64): Float64 = -x
-    override pub def remove(x: Float64, y: Float64): Float64 = x - y
+    redef remove(x: Float64, y: Float64): Float64 = x - y
 }
 
 instance Group[BigDecimal] {
     pub def inverse(x: BigDecimal): BigDecimal = -x
-    override pub def remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
+    redef remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
 }
 
 instance Group[(a1, a2)] with Group[a1], Group[a2] {

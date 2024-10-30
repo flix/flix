@@ -15,28 +15,32 @@
  */
 mod Environment {
 
+    import dev.flix.runtime.Global
+    import java.lang.Exception
+    import java.lang.Runtime
+    import java.lang.System
+    import java.io.{File => JFile}
+    import java.util.{Iterator => JIterator}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+    import java.util.{Map$Entry => Entry}
+
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
-    pub def getArgs(): List[String] = region rc {
-        import static dev.flix.runtime.Global.getArgs(): Array[String, rc] \ rc;
-        let _ = rc; // Avoids redundancy error.
-        Array.toList(getArgs())
-    }
+    pub def getArgs(): List[String] =
+        unsafe Array.toList(Global.getArgs())
 
     ///
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] = region rc {
-        import static java.lang.System.getenv(): ##java.util.Map \ rc;
-        import java.util.Map.entrySet(): ##java.util.Set \ { rc };
-        import java.util.Set.iterator(): ##java.util.Iterator \ { rc };
-        let _ = rc; // Avoids redundancy error.
         try {
-            let iter = getenv() |> entrySet |> iterator;
+            let _ = rc;
+            let iter = unchecked_cast ((System.getenv().entrySet().iterator(): _ \ IO) as _ \ rc);
             getEnvHelper(iter, Map.empty())
         } catch {
-            case _:##java.lang.Exception => Map.empty()
+            case _: Exception => Map.empty()
         }
     }
 
@@ -44,24 +48,22 @@ mod Environment {
     /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import static java.lang.System.getenv(String): String \ {};
         try {
-            let result = getenv(name);
+            let result = unsafe System.getenv(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
     /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import static java.lang.System.getProperty(String): String \ {};
         try {
-            let result = getProperty(name);
+            let result = unsafe System.getProperty(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
@@ -82,23 +84,18 @@ mod Environment {
     ///
     ///  Returns the file separator
     ///
-    pub def getFileSeparator(): String =
-        import static java_get_field java.io.File.separator: String \ {} as sep;
-        sep()
+    pub def getFileSeparator(): String = unsafe JFile.separator
 
     ///
     /// Returns the path separator
     ///
-    pub def getPathSeparator(): String =
-        import static java_get_field java.io.File.pathSeparator: String \ {} as pathSep;
-        pathSep()
+    pub def getPathSeparator(): String = unsafe JFile.pathSeparator
 
     ///
     /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String \ {};
-        lineSeparator()
+        unsafe System.lineSeparator()
 
     ///
     /// Returns the user's current working directory
@@ -126,19 +123,13 @@ mod Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime \ {};
-        import java.lang.Runtime.availableProcessors(): Int32 \ {};
-        (getRuntime() |> availableProcessors)
+        unsafe Runtime.getRuntime().availableProcessors()
 
-    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
-        import java.util.Iterator.hasNext(): Bool \ {};
-        import java.util.Iterator.next(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
-        if (hasNext(iter))
-            let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
-            let k = unchecked_cast(getKey(e) as String);
-            let v = unchecked_cast(getValue(e) as String);
+    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
+        if (unsafe iter.hasNext())
+            let e = unsafe unchecked_cast(iter.next() as Entry);
+            let k = unsafe unchecked_cast(e.getKey() as String);
+            let v = unsafe unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m

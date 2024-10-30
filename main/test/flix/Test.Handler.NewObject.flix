@@ -13,27 +13,27 @@ mod Test.Handler.NewObject {
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
         def run(_this: Runnable): Unit \ { rc } =
             try {
-              do Ask.ask(42)
+              Ask.ask(42)
             } with Ask {
                 def ask(x, _) = Ref.put(x, r)
             }
     }
 
     def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
-              Ref.put(do Gen.gen(), r)
+              Ref.put(Gen.gen(), r)
             } with Gen {
                 def gen(k) = k(42)
             }
     }
 
     def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
-                do Ask.ask(
+                Ask.ask(
                     try {
-                        do Gen.gen()
+                        Gen.gen()
                     } with Gen {
                         def gen(k) = k(42)
                     }
@@ -45,30 +45,27 @@ mod Test.Handler.NewObject {
 
     @Test
     def testRunnable01(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newAskRunnable(r));
+            newAskRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
     @Test
     def testRunnable02(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newGenRunnable(r));
+            newGenRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
     @Test
     def testRunnable03(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newGenAskRunnable(r));
+            newGenAskRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(84, result)
         }

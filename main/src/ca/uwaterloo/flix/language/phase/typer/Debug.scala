@@ -48,7 +48,7 @@ object Debug {
     */
   def startRecording()(implicit flix: Flix): Unit = {
     graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
-    Files.createDirectory(graphDir)
+    Files.createDirectories(graphDir)
     record = true
   }
 

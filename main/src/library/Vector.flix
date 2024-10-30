@@ -14,9 +14,25 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
+
+instance Indexable[Vector[a]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = OutOfBounds
+
+    pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
+        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
+        else OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+        )
+    }
+}
 
 instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
@@ -55,8 +71,8 @@ instance MonadZero[Vector] {
 instance MonadZip[Vector] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Vector[a], ys: Vector[b]): Vector[c] \ ef = Vector.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Vector[a], ys: Vector[b]): f[Vector[c]] \ ef with Applicative[f] = Vector.zipWithA(f, xs, ys)
-    pub override def zip(v1: Vector[a], v2: Vector[b]): Vector[(a, b)] = Vector.zip(v1, v2)
-    pub override def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = Vector.unzip(v)
+    redef zip(v1: Vector[a], v2: Vector[b]): Vector[(a, b)] = Vector.zip(v1, v2)
+    redef unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = Vector.unzip(v)
 }
 
 instance Foldable[Vector] {
@@ -67,20 +83,20 @@ instance Foldable[Vector] {
 
 instance UnorderedFoldable[Vector] {
     pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with CommutativeMonoid[b] = Vector.foldMap(f, v)
-    override pub def isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
-    override pub def exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
-    override pub def forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.forAll(f, v)
-    override pub def memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
+    redef isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
+    redef exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
+    redef forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.forAll(f, v)
+    redef memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
 }
 
 instance Traversable[Vector] {
     pub def traverse(f: a -> m[b] \ ef, t: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = Vector.traverse(f, t)
-    pub override def sequence(t: Vector[m[a]]): m[Vector[a]] with Applicative[m] = Vector.sequence(t)
+    redef sequence(t: Vector[m[a]]): m[Vector[a]] with Applicative[m] = Vector.sequence(t)
 }
 
 instance Filterable[Vector] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Vector[a]): Vector[b] \ ef = Vector.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: Vector[a]): Vector[a] \ ef = Vector.filter(f, x)
+    redef filter(f: a -> Bool \ ef, x: Vector[a]): Vector[a] \ ef = Vector.filter(f, x)
 }
 
 instance Witherable[Vector]
@@ -93,8 +109,9 @@ instance Monoid[Vector[a]] {
     pub def empty(): Vector[a] = Vector.empty()
 }
 
-instance Collectable[Vector] {
-    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
+instance Collectable[Vector[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ (ef + r) = Iterator.toVector(iter)
 }
 
 instance Iterable[Vector[a]] {
@@ -103,9 +120,18 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type O = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
+}
+
+
+instance FromJava[Vector[a]] {
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    }
 }
 
 mod Vector {
@@ -136,19 +162,7 @@ mod Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let first = ref true @ rc;
-
-        StringBuilder.appendString!("Vector#{", sb);
-
-        let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
-            StringBuilder.appendString!("${x}", sb)
-        };
-        forEach(f, v);
-
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
     }
 
     ///
@@ -210,9 +224,14 @@ mod Vector {
     pub def nonEmpty(v: Vector[a]): Bool = not isEmpty(v)
 
     ///
-    /// Returns the length of the vector `v`.
+    /// Returns the number of elements in the vector `v`.
     ///
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
+
+    ///
+    /// Returns the number of elements in the vector `v`.
+    ///
+    pub def size(v: Vector[a]): Int32 = length(v)
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
@@ -444,10 +463,10 @@ mod Vector {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let arr = Array.empty(rc, length(v) + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, 0, arr);
         let step = (i, x) -> {
-            let s1 = f(deref acc, x);
+            let s1 = f(Ref.get(acc), x);
             Ref.put(s1, acc);
             Array.put(s1, i+1, arr)
         };
@@ -463,13 +482,13 @@ mod Vector {
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
         let arr = Array.empty(rc, len + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, len, arr);
         def loop(i) = {
             if (i < 0)
                 ()
             else {
-                let s1 = f(get(i, v), deref acc);
+                let s1 = f(get(i, v), Ref.get(acc));
                 Ref.put(s1, acc);
                 Array.put(s1, i, arr);
                 loop(i - 1)
@@ -510,7 +529,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -528,7 +547,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -554,7 +573,7 @@ mod Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, eidentity))
+        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
     }
 
     ///
@@ -672,14 +691,14 @@ mod Vector {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
                 arrayUpdateSeqV!(0, v, arr);
                 Ref.put(length(v), pos)
             } else {
-                let ix = deref pos;
+                let ix = Ref.get(pos);
                 arrayUpdateSeqV!(ix, sep, arr);
                 let ix1 = ix + sepLength;
                 arrayUpdateSeqV!(ix1, v, arr);
@@ -726,7 +745,7 @@ mod Vector {
     /// Returns a copy of `v` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, v)
+        map(e -> if (e == src#src) dst#dst else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.
@@ -920,10 +939,10 @@ mod Vector {
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         forEach(v -> {
-            let i = deref pos;
+            let i = Ref.get(pos);
             Ref.put(i + length(v), pos);
             arrayUpdateSeqV!(i, v, arr)
         }, vs);
@@ -1495,9 +1514,9 @@ mod Vector {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, v: Vector[a]): Vector[a] \ IO = region rc {
+    pub def shuffle(v: Vector[a]): Vector[a] \ NonDet = region rc {
         let arr = toArray(rc, v);
-        Array.shuffle(rnd, arr);
+        Array.shuffle(arr);
         Array.toVector(arr)
     }
 

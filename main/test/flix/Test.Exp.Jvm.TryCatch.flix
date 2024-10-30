@@ -16,9 +16,13 @@
 
 mod Test.Exp.Jvm.TestTryCatch {
 
+    import java.lang.Math
+    import java.lang.ArithmeticException
+    import java.lang.IllegalArgumentException
+    import java.lang.Exception
+
     def exception(): Unit \ IO =
-        import static java.lang.Math.floorDiv(Int32, Int32): Int32 \ IO;
-        discard floorDiv(1, 0);
+        discard Math.floorDiv(1, 0);
         ()
 
     @test
@@ -26,7 +30,7 @@ mod Test.Exp.Jvm.TestTryCatch {
         try {
             true
         } catch {
-            case _: ##java.lang.Exception => false
+            case _: Exception => false
         }
 
     @test
@@ -35,7 +39,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.Exception => true
+            case _: Exception => true
         }
 
     @test
@@ -44,8 +48,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
-            case _: ##java.lang.IllegalArgumentException => false
+            case _: ArithmeticException => true
+            case _: IllegalArgumentException => false
         }
 
     @test
@@ -54,8 +58,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.IllegalArgumentException => false
-            case _: ##java.lang.ArithmeticException => true
+            case _: IllegalArgumentException => false
+            case _: ArithmeticException => true
         }
 
     @test
@@ -64,33 +68,29 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.IllegalArgumentException => false
+            case _: IllegalArgumentException => false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
+            case _: ArithmeticException => true
         }
 
     @test
     def testBinding01(): Bool \ IO =
-        import java.lang.Object.toString(): ##java.lang.String \ IO;
-        import java.lang.String.isEmpty(): Bool \ IO;
         try {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(toString(checked_cast(e)))) false else true
-            case _: ##java.lang.Exception => false
+            case e: ArithmeticException => if (e.toString().isEmpty()) false else true
+            case _: Exception => false
         }
 
     @test
     def testBinding02(): Bool \ IO =
-        import java.lang.String.isEmpty(): Bool \ IO;
-        import java.lang.Throwable.getMessage(): String \ IO;
         try {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(getMessage(checked_cast(e)))) false else true
-            case _: ##java.lang.Exception => false
+            case e: ArithmeticException => if (e.getMessage().isEmpty()) false else true
+            case _: Exception => false
         }
 
     @test
@@ -99,8 +99,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.Exception => true
-            case _: ##java.lang.ArithmeticException => false
+            case _: Exception => true
+            case _: ArithmeticException => false
         }
 
     @test
@@ -109,8 +109,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
-            case _: ##java.lang.Exception => false
+            case _: ArithmeticException => true
+            case _: Exception => false
         }
 
 }

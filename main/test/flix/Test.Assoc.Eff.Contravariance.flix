@@ -19,13 +19,13 @@ mod Test.Assoc.Eff.Contravariance {
 
     instance Countable[ParSet] {
         /// A parallel set permits no effects: the upper bound is pure (i.e. empty set of effects).
-        type UpperBound = Pure
+        type UpperBound = {}
         pub def count(f: a -> Bool \ {}, m: ParSet[a]): Int32 = ???
     }
 
     instance Countable[SeqSet] {
         /// A sequential set permits any effects: the upper bound is the universe.
-        type UpperBound = ~Pure
+        type UpperBound = ~{}
         pub def count(f: a -> Bool \ ef, m: SeqSet[a]): Int32 = ???
     }
 

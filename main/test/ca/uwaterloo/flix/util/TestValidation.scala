@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.errors.{Recoverable, Unrecoverable}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -378,26 +378,6 @@ class TestValidation extends AnyFunSuite {
       case (x, acc) => Validation.success(acc - x)
     }
     assertResult(Validation.success(7))(result)
-  }
-
-  test("recoverOne01") {
-    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
-    val v = Validation.success("abc").recoverOne(f)
-    assertResult(Validation.success("abc"))(v)
-  }
-
-  test("recoverOne02") {
-    val e = DummyRecoverable(1)
-    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
-    val r = Validation.toSoftFailure(e.toString, e).recoverOne(f)
-    assertResult(Validation.toSoftFailure(e.toString, e))(r)
-  }
-
-  test("recoverOne03") {
-    val ex = new RuntimeException()
-    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
-    val result = Validation.HardFailure(Chain(ex, ex)).recoverOne(f)
-    assertResult(Validation.HardFailure(Chain(ex, ex)))(result)
   }
 
   test("toSoftResult01") {

@@ -16,22 +16,23 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.shared.ExpPosition
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
   * Objectives of this phase:
-  * 1. Collect a list of the local parameters of each def
-  * 2. Collect a set of all anonymous class / new object expressions
-  * 3. Collect a flat set of all types of the program, i.e., if `List[String]` is
+  *   1. Collect a list of the local parameters of each def
+  *   1. Collect a set of all anonymous class / new object expressions
+  *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
   *   in the list, so is `String`.
   */
 object Reducer {
@@ -50,7 +51,7 @@ object Reducer {
   }
 
   private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
@@ -67,7 +68,7 @@ object Reducer {
       ctx.defTypes.put(unboxedType.tpe, ())
       cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
 
-      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, purity, loc)
+      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = {
@@ -119,12 +120,6 @@ object Reducer {
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         Expr.Let(sym, e1, e2, tpe, purity, loc)
-
-      case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-        lctx.lparams.addOne(LocalParam(varSym, exp1.tpe))
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
-        Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
       case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExpr(exp1)
@@ -198,13 +193,19 @@ object Reducer {
   /**
     * Returns all types contained in the given `Effect`.
     */
-  private def typesOfEffect(e: Effect): Set[MonoType] = e.ops.toSet.map {
-    op: Op =>
-      val paramTypes = op.fparams.map(_.tpe)
-      val resType = op.tpe
-      val continuationType = MonoType.Object
-      val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
-      correctedFunctionType
+  private def typesOfEffect(e: Effect): Set[MonoType] = {
+    e.ops.toSet.map(extractFunctionType)
+  }
+
+  /**
+    * Returns the function type based `op` represents.
+    */
+  private def extractFunctionType(op: Op): MonoType = {
+    val paramTypes = op.fparams.map(_.tpe)
+    val resType = op.tpe
+    val continuationType = MonoType.Object
+    val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+    correctedFunctionType
   }
 
   /**
@@ -216,17 +217,18 @@ object Reducer {
     */
   @tailrec
   private def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
-    import MonoType._
+    import MonoType.*
     types.dequeueOption match {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
-               Native(_) => taskList
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
+               Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
-          case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Enum(_, targs) => taskList.enqueueAll(targs)
+          case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }

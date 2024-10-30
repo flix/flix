@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
@@ -26,20 +27,22 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
 
   private implicit val flix: Flix = new Flix()
+  private implicit val scope: Scope = Scope.Top
   private val loc: SourceLocation = SourceLocation.Unknown
+  private val eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = ListMap.empty
   private val CollSym: Symbol.TraitSym = Symbol.mkTraitSym("Coll")
-  private val ElemSym: Symbol.AssocTypeSym = Symbol.mkAssocTypeSym(CollSym, Name.Ident(SourcePosition.Unknown, "Elem", SourcePosition.Unknown))
+  private val ElemSym: Symbol.AssocTypeSym = Symbol.mkAssocTypeSym(CollSym, Name.Ident("Elem", SourceLocation.Unknown))
   private val ElemCst: Ast.AssocTypeConstructor = Ast.AssocTypeConstructor(ElemSym, loc)
 
   test("TestUnifyTypes.01") {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
     val tpe2 = Type.Char
     val renv = RigidityEnv.empty
-    val result = Unification.unifyTypes(tpe1, tpe2, renv)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv, eqEnv)
 
     val expectedSubst = Substitution.empty
     val expectedEconstrs = List(Ast.EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))
-    val expectedResult: Result[(Substitution, List[Ast.EqualityConstraint]), _] = Ok((expectedSubst, expectedEconstrs))
+    val expectedResult: Result[(Substitution, List[Ast.EqualityConstraint]), ?] = Ok((expectedSubst, expectedEconstrs))
 
     assert(result == expectedResult)
   }

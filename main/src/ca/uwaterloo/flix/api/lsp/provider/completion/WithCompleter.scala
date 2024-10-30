@@ -17,16 +17,15 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.WithCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.phase.Resolver
+import ca.uwaterloo.flix.language.phase.{Deriver, Resolver}
 
-object WithCompleter extends Completer {
+object WithCompleter {
   /**
     * Returns a List of Completion based on with type class constraints.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[WithCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[WithCompletion] = {
     /*
      * When used with `enum`, `with` needs to be treated differently: we should only show derivable
      * type classes, and we shouldn't include the type parameter
@@ -42,11 +41,11 @@ object WithCompleter extends Completer {
       for {
         (_, trt) <- root.traits
         sym = trt.sym
-        if Resolver.DerivableSyms.contains(sym)
+        if Deriver.DerivableSyms.contains(sym)
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield {
-        Completion.WithCompletion(completion, Priority.high(name), TextEdit(context.range, completion),
+        Completion.WithCompletion(completion, Priority.Highest, TextEdit(context.range, completion),
           Some(trt.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
@@ -57,7 +56,7 @@ object WithCompleter extends Completer {
           val application = s"$name[$hole]"
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
-          Completion.WithCompletion(label, Priority.high(name), TextEdit(context.range, completion),
+          Completion.WithCompletion(label, Priority.Highest, TextEdit(context.range, completion),
             Some(trt.doc.text), InsertTextFormat.Snippet)
       }
     } else {

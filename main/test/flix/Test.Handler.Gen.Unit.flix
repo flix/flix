@@ -5,11 +5,11 @@ mod Test.Handler.Gen.Unit {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[Unit] =
         region rc {
-            let counter = ref 0 @ rc;
+            let counter = Ref.fresh(rc, 0);
             try {
                 generator(); Nil
             } with Gen {
@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Unit {
         }
 
     def getAndInc(r: Ref[Int32, r]): Int32 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1, r);
         i
 

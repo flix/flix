@@ -34,7 +34,7 @@ mod Test.Dec.AssocEff {
     }
 
     instance Div[Int32] {
-        type Aef = Pure
+        type Aef = {}
         pub def div(x: Int32, y: Int32): Int32 = $INT32_DIV$(x, y)
     }
 
@@ -60,7 +60,7 @@ mod Test.Dec.AssocEff {
 
     instance Iterable[List[a]] {
         type Elm = a
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = {
             List.iterator(rc, l)
         }
@@ -76,7 +76,7 @@ mod Test.Dec.AssocEff {
 
     instance Iterable[Map[k, v]] {
         type Elm = (k, v)
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], l: Map[k, v]): Iterator[(k, v), r, r] \ r = {
             Map.iterator(rc, l)
         }
@@ -100,7 +100,7 @@ mod Test.Dec.AssocEff {
         MutList.push!("Caramel", creams);
         MutList.push!("Vanilla", creams);
         foreach(fruit <- fruits; cream <- creams)
-            do Console.println("${fruit} topped with ${cream}")
+            Console.println("${fruit} topped with ${cream}")
     }
 
     trait DeepIterable[a] {
@@ -111,7 +111,7 @@ mod Test.Dec.AssocEff {
 
     instance DeepIterable[Int32] {
         type Elm = Int32
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], x: Int32): Iterator[Int32, r, r] \ r = Iterator.singleton(rc, x)
     }
 
@@ -122,8 +122,8 @@ mod Test.Dec.AssocEff {
         type Aef = Console
         pub def iterator(rc: Region[r], x: LoudInt32): Iterator[Int32, r + Console, r] \ r + Console = {
             let LoudInt32.LoudInt32(i) = x;
-            do Console.println("${i}!");
-            Iterator.singleton(rc, i) |> Iterator.map(y -> {do Console.println("${y}!"); y})
+            Console.println("${i}!");
+            Iterator.singleton(rc, i) |> Iterator.map(y -> {Console.println("${y}!"); y})
         }
     }
 
@@ -188,7 +188,7 @@ mod Test.Dec.AssocEff {
     instance Logger[ConsoleLogger] {
         type Aef = Console
         pub def log(s: String, _x: ConsoleLogger): Unit \ Console = {
-            do Console.println(s)
+            Console.println(s)
         }
     }
 
@@ -221,8 +221,8 @@ mod Test.Dec.AssocEff {
     instance Logger[TimestampedConsoleLogger] {
         type Aef = { Console, Time }
         pub def log(s: String, _x: TimestampedConsoleLogger): Unit \ { Console, Time } = {
-            let timestamp = do Time.getTime();
-            do Console.println("${timestamp}: ${s}")
+            let timestamp = Time.getTime();
+            Console.println("${timestamp}: ${s}")
         }
     }
 

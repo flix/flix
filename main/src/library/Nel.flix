@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The NonEmptyList type.
 ///
@@ -64,8 +66,8 @@ instance Monad[Nel] {
 instance MonadZip[Nel] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
-    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
+    redef zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
+    redef unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
 instance Foldable[Nel] {
@@ -76,35 +78,35 @@ instance Foldable[Nel] {
 
 instance UnorderedFoldable[Nel] {
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
-    override pub def isEmpty(_: Nel[a]): Bool = false
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    redef isEmpty(_: Nel[a]): Bool = false
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
 }
 
 instance Traversable[Nel] {
     pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
+    redef sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
-    override pub def head(l: Nel[a]): a = Nel.head(l)
-    override pub def last(l: Nel[a]): a = Nel.last(l)
-    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
-    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
-    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
-    override pub def toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
-    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
+    redef head(l: Nel[a]): a = Nel.head(l)
+    redef last(l: Nel[a]): a = Nel.last(l)
+    redef init(l: Nel[a]): List[a] = Nel.init(l)
+    redef tail(l: Nel[a]): List[a] = Nel.tail(l)
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
+    redef findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
+    redef findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
+    redef memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
+    redef dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
+    redef takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
+    redef toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
+    redef toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
+    redef toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {
@@ -117,9 +119,9 @@ instance Iterable[Nel[a]] {
 }
 
 instance ToJava[Nel[a]] {
-    type O = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
 }
 
 mod Nel {
@@ -127,16 +129,9 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String with ToString[a] = {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Nel(${x}, ", sb);
-
-        let list = List.toString(xs);
-        StringBuilder.appendString!(list, sb);
-        StringBuilder.appendString!(")", sb);
-
-        StringBuilder.toString(sb)
+        "Nel(${x}, ${xs})"
     }
 
     ///
@@ -184,11 +179,16 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)
     }
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: Nel[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -314,7 +314,7 @@ mod Nel {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: Nel[a]): Nel[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -408,7 +408,7 @@ mod Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, eidentity)
+        loop(x :: xs, z -> checked_ecast(z))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
@@ -705,8 +705,8 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toNel
+    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
 
 }

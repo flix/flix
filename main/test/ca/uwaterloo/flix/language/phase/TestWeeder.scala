@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-// NOTE: Weeder2 already passes many of these. All tests that don't have a 'TODO' pass.
-
 class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
@@ -39,19 +37,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = {
         | @Tailrec @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
-
-  test("DuplicateAnnotation.03") {
-    val input =
-      """
-        |def f(): Int32 = {
-        | @Benchmark @Benchmark
         | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
         |}
@@ -137,6 +122,55 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
+  }
+
+  test("DuplicateStructField.01") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.02") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.03") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         name: String,
+         age: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.04") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         age: Int32,
+         height: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
   }
 
   test("EmptyForFragment.01") {
@@ -261,9 +295,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @benchmark @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
+        |  @test @Tailrec
+        |  def g(i) = if (i <= 0) 0 else g(i - 1);
+        |  g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -293,7 +327,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEnum](result)
   }
-
 
   test("IllegalEqualityConstraint.01") {
     val input =
@@ -626,6 +659,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
+  test("IllegalModifier.05") {
+    val input =
+      """instance Sub[String] {
+        |    pub override redef sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
   test("IllegalNullPattern.01") {
     val input =
       s"""
@@ -761,42 +804,51 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
-  test("IllegalTypeConstraintParameter.01") {
+  test("IllegalSelectChannelRuleFunctionCall.01") {
+    val input =
+      """
+        |def f(): Int32 = select {
+        |    case x <- NotChannel.NotRecv(a) => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedSelectChannelRuleFunction](result)
+  }
+
+  test("IllegalTraitConstraintParameter.01") {
     val input =
       """
         |trait C[a] with D[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.02") {
+  test("IllegalTraitConstraintParameter.02") {
     val input =
       """
         |instance C[a] with D[Some[a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.03") {
+  test("IllegalTraitConstraintParameter.03") {
     val input =
       """
         |instance C[a] with C[C[C[String]]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("MalformedFloat64.01") {
+  test("MalformedFloat64.01") {
     val input = "def f(): Float64 = 1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("MalformedFloat64.02") {
+  test("MalformedFloat64.02") {
     val input = "def f(): Float64 = -1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)

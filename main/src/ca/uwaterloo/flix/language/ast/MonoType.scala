@@ -24,9 +24,9 @@ sealed trait MonoType
 
 object MonoType {
 
-  ///
-  /// Primitive Types.
-  ///
+  //
+  // Primitive Types.
+  //
 
   /**
     * Represents an uninhabited type, not an absent value like in Java.
@@ -63,19 +63,21 @@ object MonoType {
 
   case object Region extends MonoType
 
-  ///
-  /// Compound Types.
-  ///
+  case object Null extends MonoType
+
+  //
+  // Compound Types.
+  //
 
   case class Array(tpe: MonoType) extends MonoType
 
   case class Lazy(tpe: MonoType) extends MonoType
 
-  case class Ref(tpe: MonoType) extends MonoType
+  case class Tuple(tpes: List[MonoType]) extends MonoType
 
-  case class Tuple(elms: List[MonoType]) extends MonoType
+  case class Enum(sym: Symbol.EnumSym, targs: List[MonoType]) extends MonoType
 
-  case class Enum(sym: Symbol.EnumSym) extends MonoType
+  case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
@@ -83,7 +85,7 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
-  case class Native(clazz: Class[_]) extends MonoType
+  case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 

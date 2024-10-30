@@ -41,7 +41,7 @@ mod Test.Kind.Enum {
         }
 
         pub enum EEffToStar[a: Eff -> Type] {
-            case CEffToStar1(a[Pure])
+            case CEffToStar1(a[{}])
         }
 
         pub enum EBoolToStar[a: Bool -> Type] {

@@ -17,10 +17,11 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
@@ -47,6 +48,12 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+  }
+
   /**
     * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.
@@ -63,7 +70,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
-      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)
+      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

@@ -15,7 +15,10 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -76,8 +79,6 @@ object SimpleType {
   case object Array extends SimpleType
 
   case object Vector extends SimpleType
-
-  case object Ref extends SimpleType
 
   case object Sender extends SimpleType
 
@@ -197,6 +198,11 @@ object SimpleType {
   case class Intersection(tpes: List[SimpleType]) extends SimpleType
 
   /**
+    * A chain of types connected by `⊕`.
+    */
+  case class SymmetricDiff(tpes: List[SimpleType]) extends SimpleType
+
+  /**
     * Difference of two types.
     */
   case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
@@ -239,6 +245,27 @@ object SimpleType {
 
   case class TagConstructor(name: String) extends SimpleType
 
+  ////////////
+  // JVM Types
+  ////////////
+
+  case class JvmToType(tpe: SimpleType) extends SimpleType
+
+  case class JvmToEff(tpe: SimpleType) extends SimpleType
+
+  case class JvmConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
+
+  case class JvmField(tpe: SimpleType, name: String) extends SimpleType
+
+  case class JvmMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
+
+  case class JvmStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * A field type.
+    */
+  case class FieldType(tpe: SimpleType) extends SimpleType
+
   //////////////////////
   // Miscellaneous Types
   //////////////////////
@@ -261,7 +288,8 @@ object SimpleType {
   /**
     * A tuple.
     */
-  case class Tuple(elms: List[SimpleType]) extends SimpleType
+  case class Tuple(tpes: List[SimpleType]) extends SimpleType
+
 
   /**
     * An error type.
@@ -311,6 +339,16 @@ object SimpleType {
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+      case Type.JvmToType(tpe, _) =>
+        mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
+      case Type.JvmToEff(tpe, _) =>
+        mkApply(SimpleType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
+      case Type.UnresolvedJvmType(member, _) => member match {
+        case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmMember.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+      }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
         case TypeConstructor.AnyType => AnyType
@@ -336,12 +374,12 @@ object SimpleType {
             case Nil =>
               val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
-              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
             // Case 2: Pure function.
             case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
-              tpes.padTo(arity, Hole).reduceRight(PureArrow)
+              tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
 
             // Case 3: Impure function.
             case eff :: tpes =>
@@ -349,7 +387,7 @@ object SimpleType {
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
               val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
-              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
@@ -422,9 +460,12 @@ object SimpleType {
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
-        case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
+        case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
+        case TypeConstructor.JvmMethod(method) => Name(method.getName)
+        case TypeConstructor.JvmField(field) => Name(field.getName)
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)
@@ -515,6 +556,10 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.SymmetricDiff =>
+          val args = t.typeArguments.map(visit)
+          SymmetricDiff(args)
+
         case TypeConstructor.CaseSet(syms, _) =>
           val names = syms.toList.map(sym => SimpleType.Name(sym.name))
           val set = SimpleType.Union(names)
@@ -546,7 +591,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => SimpleType.Error
       }
     }
 

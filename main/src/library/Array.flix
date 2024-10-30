@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2024 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,42 @@
  * limitations under the License.
  */
 
+instance Indexable[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+
+    pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.get(i, t)
+        else OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
+instance IndexableMut[Array[a, r]] {
+    type Aef = r + OutOfBounds
+
+    pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
+        else OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
+instance Iterable[Array[a, r]] {
+    type Elm = a
+    type Aef = r
+
+    pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
+        checked_ecast(Array.iterator(rc, a))
+}
+
 mod Array {
+    import java.lang.Object
+    import java.util.Arrays
+    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -43,12 +79,12 @@ mod Array {
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        let first = ref true @ rc2;
+        let first = Ref.fresh(rc2, true);
 
         StringBuilder.appendString!("Array#{", sb);
 
         let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
+            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);
@@ -60,7 +96,7 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
@@ -95,15 +131,20 @@ mod Array {
     pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
     pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
+
+    ///
+    /// Returns the number of elements in the array `a`.
+    ///
+    pub def size(a: Array[a, r]): Int32 = length(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
     pub def slice(rc1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        copyOfRange(rc1, start.start, end.end, a)
+        copyOfRange(rc1, start#start, end#end, a)
 
     ///
     /// Returns the array `a` as a list.
@@ -557,13 +598,13 @@ mod Array {
     /// Returns a copy of `a` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == src.src) dst.dst else e, a)
+        map(rc1, e -> if (e == src#src) dst#dst else e, a)
 
     ///
     /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == src.src) dst.dst else e, a)
+        transform!(e -> if (e == src#src) dst#dst else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -1277,7 +1318,7 @@ mod Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(rc1, 0, c, a);
-        MutList.MutList(rc1, ref copy @ rc1, ref len @ rc1)
+        new MutList @ rc1 {r = rc1, values = copy, length = len}
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1603,61 +1644,39 @@ mod Array {
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         // All of the below casts are required to cast the type to `Array[a, ...]`.
         typematch a {
-            case arr: Array[Unit, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+            // The casts here are used to both modify the java method type and to simulate GADT typing
             case arr: Array[Bool, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Char, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigDecimal, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int8, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int16, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigInt, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
-            case arr: Array[String, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[a, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                // `a` must be non-primitive now
+                let arrObj = unchecked_cast(arr as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
             case _: _ => unreachable!()
         }
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, IO} =
+    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
+        let rnd = new JRandom();
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(rnd, i + 1);
+                let j = rnd.nextInt(i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
             }
@@ -1665,5 +1684,6 @@ mod Array {
                 ()
         };
         loop(len - 1)
+    } as _ \ {r, NonDet})
 
 }

@@ -5,11 +5,11 @@ mod Test.Handler.Gen.Char {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Char): List[Char] =
         region rc {
-            let counter = ref 'a' @ rc;
+            let counter = Ref.fresh(rc, 'a');
             try {
                 generator(); Nil
             } with Gen {
@@ -50,7 +50,7 @@ mod Test.Handler.Gen.Char {
     }
 
     def getAndInc(r: Ref[Char, r]): Char \ r =
-        let c = deref r;
+        let c = Ref.get(r);
         Ref.put(next(c), r);
         c
 

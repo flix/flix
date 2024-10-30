@@ -26,8 +26,7 @@ import ca.uwaterloo.flix.util.Similarity
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = {
-    getActionsFromErrors(uri, range, currentErrors) ++
-      getActionsFromIndex(uri, range, currentErrors)
+    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range, currentErrors)
   }
 
   /**
@@ -63,7 +62,7 @@ object CodeActionProvider {
       mkUnusedDefCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
       mkUnusedParamCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedTypeParam(sym) if onSameLine(range, sym.loc) =>
+    case RedundancyError.UnusedTypeParam(sym, _) if onSameLine(range, sym.loc) =>
       mkUnusedTypeParamCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedEffectCodeAction(sym, uri) :: Nil
@@ -188,7 +187,7 @@ object CodeActionProvider {
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
-              Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the use.
+              Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the use.
               s"use $sym;\n"
             )))
           )),
@@ -310,7 +309,7 @@ object CodeActionProvider {
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the new enum.
+        Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the new enum.
         s"""
            |enum $name {
            |

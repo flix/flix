@@ -17,9 +17,10 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object RenameProvider {
 
@@ -34,6 +35,8 @@ object RenameProvider {
 
         case Entity.Case(caze) => renameCase(caze.sym, newName)
 
+        case Entity.StructField(field) => renameStructField(field.sym, newName)
+
         case Entity.Def(defn) => renameDef(defn.sym, newName)
 
         case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
@@ -44,13 +47,15 @@ object RenameProvider {
 
         case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
 
+        case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
+
         case Entity.Exp(exp) => mkNotFound(uri, pos)
 
         case Entity.Label(label) => renameLabel(label, newName)
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => renameVar(sym, newName)
-          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
+          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -74,6 +79,7 @@ object RenameProvider {
         case Entity.AssocType(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.Struct(_) => mkNotFound(uri, pos)
         case Entity.Op(_) => mkNotFound(uri, pos)
         case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
         case Entity.Sig(_) => mkNotFound(uri, pos)
@@ -139,6 +145,12 @@ object RenameProvider {
   }
 
   private def renameCase(sym: Symbol.CaseSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
+    rename(newName, uses + defn)
+  }
+
+  private def renameStructField(sym: Symbol.StructFieldSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)

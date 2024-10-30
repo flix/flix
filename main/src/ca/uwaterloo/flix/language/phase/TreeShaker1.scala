@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -28,7 +29,7 @@ import ca.uwaterloo.flix.util.ParOps
   *
   * (a) The main function is always reachable.
   *
-  * (b) A function marked with @benchmark or @test is reachable.
+  * (b) A function marked with @test is reachable.
   *
   * (c) Appears in a function which itself is reachable.
   *
@@ -62,7 +63,7 @@ object TreeShaker1 {
     * Returns the symbols that are always reachable.
     */
   private def initReachable(root: Root): Set[ReachableSym] = {
-    root.reachable.map(ReachableSym.DefnSym)
+    root.reachable.map(ReachableSym.DefnSym.apply)
   }
 
   /**
@@ -102,25 +103,28 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Def(sym, _, _) =>
-      Set(ReachableSym.DefnSym(sym))
-
-    case Expr.Sig(sym, _, _) =>
-      Set(ReachableSym.SigSym(sym))
-
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ApplySig(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Scope(_, _, exp, _, _, _) =>

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import java.util.{Iterator => JIterator}
+import java.util.{List => JList}
+
 ///
 /// The Chain type.
 ///
@@ -65,8 +68,8 @@ instance MonadZero[Chain] {
 instance MonadZip[Chain] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
-    pub override def zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
-    pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
+    redef zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
+    redef unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
 }
 
 instance Foldable[Chain] {
@@ -77,41 +80,33 @@ instance Foldable[Chain] {
 
 instance UnorderedFoldable[Chain] {
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
-    override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
-    override pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
-    override pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
-    override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
+    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
 }
 
 instance Traversable[Chain] {
     pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
-    pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
+    redef sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
 }
 
 instance Filterable[Chain] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
+    redef filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
 
 instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Chain#{", sb);
-        Chain.forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-            }, c);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 
-instance Collectable[Chain] {
-    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
+instance Collectable[Chain[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } = Iterator.toChain(iter)
 }
 
 instance Iterable[Chain[a]] {
@@ -120,9 +115,17 @@ instance Iterable[Chain[a]] {
 }
 
 instance ToJava[Chain[a]] {
-    type O = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(c: Chain[a]): ##java.util.List \ IO = Adaptor.toList(c)
+    pub def toJava(c: Chain[a]): JList \ IO = Adaptor.toList(c)
+}
+
+instance FromJava[Chain[a]] {
+    type In = JList
+    pub def fromJava(l: JList): Chain[a] = region rc {
+        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+    }
 }
 
 mod Chain {
@@ -226,9 +229,14 @@ mod Chain {
     }
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
+
+    ///
+    /// Returns the number of elements in `c`.
+    ///
+    pub def size(c: Chain[a]): Int32 = length(c)
 
     ///
     /// Returns a new chain formed by appending the chains `c1` and `c2`.
@@ -688,7 +696,7 @@ mod Chain {
             case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), eidentity)
+        loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
 
     ///
@@ -808,8 +816,8 @@ mod Chain {
     /// Returns an iterator over `c`.
     ///
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
-        let cursor = ref viewLeft(c) @ rc;
-        let next = () -> match (deref cursor) {
+        let cursor = Ref.fresh(rc, viewLeft(c));
+        let next = () -> match (Ref.get(cursor)) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) =>
                 Ref.put(viewLeft(xs), cursor);
@@ -960,8 +968,8 @@ mod Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Chain[a]): Chain[a] \ IO = region rc {
-        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toChain
+    pub def shuffle(c: Chain[a]): Chain[a] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle |> Array.toChain
     }
 
 }
