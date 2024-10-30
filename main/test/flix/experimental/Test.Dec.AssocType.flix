@@ -43,7 +43,7 @@ mod Test.Dec.AssocType {
     }
 
     instance Iterable2[String] {
-        type Eff[String] = Pure
+        type Eff[String] = {}
         type Elem[String] = Char
 
         pub def iterator(rc: Region[r], x: String): Iterator[Char, r, r] \ r = String.iterator(rc, x)
@@ -187,7 +187,7 @@ mod Test.Dec.AssocType {
     }
 
     @test
-    pub def testCList01(): Bool = C.f(Nil: List[Int32]) == None
+    pub def testCList01(): Bool = C.f((Nil: List[Int32])) == None
 
     @test
     pub def testCList02(): Bool = C.f(1 :: 2 :: Nil) == Some(1)
@@ -205,10 +205,10 @@ mod Test.Dec.AssocType {
     pub def testCOptionList01(): Bool = C.f(Some(1 :: 2 :: Nil)) == Some(Some(1))
 
     @test
-    pub def testCOptionList02(): Bool = C.f(Some(Nil: List[Int32])) == Some(None)
+    pub def testCOptionList02(): Bool = C.f(Some((Nil: List[Int32]))) == Some(None)
 
     @test
-    pub def testCOptionList03(): Bool = C.f(None: Option[List[Int32]]) == None
+    pub def testCOptionList03(): Bool = C.f((None: Option[List[Int32]])) == None
 
     enum Option2[a] {
         case None2
@@ -232,4 +232,25 @@ mod Test.Dec.AssocType {
 
     @test
     pub def testCOption2List03(): Bool = C.f(Option2.Some2(Option2.Some2(Option2.Some2(1 :: 2 :: Nil)))) == Some(1)
+
+    trait D[a] {
+        type T: Type = Bool
+        pub def f(x: a): D.T[a]
+    }
+
+    instance D[Unit] {
+        pub def f(_: Unit): Bool = true
+    }
+
+    instance D[Int32] {
+        type T = String
+        pub def f(_: Int32): String = "hi"
+    }
+
+    @test
+    pub def testD01(): Bool = D.f()
+
+    @test
+    pub def testD02(): String = D.f(123)
+
 }

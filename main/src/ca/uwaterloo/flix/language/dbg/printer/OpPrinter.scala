@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 
 object OpPrinter {
 
@@ -163,9 +163,9 @@ object OpPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
+    * Returns the [[DocAst.Expr]] representation of `op`.
     */
-  def print(op: AtomicOp, ds: List[Expression], tpe: DocAst.Type): Expression = (op, ds) match {
+  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.RecordEmpty, Nil) => RecordEmpty
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
@@ -183,9 +183,10 @@ object OpPrinter {
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
-    case (AtomicOp.Ref, List(d)) => Ref(d)
-    case (AtomicOp.Deref, List(d)) => Deref(d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.StructNew(sym, fields), d :: rs) => Expr.StructNew(sym, fields.zip(rs), d)
+    case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
+    case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
     case (AtomicOp.Force, List(d)) => Force(d)
     case (AtomicOp.GetField(field), List(d)) => JavaGetField(field, d)
@@ -196,11 +197,9 @@ object OpPrinter {
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
-    case (AtomicOp.Assign, List(d1, d2)) => Assign(d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
     case (AtomicOp.ArrayLoad, List(d1, d2)) => ArrayLoad(d1, d2)
     case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)
-    case (AtomicOp.ScopeExit, List(d1, d2)) => ScopeExit(d1, d2)
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)

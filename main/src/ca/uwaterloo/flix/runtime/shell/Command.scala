@@ -56,6 +56,12 @@ object Command {
   case object BuildJar extends Command
 
   /**
+    * Builds a fatjar file from the current project.
+    * Status: working on.
+    */
+  case object BuildFatJar extends Command
+
+  /**
     * Builds an fpkg file from the current project.
     */
   case object BuildPkg extends Command
@@ -79,6 +85,11 @@ object Command {
     * Runs the tests for the current project.
     */
   case object Test extends Command
+
+  /**
+    * Show dependencies which have newer versions available.
+    */
+  case object Outdated extends Command
 
   /**
     * Terminates the shell.
@@ -147,6 +158,9 @@ object Command {
     if (input == ":build-jar" || input == ":jar")
       return Command.BuildJar
 
+    if (input == ":build-fatjar" || input == ":fatjar")
+      return Command.BuildFatJar
+
     if (input == ":build-pkg" || input == ":pkg")
       return Command.BuildPkg
 
@@ -158,6 +172,9 @@ object Command {
 
     if (input == ":test" || input == ":t")
       return Command.Test
+
+    if (input == ":outdated")
+      return Command.Outdated
 
     if (input == ":quit" || input == ":q")
       return Command.Quit

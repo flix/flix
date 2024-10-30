@@ -107,43 +107,43 @@ mod TestInt16 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (12000i16 `Int16.mod` 2000i16) == 0i16
+    def modulo01(): Bool = (12000i16 `Int16.modulo` 2000i16) == 0i16
 
     @test
-    def mod02(): Bool = (12000i16 `Int16.mod` 5000i16) == 2000i16
+    def modulo02(): Bool = (12000i16 `Int16.modulo` 5000i16) == 2000i16
 
     @test
-    def mod03(): Bool = (-12000i16 `Int16.mod` 5000i16) == 3000i16
+    def modulo03(): Bool = (-12000i16 `Int16.modulo` 5000i16) == 3000i16
 
     @test
-    def mod04(): Bool = (12000i16 `Int16.mod` -5000i16) == -3000i16
+    def modulo04(): Bool = (12000i16 `Int16.modulo` -5000i16) == -3000i16
 
     @test
-    def mod05(): Bool = (-12000i16 `Int16.mod` -5000i16) == -2000i16
+    def modulo05(): Bool = (-12000i16 `Int16.modulo` -5000i16) == -2000i16
 
     @test
-    def mod06(): Bool = (1i16 `Int16.mod` 0i16) == 0i16
+    def modulo06(): Bool = (1i16 `Int16.modulo` 0i16) == 0i16
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (12000i16 `Int16.rem` 2000i16) == 0i16
+    def remainder01(): Bool = (12000i16 `Int16.remainder` 2000i16) == 0i16
 
     @test
-    def rem02(): Bool = (12000i16 `Int16.rem` 5000i16) == 2000i16
+    def remainder02(): Bool = (12000i16 `Int16.remainder` 5000i16) == 2000i16
 
     @test
-    def rem03(): Bool = (-12000i16 `Int16.rem` 5000i16) == -2000i16
+    def remainder03(): Bool = (-12000i16 `Int16.remainder` 5000i16) == -2000i16
 
     @test
-    def rem04(): Bool = (12000i16 `Int16.rem` -5000i16) == 2000i16
+    def remainder04(): Bool = (12000i16 `Int16.remainder` -5000i16) == 2000i16
 
     @test
-    def rem05(): Bool = (-12000i16 `Int16.rem` -5000i16) == -2000i16
+    def remainder05(): Bool = (-12000i16 `Int16.remainder` -5000i16) == -2000i16
 
     @test
-    def rem06(): Bool = (1i16 `Int16.rem` 0i16) == 0i16
+    def remainder06(): Bool = (1i16 `Int16.remainder` 0i16) == 0i16
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
@@ -1149,20 +1149,17 @@ mod TestInt16 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(0i16);
-        equals(i, checked_cast(Int16.valueOf(0i16)))
+        unsafe i.equals(Int16.valueOf(0i16))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(1i16);
-        equals(i, checked_cast(Int16.valueOf(1i16)))
+        unsafe i.equals(Int16.valueOf(1i16))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(-1i16);
-        equals(i, checked_cast(Int16.valueOf(-1i16)))
+        unsafe i.equals(Int16.valueOf(-1i16))
 
 }

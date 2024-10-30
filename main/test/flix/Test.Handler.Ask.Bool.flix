@@ -5,7 +5,7 @@ mod Test.Handler.Ask.Bool {
     }
 
     def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+        Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Bool] =
         try {
@@ -14,7 +14,7 @@ mod Test.Handler.Ask.Bool {
             def ask(x, k) = if (x == limit) Nil else next(x) :: k()
         }
 
-    def next(i: Int32): Bool = if (Int32.mod(i, 2) == 0) true else false
+    def next(i: Int32): Bool = if (Int32.modulo(i, 2) == 0) true else false
 
     def range(a: Int32, b: Int32): List[Bool] =
         List.unfold(i -> if (i >= b) None else Some((next(i), i + 1)), a)

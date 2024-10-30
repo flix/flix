@@ -17,11 +17,20 @@
 ///
 /// A trait representing collections that can be produced from an Iterator.
 ///
-pub trait Collectable[m: Type -> Type] {
+pub trait Collectable[t: Type] {
+    ///
+    /// The element type of the Collectable.
+    ///
+    type Elm[t]: Type
+
+    ///
+    /// The associated effect of the Collectable which represents the effect of accessing its elements.
+    ///
+    type Aef[t]: Eff = {}
 
     ///
     /// Run an Iterator collecting the results.
     ///
-    pub def collect(iter: Iterator[a, ef, r]): m[a] \ {ef, r} with Order[a]
+    pub def collect(iter: Iterator[Collectable.Elm[t], ef, r]): t \ (ef + Collectable.Aef[t] +  r)
 
 }

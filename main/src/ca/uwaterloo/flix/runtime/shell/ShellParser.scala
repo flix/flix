@@ -13,29 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ca.uwaterloo.flix.runtime.shell
 
 import org.jline.reader.{EOFError, ParsedLine, Parser}
 import org.jline.reader.Parser.ParseContext
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
   * Minimal implementation of `ParsedLine`, necessary to keep jline happy.
-  * 
-  * JLine uses these values to implement syntax highlighting, line continuation on 
-  * unclosed string, brackets, etc. Because we have all of this functionality 
+  *
+  * JLine uses these values to implement syntax highlighting, line continuation on
+  * unclosed string, brackets, etc. Because we have all of this functionality
   * switched off, we just need to return something that conforms to the `ParsedLine`
   * interface.
-  * 
+  *
   * https://github.com/jline/jline3/blob/master/reader/src/main/java/org/jline/reader/ParsedLine.java
   */
 class Parsed(s: String) extends ParsedLine {
 
   def wordIndex(): Int = -1
-  def word() = ""
-  def wordCursor(): Int = -1
+  def word() = s
+  def wordCursor(): Int = s.length
   def words() = Nil.asJava
   def cursor() = -1
   def line() = s
@@ -57,7 +57,7 @@ class ShellParser extends Parser {
         // ... and doesn't end with two backslashes on a line, throw `EOFError` to trigger line continuation
         if (!(lines.size > 1 && lines.last == "\\\\"))
           throw new EOFError(-1, -1, "Escaped new line", "newline")
-      } else {      
+      } else {
 
         // Otherwise, if the last character in the string is a backslash, throw `EOFError` to trigger line continuation
         if (s.lastOption == Some('\\'))

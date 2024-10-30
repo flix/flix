@@ -54,11 +54,11 @@ enum BExp {
 // We now define a small interpreter for arithmetic expressions.
 //
 def evalAExp(e: AExp): Int32 = match e {
-    case Cst(i)                 => i
-    case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
-    case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
-    case Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
-    case IfThenElse(e1, e2, e3) =>
+    case AExp.Cst(i)                 => i
+    case AExp.Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
+    case AExp.Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
+    case AExp.Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
+    case AExp.IfThenElse(e1, e2, e3) =>
         let cond = evalBExp(e1);
             if (cond) evalAExp(e2) else evalAExp(e3)
 }
@@ -67,13 +67,13 @@ def evalAExp(e: AExp): Int32 = match e {
 // and here is the small interpreter for boolean expressions.
 //
 def evalBExp(e: BExp): Bool = match e {
-    case True           => true
-    case False          => false
-    case Not(e1)        => not evalBExp(e1)
-    case Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
-    case Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
-    case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
-    case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
+    case BExp.True           => true
+    case BExp.False          => false
+    case BExp.Not(e1)        => not evalBExp(e1)
+    case BExp.Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
+    case BExp.Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
+    case BExp.Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
+    case BExp.Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
 }
 
 //
@@ -83,35 +83,35 @@ def evalBExp(e: BExp): Bool = match e {
 //   $ flix <file> --main testEvalAExp1
 //
 
-@test
-def testEvalAExp1(): Int32 = evalAExp(Cst(42))
+@Test
+def testEvalAExp1(): Int32 = evalAExp(AExp.Cst(42))
 
-@test
-def testEvalAExp2(): Int32 = evalAExp(Plus(Cst(42), Cst(21)))
+@Test
+def testEvalAExp2(): Int32 = evalAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testEvalAExp3(): Int32 = evalAExp(Minus(Cst(42), Cst(21)))
+@Test
+def testEvalAExp3(): Int32 = evalAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testEvalAExp4(): Int32 = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+@Test
+def testEvalAExp4(): Int32 = evalAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2)))
 
-@test
-def testEvalAExp5(): Int32 = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+@Test
+def testEvalAExp5(): Int32 = evalAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testEvalBExp1(): Bool = evalBExp(True)
+@Test
+def testEvalBExp1(): Bool = evalBExp(BExp.True)
 
-@test
-def testEvalBExp2(): Bool = not evalBExp(Not(True))
+@Test
+def testEvalBExp2(): Bool = not evalBExp(BExp.Not(BExp.True))
 
-@test
-def testEvalBExp3(): Bool = not evalBExp(Conj(True, False))
+@Test
+def testEvalBExp3(): Bool = not evalBExp(BExp.Conj(BExp.True, BExp.False))
 
-@test
-def testEvalBExp4(): Bool = evalBExp(Disj(True, False))
+@Test
+def testEvalBExp4(): Bool = evalBExp(BExp.Disj(BExp.True, BExp.False))
 
-@test
-def testEvalBExp5(): Bool = evalBExp(Neq(Cst(1), Cst(2)))
+@Test
+def testEvalBExp5(): Bool = evalBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2)))
 
 //
 // We now write two compilers that translate arithmetic and boolean expressions
@@ -157,116 +157,116 @@ enum Inst {
 // The append function appends two lists and is defined in the bottom of this file.
 //
 def compileAExp(e: AExp): List[Inst] = match e {
-    case Cst(i)         => Push(i) :: Nil
-    case Plus(e1, e2)   =>
+    case AExp.Cst(i)         => Inst.Push(i) :: Nil
+    case AExp.Plus(e1, e2)   =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Add :: Nil
-    case Minus(e1, e2)  =>
+            is2 ::: is1 ::: Inst.Add :: Nil
+    case AExp.Minus(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Sub :: Nil
-    case Times(e1, e2)  =>
+            is2 ::: is1 ::: Inst.Sub :: Nil
+    case AExp.Times(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Mul :: Nil
-    case IfThenElse(e1, e2, e3)  =>
+            is2 ::: is1 ::: Inst.Mul :: Nil
+    case AExp.IfThenElse(e1, e2, e3)  =>
         let is1 = compileBExp(e1);
         let is2 = compileAExp(e2);
         let is3 = compileAExp(e3);
-            is1 ::: Branch(is2, is3) :: Nil
+            is1 ::: Inst.Branch(is2, is3) :: Nil
 }
 
 //
 // and a compiler for boolean expressions:
 //
 def compileBExp(e: BExp): List[Inst] = match e {
-    case True           => Push(1) :: Nil
-    case False          => Push(0) :: Nil
-    case Not(e1)         =>
+    case BExp.True           => Inst.Push(1) :: Nil
+    case BExp.False          => Inst.Push(0) :: Nil
+    case BExp.Not(e1)         =>
         let is = compileBExp(e1);
-            is ::: Neg :: Nil
-    case Conj(e1, e2)   =>
+            is ::: Inst.Neg :: Nil
+    case BExp.Conj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            is2 ::: is1 ::: And :: Nil
-    case Disj(e1, e2)   =>
+            is2 ::: is1 ::: Inst.And :: Nil
+    case BExp.Disj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            is2 ::: is1 ::: Or :: Nil
-    case Eq(e1, e2)     =>
+            is2 ::: is1 ::: Inst.Or :: Nil
+    case BExp.Eq(e1, e2)     =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Cmp :: Nil
-    case Neq(e1, e2)    =>
+            is2 ::: is1 ::: Inst.Cmp :: Nil
+    case BExp.Neq(e1, e2)    =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Neg :: Cmp :: Nil
+            is2 ::: is1 ::: Inst.Neg :: Inst.Cmp :: Nil
 }
 
 //
 // We test each compiler by writing some tests:
 //
-@test
-def testCompileAExp1(): List[Inst] = compileAExp(Cst(42))
+@Test
+def testCompileAExp1(): List[Inst] = compileAExp(AExp.Cst(42))
 
-@test
-def testCompileAExp2(): List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+@Test
+def testCompileAExp2(): List[Inst] = compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testCompileAExp3(): List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+@Test
+def testCompileAExp3(): List[Inst] = compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testCompileAExp4(): List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+@Test
+def testCompileAExp4(): List[Inst] = compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2)))
 
-@test
-def testCompileAExp5(): List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+@Test
+def testCompileAExp5(): List[Inst] = compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21)))
 
-@test
-def testCompileBExp1(): List[Inst] = compileBExp(True)
+@Test
+def testCompileBExp1(): List[Inst] = compileBExp(BExp.True)
 
-@test
-def testCompileBExp2(): List[Inst] = compileBExp(Not(True))
+@Test
+def testCompileBExp2(): List[Inst] = compileBExp(BExp.Not(BExp.True))
 
-@test
-def testCompileBExp3(): List[Inst] = compileBExp(Conj(True, False))
+@Test
+def testCompileBExp3(): List[Inst] = compileBExp(BExp.Conj(BExp.True, BExp.False))
 
-@test
-def testCompileBExp4(): List[Inst] = compileBExp(Disj(True, False))
+@Test
+def testCompileBExp4(): List[Inst] = compileBExp(BExp.Disj(BExp.True, BExp.False))
 
-@test
-def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
+@Test
+def testCompileBExp5(): List[Inst] = compileBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2)))
 
 //
 // Finally, we write an interpreter for the stack-based language:
 //
 def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instructions, stack) {
     case (Nil, x :: _) => x
-    case ((Push(i)) :: rs, st) => evalInst(rs, i :: st)
-    case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
-    case (Sub :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 - i2) :: st)
-    case (Mul :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 * i2) :: st)
-    case (Neg :: rs, i :: st) =>
+    case ((Inst.Push(i)) :: rs, st) => evalInst(rs, i :: st)
+    case (Inst.Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
+    case (Inst.Sub :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 - i2) :: st)
+    case (Inst.Mul :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 * i2) :: st)
+    case (Inst.Neg :: rs, i :: st) =>
         if (i == 0)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case (And :: rs, i1 :: i2 :: st) =>
+    case (Inst.And :: rs, i1 :: i2 :: st) =>
         if (i1 != 0 and i2 != 0)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case (Or :: rs, i1 :: i2 :: st) =>
+    case (Inst.Or :: rs, i1 :: i2 :: st) =>
         if (i1 != 0 or i2 != 0)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case (Cmp :: rs, i1 :: i2 :: st) =>
+    case (Inst.Cmp :: rs, i1 :: i2 :: st) =>
         if (i1 == i2)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case ((Branch(is1, is2)) :: _, i :: st) =>
+    case ((Inst.Branch(is1, is2)) :: _, i :: st) =>
         if (i != 0)
             evalInst(is1, st)
         else
@@ -277,20 +277,20 @@ def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instr
 //
 // and we can test the compiler and interpreter:
 //
-@test
-def testCompileAndEval1(): Int32 = evalInst(compileAExp(Cst(42)), Nil)
+@Test
+def testCompileAndEval1(): Int32 = evalInst(compileAExp(AExp.Cst(42)), Nil)
 
-@test
-def testCompileAndEval2(): Int32 = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+@Test
+def testCompileAndEval2(): Int32 = evalInst(compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21))), Nil)
 
-@test
-def testCompileAndEval3(): Int32 = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+@Test
+def testCompileAndEval3(): Int32 = evalInst(compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21))), Nil)
 
-@test
-def testCompileAndEval4(): Int32 = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+@Test
+def testCompileAndEval4(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2))), Nil)
 
-@test
-def testCompileAndEval5(): Int32 = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
+@Test
+def testCompileAndEval5(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))), Nil)
 
-@test
-def testCompileAndEval6(): Int32 = evalInst(compileAExp(IfThenElse(Eq(Cst(1), Cst(2)), Cst(42), Times(Cst(21), Cst(82)))), Nil)
+@Test
+def testCompileAndEval6(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.Eq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Times(AExp.Cst(21), AExp.Cst(82)))), Nil)

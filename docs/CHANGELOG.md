@@ -1,5 +1,52 @@
 # Changelog
 
+Version 0.52.0:
+- Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
+
+Version 0.51.0:
+- Language: Added support for mutable structs (thanks Joseph!)
+- Language: Added support for `Indexable` and `IndexableMut` (thanks Jonathan!)
+- Compiler: Improved keyword completion (thanks Alexander!)
+
+Version 0.50.0:
+- Language: Introduced `redef` as a short-hand to redefine functions in trait instances (thanks Jakob!)
+- Compiler: Significantly improved performance of auto-complete (thanks Magnus!)
+
+Version 0.49.0:
+- Language: Significantly improved Java interoperability (thanks Chanattan!)
+- Language: Added support for `throw` for Java interoperability (thanks Joseph!)
+
+Version 0.48.0:
+- Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
+
+Version 0.47.0:
+- Language: Added support for associated effects (thanks Matt!)
+- Library: Added `Iterable` instances for maps (thanks Stephen!)
+- Library: Added associated effects to `Iterable` and `Foldable` (thanks Stephen!)
+- Library: Added `FromJava` and `ToJava` and instances (thanks Stephen!)
+- Library: Added missing `toVector` functions (thanks Stephen!)
+- Compiler: Reduced memory usage of types (thanks Magnus!)
+
+Version 0.46.0: 
+- Language: Added support for associated types (thanks Matt!)
+- Compiler: Reworked type inference to use constraints (thanks Matt!)
+- Compiler: Reduced memory usage of types and source locations (thanks Magnus!)
+
+Version 0.45.0:
+- Compiler: Added support for the `build-fatjar` command (thanks Chanattan!)
+- Compiler: Added support for the `outdated` command (thanks Holger!)
+- Library: Added `Coerce` type class (thanks Magnus!)
+- Library: Added `purityOf` functions (thanks Jakob!)
+
+Version 0.44.0:
+- Language: Reworked `IO` to be its own effect (thanks Matt!)
+- Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)
+- Compiler: Added support for the `release` command (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in a file (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in the environment (thanks Holger!)
+- Compiler: Simplified compilation of enums (thanks Jonathan!)
+- Compiler: Improved performance of backend (thanks Jonathan!)
+
 Version 0.43.0:
 - Language: Flix now targets Java 21 bytecode (thanks Magnus!)
 - Language: Flix now uses `VirtualThread`s by default (thanks Magnus!) 
@@ -464,11 +511,3 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
-
-HEAD (in progress, not released):
-
-- Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Inliner
-- Datalog abstraction
-- Restrictable variants
-- Associated types

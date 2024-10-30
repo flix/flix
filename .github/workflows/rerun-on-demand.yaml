@@ -1,0 +1,44 @@
+name: Rerun on Demand
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  handle-request:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '!!!rerun')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rerun Tests
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+            github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            }).then(pull => {
+              github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head_sha: pull.data.head.sha,
+                status: "failure"
+              }).then(runs => {
+                var count = runs.data.total_count;
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: 'Rerunning ' + count + ' failed test(s)...' 
+                }).then(_ => {
+                  runs.data.workflow_runs.forEach(run => {
+                    github.rest.actions.reRunWorkflowFailedJobs({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      run_id: run.id
+                    })
+                  })
+                })
+              })
+            });

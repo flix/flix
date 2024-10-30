@@ -1,25 +1,23 @@
 mod Test.Handler.Gen.AtomicInteger {
 
-    type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
+    import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
-        mk(n)
+        unsafe new AtomicInteger(n)
 
     def toInt(n: AtomicInteger): Int32 =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
-        intValue(n)
+        unsafe n.intValue()
 
     eff Gen {
         pub def gen(): AtomicInteger
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {
-            let counter = ref newAtomicInteger(0) @ rc;
+            let counter = Ref.fresh(rc, newAtomicInteger(0));
             try {
                 generator(); Nil
             } with Gen {
@@ -30,8 +28,8 @@ mod Test.Handler.Gen.AtomicInteger {
         }
 
     def getAndInc(r: Ref[AtomicInteger, r]): AtomicInteger \ r =
-        let i = toInt(deref r);
-        r := newAtomicInteger(i + 1);
+        let i = toInt(Ref.get(r));
+        Ref.put(newAtomicInteger(i + 1), r);
         newAtomicInteger(i)
 
     def range(a: AtomicInteger, b: AtomicInteger): List[AtomicInteger] =

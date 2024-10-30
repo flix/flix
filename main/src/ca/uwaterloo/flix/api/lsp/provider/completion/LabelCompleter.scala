@@ -20,18 +20,18 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object LabelCompleter extends Completer {
+object LabelCompleter {
 
   /**
     * Returns a list of [[LabelCompletion]]s.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[LabelCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
     }
 
-    val regex = raw"(.*)[.].*".r
+    val regex = raw"(.*)#.*".r
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>

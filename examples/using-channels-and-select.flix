@@ -1,19 +1,19 @@
  /// Mooo's `n` times on channel `c`.
-def mooo(tx: Sender[String, r], n: Int32): Unit \ IO =
+def mooo(tx: Sender[String, r], n: Int32): Unit \ r + IO =
     match n {
         case 0 => ()
         case x => Channel.send("Mooo!", tx); mooo(tx, x - 1)
     }
 
 /// Meow's `n` times on channel `c`.
-def meow(tx: Sender[String, r], n: Int32): Unit \ IO =
+def meow(tx: Sender[String, r], n: Int32): Unit \ r + IO =
     match n {
         case 0 => ()
         case x => Channel.send("Meow!", tx); meow(tx, x - 1)
     }
 
 /// Hiss'es `n` times on channel `c`.
-def hiss(tx: Sender[String, r], n: Int32): Unit \ IO =
+def hiss(tx: Sender[String, r], n: Int32): Unit \ r + IO =
     match n {
         case 0 => ()
         case x => Channel.send("Hiss!", tx); hiss(tx, x - 1)

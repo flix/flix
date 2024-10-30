@@ -26,7 +26,7 @@ mod Graph {
     /// Returns the pairs `(a, b)` where `a` can reach `b` through a number of
     /// edges in the directed graph `g`, including zero.
     ///
-    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
+    pub def closure(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let res = query edges, nodes(), reachability()
                   select (src, dst)
@@ -38,7 +38,7 @@ mod Graph {
     /// Returns the nodes that are reachable from `src` in the directed
     /// graph `g`.
     ///
-    pub def reachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
+    pub def reachableFrom(src: t, g: m[(t, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let res = query edges, reachabilityFromSrc(src)
                   select dst
@@ -50,7 +50,7 @@ mod Graph {
     /// Returns the nodes that are unreachable from `src` in the directed
     /// graph `g`.
     ///
-    pub def unreachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
+    pub def unreachableFrom(src: t, g: m[(t, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let unreachablility = #{
             // If there is a node that is not reachable from `src` then it is
@@ -67,15 +67,15 @@ mod Graph {
     /// Returns `true` if there is a path from `src` to `dst` in the directed
     /// graph `g`.
     ///
-    pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool with Foldable[m], Order[t] =
-        reachableFrom(src.src, g) |> Set.exists(x -> dst.dst == x)
+    pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        reachableFrom(src#src, g) |> Set.exists(x -> dst#dst == x)
 
     ///
     /// Returns the strongly connected components of the directed graph `g`.
     /// Two nodes are in the same component if and only if they can both
     /// reach each other.
     ///
-    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Order[t] = {
+    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let connected = #{
             // If `n1` can reach `n2` and `n2` can reach `n1` then they are part
@@ -98,7 +98,7 @@ mod Graph {
     /// Returns the graph where all edges in the directed graph `g` have their
     /// nodes flipped.
     ///
-    pub def flipEdges(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
+    pub def flipEdges(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let rev = #{
             RevEdge(y, x) :- Edge(x, y).
@@ -115,7 +115,7 @@ mod Graph {
     ///
     /// OBS: No self-edges are returned no matter the input.
     ///
-    pub def invert(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
+    pub def invert(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let inverse = #{
             InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y), if x != y.
@@ -129,7 +129,7 @@ mod Graph {
     ///
     /// Returns `true` if the directed graph `g` contains at least one cycle.
     ///
-    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Order[t] = {
+    pub def isCyclic(g: m[(t, t)]): Bool \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let reachability = #{
             // Reachability given the edges.
@@ -150,7 +150,7 @@ mod Graph {
     /// weighted directed graph `g`. Returns `None` if `g` contains a
     /// negative cycle.
     ///
-    pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Order[t] = {
+    pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         // Algorithm based on floyd-warshall.
         /// Returns the number of items in `s` less than `v`.
         def rank(v, s) = s |> Set.partition(v0 -> v0 < v) |> fst |> Set.size;
@@ -206,7 +206,7 @@ mod Graph {
     ///
     /// OBS: No negative cycles must be present.
     ///
-    pub def boundedDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Order[t] = {
+    pub def boundedDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
             // Initialize all node distances to zero.
@@ -227,21 +227,16 @@ mod Graph {
     }
 
     ///
-    /// Returns the shortest distance from `src` to every other node in the
+    /// Returns the shortest distance from `src` to every other reachable vertex in the
     /// weighted directed graph `g`.
     ///
-    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
+    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
             Dist(src; Down.Down(0)).
             Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
-        let mapping = #{
-            Mapping(x, destructDown(d)) :- fix Dist(x; d).
-        };
-        let res = query edges, dists, mapping
-                  select (x, d)
-                  from Mapping(x, d);
+        let res = query edges, dists select (x, coerce(d)) from Dist(x; d);
         res |> Vector.toMap
     }
 
@@ -249,14 +244,14 @@ mod Graph {
     /// Returns the shortest distance from `src` to `dst` in the weighted
     /// directed graph `g`.
     ///
-    pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Order[t] =
-        distancesFrom(src.src, g) |> Map.get(dst.dst)
+    pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        distancesFrom(src#src, g) |> Map.get(dst#dst)
 
     ///
     /// Returns a copy of the directed graph `g` where all flipped edges are
     /// added. An undirected graph in directed representation.
     ///
-    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
+    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
     }
@@ -265,7 +260,7 @@ mod Graph {
     /// Returns a copy of the weighted directed graph `g` where all flipped
     /// edges are added. An undirected graph in directed representation.
     ///
-    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Order[t] = {
+    pub def toUndirectedLabeled(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
@@ -276,7 +271,7 @@ mod Graph {
     ///
     /// OBS: No negative cycles must be present.
     ///
-    pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Order[t] = {
+    pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
             Dist(src; Down.Down(0)) :- if limit >= 0.
@@ -294,7 +289,7 @@ mod Graph {
     /// Returns the nodes that are at most `limit` (inclusive) edges away
     /// from `src` in the directed graph `g`.
     ///
-    pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
+    pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
             Dist(src; Down.Down(0)) :- if limit >= 0.
@@ -315,7 +310,7 @@ mod Graph {
     ///
     /// OBS: No cycles must be present.
     ///
-    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Order[t] = region rc {
+    pub def topologicalSort(g: m[(t, t)]): List[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = region rc {
         // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
         let edges = inject g into Edge;
         let topSort = #{
@@ -334,7 +329,7 @@ mod Graph {
                                After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
-        let ml = MutList.new(rc);
+        let ml = MutList.empty(rc);
         // Extract nodes in fixed order.
         res |>
             Vector.sortBy(match (x, i) -> (i, x)) |>
@@ -346,7 +341,7 @@ mod Graph {
     /// Returns the degree of each node in the directed graph `g` (the number of
     /// times a node exists as an endpoint of an edge).
     ///
-    pub def degrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
+    pub def degrees(g: m[(t, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let in = #{
@@ -368,7 +363,7 @@ mod Graph {
     /// Returns a mapping from distances to the set of nodes for which the
     /// shortest path from `src` in the directed graph `g` is of a given length.
     ///
-    pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Order[t] = {
+    pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let frontiers = #{
             Dist(src; Down.Down(0)).
@@ -405,7 +400,7 @@ mod Graph {
     /// There will at most be one triple for each pair of nodes (which will
     /// be the maximum `cut` of the possible choices).
     ///
-    pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Order[t] = {
+    pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         def unpack(opt) = match opt {
             case Some(v) => v
@@ -432,7 +427,7 @@ mod Graph {
     /// Returns the in-degree (how many edges end in a given node)
     /// of each node in the directed graph `g`.
     ///
-    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
+    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let in = #{
@@ -453,7 +448,7 @@ mod Graph {
     /// Returns the out-degree (how many edges start in a given node)
     /// of each node in the directed graph `g`.
     ///
-    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
+    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let out = #{
@@ -475,8 +470,8 @@ mod Graph {
     /// The strings of nodes are put in quotes but DOT identifier validity is
     /// up to the caller.
     ///
-    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new(rc);
+    pub def toGraphviz(g: m[(t, t)]): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] = region rc {
+        let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
@@ -491,8 +486,8 @@ mod Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new(rc);
+    pub def toGraphvizLabeled(g: m[(t, l, t)]): String \ Foldable.Aef[m] with Foldable[m], ToString[t], ToString[l] = region rc {
+        let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {
@@ -513,7 +508,7 @@ mod Graph {
     /// with backslash.
     ///
     def graphvizId(id: t): String with ToString[t] = {
-        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+        "\"${String.replace(src = "\"", dst = "\\\"", "${id}")}\""
     }
 
     ///

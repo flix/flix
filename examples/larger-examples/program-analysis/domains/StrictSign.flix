@@ -1,6 +1,6 @@
-/**
- * An implementation of the strict sign domain.
- */
+///
+/// An implementation of the strict sign domain.
+///
 mod Domain.StrictSign {
 
     ///
@@ -17,14 +17,14 @@ mod Domain.StrictSign {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//    #reflexive #antiSymmetric #transitive #leastElement(Sign.Bot) #greatestElement(Sign.Top)
     pub def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
-        case (Bot, _)   => true
-        case (Neg, Neg) => true
-        case (Zer, Zer) => true
-        case (Pos, Pos) => true
-        case (_, Top)   => true
-        case _          => false
+        case (Sign.Bot, _)        => true
+        case (Sign.Neg, Sign.Neg) => true
+        case (Sign.Zer, Sign.Zer) => true
+        case (Sign.Pos, Sign.Pos) => true
+        case (_, Sign.Top)        => true
+        case _                    => false
     }
 
     ///
@@ -32,12 +32,12 @@ mod Domain.StrictSign {
     ///
 //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Bot, x)   => x
-        case (x, Bot)   => x
-        case (Neg, Neg) => Neg
-        case (Zer, Zer) => Zer
-        case (Pos, Pos) => Pos
-        case _          => Top
+        case (Sign.Bot, x)        => x
+        case (x, Sign.Bot)        => x
+        case (Sign.Neg, Sign.Neg) => Sign.Neg
+        case (Sign.Zer, Sign.Zer) => Sign.Zer
+        case (Sign.Pos, Sign.Pos) => Sign.Pos
+        case _                    => Sign.Top
     }
 
     ///
@@ -45,33 +45,33 @@ mod Domain.StrictSign {
     ///
 //    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Top, x)   => x
-        case (x, Top)   => x
-        case (Neg, Neg) => Neg
-        case (Zer, Zer) => Zer
-        case (Pos, Pos) => Pos
-        case _          => Bot
+        case (Sign.Top, x)        => x
+        case (x, Sign.Top)        => x
+        case (Sign.Neg, Sign.Neg) => Sign.Neg
+        case (Sign.Zer, Sign.Zer) => Sign.Zer
+        case (Sign.Pos, Sign.Pos) => Sign.Pos
+        case _                    => Sign.Bot
     }
 
     ///
     /// The lattice height function.
     ///
-//    #nonNegative
+//    #nonSign.Negative
     pub def height(e: Sign): BigInt = match e {
-        case Top    => 0ii
-        case Neg    => 1ii
-        case Zer    => 1ii
-        case Pos    => 1ii
-        case Bot    => 2ii
+        case Sign.Top => 0ii
+        case Sign.Neg => 1ii
+        case Sign.Zer => 1ii
+        case Sign.Pos => 1ii
+        case Sign.Bot => 2ii
     }
 
     ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
     pub def alpha(i: BigInt): Sign = {
-        if      (i < 0ii)   Neg
-        else if (i > 0ii)   Pos
-        else                Zer
+        if      (i < 0ii) Sign.Neg
+        else if (i > 0ii) Sign.Pos
+        else              Sign.Zer
     }
 
     ///
@@ -80,11 +80,11 @@ mod Domain.StrictSign {
 //    #safe1(x -> x + 1ii)
 //    #strict1 #monotone1
     pub def inc(e: Sign): Sign = match e {
-        case Bot => Bot
-        case Neg => Top
-        case Zer => Pos
-        case Pos => Pos
-        case Top => Top
+        case Sign.Bot => Sign.Bot
+        case Sign.Neg => Sign.Top
+        case Sign.Zer => Sign.Pos
+        case Sign.Pos => Sign.Pos
+        case Sign.Top => Sign.Top
     }
 
     ///
@@ -93,11 +93,11 @@ mod Domain.StrictSign {
 //    #safe1(x -> x - 1ii)
 //    #strict1 #monotone1
     pub def dec(e: Sign): Sign = match e {
-        case Bot => Bot
-        case Neg => Neg
-        case Zer => Neg
-        case Pos => Top
-        case Top => Top
+        case Sign.Bot => Sign.Bot
+        case Sign.Neg => Sign.Neg
+        case Sign.Zer => Sign.Neg
+        case Sign.Pos => Sign.Top
+        case Sign.Top => Sign.Top
     }
 
     ///
@@ -106,18 +106,18 @@ mod Domain.StrictSign {
 //    #safe2((x, y) -> x + y)
 //    #strict2 #monotone2 #commutative #associative
     pub def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Bot, _)   => Bot
-        case (_, Bot)   => Bot
-        case (Neg, Neg) => Neg
-        case (Neg, Zer) => Neg
-        case (Neg, Pos) => Top
-        case (Zer, Neg) => Neg
-        case (Zer, Zer) => Zer
-        case (Zer, Pos) => Pos
-        case (Pos, Neg) => Top
-        case (Pos, Zer) => Pos
-        case (Pos, Pos) => Pos
-        case _          => Top
+        case (Sign.Bot, _)        => Sign.Bot
+        case (_, Sign.Bot)        => Sign.Bot
+        case (Sign.Neg, Sign.Neg) => Sign.Neg
+        case (Sign.Neg, Sign.Zer) => Sign.Neg
+        case (Sign.Neg, Sign.Pos) => Sign.Top
+        case (Sign.Zer, Sign.Neg) => Sign.Neg
+        case (Sign.Zer, Sign.Zer) => Sign.Zer
+        case (Sign.Zer, Sign.Pos) => Sign.Pos
+        case (Sign.Pos, Sign.Neg) => Sign.Top
+        case (Sign.Pos, Sign.Zer) => Sign.Pos
+        case (Sign.Pos, Sign.Pos) => Sign.Pos
+        case _                    => Sign.Top
     }
 
     ///
@@ -126,18 +126,18 @@ mod Domain.StrictSign {
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
     pub def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Bot, _)   => Bot
-        case (_, Bot)   => Bot
-        case (Neg, Neg) => Top
-        case (Neg, Zer) => Neg
-        case (Neg, Pos) => Neg
-        case (Zer, Neg) => Pos
-        case (Zer, Zer) => Zer
-        case (Zer, Pos) => Neg
-        case (Pos, Neg) => Pos
-        case (Pos, Zer) => Pos
-        case (Pos, Pos) => Top
-        case _          => Top
+        case (Sign.Bot, _)        => Sign.Bot
+        case (_, Sign.Bot)        => Sign.Bot
+        case (Sign.Neg, Sign.Neg) => Sign.Top
+        case (Sign.Neg, Sign.Zer) => Sign.Neg
+        case (Sign.Neg, Sign.Pos) => Sign.Neg
+        case (Sign.Zer, Sign.Neg) => Sign.Pos
+        case (Sign.Zer, Sign.Zer) => Sign.Zer
+        case (Sign.Zer, Sign.Pos) => Sign.Neg
+        case (Sign.Pos, Sign.Neg) => Sign.Pos
+        case (Sign.Pos, Sign.Zer) => Sign.Pos
+        case (Sign.Pos, Sign.Pos) => Sign.Top
+        case _                    => Sign.Top
     }
 
     ///
@@ -146,76 +146,19 @@ mod Domain.StrictSign {
 //    #safe2((x, y) -> x * y)
 //    #strict2 #monotone2 #commutative #associative
     pub def times(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Bot, _)   => Bot
-        case (_, Bot)   => Bot
-        case (Neg, Neg) => Pos
-        case (Neg, Zer) => Zer
-        case (Neg, Pos) => Neg
-        case (Zer, Neg) => Zer
-        case (Zer, Zer) => Zer
-        case (Zer, Pos) => Zer
-        case (Pos, Neg) => Neg
-        case (Pos, Zer) => Zer
-        case (Pos, Pos) => Pos
-        case _          => Top
+        case (Sign.Bot, _)        => Sign.Bot
+        case (_, Sign.Bot)        => Sign.Bot
+        case (Sign.Neg, Sign.Neg) => Sign.Pos
+        case (Sign.Neg, Sign.Zer) => Sign.Zer
+        case (Sign.Neg, Sign.Pos) => Sign.Neg
+        case (Sign.Zer, Sign.Neg) => Sign.Zer
+        case (Sign.Zer, Sign.Zer) => Sign.Zer
+        case (Sign.Zer, Sign.Pos) => Sign.Zer
+        case (Sign.Pos, Sign.Neg) => Sign.Neg
+        case (Sign.Pos, Sign.Zer) => Sign.Zer
+        case (Sign.Pos, Sign.Pos) => Sign.Pos
+        case _                    => Sign.Top
     }
-
-    ///
-    /// Over-approximates `equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def eq(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)   => Belnap/Belnap.Bot
-        case (_, Bot)   => Belnap/Belnap.Bot
-        case (Neg, Neg) => Belnap/Belnap.Top
-        case (Neg, Zer) => Belnap/Belnap.False
-        case (Neg, Pos) => Belnap/Belnap.False
-        case (Zer, Neg) => Belnap/Belnap.False
-        case (Zer, Zer) => Belnap/Belnap.True
-        case (Zer, Pos) => Belnap/Belnap.False
-        case (Pos, Neg) => Belnap/Belnap.False
-        case (Pos, Zer) => Belnap/Belnap.False
-        case (Pos, Pos) => Belnap/Belnap.Top
-        case _          => Belnap/Belnap.Top
-    }
-
-    ///
-    /// Over-approximates `not equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def neq(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.not(eq(e1, e2))
-
-    ///
-    /// Over-approximates `less than`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)   => Belnap/Belnap.Bot
-        case (_, Bot)   => Belnap/Belnap.Bot
-        case (Neg, Zer) => Belnap/Belnap.True
-        case (Neg, Pos) => Belnap/Belnap.True
-        case (Zer, Pos) => Belnap/Belnap.True
-        case (Pos, Neg) => Belnap/Belnap.False
-        case (Pos, Zer) => Belnap/Belnap.False
-        case (Zer, Neg) => Belnap/Belnap.False
-        case _          => Belnap/Belnap.Top
-    }
-
-    ///
-    /// Over-approximates `less than or equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     //
     // ## Specialized Laws
@@ -233,9 +176,9 @@ mod Domain.StrictSign {
 
 //    law greatestElement(leq: (Sign, Sign) -> Bool, top: Sign): Bool = Bounded.greatestElement(top, leq)
 
-//    law strict1(f: Sign -> Sign): Bool = Bounded.strict1(f, Bot, Bot)
+//    law strict1(f: Sign -> Sign): Bool = Bounded.strict1(f, Sign.Bot, Sign.Bot)
 
-//    law strict2(f: (Sign, Sign) -> Sign): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+//    law strict2(f: (Sign, Sign) -> Sign): Bool = Bounded.strict2(f, Sign.Bot, Sign.Bot, Sign.Bot)
 
 //    law monotone1(f: Sign -> Sign): Bool = PartialOrder.monotone1(f, leq, leq)
 

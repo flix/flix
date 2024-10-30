@@ -70,19 +70,6 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Transform exactly one hard error into a soft error using the given function `f`.
-    */
-  def recoverOne[U >: T](f: PartialFunction[E, U]): Validation[U, E] = this match {
-    case Validation.HardFailure(errors) if errors.length == 1 =>
-      val one = errors.head.get
-      if (f.isDefinedAt(one))
-        Validation.SoftFailure(f(one), Chain(one))
-      else
-        this
-    case _ => this
-  }
-
-  /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
@@ -188,7 +175,7 @@ object Validation {
   /**
     * Represents a success that contains a value and non-critical `errors`.
     */
-  case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
+  private case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
 
   /**
     * Represents a failure with no value and `errors`.
@@ -237,15 +224,6 @@ object Validation {
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
   /**
-    * Traverses the given map, applying the function `f` to each value.
-    */
-  def traverseValues[K, V1, V2, E](xs: Map[K, V1])(f: V1 => Validation[V2, E]): Validation[Map[K, V2], E] = {
-    mapN(traverse(xs) {
-      case (k, v0) => mapN(f(v0))(v => k -> v)
-    })(_.toMap)
-  }
-
-  /**
     * Traverses `o` applying the function `f` to the value, if it exists.
     */
   def traverseOpt[T, S, E](o: Option[T])(f: T => Validation[S, E]): Validation[Option[S], E] = o match {
@@ -260,7 +238,7 @@ object Validation {
   /**
     * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
     */
-  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[_, E]): Validation[Unit, E] = {
+  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[?, E]): Validation[Unit, E] = {
     mapN(traverse(xs)(f))(_ => ())
   }
 
@@ -569,13 +547,31 @@ object Validation {
     flatten(ap(mapN(t1, t2, t3, t4, t5)(curry(f)))(t6))
 
   /**
-    * FlatMaps over t1, t2, t3, t4, t5, and t6.
+    * FlatMaps over t1, t2, t3, t4, t5, t6 and t7.
     */
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E])
                                                 (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
+
+  /**
+   * FlatMaps over t1, t2, t3, t4, t5, t6, t7 and t8.
+   */
+  def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                     t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                     t7: Validation[T7, E], t8: Validation[T8, E])
+                                                    (f: (T1, T2, T3, T4, T5, T6, T7, T8) => Validation[U, E]): Validation[U, E] =
+    flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8))
+
+  /**
+   * FlatMaps over t1, t2, t3, t4, t5, t6, t7 t8 and t9
+   */
+  def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                         t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                         t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
+                                                        (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => Validation[U, E]): Validation[U, E] =
+    flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8)(curry(f)))(t9))
 
   /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.

@@ -12,29 +12,28 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.12!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.12!!'
+    implementation 'org.scala-lang:scala-library:2.13.14!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.14!!'
 
-    implementation('org.java-websocket:Java-WebSocket:1.5.3')
-    implementation('org.jline:jline:3.22.0')
-    implementation('org.json4s:json4s-native_2.13:3.6.12')
-    implementation('org.ow2.asm:asm:9.6')
-    implementation('org.parboiled:parboiled_2.13:2.4.1')
-    implementation('org.scalactic:scalactic_2.13:3.2.15')
+    implementation('org.java-websocket:Java-WebSocket:1.5.6')
+    implementation('org.jline:jline:3.25.1')
+    implementation('org.json4s:json4s-native_2.13:4.0.7')
+    implementation('org.ow2.asm:asm:9.7')
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
-    implementation('com.google.guava:guava:31.1-jre')
-
-    // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
-    implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
+    implementation('com.google.guava:guava:33.2.0-jre')
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
 
     implementation('io.get-coursier:coursier_2.13:2.1.4')
-    implementation('org.tomlj:tomlj:1.1.0')
+
+    // Note: The tomlj library determines the antlr library.
+    // We cannot upgrade the antlr library independently.
+    implementation('org.tomlj:tomlj:1.1.1')
     implementation('org.antlr:antlr4-runtime:4.11.1')
 
-    implementation('org.slf4j:slf4j-nop:2.0.7')
+    implementation('org.slf4j:slf4j-nop:2.0.13')
 
-    testImplementation('org.scalatest:scalatest_2.13:3.2.15')
+    testImplementation('org.scalatest:scalatest_2.13:3.2.18')
 }
 
 tasks.withType(ScalaCompile) {
@@ -42,10 +41,12 @@ tasks.withType(ScalaCompile) {
         memoryMaximumSize = '1536m'
     }
     scalaCompileOptions.additionalParameters = [
-            "-language:postfixOps",
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
-            "-release", "11"
+            "-release", "11",
+            "-opt:inline:ca.uwaterloo.**",
+            "-Xsource:3",    // Scala 3 migration flag
+            "-Ytasty-reader" // Scala 3 migration flag
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
@@ -78,10 +79,12 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    
+
     from('main') {
         include '**/*.flix'
+        include '**/*.json'
         include '**/*.zip'
+        include '**/ClassList.txt'
     }
 
     duplicatesStrategy = 'exclude'
@@ -89,14 +92,20 @@ jar {
 
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
-    args = ['-P', '-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
 
 test.dependsOn testAll
 
-task vscode(type: Copy, dependsOn:[clean, jar]) {
+task vscode(type: Copy, dependsOn: [clean, jar]) {
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
 }

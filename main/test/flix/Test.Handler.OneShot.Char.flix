@@ -1,72 +1,72 @@
 mod Test.Handler.OneShot.Char {
 
-    eff Ask {
-        pub def ask(x: Char): Char
+    eff AskTell {
+        pub def askTell(x: Char): Char
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Ask.ask('a');
+        def f1() = AskTell.askTell('a');
         let result = try {
             f1()
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Ask.ask('a');
+        def f1() = AskTell.askTell('a');
         def f2() = f1();
         let result = try {
             f2()
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Ask.ask('a');
+        def f1() = AskTell.askTell('a');
         def f2() = f1();
         def f3() = f2();
         let result = try {
             f3()
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Ask.ask('a');
+        def f() = AskTell.askTell('a');
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Ask.ask('a');
+        def f() = AskTell.askTell('a');
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do Ask.ask('a');
+        def f1() = AskTell.askTell('a');
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = try {
             r(10)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
@@ -74,8 +74,8 @@ mod Test.Handler.OneShot.Char {
     def testMutualRecursive01(): Bool =
         let result = try {
             mutual1(0)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
@@ -83,8 +83,8 @@ mod Test.Handler.OneShot.Char {
     def testMutualRecursive02(): Bool =
         let result = try {
             mutual1(1)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
@@ -92,8 +92,8 @@ mod Test.Handler.OneShot.Char {
     def testMutualRecursive03(): Bool =
         let result = try {
             mutual1(2)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
@@ -101,8 +101,8 @@ mod Test.Handler.OneShot.Char {
     def testMutualRecursive04(): Bool =
         let result = try {
             mutual1(3)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
@@ -110,17 +110,17 @@ mod Test.Handler.OneShot.Char {
     def testMutualRecursive05(): Bool =
         let result = try {
             mutual1(10)
-        } with Ask {
-            def ask(x, k) = k(next(x))
+        } with AskTell {
+            def askTell(x, k) = k(next(x))
         };
         Assert.eq('b', result)
 
-    def f(): Char \ Ask = do Ask.ask('a')
+    def f(): Char \ AskTell = AskTell.askTell('a')
 
-    def mutual1(x: Int32): Char \ Ask =
+    def mutual1(x: Int32): Char \ AskTell =
         if (x == 0) f() else mutual2(x - 1)
 
-    def mutual2(x: Int32): Char \ Ask =
+    def mutual2(x: Int32): Char \ AskTell =
         if (x == 0) f() else mutual1(x - 1)
 
     def next(c: Char): Char = match c {

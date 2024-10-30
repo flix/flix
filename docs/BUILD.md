@@ -1,10 +1,11 @@
-# Building and running the compiler
+# Building and Running the Flix compiler
 
 ## Building with IntelliJ IDEA
 
-Flix can be built and run from within the IntelliJ IDEA IDE which is useful for working on the compiler and the standard library.
+Flix can be built and run from within the IntelliJ IDEA IDE which is useful for
+working on the compiler and the standard library.
 
-### Setup an IDEA project
+### Setup IDEA project
 
 1. Open IDEA and choose "Get from VCS"
 2. IDEA should automatically detect that this is a Gradle project
@@ -16,22 +17,41 @@ Flix can be built and run from within the IntelliJ IDEA IDE which is useful for 
 
 Traverse to `main/src/ca/uwaterloo/flix/Main.scala`
 
-Open `Main.scala`, right-click on `def main` and select `Run 'Main'`. This runs the Flix REPL.
+Open `Main.scala`, right-click on `def main` and select `Run 'Main'`. This runs
+the Flix REPL.
 
-To compile and run a Flix file with a `main` function, right-click on the main function in `Main.scala` and choose "Modify Run Configuration".
+To compile and run a Flix file with a `main` function, right-click on the main
+function in `Main.scala` and choose "Modify Run Configuration".
+
 Here enter the file name in the "Program arguments" field.
 
 ### Running tests
 
 Open `TestAll.scala`, right click on `class TestAll` and select `Run 'TestAll'`
 
+### Testing VSCode
+
+Add a `gradle.properties` file to the project root with:
+
+```
+dev.flix.vscode.project=C:/tmp/flix
+```
+
+where `C:/tmp/flix` is a path to an empty directory. 
+
+Run `./gradlew vscode` to build a Flix `jar` and copy it to `C:/tmp/flix`.
+
+Open the directory in VSCode: `File -> Open Folder ...` and test!
+
 ### Formatting
 
-Settings > Editor > Code Style > Scala > ScalaDoc > check "add additional space for leading asterisk"
+Go to `Settings > Editor > Code Style > Scala > ScalaDoc` and check "add
+additional space for leading asterisk".
 
 ## Building with Gradle
 
-Flix can also be built with Gradle, but the main developers prefer to build with IntelliJ IDEA.
+Flix can also be built with Gradle, but the main developers prefer to build with
+IntelliJ IDEA.
 
 The Gradle build is used for continuous integration on GitHub.
 
@@ -39,13 +59,20 @@ The Gradle build is used for continuous integration on GitHub.
 
 ### Out of memory
 
-If you get a `java.lang.OutOfMemoryError: Java heap space` error, find the setting to increase the heap size. For IDEA projects, this is under `Settings -> Build, Execution, Deployment -> Compiler`. Directly on "Compiler" there is a field "Shared build processes heap" and under `Scala Compiler -> Scala Compiler` there is "Maximum heap size". Try out which one you need to increase. 4GB should be enough in each case.
+If you get a `java.lang.OutOfMemoryError: Java heap space` error, find the
+setting to increase the heap size. For IDEA projects, this is under `Settings ->
+Build, Execution, Deployment -> Compiler`. Directly on "Compiler" there is a
+field "Shared build processes heap" and under `Scala Compiler -> Scala Compiler`
+there is "Maximum heap size". Try out which one you need to increase. 4GB should
+be enough in each case.
 
 ### Problems with imports from libraries
 
 Check that all jar files in the `lib` folder are added as library (see above).
-When a new library is added or an existing one is updated, it has to be added (again) this way.
+When a new library is added or an existing one is updated, it has to be added
+(again) this way.
 
 ### Build problems in IntelliJ
 
-Sometimes it helps running `Build -> Rebuild Project` which will fix any cache issues.
+Sometimes it helps running `Build -> Rebuild Project` which will fix any cache
+issues.

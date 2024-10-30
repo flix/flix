@@ -40,7 +40,7 @@ mod Test.Exp.ChooseStar.Simple {
 
     pub def testChooseStar3(): Bool = region rc {
         // P2: check the lower bound by using result in a choose
-        let star = choose* Expr.Cst(ref 2 @ rc) {
+        let star = choose* Expr.Cst(Ref.fresh(rc, 2)) {
             case Expr.Cst(_) => Expr.Var("tmp")
             case Expr.Not(_) => Expr.Var("tmp")
             case Expr.Xor(x, _) => Expr.Not(Some(x))
@@ -54,10 +54,10 @@ mod Test.Exp.ChooseStar.Simple {
 // TODO RESTR-VARS
 //    pub def testChooseStar4(): Bool = {
 //        // P2: check the lower bound by using result in a choose
-//        let star = choose* open Expr.Cst(32.1f32) {
-//            case Expr.Cst(_) => open Expr.Var("tmp")
-//            case Expr.Not(_) => open Expr.Var("tmp")
-//            case Expr.Xor(x, _) => open Expr.Not(Some(x))
+//        let star = choose* open_variant Expr.Cst(32.1f32) {
+//            case Expr.Cst(_) => open_variant Expr.Var("tmp")
+//            case Expr.Not(_) => open_variant Expr.Var("tmp")
+//            case Expr.Xor(x, _) => open_variant Expr.Not(Some(x))
 //        };
 //        choose star {
 //            case Expr.Var(_) => true
@@ -68,9 +68,9 @@ mod Test.Exp.ChooseStar.Simple {
 //
 //    pub def testChooseStar5(): Bool = {
 //        // P3: Check that not is not present
-//        let star = choose* open Expr.Cst(None) {
-//            case Expr.Not(opt) => open Expr.Not(opt)
-//            case Expr.Cst(opt) => open Expr.Var(match opt {
+//        let star = choose* open_variant Expr.Cst(None) {
+//            case Expr.Not(opt) => open_variant Expr.Not(opt)
+//            case Expr.Cst(opt) => open_variant Expr.Var(match opt {
 //                case None => "None"
 //                case Some(_) => "Some"
 //            })
@@ -82,9 +82,9 @@ mod Test.Exp.ChooseStar.Simple {
 //
 //    pub def testChooseStar6(): Bool = {
 //        // P3: Check that not is not present
-//        let star = choose* open Expr.Cst(12) {
-//            case Expr.Not(opt) => open Expr.Not(opt)
-//            case Expr.Cst(x) => open Expr.Cst(x)
+//        let star = choose* open_variant Expr.Cst(12) {
+//            case Expr.Not(opt) => open_variant Expr.Not(opt)
+//            case Expr.Cst(x) => open_variant Expr.Cst(x)
 //        };
 //        choose star {
 //            case Expr.Cst(_) => true
@@ -94,12 +94,12 @@ mod Test.Exp.ChooseStar.Simple {
 //    pub def testChooseStar7(): Bool = {
 //        // P3: Check that Not is not present
 //        let f = c -> choose* c {
-//            case Expr.Not(opt) => open Expr.Not(opt)
-//            case Expr.Cst(_) => open Expr.Var("tmp")
+//            case Expr.Not(opt) => open_variant Expr.Not(opt)
+//            case Expr.Cst(_) => open_variant Expr.Var("tmp")
 //        };
 //        let g = c -> choose* c {
-//            case Expr.Not(opt) => open Expr.Not(opt)
-//            case Expr.Xor(x, y) => open Expr.And(y, x)
+//            case Expr.Not(opt) => open_variant Expr.Not(opt)
+//            case Expr.Xor(x, y) => open_variant Expr.And(y, x)
 //        };
 //        let _ = if (true) f else g;
 //        true

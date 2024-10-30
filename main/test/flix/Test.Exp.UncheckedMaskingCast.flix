@@ -4,13 +4,13 @@ mod Test.Exp.UncheckedMaskingCast {
     def testMask01(): Bool = masked_cast(true)
 
     @test
-    def testMask02(): Bool = masked_cast(deref (ref true @ Static))
+    def testMask02(): Bool = masked_cast(Ref.get(Ref.fresh(Static, true)))
 
     @test
     def testMask03(): Bool = region rc {
-        let r = ref false @ rc;
-        masked_cast(r := true);
-        deref r
+        let r = Ref.fresh(rc, false);
+        masked_cast(Ref.put(true, r));
+        Ref.get(r)
     }
 
 }

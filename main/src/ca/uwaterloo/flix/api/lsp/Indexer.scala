@@ -16,9 +16,11 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 
 object Indexer {
 
@@ -29,7 +31,8 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
-      traverse(root.classes.values)(visitClass),
+      traverse(root.structs.values)(visitStruct),
+      traverse(root.traits.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
       },
@@ -42,7 +45,7 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, exp) =>
+    case Def(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(def0),
         visitSpec(spec),
@@ -54,7 +57,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, exp) =>
+    case Sig(_, spec, exp, _) =>
       Index.all(
         Index.occurrenceOf(sig0),
         visitSpec(spec),
@@ -66,11 +69,11 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(econstrs)(visitEqualityConstraint),
         visitType(retTpe),
         visitType(eff),
@@ -81,12 +84,12 @@ object Indexer {
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = enum0 match {
-    case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
+    case Enum(_, _, _, _, tparams, derives, cases, _) =>
       Index.all(
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),
-        traverse(derives.classes) {
-          case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
+        traverse(derives.traits) {
+          case Ast.Derivation(trt, loc) => Index.useOf(trt, loc)
         },
         traverse(cases.values)(visitCase),
       )
@@ -101,14 +104,28 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given class `class0`.
+    * Returns a reverse index for the given struct `struct0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc) =>
+  private def visitStruct(struct0: Struct): Index = struct0 match {
+    case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
       Index.all(
-        Index.occurrenceOf(class0),
+        Index.occurrenceOf(struct0),
+        traverse(tparams)(visitTypeParam),
+        traverse(fields.values) {
+          case f@StructField(sym, tpe, loc) => Index.occurrenceOf(f) ++ visitType(tpe)
+        },
+      )
+  }
+
+  /**
+    * Returns a reverse index for the given trait `trait0`.
+    */
+  private def visitTrait(trait0: TypedAst.Trait): Index = trait0 match {
+    case Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
+      Index.all(
+        Index.occurrenceOf(trait0),
         visitTypeParam(tparam),
-        traverse(superClasses)(visitTypeConstraint),
+        traverse(superTraits)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeSig),
         traverse(signatures)(visitSig),
         //        laws.map(visitDef) // TODO visit laws?
@@ -119,11 +136,11 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, _, clazz, tpe, tconstrs, assocs, defs, _, _) =>
+    case Instance(_, _, _, trt, tpe, tconstrs, assocs, defs, _, _) =>
       Index.all(
-        Index.useOf(clazz.sym, clazz.loc),
+        Index.useOf(trt.sym, trt.loc),
         visitType(tpe),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeDef),
         traverse(defs)(visitDef),
       )
@@ -146,7 +163,7 @@ object Indexer {
     * Returns a reverse index for the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
-    case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
+    case AssocTypeDef(_, _, AssocTypeSymUse(sym, loc), arg, tpe, _) =>
       Index.all(
         Index.useOf(sym, loc),
         visitType(arg),
@@ -158,10 +175,11 @@ object Indexer {
     * Returns a reverse index for the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
-    case AssocTypeSig(_, _, _, tparam, _, _) =>
+    case AssocTypeSig(_, _, _, tparam, _, tpe, _) =>
       Index.all(
         Index.occurrenceOf(assoc),
         visitTypeParam(tparam),
+        Index.traverse(tpe)(visitType)
       )
   }
 
@@ -180,7 +198,7 @@ object Indexer {
     * Returns a reverse index for the given effect operation `op0`
     */
   private def visitOp(op0: Op): Index = op0 match {
-    case Op(_, spec) =>
+    case Op(_, spec, _) =>
       Index.all(
         Index.occurrenceOf(op0),
         visitSpec(spec),
@@ -198,15 +216,7 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
-    case Expr.Def(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
-
-    case Expr.Sig(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.clazz, loc)
-
-    case Expr.Hole(_, _, _) =>
+    case Expr.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expr.HoleWithExp(exp, _, _, _) =>
@@ -221,8 +231,20 @@ object Indexer {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Apply(exp, exps, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ visitExps(exps)
+
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc) ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -230,11 +252,20 @@ object Indexer {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(bnd.sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      // We construct the type manually here, since we do not have immediate access to it
+      // like with normal defs.
+      val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
+      Index.all(
+        traverse(fparams)(visitFormalParam),
+        Index.occurrenceOf(sym, arrowType),
+        visitExp(exp1),
+        visitExp(exp2),
+        Index.occurrenceOf(exp0)
+      )
 
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)
@@ -242,9 +273,6 @@ object Indexer {
     case Expr.Scope(sym, _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
@@ -274,11 +302,11 @@ object Indexer {
         case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
-    case Expr.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.Tag(CaseSymUse(sym, loc), exp, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
       val parent = Entity.Exp(exp0)
       // TODO RESTR-VARS use of sym
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -313,6 +341,24 @@ object Indexer {
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+      val i0 = visitExp(region) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(fields) {
+        case (_, e) => visitExp(e)
+      }
+      val parent = Entity.Exp(exp0)
+      val i2 = Index.useOf(sym, loc)
+      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym.sym, sym.loc, parent) }
+      fieldSymIndices.foldLeft(i0 ++ i1 ++ i2)(_ ++ _)
+
+    case Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val parent = Entity.Exp(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
+
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
+      val parent = Entity.Exp(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
 
@@ -321,15 +367,6 @@ object Indexer {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
-
-    case Expr.Deref(exp1, _, _, _) =>
-      visitExp(exp1) ++ Index.occurrenceOf(exp0)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.Ascribe(exp, tpe, eff, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
@@ -357,6 +394,9 @@ object Indexer {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
       i0 ++ i1
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val parent = Entity.Exp(exp0)
@@ -469,7 +509,7 @@ object Indexer {
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, loc), pat, _, _) =>
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
@@ -559,24 +599,29 @@ object Indexer {
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(Ast.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
     case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ visitType(arg)
+
+    // Jvm types should not be exposed to the user.
+    case _: Type.JvmToType => Index.empty
+    case _: Type.JvmToEff => Index.empty
+    case _: Type.UnresolvedJvmType => Index.empty
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tconstr0`.
+    * Returns a reverse index for the given trait constraint `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
-    case Ast.TypeConstraint(head, arg, _) => visitTypeConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tconstr0: TraitConstraint): Index = tconstr0 match {
+    case TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
-    * Returns a reverse index for the given type constraint `head`.
+    * Returns a reverse index for the given trait constraint `head`.
     */
-  private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
-    case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Index = head0 match {
+    case TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tconstr0`.
+    * Returns a reverse index for the given equality constraint `econstr0`.
     */
   private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>

@@ -90,7 +90,7 @@ mod Test.Dec.Trait {
             pub def isPure(f: a -> b \ ef): Bool
         }
 
-        instance Eff[Pure] {
+        instance Eff[{}] {
             pub def isPure(_f: a -> b): Bool = true
         }
     }
@@ -122,7 +122,7 @@ mod Test.Dec.Trait {
             pub def f(x: a, y: a): Bool
 
             // TODO handle mods better
-            law reflexivity: forall (x: a, y: a) . Test.Dec.Trait.Test11.C.f(x, y) == Test.Dec.Trait.Test11.C.f(y, x)
+            law reflexivity: forall (x: a, y: a) Test.Dec.Trait.Test11.C.f(x, y) == Test.Dec.Trait.Test11.C.f(y, x)
         }
 
         instance C[Int32] {
@@ -134,11 +134,11 @@ mod Test.Dec.Trait {
         trait C[a] {
             pub def f(): a
 
-            law l: forall (_x: a) . true
+            law l: forall (_x: a) true
 
             pub def g(): a
 
-            law m: forall[a: Type](_x: a) . true
+            law m: forall[a: Type](_x: a) true
         }
     }
 
@@ -154,17 +154,17 @@ mod Test.Dec.Trait {
         instance C[Int32] {
             pub def f(): Int32 = 0
 
-            override pub def h(): Int32 = 1
+            redef h(): Int32 = 1
         }
 
         @test
-        def testSigOverride01(): Bool = Test.Dec.Trait.Test13.C.f() == 0
+        def testSigRedef01(): Bool = Test.Dec.Trait.Test13.C.f() == 0
 
         @test
-        def testSigOverride02(): Bool = Test.Dec.Trait.Test13.C.g() == 0
+        def testSigRedef02(): Bool = Test.Dec.Trait.Test13.C.g() == 0
 
         @test
-        def testSigOverride03(): Bool = Test.Dec.Trait.Test13.C.h() == 1
+        def testSigRedef03(): Bool = Test.Dec.Trait.Test13.C.h() == 1
     }
 
     mod Test14 {
@@ -193,7 +193,7 @@ mod Test.Dec.Trait {
         }
 
         trait C[a] {
-            law l: forall (x: a, y: a) with D[a] . Test.Dec.Trait.Test16.D.f(x, y)
+            law l: forall (x: a, y: a) with D[a] Test.Dec.Trait.Test16.D.f(x, y)
         }
     }
 
@@ -203,7 +203,7 @@ mod Test.Dec.Trait {
         }
 
         trait E[a: Type -> Type] {
-            law l: forall (x: a[b]) with D[a[b]] . Test.Dec.Trait.Test17.D.f(x)
+            law l: forall (x: a[b]) with D[a[b]] Test.Dec.Trait.Test17.D.f(x)
         }
     }
 

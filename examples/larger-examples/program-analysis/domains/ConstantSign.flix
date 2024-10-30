@@ -1,6 +1,6 @@
-/**
- * An implementation of the sign domain lifted over the constant propagation domain.
- */
+///
+/// An implementation of the sign domain lifted over the constant propagation domain.
+///
 mod Domain.ConstantSign {
 
     ///
@@ -19,16 +19,16 @@ mod Domain.ConstantSign {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//    #reflexive #antiSymmetric #transitive #leastElement(ConstantSign.Bot) #greatestElement(ConstantSign.Top)
     pub def leq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
-        case (Bot, _)           => true
-        case (Cst(n1), Cst(n2)) => n1 == n2
-        case (Cst(n), Neg)      => n <= 0ii
-        case (Cst(n), Pos)      => n >= 0ii
-        case (Neg, Neg)         => true
-        case (Pos, Pos)         => true
-        case (_, Top)           => true
-        case _                  => false
+        case (ConstantSign.Bot, _)                        => true
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) => n1 == n2
+        case (ConstantSign.Cst(n), ConstantSign.Neg)      => n <= 0ii
+        case (ConstantSign.Cst(n), ConstantSign.Pos)      => n >= 0ii
+        case (ConstantSign.Neg, ConstantSign.Neg)         => true
+        case (ConstantSign.Pos, ConstantSign.Pos)         => true
+        case (_, ConstantSign.Top)                        => true
+        case _                                            => false
     }
 
     ///
@@ -36,21 +36,20 @@ mod Domain.ConstantSign {
     ///
 //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (Bot, x)           => x
-        case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => {
-            if      (n1 == n2)                  Cst(n1)
-            else if (n1 >= 0ii and n2 >= 0ii)    Pos
-            else if (n1 <= 0ii and n2 <= 0ii)    Neg
-            else                                Top
-        }
-        case (Cst(n), Neg)      => if (n <= 0ii) Neg else Top
-        case (Neg, Cst(n))      => if (n <= 0ii) Neg else Top
-        case (Cst(n), Pos)      => if (n >= 0ii) Pos else Top
-        case (Pos, Cst(n))      => if (n >= 0ii) Pos else Top
-        case (Neg, Neg)         => Neg
-        case (Pos, Pos)         => Pos
-        case _                  => Top
+        case (ConstantSign.Bot, x)                        => x
+        case (x, ConstantSign.Bot)                        => x
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) =>
+            if      (n1 == n2)                ConstantSign.Cst(n1)
+            else if (n1 >= 0ii and n2 >= 0ii) ConstantSign.Pos
+            else if (n1 <= 0ii and n2 <= 0ii) ConstantSign.Neg
+            else                              ConstantSign.Top
+        case (ConstantSign.Cst(n), ConstantSign.Neg)      => if (n <= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Cst(n))      => if (n <= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Cst(n), ConstantSign.Pos)      => if (n >= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Pos, ConstantSign.Cst(n))      => if (n >= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Neg)         => ConstantSign.Neg
+        case (ConstantSign.Pos, ConstantSign.Pos)         => ConstantSign.Pos
+        case _                                            => ConstantSign.Top
     }
 
     ///
@@ -58,36 +57,36 @@ mod Domain.ConstantSign {
     ///
 //    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (Top, x)           => x
-        case (x, Top)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) Cst(n1) else Bot
-        case (Neg, Cst(n))      => if (n <= 0ii) Cst(n) else Bot
-        case (Cst(n), Neg)      => if (n <= 0ii) Cst(n) else Bot
-        case (Pos, Cst(n))      => if (n >= 0ii) Cst(n) else Bot
-        case (Cst(n), Pos)      => if (n >= 0ii) Cst(n) else Bot
-        case (Neg, Neg)         => Neg
-        case (Pos, Pos)         => Pos
-        case (Neg, Pos)         => Cst(0ii)
-        case (Pos, Neg)         => Cst(0ii)
-        case _                  => Bot
+        case (ConstantSign.Top, x)                        => x
+        case (x, ConstantSign.Top)                        => x
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) => if (n1 == n2) ConstantSign.Cst(n1) else ConstantSign.Bot
+        case (ConstantSign.Neg, ConstantSign.Cst(n))      => if (n <= 0ii) ConstantSign.Cst(n) else ConstantSign.Bot
+        case (ConstantSign.Cst(n), ConstantSign.Neg)      => if (n <= 0ii) ConstantSign.Cst(n) else ConstantSign.Bot
+        case (ConstantSign.Pos, ConstantSign.Cst(n))      => if (n >= 0ii) ConstantSign.Cst(n) else ConstantSign.Bot
+        case (ConstantSign.Cst(n), ConstantSign.Pos)      => if (n >= 0ii) ConstantSign.Cst(n) else ConstantSign.Bot
+        case (ConstantSign.Neg, ConstantSign.Neg)         => ConstantSign.Neg
+        case (ConstantSign.Pos, ConstantSign.Pos)         => ConstantSign.Pos
+        case (ConstantSign.Neg, ConstantSign.Pos)         => ConstantSign.Cst(0ii)
+        case (ConstantSign.Pos, ConstantSign.Neg)         => ConstantSign.Cst(0ii)
+        case _                                            => ConstantSign.Bot
     }
 
     ///
     /// The lattice height function.
     ///
-//    #nonNegative
+//    #nonConstantSign.Negative
     pub def height(e: ConstantSign): BigInt = match e {
-        case Top    => 0ii
-        case Neg    => 1ii
-        case Pos    => 1ii
-        case Cst(_) => 2ii
-        case Bot    => 3ii
+        case ConstantSign.Top    => 0ii
+        case ConstantSign.Neg    => 1ii
+        case ConstantSign.Pos    => 1ii
+        case ConstantSign.Cst(_) => 2ii
+        case ConstantSign.Bot    => 3ii
     }
 
     ///
     /// Abstracts a concrete number into the domain.
     ///
-    pub def alpha(i: BigInt): ConstantSign = Cst(i)
+    pub def alpha(i: BigInt): ConstantSign = ConstantSign.Cst(i)
 
     ///
     /// Over-approximates integer `increment`.
@@ -95,11 +94,11 @@ mod Domain.ConstantSign {
 //    #safe1(x -> x + 1ii)
 //    #strict1 #monotone1
     pub def inc(e: ConstantSign): ConstantSign = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n + 1ii)
-        case Neg    => Top
-        case Pos    => Pos
-        case Top    => Top
+        case ConstantSign.Bot    => ConstantSign.Bot
+        case ConstantSign.Cst(n) => ConstantSign.Cst(n + 1ii)
+        case ConstantSign.Neg    => ConstantSign.Top
+        case ConstantSign.Pos    => ConstantSign.Pos
+        case ConstantSign.Top    => ConstantSign.Top
     }
 
     ///
@@ -108,11 +107,11 @@ mod Domain.ConstantSign {
 //    #safe1(x -> x - 1ii)
 //    #strict1 #monotone1
     pub def dec(e: ConstantSign): ConstantSign = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n - 1ii)
-        case Neg    => Neg
-        case Pos    => Top
-        case Top    => Top
+        case ConstantSign.Bot    => ConstantSign.Bot
+        case ConstantSign.Cst(n) => ConstantSign.Cst(n - 1ii)
+        case ConstantSign.Neg    => ConstantSign.Neg
+        case ConstantSign.Pos    => ConstantSign.Top
+        case ConstantSign.Top    => ConstantSign.Top
     }
 
     ///
@@ -121,16 +120,16 @@ mod Domain.ConstantSign {
 //    #safe2((x, y) -> x + y)
 //    #strict2 #monotone2 #commutative
     pub def plus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-        case (Cst(n1), Neg)     => if (n1 <= 0ii) Neg else Top
-        case (Neg, Cst(n1))     => if (n1 <= 0ii) Neg else Top
-        case (Cst(n1), Pos)     => if (n1 >= 0ii) Pos else Top
-        case (Pos, Cst(n1))     => if (n1 >= 0ii) Pos else Top
-        case (Neg, Neg)         => Neg
-        case (Pos, Pos)         => Pos
-        case _                  => Top
+        case (ConstantSign.Bot, _)                        => ConstantSign.Bot
+        case (_, ConstantSign.Bot)                        => ConstantSign.Bot
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) => ConstantSign.Cst(n1 + n2)
+        case (ConstantSign.Cst(n1), ConstantSign.Neg)     => if (n1 <= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Cst(n1))     => if (n1 <= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Cst(n1), ConstantSign.Pos)     => if (n1 >= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Pos, ConstantSign.Cst(n1))     => if (n1 >= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Neg)         => ConstantSign.Neg
+        case (ConstantSign.Pos, ConstantSign.Pos)         => ConstantSign.Pos
+        case _                                            => ConstantSign.Top
     }
 
     ///
@@ -139,16 +138,16 @@ mod Domain.ConstantSign {
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
     pub def minus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
-        case (Cst(n1), Neg)     => if (n1 >= 0ii) Pos else Top
-        case (Neg, Cst(n1))     => if (n1 >= 0ii) Neg else Top
-        case (Cst(n1), Pos)     => if (n1 <= 0ii) Neg else Top
-        case (Pos, Cst(n1))     => if (n1 <= 0ii) Pos else Top
-        case (Pos, Neg)         => Pos
-        case (Neg, Pos)         => Neg
-        case _                  => Top
+        case (ConstantSign.Bot, _)                        => ConstantSign.Bot
+        case (_, ConstantSign.Bot)                        => ConstantSign.Bot
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) => ConstantSign.Cst(n1 - n2)
+        case (ConstantSign.Cst(n1), ConstantSign.Neg)     => if (n1 >= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Cst(n1))     => if (n1 >= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Cst(n1), ConstantSign.Pos)     => if (n1 <= 0ii) ConstantSign.Neg else ConstantSign.Top
+        case (ConstantSign.Pos, ConstantSign.Cst(n1))     => if (n1 <= 0ii) ConstantSign.Pos else ConstantSign.Top
+        case (ConstantSign.Pos, ConstantSign.Neg)         => ConstantSign.Pos
+        case (ConstantSign.Neg, ConstantSign.Pos)         => ConstantSign.Neg
+        case _                                            => ConstantSign.Top
     }
 
     ///
@@ -157,73 +156,21 @@ mod Domain.ConstantSign {
 //    #safe2((x, y) -> x * y)
 //    #strict2 #monotone2 #commutative #associative
     pub def times(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-        case (Cst(0ii), _)      => Cst(0ii)
-        case (_, Cst(0ii))      => Cst(0ii)
-        case (Cst(n1), Neg)     => if (n1 > 0ii) Neg else Pos
-        case (Neg, Cst(n1))     => if (n1 > 0ii) Neg else Pos
-        case (Cst(n1), Pos)     => if (n1 < 0ii) Neg else Pos
-        case (Pos, Cst(n1))     => if (n1 < 0ii) Neg else Pos
-        case (Neg, Neg)         => Pos
-        case (Pos, Neg)         => Neg
-        case (Neg, Pos)         => Neg
-        case (Pos, Pos)         => Pos
-        case _                  => Top
+        case (ConstantSign.Bot, _)                        => ConstantSign.Bot
+        case (_, ConstantSign.Bot)                        => ConstantSign.Bot
+        case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) => ConstantSign.Cst(n1 * n2)
+        case (ConstantSign.Cst(0ii), _)                   => ConstantSign.Cst(0ii)
+        case (_, ConstantSign.Cst(0ii))                   => ConstantSign.Cst(0ii)
+        case (ConstantSign.Cst(n1), ConstantSign.Neg)     => if (n1 > 0ii) ConstantSign.Neg else ConstantSign.Pos
+        case (ConstantSign.Neg, ConstantSign.Cst(n1))     => if (n1 > 0ii) ConstantSign.Neg else ConstantSign.Pos
+        case (ConstantSign.Cst(n1), ConstantSign.Pos)     => if (n1 < 0ii) ConstantSign.Neg else ConstantSign.Pos
+        case (ConstantSign.Pos, ConstantSign.Cst(n1))     => if (n1 < 0ii) ConstantSign.Neg else ConstantSign.Pos
+        case (ConstantSign.Neg, ConstantSign.Neg)         => ConstantSign.Pos
+        case (ConstantSign.Pos, ConstantSign.Neg)         => ConstantSign.Neg
+        case (ConstantSign.Neg, ConstantSign.Pos)         => ConstantSign.Neg
+        case (ConstantSign.Pos, ConstantSign.Pos)         => ConstantSign.Pos
+        case _                                            => ConstantSign.Top
     }
-
-    ///
-    /// Over-approximates `equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def eq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
-        case (Cst(n1), Neg)     => if (n1 > 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Neg, Cst(n1))     => if (n1 > 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Cst(n1), Pos)     => if (n1 < 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Pos, Cst(n1))     => if (n1 < 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case _                  => Belnap/Belnap.Top
-    }
-
-    ///
-    /// Over-approximates `not equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def neq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.not(eq(e1, e2))
-
-    ///
-    /// Over-approximates `less than`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
-        case (Cst(n1), Neg)     => if (n1 > 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Neg, Cst(n1))     => if (n1 > 0ii) Belnap/Belnap.True else Belnap/Belnap.Top
-        case (Cst(n1), Pos)     => if (n1 < 0ii) Belnap/Belnap.True else Belnap/Belnap.Top
-        case (Pos, Cst(n1))     => if (n1 < 0ii) Belnap/Belnap.False else Belnap/Belnap.Top
-        case _                  => Belnap/Belnap.Top
-    }
-
-    ///
-    /// Over-approximates `less than or equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     //
     // ## Specialized Laws
@@ -237,13 +184,13 @@ mod Domain.ConstantSign {
 
 //    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
-//    law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, bot: ConstantSign): Bool = Bounded.leastElement(bot, leq)
+//    law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, ConstantSign.Bot: ConstantSign): Bool = Bounded.leastElement(ConstantSign.Bot, leq)
 
-//    law greatestElement(leq: (ConstantSign, ConstantSign) -> Bool, top: ConstantSign): Bool = Bounded.greatestElement(top, leq)
+//    law greatestElement(leq: (ConstantSign, ConstantSign) -> Bool, ConstantSign.Top: ConstantSign): Bool = Bounded.greatestElement(ConstantSign.Top, leq)
 
-//    law strict1(f: ConstantSign -> ConstantSign): Bool = Bounded.strict1(f, Bot, Bot)
+//    law strict1(f: ConstantSign -> ConstantSign): Bool = Bounded.strict1(f, ConstantSign.Bot, ConstantSign.Bot)
 
-//    law strict2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+//    law strict2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = Bounded.strict2(f, ConstantSign.Bot, ConstantSign.Bot, ConstantSign.Bot)
 
 //    law monotone1(f: ConstantSign -> ConstantSign): Bool = PartialOrder.monotone1(f, leq, leq)
 

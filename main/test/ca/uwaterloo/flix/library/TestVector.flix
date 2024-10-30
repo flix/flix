@@ -78,7 +78,7 @@ mod TestVector {
 
     @test
     def toString01(): Bool =
-        Vector.toString(Vector#{}: Vector[Int32]) == "Vector#{}"
+        Vector.toString((Vector#{}: Vector[Int32])) == "Vector#{}"
 
     @test
     def toString02(): Bool =
@@ -156,6 +156,22 @@ mod TestVector {
         not Vector.isEmpty(Vector#{1, 2, 3})
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        not Vector.nonEmpty(Vector#{})
+
+    @test
+    def nonEmpty02(): Bool =
+        Vector.nonEmpty(Vector#{1})
+
+    @test
+    def nonEmpty03(): Bool =
+        Vector.nonEmpty(Vector#{1, 2, 3})
+
+    /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -170,6 +186,22 @@ mod TestVector {
     @test
     def length03(): Bool =
         Vector.length(Vector#{1, 2, 3}) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        Vector.size(Vector#{}) == 0
+
+    @test
+    def size02(): Bool =
+        Vector.size(Vector#{1}) == 1
+
+    @test
+    def size03(): Bool =
+        Vector.size(Vector#{1, 2, 3}) == 3
 
     /////////////////////////////////////////////////////////////////////////////
     // slice                                                                   //
@@ -193,7 +225,7 @@ mod TestVector {
 
     @test
     def toList01(): Bool =
-        Vector.toList(Vector#{}: Vector[Int32]) == Nil
+        Vector.toList((Vector#{}: Vector[Int32])) == Nil
 
     @test
     def toList02(): Bool =
@@ -209,7 +241,7 @@ mod TestVector {
 
     @test
     def toNel01(): Bool =
-        Vector.toNel(Vector#{}: Vector[Unit]) == None
+        Vector.toNel((Vector#{}: Vector[Unit])) == None
 
     @test
     def toNel02(): Bool =
@@ -229,15 +261,15 @@ mod TestVector {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let v = Vector#{}: Vector[Int32];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let v = (Vector#{}: Vector[Int32]);
+        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let v = Vector#{1};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
@@ -245,7 +277,7 @@ mod TestVector {
     @test
     def toMutDeque03(): Bool = region rc {
         let v = Vector#{1, 2, 3};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -255,7 +287,7 @@ mod TestVector {
     @test
     def toMutDeque04(): Bool = region rc {
         let v = Vector#{1, 2, 3, 4, 5};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -267,7 +299,7 @@ mod TestVector {
     @test
     def toMutDeque05(): Bool = region rc {
         let v = Vector#{'a', 'b', 'c'};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -280,7 +312,7 @@ mod TestVector {
 
     @test
     def head01(): Bool =
-        Vector.head(Vector#{}: Vector[Int32]) == None
+        Vector.head((Vector#{}: Vector[Int32])) == None
 
     @test
     def head02(): Bool =
@@ -300,7 +332,7 @@ mod TestVector {
 
     @test
     def last01(): Bool =
-        Vector.last(Vector#{}): Option[Unit] == None
+        (Vector.last(Vector#{}): Option[Unit]) == None
 
     @test
     def last02(): Bool =
@@ -320,27 +352,27 @@ mod TestVector {
 
     @test
     def append01(): Bool =
-        let v = Vector.append(Vector#{}: Vector[Int32], Vector#{}: Vector[Int32]);
+        let v = Vector.append((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
         v == (Vector#{}: Vector[Int32])
 
     @test
     def append02(): Bool =
-        let v = Vector.append(Vector#{}: Vector[Int32], Vector#{1});
+        let v = Vector.append((Vector#{}: Vector[Int32]), Vector#{1});
         v == Vector#{1}
 
     @test
     def append03(): Bool =
-        let v = Vector.append(Vector#{}: Vector[Int32], Vector#{1, 2});
+        let v = Vector.append((Vector#{}: Vector[Int32]), Vector#{1, 2});
         v == Vector#{1, 2}
 
     @test
     def append04(): Bool =
-        let v = Vector.append(Vector#{1}, Vector#{}: Vector[Int32]);
+        let v = Vector.append(Vector#{1}, (Vector#{}: Vector[Int32]));
         v == Vector#{1}
 
     @test
     def append05(): Bool =
-        let v = Vector.append(Vector#{1, 2}, Vector#{}: Vector[Int32]);
+        let v = Vector.append(Vector#{1, 2}, (Vector#{}: Vector[Int32]));
         v == Vector#{1, 2}
 
     @test
@@ -364,7 +396,7 @@ mod TestVector {
 
     @test
     def memberOf01(): Bool =
-        Vector.memberOf(0, Vector#{}: Vector[Int32]) == false
+        Vector.memberOf(0, (Vector#{}: Vector[Int32])) == false
 
     @test
     def memberOf02(): Bool =
@@ -396,7 +428,7 @@ mod TestVector {
 
     @test
     def indexOf01(): Bool =
-        Vector.indexOf(0, Vector#{}: Vector[Int32]) == None
+        Vector.indexOf(0, (Vector#{}: Vector[Int32])) == None
 
     @test
     def indexOf02(): Bool =
@@ -424,7 +456,7 @@ mod TestVector {
 
     @test
     def indexOfLeft01(): Bool =
-        Vector.indexOfLeft(0, Vector#{}: Vector[Int32]) == None
+        Vector.indexOfLeft(0, (Vector#{}: Vector[Int32])) == None
 
     @test
     def indexOfLeft02(): Bool =
@@ -456,7 +488,7 @@ mod TestVector {
 
     @test
     def indexOfRight01(): Bool =
-        Vector.indexOfRight(0, Vector#{}: Vector[Int32]) == None
+        Vector.indexOfRight(0, (Vector#{}: Vector[Int32])) == None
 
     @test
     def indexOfRight02(): Bool =
@@ -488,7 +520,7 @@ mod TestVector {
 
     @test
     def indices01(): Bool =
-        let v = Vector.indices(0, Vector#{}: Vector[Int32]);
+        let v = Vector.indices(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -725,7 +757,7 @@ mod TestVector {
 
     @test
     def scanLeft01(): Bool =
-        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{}: Vector[Bool]);
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, (Vector#{}: Vector[Bool]));
         v == Vector#{1}
 
     @test
@@ -1055,7 +1087,7 @@ mod TestVector {
 
     @test
     def reverse01(): Bool =
-        let v = Vector.reverse(Vector#{}: Vector[Int32]);
+        let v = Vector.reverse((Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -1246,42 +1278,42 @@ mod TestVector {
 
     @test
     def replace01(): Bool =
-        let v = Vector.replace(from = 3, to = 4, (Vector#{}: Vector[Int32]));
+        let v = Vector.replace(src = 3, dst = 4, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def replace02(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1});
         v == Vector#{1}
 
     @test
     def replace03(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3});
         v == Vector#{4}
 
     @test
     def replace04(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{4});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{4});
         v == Vector#{4}
 
     @test
     def replace05(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 2});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1, 2});
         v == Vector#{1, 2}
 
     @test
     def replace06(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1, 3});
         v == Vector#{1, 4}
 
     @test
     def replace07(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 4});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3, 4});
         v == Vector#{4, 4}
 
     @test
     def replace08(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3, 3});
         v == Vector#{4, 4}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1463,22 +1495,22 @@ mod TestVector {
 
     @test
     def intercalate01(): Bool =
-        let v = Vector.intercalate(Vector#{}: Vector[Int32], Vector#{}: Vector[Vector[Int32]]);
+        let v = Vector.intercalate((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Vector[Int32]]));
         v == Vector#{}
 
     @test
     def intercalate02(): Bool =
-        let v = Vector.intercalate(Vector#{}: Vector[Int32], Vector#{Vector#{1}});
+        let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}});
         v == Vector#{1}
 
     @test
     def intercalate03(): Bool =
-        let v = Vector.intercalate(Vector#{11, 12, 13}, Vector#{}: Vector[Vector[Int32]]);
+        let v = Vector.intercalate(Vector#{11, 12, 13}, (Vector#{}: Vector[Vector[Int32]]));
         v == Vector#{}
 
     @test
     def intercalate04(): Bool =
-        let v = Vector.intercalate(Vector#{}: Vector[Int32], Vector#{Vector#{1}, Vector#{2, 3}});
+        let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}, Vector#{2, 3}});
         v == Vector#{1, 2, 3}
 
     @test
@@ -1488,7 +1520,7 @@ mod TestVector {
 
     @test
     def intercalate06(): Bool =
-        let v = Vector.intercalate(Vector#{}: Vector[Int32], Vector#{Vector#{1}, Vector#{2, 3}, Vector#{4}});
+        let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}, Vector#{2, 3}, Vector#{4}});
         v == Vector#{1, 2, 3, 4}
 
     @test
@@ -1502,7 +1534,7 @@ mod TestVector {
 
     @test
     def transpose01(): Bool =
-        let v = Vector.transpose(Vector#{}: Vector[Vector[Int32]]);
+        let v = Vector.transpose((Vector#{}: Vector[Vector[Int32]]));
         v == Vector#{}
 
     @test
@@ -1616,15 +1648,15 @@ mod TestVector {
 
     @test
     def isPrefixOf01(): Bool =
-        Vector.isPrefixOf(Vector#{}: Vector[Int32], Vector#{}: Vector[Int32])
+        Vector.isPrefixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
 
     @test
     def isPrefixOf02(): Bool =
-        Vector.isPrefixOf(Vector#{1}, Vector#{}: Vector[Int32]) == false
+        Vector.isPrefixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
 
     @test
     def isPrefixOf03(): Bool =
-        Vector.isPrefixOf(Vector#{}: Vector[Int32], Vector#{1})
+        Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1})
 
     @test
     def isPrefixOf04(): Bool =
@@ -1640,7 +1672,7 @@ mod TestVector {
 
     @test
     def isPrefixOf07(): Bool =
-        Vector.isPrefixOf(Vector#{}: Vector[Int32], Vector#{1, 2})
+        Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
 
     @test
     def isPrefixOf08(): Bool =
@@ -1672,15 +1704,15 @@ mod TestVector {
 
     @test
     def isInfixOf01(): Bool =
-        Vector.isInfixOf(Vector#{}: Vector[Int32], Vector#{}: Vector[Int32])
+        Vector.isInfixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
 
     @test
     def isInfixOf02(): Bool =
-        Vector.isInfixOf(Vector#{1}, Vector#{}: Vector[Int32]) == false
+        Vector.isInfixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
 
     @test
     def isInfixOf03(): Bool =
-        Vector.isInfixOf(Vector#{}: Vector[Int32], Vector#{1})
+        Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1})
 
     @test
     def isInfixOf04(): Bool =
@@ -1696,7 +1728,7 @@ mod TestVector {
 
     @test
     def isInfixOf07(): Bool =
-        Vector.isInfixOf(Vector#{}: Vector[Int32], Vector#{1, 2})
+        Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
 
     @test
     def isInfixOf08(): Bool =
@@ -1728,15 +1760,15 @@ mod TestVector {
 
     @test
     def isSuffixOf01(): Bool =
-        Vector.isSuffixOf(Vector#{}: Vector[Int32], Vector#{}: Vector[Int32])
+        Vector.isSuffixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
 
     @test
     def isSuffixOf02(): Bool =
-        Vector.isSuffixOf(Vector#{1}, Vector#{}: Vector[Int32]) == false
+        Vector.isSuffixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
 
     @test
     def isSuffixOf03(): Bool =
-        Vector.isSuffixOf(Vector#{}: Vector[Int32], Vector#{1})
+        Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1})
 
     @test
     def isSuffixOf04(): Bool =
@@ -1752,7 +1784,7 @@ mod TestVector {
 
     @test
     def isSuffixOf07(): Bool =
-        Vector.isSuffixOf(Vector#{}: Vector[Int32], Vector#{1, 2})
+        Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
 
     @test
     def isSuffixOf08(): Bool =
@@ -1784,7 +1816,7 @@ mod TestVector {
 
     @test
     def fold01(): Bool =
-        Vector.fold((Vector#{}): Vector[Unit]) == ()
+        Vector.fold((Vector#{}: Vector[Unit])) == ()
 
     @test
     def fold02(): Bool =
@@ -1804,19 +1836,19 @@ mod TestVector {
 
     @test
     def foldLeft01(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldLeft02(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldLeft03(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 196
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 196
 
     @test
     def foldLeft04(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 386
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 386
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -1824,19 +1856,19 @@ mod TestVector {
 
     @test
     def foldRight01(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldRight02(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldRight03(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 194
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
 
     @test
     def foldRight04(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
@@ -1844,19 +1876,19 @@ mod TestVector {
 
     @test
     def foldRightWithCont01(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldRightWithCont02(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldRightWithCont03(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 194
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
 
     @test
     def foldRightWithCont04(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -1888,7 +1920,7 @@ mod TestVector {
 
     @test
     def reduceLeft01(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, Vector#{}: Vector[Int32]) == None
+        Vector.reduceLeft((a, b) -> a - b, (Vector#{}: Vector[Int32])) == None
 
     @test
     def reduceLeft02(): Bool =
@@ -1912,7 +1944,7 @@ mod TestVector {
 
     @test
     def reduceRight01(): Bool =
-        Vector.reduceRight((a, b) -> a - b, Vector#{}: Vector[Int32]) == None
+        Vector.reduceRight((a, b) -> a - b, (Vector#{}: Vector[Int32])) == None
 
     @test
     def reduceRight02(): Bool =
@@ -2022,7 +2054,7 @@ mod TestVector {
 
     @test
     def exists01(): Bool =
-        Vector.exists(i -> i > 3, Vector#{}: Vector[Int32]) == false
+        Vector.exists(i -> i > 3, (Vector#{}: Vector[Int32])) == false
 
     @test
     def exists02(): Bool =
@@ -2062,7 +2094,7 @@ mod TestVector {
 
     @test
     def forAll01(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{}: Vector[Int32]) == true
+        Vector.forAll(i -> i > 3, (Vector#{}: Vector[Int32])) == true
 
     @test
     def forAll02(): Bool =
@@ -2150,7 +2182,7 @@ mod TestVector {
 
     @test
     def partition01(): Bool =
-        let (a, b) = Vector.partition(i -> i > 3, Vector#{}: Vector[Int32]);
+        let (a, b) = Vector.partition(i -> i > 3, (Vector#{}: Vector[Int32]));
         (a == Vector#{}) and (b == Vector#{})
 
     @test
@@ -2166,7 +2198,7 @@ mod TestVector {
     @test
     def partition04(): Bool =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 2});
-        (a ==Vector#{}) and (b == Vector#{1, 2})
+        (a == Vector#{}) and (b == Vector#{1, 2})
 
     @test
     def partition05(): Bool =
@@ -2181,7 +2213,7 @@ mod TestVector {
     @test
     def partition07(): Bool =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 8});
-        (a == Vector#{5, 8}) and (b == Vector#{}: Vector[Int32])
+        (a == Vector#{5, 8}) and (b == (Vector#{}: Vector[Int32]))
 
     @test
     def partition08(): Bool =
@@ -2194,7 +2226,7 @@ mod TestVector {
 
     @test
     def span01(): Bool =
-        let (a, b) = Vector.span(i -> i > 3, Vector#{}: Vector[Int32]);
+        let (a, b) = Vector.span(i -> i > 3, (Vector#{}: Vector[Int32]));
         (a == Vector#{}) and (b == Vector#{})
 
     @test
@@ -2238,17 +2270,17 @@ mod TestVector {
 
     @test
     def drop01(): Bool =
-        let v = Vector.drop(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.drop(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def drop02(): Bool =
-        let v = Vector.drop(0, Vector#{}: Vector[Int32]);
+        let v = Vector.drop(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def drop03(): Bool =
-        let v = Vector.drop(1, Vector#{}: Vector[Int32]);
+        let v = Vector.drop(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2302,17 +2334,17 @@ mod TestVector {
 
     @test
     def dropLeft01(): Bool =
-        let v = Vector.dropLeft(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.dropLeft(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def dropLeft02(): Bool =
-        let v = Vector.dropLeft(0, Vector#{}: Vector[Int32]);
+        let v = Vector.dropLeft(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def dropLeft03(): Bool =
-        let v = Vector.dropLeft(1, Vector#{}: Vector[Int32]);
+        let v = Vector.dropLeft(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2366,17 +2398,17 @@ mod TestVector {
 
     @test
     def dropRight01(): Bool =
-        let v = Vector.dropRight(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.dropRight(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def dropRight02(): Bool =
-        let v = Vector.dropRight(0, Vector#{}: Vector[Int32]);
+        let v = Vector.dropRight(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def dropRight03(): Bool =
-        let v = Vector.dropRight(1, Vector#{}: Vector[Int32]);
+        let v = Vector.dropRight(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2430,7 +2462,7 @@ mod TestVector {
 
     @test
     def dropWhile01(): Bool =
-        let v = Vector.dropWhile(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.dropWhile(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2474,7 +2506,7 @@ mod TestVector {
 
     @test
     def dropWhileLeft01(): Bool =
-        let v = Vector.dropWhileLeft(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.dropWhileLeft(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2518,7 +2550,7 @@ mod TestVector {
 
     @test
     def dropWhileRight01(): Bool =
-        let v = Vector.dropWhileRight(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.dropWhileRight(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2562,17 +2594,17 @@ mod TestVector {
 
     @test
     def take01(): Bool =
-        let v = Vector.take(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.take(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def take02(): Bool =
-        let v = Vector.take(0, Vector#{}: Vector[Int32]);
+        let v = Vector.take(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def take03(): Bool =
-        let v = Vector.take(1, Vector#{}: Vector[Int32]);
+        let v = Vector.take(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2626,17 +2658,17 @@ mod TestVector {
 
     @test
     def takeLeft01(): Bool =
-        let v = Vector.takeLeft(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.takeLeft(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def takeLeft02(): Bool =
-        let v = Vector.takeLeft(0, Vector#{}: Vector[Int32]);
+        let v = Vector.takeLeft(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def takeLeft03(): Bool =
-        let v = Vector.takeLeft(1, Vector#{}: Vector[Int32]);
+        let v = Vector.takeLeft(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2690,17 +2722,17 @@ mod TestVector {
 
     @test
     def takeRight01(): Bool =
-        let v = Vector.takeRight(-1, Vector#{}: Vector[Int32]);
+        let v = Vector.takeRight(-1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def takeRight02(): Bool =
-        let v = Vector.takeRight(0, Vector#{}: Vector[Int32]);
+        let v = Vector.takeRight(0, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def takeRight03(): Bool =
-        let v = Vector.takeRight(1, Vector#{}: Vector[Int32]);
+        let v = Vector.takeRight(1, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2754,7 +2786,7 @@ mod TestVector {
 
     @test
     def takeWhile01(): Bool =
-        let v = Vector.takeWhile(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.takeWhile(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2798,7 +2830,7 @@ mod TestVector {
 
     @test
     def takeWhileLeft01(): Bool =
-        let v = Vector.takeWhileLeft(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.takeWhileLeft(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2842,7 +2874,7 @@ mod TestVector {
 
     @test
     def takeWhileRight01(): Bool =
-        let v = Vector.takeWhileRight(i -> i > 3, Vector#{}: Vector[Int32]);
+        let v = Vector.takeWhileRight(i -> i > 3, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2886,7 +2918,7 @@ mod TestVector {
 
     @test
     def splitAt01(): Bool =
-        let v = Vector#{}: Vector[Int32];
+        let v = (Vector#{}: Vector[Int32]);
         Vector.splitAt(0, v) == (Vector#{}, Vector#{})
 
     @test
@@ -2910,7 +2942,7 @@ mod TestVector {
 
     @test
     def groupBy01(): Bool =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{}: Vector[Int32]);
+        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -2949,17 +2981,17 @@ mod TestVector {
 
     @test
     def zip01(): Bool =
-        let v = Vector.zip(Vector#{}: Vector[Int32], Vector#{}: Vector[Int32]);
+        let v = Vector.zip((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def zip02(): Bool =
-        let v = Vector.zip(Vector#{1}, Vector#{}: Vector[Int32]);
+        let v = Vector.zip(Vector#{1}, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def zip03(): Bool =
-        let v = Vector.zip(Vector#{}: Vector[Int32], Vector#{2});
+        let v = Vector.zip((Vector#{}: Vector[Int32]), Vector#{2});
         v == Vector#{}
 
     @test
@@ -2988,17 +3020,17 @@ mod TestVector {
 
     @test
     def zipWith01(): Bool =
-        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{}: Vector[Int32], Vector#{}: Vector[Bool]);
+        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool]));
         v == Vector#{}
 
     @test
     def zipWith02(): Bool =
-        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{1}, Vector#{}: Vector[Bool]);
+        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{1}, (Vector#{}: Vector[Bool]));
         v == Vector#{}
 
     @test
     def zipWith03(): Bool =
-        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{}: Vector[Int32], Vector#{true});
+        let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector#{}: Vector[Int32]), Vector#{true});
         v == Vector#{}
 
     @test
@@ -3024,7 +3056,7 @@ mod TestVector {
 
     @test
     def unzip01(): Bool =
-        let (a, b) = Vector.unzip((Vector#{}): Vector[(Unit, Unit)]);
+        let (a, b) = Vector.unzip((Vector#{}: Vector[(Unit, Unit)]));
         (a == Vector#{}) and (b == Vector#{})
 
     @test
@@ -3053,7 +3085,7 @@ mod TestVector {
 
     @test
     def fold201(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{}: Vector[Int32], Vector#{}: Vector[Bool]) == 4
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
 
     @test
     def fold202(): Bool =
@@ -3098,15 +3130,15 @@ mod TestVector {
 
     @test
     def foldLeft201(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{}: Vector[Int32], Vector#{}: Vector[Bool]) == 4
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
 
     @test
     def foldLeft202(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, Vector#{}: Vector[Bool]) == 4
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])) == 4
 
     @test
     def foldLeft203(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{}: Vector[Int32], Vector#{true}) == 4
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}) == 4
 
     @test
     def foldLeft204(): Bool =
@@ -3143,15 +3175,15 @@ mod TestVector {
 
     @test
     def foldRight201(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{}: Vector[Int32], Vector#{}: Vector[Bool]) == 4
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
 
     @test
     def foldRight202(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{1}, Vector#{}: Vector[Bool]) == 4
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])) == 4
 
     @test
     def foldRight203(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{}: Vector[Int32], Vector#{true}) == 4
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}) == 4
 
     @test
     def foldRight204(): Bool =
@@ -3188,42 +3220,42 @@ mod TestVector {
 
     @test
     def filterMap01(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]);
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def filterMap02(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1});
         v == Vector#{}
 
     @test
     def filterMap03(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{2});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2});
         v == Vector#{1}
 
     @test
     def filterMap04(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 3});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3});
         v == Vector#{}
 
     @test
     def filterMap05(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 4});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4});
         v == Vector#{2}
 
     @test
     def filterMap06(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{6, -1});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1});
         v == Vector#{3}
 
     @test
     def filterMap07(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{8, 6});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6});
         v == Vector#{4, 3}
 
     @test
     def filterMap08(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10});
         v == Vector#{0, 1, 2, 5}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3232,35 +3264,35 @@ mod TestVector {
 
     @test
     def findMap01(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Vector#{}: Vector[Int32])) == None
 
     @test
     def findMap02(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1}) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1}) == None
 
     @test
     def findMap03(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{2}) == Some(1)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2}) == Some(1)
 
     @test
     def findMap04(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 3}) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3}) == None
 
     @test
     def findMap05(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 4}) == Some(2)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4}) == Some(2)
 
     @test
     def findMap06(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{6, -1}) == Some(3)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1}) == Some(3)
 
     @test
     def findMap07(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{8, 6}) == Some(4)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6}) == Some(4)
 
     @test
     def findMap08(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}) == Some(0)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -3268,7 +3300,7 @@ mod TestVector {
 
     @test
     def toSet01(): Bool =
-        Vector.toSet(Vector#{}: Vector[Int32]) == Set#{}
+        Vector.toSet((Vector#{}: Vector[Int32])) == Set#{}
 
     @test
     def toSet02(): Bool =
@@ -3304,7 +3336,7 @@ mod TestVector {
 
     @test
     def toMap01(): Bool =
-        Vector.toMap((Vector#{}): Vector[(Int32, Bool)]) == Map#{}
+        Vector.toMap((Vector#{}: Vector[(Int32, Bool)])) == Map#{}
 
     @test
     def toMap02(): Bool =
@@ -3324,7 +3356,7 @@ mod TestVector {
 
     @test
     def findIndexOf01(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{}: Vector[Int32]) == None
+        Vector.findIndexOf(i -> i > 2, (Vector#{}: Vector[Int32])) == None
 
     @test
     def findIndexOf02(): Bool =
@@ -3356,7 +3388,7 @@ mod TestVector {
 
     @test
     def findIndexOfLeft01(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{}: Vector[Int32]) == None
+        Vector.findIndexOfLeft(i -> i > 2, (Vector#{}: Vector[Int32])) == None
 
     @test
     def findIndexOfLeft02(): Bool =
@@ -3388,7 +3420,7 @@ mod TestVector {
 
     @test
     def findIndexOfRight01(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{}: Vector[Int32]) == None
+        Vector.findIndexOfRight(i -> i > 2, (Vector#{}: Vector[Int32])) == None
 
     @test
     def findIndexOfRight02(): Bool =
@@ -3460,7 +3492,7 @@ mod TestVector {
     @test
     def init01(): Bool =
         let v = Vector.init(x -> x, 0);
-        v == Vector#{}: Vector[Int32]
+        v == (Vector#{}: Vector[Int32])
 
     @test
     def init02(): Bool =
@@ -3488,19 +3520,19 @@ mod TestVector {
 
     @test
     def equals01(): Bool =
-        let a = Vector#{}: Vector[Int32];
-        let b = Vector#{}: Vector[Int32];
+        let a = (Vector#{}: Vector[Int32]);
+        let b = (Vector#{}: Vector[Int32]);
         Vector.equals(a, b) == true
 
     @test
     def equals02(): Bool =
         let a = (Vector#{1});
-        let b = Vector#{}: Vector[Int32];
+        let b = (Vector#{}: Vector[Int32]);
         Vector.equals(a, b) == false
 
     @test
     def equals03(): Bool =
-        let a = Vector#{}: Vector[Int32];
+        let a = (Vector#{}: Vector[Int32]);
         let b = (Vector#{1});
         Vector.equals(a, b) == false
 
@@ -3513,7 +3545,7 @@ mod TestVector {
     @test
     def equals05(): Bool =
         let a = (Vector#{1});
-        let b = Vector#{}: Vector[Int32];
+        let b = (Vector#{}: Vector[Int32]);
         Vector.equals(a, b) == false
 
     @test
@@ -3534,8 +3566,8 @@ mod TestVector {
 
     @test
     def forEach01(): Bool = region rc {
-        let v = Vector#{}: Vector[Int32];
-        let sb = StringBuilder.new(rc);
+        let v = (Vector#{}: Vector[Int32]);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3544,7 +3576,7 @@ mod TestVector {
     @test
     def forEach02(): Bool = region rc {
         let v = Vector#{0};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3553,7 +3585,7 @@ mod TestVector {
     @test
     def forEach03(): Bool = region rc {
         let v = Vector#{1};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "T"
@@ -3562,7 +3594,7 @@ mod TestVector {
     @test
     def forEach04(): Bool = region rc {
         let v = Vector#{0, 1};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3574,8 +3606,8 @@ mod TestVector {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let v = (Vector#{}): Vector[Float32];
-        let sb = StringBuilder.new(rc);
+        let v = (Vector#{}: Vector[Float32]);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3584,7 +3616,7 @@ mod TestVector {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let v = Vector#{0.0f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3593,7 +3625,7 @@ mod TestVector {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3602,7 +3634,7 @@ mod TestVector {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTT"
@@ -3611,7 +3643,7 @@ mod TestVector {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32, 0.3f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTTT"
@@ -3623,7 +3655,7 @@ mod TestVector {
 
     @test
     def updateSequence01(): Bool =
-         let v = Vector.updateSequence(0, Vector#{}: Vector[Int32], Vector#{}: Vector[Int32]);
+         let v = Vector.updateSequence(0, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
          v == Vector#{}
 
     @test
@@ -3772,7 +3804,7 @@ mod TestVector {
 
     @test
     def sortWith01(): Bool =
-        let v = Vector.sortWith(cmp, Vector#{}: Vector[Int32]);
+        let v = Vector.sortWith(cmp, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
@@ -3845,7 +3877,7 @@ mod TestVector {
 
     @test
     def sort01(): Bool =
-        testSortVsSortWith(Vector#{}: Vector[Int32])
+        testSortVsSortWith((Vector#{}: Vector[Int32]))
 
     @test
     def sort02(): Bool =
@@ -3890,7 +3922,7 @@ mod TestVector {
 
     @test
     def sortBy01(): Bool =
-        testSortByVsSort(Vector#{}: Vector[Int32])
+        testSortByVsSort((Vector#{}: Vector[Int32]))
 
     @test
     def sortBy02(): Bool =
@@ -3932,12 +3964,12 @@ mod TestVector {
         pub def eq(a: R, b: R): Bool =
             let R.R(x) = a;
             let R.R(y) = b;
-            x.i == y.i and x.s == y.s
+            x#i == y#i and x#s == y#s
     }
 
     @test
     def sortBy10(): Bool =
-        let geti = r -> {let R.R(x) = r; x.i};
+        let geti = r -> {let R.R(x) = r; x#i};
         Vector.sortBy(geti, Vector#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})})
             == Vector#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})}
 
@@ -3947,7 +3979,7 @@ mod TestVector {
 
     @test
     def minimumBy01(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, Vector#{}: Vector[Int32]) == None
+        Vector.minimumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])) == None
 
     @test
     def minimumBy02(): Bool =
@@ -3967,7 +3999,7 @@ mod TestVector {
 
     @test
     def maximumBy01(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, Vector#{}: Vector[Int32]) == None
+        Vector.maximumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])) == None
 
     @test
     def maximumBy02(): Bool =
@@ -4048,7 +4080,7 @@ mod TestVector {
 
     @test
     def toDelayList01(): Bool =
-        (Vector#{}): Vector[Unit] |> Vector.toDelayList == DelayList.empty()
+        (Vector#{}: Vector[Unit]) |> Vector.toDelayList == DelayList.empty()
 
     @test
     def toDelayList02(): Bool =
@@ -4068,7 +4100,7 @@ mod TestVector {
 
     @test
     def toChain01(): Bool =
-        Vector.toChain((Vector#{}): Vector[Unit]) == Chain.empty(): Chain[Unit]
+        Vector.toChain((Vector#{}: Vector[Unit])) == (Chain.empty(): Chain[Unit])
 
     @test
     def toChain02(): Bool =
@@ -4088,7 +4120,7 @@ mod TestVector {
 
     @test
     def toNec01(): Bool =
-        Vector.toNec((Vector#{}): Vector[Unit]) == None
+        Vector.toNec((Vector#{}: Vector[Unit])) == None
 
     @test
     def toNec02(): Bool =
@@ -4108,7 +4140,7 @@ mod TestVector {
 
     @test
     def iterator01(): Bool = region rc {
-        Vector#{}: Vector[Int32] |> Vector.iterator(rc) |> Iterator.toList == Nil
+        (Vector#{}: Vector[Int32]) |> Vector.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
@@ -4132,7 +4164,7 @@ mod TestVector {
 
     @test
     def join01(): Bool =
-        Vector.join(",", Vector#{}: Vector[Int32]) == ""
+        Vector.join(",", (Vector#{}: Vector[Int32])) == ""
 
     @test
     def join02(): Bool =
@@ -4209,19 +4241,19 @@ mod TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), MutList.new(rc))
+        MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         MutList.push!(1, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         MutList.push!(1, l);
         MutList.push!(2, l);
         MutList.push!(3, l);
@@ -4256,27 +4288,27 @@ mod TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
-        let v = Vector#{}: Vector[Int32];
-        let v1 = Vector.shuffle(Random.new(), v);
+    def shuffle01(): Bool \ NonDet =
+        let v = (Vector#{}: Vector[Int32]);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let v = Vector#{0};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let v = Vector#{0, 1, 2, 3};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(v);
         Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

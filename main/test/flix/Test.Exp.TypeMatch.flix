@@ -559,27 +559,6 @@ mod Test.Exp.ReifyType {
     @Test
     def sameTypes05(): Bool = not sameTypes(123 :: Nil, Nil)
 
-    def hasListSomewhere(x: a): Bool = typematch x {
-        case _: List[_] => true
-        case _: _[List] => true
-        case _: _[List[_]] => true
-        case _: _[List, _] => true
-        case _: _[List[_], _] => true
-        case _: _ => false
-    }
-
-    @Test
-    def hasListSomewhere01(): Bool = hasListSomewhere(Nil)
-
-    @Test
-    def hasListSomewhere02(): Bool = hasListSomewhere(Some(Nil))
-
-    @Test
-    def hasListSomewhere03(): Bool = not hasListSomewhere(123)
-
-    @Test
-    def hasListSomewhere04(): Bool = not hasListSomewhere(None)
-
     def isPredicateNotFromInt32(f: a): Bool = typematch f {
         case _: Int32 -> _ => false
         case _: _ -> Bool => true
@@ -613,7 +592,7 @@ mod Test.Exp.ReifyType {
     def isAppliedType03(): Bool = not isAppliedType(123)
 
     def isEmptyRecord(x: {| r}): Bool = typematch x {
-        case _: {} => true
+        case _: {|} => true
         case _: _ => false
     }
 
@@ -752,18 +731,18 @@ mod Test.Exp.ReifyType {
                 "Not Array"
         }
 
-    def reg2(x: a): String \ Impure =
+    def reg2(x: a): String \ IO =
         typematch x {
-            case y: Array[_, _] =>
-                checked_ecast(Array.get(0, y));
+            case y: Array[_, Static] =>
+                Array.get(0, y);
                 "Array"
             case _: _ =>
                 "Not Array"
         }
 
     @Test
-     def testReg1(): Bool \ Impure = reg1(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg1(): Bool \ IO = reg1(Array#{1, 2, 3} @ Static) == "Array"
 
     @Test
-     def testReg2(): Bool \ Impure = reg2(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg2(): Bool \ IO = reg2(Array#{1, 2, 3} @ Static) == "Array"
 }

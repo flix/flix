@@ -3,8 +3,8 @@ mod Test.Term.Lit.List {
     @test
     def testLitList01(): Bool =
         let p = #{
-            A(Nil: List[Int32]).
-            B(Nil: List[Int32]).
+            A((Nil: List[Int32])).
+            B((Nil: List[Int32])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
@@ -13,8 +13,8 @@ mod Test.Term.Lit.List {
     @test
     def testLitList02(): Bool =
         let p = #{
-            A(Nil: List[String]).
-            B(Nil: List[String]).
+            A((Nil: List[String])).
+            B((Nil: List[String])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);

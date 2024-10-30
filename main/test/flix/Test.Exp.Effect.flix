@@ -17,20 +17,15 @@ mod Test.Exp.Effect {
     }
 
     // @test
-    pub def handleEff03(): Bool = {
-        try true with Empty
-    }
-
-    // @test
     pub def perform01(): Unit \ Fail = {
-        do Test.Exp.Effect.Fail.fail(":(")
+        Test.Exp.Effect.Fail.fail(":(")
     }
 
     // @test
     pub def perform02(): Bool = {
         try {
-            do Test.Exp.Effect.Console.println("hi");
-            do Test.Exp.Effect.Console.println("bye");
+            Test.Exp.Effect.Console.println("hi");
+            Test.Exp.Effect.Console.println("bye");
             true
         } with Console {
             def println(_, cont) = cont()
@@ -39,7 +34,7 @@ mod Test.Exp.Effect {
 
     // @test
     pub def handlePerform01(): Unit = {
-        try do Test.Exp.Effect.Fail.fail("rats") with Fail {
+        try Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_, _cont) = ()
         }
     }
@@ -47,7 +42,7 @@ mod Test.Exp.Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Test.Exp.Effect.Console.println("It was the best of times");
+            let _ = Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {
             def println(_, cont) = cont()
@@ -58,37 +53,37 @@ mod Test.Exp.Effect {
 
     pub def without02(): Bool = true without {Fail, Console}
 
-    pub def singleEffect(): Bool \ Fail = checked_ecast(???)
+    pub def singleEffect(): Bool \ Fail = ???
 
-    pub def complementEffect(): Bool \ ~Fail = checked_ecast(???)
+    pub def complementEffect(): Bool \ ~Fail = ???
 
-    pub def unionEffect(): Bool \ Fail + Fail = checked_ecast(???)
+    pub def unionEffect(): Bool \ Fail + Fail = ???
 
-    pub def intersectionEffect(): Bool \ Fail & Fail = checked_ecast(???)
+    pub def intersectionEffect(): Bool \ Fail & Fail = ???
 
     pub def differenceEffect(): Bool \ Fail - Fail = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = checked_ecast(???)
+    pub def singlePolyEffect(): Bool \ ef1 = ???
 
-    pub def complementPolyEffect(): Bool \ ~ef1 = checked_ecast(???)
+    pub def complementPolyEffect(): Bool \ ~ef1 = ???
 
-    pub def unionPolyEffect(): Bool \ ef1 + ef2 = checked_ecast(???)
+    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
 
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = checked_ecast(???)
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
 
-    pub def differencePolyEffect(): Bool \ ef1 - ef2 = checked_ecast(???)
+    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
 
-    pub def effectSet01(): Bool \ { Fail } = checked_ecast(???)
+    pub def effectSet01(): Bool \ { Fail } = ???
 
-    pub def effectSet02(): Bool \ { Fail, Fail } = checked_ecast(???)
+    pub def effectSet02(): Bool \ { Fail, Fail } = ???
 
-    pub def effectSet03(): Bool \ { Fail, Fail, Console } = checked_ecast(???)
+    pub def effectSet03(): Bool \ { Fail, Fail, Console } = ???
 
     pub def effectSet04(): Bool \ {} = ???
 
-    pub def polyEffectSet01[ef: Eff](): Bool \ ef = checked_ecast(???)
+    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ???
 
-    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = checked_ecast(???)
+    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ???
 
     pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
 
@@ -96,7 +91,7 @@ mod Test.Exp.Effect {
 
     pub def arrowWithEffect03(f: a -> b \ Console + (ef - Fail)): Bool = ???
 
-    pub def enumWithEffect01(f: Do[{Pure}]): Bool = ???
+    pub def enumWithEffect01(f: Do[{}]): Bool = ???
 
     pub def enumWithEffect02(f: Do[{ef}]): Bool = ???
 
@@ -105,8 +100,6 @@ mod Test.Exp.Effect {
     pub def enumWithEffect04(f: Do[ef - Fail]): Bool = ???
 
     pub def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
-
-    eff Empty
 
     eff Fail {
         pub def fail(x: String): Unit
@@ -117,4 +110,13 @@ mod Test.Exp.Effect {
     }
 
     pub enum Do[ef: Eff](Unit -> Unit \ ef)
+
+    // Testing effect parsing and set semantics
+    pub eff A
+    pub eff B
+    pub eff C
+    def f(): Unit \ {A, B, C} - {B} + {C} = ???
+    pub def g(): Unit \ ({A, B, C} - {B}) + {C} = f()
+    // TODO: enable with set effects
+    // pub def h(): Unit \ {A, C} = f()
 }

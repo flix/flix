@@ -121,14 +121,14 @@ mod Test.Predicate.Guard {
 
     @test
     def testGuardCapturedVar04(): Bool =
-        let f = (x: Bool) -> not x;
+        let f = x -> not x;
         let c = #{ R(1, 1) :- if f(false). };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
 
     @test
     def testGuardCapturedVar05(): Bool =
-        let f = (x: Bool, y: Bool) -> x and y;
+        let f = (x, y) -> x and y;
         let c = #{ R(1, 1) :- if f(true, true). };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
@@ -136,7 +136,7 @@ mod Test.Predicate.Guard {
     @test
     def testGuardCapturedVar06(): Bool =
         let k = true;
-        let f = (x: Bool, y: Bool) -> x and y;
+        let f = (x, y) -> x and y;
         let c = #{ R(1, 1) :- if f(k, k). };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
@@ -152,7 +152,7 @@ mod Test.Predicate.Guard {
     @test
     def testGuardQuantAndCapturedVar02(): Bool =
         let k = 1;
-        let g = (x: Int32, y: Int32) -> x: Int32 == y;
+        let g = (x, y) -> (x: Int32) == y;
         let f = #{ A(1). A(2). B(1). B(2). };
         let c = #{ R(x, y) :- if g(k, x), A(x), B(y). };
         let r = query f, c select (x, y) from R(x, y);

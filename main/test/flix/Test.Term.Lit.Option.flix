@@ -3,8 +3,8 @@ mod Test.Term.Lit.Option {
     @test
     def testLitOption01(): Bool =
         let p = #{
-            A(None: Option[Int32]).
-            B(None: Option[Int32]).
+            A((None: Option[Int32])).
+            B((None: Option[Int32])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
@@ -13,8 +13,8 @@ mod Test.Term.Lit.Option {
     @test
     def testLitOption02(): Bool =
         let p = #{
-            A(None: Option[String]).
-            B(None: Option[String]).
+            A((None: Option[String])).
+            B((None: Option[String])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);

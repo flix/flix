@@ -1,6 +1,6 @@
-/**
- * An implementation of the parity domain lifted over the constant propagation domain.
- */
+///
+/// An implementation of the parity domain lifted over the constant propagation domain.
+///
 mod Domain.ConstantParity {
 
     ///
@@ -19,16 +19,16 @@ mod Domain.ConstantParity {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//    #reflexive #antiSymmetric #transitive #leastElement(ConstantParity.Bot) #greatestElement(ConstantParity.Top)
     pub def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
-        case (Bot, _)           => true
-        case (Cst(n1), Cst(n2)) => n1 == n2
-        case (Cst(n), Odd)      => isOdd(n)
-        case (Cst(n), Even)     => isEven(n)
-        case (Odd, Odd)         => true
-        case (Even, Even)       => true
-        case (_, Top)           => true
-        case _                  => false
+        case (ConstantParity.Bot, _)                    => true
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) => n1 == n2
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => isOdd(n)
+        case (ConstantParity.Cst(n), ConstantParity.Even)     => isEven(n)
+        case (ConstantParity.Odd, ConstantParity.Odd)         => true
+        case (ConstantParity.Even, ConstantParity.Even)       => true
+        case (_, ConstantParity.Top)                          => true
+        case _                                                => false
     }
 
     ///
@@ -36,21 +36,20 @@ mod Domain.ConstantParity {
     ///
 //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (Bot, x)           => x
-        case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => {
-            if      (n1 == n2)                  Cst(n1)
-            else if (isOdd(n1) and isOdd(n2))    Odd
-            else if (isEven(n1) and isEven(n2))  Even
-            else                                Top
-        }
-        case (Cst(n), Odd)      => if (isOdd(n))  Odd else Top
-        case (Odd, Cst(n))      => if (isOdd(n))  Odd else Top
-        case (Cst(n), Even)     => if (isEven(n)) Even else Top
-        case (Even, Cst(n))     => if (isEven(n)) Even else Top
-        case (Odd, Odd)         => Odd
-        case (Even, Even)       => Even
-        case _                  => Top
+        case (ConstantParity.Bot, x)                          => x
+        case (x, ConstantParity.Bot)                          => x
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) =>
+            if      (n1 == n2)                  ConstantParity.Cst(n1)
+            else if (isOdd(n1)  and isOdd(n2))  ConstantParity.Odd
+            else if (isEven(n1) and isEven(n2)) ConstantParity.Even
+            else                                ConstantParity.Top
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => if (isOdd(n))  ConstantParity.Odd else ConstantParity.Top
+        case (ConstantParity.Odd, ConstantParity.Cst(n))      => if (isOdd(n))  ConstantParity.Odd else ConstantParity.Top
+        case (ConstantParity.Cst(n), ConstantParity.Even)     => if (isEven(n)) ConstantParity.Even else ConstantParity.Top
+        case (ConstantParity.Even, ConstantParity.Cst(n))     => if (isEven(n)) ConstantParity.Even else ConstantParity.Top
+        case (ConstantParity.Odd, ConstantParity.Odd)         => ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Even)       => ConstantParity.Even
+        case _                                                => ConstantParity.Top
     }
 
     ///
@@ -58,16 +57,16 @@ mod Domain.ConstantParity {
     ///
 //    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (Top, x)           => x
-        case (x, Top)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2)  Cst(n1) else Bot
-        case (Cst(n), Odd)      => if (isOdd(n))  Cst(n) else Bot
-        case (Odd, Cst(n))      => if (isOdd(n))  Cst(n) else Bot
-        case (Cst(n), Even)     => if (isEven(n)) Cst(n) else Bot
-        case (Even, Cst(n))     => if (isEven(n)) Cst(n) else Bot
-        case (Odd, Odd)         => Odd
-        case (Even, Even)       => Even
-        case _                  => Bot
+        case (ConstantParity.Top, x)                          => x
+        case (x, ConstantParity.Top)                          => x
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) => if (n1 == n2)  ConstantParity.Cst(n1) else ConstantParity.Bot
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => if (isOdd(n))  ConstantParity.Cst(n) else ConstantParity.Bot
+        case (ConstantParity.Odd, ConstantParity.Cst(n))      => if (isOdd(n))  ConstantParity.Cst(n) else ConstantParity.Bot
+        case (ConstantParity.Cst(n), ConstantParity.Even)     => if (isEven(n)) ConstantParity.Cst(n) else ConstantParity.Bot
+        case (ConstantParity.Even, ConstantParity.Cst(n))     => if (isEven(n)) ConstantParity.Cst(n) else ConstantParity.Bot
+        case (ConstantParity.Odd, ConstantParity.Odd)         => ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Even)       => ConstantParity.Even
+        case _                                                => ConstantParity.Bot
     }
 
     ///
@@ -75,17 +74,17 @@ mod Domain.ConstantParity {
     ///
 //    #nonNegative
     pub def height(e: ConstantParity): BigInt = match e {
-        case Top    => 0ii
-        case Odd    => 1ii
-        case Even   => 1ii
-        case Cst(_) => 2ii
-        case Bot    => 3ii
+        case ConstantParity.Top    => 0ii
+        case ConstantParity.Odd    => 1ii
+        case ConstantParity.Even   => 1ii
+        case ConstantParity.Cst(_) => 2ii
+        case ConstantParity.Bot    => 3ii
     }
 
     ///
     /// Abstracts a concrete number into the constant parity domain.
     ///
-    pub def alpha(i: BigInt): ConstantParity = Cst(i)
+    pub def alpha(i: BigInt): ConstantParity = ConstantParity.Cst(i)
 
     ///
     /// Over-approximates integer `increment`.
@@ -93,11 +92,11 @@ mod Domain.ConstantParity {
 //    #safe1(x -> x + 1ii)
 //    #strict1 #monotone1
     pub def inc(e: ConstantParity): ConstantParity = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n + 1ii)
-        case Even   => Odd
-        case Odd    => Even
-        case Top    => Top
+        case ConstantParity.Bot    => ConstantParity.Bot
+        case ConstantParity.Cst(n) => ConstantParity.Cst(n + 1ii)
+        case ConstantParity.Even   => ConstantParity.Odd
+        case ConstantParity.Odd    => ConstantParity.Even
+        case ConstantParity.Top    => ConstantParity.Top
     }
 
     ///
@@ -106,11 +105,11 @@ mod Domain.ConstantParity {
 //    #safe1(x -> x - 1ii)
 //    #strict1 #monotone1
     pub def dec(e: ConstantParity): ConstantParity = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n - 1ii)
-        case Even   => Odd
-        case Odd    => Even
-        case Top    => Top
+        case ConstantParity.Bot    => ConstantParity.Bot
+        case ConstantParity.Cst(n) => ConstantParity.Cst(n - 1ii)
+        case ConstantParity.Even   => ConstantParity.Odd
+        case ConstantParity.Odd    => ConstantParity.Even
+        case ConstantParity.Top    => ConstantParity.Top
     }
 
     ///
@@ -119,18 +118,18 @@ mod Domain.ConstantParity {
 //    #safe2((x, y) -> x + y)
 //    #strict2 #monotone2 #commutative
     pub def plus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-        case (Cst(n), Odd)      => if (isOdd(n))  Even else Odd
-        case (Odd, Cst(n))      => if (isOdd(n))  Even else Odd
-        case (Cst(n), Even)     => if (isEven(n)) Even else Odd
-        case (Even, Cst(n))     => if (isEven(n)) Even else Odd
-        case (Even, Even)       => Even
-        case (Even, Odd)        => Odd
-        case (Odd, Even)        => Odd
-        case (Odd, Odd)         => Even
-        case _                  => Top
+        case (ConstantParity.Bot, _)                          => ConstantParity.Bot
+        case (_, ConstantParity.Bot)                          => ConstantParity.Bot
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) => ConstantParity.Cst(n1 + n2)
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => if (isOdd(n))  ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Cst(n))      => if (isOdd(n))  ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Cst(n), ConstantParity.Even)     => if (isEven(n)) ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Cst(n))     => if (isEven(n)) ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Even)       => ConstantParity.Even
+        case (ConstantParity.Even, ConstantParity.Odd)        => ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Even)        => ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Odd)         => ConstantParity.Even
+        case _                                                => ConstantParity.Top
     }
 
     ///
@@ -139,18 +138,18 @@ mod Domain.ConstantParity {
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
     pub def minus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
-        case (Cst(n), Odd)      => if (isOdd(n))  Even else Odd
-        case (Odd, Cst(n))      => if (isOdd(n))  Even else Odd
-        case (Cst(n), Even)     => if (isEven(n)) Even else Odd
-        case (Even, Cst(n))     => if (isEven(n)) Even else Odd
-        case (Even, Even)       => Even
-        case (Even, Odd)        => Odd
-        case (Odd, Even)        => Odd
-        case (Odd, Odd)         => Even
-        case _                  => Top
+        case (ConstantParity.Bot, _)                          => ConstantParity.Bot
+        case (_, ConstantParity.Bot)                          => ConstantParity.Bot
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) => ConstantParity.Cst(n1 - n2)
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => if (isOdd(n))  ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Cst(n))      => if (isOdd(n))  ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Cst(n), ConstantParity.Even)     => if (isEven(n)) ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Cst(n))     => if (isEven(n)) ConstantParity.Even else ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Even)       => ConstantParity.Even
+        case (ConstantParity.Even, ConstantParity.Odd)        => ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Even)        => ConstantParity.Odd
+        case (ConstantParity.Odd, ConstantParity.Odd)         => ConstantParity.Even
+        case _                                                => ConstantParity.Top
     }
 
     ///
@@ -159,75 +158,27 @@ mod Domain.ConstantParity {
 //    #safe2((x, y) -> x * y)
 //    #strict2  // NB: @monotone annotation removed since Z3 reports unknown.
     pub def times(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-        case (Cst(n), Odd)      => if (isOdd(n)) Odd else Even
-        case (Odd, Cst(n))      => if (isOdd(n)) Odd else Even
-        case (Cst(_), Even)     => Even
-        case (Even, Cst(_))     => Even
-        case (Even, Even)       => Even
-        case (Even, Odd)        => Even
-        case (Odd, Even)        => Even
-        case (Odd, Odd)         => Odd
-        case _                  => Top
+        case (ConstantParity.Bot, _)                          => ConstantParity.Bot
+        case (_, ConstantParity.Bot)                          => ConstantParity.Bot
+        case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) => ConstantParity.Cst(n1 * n2)
+        case (ConstantParity.Cst(n), ConstantParity.Odd)      => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Even
+        case (ConstantParity.Odd, ConstantParity.Cst(n))      => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Even
+        case (ConstantParity.Cst(_), ConstantParity.Even)     => ConstantParity.Even
+        case (ConstantParity.Even, ConstantParity.Cst(_))     => ConstantParity.Even
+        case (ConstantParity.Even, ConstantParity.Even)       => ConstantParity.Even
+        case (ConstantParity.Even, ConstantParity.Odd)        => ConstantParity.Even
+        case (ConstantParity.Odd, ConstantParity.Even)        => ConstantParity.Even
+        case (ConstantParity.Odd, ConstantParity.Odd)         => ConstantParity.Odd
+        case _                                                => ConstantParity.Top
     }
 
     ///
-    /// Over-approximates `equal`.
+    /// Returns `true` iff the given number `n` is ConstantParity.Odd.
     ///
-//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def eq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
-        case (Cst(n), Even)     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Even, Cst(n))     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Cst(n), Odd)      => if (isEven(n)) Belnap/Belnap.False else Belnap/Belnap.Top
-        case (Odd, Cst(n))      => if (isEven(n)) Belnap/Belnap.False else Belnap/Belnap.Top
-        case _                  => Belnap/Belnap.Top
-    }
+    pub def isOdd(n: BigInt): Bool = (n `BigInt.remainder` 2ii) != 0ii
 
     ///
-    /// Over-approximates `not equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def neq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.not(eq(e1, e2))
-
-    ///
-    /// Over-approximates `less than`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
-        case _                  => Belnap/Belnap.Top
-    }
-
-    ///
-    /// Over-approximates `less than or equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def lessEqual(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
-
-    ///
-    /// Returns `true` iff the given number `n` is odd.
-    ///
-    pub def isOdd(n: BigInt): Bool = (n `rem` 2ii) != 0ii
-
-    ///
-    /// Returns `true` iff the given number `n` is even.
+    /// Returns `true` iff the given number `n` is ConstantParity.Even.
     ///
     pub def isEven(n: BigInt): Bool = not isOdd(n)
 
@@ -243,13 +194,13 @@ mod Domain.ConstantParity {
 
 //    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
-//    law leastElement(leq: (ConstantParity, ConstantParity) -> Bool, bot: ConstantParity): Bool = Bounded.leastElement(bot, leq)
+//    law leastElement(leq: (ConstantParity, ConstantParity) -> Bool, ConstantParity.Bot: ConstantParity): Bool = Bounded.leastElement(ConstantParity.Bot, leq)
 
-//    law greatestElement(leq: (ConstantParity, ConstantParity) -> Bool, top: ConstantParity): Bool = Bounded.greatestElement(top, leq)
+//    law greatestElement(leq: (ConstantParity, ConstantParity) -> Bool, ConstantParity.Top: ConstantParity): Bool = Bounded.greatestElement(ConstantParity.Top, leq)
 
-//    law strict1(f: ConstantParity -> ConstantParity): Bool = Bounded.strict1(f, Bot, Bot)
+//    law strict1(f: ConstantParity -> ConstantParity): Bool = Bounded.strict1(f, ConstantParity.Bot, ConstantParity.Bot)
 
-//    law strict2(f: (ConstantParity, ConstantParity) -> ConstantParity): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+//    law strict2(f: (ConstantParity, ConstantParity) -> ConstantParity): Bool = Bounded.strict2(f, ConstantParity.Bot, ConstantParity.Bot, ConstantParity.Bot)
 
 //    law monotone1(f: ConstantParity -> ConstantParity): Bool = PartialOrder.monotone1(f, leq, leq)
 

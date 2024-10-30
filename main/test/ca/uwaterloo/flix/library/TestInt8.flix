@@ -107,43 +107,43 @@ mod TestInt8 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (12i8 `Int8.mod` 2i8) == 0i8
+    def modulo01(): Bool = (12i8 `Int8.modulo` 2i8) == 0i8
 
     @test
-    def mod02(): Bool = (12i8 `Int8.mod` 5i8) == 2i8
+    def modulo02(): Bool = (12i8 `Int8.modulo` 5i8) == 2i8
 
     @test
-    def mod03(): Bool = (-12i8 `Int8.mod` 5i8) == 3i8
+    def modulo03(): Bool = (-12i8 `Int8.modulo` 5i8) == 3i8
 
     @test
-    def mod04(): Bool = (12i8 `Int8.mod` -5i8) == -3i8
+    def modulo04(): Bool = (12i8 `Int8.modulo` -5i8) == -3i8
 
     @test
-    def mod05(): Bool = (-12i8 `Int8.mod` -5i8) == -2i8
+    def modulo05(): Bool = (-12i8 `Int8.modulo` -5i8) == -2i8
 
     @test
-    def mod06(): Bool = (1i8 `Int8.mod` 0i8) == 0i8
+    def modulo06(): Bool = (1i8 `Int8.modulo` 0i8) == 0i8
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (12i8 `Int8.rem` 2i8) == 0i8
+    def remainder01(): Bool = (12i8 `Int8.remainder` 2i8) == 0i8
 
     @test
-    def rem02(): Bool = (12i8 `Int8.rem` 5i8) == 2i8
+    def remainder02(): Bool = (12i8 `Int8.remainder` 5i8) == 2i8
 
     @test
-    def rem03(): Bool = (-12i8 `Int8.rem` 5i8) == -2i8
+    def remainder03(): Bool = (-12i8 `Int8.remainder` 5i8) == -2i8
 
     @test
-    def rem04(): Bool = (12i8 `Int8.rem` -5i8) == 2i8
+    def remainder04(): Bool = (12i8 `Int8.remainder` -5i8) == 2i8
 
     @test
-    def rem05(): Bool = (-12i8 `Int8.rem` -5i8) == -2i8
+    def remainder05(): Bool = (-12i8 `Int8.remainder` -5i8) == -2i8
 
     @test
-    def rem06(): Bool = (1i8 `Int8.rem` 0i8) == 0i8
+    def remainder06(): Bool = (1i8 `Int8.remainder` 0i8) == 0i8
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
@@ -1106,20 +1106,17 @@ mod TestInt8 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(0i8);
-        equals(i, checked_cast(Int8.valueOf(0i8)))
+        unsafe i.equals(Int8.valueOf(0i8))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(1i8);
-        equals(i, checked_cast(Int8.valueOf(1i8)))
+        unsafe i.equals(Int8.valueOf(1i8))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(-1i8);
-        equals(i, checked_cast(Int8.valueOf(-1i8)))
+        unsafe i.equals(Int8.valueOf(-1i8))
 
 }

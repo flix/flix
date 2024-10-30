@@ -58,6 +58,53 @@ mod Test.Exp.LetRec {
         def loop(n) = if (n == 0) inc(0) else loop(dec(n));
         loop(10) == 1
 
+    @test
+    def testLetRecCapture05(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        f(10)() == 4
+
+    @test
+    def testLetRecCapture06(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        ((q) -> f(q))(10)() == 4
+
+    @test
+    def testLetRecCapture07(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        (() -> f)()(10)() == 4
+
+    @test
+    def testLetRecCapture08(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        (() -> f(b))()() == 4
+
+    @test
+    def testLetRecCapture09(): Bool =
+        let a = 1;
+        let b = 2;
+        let g = {
+            let d = 3;
+            def f(l) = if (l == 4) () -> d + l else f(a + b + 1);
+            () -> f
+        };
+        g()(5)() == 7
+
+    @test
+    def testLetRecCapture10(): Bool =
+        foo(42, _ -> -1)() == 1
+
+    def foo(x: Int32, r: Unit -> Int32): Unit -> Int32 =
+        def local() = x;
+        if (x == 0) r else foo(x - 1, _ -> local())
+
     ///
     /// Nested Let Recs.
     ///
@@ -179,9 +226,9 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed03(): Bool = region rc {
-        def incr(x): Unit \ rc = x := deref x + 1;
-        let r = ref 1 @ rc;
+        def incr(x): Unit \ rc = Ref.put(Ref.get(x) + 1, x);
+        let r = Ref.fresh(rc, 1);
         incr(r);
-        deref r == 2
+        Ref.get(r) == 2
     }
 }

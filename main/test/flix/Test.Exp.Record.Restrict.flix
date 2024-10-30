@@ -22,7 +22,7 @@ mod Test.Exp.Record.Restrict {
         r3
 
     @test
-    def testRecordRestrict04(): { } =
+    def testRecordRestrict04(): {|} =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let r1 = { -fstName | r0 };
         let r2 = { -lstName | r1 };
@@ -34,14 +34,14 @@ mod Test.Exp.Record.Restrict {
     def testRecordRestrict05(): Bool =
         let r0 = { a = 123, a = 456 };
         let r1 = { -a | r0 };
-        r1.a == 456
+        r1#a == 456
 
     @test
     def testRecordRestrict06(): Bool =
         let r0 = { a = 123, a = 456, a = 789 };
         let r1 = { -a | r0 };
         let r2 = { -a | r1 };
-        r2.a == 789
+        r2#a == 789
 
     @test
     pub def testRecordRestrict07(): Bool = {
@@ -49,7 +49,7 @@ mod Test.Exp.Record.Restrict {
         // the arbitrary value juggling is to avoid inlining
         let r1 = {x = 1, y = 1, z = 1};
         let r2 = {-z | r1};
-        let tple = (r1.z + r2.y) |> (i -> (r1.z, i));
+        let tple = (r1#z + r2#y) |> (i -> (r1#z, i));
         fst(tple) == 1
     }
 
@@ -64,17 +64,17 @@ mod Test.Exp.Record.Restrict {
         { -fstName, -lstName | r0 }
 
     @test
-    def testRecordRestrictUnordered01(): { } =
+    def testRecordRestrictUnordered01(): {|} =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         { -lstName, -fstName, -age, -cowboy | r0 }
 
     @test
-    def testRecordRestrictUnordered02(): { } =
+    def testRecordRestrictUnordered02(): {|} =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         { -lstName, -age, -fstName, -cowboy | r0 }
 
     @test
-    def testRecordRestrictUnordered03(): { } =
+    def testRecordRestrictUnordered03(): {|} =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         {  -cowboy, -age, -lstName, -fstName | r0 }
 
@@ -89,7 +89,7 @@ mod Test.Exp.Record.Restrict {
         { -a, -a | r }
 
     @test
-    def testRecordRestrictDuplicateLabels03(): {} =
+    def testRecordRestrictDuplicateLabels03(): {|} =
         let r = { a = 1, a = 2, a = 3};
         { -a, -a, -a | r }
 
@@ -114,7 +114,7 @@ mod Test.Exp.Record.Restrict {
         { -a, -b, -a, -b | r }
 
     @test
-    def testRecordRestrictDuplicateLabels08(): {} =
+    def testRecordRestrictDuplicateLabels08(): {|} =
         let r = { a = 1, b = 42, a = 2, b = 84, a = 3};
         { -a, -b, -a, -b, -a | r }
 

@@ -24,8 +24,8 @@ pub type alias Graph[node] = {
 /// Given the undirected graph described by `nodes` and `edges`, connected components are
 /// found and a relation with the component representative for each node is returned.
 pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r } with Order[node] =
-    let nodes = inject g.nodes into Node;
-    let edges = inject g.edges into Edge;
+    let nodes = inject g#nodes into Node;
+    let edges = inject g#edges into Edge;
     let reachability = #{
         // `Reachable(n1, n2)` describes that `n1` can reach `n2`.
         // All nodes can reach themselves.

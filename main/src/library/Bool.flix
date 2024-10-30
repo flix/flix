@@ -50,21 +50,6 @@ mod Bool {
     pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
 
     ///
-    /// Negation of `x`
-    ///
-    pub def not(x: Bool): Bool = not x
-
-    ///
-    /// Logical and.
-    ///
-    pub def and(x: Bool, y: Lazy[Bool]): Bool = if(x) force y else x
-
-    ///
-    /// Logical or.
-    ///
-    pub def or(x: Bool, y: Lazy[Bool]): Bool = if(x) x else force y
-
-    ///
     /// Returns `true` if `x` implies `y` logically holds.
     ///
     pub def ==>(x: Bool, y: Bool): Bool = not x or y

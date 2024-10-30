@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.dbg.AstPrinter
-
 import java.io.{IOException, PrintWriter, StringWriter}
 import java.nio.file.{Files, Path}
 
@@ -46,9 +44,6 @@ object CrashHandler {
               None
           }
       }
-
-    // Print asts.
-    AstPrinter.printAllAsts()
 
     optPath.map(_.toAbsolutePath.normalize)
   }

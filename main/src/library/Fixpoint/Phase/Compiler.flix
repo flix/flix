@@ -40,7 +40,7 @@ mod Fixpoint.Phase.Compiler {
     @Internal
     pub def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
         case Datalog(facts, rules) => region rc {
-            let stmts = MutList.new(rc);
+            let stmts = MutList.empty(rc);
             Vector.forEach(compileRule(stmts), facts);
             Vector.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -76,7 +76,7 @@ mod Fixpoint.Phase.Compiler {
             let arity = Vector.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.new(rc);
+        let loopBody = MutList.empty(rc);
         List.forEach(compileRule(stmts), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
@@ -90,15 +90,15 @@ mod Fixpoint.Phase.Compiler {
         }, idb);
         List.forEach(compileRuleIncr(loopBody), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
-            let new = RamSym.New(predSym, arity, den);
+            let newr = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
-            let mergeNew = RamStmt.Merge(new, full);
+            let mergeNew = RamStmt.Merge(newr, full);
             MutList.push!(mergeNew, loopBody)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
             let delta = RamSym.Delta(predSym, arity, den);
-            let new = RamSym.New(predSym, arity, den);
-            let assign = RamStmt.Assign(delta, new);
+            let newr = RamSym.New(predSym, arity, den);
+            let assign = RamStmt.Assign(delta, newr);
             MutList.push!(assign, loopBody)
         }, idb);
         let loopTest =

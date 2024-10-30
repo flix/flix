@@ -49,7 +49,7 @@ object TypePrinter {
     */
   def printAsEffect(tpe: Type): DocAst.Eff = tpe match {
     case Type.Cst(TypeConstructor.Pure, _) => DocAst.Eff.Pure
-    case Type.Cst(TypeConstructor.EffUniv, _) => DocAst.Eff.Impure
+    case Type.Cst(TypeConstructor.Univ, _) => DocAst.Eff.Univ
     case _ => DocAst.Eff.AsIs(typeToString(tpe))
   }
 
@@ -60,7 +60,7 @@ object TypePrinter {
 
   /** Returns the type as a simple string */
   private def typeToString(tpe: Type): String = {
-    FormatType.formatTypeWithOptions(tpe, FormatOptions(ignorePur = true, ignoreEff = true, FormatOptions.VarName.NameBased))
+    FormatType.formatTypeWithOptions(tpe, FormatOptions(FormatOptions.VarName.NameBased))
   }
 
 }

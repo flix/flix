@@ -16,6 +16,9 @@
  */
 mod Fixpoint.Ast.Shared {
 
+    use Fixpoint.Boxable
+    use Fixpoint.Boxed
+
     /////////////////////////////////////////////////////////////////////////////
     // Denotation                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -44,7 +47,7 @@ mod Fixpoint.Ast.Shared {
     @Internal
     pub def isRelational(den: Denotation[v]): Bool = match den {
         case Denotation.Relational => true
-        case _          => false
+        case _                     => false
     }
 
     ///
@@ -54,10 +57,10 @@ mod Fixpoint.Ast.Shared {
     pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
         Denotation.Latticenal(
-            LowerBound.minValue() : t,
-            (x: t, y: t) -> PartialOrder.lessEqual(x: t, y: t),
-            (x: t, y: t) -> JoinLattice.leastUpperBound(x: t, y: t),
-            (x: t, y: t) -> MeetLattice.greatestLowerBound(x: t, y:t)
+            LowerBound.minValue(),
+            (x, y) -> PartialOrder.lessEqual(x, y),
+            (x, y) -> JoinLattice.leastUpperBound(x, y),
+            (x, y) -> MeetLattice.greatestLowerBound(x, y)
         )
 
     ///

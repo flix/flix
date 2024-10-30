@@ -102,7 +102,7 @@ mod Validation {
     ///
     pub def withDefault(default: {default = Validation[e, t]}, v: Validation[e, t]): Validation[e, t] = match v {
         case Success(_) => v
-        case Failure(_) => default.default
+        case Failure(_) => default#default
     }
 
     ///

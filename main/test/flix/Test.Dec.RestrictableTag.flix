@@ -17,7 +17,7 @@ pub restrictable enum ExprSimple[_] {
     case Not((Int32, BigInt, BigDecimal))
     case And(Float64, Float32)
     case Or(Option[Bool], (Int8, Int16))
-    case Xor(Array[Array[Int64, Impure], Impure], Unit)
+    case Xor(Array[Array[Int64, Univ], Univ], Unit)
 }
 
 /// Polymorphic term types
@@ -64,8 +64,8 @@ pub restrictable enum MutualB[s][t: MutualA] {
 /// Non-direct use of index
 pub restrictable enum ExprFancy[s][t: ExprFancy] {
     case A(ExprFancy[t][s])
-    case B(ExprFancy[t -- <ExprFancy.A>][t])
-    case C(ExprFancy[s ++ t][<ExprFancy.A>])
+    case B(ExprFancy[t rvsub <ExprFancy.A>][t])
+    case C(ExprFancy[s rvadd t][<ExprFancy.A>])
 }
 
 }

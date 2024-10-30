@@ -4,7 +4,7 @@ restrictable enum Expr[s] {
     case Not((Int32, BigInt, BigDecimal))
     case And(Float64, Float32)
     case Or(Option[Bool], (Int8, Int16))
-    case Xor(Array[Array[Int64, Impure], Impure], Unit)
+    case Xor(Array[Array[Int64, Univ], Univ], Unit)
 }
 
 mod Test.Exp.Choose.SimpleTerms {
@@ -23,7 +23,7 @@ mod Test.Exp.Choose.SimpleTerms {
 
 // TODO RESTR-VARS
     pub def testChoose03(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
+        let cstOrVar = if (true) open_variant Expr.Cst('a') else open_variant Expr.Var("lol");
         choose cstOrVar {
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
@@ -31,7 +31,7 @@ mod Test.Exp.Choose.SimpleTerms {
     }
 
     pub def testChoose04(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
+        let cstOrVar = if (true) open_variant Expr.Cst('a') else open_variant Expr.Var("lol");
         choose cstOrVar {
             case Expr.Xor(_) => false
             case Expr.Cst(_) => true
@@ -65,7 +65,7 @@ mod Test.Exp.Choose.SimpleTerms {
         };
         let h = if (true) f else g;
 
-        let cstOrNot = if (true) open Expr.Cst('a') else open Expr.Not((123, 123ii, 1e23ff));
+        let cstOrNot = if (true) open_variant Expr.Cst('a') else open_variant Expr.Not((123, 123ii, 1e23ff));
         h(cstOrNot)
     }
 }

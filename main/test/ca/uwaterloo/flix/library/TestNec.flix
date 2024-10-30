@@ -228,6 +228,19 @@ mod TestNec {
     def length03(): Bool = Nec.length(necOf3(1, 2, 3)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = Nec.size(singleton(1)) == 1
+
+    @test
+    def size02(): Bool = Nec.size(necOf2(1, 2)) == 2
+
+    @test
+    def size03(): Bool = Nec.size(necOf3(1, 2, 3)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -553,16 +566,16 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = Nec.replace(from = 1, to = 42, singleton(1)) == singleton(42)
+    def replace01(): Bool = Nec.replace(src =  1, dst =  42, singleton(1)) == singleton(42)
 
     @test
-    def replace02(): Bool = Nec.replace(from = 7, to = 42, singleton(1)) == singleton(1)
+    def replace02(): Bool = Nec.replace(src =  7, dst =  42, singleton(1)) == singleton(1)
 
     @test
-    def replace03(): Bool = Nec.replace(from = 2, to = 42, necOf2(1, 2)) == necOf2(1, 42)
+    def replace03(): Bool = Nec.replace(src =  2, dst =  42, necOf2(1, 2)) == necOf2(1, 42)
 
     @test
-    def replace04(): Bool = Nec.replace(from = 7, to = 42, necOf2(1, 2)) == necOf2(1, 2)
+    def replace04(): Bool = Nec.replace(src =  7, dst =  42, necOf2(1, 2)) == necOf2(1, 2)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
@@ -840,25 +853,25 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMap01(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == Nil
+    def filterMap01(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(1)) == Nil
 
     @test
-    def filterMap02(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
+    def filterMap02(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
 
     @test
-    def filterMap03(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
+    def filterMap03(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
 
     @test
-    def filterMap04(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
+    def filterMap04(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
 
     @test
-    def filterMap05(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
+    def filterMap05(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
 
     @test
-    def filterMap07(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
+    def filterMap07(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
 
     @test
-    def filterMap08(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
+    def filterMap08(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
                             0 :: 1 :: 2 :: 5 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
@@ -866,25 +879,25 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findMap01(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == None
+    def findMap01(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(1)) == None
 
     @test
-    def findMap02(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
+    def findMap02(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
 
     @test
-    def findMap03(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
+    def findMap03(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
 
     @test
-    def findMap04(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
+    def findMap04(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
 
     @test
-    def findMap05(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
+    def findMap05(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
 
     @test
-    def findMap06(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
+    def findMap06(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
 
     @test
-    def findMap07(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
+    def findMap07(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -1002,16 +1015,16 @@ mod TestNec {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Nec.forEach(x -> ri := x, singleton(1));
-        1 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Nec.forEach(x -> Ref.put(x, ri), singleton(1));
+        1 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Nec.forEach(x -> ri := x, necOf3(1, 2, 3));
-        3 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Nec.forEach(x -> Ref.put(x, ri), necOf3(1, 2, 3));
+        3 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1020,16 +1033,16 @@ mod TestNec {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Nec.forEachWithIndex((i, _) -> ri := i, singleton(1));
-        0 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), singleton(1));
+        0 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Nec.forEachWithIndex((i, _) -> ri := i, necOf3(1, 2, 3));
-        2 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), necOf3(1, 2, 3));
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1055,7 +1068,7 @@ mod TestNec {
         let c = singleton(1);
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1066,7 +1079,7 @@ mod TestNec {
         let c = necOf2(1, 2);
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1078,7 +1091,7 @@ mod TestNec {
         let c = necOf3('a', 'b', 'c');
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);
@@ -1424,33 +1437,33 @@ mod TestNec {
     def traverse02(): Bool = Nec.traverse(x -> Some(x+1), necOf2(1, 2)) == Some(necOf2(2, 3))
 
     @test
-    def traverse03(): Bool = Nec.traverse(_ -> None: Option[Int32], singleton(1)) == None
+    def traverse03(): Bool = Nec.traverse(_ -> (None: Option[Int32]), singleton(1)) == None
 
     @test
-    def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
+    def traverse04(): Bool = Nec.traverse(_ -> (None: Option[Int32]), necOf2(1, 2)) == None
 
     @test
     def traverse05(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nec.singleton(1);
-        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
+        let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nec.singleton(1)) and Ref.get(st) == 1
     }
 
     @test
     def traverse06(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf2(1, 2);
-        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
+        let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(necOf2(1, 2)) and Ref.get(st) == 2
     }
 
     @test
     def traverse07(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf3(1, 2, 3);
-        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3
+        let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(necOf3(1, 2, 3)) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1676,24 +1689,24 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
-        let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
+    def shuffle01(): Bool \ NonDet =
+        let c = Nec.singleton(1) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
             case _       => false
         }
 
     @test
-    def shuffle02(): Bool \ IO =
-        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());
+    def shuffle02(): Bool \ NonDet =
+        let c = necOf3(1, 2, 3) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
             case _       => false
         }
 
     @test
-    def shuffle03(): Bool \ IO =
-        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new());
+    def shuffle03(): Bool \ NonDet =
+        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
             case _       => false

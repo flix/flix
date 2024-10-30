@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 object ParOps {
@@ -51,19 +51,34 @@ object ParOps {
     // Construct a new count down latch to track the number of threads.
     val latch = new CountDownLatch(size)
 
+    // Construct a local volatile variable to hold a thrown exception (if any).
+    // Multiple exceptions may be thrown, but we will just rethrow one of them.
+    @volatile var exception: Throwable = null
+
     // Iterate through the elements of `xs`. Use a local variable to track the index.
     var idx = 0
     for (elm <- xs) {
       val i = idx // Ensure proper scope of i.
       flix.threadPool.execute(() => {
-        out(i) = f(elm)
-        latch.countDown()
+        try {
+          out(i) = f(elm)
+        } catch {
+          case ex: Throwable =>
+            ex.printStackTrace()
+            exception = ex
+        } finally {
+          latch.countDown()
+        }
       })
       idx = idx + 1
     }
 
     // Await all threads to finish and return the result.
     latch.await()
+
+    // Rethrow the latest exception (if any).
+    if (exception != null) throw exception
+
     out
   }
 

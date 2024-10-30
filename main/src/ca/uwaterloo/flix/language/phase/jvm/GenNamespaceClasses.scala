@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 
 /**
   * Generates bytecode for the namespace classes.
@@ -70,7 +70,7 @@ object GenNamespaceClasses {
     */
   private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // Name of the shim
-    val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
+    val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
     // Erased argument and result type.
     val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
@@ -101,7 +101,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), defn.loc)(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc)(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return

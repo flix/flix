@@ -19,6 +19,8 @@ pub enum IOError with Eq, Order, ToString, Hash, Sendable {
 
 mod IOError {
 
+    import java.lang.Exception
+
     use IOError.Generic
 
     ///
@@ -30,13 +32,11 @@ mod IOError {
     /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def tryCatch(f: Unit -> a \ IO): Result[IOError, a] \ IO =
+    pub def tryCatch(f: Unit -> a \ ef): Result[IOError, a] \ ef =
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(e)))
+            case e: Exception => Err(Generic(unsafe e.getMessage()))
         }
 
 }

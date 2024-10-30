@@ -18,131 +18,84 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.printer._
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.dbg.printer.*
+import ca.uwaterloo.flix.util.tc.Debug
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
 
 import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  /**
-    * Writes all the formatted asts, requested by the flix options, to disk.
-    */
-  def printAsts()(implicit flix: Flix): Unit = {
-    val asts = flix.options.xprintphase
-    if (asts.isEmpty)
-      ()
-    else if (asts.contains("all") || asts.contains("All"))
-      printAllAsts()
-    else {
-      //
-      // Front-end
-      //
-      if (asts.contains("Parser")) () // wip
-      if (asts.contains("Weeder")) () // wip
-      if (asts.contains("Desugar")) () // wip
-      if (asts.contains("Namer")) () // wip
-      if (asts.contains("Resolver")) () // wip
-      if (asts.contains("Kinder")) () // wip
-      if (asts.contains("Deriver")) () // wip
-      if (asts.contains("Typer")) () // wip
-      if (asts.contains("Entrypoint")) () // wip
-      if (asts.contains("PredDeps")) () // wip
-      if (asts.contains("Stratifier")) () // wip
-      if (asts.contains("PatMatch")) () // wip
-      if (asts.contains("Redundancy")) () // wip
-      if (asts.contains("Safety")) () // wip
-      //
-      // Back-end
-      //
-      if (asts.contains("Lowering")) writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-      if (asts.contains("TreeShaker1")) writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
-      if (asts.contains("MonoDefs")) writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
-      if (asts.contains("MonoTypes")) writeToDisk("MonoTypes", formatLoweredAst(flix.getMonoTypesAst))
-      if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
-      if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
-      if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
-      if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
-      if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-      if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-      if (asts.contains("EffectBinder")) writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
-      if (asts.contains("Eraser")) writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
-      if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
-      if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
-      if (asts.contains("JvmBackend")) () // wip
-    }
+  case class DebugNoOp[T]() extends Debug[T] {
+    override def emit(phase: String, root: T)(implicit flix: Flix): Unit = ()
   }
 
-  /**
-    * Writes all the formatted asts to disk.
-    */
-  def printAllAsts()(implicit flix: Flix): Unit = {
-    //
-    // Front-end
-    //
+  implicit object DebugUnit extends DebugNoOp[Unit]
 
-    // Parser wip
-    // Weeder wip
-    // Desugar wip
-    // Namer wip
-    // Resolver wip
-    // Kinder wip
-    // Deriver wip
-    // Typer wip
-    // Entrypoint wip
-    // PredDeps wip
-    // Stratifier wip
-    // PatMatch wip
-    // Redundancy wip
-    // Safety wip
-
-    //
-    // Back-end
-    //
-
-    writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-    writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
-    writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
-    writeToDisk("MonoTypes", formatLoweredAst(flix.getMonoTypesAst))
-    writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
-    writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
-    writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
-    writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
-    writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-    writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-    writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
-    writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
-    writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
-    writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
+  implicit object DebugSyntaxTree extends Debug[SyntaxTree.Root] {
+    override def emit(phase: String, root: SyntaxTree.Root)(implicit flix: Flix): Unit = ()
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatLoweredAst(root: LoweredAst.Root): String = {
-    formatDocProgram(LoweredAstPrinter.print(root))
+  implicit object DebugWeededAst extends Debug[WeededAst.Root] {
+    override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = ()
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatSimplifiedAst(root: SimplifiedAst.Root): String = {
-    formatDocProgram(SimplifiedAstPrinter.print(root))
+  implicit object DebugDesugaredAst extends Debug[DesugaredAst.Root] {
+    override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = ()
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatLiftedAst(root: LiftedAst.Root): String = {
-    formatDocProgram(LiftedAstPrinter.print(root))
+  implicit object DebugNamedAst extends Debug[NamedAst.Root] {
+    override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatReducedAst(root: ReducedAst.Root): String = {
-    formatDocProgram(ReducedAstPrinter.print(root))
+  implicit object DebugResolvedAst extends Debug[ResolvedAst.Root] {
+    override def emit(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, ResolvedAstPrinter.print(root))
+  }
+
+  implicit object DebugKindedAst extends Debug[KindedAst.Root] {
+    override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = ()
+  }
+
+  implicit object DebugTypedAst extends Debug[TypedAst.Root] {
+    override def emit(phase: String, root: TypedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, TypedAstPrinter.print(root))
+  }
+
+  implicit object DebugSimplifiedAst extends Debug[SimplifiedAst.Root] {
+    override def emit(phase: String, root: SimplifiedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, SimplifiedAstPrinter.print(root))
+  }
+
+  implicit object DebugLoweredAst extends Debug[LoweredAst.Root] {
+    override def emit(phase: String, root: LoweredAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, LoweredAstPrinter.print(root))
+  }
+
+  implicit object DebugLiftedAst extends Debug[LiftedAst.Root] {
+    override def emit(phase: String, root: LiftedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, LiftedAstPrinter.print(root))
+  }
+
+  implicit object DebugMonoAst extends Debug[MonoAst.Root] {
+    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = ()
+  }
+
+  implicit object DebugReducedAst extends Debug[ReducedAst.Root] {
+    override def emit(phase: String, root: ReducedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, ReducedAstPrinter.print(root))
+  }
+
+  case class DebugValidation[T, E]()(implicit d: Debug[T]) extends Debug[Validation[T, E]] {
+    override def emit(phase: String, v: Validation[T, E])(implicit flix: Flix): Unit =
+      Validation.mapN(v) {
+        case x => d.emit(phase, x)
+      }
+  }
+
+  private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, formatDocProgram(dast))
   }
 
   /**
@@ -155,13 +108,12 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
+    * Writes `content` to the file `./build/asts/<phaseName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */
-  private def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
-    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-    val filePath = buildAstsPath.resolve(s"$fileName.$IrFileExtension")
-    Files.createDirectories(buildAstsPath)
+  private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
+    val filePath = phaseOutputPath(phaseName)
+    Files.createDirectories(filePath.getParent)
 
     // Check if the file already exists.
     if (Files.exists(filePath)) {
@@ -178,4 +130,21 @@ object AstPrinter {
     FileOps.writeString(filePath, content)
   }
 
+  /**
+    * Returns the path to the pretty printed output of `phaseName` used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
+    */
+  private def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
+    astFolderPath.resolve(s"$phaseName.$IrFileExtension")
+  }
+
+  /**
+    * Returns the path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not exist and it might not be readable etc.
+    */
+  def astFolderPath(implicit flix: Flix): Path = {
+    flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
+  }
 }

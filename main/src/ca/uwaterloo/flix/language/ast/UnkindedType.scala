@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -33,6 +34,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
+    case t: UnkindedType.Struct => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case t: UnkindedType.UnappliedAssocType => t
@@ -80,6 +82,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => SortedSet(sym)
     case UnkindedType.Cst(_, _) => SortedSet.empty
     case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
@@ -132,6 +135,18 @@ object UnkindedType {
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+   * An unkinded struct.
+   */
+  case class Struct(sym: Symbol.StructSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Struct(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -301,7 +316,7 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit level: Level, flix: Flix): UnkindedType.Var = {
+  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
@@ -359,8 +374,8 @@ object UnkindedType {
   /**
     * Constructs the type a -> b \ IO
     */
-  def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
+  def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
@@ -435,6 +450,11 @@ object UnkindedType {
   def mkEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
 
   /**
+    * Construct the struct type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkStruct(sym: Symbol.StructSym, loc: SourceLocation): UnkindedType = UnkindedType.Struct(sym, loc)
+
+  /**
     * Construct the restrictable enum type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
@@ -447,10 +467,10 @@ object UnkindedType {
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Ast.Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Ast.Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
     }
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
@@ -509,6 +529,7 @@ object UnkindedType {
     case tpe: Var => tpe
     case tpe: Cst => tpe
     case tpe: Enum => tpe
+    case tpe: Struct => tpe
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
@@ -529,7 +550,7 @@ object UnkindedType {
   /**
     * Returns the Flix UnkindedType of a Java Class
     */
-  def getFlixType(c: Class[_]): UnkindedType = {
+  def getFlixType(c: Class[?]): UnkindedType = {
     if (c == java.lang.Boolean.TYPE) {
       UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
     }
@@ -575,7 +596,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }

@@ -20,19 +20,18 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
 
-object MatchCompleter extends Completer {
+object MatchCompleter {
   /**
     * Returns a List of Completion for match.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[MatchCompletion] = {
-    val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MatchCompletion] = {
+    val matchPattern = raw".*\s*match(\s\S*)?".r
 
     if (!(matchPattern matches context.prefix)) {
       return Nil
     }
 
-    val wordPattern = "ma?t?c?h?".r
-    val currentWordIsMatch = wordPattern matches context.word
+    val currentWordIsMatch = context.word == "match"
 
     root.enums.foldLeft[List[MatchCompletion]](Nil)((acc, enm) => {
       if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch) match {

@@ -115,7 +115,7 @@ mod Test.Exp.ChooseStar.Simple {
 
     pub def testChoose10(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         let thing = choose* cstOrVar {
             case Expr.Cst => Expr.Cst
             case Expr.Var => Expr.Cst
@@ -125,7 +125,7 @@ mod Test.Exp.ChooseStar.Simple {
 
     pub def testChoose11(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         let thing = choose* cstOrVar {
             case Expr.Xor => Expr.Xor
             case Expr.Cst => Expr.Cst
@@ -169,7 +169,7 @@ mod Test.Exp.ChooseStar.Simple {
 //        };
 //        let h = if (true) f else g;
 //
-//        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
+//        let cstOrNot = if (true) open_variant Expr.Cst else open_variant Expr.Not;
 //        choose h(cstOrNot) {case Expr.Cst => true}
 //    }
 

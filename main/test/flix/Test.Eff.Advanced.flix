@@ -7,61 +7,61 @@ mod Test.Eff.Advanced {
     def testAdvanced01(): Unit = requiresPure(pure)
 
     @test
-    def testAdvanced02(): Unit = requiresImpure(impure)
+    def testAdvanced02(): Unit = requiresUniv(univ)
 
     @test
-    def testAdvanced03(): Unit = requiresPureAndImpure1(pure, impure)
+    def testAdvanced03(): Unit = requiresPureAndUniv1(pure, univ)
 
     @test
-    def testAdvanced04(): Unit = requiresPureAndImpure1(impure, pure)
+    def testAdvanced04(): Unit = requiresPureAndUniv1(univ, pure)
 
     @test
-    def testAdvanced05(): Unit = requiresPureAndImpure2(pure, impure)
+    def testAdvanced05(): Unit = requiresPureAndUniv2(pure, univ)
 
     @test
-    def testAdvanced06(): Unit = requiresPureAndImpure2(impure, pure)
+    def testAdvanced06(): Unit = requiresPureAndUniv2(univ, pure)
 
     @test
-    def testAdvanced07(): Unit = requiresAtmostOnePure1(impure, impure)
+    def testAdvanced07(): Unit = requiresAtmostOnePure1(univ, univ)
 
     @test
-    def testAdvanced08(): Unit = requiresAtmostOnePure1(pure, impure)
+    def testAdvanced08(): Unit = requiresAtmostOnePure1(pure, univ)
 
     @test
-    def testAdvanced09(): Unit = requiresAtmostOnePure1(impure, pure)
+    def testAdvanced09(): Unit = requiresAtmostOnePure1(univ, pure)
 
     @test
-    def testAdvanced10(): Unit = requiresAtmostOnePure2(impure, impure)
+    def testAdvanced10(): Unit = requiresAtmostOnePure2(univ, univ)
 
     @test
-    def testAdvanced11(): Unit = requiresAtmostOnePure2(pure, impure)
+    def testAdvanced11(): Unit = requiresAtmostOnePure2(pure, univ)
 
     @test
-    def testAdvanced12(): Unit = requiresAtmostOnePure2(impure, pure)
+    def testAdvanced12(): Unit = requiresAtmostOnePure2(univ, pure)
 
     @test
-    def testAdvanced13(): Unit = requiresTwoAndOne(pure, impure, pure)
+    def testAdvanced13(): Unit = requiresTwoAndOne(pure, univ, pure)
 
     @test
-    def testAdvanced14(): Unit = requiresTwoAndOne(impure, pure, impure)
+    def testAdvanced14(): Unit = requiresTwoAndOne(univ, pure, univ)
 
     /// A pure function from Unit -> Unit.
     def pure(): Unit = ()
 
-    /// An impure function from Unit -> Unit.
-    def impure(): Unit \ Impure = discard Array#{1, 2, 3} @ Static; ()
+    /// An univ function from Unit -> Unit.
+    def univ(): Unit \ Univ = checked_ecast(())
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()
 
-    /// A function that requires an impure function.
-    def requiresImpure(_f: a -> b \ Impure): Unit = ()
+    /// A function that requires an univ function.
+    def requiresUniv(_f: a -> b \ Univ): Unit = ()
 
-    /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure1(_f: a -> b \ ef, _g: a -> b \ ~ef): Unit = ()
+    /// A function that requires a pure and an univ function.
+    def requiresPureAndUniv1(_f: a -> b \ ef, _g: a -> b \ ~ef): Unit = ()
 
-    /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure2(_f: a -> b \ ~ef, _g: a -> b \ ef): Unit = ()
+    /// A function that requires a pure and an univ function.
+    def requiresPureAndUniv2(_f: a -> b \ ~ef, _g: a -> b \ ef): Unit = ()
 
     /// A function that requires at most one pure function.
     def requiresAtmostOnePure1(_f: a -> b \ ef1, _g: a -> b \ ~ef1 + ef2): Unit = ()

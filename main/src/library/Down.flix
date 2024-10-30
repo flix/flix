@@ -27,6 +27,13 @@ instance Eq[Down[a]] with Eq[a] {
     }
 }
 
+instance Coerce[Down[a]] {
+    type Out = a
+    pub def coerce(x: Down[a]): a = match x {
+        case Down.Down(xx) => xx
+    }
+}
+
 instance ToString[Down[a]] with ToString[a] {
     pub def toString(x: Down[a]): String = match x {
         case Down.Down(xx) => ToString.toString(xx)

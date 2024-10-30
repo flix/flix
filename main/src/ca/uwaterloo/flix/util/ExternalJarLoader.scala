@@ -19,14 +19,11 @@ import java.net.{URL, URLClassLoader}
 
 /**
   * A class loader to which JARs can be added dynamically.
-  * 
+  *
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
 class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatformClassLoader()) {
-
-  Thread.currentThread().setContextClassLoader(this)
-
   /**
     * Adds the URL to the class loader.
     */
@@ -35,11 +32,11 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
     super.addURL(url)
   }
 
-  override def findClass(name: String): Class[_ <: Object] = {
+  override def findClass(name: String): Class[? <: Object] = {
     try {
       super.findClass(name)
     } catch {
-      case e: ClassNotFoundException => 
+      case e: ClassNotFoundException =>
         // Special case for dev.flix.runtime.Global
         // This is never used at runtime, but we need to be able to load it at compile
         // time in order to check method signatures

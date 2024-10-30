@@ -90,46 +90,4 @@ mod Bool {
     @test
     def mathXor04(): Bool = (false ⊕ false) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Negation                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def notTest01(): Bool = not(true) == false
-
-    @test
-    def notTest02(): Bool = not(false) == true
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical And (lazy)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def andTest01(): Bool = and(false, lazy false) == false
-
-    @test
-    def andTest02(): Bool = and(false, lazy true) == false
-
-    @test
-    def andTest03(): Bool = and(true, lazy false) == false
-
-    @test
-    def andTest04(): Bool = and(true, lazy true) == true
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Or (lazy)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def orTest01(): Bool = or(false, lazy false) == false
-
-    @test
-    def orTest02(): Bool = or(false, lazy true) == true
-
-    @test
-    def orTest03(): Bool = or(true, lazy false) == true
-
-    @test
-    def orTest04(): Bool = or(true, lazy true) == true
-
 }

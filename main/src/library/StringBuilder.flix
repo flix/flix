@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
+import java.lang.{StringBuilder => JStringBuilder}
+
 ///
 /// Represents a StringBuilder.
 ///
-enum StringBuilder[_: Region](##java.lang.StringBuilder)
+enum StringBuilder[_: Region](JStringBuilder)
 
 mod StringBuilder {
+    import java.lang.{StringBuilder => JStringBuilder};
 
     ///
     /// Returns a new mutable StringBuilder.
     ///
-    pub def new(_: Region[r]): StringBuilder[r] \ r =
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
-        StringBuilder(newStringBuilder())
+    pub def empty(_: Region[r]): StringBuilder[r] \ r =
+        StringBuilder(unchecked_cast ((new JStringBuilder(): _ \ IO) as _ \ r))
 
     ///
     /// Append `x` to the StringBuilder `sb`.
@@ -40,18 +42,16 @@ mod StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
-        discard msb `append` s;
+        unchecked_cast((msb.append(s): _ \ IO) as _ \ r);
         ()
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.appendCodePoint(Int32): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
-        discard msb `appendCodePoint` cp;
+        unchecked_cast((msb.appendCodePoint(cp): _ \ IO) as _ \ r);
         ()
 
     ///
@@ -83,7 +83,7 @@ mod StringBuilder {
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
-    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, r } with Foldable[t] =
+    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ (ef + r + Foldable.Aef[t]) with Foldable[t] =
         Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///
@@ -109,9 +109,8 @@ mod StringBuilder {
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
-        import java.lang.StringBuilder.charAt(Int32): Char \ r2;
         let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((msb.charAt(i): _ \ IO) as _ \ r2))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
@@ -120,20 +119,29 @@ mod StringBuilder {
         iterator(rc1, sb) |> Iterator.zipWithIndex
 
     ///
-    /// Return the length of the StringBuilder `sb`.
+    /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
-        import java.lang.StringBuilder.length(): Int32 \ r;
         let StringBuilder(msb) = sb;
-        length(msb)
+        unchecked_cast((msb.length(): _ \ IO) as _ \ r)
+
+    ///
+    /// Return the number of characters in the StringBuilder `sb`.
+    ///
+    pub def size(sb: StringBuilder[r]): Int32 \ r = length(sb)
+
+    ///
+    /// Sets the length of the StringBuilder `sb`.
+    ///
+    pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
+        let StringBuilder.StringBuilder(msb) = sb;
+        unchecked_cast((msb.setLength(newLength): _ \ IO) as _ \ r)
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
-        import java.lang.StringBuilder.toString(): String \ r;
         let StringBuilder(msb) = sb;
-        toString(msb)
+        unchecked_cast((msb.toString(): _ \ IO) as _ \ r)
 
 }
-

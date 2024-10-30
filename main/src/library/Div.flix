@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+import java.io.File
+
 ///
 /// A trait for division.
 ///
@@ -34,11 +36,10 @@ instance Div[Float64] {
 
 instance Div[BigDecimal] {
     pub def div(x: BigDecimal, y: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.divide(BigDecimal): BigDecimal \ {};
         if (y == 0ff)
             0ff
         else
-            x `divide` y
+            unsafe x.divide(y)
 }
 
 instance Div[Int8] {
@@ -75,15 +76,14 @@ instance Div[Int64] {
 
 instance Div[BigInt] {
     pub def div(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.divide(BigInt): BigInt \ {};
         if (y == 0ii)
             0ii
         else
-            x `divide` y
+            unsafe x.divide(y)
 }
 
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        import static get java.io.File.separator: String \ {} as separator;
-        (x + separator() + y)
+        let s = unsafe File.separator;
+        x + s + y
 }
