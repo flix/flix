@@ -48,7 +48,7 @@ object Options {
     xprinttyper = None,
     xverifyeffects = false,
     xsubeffecting = Set.empty,
-    xzhegalkin = true,
+    xzhegalkin = false,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
