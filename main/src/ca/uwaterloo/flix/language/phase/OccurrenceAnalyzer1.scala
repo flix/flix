@@ -447,9 +447,9 @@ object OccurrenceAnalyzer1 {
     }
 
     def visitRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern): (OccurrenceAst1.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
-      case MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
+      case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
         val (p, syms) = visit(pat)
-        (OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, p, loc), syms)
+        (OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
     }
 
     visit(pattern00)

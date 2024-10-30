@@ -367,9 +367,9 @@ object Inliner1 {
     }
 
     def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
-      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
+      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
         val p = visit(pat)
-        MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, p, loc)
+        MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
     }
 
     visit(pattern00)
@@ -623,9 +623,9 @@ object Inliner1 {
     }
 
     def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
-      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, tpe, pat, loc) =>
+      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
         val (p, subst) = visit(pat)
-        (MonoAst.Pattern.Record.RecordLabelPattern(label, tpe, p, loc), subst)
+        (MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
     }
 
     visit(pattern00)
