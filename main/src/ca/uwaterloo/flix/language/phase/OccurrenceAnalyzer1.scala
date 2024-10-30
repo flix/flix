@@ -137,8 +137,8 @@ object OccurrenceAnalyzer1 {
       case Some(o) => o match {
         case Occur.Dead => false
         case Occur.Once => true
-        case Occur.OnceInLambda => false // TODO: Is it allowed to be captured? If, so update doc and these two cases.
-        case Occur.OnceInLocalDef => false
+        case Occur.OnceInAbstraction => false // TODO: Is it allowed to be captured? If, so update doc and these two cases.
+        case Occur.OnceInAbstraction => false
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
@@ -540,14 +540,14 @@ object OccurrenceAnalyzer1 {
   // TODO: Add doc
   private def captureInLambda(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
-      case Once => OnceInLambda
+      case Once => OnceInAbstraction
     }
   }
 
   // TODO: Add doc
   private def captureInLocalDef(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
-      case Once => OnceInLocalDef
+      case Once => OnceInAbstraction
     }
   }
 

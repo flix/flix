@@ -49,8 +49,8 @@ object Inliner1 {
     val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
     val shouldInline = def0.context.isDirectCall ||
       def0.context.occur == Once ||
-      def0.context.occur == OnceInLambda || // May duplicate work?
-      def0.context.occur == OnceInLocalDef // May duplicate work?
+      def0.context.occur == OnceInAbstraction || // May duplicate work?
+      def0.context.occur == OnceInAbstraction // May duplicate work?
     mayInline && shouldInline
   }
 
