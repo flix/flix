@@ -82,6 +82,9 @@ object Zhegalkin {
 
     /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
     val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
+
+    /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
+    def mkVar(x: ZhegalkinVar): ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(x))))
   }
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
@@ -314,15 +317,9 @@ object Zhegalkin {
 
     override def mkTop: ZhegalkinExpr = ZhegalkinExpr.one
 
-    override def mkCst(id: Int): ZhegalkinExpr = {
-      val x = ZhegalkinVar(id, flexible = false)
-      mkZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(x))))
-    }
+    override def mkCst(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))
 
-    override def mkVar(id: Int): ZhegalkinExpr = {
-      val x = ZhegalkinVar(id, flexible = true)
-      mkZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(x))))
-    }
+    override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
 
     override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = zmkNot(f)
 
