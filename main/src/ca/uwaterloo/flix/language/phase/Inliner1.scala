@@ -438,6 +438,7 @@ object Inliner1 {
   private def isTrivialExp(exp0: MonoAst.Expr): Boolean = exp0 match {
     case MonoAst.Expr.Cst(_, _, _) => true
     case MonoAst.Expr.Var(_, _, _) => true
+    case MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case _ => false
   }
