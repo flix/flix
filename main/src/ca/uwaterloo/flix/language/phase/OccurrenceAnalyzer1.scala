@@ -137,8 +137,7 @@ object OccurrenceAnalyzer1 {
       case Some(o) => o match {
         case Occur.Dead => false
         case Occur.Once => true
-        case Occur.OnceInAbstraction => false // TODO: Is it allowed to be captured? If, so update doc and these two cases.
-        case Occur.OnceInAbstraction => false
+        case Occur.OnceInAbstraction => true
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
