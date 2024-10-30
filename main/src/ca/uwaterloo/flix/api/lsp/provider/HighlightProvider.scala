@@ -29,28 +29,31 @@ object HighlightProvider {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
-    stackConsumer.getStack.headOption match {
-      case None => mkNotFound(uri, pos)
-      case Some(sym: Symbol) =>
-        val occurConsumer = SymbolOccurrenceConsumer(sym)
-        val acceptor = Visitor.FileAcceptor(uri)
+    val highlights = for {
+      sym <- stackConsumer.getStack.headOption.map { case sym: Symbol => sym }
 
-        Visitor.visitRoot(root, occurConsumer, acceptor)
+      occurConsumer = SymbolOccurrenceConsumer(sym)
+      acceptor = Visitor.FileAcceptor(uri)
 
-        getSymLoc(sym) match {
-          case None => mkNotFound(uri, pos)
-          case Some(loc) =>
-            val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-            val reads = occurConsumer.occurances.flatMap(
-              occur => getSymLoc(occur) match {
-                case None => None
-                case Some(loc) => Some(DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-              }
-            )
+      _ = Visitor.visitRoot(root, occurConsumer, acceptor)
 
-            val highlights = write :: reads
-            ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+      writeLoc <- getSymLoc(sym)
+
+      write = DocumentHighlight(Range.from(writeLoc), DocumentHighlightKind.Write)
+      reads = occurConsumer.occurances.flatMap(
+        occur => getSymLoc(occur) match {
+          case None => None
+          case Some(loc) => Some(DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
         }
+      )
+
+      highlights = write :: reads
+
+    } yield highlights
+
+    highlights match {
+      case None => mkNotFound(uri, pos)
+      case Some(highlights) => ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
     }
   }
 
@@ -67,13 +70,13 @@ object HighlightProvider {
     case sym: Symbol.RestrictableCaseSym => Some(sym.loc)
     case sym: Symbol.TraitSym => Some(sym.loc)
     case sym: Symbol.SigSym => Some(sym.loc)
-    case sym: Symbol.LabelSym => None
+    case _: Symbol.LabelSym => None
     case sym: Symbol.HoleSym => Some(sym.loc)
     case sym: Symbol.TypeAliasSym => Some(sym.loc)
     case sym: Symbol.AssocTypeSym => Some(sym.loc)
     case sym: Symbol.EffectSym => Some(sym.loc)
     case sym: Symbol.OpSym => Some(sym.loc)
-    case sym: Symbol.ModuleSym => None
+    case _: Symbol.ModuleSym => None
   }
 
   /**
