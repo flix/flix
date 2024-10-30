@@ -16,12 +16,13 @@
 mod App {
 
     ///
-    /// Runs the given function `f` handling the `Clock`, `Console`, and `Logger` effects.
+    /// Runs the given function `f` handling the `Clock`, `Console`, `FilePath` and `Logger` effects.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Logger}) + IO =
+    pub def run(f: Unit -> a \ ef): a \ (ef - {Clock, Console, FilePath, Logger}) + IO =
         let r = f |>
             Clock.handle |>
             Console.handle |>
+            FilePath.handle |>
             Logger.handle;
         r()
 

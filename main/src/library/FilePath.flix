@@ -155,3 +155,25 @@ pub eff FilePath {
     pub def list(f: String): List[String]
 
 }
+
+mod FilePath {
+
+    import java.io.File
+
+    ///
+    /// Handles the `FilePath` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FilePath` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePath) + IO = x ->
+        try {
+            f(x)
+        } with FilePath {
+            def exists(f, k) = {
+                let file = new File(f);
+                let exists = file.exists();
+                k(exists)
+            }
+        }
+
+}
