@@ -321,15 +321,15 @@ object Zhegalkin {
 
     override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
 
-    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = zmkNot(f)
+    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkNot(f)
 
-    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = zmkUnion(f1, f2)
+    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkUnion(f1, f2)
 
-    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = zmkInter(f1, f2)
+    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkInter(f1, f2)
 
-    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = zfreeVars(f)
+    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = Zhegalkin.zfreeVars(f)
 
-    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = mapExpr(fn, f)
+    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.mapExpr(fn, f)
   }
 
 }
