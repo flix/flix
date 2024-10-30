@@ -934,9 +934,9 @@ object Redundancy {
         case (acc, term) => acc ++ Used.of(freeVars(term))
       }
 
-    case Body.Functional(outVars, exp, _) =>
-      outVars.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
-        case (acc, varSym) => acc ++ Used.of(varSym)
+    case Body.Functional(outBnds, exp, _) =>
+      outBnds.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
+        case (acc, bnd) => acc ++ Used.of(bnd.sym)
       }
 
     case Body.Guard(exp, _) =>

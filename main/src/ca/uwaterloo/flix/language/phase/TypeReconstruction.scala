@@ -733,7 +733,8 @@ object TypeReconstruction {
 
     case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
       val e = visitExp(exp)
-      TypedAst.Predicate.Body.Functional(outVars, e, loc)
+      val outBnds = outVars.map(varSym => TypedAst.Binder(varSym, subst(varSym.tvar)))
+      TypedAst.Predicate.Body.Functional(outBnds, e, loc)
 
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = visitExp(exp)

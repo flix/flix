@@ -337,7 +337,7 @@ object TypedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
 
-      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
+      case class Functional(outBnds: List[Binder], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
       case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
 

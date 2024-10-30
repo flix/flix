@@ -1068,7 +1068,8 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case TypedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+    case TypedAst.Predicate.Body.Functional(outBnds, exp0, loc) =>
+      val outVars = outBnds.map(_.sym)
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val inVars = quantifiedVars(cparams0, exp0)
       val exp = visitExp(exp0)
