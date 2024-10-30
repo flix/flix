@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer1.OccurInfo
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -29,30 +32,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   * TODO: Improve this documentation
   */
 object Inliner1 {
-
-  sealed private trait SubstRange
-
-  private object SubstRange {
-
-    case class DoneExp(exp: MonoAst.Expr) extends SubstRange
-
-    case class SuspendedExp(exp: OccurrenceAst1.Expr) extends SubstRange
-
-  }
-
-  private type VarSubst = Map[Symbol.VarSym, Symbol.VarSym]
-
-  /**
-    * Returns `true` if `def0` should be inlined.
-    */
-  private def canInlineDef(def0: OccurrenceAst1.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
-    val shouldInline = def0.context.isDirectCall ||
-      def0.context.occur == Once ||
-      def0.context.occur == OnceInAbstraction || // May duplicate work?
-      def0.context.occur == OnceInAbstraction // May duplicate work?
-    mayInline && shouldInline
-  }
 
   /**
     * Performs inlining on the given AST `root`.
@@ -63,6 +42,52 @@ object Inliner1 {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     Validation.success(MonoAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
+
+  private type InVar = Symbol.VarSym
+
+  private type OutVar = Symbol.VarSym
+
+  private type InExpr = OccurrenceAst1.Expr
+
+  private type OutExpr = MonoAst.Expr
+
+  sealed private trait SubstRange
+
+  private object SubstRange {
+
+    case class SuspendedExp(exp: InExpr) extends SubstRange
+
+    case class DoneExp(exp: OutExpr) extends SubstRange
+
+  }
+
+  private sealed trait Const
+
+  private object Const {
+
+    case class Lit(lit: Constant) extends Const
+
+    case class Tag(tag: Symbol.CaseSym) extends Const
+
+  }
+
+  private sealed trait Definition
+
+  private object Definition {
+
+    case object CaseOrLambda extends Definition
+
+    case class LetBound(expr: OutExpr, occur: Occur, level: Int) extends Definition
+
+    case class NotAmong(cases: List[Const]) extends Definition
+
+  }
+
+  private type VarSubst = Map[InVar, OutVar]
+
+  private type Subst = Map[InVar, SubstRange]
+
+  private type InScopeSet = Map[OutVar, Definition]
 
   /**
     * Performs expression inlining on the given definition `def0`.
@@ -115,7 +140,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Map[Symbol.VarSym, SubstRange])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
+  private def visitExp(exp0: OccurrenceAst1.Expr, subst0: Subst)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = exp0 match { // TODO: Add local `visit` function that captures `subst0`
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
@@ -364,6 +389,17 @@ object Inliner1 {
     }
 
     visit(pattern00)
+  }
+
+  /**
+    * Returns `true` if `def0` should be inlined.
+    */
+  private def canInlineDef(def0: OccurrenceAst1.Def): Boolean = {
+    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val shouldInline = def0.context.isDirectCall ||
+      def0.context.occur == Once ||
+      def0.context.occur == OnceInAbstraction // May duplicate work?
+    mayInline && shouldInline
   }
 
   private def isPure(eff0: Type): Boolean = {
