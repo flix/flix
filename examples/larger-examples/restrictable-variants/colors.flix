@@ -55,7 +55,7 @@ mod Colors {
             case Color.Blue => false
         }
 
-    pub def isWarmAlternative(c: Color[~~<Color.Green>]): Bool =
+    pub def isWarmAlternative(c: Color[rvnot <Color.Green>]): Bool =
         choose c {
             case Color.Red  => true
             case Color.Blue => false
@@ -63,9 +63,9 @@ mod Colors {
 
     // The types of isWarm and isWarmAlternative are equivalent.
 
-    // A most general -- and more useful -- type is:
+    // A most general rvsub and more useful rvsub type is:
 
-    pub def isWarmGeneral(c: Color[s -- <Color.Green>]): Bool =
+    pub def isWarmGeneral(c: Color[s rvsub <Color.Green>]): Bool =
         choose c {
             case Color.Red  => true
             case Color.Blue => false

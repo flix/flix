@@ -6,7 +6,7 @@ mod Test.Exp.Record.Multiple {
         { a = 42, -b, -c, +d = 84 | r }
 
     @test
-    def testMultipleRecordOps02(): { } =
+    def testMultipleRecordOps02(): {|} =
         let r = { a = 1, b = 2, c = 3};
         { -a, -b, -c, a = 7, b = 8, c = 9 | r }
 

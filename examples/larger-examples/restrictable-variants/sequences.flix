@@ -59,7 +59,7 @@ mod Seq {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: Seq[s][a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -80,7 +80,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def head(l: Seq[s -- <Seq.Nil>][a]): a = choose l {
+    pub def head(l: Seq[s rvsub <Seq.Nil>][a]): a = choose l {
         case Seq.One(x)     => x
         case Seq.Cons(x, _) => x
     }
@@ -90,13 +90,13 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def last(l: Seq[s && <Seq.One, Seq.Cons>][a]): a = choose l {
+    pub def last(l: Seq[s rvand <Seq.One, Seq.Cons>][a]): a = choose l {
         case Seq.One(x)         => x
         case Seq.Cons(_, xs)    => last(xs)
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Seq[s][a]): Int32 = choose l{
         case Seq.Nil => 0
@@ -108,7 +108,7 @@ mod Seq {
     /// Returns `l2` appended to `l1`.
     ///
     ///
-    pub def append(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 ++ <Seq.Cons>][a] = choose* l1 {
+    pub def append(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 rvadd <Seq.Cons>][a] = choose* l1 {
         case Seq.Nil            => l2
         case Seq.One(x)         => open_variant Seq.Cons(x, l2)
         case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, append(xs, l2))
@@ -128,7 +128,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def minimum(l: Seq[s -- <Seq.Nil>][a]): a with Order[a] =
+    pub def minimum(l: Seq[s rvsub <Seq.Nil>][a]): a with Order[a] =
         reduceLeft(Order.min, l)
 
     ///
@@ -136,7 +136,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, l: Seq[s -- <Seq.Nil>][a]): a =
+    pub def minimumBy(cmp: (a, a) -> Comparison, l: Seq[s rvsub <Seq.Nil>][a]): a =
         reduceLeft(Order.minBy(cmp), l)
 
     ///
@@ -144,7 +144,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def maximum(l: Seq[s -- <Seq.Nil>][a]): a with Order[a] =
+    pub def maximum(l: Seq[s rvsub <Seq.Nil>][a]): a with Order[a] =
         reduceLeft(Order.max, l)
 
     ///
@@ -152,7 +152,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, l: Seq[s -- <Seq.Nil>][a]): a =
+    pub def maximumBy(cmp: (a, a) -> Comparison, l: Seq[s rvsub <Seq.Nil>][a]): a =
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
@@ -271,7 +271,7 @@ mod Seq {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
-    pub def flatMap(f: a -> Seq[s1][b] \ ef, l: Seq[s2][a]): Seq[(s2 && <Seq.Nil, Seq.Cons>) ++ s1][b] \ ef = choose* l {
+    pub def flatMap(f: a -> Seq[s1][b] \ ef, l: Seq[s2][a]): Seq[(s2 rvand <Seq.Nil, Seq.Cons>) rvadd s1][b] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => f(x)
         case Seq.Cons(x, xs)    => append(f(x), flatMap(f, xs))
@@ -280,13 +280,13 @@ mod Seq {
     ///
     /// Returns the reverse of `l`.
     ///
-    pub def reverse(l: Seq[s][a]): Seq[(s && <Seq.Nil>) ++ <Seq.One, Seq.Cons>][a] = choose* l {
+    pub def reverse(l: Seq[s][a]): Seq[(s rvand <Seq.Nil>) rvadd <Seq.One, Seq.Cons>][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => Seq.One(x)
         case Seq.Cons(x, xs)    => revAppend(xs, Seq.One(x))
     }
 
-    def revAppend(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 ++ <Seq.Cons>][a] = choose* l1 {
+    def revAppend(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 rvadd <Seq.Cons>][a] = choose* l1 {
         case Seq.Nil            => l2
         case Seq.One(x)         => open_variant Seq.Cons(x, l2)
         case Seq.Cons(x, xs)    => revAppend(xs, open_variant Seq.Cons(x, l2))
@@ -304,20 +304,21 @@ mod Seq {
     }
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Seq[s][a]): Seq[s][a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: Seq[s][a]): Seq[s][a] with Eq[a] =
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
-    pub def intersperse(a: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] = choose* l {
+    pub def intersperse(a: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => Seq.One(x)
         case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, presperse(a, xs))
     }
 
-    def presperse(a: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] = choose* l {
+    def presperse(a: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => open_variant Seq.Cons(a, Seq.One(x))
         case Seq.Cons(x, xs)    => open_variant Seq.Cons(a, open_variant Seq.Cons(x, presperse(a, xs)))
@@ -328,13 +329,13 @@ mod Seq {
     ///
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
-    pub def intercalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o && <Seq.Nil>) ++ s2i ++ <Seq.Cons>][a] = choose* l2 {
+    pub def intercalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o rvand <Seq.Nil>) rvadd s2i rvadd <Seq.Cons>][a] = choose* l2 {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => x
         case Seq.Cons(x, xs)    => append(x, precalate(l1, xs))
     }
 
-    def precalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o && <Seq.Nil>) ++ s2i ++ <Seq.Cons>][a] = choose* l2 {
+    def precalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o rvand <Seq.Nil>) rvadd s2i rvadd <Seq.Cons>][a] = choose* l2 {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => append(l1, x)
         case Seq.Cons(x, xs)    => append(append(l1, x), precalate(l1, xs))
@@ -424,7 +425,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef, l: Seq[s -- <Seq.Nil>][a]): a \ ef = choose l {
+    pub def reduceLeft(f: (a, a) -> a \ ef, l: Seq[s rvsub <Seq.Nil>][a]): a \ ef = choose l {
         case Seq.One(x)         => x
         case Seq.Cons(x, xs)    => foldLeft(f, x, xs)
     }
@@ -436,7 +437,7 @@ mod Seq {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a \ ef, l: Seq[s -- <Seq.Nil>][a]): a \ ef = choose l {
+    pub def reduceRight(f: (a, a) -> a \ ef, l: Seq[s rvsub <Seq.Nil>][a]): a \ ef = choose l {
         case Seq.One(x)         => x
         case Seq.Cons(x, xs)    => foldRight(f, x, xs)
     }
@@ -450,7 +451,7 @@ mod Seq {
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
-    pub def flatten(l: Seq[s1][Seq[s2][a]]): Seq[s2 ++ (s1 && <Seq.Nil, Seq.Cons>)][a] = choose* l {
+    pub def flatten(l: Seq[s1][Seq[s2][a]]): Seq[s2 rvadd (s1 rvand <Seq.Nil, Seq.Cons>)][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => x
         case Seq.Cons(x, xs)    => append(x, flatten(xs))
@@ -481,7 +482,7 @@ mod Seq {
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
-    pub def filter(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
+    pub def filter(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
         case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, filter(f, xs)) else open_variant_as Seq filter(f, xs)
@@ -491,7 +492,7 @@ mod Seq {
     /// Returns the sublist of `l` without the first element.
     /// Returns `None` if the list `l` is `Nil`.
     ///
-    pub def tail(l: Seq[s -- <Seq.Nil>][a]): Seq[s ++ <Seq.Nil>][a] = choose* l {
+    pub def tail(l: Seq[s rvsub <Seq.Nil>][a]): Seq[s rvadd <Seq.Nil>][a] = choose* l {
         case Seq.One(_)         => Seq.Nil
         case Seq.Cons(_, xs)    => xs
     }
@@ -502,8 +503,8 @@ mod Seq {
     /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= start` and `i < end`.
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] =
-        l |> drop(start.start) |> take(end.end - start.start)
+    pub def slice(start: {start = Int32}, end: {end = Int32}, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] =
+        l |> drop(start#start) |> take(end#end - start#start)
 
     ///
     /// Returns `l` without the first `n` elements.
@@ -511,7 +512,7 @@ mod Seq {
     /// Returns `Nil` if `n > length(l)`.
     /// Returns `l` if `n < 0`.
     ///
-    pub def drop(n: Int32, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] = {
+    pub def drop(n: Int32, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] = {
         if (n <= 0) {
             open_variant_as Seq l
         } else {
@@ -526,7 +527,7 @@ mod Seq {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
+    pub def dropWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => if (f(x)) open_variant Seq.Nil else open_variant Seq.One(x)
         case Seq.Cons(x, xs)    => if (f(x)) open_variant_as Seq dropWhile(f, xs) else open_variant Seq.Cons(x, open_variant_as Seq xs)
@@ -538,7 +539,7 @@ mod Seq {
     /// Returns `l` if `n > length(l)`.
     /// Returns `Nil` if `n < 0`.
     ///
-    pub def take(n: Int32, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] = {
+    pub def take(n: Int32, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] = {
         if (n <= 0) {
             open_variant Seq.Nil
         } else {
@@ -553,7 +554,7 @@ mod Seq {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
+    pub def takeWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
         case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, takeWhile(f, xs)) else open_variant_as Seq takeWhile(f, xs)
@@ -568,7 +569,7 @@ mod Seq {
     /// Returns `(xs, Nil)` if `n > length(xs)`.
     /// Returns `(Nil, xs)` if `n < 0`.
     ///
-    pub def splitAt(n: Int32, xs: Seq[s][a]): (Seq[s ++ <Seq.Nil>][a], Seq[s ++ <Seq.Nil>][a]) =
+    pub def splitAt(n: Int32, xs: Seq[s][a]): (Seq[s rvadd <Seq.Nil>][a], Seq[s rvadd <Seq.Nil>][a]) =
         (take(n, xs), drop(n, xs))
 
     ///
@@ -577,7 +578,7 @@ mod Seq {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    pub def zip(l1: Seq[s1][a], l2: Seq[s2][b]): Seq[((s1 ++ s2) && <Seq.Nil>) ++ ((s1 ++ s2) && <Seq.One>) ++ ((s1 && s2) && <Seq.Cons>)][(a, b)] = choose* l1 {
+    pub def zip(l1: Seq[s1][a], l2: Seq[s2][b]): Seq[((s1 rvadd s2) rvand <Seq.Nil>) rvadd ((s1 rvadd s2) rvand <Seq.One>) rvadd ((s1 rvand s2) rvand <Seq.Cons>)][(a, b)] = choose* l1 {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         =>
             choose* l2 {
@@ -599,7 +600,7 @@ mod Seq {
     // ///
     // /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     // ///
-    pub def zipWith(f: (a, b) -> c \ ef, l1: Seq[s1][a], l2: Seq[s2][b]): Seq[((s1 ++ s2) && <Seq.Nil>) ++ ((s1 ++ s2) && <Seq.One>) ++ ((s1 && s2) && <Seq.Cons>)][c] \ ef = {
+    pub def zipWith(f: (a, b) -> c \ ef, l1: Seq[s1][a], l2: Seq[s2][b]): Seq[((s1 rvadd s2) rvand <Seq.Nil>) rvadd ((s1 rvadd s2) rvand <Seq.One>) rvadd ((s1 rvand s2) rvand <Seq.Cons>)][c] \ ef = {
         zip(l1, l2) |> map(match (x, y) -> f(x, y))
     }
 
@@ -630,7 +631,7 @@ mod Seq {
     // ///
     // /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     // ///
-    pub def zip3(l1: Seq[s1][a], l2: Seq[s2][b], l3: Seq[s3][c]): Seq[((s1 ++ s2 ++ s3) && <Seq.Nil>) ++ ((s1 ++ s2 ++ s3) && <Seq.One>) ++ ((s1 && s2 && s3) && <Seq.Cons>)][(a, b, c)] = {
+    pub def zip3(l1: Seq[s1][a], l2: Seq[s2][b], l3: Seq[s3][c]): Seq[((s1 rvadd s2 rvadd s3) rvand <Seq.Nil>) rvadd ((s1 rvadd s2 rvadd s3) rvand <Seq.One>) rvadd ((s1 rvand s2 rvand s3) rvand <Seq.Cons>)][(a, b, c)] = {
         (l1 `zip` l2 `zip` l3) |> map(match ((x, y), z) -> (x, y, z))
     }
 
@@ -641,7 +642,7 @@ mod Seq {
     ///
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
-    pub def zipWith3(f: (a, b, c) -> d \ ef, l1: Seq[s1][a], l2: Seq[s2][b], l3: Seq[s3][c]): Seq[((s1 ++ s2 ++ s3) && <Seq.Nil>) ++ ((s1 ++ s2 ++ s3) && <Seq.One>) ++ ((s1 && s2 && s3) && <Seq.Cons>)][d] \ ef = {
+    pub def zipWith3(f: (a, b, c) -> d \ ef, l1: Seq[s1][a], l2: Seq[s2][b], l3: Seq[s3][c]): Seq[((s1 rvadd s2 rvadd s3) rvand <Seq.Nil>) rvadd ((s1 rvadd s2 rvadd s3) rvand <Seq.One>) rvadd ((s1 rvand s2 rvand s3) rvand <Seq.Cons>)][d] \ ef = {
         zip3(l1, l2, l3) |> map(match (x, y, z) -> f(x, y, z))
     }
 
@@ -689,7 +690,7 @@ mod Seq {
     ///
     /// Returns `None` if every element of `l` is `None`.
     ///
-    pub def findMap(f: a -> Seq[s1 && <Seq.Nil, Seq.One>][b] \ ef, l: Seq[s2][a]): Seq[(s2 && <Seq.Nil>) ++ (s1 && <Seq.Nil, Seq.One>)][b] \ ef = choose* l {
+    pub def findMap(f: a -> Seq[s1 rvand <Seq.Nil, Seq.One>][b] \ ef, l: Seq[s2][a]): Seq[(s2 rvand <Seq.Nil>) rvadd (s1 rvand <Seq.Nil, Seq.One>)][b] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => f(x)
         case Seq.Cons(x, xs)    =>
@@ -732,7 +733,7 @@ mod Seq {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: Seq[s][a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -787,7 +788,7 @@ mod Seq {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(rc: Region[r], l: Seq[s][a]): Array[a, r] \ r = {
-            let a = Array.new(rc, length(l));
+            let a = Array.empty(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -796,7 +797,7 @@ mod Seq {
     /// Returns the list `l` as a vector.
     ///
     pub def toVector(l: Seq[s][a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.empty(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
@@ -812,7 +813,7 @@ mod Seq {
         case Seq.Cons(x, xs)    => insert(x, sort(xs))
     }
 
-    def insert(x: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] with Order[a] = choose* l {
+    def insert(x: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] with Order[a] = choose* l {
         case Seq.Nil            => open_variant Seq.Cons(x, Seq.Nil)
         case Seq.One(y)         => if (x <= y) open_variant Seq.Cons(x, Seq.One(y)) else open_variant Seq.Cons(y, Seq.One(x))
         case Seq.Cons(y, ys)    => if (x <= y) open_variant Seq.Cons(x, open_variant Seq.Cons(y, ys)) else open_variant Seq.Cons(y, insert(x, ys))
@@ -834,12 +835,12 @@ mod Seq {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
-        let ls = ref open_variant_as Seq xs @ rc;
+        let ls = Ref.fresh(rc, open_variant_as Seq xs);
         let next = () -> {
-            choose (deref ls) {
+            choose (Ref.get(ls)) {
                 case Seq.Nil            => None
-                case Seq.One(x)         => ls := open_variant Seq.Nil; Some(x)
-                case Seq.Cons(x, rs)    => ls := rs; Some(x)
+                case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
+                case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)
@@ -904,6 +905,7 @@ instance Foldable[Seq.Seq[s]] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRightWithCont(f, s, l)
 }
 
-instance Iterable[Seq.Seq[s]] {
+instance Iterable[Seq.Seq[s][a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }

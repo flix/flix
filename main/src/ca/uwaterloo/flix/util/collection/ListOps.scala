@@ -28,4 +28,15 @@ object ListOps {
       case ((h1, h2, h3, h4), (t1, t2, t3, t4)) => (h1 :: t1, h2 :: t2, h3 :: t3, h4 :: t4)
     }
   }
+
+  /**
+    * Lazily executes the function `f` on the elements of `list`.
+    *
+    * Returns the first `Some` value we get, or `None` if all results are `None`.
+    */
+  def findMap[A, B](list: List[A])(f: A => Option[B]): Option[B] = {
+    list.iterator.map(f).collectFirst {
+      case Some(value) => value
+    }
+  }
 }

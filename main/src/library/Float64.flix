@@ -24,6 +24,11 @@ instance UpperBound[Float64] {
 
 mod Float64 {
 
+    import java.lang.Double
+    import java.lang.Math
+    import java.math.BigDecimal
+    import java.lang.NumberFormatException
+
     ///
     /// Returns the number of bits used to represent a `Float64`.
     ///
@@ -104,11 +109,9 @@ mod Float64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float64] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Double.parseDouble(String): Float64 \ {};
-        Some(s |> strip |> parseDouble)
+        Some(unsafe Double.parseDouble(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -121,12 +124,10 @@ mod Float64 {
     /// (i.e. -128 to 127), or it is NaN or infinity.
     ///
     pub def tryToInt8(x: Float64): Option[Int8] =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.byteValue(): Int8 \ {};
         if (x < Int8.toFloat64(Int8.minValue()) or x > Int8.toFloat64(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> byteValue)
+            Some(unsafe Double.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -138,12 +139,10 @@ mod Float64 {
     /// (i.e. -32768 to 32767), or it is NaN or infinity.
     ///
     pub def tryToInt16(x: Float64): Option[Int16] =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.shortValue(): Int16 \ {};
         if (x < Int16.toFloat64(Int16.minValue()) or x > Int16.toFloat64(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> shortValue)
+            Some(unsafe Double.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -155,12 +154,10 @@ mod Float64 {
     /// (i.e. -2147483648 to 2147483647), or it is NaN or infinity.
     ///
     pub def tryToInt32(x: Float64): Option[Int32] =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.intValue(): Int32 \ {};
         if (x < Int32.toFloat64(Int32.minValue()) or x > Int32.toFloat64(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> intValue)
+            Some(unsafe Double.valueOf(x).intValue())
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -175,12 +172,10 @@ mod Float64 {
     /// converting this range to Float64 values is imprecise.
     ///
     pub def tryToInt64(x: Float64): Option[Int64] =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.longValue(): Int64 \ {};
         if (x < Int64.toFloat64(Int64.minValue()) or x > Int64.toFloat64(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> longValue)
+            Some(unsafe Double.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -190,13 +185,11 @@ mod Float64 {
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
     pub def tryToBigInt(x: Float64): Option[BigInt] =
-        import static java.math.BigDecimal.valueOf(Float64): BigDecimal \ {};
-        import java.math.BigDecimal.toBigInteger(): BigInt \ {};
         try {
-            Some(x |> valueOf |> toBigInteger)
+            Some(unsafe BigDecimal.valueOf(x).toBigInteger())
         } catch {
             // Catch NaN, isInfinite.
-            case _: ##java.lang.NumberFormatException => None
+            case _: NumberFormatException => None
         }
 
     ///
@@ -212,12 +205,10 @@ mod Float64 {
     /// `Some` wrapping the corresponding Float32 infinity.
     ///
     pub def tryToFloat32(x: Float64): Option[Float32] =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.floatValue(): Float32 \ {};
         if (x < Float32.toFloat64(Float32.minValue()) or x > Float32.toFloat64(Float32.maxValue()))
             None
         else
-            Some(valueOf(x) |> floatValue)
+            Some(unsafe Double.valueOf(x).floatValue())
 
     ///
     /// Convert `x` to an `Option[BigDecimal]`.
@@ -228,11 +219,10 @@ mod Float64 {
     /// If `x` is NaN or infinity return `None`.
     ///
     pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
-        import new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
         try {
-            Some(fromFloat64(x))
+            Some(unsafe new BigDecimal(x))
         } catch {
-            case _: ##java.lang.NumberFormatException => None
+            case _: NumberFormatException => None
         }
 
     ///
@@ -256,14 +246,12 @@ mod Float64 {
     /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
     ///
     pub def clampToInt8(x: Float64, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.byteValue(): Int8 \ {};
         let minf64 = Int8.toFloat64(minimum);
         let maxf64 = Int8.toFloat64(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf64, maxf64)) |> byteValue)
+            unsafe Double.valueOf(clamp(x, minf64, maxf64)).byteValue()
 
     ///
     /// Convert `x` to an `Int16`.
@@ -274,14 +262,12 @@ mod Float64 {
     /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
     ///
     pub def clampToInt16(x: Float64, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.shortValue(): Int16 \ {};
         let minf64 = Int16.toFloat64(minimum);
         let maxf64 = Int16.toFloat64(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf64, maxf64)) |> shortValue)
+            unsafe Double.valueOf(clamp(x, minf64, maxf64)).shortValue()
 
     ///
     /// Convert `x` to an `Int32`.
@@ -292,14 +278,12 @@ mod Float64 {
     /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
     ///
     pub def clampToInt32(x: Float64, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.intValue(): Int32 \ {};
         let minf64 = Int32.toFloat64(minimum);
         let maxf64 = Int32.toFloat64(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf64, maxf64)) |> intValue)
+            unsafe Double.valueOf(clamp(x, minf64, maxf64)).intValue()
 
     ///
     /// Convert `x` to an `Int64`.
@@ -310,14 +294,12 @@ mod Float64 {
     /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
     ///
     pub def clampToInt64(x: Float64, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.longValue(): Int64 \ {};
         let minf64 = Int64.toFloat64(minimum);
         let maxf64 = Int64.toFloat64(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf64, maxf64)) |> longValue)
+            unsafe Double.valueOf(clamp(x, minf64, maxf64)).longValue()
 
     ///
     /// Convert `x` to a `Float32`.
@@ -325,35 +307,30 @@ mod Float64 {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: Float64, minimum: Float32, maximum: Float32): Float32 =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        import java.lang.Double.floatValue(): Float32 \ {};
         let minf64 = Float32.toFloat64(minimum);
         let maxf64 = Float32.toFloat64(maximum);
         if (isNan(x))
             Float32.nan()
         else
-            (valueOf(clamp(x, minf64, maxf64)) |> floatValue)
+            unsafe Double.valueOf(clamp(x, minf64, maxf64)).floatValue()
 
     ///
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: Float64): Float64 =
-        import static java.lang.Math.abs(Float64): Float64 \ {};
-        abs(x)
+        unsafe Math.abs(x)
 
     ///
     /// Returns `x` rounded up to a Float64 representing the nearest larger integer value.
     ///
     pub def ceil(x: Float64): Float64 =
-        import static java.lang.Math.ceil(Float64): Float64 \ {};
-        ceil(x)
+        unsafe Math.ceil(x)
 
     ///
     /// Returns `x` rounded down to a Float64 representing the nearest smaller integer value.
     ///
     pub def floor(x: Float64): Float64 =
-        import static java.lang.Math.floor(Float64): Float64 \ {};
-        floor(x)
+        unsafe Math.floor(x)
 
     ///
     /// Returns `x` rounded to a Float64 representing the nearest integer value.
@@ -362,8 +339,7 @@ mod Float64 {
     /// close, `x` will be rounded to an even value (i.e. `round(0.5f64) == 0.0f64`).
     ///
     pub def round(x: Float64): Float64 =
-        import static java.lang.Math.rint(Float64): Float64 \ {};
-        rint(x)
+        unsafe Math.rint(x)
 
     ///
     /// Returns `x` raised to the power of `n`.
@@ -374,27 +350,24 @@ mod Float64 {
     /// Returns the exponential of `x`.
     ///
     pub def exp(x: Float64): Float64 =
-        import static java.lang.Math.exp(Float64): Float64 \ {};
-        exp(x)
+        unsafe Math.exp(x)
 
     ///
-    /// Get the primitive Float64 value from its object representation (i.e. ##java.lang.Double).
+    /// Get the primitive Float64 value from its object representation (i.e. java.lang.Double).
     ///
     /// This function is expected to be used when marshaling Float64s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Double`.
+    /// code you should not need to use `java.lang.Double`.
     ///
-    pub def doubleValue(i: ##java.lang.Double): Float64 =
-        import java.lang.Double.doubleValue(): Float64 \ {};
-        doubleValue(i)
+    pub def doubleValue(i: Double): Float64 =
+        unsafe i.doubleValue()
 
     ///
-    /// Convert an Float64 value to its object representation (i.e. ##java.lang.Double).
+    /// Convert an Float64 value to its object representation (i.e. java.lang.Double).
     ///
     /// This function is expected to be used when marshaling Float64s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Double`.
+    /// code you should not need to use `java.lang.Double`.
     ///
-    pub def valueOf(i: Float64): ##java.lang.Double =
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
-        valueOf(i)
+    pub def valueOf(i: Float64): Double =
+        unsafe Double.valueOf(i)
 
 }

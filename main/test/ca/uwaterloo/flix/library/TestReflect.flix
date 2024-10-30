@@ -35,5 +35,5 @@ mod TestReflect {
     def testDefaultBigInt(): Bool = (default(): BigInt) == 0ii
 
     @test
-    def testDefaultList(): Bool = Object.isNull(default(): List[String])
+    def testDefaultList(): Bool = Object.isNull((default(): List[String]))
 }

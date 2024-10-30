@@ -5,11 +5,11 @@ mod Test.Handler.Gen.String {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: String): List[String] =
         region rc {
-            let counter = ref "a" @ rc;
+            let counter = Ref.fresh(rc, "a");
             try {
                 generator(); Nil
             } with Gen {
@@ -50,8 +50,8 @@ mod Test.Handler.Gen.String {
     }
 
     def getAndInc(r: Ref[String, r]): String \ r =
-        let c = deref r;
-        r := next(c);
+        let c = Ref.get(r);
+        Ref.put(next(c), r);
         c
 
     def range(a: String, b: String): List[String] =

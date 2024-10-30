@@ -50,7 +50,7 @@ mod Test.Derives.ToString {
     def testToString03(): Bool = "${Enum.TupleCase(123, true)}" == "TupleCase(123, true)"
 
     @test
-    def testToString04(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Int32]}" == "EmptyCase"
+    def testToString04(): Bool = "${(PolyEnum.EmptyCase: PolyEnum[Int32])}" == "EmptyCase"
 
     @test
     def testToString05(): Bool = "${PolyEnum.SingletonCase(123)}" == "SingletonCase(123)"
@@ -59,7 +59,7 @@ mod Test.Derives.ToString {
     def testToString06(): Bool = "${PolyEnum.TupleCase(123, 123)}" == "TupleCase(123, 123)"
 
     @test
-    def testToString07(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Enum]}" == "EmptyCase"
+    def testToString07(): Bool = "${(PolyEnum.EmptyCase: PolyEnum[Enum])}" == "EmptyCase"
 
     @test
     def testToString08(): Bool = "${PolyEnum.SingletonCase(Enum.EmptyCase)}" == "SingletonCase(EmptyCase)"
@@ -68,10 +68,10 @@ mod Test.Derives.ToString {
     def testToString09(): Bool = "${PolyEnum.SingletonCase(Enum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"
 
     @test
-    def testToString10(): Bool = "${PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]}" == "EmptyCase"
+    def testToString10(): Bool = "${(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]])}" == "EmptyCase"
 
     @test
-    def testToString11(): Bool = "${PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]}" == "SingletonCase(EmptyCase)"
+    def testToString11(): Bool = "${(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]])}" == "SingletonCase(EmptyCase)"
 
     @test
     def testToString12(): Bool = "${PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"
@@ -83,22 +83,22 @@ mod Test.Derives.ToString {
     def testToString14(): Bool = "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}" == "RecursiveCase(EmptyCase)"
 
     @test
-    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]}" == "EmptyCase"
+    def testToString15(): Bool = "${(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool])}" == "EmptyCase"
 
     @test
-    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]}" == "LeftCase(123)"
+    def testToString16(): Bool = "${(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool])}" == "LeftCase(123)"
 
     @test
-    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]}" == "RightCase(true)"
+    def testToString17(): Bool = "${(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool])}" == "RightCase(true)"
 
     @test
     def testToString18(): Bool = "${PolyMultiEnum.BothCase(123, true)}" == "BothCase(123, true)"
 
     @test
-    def testToString19(): Bool = "${PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]}" == "EmptyCase"
+    def testToString19(): Bool = "${(PolyBoolEnum.EmptyCase: PolyBoolEnum[{}])}" == "EmptyCase"
 
     @test
-    def testToString20(): Bool = "${PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]}" == "RecursiveCase(EmptyCase)"
+    def testToString20(): Bool = "${(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}])}" == "RecursiveCase(EmptyCase)"
 
     @test
     def testToString21(): Bool = "${MutRecursiveEnum1.EmptyCase}" == "EmptyCase"

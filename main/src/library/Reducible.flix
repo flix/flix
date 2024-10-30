@@ -80,8 +80,8 @@ pub trait Reducible[t: Type -> Type] {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, t: t[a]): b \ ef =
-        let f1 = (a, b) -> f(a, constant(b));
-        Reducible.reduceRightTo(f1, a -> f(a, constant(z)), t)
+        let f1 = (a, b) -> f(a, _ -> checked_ecast(b));
+        Reducible.reduceRightTo(f1, a -> f(a, _ -> checked_ecast(z)), t)
 
     ///
     /// Alias for `reduce`.
@@ -247,7 +247,7 @@ pub trait Reducible[t: Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ r =
-        let v = MutList.new(rc);
+        let v = MutList.empty(rc);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(rc, v)
 
@@ -255,7 +255,7 @@ pub trait Reducible[t: Type -> Type] {
     /// Returns `t` as a vector.
     ///
     pub def toVector(t: t[a]): Vector[a] = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         Reducible.foldLeft((_, a) -> MutList.push!(a, l), (), t);
         MutList.toVector(l)
     }
@@ -283,5 +283,14 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
         Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
+
+}
+
+mod Reducible {
+
+    ///
+    /// Returns the number of elements in `t`.
+    ///
+    pub def size(t: t[a]): Int32 with Reducible[t] = Reducible.length(t)
 
 }

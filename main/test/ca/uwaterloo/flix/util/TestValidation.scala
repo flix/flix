@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.errors.{Recoverable, Unrecoverable}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -78,17 +78,17 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("map06") {
-    val one = mapN(SoftFailure("abc", Chain.empty)) {
+    val one = mapN(Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case x => x.length
     }
     val result = mapN(one) {
       case y => y < 5
     }
-    assertResult(SoftFailure(true, Chain.empty))(result)
+    assertResult(Validation.toSoftFailure(true, DummyRecoverable(1)))(result)
   }
 
   test("map07") {
-    val one = mapN(SoftFailure("abc", Chain.empty)) {
+    val one = mapN(Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case x => x.charAt(1)
     }
     val two = mapN(one) {
@@ -97,23 +97,21 @@ class TestValidation extends AnyFunSuite {
     val result = mapN(two) {
       case z => z.toChar.toString
     }
-    assertResult(SoftFailure("e", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("e", DummyRecoverable(1)))(result)
   }
 
   test("map08") {
-    val ex = new RuntimeException()
-    val one = mapN(SoftFailure("abc", Chain(ex))) {
+    val one = mapN(Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case x => x.length
     }
     val result = mapN(one) {
       case y => y < 5
     }
-    assertResult(SoftFailure(true, Chain(ex)))(result)
+    assertResult(Validation.toSoftFailure(true, DummyRecoverable(1)))(result)
   }
 
   test("map09") {
-    val ex = new RuntimeException()
-    val one = mapN(SoftFailure("abc", Chain(ex))) {
+    val one = mapN(Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case x => x.charAt(1)
     }
     val two = mapN(one) {
@@ -122,7 +120,7 @@ class TestValidation extends AnyFunSuite {
     val result = mapN(two) {
       case z => z.toChar.toString
     }
-    assertResult(SoftFailure("e", Chain(ex)))(result)
+    assertResult(Validation.toSoftFailure("e", DummyRecoverable(1)))(result)
   }
 
   test("mapN01") {
@@ -133,40 +131,38 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("mapN02") {
-    val result = mapN(Validation.success("foo"), Validation.success("foo"), SoftFailure("abc", Chain.empty)) {
+    val result = mapN(Validation.success("foo"), Validation.success("foo"), Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case (x, y, _) => x.toUpperCase.reverse + y.toUpperCase.reverse
     }
-    assertResult(SoftFailure("OOFOOF", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
   }
 
   test("mapN03") {
-    val result = mapN(Validation.success("foo"), Validation.success("foo"), SoftFailure("abc", Chain.empty)) {
+    val result = mapN(Validation.success("foo"), Validation.success("foo"), Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case (x, y, z) => x.toUpperCase.reverse + y.toUpperCase.reverse + z.toUpperCase.reverse
     }
-    assertResult(SoftFailure("OOFOOFCBA", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOFOOFCBA", DummyRecoverable(1)))(result)
   }
 
   test("mapN04") {
-    val ex = new RuntimeException()
-    val result = mapN(Validation.success("foo"), Validation.success("foo"), SoftFailure("abc", Chain(ex))) {
+    val result = mapN(Validation.success("foo"), Validation.success("foo"), Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case (x, y, z) => x.toUpperCase.reverse + y.toUpperCase.reverse + z.toUpperCase.reverse
     }
-    assertResult(SoftFailure("OOFOOFCBA", Chain(ex)))(result)
+    assertResult(Validation.toSoftFailure("OOFOOFCBA", DummyRecoverable(1)))(result)
   }
 
   test("mapN05") {
-    val result = mapN(SoftFailure("foo", Chain.empty)) {
+    val result = mapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => x.toUpperCase.reverse
     }
-    assertResult(SoftFailure("OOF", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOF", DummyRecoverable(1)))(result)
   }
 
   test("mapN06") {
-    val ex = new RuntimeException()
-    val result = mapN(SoftFailure("foo", Chain(ex))) {
+    val result = mapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => x.toUpperCase.reverse
     }
-    assertResult(SoftFailure("OOF", Chain(ex)))(result)
+    assertResult(Validation.toSoftFailure("OOF", DummyRecoverable(1)))(result)
   }
 
   test("mapN07") {
@@ -203,44 +199,44 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMapN03") {
-    val result = flatMapN(SoftFailure("foo", Chain.empty)) {
+    val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
         case y => flatMapN(Validation.success(y.reverse)) {
           case z => Validation.success((z + z))
         }
       }
     }
-    assertResult(SoftFailure("OOFOOF", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
   }
 
   test("flatMapN04") {
     val ex = new RuntimeException()
-    val result = flatMapN(SoftFailure("foo", Chain.empty)) {
-      case x => flatMapN(SoftFailure(x.toUpperCase, Chain(ex))) {
-        case y => flatMapN(Validation.success(y.reverse)) {
-          case z => Validation.success((z + z))
-        }
-      }
-    }
-    assertResult(SoftFailure("OOFOOF", Chain(ex)))(result)
-  }
-
-  test("flatMapN05") {
-    val ex = new RuntimeException()
-    val result = flatMapN(Validation.success[String, Exception]("foo")) {
-      case x => flatMapN(SoftFailure(x.toUpperCase, Chain(ex))) {
+    val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
+      case x => flatMapN(Validation.toSoftFailure(x.toUpperCase, DummyRecoverable(1))) {
         case y => flatMapN(Validation.success(y.reverse)) {
           case z => Validation.success(z + z)
         }
       }
     }
-    assertResult(SoftFailure("OOFOOF", Chain(ex)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("OOFOOF", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
+  }
+
+  test("flatMapN05") {
+    val ex = DummyRecoverable(1)
+    val result = flatMapN(Validation.success[String, DummyError]("foo")) {
+      case x => flatMapN(Validation.toSoftFailure(x.toUpperCase, ex)) {
+        case y => flatMapN(Validation.success(y.reverse)) {
+          case z => Validation.success(z + z)
+        }
+      }
+    }
+    assertResult(Validation.toSoftFailure("OOFOOF", ex))(result)
   }
 
   test("andThen03") {
-    val ex = DummyUnrecoverable()
+    val ex = DummyUnrecoverable(1)
     val result = flatMapN(Validation.success[String, DummyUnrecoverable]("foo")) {
-      case x => Validation.toHardFailure(ex)
+      case _ => Validation.toHardFailure(ex)
     }
     assertResult(HardFailure(Chain(ex)))(result)
   }
@@ -259,8 +255,8 @@ class TestValidation extends AnyFunSuite {
   test("andThen05") {
     val result = flatMapN(Validation.success[String, Int]("foo")) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case y => flatMapN(HardFailure(Chain(4, 5, 6))) {
-          case z => HardFailure(Chain(7, 8, 9))
+        case _ => flatMapN(HardFailure(Chain(4, 5, 6))) {
+          case _ => HardFailure(Chain(7, 8, 9))
         }
       }
     }
@@ -268,7 +264,7 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMap01") {
-    val val1 = flatMapN(SoftFailure("foo", Chain.empty)) {
+    val val1 = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => Validation.success(x.toUpperCase)
     }
     val val2 = flatMapN(val1) {
@@ -277,68 +273,62 @@ class TestValidation extends AnyFunSuite {
     val result = flatMapN(val2) {
       case z => Validation.success(z + z)
     }
-    assertResult(SoftFailure("OOFOOF", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
   }
 
   test("flatMap02") {
-    val result = flatMapN(SoftFailure("foo", Chain.empty)) {
+    val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
         case y => flatMapN(Validation.success(y.reverse)) {
           case z => Validation.success(z + z)
         }
       }
     }
-    assertResult(SoftFailure("OOFOOF", Chain.empty))(result)
+    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
   }
 
   test("flatMap03") {
-    val ex = new RuntimeException()
-    val result = flatMapN(SoftFailure("foo", Chain.empty)) {
+    val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
         case y => flatMapN(Validation.success(y.reverse)) {
-          case z => SoftFailure[String, Exception](z + z, Chain(ex))
+          case z => Validation.toSoftFailure(z + z, DummyRecoverable(1))
         }
       }
     }
-    assertResult(SoftFailure("OOFOOF", Chain(ex)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("OOFOOF", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
   }
 
   test("flatMap04") {
-    val ex = new RuntimeException()
-    val result = flatMapN(SoftFailure("foo", Chain.empty)) {
+    val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
         case y => flatMapN(Validation.success(y.reverse)) {
-          case _ => HardFailure[String, Exception](Chain(ex))
+          case _ => HardFailure(Chain(DummyRecoverable(1)))
         }
       }
     }
-    assertResult(HardFailure(Chain(ex)))(result)
+    assertResult(HardFailure(Chain(DummyRecoverable(1), DummyRecoverable(1))))(result)
   }
 
   test("flatMap05") {
-    val ex1: Exception = new RuntimeException("1")
-    val ex2: Exception = new RuntimeException("2")
-    val result = flatMapN(SoftFailure("abc", Chain(ex1))) {
+    val result = flatMapN(Validation.toSoftFailure("abc", DummyRecoverable(1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case y => flatMapN(SoftFailure[String, Exception](y.reverse, Chain(ex2))) {
+        case y => flatMapN(Validation.toSoftFailure(y.reverse, DummyRecoverable(1))) {
           case z => Validation.success(z + z)
         }
       }
     }
-    assertResult(SoftFailure("CBACBA", Chain(ex1, ex2)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("CBACBA", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
   }
 
   test("flatMap06") {
-    val ex1: Exception = new RuntimeException()
-    val ex2: Exception = new RuntimeException()
     val result = flatMapN(Validation.success("abc")) {
-      case x => flatMapN(SoftFailure(x.toUpperCase, Chain(ex2))) {
-        case y => flatMapN(SoftFailure(y.reverse, Chain(ex1))) {
-          case z => Validation.success[String, Exception](z + z)
+      case x => flatMapN(Validation.toSoftFailure(x.toUpperCase, DummyRecoverable(1))) {
+        case y => flatMapN(Validation.toSoftFailure(y.reverse, DummyRecoverable(2))) {
+          case z => Validation.success(z + z)
         }
       }
     }
-    assertResult(SoftFailure("CBACBA", Chain(ex2, ex1)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("CBACBA", Seq(DummyRecoverable(1), DummyRecoverable(2))))(result)
   }
 
   test("traverse01") {
@@ -364,23 +354,23 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse04") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) SoftFailure(x, Chain(-1)) else SoftFailure(-1, Chain(x))
+      case x => if (x % 2 == 1) Validation.toSoftFailure(x, DummyRecoverable(-1)) else Validation.toSoftFailure(-1, DummyRecoverable(x))
     }
-    assertResult(SoftFailure(List(1, -1, 3), Chain(-1, 2, -1)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure(List(1, -1, 3), Seq(DummyRecoverable(-1), DummyRecoverable(2), DummyRecoverable(-1))))(result)
   }
 
   test("traverse05") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) Validation.success(x) else SoftFailure(-1, Chain(x))
+      case x => if (x % 2 == 1) Validation.success(x) else Validation.toSoftFailure(-1, DummyRecoverable(x))
     }
-    assertResult(SoftFailure(List(1, -1, 3), Chain(2)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure(List(1, -1, 3), Seq(DummyRecoverable(2))))(result)
   }
 
   test("traverse06") {
     val result = traverse(List(1, 2, 3, 4, 5)) {
-      case x => if (x % 2 == 1) SoftFailure(x, Chain(-x)) else HardFailure(Chain(x))
+      case x => if (x % 2 == 1) Validation.toSoftFailure(x, DummyRecoverable(-x)) else HardFailure(Chain(DummyRecoverable(x)))
     }
-    assertResult(HardFailure(Chain(-1, 2, -3, 4, -5)))(result)
+    assertResult(HardFailure(Chain(DummyRecoverable(-1), DummyRecoverable(2), DummyRecoverable(-3), DummyRecoverable(4), DummyRecoverable(-5))))(result)
   }
 
   test("foldRight01") {
@@ -390,49 +380,6 @@ class TestValidation extends AnyFunSuite {
     assertResult(Validation.success(7))(result)
   }
 
-  test("toSoftFailure01") {
-    val e = DummyRecoverable()
-    val v = Validation.toSoftFailure("abc", e)
-    assertResult(SoftFailure("abc", Chain(e)))(v)
-  }
-
-  test("toSoftFailure02") {
-    val e = DummyRecoverable()
-    val v = Validation.toSoftFailure("abc", e)
-    val result = mapN(v) {
-      case s => s.reverse
-    }
-    assertResult(SoftFailure("cba", Chain(e)))(result)
-  }
-
-  test("toSoftFailure03") {
-    val e = DummyRecoverable()
-    val v = mapN(Validation.toSoftFailure("abc", e)) {
-      case s => s.reverse
-    }
-    assertResult(SoftFailure("cba", Chain(e)))(v)
-  }
-
-  test("recoverOne01") {
-    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
-    val v = Validation.success("abc").recoverOne(f)
-    assertResult(Validation.success("abc"))(v)
-  }
-
-  test("recoverOne02") {
-    val e = DummyRecoverable()
-    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
-    val r = Validation.toSoftFailure(e.toString, e).recoverOne(f)
-    assertResult(Validation.toSoftFailure(e.toString, e))(r)
-  }
-
-  test("recoverOne03") {
-    val ex = new RuntimeException()
-    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
-    val result = Validation.HardFailure(Chain(ex, ex)).recoverOne(f)
-    assertResult(Validation.HardFailure(Chain(ex, ex)))(result)
-  }
-
   test("toSoftResult01") {
     val t = Validation.success[String, DummyError]("abc")
     val result = t.toSoftResult
@@ -440,14 +387,14 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("toSoftResult02") {
-    val e = DummyRecoverable()
+    val e = DummyRecoverable(1)
     val t = Validation.toSoftFailure("xyz", e)
     val result = t.toSoftResult
     assertResult(Result.Ok(("xyz", Chain(e))))(result)
   }
 
   test("toSoftResult03") {
-    val e = DummyUnrecoverable()
+    val e = DummyUnrecoverable(1)
     val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
     val result = t.toSoftResult
     assertResult(Result.Err(Chain(e)))(result)
@@ -460,14 +407,14 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("toHardResult02") {
-    val e = DummyRecoverable()
+    val e = DummyRecoverable(1)
     val t = Validation.toSoftFailure("xyz", e)
     val result = t.toHardResult
     assertResult(Result.Err(Chain(e)))(result)
   }
 
   test("toHardResult03") {
-    val e = DummyUnrecoverable()
+    val e = DummyUnrecoverable(1)
     val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
     val result = t.toHardResult
     assertResult(Result.Err(Chain(e)))(result)
@@ -475,7 +422,7 @@ class TestValidation extends AnyFunSuite {
 
   trait DummyError
 
-  case class DummyRecoverable() extends DummyError with Recoverable
+  case class DummyRecoverable(n: Int) extends DummyError with Recoverable
 
-  case class DummyUnrecoverable() extends DummyError with Unrecoverable
+  case class DummyUnrecoverable(n: Int) extends DummyError with Unrecoverable
 }

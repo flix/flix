@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseOpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object UseOpCompleter extends Completer {
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseOpCompletion] = {
+object UseOpCompleter {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseOpCompletion] = {
     stripWord(context) match {
       case Some(word) => {
         val uri = context.uri

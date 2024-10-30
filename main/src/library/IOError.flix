@@ -19,6 +19,8 @@ pub enum IOError with Eq, Order, ToString, Hash, Sendable {
 
 mod IOError {
 
+    import java.lang.Exception
+
     use IOError.Generic
 
     ///
@@ -34,9 +36,7 @@ mod IOError {
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(e)))
+            case e: Exception => Err(Generic(unsafe e.getMessage()))
         }
 
 }

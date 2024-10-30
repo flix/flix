@@ -1,5 +1,4 @@
 :root {
-    --light-toggle-icon: "☼";
     --light-bg-color-1: #ffffff;
     --light-bg-color-2: #fcfcfd;
     --light-bg-color-3: #f8f9fa;
@@ -28,11 +27,10 @@
     --light-shadow-color: rgba(0, 0, 0, 0.05);
     --light-highlight-color: rgba(0, 0, 0, 0.3);
 
-    --dark-toggle-icon: "☾";
     --dark-bg-color-1: #151719;
     --dark-bg-color-2: #101214;
     --dark-bg-color-3: #0e0f11;
-    --dark-border-color: rgba(255, 255, 255, 0.15);
+    --dark-border-color: rgba(255, 255, 255, 0.07);
     --dark-heading-color: #e6e6e6;
     --dark-text-color: #f7f7f7;
     --dark-faded-text-color: #8a8a8a;
@@ -54,10 +52,9 @@
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
     --dark-def-color: #83af9b;
-    --dark-shadow-color: rgba(0, 0, 0, 0.5);
+    --dark-shadow-color: rgba(0, 0, 0, 0.3);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
 
-    --toggle-icon: var(--light-toggle-icon);
     --bg-color-1: var(--light-bg-color-1);
     --bg-color-2: var(--light-bg-color-2);
     --bg-color-3: var(--light-bg-color-3);
@@ -89,7 +86,6 @@
 }
 @media (prefers-color-scheme: dark) {
     :root {
-        --toggle-icon: var(--dark-toggle-icon);
         --bg-color-1: var(--dark-bg-color-1);
         --bg-color-2: var(--dark-bg-color-2);
         --bg-color-3: var(--dark-bg-color-3);
@@ -122,7 +118,6 @@
 }
 
 body.light {
-    --toggle-icon: var(--light-toggle-icon);
     --bg-color-1: var(--light-bg-color-1);
     --bg-color-2: var(--light-bg-color-2);
     --bg-color-3: var(--light-bg-color-3);
@@ -153,7 +148,6 @@ body.light {
     color-scheme: light;
 }
 body.dark {
-    --toggle-icon: var(--dark-toggle-icon);
     --bg-color-1: var(--dark-bg-color-1);
     --bg-color-2: var(--dark-bg-color-2);
     --bg-color-3: var(--dark-bg-color-3);
@@ -201,51 +195,45 @@ body {
     background-color: var(--bg-color-2);
 }
 
+.no-script #theme-toggle {
+    display: none;
+}
 #theme-toggle {
     display: flex;
-    flex-direction: column;
-    align-items: end;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: 0;
     right: 0;
     margin: 1rem 2rem;
-    background-color: transparent;
     border: none;
     cursor: pointer;
-    color: var(--heading-color);
-    background-color: var(--bg-color-2);
-    border-radius: 0.5rem;
-}
-#theme-toggle span {
-    display: none;
-}
-#theme-toggle::before {
-    line-height: 1.2;
-    width: 2rem;
-    font-size: 2rem;
-    content: var(--toggle-icon);
-}
-#theme-toggle:hover {
-    color: var(--text-color);
-}
-
-#theme-toggle [role="tooltip"] {
     color: var(--faded-text-color);
     background-color: var(--bg-color-2);
-    padding: 0.2rem;
-    display: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
 }
-.no-script #theme-toggle:hover [role="tooltip"] {
-    display: block;
+#theme-toggle:hover {
+    color: var(--text-color)
 }
-.no-script #theme-toggle:focus [role="tooltip"] {
-    display: block;
-}
-
 @media screen and (max-width: 50rem) {
     #theme-toggle {
         margin: 0.4rem;
     }
+}
+
+#theme-toggle .text {
+    /* Replace text with icons when CSS is included */
+    display: none;
+}
+
+/* Can rely on .light and .dark because it's only visible when JS is present */
+.light #theme-toggle .light-icon {
+    display: none;
+}
+.dark #theme-toggle .dark-icon {
+    display: none;
 }
 
 h1, h2 {
@@ -289,14 +277,12 @@ nav {
 }
 
 nav .back {
-    display: block;
+    display: flex;
+    gap: 0.1rem;
     margin-bottom: 1rem;
 }
-nav .back::before {
-    content: "↩ ";
-}
 
-nav > div {
+nav > .sidebar {
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
     border-right: 1px solid var(--border-color);
@@ -309,40 +295,54 @@ nav > div {
 
 #menu-toggle {
     display: none;
-    appearance: none;
     position: absolute;
     top: 0;
     right: 0;
     margin: 0.4rem;
     width: 2rem;
     height: 2rem;
-    font-size: 1.2rem;
     color: var(--faded-text-color);
     align-items: center;
     justify-content: center;
 }
-#menu-toggle:not(:checked) {
+#menu-toggle:has(input:not(:checked)) {
     background-color: var(--bg-color-1);
     border: 1px solid var(--border-color);
     box-shadow: 0 0 10px 0 var(--shadow-color);
     border-radius: 0.3rem;
 }
-#menu-toggle:not(:checked)::after {
-    content: "☰";
+#menu-toggle > input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
 }
-#menu-toggle:checked::after {
-    content: "✕";
+#menu-toggle > .icon {
+    display: flex;
+}
+#menu-toggle:has(input:not(:checked)) > .close.icon {
+    display: none;
+}
+#menu-toggle:has(input:checked) > .menu.icon {
+    display: none;
 }
 @media screen and (max-width: 50rem) {
     #menu-toggle {
         display: flex;
     }
-    #menu-toggle:not(:checked) {
+    #menu-toggle:has(input:not(:checked)) {
         transform: translateX(2.8rem);
     }
 
-    #menu-toggle:not(:checked) ~ div {
+    nav:has(#menu-toggle > input:not(:checked)) > .sidebar {
         display: none;
+    }
+
+    body:has(#menu-toggle > input:checked) main {
+        /* Disable interactions behind the sidebar when it is shown */
+        pointer-events: none;
     }
 }
 
@@ -409,7 +409,7 @@ nav .Effects li::before {
 nav .Type-Aliases li::before {
     color: var(--type-alias-color);
 }
-nav .Definitions li::before, 
+nav .Definitions li::before,
 nav .Module-Definitions li::before {
     color: var(--def-color);
 }
@@ -461,10 +461,12 @@ main h2 {
     margin-top: 1rem;
     padding-left: 1.5rem;
 }
+.subsection h3 {
+    margin-left: -1.5rem;
+}
 .subsection > summary {
     cursor: pointer;
     list-style: none;
-    margin-left: -1.5rem;
 }
 .subsection > summary::after {
     content: "(show)";
@@ -481,7 +483,7 @@ main h2 {
 }
 
 .subsection > div {
-    margin-top: 0.5rem;
+    padding: 0.5rem 0;
 }
 .subsection > div:not(:last-child) {
     border-bottom: 1px solid var(--border-color);
@@ -490,6 +492,7 @@ main h2 {
 .decl {
     display: flex;
     gap: 0.2rem;
+    align-items: center;
 }
 .decl > code {
     flex: 1;

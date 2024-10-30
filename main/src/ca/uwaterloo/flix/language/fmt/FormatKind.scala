@@ -31,10 +31,12 @@ object FormatKind {
     case Kind.RecordRow => "RecordRow"
     case Kind.SchemaRow => "SchemaRow"
     case Kind.Predicate => "Predicate"
+    case Kind.Jvm => "Jvm"
     case Kind.CaseSet(sym) => s"CaseSet[${sym.name}]"
     // parenthesize the left because `->` is right-associative
     case Kind.Arrow(k1: Kind.Arrow, k2) => s"(${formatKind(k1)}) -> ${formatKind(k2)}"
     case Kind.Arrow(k1, k2) => s"${formatKind(k1)} -> ${formatKind(k2)}"
+    case Kind.Error => "Error"
   }
 
 }

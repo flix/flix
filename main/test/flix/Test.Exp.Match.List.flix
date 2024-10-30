@@ -80,7 +80,7 @@ mod Test.Exp.Match.List {
     }
 
     @test
-    def testListList01(): Bool = match Nil : List[List[Int32]] {
+    def testListList01(): Bool = match (Nil : List[List[Int32]]) {
         case Nil              => true
         case _                => false
     }

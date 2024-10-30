@@ -44,17 +44,17 @@ mod TestTraversable {
     @test
     def for04(): Bool =
         let xs: List[Int32] = Nil;
-        Traversable.for(xs, _ -> None: Option[Int32]) == Some(Nil)
+        Traversable.for(xs, _ -> (None: Option[Int32])) == Some(Nil)
 
     @test
     def for05(): Bool =
         let xs: List[Int32] = 1 :: Nil;
-        Traversable.for(xs, _ -> None: Option[Int32]) == None
+        Traversable.for(xs, _ -> (None: Option[Int32])) == None
 
     @test
     def for06(): Bool =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        Traversable.for(xs, _ -> None: Option[Int32]) == None
+        Traversable.for(xs, _ -> (None: Option[Int32])) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceOption                                                          //
@@ -154,17 +154,17 @@ mod TestTraversable {
     @test
     def traverseList04(): Bool =
         let xs: List[Int32] = Nil;
-        traverse(_ -> None: Option[Int32], xs) == Some(Nil)
+        traverse(_ -> (None: Option[Int32]), xs) == Some(Nil)
 
     @test
     def traverseList05(): Bool =
         let xs: List[Int32] = 1 :: Nil;
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     @test
     def traverseList06(): Bool =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftList                                                        //
@@ -231,12 +231,12 @@ mod TestTraversable {
     @test
     def traverseNel03(): Bool =
         let xs: Nel[Int32] = Nel.Nel(1, Nil);
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     @test
     def traverseNel04(): Bool =
         let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftNel.Nel                                                         //
@@ -308,17 +308,17 @@ mod TestTraversable {
     @test
     def traverseChain04(): Bool =
         let xs: Chain[Int32] = Chain.empty();
-        traverse(_ -> None: Option[Int32], xs) == Some(Chain.empty())
+        traverse(_ -> (None: Option[Int32]), xs) == Some(Chain.empty())
 
     @test
     def traverseChain05(): Bool =
         let xs: Chain[Int32] = Chain.singleton(1);
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     @test
     def traverseChain06(): Bool =
         let xs: Chain[Int32] = List.toChain(1 :: 2 :: Nil);
-        traverse(_ -> None: Option[Int32], xs) == None
+        traverse(_ -> (None: Option[Int32]), xs) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftChain                                                       //
@@ -395,17 +395,17 @@ mod TestTraversable {
     @test
     def traverseMap04(): Bool =
         let m: Map[Int32, Int32] = Map#{};
-        traverse(_ -> None: Option[Int32], m) == Some(Map#{})
+        traverse(_ -> (None: Option[Int32]), m) == Some(Map#{})
 
     @test
     def traverseMap05(): Bool =
         let m: Map[Int32, Int32] = Map#{1 => 1};
-        traverse(_ -> None: Option[Int32], m) == None
+        traverse(_ -> (None: Option[Int32]), m) == None
 
     @test
     def traverseMap06(): Bool =
         let m: Map[Int32, Int32] = Map#{1 => 1, 2 => 2};
-        traverse(_ -> None: Option[Int32], m) == None
+        traverse(_ -> (None: Option[Int32]), m) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftMap                                                         //
@@ -489,17 +489,17 @@ mod TestTraversable {
     @test
     def traverseRedBlackTree04(): Bool =
         let t: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
-        traverse(_ -> None: Option[Int32], t) == Some(RedBlackTree.empty())
+        traverse(_ -> (None: Option[Int32]), t) == Some(RedBlackTree.empty())
 
     @test
     def traverseRedBlackTree05(): Bool =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1):: Nil);
-        traverse(_ -> None: Option[Int32], t) == None
+        traverse(_ -> (None: Option[Int32]), t) == None
 
     @test
     def traverseRedBlackTree06(): Bool =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
-        traverse(_ -> None: Option[Int32], t) == None
+        traverse(_ -> (None: Option[Int32]), t) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftRedBlackTree                                                //

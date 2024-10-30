@@ -1,21 +1,19 @@
 mod Test.Handler.Ask.AtomicInteger {
 
-    type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
+    import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
-        mk(n)
+        unsafe new AtomicInteger(n)
 
     def toInt(n: AtomicInteger): Int32 =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
-        intValue(n)
+        unsafe n.intValue()
 
     eff Ask {
         pub def ask(x: AtomicInteger): Unit
     }
 
     def generator(x: AtomicInteger): Unit \ Ask =
-        do Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
+        Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
 
     def sample(limit: Int32): List[AtomicInteger] =
         try {

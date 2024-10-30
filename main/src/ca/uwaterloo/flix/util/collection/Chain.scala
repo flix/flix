@@ -16,20 +16,12 @@
 package ca.uwaterloo.flix.util.collection
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
 /**
   * A linear data structure that allows fast concatenation.
   */
 sealed trait Chain[+A] {
-
-  /**
-    * Returns an iterator over the chain, from left to right.
-    */
-  final def iterator: Iterator[A] = this match {
-    case Chain.Empty => Iterator.empty
-    case Chain.Link(l, r) => l.iterator ++ r.iterator
-    case Chain.Proxy(xs) => xs.iterator
-  }
 
   /**
     * Concatenates `this` chain and `that` chain.
@@ -100,9 +92,13 @@ sealed trait Chain[+A] {
     * Applies `f` this every element in `this`.
     */
   final def foreach(f: A => Unit): Unit = this match {
-    case Chain.Empty => ()
-    case Chain.Link(l, r) => l.foreach(f); r.foreach(f)
-    case Chain.Proxy(xs) => xs.foreach(f)
+    // N.B.: We must match on the type to avoid
+    // infinite recursion when pattern matching
+    // since it calls the equals method which
+    // depends on foreach.
+    case _: Chain.Empty.type => ()
+    case c: Chain.Link[_] => c.l.foreach(f); c.r.foreach(f)
+    case c: Chain.Proxy[_] => c.xs.foreach(f)
   }
 
   /**
@@ -117,23 +113,22 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  final def toList: List[A] = this match {
-    // N.B.: We have to use reflection to avoid
-    // infinite recursion when pattern matching
-    // since it calls the equals method which
-    // depends on toList.
-    case _: Chain.Empty.type => List.empty
-    case c: Chain.Link[A] => c.l.toList ++ c.r.toList
-    case c: Chain.Proxy[A] => c.xs.toList
+  final def toList: List[A] = {
+    val buf = new ListBuffer[A]
+    this.foreach(buf.addOne)
+    buf.toList
   }
 
   /**
     * Displays all elements of this collection in a string using a separator string.
     */
-  final def mkString(sep: String): String = this match {
-    case Chain.Empty => ""
-    case Chain.Link(l, r) => l.mkString(sep) ++ sep ++ r.mkString(sep)
-    case Chain.Proxy(xs) => xs.mkString(sep)
+  final def mkString(sep: String): String = {
+    val sb = new StringBuilder()
+    this.foreach { x =>
+      sb.addAll(x.toString); sb.addAll(sep)
+    }
+    sb.dropRight(sep.length)
+    sb.mkString
   }
 
   final override def hashCode(): Int = this.toList.hashCode()
@@ -141,6 +136,10 @@ sealed trait Chain[+A] {
   final override def equals(obj: Any): Boolean = obj match {
     case that: Chain[_] => this.toList == that.toList
     case _ => false
+  }
+
+  final override def toString: String = {
+    s"Chain(${this.mkString(", ")})"
   }
 }
 
@@ -175,11 +174,6 @@ object Chain {
     * Returns a chain containing the given elements.
     */
   def from[A](xs: Seq[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
-
-  /**
-    * Returns a chain containing the given elements.
-    */
-  def apply[A](xs: Iterable[A]): Chain[A] = from(xs)
 
   /**
     * Returns a chain containing the given elements.

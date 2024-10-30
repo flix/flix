@@ -30,30 +30,25 @@ sealed trait PackageError {
 object PackageError {
   case class VersionDoesNotExist(version: SemVer, project: Project) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}
-         |""".stripMargin
+      s"Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}"
   }
 
   case class InvalidProjectName(projectString: String) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |A GitHub project should be formatted like so: 'owner/repository'.
+      s"""A GitHub project should be formatted like so: 'owner/repository'.
          |Instead found: ${f.red(projectString)}.
          |""".stripMargin
   }
 
   case class NoReleasesFound(project: Project) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |No releases found for project ${f.bold(project.toString)}.
+      s"""No releases found for project ${f.bold(project.toString)}.
          |""".stripMargin
   }
 
   case class ProjectNotFound(url: URL, project: Project) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |An I/O error occurred while trying to read the following url:
+      s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
          |""".stripMargin
@@ -61,8 +56,7 @@ object PackageError {
 
   case class JsonError(json: String, project: Project) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |An error occurred while trying to parse the following as JSON:
+      s"""An error occurred while trying to parse the following as JSON:
          |${f.cyan(json)}
          |Project: ${f.bold(project.toString)}
          |""".stripMargin
@@ -70,8 +64,7 @@ object PackageError {
 
   case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |A download error occurred while downloading ${f.bold(asset.name)}
+      s"""A download error occurred while downloading ${f.bold(asset.name)}
          |${
          message match {
            case Some(e) => e
@@ -82,8 +75,7 @@ object PackageError {
 
   case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |A download error occurred while downloading ${f.bold(fileName)} from $url
+      s"""A download error occurred while downloading ${f.bold(fileName)} from $url
          |${
         message match {
           case Some(e) => e
@@ -95,23 +87,20 @@ object PackageError {
 
   case class CoursierError(errorMsg: String) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |An error occurred with Coursier:
+      s"""An error occurred with Coursier:
          |$errorMsg
          |""".stripMargin
   }
 
   case class NoSuchFile(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+      s"""There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
          |""".stripMargin
   }
 
   case class TooManyFiles(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
-      s"""
-         |There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+      s"""There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
          |There should only be one $extension file in each project.
          |""".stripMargin
   }

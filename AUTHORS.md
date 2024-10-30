@@ -68,3 +68,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Lionel Mendes](https://github.com/LionelMeli) 
 - [Stephen Bastians](https://github.com/stetimi)
 - [Chanattan Sok](https://github.com/ZentsuGo)
+- [Felix Berg](https://github.com/felix-berg)
+- [Surya Somayyajula](https://github.com/saisoma123)
+- [Joseph Tan](https://github.com/dghosef)
+- [Alexander Dybdahl Troelsen](https://github.com/LoZander)

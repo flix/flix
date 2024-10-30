@@ -28,7 +28,7 @@ mod TestFilterable {
 
     @test
     def filterChain01(): Bool =
-        filter(isOdd, Chain.empty(): Chain[Int32]) |> Chain.toList == Nil
+        filter(isOdd, (Chain.empty(): Chain[Int32])) |> Chain.toList == Nil
 
     @test
     def filterChain02(): Bool =
@@ -44,7 +44,7 @@ mod TestFilterable {
 
     @test
     def filterMapChain01(): Bool =
-        filterMap(oddPlus10, Chain.empty(): Chain[Int32]) |> Chain.toList == Nil
+        filterMap(oddPlus10, (Chain.empty(): Chain[Int32])) |> Chain.toList == Nil
 
     @test
     def filterMapChain02(): Bool =
@@ -61,7 +61,7 @@ mod TestFilterable {
 
     @test
     def filterDelayList01(): Bool =
-        filter(isOdd, DelayList.empty(): DelayList[Int32]) |> DelayList.toList == Nil
+        filter(isOdd, (DelayList.empty(): DelayList[Int32])) |> DelayList.toList == Nil
 
     @test
     def filterDelayList02(): Bool =
@@ -77,7 +77,7 @@ mod TestFilterable {
 
     @test
     def filterMapDelayList01(): Bool =
-        filterMap(oddPlus10, DelayList.empty(): DelayList[Int32]) |> DelayList.toList == Nil
+        filterMap(oddPlus10, (DelayList.empty(): DelayList[Int32])) |> DelayList.toList == Nil
 
     @test
     def filterMapDelayList02(): Bool =
@@ -92,7 +92,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterList01(): Bool = filter(isOdd, Nil: List[Int32]) == Nil
+    def filterList01(): Bool = filter(isOdd, (Nil: List[Int32])) == Nil
 
     @test
     def filterList02(): Bool = filter(isOdd, 1 :: Nil) == 1 :: Nil
@@ -105,7 +105,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapList01(): Bool = filterMap(oddPlus10, Nil: List[Int32]) == Nil
+    def filterMapList01(): Bool = filterMap(oddPlus10, (Nil: List[Int32])) == Nil
 
     @test
     def filterMapList02(): Bool = filterMap(oddPlus10, 1 :: Nil) == 11 :: Nil
@@ -118,7 +118,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMap01(): Bool = filter(isOdd, Map.empty(): Map[Int32, Int32]) == Map#{}
+    def filterMap01(): Bool = filter(isOdd, (Map.empty(): Map[Int32, Int32])) == Map#{}
 
     @test
     def filterMap02(): Bool = filter(isOdd, Map#{1 => 1}) == Map#{1 => 1}
@@ -132,7 +132,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapMap01(): Bool = filterMap(oddPlus10, Map.empty(): Map[Int32, Int32]) == Map#{}
+    def filterMapMap01(): Bool = filterMap(oddPlus10, (Map.empty(): Map[Int32, Int32])) == Map#{}
 
     @test
     def filterMapMap02(): Bool = filterMap(oddPlus10, Map#{1 => 1}) == Map#{1 => 11}
@@ -145,7 +145,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterOption01(): Bool = filter(isOdd, None: Option[Int32]) == None
+    def filterOption01(): Bool = filter(isOdd, (None: Option[Int32])) == None
 
     @test
     def filterOption02(): Bool = filter(isOdd, Some(1)) == Some(1)
@@ -158,7 +158,7 @@ mod TestFilterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapOption01(): Bool = filterMap(oddPlus10, None: Option[Int32]) == None
+    def filterMapOption01(): Bool = filterMap(oddPlus10, (None: Option[Int32])) == None
 
     @test
     def filterMapOption02(): Bool = filterMap(oddPlus10, Some(1)) == Some(11)
@@ -172,7 +172,7 @@ mod TestFilterable {
 
     @test
     def filterRedBlackTree01(): Bool =
-        filter(isOdd, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        filter(isOdd, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty()
 
     @test
     def filterRedBlackTree02(): Bool =
@@ -190,7 +190,7 @@ mod TestFilterable {
 
     @test
     def filterMapRedBlackTree01(): Bool =
-        filterMap(oddPlus10, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        filterMap(oddPlus10, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty()
 
     @test
     def filterMapMapRedBlackTree02(): Bool =

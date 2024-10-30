@@ -26,9 +26,9 @@ object AtomicOp {
 
   case class Closure(sym: Symbol.DefnSym) extends AtomicOp
 
-  case class Unary(sop: SemanticOp) extends AtomicOp
+  case class Unary(sop: SemanticOp.UnaryOp) extends AtomicOp
 
-  case class Binary(sop: SemanticOp) extends AtomicOp
+  case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
   case object Region extends AtomicOp
 
@@ -60,13 +60,13 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
-  case object Ref extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
-  case object Deref extends AtomicOp
+  case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case object Assign extends AtomicOp
+  case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class InstanceOf(clazz: Class[_]) extends AtomicOp
+  case class InstanceOf(clazz: Class[?]) extends AtomicOp
 
   case object Cast extends AtomicOp
 
@@ -74,7 +74,7 @@ object AtomicOp {
 
   case object Box extends AtomicOp
 
-  case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
+  case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp
 
@@ -87,6 +87,8 @@ object AtomicOp {
   case class GetStaticField(field: Field) extends AtomicOp
 
   case class PutStaticField(field: Field) extends AtomicOp
+
+  case object Throw extends AtomicOp
 
   case object Spawn extends AtomicOp
 

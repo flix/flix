@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
@@ -77,6 +78,7 @@ object SimpleRunner {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
+      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
       val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addFlix(file.toPath)
@@ -91,8 +93,7 @@ object SimpleRunner {
     flix.setFormatter(Formatter.getDefault)
 
     // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult.toHardResult match {
+    flix.compile().toHardResult match {
       case Result.Ok(compilationResult) =>
 
         compilationResult.getMain match {

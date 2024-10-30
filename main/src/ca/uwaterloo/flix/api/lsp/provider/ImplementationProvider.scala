@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 object ImplementationProvider {
 
   /**
-    * Returns implementations LocationLink for a given class.
+    * Returns implementations LocationLink for a given trait.
     */
   def processImplementation(uri: String, position: Position)(implicit root: Root): List[LocationLink] = {
     if (root == null) {
@@ -31,22 +31,22 @@ object ImplementationProvider {
     }
 
     val links = for {
-      classSym <- classAt(uri, position)
-      inst <- root.instances.getOrElse(classSym, Nil)
-    } yield LocationLink.fromInstanceClassSymUse(inst.clazz, classSym.loc)
+      traitSym <- traitAt(uri, position)
+      inst <- root.instances.getOrElse(traitSym, Nil)
+    } yield LocationLink.fromInstanceTraitSymUse(inst.trt, traitSym.loc)
 
     links.toList
   }
 
   /**
-    * Returns the class symbol located at the given position as a singleton iterable.
-    * Returns an empty iterable if there is no such class symbol.
+    * Returns the trait symbol located at the given position as a singleton iterable.
+    * Returns an empty iterable if there is no such trait symbol.
     */
-  private def classAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.ClassSym] = {
-    root.instances.keys.filter(classSym => classSym.loc.source.name == uri
-      && (classSym.loc.beginLine < p.line
-      || (classSym.loc.beginLine == p.line && classSym.loc.beginCol <= p.character))
-      && (classSym.loc.endLine > p.line
-      || (classSym.loc.endLine == p.line && classSym.loc.endCol >= p.character)))
+  private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
+    root.instances.keys.filter(traitSym => traitSym.loc.source.name == uri
+      && (traitSym.loc.beginLine < p.line
+      || (traitSym.loc.beginLine == p.line && traitSym.loc.beginCol <= p.character))
+      && (traitSym.loc.endLine > p.line
+      || (traitSym.loc.endLine == p.line && traitSym.loc.endCol >= p.character)))
   }
 }

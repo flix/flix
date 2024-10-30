@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
-sealed trait LexerError extends CompilationMessage {
+sealed trait LexerError extends CompilationMessage with Recoverable {
   val kind = "Lexer Error"
 }
 
@@ -34,9 +34,8 @@ object LexerError {
     override def summary: String = s"Block-comment nested too deep."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Block-comment nested too deep.
+      import formatter.*
+      s""">> Block-comment nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -56,9 +55,8 @@ object LexerError {
     override def summary: String = s"Number has two decimal dots."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two decimal dots.
+      import formatter.*
+      s""">> Number has two decimal dots.
          |
          |${code(loc, "Second decimal dot is here.")}
          |
@@ -77,11 +75,91 @@ object LexerError {
     override def summary: String = s"Number has two scientific notation indicators."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two scientific notation indicators.
+      import formatter.*
+      s""">> Number has two scientific notation indicators.
          |
          |${code(loc, "Second 'e' is here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a number contains a sequence of underscores.
+    *
+    * @param loc The location of the number literal.
+    */
+  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Number has sequence of '_'"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Number has sequence of '_'.
+         |
+         |${code(loc, "Ending here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a period has whitespace before it.
+    * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
+    *
+    * @param loc The location of the '.'.
+    */
+  case class FreeDot(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"'.' has leading whitespace."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> '.' has leading whitespace.
+         |
+         |${code(loc, "here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a number ends on an underscore.
+    *
+    * @param loc The location of the number literal.
+    */
+  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Number ends on a '_'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Number ends on a '_'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when the digits of a hex literal starts with an '_'
+    *
+    * @param loc The location of the number literal.
+    */
+  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Hex literal starts on a '_'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Hex literal starts on a '_'.
+         |
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -98,9 +176,8 @@ object LexerError {
     override def summary: String = s"String interpolation nested too deep."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> String interpolation nested too deep.
+      import formatter.*
+      s""">> String interpolation nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -120,9 +197,8 @@ object LexerError {
     override def summary: String = s"Unexpected character '$s'."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected character '${red(s)}'.
+      import formatter.*
+      s""">> Unexpected character '${red(s)}'.
          |
          |${code(loc, "Unexpected character.")}
          |
@@ -141,9 +217,8 @@ object LexerError {
     override def summary: String = s"Unterminated block-comment."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '*/' in block-comment.
+      import formatter.*
+      s""">> Missing '*/' in block-comment.
          |
          |${code(loc, "Block-comment starts here.")}
          |
@@ -162,9 +237,8 @@ object LexerError {
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '$$' in built-in.
+      import formatter.*
+      s""">> Missing '$$' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |
@@ -183,9 +257,8 @@ object LexerError {
     override def summary: String = s"Unterminated char."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `'` in char.
+      import formatter.*
+      s""">> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
          |
@@ -204,9 +277,8 @@ object LexerError {
     override def summary: String = s"Unterminated infix function."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '`' in infix function.
+      import formatter.*
+      s""">> Missing '`' in infix function.
          |
          |${code(loc, "Infix function starts here.")}
          |
@@ -225,9 +297,8 @@ object LexerError {
     override def summary: String = s"Unterminated regex."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `"` in regex.
+      import formatter.*
+      s""">> Missing `"` in regex.
          |
          |${code(loc, "Regex starts here")}
          |
@@ -246,9 +317,8 @@ object LexerError {
     override def summary: String = s"Unterminated string."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> missing '"' in string.
+      import formatter.*
+      s""">> Missing '"' in string.
          |
          |${code(loc, "String starts here.")}
          |
@@ -267,9 +337,8 @@ object LexerError {
     override def summary: String = s"Unterminated string interpolation."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '}' in string interpolation.
+      import formatter.*
+      s""">> Missing '}' in string interpolation.
          |
          |${code(loc, "Interpolation starts here.")}
          |

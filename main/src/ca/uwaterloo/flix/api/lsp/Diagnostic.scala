@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object for [[Diagnostic]].
@@ -38,7 +38,7 @@ object Diagnostic {
       case Some(expl) if explain => explanationHeading + expl
       case _ => ""
     }
-    val fullMessage = compilationMessage.message(formatter) + explanation
+    val fullMessage = compilationMessage.messageWithLoc(formatter) + explanation
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
   }
 

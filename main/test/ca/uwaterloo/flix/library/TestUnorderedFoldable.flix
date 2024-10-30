@@ -25,11 +25,11 @@ mod TestUnorderedFoldable {
 
     @test
     def fold01(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Unit]) == ()
+        UnorderedFoldable.fold((Set#{}: Set[Unit])) == ()
 
     @test
     def fold02(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Int32]) == 0
+        UnorderedFoldable.fold((Set#{}: Set[Int32])) == 0
 
     @test
     def fold03(): Bool =
@@ -46,7 +46,7 @@ mod TestUnorderedFoldable {
 
     @test
     def isEmpty01(): Bool =
-        UnorderedFoldable.isEmpty(Set#{}: Set[Unit]) == true
+        UnorderedFoldable.isEmpty((Set#{}: Set[Unit])) == true
 
     @test
     def isEmpty02(): Bool =
@@ -63,6 +63,31 @@ mod TestUnorderedFoldable {
     @test
     def isEmpty05(): Bool =
         UnorderedFoldable.isEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == false
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        UnorderedFoldable.nonEmpty((Set#{}: Set[Unit])) == false
+
+    @test
+    def nonEmpty02(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1}) == true
+
+    @test
+    def nonEmpty03(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2}) == true
+
+    @test
+    def nonEmpty04(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3}) == true
+
+    @test
+    def nonEmpty05(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == true
 
 
     /////////////////////////////////////////////////////////////////////////////

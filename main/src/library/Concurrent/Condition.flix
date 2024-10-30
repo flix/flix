@@ -15,26 +15,25 @@
  */
 
 mod Concurrent {
+    import java.util.concurrent.locks.{Condition => JCondition}
 
     ///
     /// A wrapper around a Java Condition.
     ///
     @Internal
-    pub enum Condition(##java.util.concurrent.locks.Condition)
+    pub enum Condition(JCondition)
 
     mod Condition {
-        // TODO NS-REFACTOR these imports can be removed
-        use Concurrent.Condition;
-        use Concurrent.Condition.Condition;
+
+        import java.lang.IllegalMonitorStateException
 
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
         @Internal
         pub def await(condition: Condition): Unit \ IO =
-            import java.util.concurrent.locks.Condition.await(): Unit \ IO;
             let Condition(c) = condition;
-            await(c)
+            c.await()
 
         ///
         /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting
@@ -43,34 +42,31 @@ mod Concurrent {
         ///
         @Internal
         pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
-            import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
             let Condition(c) = condition;
-            awaitNanos(c, timeout)
+            c.awaitNanos(timeout)
 
         ///
         /// Wakes up one waiting thread.
         ///
         @Internal
-        pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signal(): Unit \ IO;
+        pub def signal(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {
-                Ok(signal(c))
+                Ok(c.signal())
             } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
+                case e: IllegalMonitorStateException => Err(e)
             }
 
         ///
         /// Wakes up all waiting threads.
         ///
         @Internal
-        pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signalAll(): Unit \ IO;
+        pub def signalAll(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {
-                Ok(signalAll(c))
+                Ok(c.signalAll())
             } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
+                case e: IllegalMonitorStateException => Err(e)
             }
     }
 }

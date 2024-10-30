@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The NonEmpty Chain type.
 ///
@@ -78,8 +80,8 @@ instance Monad[Nec] {
 instance MonadZip[Nec] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
-    pub override def unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
+    redef zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
+    redef unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
 }
 
 instance Foldable[Nec] {
@@ -90,59 +92,52 @@ instance Foldable[Nec] {
 
 instance UnorderedFoldable[Nec] {
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
-    override pub def isEmpty(_: Nec[a]): Bool = false
-    override pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
-    override pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
-    override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    redef isEmpty(_: Nec[a]): Bool = false
+    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
+    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
 }
 
 instance Traversable[Nec] {
     pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
-    pub override def sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
+    redef sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
 }
 
 instance Reducible[Nec] {
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
-    override pub def head(l: Nec[a]): a = Nec.head(l)
-    override pub def last(l: Nec[a]): a = Nec.last(l)
-    override pub def init(l: Nec[a]): List[a] = Nec.init(l)
-    override pub def tail(l: Nec[a]): List[a] = Nec.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
-    override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
-    override pub def toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
-    override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
+    redef head(l: Nec[a]): a = Nec.head(l)
+    redef last(l: Nec[a]): a = Nec.last(l)
+    redef init(l: Nec[a]): List[a] = Nec.init(l)
+    redef tail(l: Nec[a]): List[a] = Nec.tail(l)
+    redef exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
+    redef find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
+    redef findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
+    redef findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
+    redef memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
+    redef dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
+    redef takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
+    redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
+    redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
+    redef toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
-        StringBuilder.appendString!("Nec#{", sb);
-        Nec.forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-        }, c);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 
-instance Iterable[Nec] {
+instance Iterable[Nec[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
 }
 
 instance ToJava[Nec[a]] {
-    type O = ##java.util.List
-    pub def toJava(l: Nec[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    type Out = JList
+    type Aef = IO
+    pub def toJava(l: Nec[a]): JList \ IO = Adaptor.toList(l)
 }
 
 mod Nec {
@@ -236,9 +231,14 @@ mod Nec {
     }
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
+
+    ///
+    /// Returns the number of elements in `c`.
+    ///
+    pub def size(c: Nec[a]): Int32 = length(c)
 
     ///
     /// Returns a new Nec formed by appending the Necs `c1` and `c2`.
@@ -372,7 +372,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
@@ -384,7 +384,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, eidentity)
+        loop(c, 0, x -> checked_ecast(x))
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -396,7 +396,7 @@ mod Nec {
             case ViewLeft.OneLeft(f2)      => k(map(f2, c))
             case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, eidentity)
+        loop(f, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
@@ -406,7 +406,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
     ///
     /// Returns the reverse of `c`.
@@ -424,10 +424,10 @@ mod Nec {
         }
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: Nec[a]): Nec[a] with Eq[a] =
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns all permutations of `c` in lexicographical order by element indices in `c`.
@@ -542,7 +542,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
 
 
@@ -584,7 +584,7 @@ mod Nec {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, constant(z))
+        case ViewLeft.OneLeft(x)      => f(x, _ -> checked_ecast(z))
         case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
@@ -654,7 +654,7 @@ mod Nec {
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
         };
-        loop(c1, c2, eidentity)
+        loop(c1, c2, x -> checked_ecast(x))
 
     ///
     /// Returns a pair of Necs, the first containing all first components in `c`
@@ -688,7 +688,7 @@ mod Nec {
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
         };
-        loop(viewLeft(xs), viewLeft(ys), eidentity)
+        loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -752,7 +752,7 @@ mod Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -798,7 +798,7 @@ mod Nec {
     /// Returns the Nec `c` as a vector.
     ///
     pub def toVector(c: Nec[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.empty(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }
@@ -813,17 +813,15 @@ mod Nec {
     /// Returns an iterator over `l`.
     ///
     def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
-        let cursor = ref vl @ rc;
-        let next = () -> match (deref cursor) {
+        let cursor = Ref.fresh(rc, vl);
+        let next = () -> match (Ref.get(cursor)) {
             case None             => None
-            case Some(OneLeft(x)) => {
-                cursor := None;
+            case Some(OneLeft(x)) =>
+                Ref.put(None, cursor);
                 Some(x)
-            }
-            case Some(SomeLeft(x, xs)) => {
-                cursor := Some(viewLeft(xs));
+            case Some(SomeLeft(x, xs)) =>
+                Ref.put(Some(viewLeft(xs)), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 
@@ -1029,8 +1027,8 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ IO = region rc {
-        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toNec
+    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle |> Array.toNec
     }
 
 }

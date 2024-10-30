@@ -16,7 +16,8 @@
 
 mod Fixpoint.Solver {
 
-    use Boxable.{box, unbox}
+    import dev.flix.runtime.Global
+
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
     use Fixpoint.Ast.Datalog.Constraint.Constraint
@@ -26,6 +27,8 @@ mod Fixpoint.Solver {
     use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint.Boxable.{box, unbox}
+    use Fixpoint.Boxed
     use Fixpoint.Interpreter.Database
 
     ///
@@ -43,8 +46,8 @@ mod Fixpoint.Solver {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def runWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
-        masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
+    def runWithStratification(d0: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+        let d = Fixpoint.Debugging.notifyPreSolve(d0);
         let compiler = cs ->
             Fixpoint.Phase.Compiler.compile(cs, stf) |>
             Fixpoint.Phase.Simplifier.simplifyStmt |>
@@ -61,8 +64,8 @@ mod Fixpoint.Solver {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        masked_cast(Fixpoint.Debugging.notifyPostSolve(model));
-        model
+        let m = Fixpoint.Debugging.notifyPostSolve(model);
+        m
     }
 
     ///
@@ -94,7 +97,7 @@ mod Fixpoint.Solver {
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
     @Internal
-    pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
+    pub def projectSym(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
@@ -108,7 +111,7 @@ mod Fixpoint.Solver {
             }, db) |>
             List.toMap |>
             Model
-        case Join(d1, d2) => union(project(p, d1), project(p, d2))
+        case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
 
     ///
@@ -118,9 +121,6 @@ mod Fixpoint.Solver {
     pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
         use Fixpoint.PredSymsOf.predSymsOf;
         use Fixpoint.SubstitutePredSym.substitute;
-
-        // Import a function that can create new ids.
-        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
         // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
@@ -133,7 +133,7 @@ mod Fixpoint.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unchecked_cast((newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
+                let nextId = unchecked_cast((Global.newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
@@ -151,8 +151,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1), (t1')`.
     ///
     @Internal
-    pub def injectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
-        Datalog[Boxed] with Order[t1], Foldable[f] =
+    pub def injectInto1(p: PredSym, ts: f[t1]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Foldable[f] =
         injectIntoX(match (v1) ->
             box(v1) ::
             Nil
@@ -165,8 +165,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2), (t1', t2')`.
     ///
     @Internal
-    pub def injectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Foldable[f] =
+    pub def injectInto2(p: PredSym, ts: f[(t1, t2)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Foldable[f] =
         injectIntoX(match (v1, v2) ->
             box(v1) ::
             box(v2) ::
@@ -180,8 +180,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
     ///
     @Internal
-    pub def injectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Foldable[f] =
+    pub def injectInto3(p: PredSym, ts: f[(t1, t2, t3)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) ->
             box(v1) ::
             box(v2) ::
@@ -197,8 +197,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
     ///
     @Internal
-    pub def injectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
+    pub def injectInto4(p: PredSym, ts: f[(t1, t2, t3, t4)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) ->
             box(v1) ::
             box(v2) ::
@@ -215,8 +215,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
     ///
     @Internal
-    pub def injectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
+    pub def injectInto5(p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) ->
             box(v1) ::
             box(v2) ::
@@ -234,8 +234,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
     ///
     @Internal
-    pub def injectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
+    pub def injectInto6(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
             box(v1) ::
             box(v2) ::
@@ -254,8 +254,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
     ///
     @Internal
-    pub def injectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
+    pub def injectInto7(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
             box(v1) ::
             box(v2) ::
@@ -276,8 +276,8 @@ mod Fixpoint.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
     ///
     @Internal
-    pub def injectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
+    pub def injectInto8(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
             box(v1) ::
             box(v2) ::
@@ -299,8 +299,8 @@ mod Fixpoint.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
     ///
     @Internal
-    pub def injectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
+    pub def injectInto9(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
             box(v1) ::
             box(v2) ::
@@ -325,8 +325,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
     ///
     @Internal
-    pub def injectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
+    pub def injectInto10(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
             box(v1) ::
             box(v2) ::
@@ -352,8 +352,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
     ///
     @Internal
-    pub def injectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
+    pub def injectInto11(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
             box(v1) ::
             box(v2) ::
@@ -380,8 +380,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
     ///
     @Internal
-    pub def injectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
+    pub def injectInto12(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
             box(v1) ::
             box(v2) ::
@@ -409,8 +409,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
     ///
     @Internal
-    pub def injectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
+    pub def injectInto13(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
             box(v1) ::
             box(v2) ::
@@ -439,8 +439,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
     ///
     @Internal
-    pub def injectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
+    pub def injectInto14(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
             box(v1) ::
             box(v2) ::
@@ -470,8 +470,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
     ///
     @Internal
-    pub def injectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
-        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
+    pub def injectInto15(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
             box(v1) ::
             box(v2) ::
@@ -491,14 +491,14 @@ mod Fixpoint.Solver {
             Nil
         , p, ts)
 
-    def injectIntoX[f: Type -> Type, t: Type, ef: Eff](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
+    def injectIntoX(f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ (ef + Foldable.Aef[f]) with Foldable[f] =
         region rc {
-            let db = MutMap.new(rc);
+            let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(rc), db);
                 MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
@@ -697,7 +697,7 @@ mod Fixpoint.Solver {
     ///
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): Vector[t] \ ef = match d {
         case Datalog(_, cs) => region rc {
-            let pFacts = MutList.new(rc);
+            let pFacts = MutList.empty(rc);
             Vector.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), body) =>
                     if (headPred == p and Vector.isEmpty(body))
@@ -710,7 +710,7 @@ mod Fixpoint.Solver {
         }
         case Model(db) => region rc {
             use Fixpoint.Ast.Ram.toDenotation;
-            let pFacts = MutList.new(rc);
+            let pFacts = MutList.empty(rc);
             let qquery = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo

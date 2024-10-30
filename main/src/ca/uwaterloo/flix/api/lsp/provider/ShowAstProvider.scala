@@ -20,31 +20,30 @@ import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.util.Similarity
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
+
+import java.nio.file.Path
 
 object ShowAstProvider {
 
   /**
     * Returns a JSON object with
     *
-    * - `title` (a string like `Namer.flix.ir`)
-    * - `text` (a string with the ir representation).
+    *   - `title` (a string like `Namer.flix.ir`)
+    *   - `text` (a string with the ir representation).
     */
-  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = root match {
-    case None =>
-      val text = "No IR available. Does the program not compile?"
-      astObject(phase, text)
-    case Some(r) =>
-      // We have to compile the program to obtain the relevant AST.
-      flix.codeGen(r)
-
-      val closestPrettyPrinter = Similarity.closestMatch(phase, AstPrinter.allPhases())
-      astObject(phase, closestPrettyPrinter())
+  def showAst()(implicit flix: Flix): JObject = {
+    val oldOpts = flix.options
+    flix.setOptions(oldOpts.copy(xprintphases = true))
+    flix.compile()
+    flix.setOptions(oldOpts)
+    pathObject(AstPrinter.astFolderPath)
   }
 
-  private def astObject(phase: String, text: String): JObject = {
-    ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+  private def pathObject(path: Path): JObject = {
+    ("path" -> path.toAbsolutePath.toString)
   }
 }

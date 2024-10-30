@@ -19,7 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, Scope}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -44,6 +46,9 @@ import scala.collection.mutable
   */
 object EffectBinder {
 
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
+
   /**
     * Transforms the AST such that effect operations will be run without an
     * operand stack.
@@ -58,8 +63,6 @@ object EffectBinder {
 
   private case class LetBinder(sym: VarSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
 
-  private case class LetRecBinder(varSym: VarSym, index: Int, defSym: DefnSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
-
   private case class NonBinder(exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
 
   /**
@@ -67,12 +70,12 @@ object EffectBinder {
     * operand stack.
     */
   private def visitDef(defn: LiftedAst.Def)(implicit flix: Flix): ReducedAst.Def = defn match {
-    case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, purity, loc) =>
+    case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, loc) =>
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val lparams = Nil
       val exp = visitExpr(exp0)
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
+      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
   }
 
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {
@@ -121,17 +124,12 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.ApplyClo(_, _, _, _, _, _) =>
+    case LiftedAst.Expr.ApplyClo(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.ApplyDef(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.ApplySelfTail(_, _, _, _, _) =>
+    case LiftedAst.Expr.ApplyDef(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
@@ -158,14 +156,7 @@ object EffectBinder {
       val e = ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
-      val e = ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
@@ -191,7 +182,7 @@ object EffectBinder {
           val exp = visitExpr(exp0)
           ReducedAst.HandlerRule(op, fparams, exp)
       }
-      ReducedAst.Expr.TryWith(e, effUse, rules1, tpe, purity, loc)
+      ReducedAst.Expr.TryWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
@@ -230,18 +221,14 @@ object EffectBinder {
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+      ReducedAst.Expr.ApplyClo(e, es, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
-
-    case LiftedAst.Expr.ApplySelfTail(sym, actuals0, tpe, purity, loc) =>
-      val actuals = actuals0.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc)
+      ReducedAst.Expr.ApplyDef(sym, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
@@ -264,12 +251,7 @@ object EffectBinder {
       binders.addOne(LetBinder(sym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
-    case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      binders.addOne(LetRecBinder(varSym, index, defSym, e1, loc))
-      visitExprInnerWithBinders(binders)(exp2)
-
-    case LiftedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
+    case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       binders.addOne(NonBinder(e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
@@ -296,7 +278,7 @@ object EffectBinder {
           val exp = visitExpr(exp0)
           ReducedAst.HandlerRule(op, fparams, exp)
       }
-      ReducedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      ReducedAst.Expr.TryWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
@@ -336,15 +318,12 @@ object EffectBinder {
       case ReducedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
-        binders.addOne(LetRecBinder(varSym, index, defSym, exp1, loc))
-        bind(exp2)
       case ReducedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
         binders.addOne(NonBinder(exp1, loc))
         bind(exp2)
       case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.TryWith(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.TryWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
     }
@@ -358,7 +337,7 @@ object EffectBinder {
     */
   private def letBindExpr(binders: mutable.ArrayBuffer[Binder])(e: ReducedAst.Expr)(implicit flix: Flix): ReducedAst.Expr.Var = {
     val loc = e.loc.asSynthetic
-    val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)(Level.Default, flix)
+    val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)
     binders.addOne(LetBinder(sym, e, loc))
     ReducedAst.Expr.Var(sym, e.tpe, loc)
   }
@@ -371,8 +350,6 @@ object EffectBinder {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
         ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
-      case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
-        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (NonBinder(exp1, loc), acc) =>
         ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
     }

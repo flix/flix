@@ -5,11 +5,11 @@ mod Test.Handler.Gen.Int64 {
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int64): List[Int64] =
         region rc {
-            let counter = ref 0i64 @ rc;
+            let counter = Ref.fresh(rc, 0i64);
             try {
                 generator(); Nil
             } with Gen {
@@ -20,8 +20,8 @@ mod Test.Handler.Gen.Int64 {
         }
 
     def getAndInc(r: Ref[Int64, r]): Int64 \ r =
-        let i = deref r;
-        r := (i + 1i64);
+        let i = Ref.get(r);
+        Ref.put(i + 1i64, r);
         i
 
     def range(a: Int64, b: Int64): List[Int64] =
