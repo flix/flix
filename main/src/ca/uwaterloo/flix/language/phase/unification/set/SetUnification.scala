@@ -31,12 +31,13 @@ object SetUnification {
     *
     * @param sizeThreshold if positive, [[solve]] will give up before SVE if there are more equations than this
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
+    * @param zhegalkin if true, use Zhegalkin polynomials for SVE.
     */
-  final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int)
+  final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int, zhegalkin: Boolean)
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(10, 10_000)
+    val default: Options = Options(25, 10_000, zhegalkin = false)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -105,26 +106,6 @@ object SetUnification {
     runWithState(state, runRule(trivial), trivialPhaseName)
     runWithState(state, assertSveEquationCount, "Assert Size")
     runWithState(state, runRule(sve), "SVE")
-
-    // Experiment with Zhegalkin polynomials.
-    //        for ((_, f) <- state.subst.m) {
-    //          f match {
-    //            case SetFormula.Empty => // nop
-    //            case SetFormula.Var(_) => // nop
-    //            case SetFormula.ElemSet(_) => // nop
-    //            case SetFormula.Cst(_) => // nop
-    //            case _ =>
-    //              def withBound(s: String, b: Int): String = {
-    //                val len = s.length
-    //                if (len < b) s else s.substring(0, b - 3) + s"... ${len - (b + 3)} more"
-    //              }
-    //
-    //              val z = Zhegalkin.toZhegalkin(f)
-    //              val s1 = withBound(f.toString, 100)
-    //              val s2 = withBound(z.toString, 100)
-    //              println(f"$s1%100s -- $s2")
-    //          }
-    //        }
 
     (state.eqs, state.subst)
   }
@@ -463,6 +444,16 @@ object SetUnification {
   }
 
   /**
+   * Runs SVE -- either using SetFormulas or Zhegalkin polynomials.
+   */
+  private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
+    if (opts.zhegalkin)
+      sveZhegalkin(eq)
+    else
+      sveSetFormula(eq)
+  }
+
+  /**
     * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
     *
     * SVE can always make progress, so [[None]] is never returned.
@@ -470,30 +461,7 @@ object SetUnification {
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
-
-    if (false) {
-      implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
-      val f1 = Zhegalkin.toZhegalkin(eq.f1)
-      val f2 = Zhegalkin.toZhegalkin(eq.f2)
-      val q = alg.mkXor(f1, f2)
-      val fvs = alg.freeVars(q).toList
-      try {
-        val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
-        println("SUCCESS: " + subst)
-        val m = subst.m.toList.map {
-          case (x, e) => x -> Zhegalkin.toSetFormula(e)
-        }.toMap
-        println(m)
-        println()
-        //return Some(Nil, SetSubstitution(m))
-      } catch {
-        case _: BoolUnificationException =>
-          println("FAILURE: " + eq + s"    ----    ($f1 ~ $f2)")
-      }
-    }
-
-
+  private def sveSetFormula(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     val query = mkEmptyQuery(eq.f1, eq.f2)
     val fvs = query.variables.toList.reverse
     try {
@@ -502,6 +470,32 @@ object SetUnification {
     } catch {
       case NoSolutionException() => Some(List(eq.toUnsolvable), SetSubstitution.empty)
       case ComplexException(msg) => Some(List(eq.toTimeout(msg)), SetSubstitution.empty)
+    }
+  }
+
+  /**
+   * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
+   *
+   * SVE can always make progress, so [[None]] is never returned.
+   *
+   * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
+   * [[Equation.Status.Timeout]].
+   */
+  private def sveZhegalkin(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
+    val f1 = Zhegalkin.toZhegalkin(eq.f1)
+    val f2 = Zhegalkin.toZhegalkin(eq.f2)
+    val q = alg.mkXor(f1, f2)
+    val fvs = alg.freeVars(q).toList
+    try {
+      val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
+      val m = subst.m.toList.map {
+        case (x, e) => x -> Zhegalkin.toSetFormula(e)
+      }.toMap
+      Some(Nil, SetSubstitution(m))
+    } catch {
+      case _: BoolUnificationException =>
+        Some(List(eq.toUnsolvable), SetSubstitution.empty)
     }
   }
 
