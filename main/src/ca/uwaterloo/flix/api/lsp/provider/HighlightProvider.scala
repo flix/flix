@@ -30,7 +30,10 @@ object HighlightProvider {
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
     val highlights = for {
-      sym <- stackConsumer.getStack.headOption.map { case sym: Symbol => sym }
+      sym <- stackConsumer.getStack.headOption match {
+        case Some(sym: Symbol) => Some(sym)
+        case _ => None
+      }
 
       occurConsumer = SymbolOccurrenceConsumer(sym)
       acceptor = Visitor.FileAcceptor(uri)
