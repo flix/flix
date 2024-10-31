@@ -128,37 +128,41 @@ object Zhegalkin {
   private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
     // Performance: Special cases
     // 0 ⊕ a = a (Identity Law)
-    if (z1 == ZhegalkinExpr.zero) {
+    if (z1 eq ZhegalkinExpr.zero) {
       return z2
     }
     // a ⊕ 0 = a (Identity Law)
-    if (z2 == ZhegalkinExpr.zero) {
+    if (z2 eq ZhegalkinExpr.zero) {
       return z1
     }
-    // a ⊕ a = Ø (Identity Law)
-    if (z1 == z2) {
-      return ZhegalkinExpr.zero
-    }
 
-    // Otherwise: We have to perform the actual multiplication.
-    (z1, z2) match {
-      case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-        val c = mkXor(c1, c2)
-        // Eliminate duplicates: t ⊕ t = 0
-        val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
-
-        // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
-        val grouped = tsr1.groupBy(_.vars).toList
-        val resTerms = grouped.map {
-          case (vars, l) =>
-            val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
-              case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
-            }
-            ZhegalkinTerm(mergedCst, vars)
-        }
-        mkZhegalkinExpr(c, resTerms)
-    }
+    // Perform a cache lookup or an actual computation.
+    ZhegalkinCache.lookupXor(z1, z2, computeXor)
   }
+
+  /**
+    * Computes and returns the xor of the given two Zhegalkin expressions `e1` and `e2`.
+    *
+    * Does not use any simplification rules nor any cache.
+    */
+  private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
+    case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
+      val c = mkXor(c1, c2)
+      // Eliminate duplicates: t ⊕ t = 0
+      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+
+      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
+      val grouped = tsr1.groupBy(_.vars).toList
+      val resTerms = grouped.map {
+        case (vars, l) =>
+          val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
+            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+          }
+          ZhegalkinTerm(mergedCst, vars)
+      }
+      mkZhegalkinExpr(c, resTerms)
+  }
+
 
   /** Returns the complement of the Zhegalkin expr. */
   private def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
@@ -313,26 +317,6 @@ object Zhegalkin {
     case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
   }
 
-  /**
-    * Returns the given Zhegalkin term `c ∩ x1 ∩ x2 ∩ ... ∩ xn` as SetFormula.
-    */
-  def toSetFormula(t: ZhegalkinTerm): SetFormula = t match {
-    case ZhegalkinTerm(cst, vars) => vars.foldLeft(toSetFormula(cst)) {
-      case (acc, x) if x.flexible => SetFormula.mkInter(acc, SetFormula.Var(x.v))
-      case (acc, x) => SetFormula.mkInter(acc, SetFormula.Cst(x.v))
-    }
-  }
-
-  /**
-    * Returns the given Zhegalkin constant as a SetFormula.
-    */
-  def toSetFormula(c: ZhegalkinConstant): SetFormula = c match {
-    case ZhegalkinConstant(s) => s match {
-      case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
-      case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
-    }
-  }
-
   object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
     override def isEquivBot(f: ZhegalkinExpr): Boolean = isEmpty(f)
 
@@ -350,8 +334,8 @@ object Zhegalkin {
 
     override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkInter(f1, f2)
 
-    // Performance: It is important that we override the default implementation of Xor.
-    override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinCache.lookupXor(f1, f2, Zhegalkin.mkXor)
+    // Performance: We must override the default implementation of `mkXor` to increase performance.
+    override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr =  Zhegalkin.mkXor(f1, f2)
 
     override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = Zhegalkin.zfreeVars(f)
 
