@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 import ca.uwaterloo.flix.util.Result
 
@@ -482,7 +482,7 @@ object SetUnification {
    * [[Equation.Status.Timeout]].
    */
   private def sveZhegalkin(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
-    implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
+    implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val f1 = Zhegalkin.toZhegalkin(eq.f1)
     val f2 = Zhegalkin.toZhegalkin(eq.f2)
     val q = alg.mkXor(f1, f2)

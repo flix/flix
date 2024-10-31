@@ -125,7 +125,7 @@ object Zhegalkin {
   }
 
   /** Returns the xor of the two Zhegalkin expressions. */
-  private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
+  def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
     // Performance: Special cases
     // 0 ⊕ a = a (Identity Law)
     if (z1 eq ZhegalkinExpr.zero) {
@@ -165,7 +165,7 @@ object Zhegalkin {
 
 
   /** Returns the complement of the Zhegalkin expr. */
-  private def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
+  def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
     // ¬a = 1 ⊕ a
     mkXor(ZhegalkinExpr.one, a)
 
@@ -175,7 +175,7 @@ object Zhegalkin {
   //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
-  private def zmkInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
+  def zmkInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, z2)
       ts1.foldLeft(zero) {
@@ -218,7 +218,7 @@ object Zhegalkin {
   }
 
   /** Returns the union of the two Zhegalkin expressions. */
-  private def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
+  def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
     /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
     mkXor(mkXor(a, b), zmkInter(a, b))
   }
@@ -226,7 +226,7 @@ object Zhegalkin {
   //
   // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
   //
-  private def mapExpr(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  def mapExpr(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(_, Nil) => z
 
     case ZhegalkinExpr(cst, terms) => terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
@@ -248,10 +248,10 @@ object Zhegalkin {
     *
     * Note: The representation of Zhegalkin polynomials is unique, hence we can use a simple equality check here.
     */
-  private def isEmpty(z: ZhegalkinExpr): Boolean = z == ZhegalkinExpr.zero
+  def isEmpty(z: ZhegalkinExpr): Boolean = z == ZhegalkinExpr.zero
 
   // TODO: Need to distinguish free and rigid variables.
-  private def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
+  def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
     case ZhegalkinExpr(_, terms) => terms.foldLeft(SortedSet.empty[Int]) {
       case (acc, term) => acc ++ freeVarsTerm(term)
     }
@@ -317,30 +317,7 @@ object Zhegalkin {
     case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
   }
 
-  object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
-    override def isEquivBot(f: ZhegalkinExpr): Boolean = isEmpty(f)
 
-    override def mkBot: ZhegalkinExpr = ZhegalkinExpr.zero
-
-    override def mkTop: ZhegalkinExpr = ZhegalkinExpr.one
-
-    override def mkCst(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))
-
-    override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
-
-    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkNot(f)
-
-    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkUnion(f1, f2)
-
-    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkInter(f1, f2)
-
-    // Performance: We must override the default implementation of `mkXor` to increase performance.
-    override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr =  Zhegalkin.mkXor(f1, f2)
-
-    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = Zhegalkin.zfreeVars(f)
-
-    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.mapExpr(fn, f)
-  }
 
 }
 
