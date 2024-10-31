@@ -29,14 +29,15 @@ object Zhegalkin {
   case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
     override def toString: String = if (flexible) s"x$v" else s"x!$v"
 
-    override def equals(obj: Any): Boolean = obj match {
-      case that: ZhegalkinVar => this.v == that.v
-      case _ => false
+    override def compare(that: ZhegalkinVar): Int = {
+      val cmp = this.v - that.v
+      if (cmp != 0) {
+        return cmp
+      }
+      val x = if (this.flexible) 0 else 1
+      val y = if (that.flexible) 0 else 1
+      x - y
     }
-
-    override def hashCode(): Int = v
-
-    override def compare(that: ZhegalkinVar): Int = this.v.compare(that.v)
   }
 
   /** Companion object for [[ZhegalkinConstant]] */
@@ -44,7 +45,7 @@ object Zhegalkin {
     /** A Zhegalkin constant that represents the empty set. */
     val empty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
 
-    /** A Zhegalkin constant that represents the university. */
+    /** A Zhegalkin constant that represents the universe. */
     val universe: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
   }
 
@@ -76,7 +77,7 @@ object Zhegalkin {
   }
 
   /** Companion object for [[ZhegalkinExpr]] */
-  private object ZhegalkinExpr {
+  object ZhegalkinExpr {
     /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
     val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
 
@@ -348,6 +349,9 @@ object Zhegalkin {
     override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkUnion(f1, f2)
 
     override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkInter(f1, f2)
+
+    // Performance: It is important that we override the default implementation of Xor.
+    override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinCache.lookupXor(f1, f2, Zhegalkin.mkXor)
 
     override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = Zhegalkin.zfreeVars(f)
 
