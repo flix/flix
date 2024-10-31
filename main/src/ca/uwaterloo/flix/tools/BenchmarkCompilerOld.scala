@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL.*
@@ -227,6 +228,9 @@ object BenchmarkCompilerOld {
     * Returns a Flix object configured with the benchmark program.
     */
   private def newFlix(o: Options): Flix = {
+    // Clear caches
+    ZhegalkinCache.clearCaches()
+
     val flix = new Flix()
 
     flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
