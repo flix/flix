@@ -39,6 +39,15 @@ object Zhegalkin {
     override def compare(that: ZhegalkinVar): Int = this.v.compare(that.v)
   }
 
+  /** Companion object for [[ZhegalkinConstant]] */
+  private object ZhegalkinConstant {
+    /** A Zhegalkin constant that represents the empty set. */
+    val empty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
+
+    /** A Zhegalkin constant that represents the university. */
+    val universe: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
+  }
+
   /** Represents a set Zhegalkin constant (i.e. a set or co-set) */
   case class ZhegalkinConstant(s: CofiniteIntSet) {
     def compl: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.complement(s))
@@ -57,9 +66,6 @@ object Zhegalkin {
     }
   }
 
-  private val ZEmpty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
-  private val ZUniverse: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
-
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
   case class ZhegalkinTerm(cst: ZhegalkinConstant, vars: SortedSet[ZhegalkinVar]) {
     override def toString: String =
@@ -67,6 +73,18 @@ object Zhegalkin {
         cst.toString
       else
         s"$cst ∩ ${vars.mkString(" ∩ ")}"
+  }
+
+  /** Companion object for [[ZhegalkinExpr]] */
+  private object ZhegalkinExpr {
+    /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
+    val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
+
+    /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
+    val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
+
+    /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
+    def mkVar(x: ZhegalkinVar): ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(x))))
   }
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
@@ -91,8 +109,13 @@ object Zhegalkin {
   /**
     * A smart constructor to filter empty intersections.
     */
-  private def mkZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]): ZhegalkinExpr =
-    ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  private def mkZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+    case (ZhegalkinConstant.empty, Nil) => ZhegalkinExpr.zero
+    case (ZhegalkinConstant.universe, Nil) => ZhegalkinExpr.one
+    case _ =>
+      // Construct a new polynomial, but ignore skip any terms where the coefficient is the empty set.
+      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  }
 
   /** Returns the xor of the two Zhegalkin constants */
   private def mkXor(c1: ZhegalkinConstant, c2: ZhegalkinConstant): ZhegalkinConstant = {
@@ -101,28 +124,45 @@ object Zhegalkin {
   }
 
   /** Returns the xor of the two Zhegalkin expressions. */
-  private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = (z1, z2) match {
-    case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = mkXor(c1, c2)
-      // Eliminate duplicates: t ⊕ t = 0
-      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+  private def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Performance: Special cases
+    // 0 ⊕ a = a (Identity Law)
+    if (z1 == ZhegalkinExpr.zero) {
+      return z2
+    }
+    // a ⊕ 0 = a (Identity Law)
+    if (z2 == ZhegalkinExpr.zero) {
+      return z1
+    }
+    // a ⊕ a = Ø (Identity Law)
+    if (z1 == z2) {
+      return ZhegalkinExpr.zero
+    }
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
-      val grouped = tsr1.groupBy(_.vars).toList
-      val resTerms = grouped.map {
-        case (vars, l) =>
-          val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
-            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
-          }
-          ZhegalkinTerm(mergedCst, vars)
-      }
-      mkZhegalkinExpr(c, resTerms)
+    // Otherwise: We have to perform the actual multiplication.
+    (z1, z2) match {
+      case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
+        val c = mkXor(c1, c2)
+        // Eliminate duplicates: t ⊕ t = 0
+        val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+
+        // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
+        val grouped = tsr1.groupBy(_.vars).toList
+        val resTerms = grouped.map {
+          case (vars, l) =>
+            val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
+              case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+            }
+            ZhegalkinTerm(mergedCst, vars)
+        }
+        mkZhegalkinExpr(c, resTerms)
+    }
   }
 
   /** Returns the complement of the Zhegalkin expr. */
   private def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
-  // ¬a = 1 ⊕ a
-    mkXor(ZhegalkinExpr(ZUniverse, Nil), a)
+    // ¬a = 1 ⊕ a
+    mkXor(ZhegalkinExpr.one, a)
 
   //
   // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
@@ -160,9 +200,9 @@ object Zhegalkin {
   //
   private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr = mkZhegalkinExpr(ZEmpty, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinConstant.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZEmpty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinConstant.empty, List(mkInterTermTerm(t, t2))))
       }
   }
 
@@ -198,11 +238,12 @@ object Zhegalkin {
     }
   }
 
-  // TODO: Just do eq check?
-  private def isEmpty(z: ZhegalkinExpr): Boolean = z match {
-    case ZhegalkinExpr(cst, Nil) => cst == ZEmpty
-    case _ => false
-  }
+  /**
+    * Returns `true` if the given Zhegalkin expression `z` represents the empty set.
+    *
+    * Note: The representation of Zhegalkin polynomials is unique, hence we can use a simple equality check here.
+    */
+  private def isEmpty(z: ZhegalkinExpr): Boolean = z == ZhegalkinExpr.zero
 
   // TODO: Need to distinguish free and rigid variables.
   private def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
@@ -219,10 +260,10 @@ object Zhegalkin {
     * Returns the given set formula as a Zhegalkin polynomial.
     */
   def toZhegalkin(f: SetFormula): ZhegalkinExpr = f match {
-    case SetFormula.Univ => ZhegalkinExpr(ZUniverse, Nil)
-    case SetFormula.Empty => ZhegalkinExpr(ZEmpty, Nil)
-    case Cst(c) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(c, flexible = false)))))
-    case Var(x) => ZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(ZhegalkinVar(x, flexible = true)))))
+    case SetFormula.Univ => ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
+    case SetFormula.Empty => ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
+    case Cst(c) => ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinConstant(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => zmkNot(toZhegalkin(f))
@@ -259,7 +300,9 @@ object Zhegalkin {
   /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
   private def evaluate(z: ZhegalkinTerm, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
     val ZhegalkinTerm(cst, vars) = z
+
     def instVar(v: ZhegalkinVar): CofiniteIntSet = if (pos.contains(v)) CofiniteIntSet.universe else CofiniteIntSet.empty
+
     (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection(_, _: CofiniteIntSet))
   }
 
@@ -292,29 +335,23 @@ object Zhegalkin {
   object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
     override def isEquivBot(f: ZhegalkinExpr): Boolean = isEmpty(f)
 
-    override def mkBot: ZhegalkinExpr = ZhegalkinExpr(ZEmpty, Nil)
+    override def mkBot: ZhegalkinExpr = ZhegalkinExpr.zero
 
-    override def mkTop: ZhegalkinExpr = ZhegalkinExpr(ZUniverse, Nil)
+    override def mkTop: ZhegalkinExpr = ZhegalkinExpr.one
 
-    override def mkCst(id: Int): ZhegalkinExpr = {
-      val x = ZhegalkinVar(id, flexible = false)
-      mkZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(x))))
-    }
+    override def mkCst(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))
 
-    override def mkVar(id: Int): ZhegalkinExpr = {
-      val x = ZhegalkinVar(id, flexible = true)
-      mkZhegalkinExpr(ZEmpty, List(ZhegalkinTerm(ZUniverse, SortedSet(x))))
-    }
+    override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
 
-    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = zmkNot(f)
+    override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkNot(f)
 
-    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = zmkUnion(f1, f2)
+    override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkUnion(f1, f2)
 
-    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = zmkInter(f1, f2)
+    override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.zmkInter(f1, f2)
 
-    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = zfreeVars(f)
+    override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = Zhegalkin.zfreeVars(f)
 
-    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = mapExpr(fn, f)
+    override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = Zhegalkin.mapExpr(fn, f)
   }
 
 }
