@@ -31,7 +31,7 @@ object WithHandlerCompleter {
   }
 
   private def fmtOp(op: TypedAst.Op): String = {
-    val fparamsString = (op.spec.fparams.map(p => p.sym.text) :+ "k").mkString(", ")
+    val fparamsString = (op.spec.fparams.map(p => p.bnd.sym.text) :+ "k").mkString(", ")
     s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }

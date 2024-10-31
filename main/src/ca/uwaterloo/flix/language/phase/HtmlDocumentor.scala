@@ -1275,7 +1275,7 @@ object HtmlDocumentor {
       // the compiler will introduce a single parameter of the unit type
       case _ =>
         docList(fparams.sortBy(_.loc)) { p =>
-          sb.append(s"<span><span>${esc(p.sym.text)}</span>: ")
+          sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
         }
