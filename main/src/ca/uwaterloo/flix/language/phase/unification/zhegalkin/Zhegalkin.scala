@@ -65,11 +65,11 @@ object Zhegalkin {
     * Uses identity laws and caching to speedup the computation.
     */
   def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
-    // 0 ⊕ a = a (Identity Law)
+    // 0 ⊕ a = a
     if (z1 eq ZhegalkinExpr.zero) {
       return z2
     }
-    // a ⊕ 0 = a (Identity Law)
+    // a ⊕ 0 = a
     if (z2 eq ZhegalkinExpr.zero) {
       return z1
     }
@@ -107,13 +107,33 @@ object Zhegalkin {
     // ¬a = 1 ⊕ a
     mkXor(ZhegalkinExpr.one, a)
 
+  def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Ø ∩ a = Ø
+    if (e1 eq ZhegalkinExpr.zero) {
+      return ZhegalkinExpr.zero
+    }
+    // a ∩ Ø = Ø
+    if (e2 eq ZhegalkinExpr.zero) {
+      return ZhegalkinExpr.zero
+    }
+    // 𝓤 ∩ a = a
+    if (e1 eq ZhegalkinExpr.one) {
+      return e2
+    }
+    if (e2 eq ZhegalkinExpr.one) {
+      return e1
+    }
+
+    computeInter(e1, e2)
+  }
+
   //
   // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //   =   (c1  ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
-  def zmkInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
+  private def computeInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, z2)
       ts1.foldLeft(zero) {
