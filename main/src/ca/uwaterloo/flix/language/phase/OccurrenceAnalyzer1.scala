@@ -216,7 +216,7 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val fp = visitFormalParam(fparam)
         val (e, o) = visit(exp)
-        val o1 = captureInLambda(o)
+        val o1 = captureVars(o)
         val occur = o1.get(fp.sym)
         val o2 = o1 - fp.sym
         (OccurrenceAst1.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
@@ -254,7 +254,7 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
         val fps = fparams.map(visitFormalParam)
         val (e1, o10) = visit(exp1)
-        val o1 = captureInLocalDef(o10)
+        val o1 = captureVars(o10)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
         val occur = o3.get(sym)
@@ -533,14 +533,7 @@ object OccurrenceAnalyzer1 {
   }
 
   // TODO: Add doc
-  private def captureInLambda(occurInfo: OccurInfo): OccurInfo = {
-    update(occurInfo) {
-      case Once => OnceInAbstraction
-    }
-  }
-
-  // TODO: Add doc
-  private def captureInLocalDef(occurInfo: OccurInfo): OccurInfo = {
+  private def captureVars(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
       case Once => OnceInAbstraction
     }
