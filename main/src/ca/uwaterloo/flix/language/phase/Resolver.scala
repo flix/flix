@@ -611,10 +611,10 @@ object Resolver {
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
   private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.Declaration.StructField(_, sym, tpe0, loc) =>
+    case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
+        tpe => ResolvedAst.Declaration.StructField(mod, sym, tpe, loc)
       }
   }
 
