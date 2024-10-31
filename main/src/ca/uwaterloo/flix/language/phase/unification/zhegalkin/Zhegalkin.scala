@@ -52,13 +52,6 @@ object Zhegalkin {
       case (s, t) => s ++ t.vars
     }
 
-    // TODO: Remove expensive assertions:
-    private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
-
-    if (grouped.exists(_._2.length > 1)) {
-      throw InternalCompilerException("Invariant violated: Duplicate term", SourceLocation.Unknown)
-    }
-
     override def toString: String =
       if (terms.isEmpty)
         cst.toString
