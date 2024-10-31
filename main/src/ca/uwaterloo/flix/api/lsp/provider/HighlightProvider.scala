@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus, StackConsumer, Visitor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Expr, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.Exception
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -29,57 +31,71 @@ object HighlightProvider {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
-    val highlights = for {
-      sym <- stackConsumer.getStack.headOption match {
-        case Some(sym: Symbol) => Some(sym)
-        case _ => None
-      }
-
-      occurConsumer = SymbolOccurrenceConsumer(sym)
-      acceptor = Visitor.FileAcceptor(uri)
-
-      _ = Visitor.visitRoot(root, occurConsumer, acceptor)
-
-      writeLoc <- getSymLoc(sym)
-
-      write = DocumentHighlight(Range.from(writeLoc), DocumentHighlightKind.Write)
-      reads = occurConsumer.occurances.flatMap(
-        occur => getSymLoc(occur) match {
-          case None => None
-          case Some(loc) => Some(DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-        }
-      )
-
-      highlights = write :: reads
-
-    } yield highlights
-
-    highlights match {
+    stackConsumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)
-      case Some(highlights) => ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+      case Some(x) => highlightAny(uri, pos, x)
     }
+
   }
 
-  private def getSymLoc(sym: Symbol): Option[SourceLocation] = sym match {
-    case sym: Symbol.VarSym => Some(sym.loc)
-    case sym: Symbol.KindedTypeVarSym => Some(sym.loc)
-    case sym: Symbol.UnkindedTypeVarSym => Some(sym.loc)
-    case sym: Symbol.DefnSym => Some(sym.loc)
-    case sym: Symbol.EnumSym => Some(sym.loc)
-    case sym: Symbol.StructSym => Some(sym.loc)
-    case sym: Symbol.RestrictableEnumSym => Some(sym.loc)
-    case sym: Symbol.CaseSym => Some(sym.loc)
-    case sym: Symbol.StructFieldSym => Some(sym.loc)
-    case sym: Symbol.RestrictableCaseSym => Some(sym.loc)
-    case sym: Symbol.TraitSym => Some(sym.loc)
-    case sym: Symbol.SigSym => Some(sym.loc)
-    case _: Symbol.LabelSym => None
-    case sym: Symbol.HoleSym => Some(sym.loc)
-    case sym: Symbol.TypeAliasSym => Some(sym.loc)
-    case sym: Symbol.AssocTypeSym => Some(sym.loc)
-    case sym: Symbol.EffectSym => Some(sym.loc)
-    case sym: Symbol.OpSym => Some(sym.loc)
-    case _: Symbol.ModuleSym => None
+  private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
+    case Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
+    case Binder(sym, _) => highlightVarSym(uri, sym)
+    case Case(sym, _, _, _) => highlightCaseSym(uri, sym)
+    case CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
+    case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightCaseSym(uri: String, sym: Symbol.CaseSym)(implicit root: Root): JObject = {
+    var occurs: List[Symbol.CaseSym] = Nil
+    def add(x: Symbol.CaseSym): Unit = {
+      occurs = x :: occurs
+    }
+
+    def check(x: Symbol.CaseSym): Unit = if (x == sym) { add(x) }
+
+    object CaseSymConsumer extends Consumer {
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = check(sym.sym)
+      override def consumeCase(cse: TypedAst.Case): Unit = check(cse.sym)
+    }
+
+    Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
+
+    val write = DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(sym => DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+  }
+
+  private def highlightVarSym(uri: String, sym: Symbol.VarSym)(implicit root: Root): JObject = {
+    var occurs: List[Symbol.VarSym] = Nil
+
+    def check(x: Symbol.VarSym): Unit = if (x == sym) { add(x) }
+
+    def add(x: Symbol.VarSym): Unit = {
+      occurs = x :: occurs
+    }
+
+    object VarSymConsumer extends Consumer {
+      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = check(symUse.sym)
+      override def consumeBinder(bnd: TypedAst.Binder): Unit = check(bnd.sym)
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Var(sym, _, _) => check(sym)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, VarSymConsumer, Visitor.FileAcceptor(uri))
+
+    val write = DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(sym => DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+
   }
 
   /**
