@@ -41,7 +41,6 @@ object Zhegalkin {
   }
 
 
-
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
   case class ZhegalkinTerm(cst: ZhegalkinConstant, vars: SortedSet[ZhegalkinVar]) {
     override def toString: String =
@@ -99,9 +98,12 @@ object Zhegalkin {
     c1.union(c2).inter(c1.inter(c2).compl)
   }
 
-  /** Returns the xor of the two Zhegalkin expressions. */
+  /**
+    * Returns the xor of the two Zhegalkin expressions.
+    *
+    * Uses identity laws and caching to speedup the computation.
+    */
   def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
-    // Performance: Special cases
     // 0 ⊕ a = a (Identity Law)
     if (z1 eq ZhegalkinExpr.zero) {
       return z2
@@ -291,7 +293,6 @@ object Zhegalkin {
     case CofiniteIntSet.Set(s) => mkElemSet(s)
     case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
   }
-
 
 
 }
