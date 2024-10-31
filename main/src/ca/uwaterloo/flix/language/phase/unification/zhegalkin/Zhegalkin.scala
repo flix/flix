@@ -15,24 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
+import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
 object Zhegalkin {
-
-  /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
-  case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
-    override def toString: String =
-      if (vars.isEmpty)
-        cst.toString
-      else
-        s"$cst ∩ ${vars.mkString(" ∩ ")}"
-  }
 
   /** Companion object for [[ZhegalkinExpr]] */
   object ZhegalkinExpr {
@@ -212,7 +201,7 @@ object Zhegalkin {
     }
   }
 
-  private def freeVarsTerm(t: Zhegalkin.ZhegalkinTerm): SortedSet[Int] = t match {
+  private def freeVarsTerm(t: ZhegalkinTerm): SortedSet[Int] = t match {
     case ZhegalkinTerm(_, vars) => vars.filter(x => x.flexible).map(_.v)
   }
 
