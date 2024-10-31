@@ -529,7 +529,7 @@ object OccurrenceAnalyzer1 {
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
-    case _ => Many
+    case _ => ManyBranch
   }
 
   // TODO: Add doc
