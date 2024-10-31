@@ -24,6 +24,12 @@ object ZhegalkinCst {
 
   /** A Zhegalkin constant that represents the universe. */
   val universe: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.universe)
+
+  /** Returns the xor of the two given Zhegalkin constants `c1` and `c2`. */
+  def mkXor(c1: ZhegalkinCst, c2: ZhegalkinCst): ZhegalkinCst = {
+    // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
+    c1.union(c2).inter(c1.inter(c2).compl)
+  }
 }
 
 /** Represents a set Zhegalkin constant (i.e. a set or co-set). A thin wrapper around [[CofiniteIntSet]]. */

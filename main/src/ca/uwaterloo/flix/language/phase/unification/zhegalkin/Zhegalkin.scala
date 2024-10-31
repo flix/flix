@@ -59,12 +59,6 @@ object Zhegalkin {
       ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
   }
 
-  /** Returns the xor of the two Zhegalkin constants */
-  private def mkXor(c1: ZhegalkinCst, c2: ZhegalkinCst): ZhegalkinCst = {
-    // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
-    c1.union(c2).inter(c1.inter(c2).compl)
-  }
-
   /**
     * Returns the xor of the two Zhegalkin expressions.
     *
@@ -91,7 +85,7 @@ object Zhegalkin {
     */
   private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = mkXor(c1, c2)
+      val c = ZhegalkinCst.mkXor(c1, c2)
       // Eliminate duplicates: t ⊕ t = 0
       val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
 
@@ -100,7 +94,7 @@ object Zhegalkin {
       val resTerms = grouped.map {
         case (vars, l) =>
           val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst(CofiniteIntSet.empty)) { // Neutral element for Xor
-            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
           }
           ZhegalkinTerm(mergedCst, vars)
       }
@@ -197,12 +191,8 @@ object Zhegalkin {
   // TODO: Need to distinguish free and rigid variables.
   def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
     case ZhegalkinExpr(_, terms) => terms.foldLeft(SortedSet.empty[Int]) {
-      case (acc, term) => acc ++ freeVarsTerm(term)
+      case (acc, term) => acc ++ term.freeVars
     }
-  }
-
-  private def freeVarsTerm(t: ZhegalkinTerm): SortedSet[Int] = t match {
-    case ZhegalkinTerm(_, vars) => vars.filter(x => x.flexible).map(_.v)
   }
 
   /**

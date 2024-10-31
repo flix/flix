@@ -20,10 +20,16 @@ import scala.collection.immutable.SortedSet
 /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
 case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
 
+  /**
+    * Returns the free (i.e. flexible) variables in `this` Zhegalkin term.
+    */
+  def freeVars: SortedSet[Int] = vars.filter(x => x.flexible).map(_.v)
+
   /** Returns a human-readable string representation of `this` Zhegalkin term. Must only be used for debugging. */
   override def toString: String =
     if (vars.isEmpty)
       cst.toString
     else
       s"$cst ∩ ${vars.mkString(" ∩ ")}"
+
 }
