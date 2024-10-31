@@ -40,32 +40,7 @@ object Zhegalkin {
     }
   }
 
-  /** Companion object for [[ZhegalkinConstant]] */
-  private object ZhegalkinConstant {
-    /** A Zhegalkin constant that represents the empty set. */
-    val empty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
 
-    /** A Zhegalkin constant that represents the universe. */
-    val universe: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
-  }
-
-  /** Represents a set Zhegalkin constant (i.e. a set or co-set) */
-  case class ZhegalkinConstant(s: CofiniteIntSet) {
-    def compl: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.complement(s))
-
-    def union(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.union(s, that.s))
-
-    def inter(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.intersection(s, that.s))
-
-    override def toString: String = {
-      if (s.isEmpty) "Ø"
-      else if (s.isUniverse) "𝓤"
-      else s match {
-        case CofiniteIntSet.Set(xs) => s"{${xs.mkString(", ")}}"
-        case CofiniteIntSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
-      }
-    }
-  }
 
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
   case class ZhegalkinTerm(cst: ZhegalkinConstant, vars: SortedSet[ZhegalkinVar]) {
