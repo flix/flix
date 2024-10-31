@@ -38,7 +38,7 @@ case class ZhegalkinCst(s: CofiniteIntSet) {
   def inter(that: ZhegalkinCst): ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.intersection(s, that.s))
 
   /**
-    * A human-readable string representation of a Zhegalkin constant.
+    * A human-readable string representation of `this` constant.
     *
     * Must only be used for debugging.
     */

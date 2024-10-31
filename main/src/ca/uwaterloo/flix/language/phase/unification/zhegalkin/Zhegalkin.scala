@@ -25,22 +25,6 @@ import scala.collection.immutable.SortedSet
 
 object Zhegalkin {
 
-  /** Represents a variable. */
-  case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
-    override def toString: String = if (flexible) s"x$v" else s"x!$v"
-
-    override def compare(that: ZhegalkinVar): Int = {
-      val cmp = this.v - that.v
-      if (cmp != 0) {
-        return cmp
-      }
-      val x = if (this.flexible) 0 else 1
-      val y = if (that.flexible) 0 else 1
-      x - y
-    }
-  }
-
-
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
   case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
     override def toString: String =
