@@ -17,25 +17,25 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.util.CofiniteIntSet
 
-/** Companion object for [[ZhegalkinConstant]] */
-object ZhegalkinConstant {
+/** Companion object for [[ZhegalkinCst]] */
+object ZhegalkinCst {
   /** A Zhegalkin constant that represents the empty set. */
-  val empty: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.empty)
+  val empty: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.empty)
 
   /** A Zhegalkin constant that represents the universe. */
-  val universe: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.universe)
+  val universe: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.universe)
 }
 
 /** Represents a set Zhegalkin constant (i.e. a set or co-set). A thin wrapper around [[CofiniteIntSet]]. */
-case class ZhegalkinConstant(s: CofiniteIntSet) {
+case class ZhegalkinCst(s: CofiniteIntSet) {
   /** Returns the complement of `this` Zhegalkin constant. */
-  def compl: ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.complement(s))
+  def compl: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.complement(s))
 
   /** Returns the union of `this` Zhegalkin constant with `that`/ */
-  def union(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.union(s, that.s))
+  def union(that: ZhegalkinCst): ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.union(s, that.s))
 
   /** Returns the intersection of `this` Zhegalkin constant with `that`. */
-  def inter(that: ZhegalkinConstant): ZhegalkinConstant = ZhegalkinConstant(CofiniteIntSet.intersection(s, that.s))
+  def inter(that: ZhegalkinCst): ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.intersection(s, that.s))
 
   /**
     * A human-readable string representation of a Zhegalkin constant.

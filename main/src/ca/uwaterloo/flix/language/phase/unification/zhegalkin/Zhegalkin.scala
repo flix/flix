@@ -42,7 +42,7 @@ object Zhegalkin {
 
 
   /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
-  case class ZhegalkinTerm(cst: ZhegalkinConstant, vars: SortedSet[ZhegalkinVar]) {
+  case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
     override def toString: String =
       if (vars.isEmpty)
         cst.toString
@@ -53,21 +53,22 @@ object Zhegalkin {
   /** Companion object for [[ZhegalkinExpr]] */
   object ZhegalkinExpr {
     /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-    val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
+    val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.empty, Nil)
 
     /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-    val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
+    val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.universe, Nil)
 
     /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
-    def mkVar(x: ZhegalkinVar): ZhegalkinExpr = ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(x))))
+    def mkVar(x: ZhegalkinVar): ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(x))))
   }
 
   /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
-  case class ZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]) {
+  case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
     def vars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
       case (s, t) => s ++ t.vars
     }
 
+    // TODO: Remove expensive assertions:
     private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
 
     if (grouped.exists(_._2.length > 1)) {
@@ -84,16 +85,16 @@ object Zhegalkin {
   /**
     * A smart constructor to filter empty intersections.
     */
-  private def mkZhegalkinExpr(cst: ZhegalkinConstant, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
-    case (ZhegalkinConstant.empty, Nil) => ZhegalkinExpr.zero
-    case (ZhegalkinConstant.universe, Nil) => ZhegalkinExpr.one
+  private def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+    case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
+    case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
     case _ =>
       // Construct a new polynomial, but ignore skip any terms where the coefficient is the empty set.
       ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
   }
 
   /** Returns the xor of the two Zhegalkin constants */
-  private def mkXor(c1: ZhegalkinConstant, c2: ZhegalkinConstant): ZhegalkinConstant = {
+  private def mkXor(c1: ZhegalkinCst, c2: ZhegalkinCst): ZhegalkinCst = {
     // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
     c1.union(c2).inter(c1.inter(c2).compl)
   }
@@ -132,7 +133,7 @@ object Zhegalkin {
       val grouped = tsr1.groupBy(_.vars).toList
       val resTerms = grouped.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinConstant = l.foldLeft(ZhegalkinConstant(CofiniteIntSet.empty)) { // Neutral element for Xor
+          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst(CofiniteIntSet.empty)) { // Neutral element for Xor
             case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
           }
           ZhegalkinTerm(mergedCst, vars)
@@ -163,7 +164,7 @@ object Zhegalkin {
   //
   // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
   //
-  private def mkInterConstantTerm(c: ZhegalkinConstant, t: ZhegalkinTerm): ZhegalkinTerm = t match {
+  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
     case ZhegalkinTerm(c2, vars) =>
       ZhegalkinTerm(c.inter(c2), vars)
   }
@@ -171,7 +172,7 @@ object Zhegalkin {
   //
   // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
   //
-  private def mkInterConstantExpr(c: ZhegalkinConstant, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  private def mkInterConstantExpr(c: ZhegalkinCst, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)
@@ -182,9 +183,9 @@ object Zhegalkin {
   //
   private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinConstant.empty, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinConstant.empty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterTermTerm(t, t2))))
       }
   }
 
@@ -242,12 +243,12 @@ object Zhegalkin {
     * Returns the given set formula as a Zhegalkin polynomial.
     */
   def toZhegalkin(f: SetFormula): ZhegalkinExpr = f match {
-    case SetFormula.Univ => ZhegalkinExpr(ZhegalkinConstant.universe, Nil)
-    case SetFormula.Empty => ZhegalkinExpr(ZhegalkinConstant.empty, Nil)
-    case Cst(c) => ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
-    case Var(x) => ZhegalkinExpr(ZhegalkinConstant.empty, List(ZhegalkinTerm(ZhegalkinConstant.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
+    case SetFormula.Univ => ZhegalkinExpr(ZhegalkinCst.universe, Nil)
+    case SetFormula.Empty => ZhegalkinExpr(ZhegalkinCst.empty, Nil)
+    case Cst(c) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
-      ZhegalkinExpr(ZhegalkinConstant(CofiniteIntSet.mkSet(s)), Nil)
+      ZhegalkinExpr(ZhegalkinCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => zmkNot(toZhegalkin(f))
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
