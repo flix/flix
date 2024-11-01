@@ -82,6 +82,7 @@ object ZhegalkinCache {
     * Clears all caches.
     */
   def clearCaches(): Unit = {
+    cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
   }
