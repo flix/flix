@@ -607,8 +607,9 @@ object ConstraintGen {
         c.expectType(structTpe, tpe, exp.loc)
         val (mutable, fieldTpe) = instantiatedFieldTpes(field.sym)
         c.unifyType(fieldTpe, tvar, loc)
-        if (mutable) c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
-        else c.unifyType(eff, evar, exp.loc)
+        // If the field is mutable, then it emits a region effect, otherwise not.
+        val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
+        c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
