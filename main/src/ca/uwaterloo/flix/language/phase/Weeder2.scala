@@ -3175,24 +3175,32 @@ object Weeder2 {
     * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
     */
   private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
-    tree.children.headOption match {
-      case Some(token@Token(_, _, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2))
-      // If child is an ErrorTree, that means the parse already reported and error.
-      // We can avoid double reporting by returning a success here.
-      // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
-      case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
-        // TODO: Do the same thing do the top level tree `tree` (the parameter to this function)
+    tree.kind match {
+      case TreeKind.ErrorTree(_) =>
         val name = text(tree).mkString("")
         Name.Ident(name, tree.loc)
-      case Some(t: Tree) if t.kind == TreeKind.CommentList =>
-        // We hit a misplaced comment.
-        val name = text(tree).mkString("")
-        val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
-        sctx.errors.add(error)
-        Name.Ident(name, tree.loc)
-      // TODO: Replace exception below with error?
-      case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
+
+      case _ => tree.children.headOption match {
+        case Some(token@Token(_, _, _, _, sp1, sp2)) =>
+          Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2))
+
+        // If child is an ErrorTree, that means the parse already reported and error.
+        // We can avoid double reporting by returning a success here.
+        // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
+        case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
+          val name = text(tree).mkString("")
+          Name.Ident(name, tree.loc)
+
+        case Some(t: Tree) if t.kind == TreeKind.CommentList =>
+          // We hit a misplaced comment.
+          val name = text(tree).mkString("")
+          val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
+          sctx.errors.add(error)
+          Name.Ident(name, tree.loc)
+
+        // TODO: Replace exception below with error?
+        case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
+      }
     }
   }
 
