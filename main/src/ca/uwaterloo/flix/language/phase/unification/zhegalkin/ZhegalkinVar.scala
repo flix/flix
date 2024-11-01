@@ -26,9 +26,9 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
   * A Zhegalkin expression should _never_ contain the same variable that is both flexible and rigid,
   * i.e. we assume that the two domains are disjoint.
   */
-case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
+case class ZhegalkinVar(id: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
   override def compare(that: ZhegalkinVar): Int = {
-    val cmp = this.v - that.v
+    val cmp = this.id - that.id
     if (cmp != 0) {
       return cmp
     }
@@ -38,5 +38,5 @@ case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar]
   }
 
   /** Returns a human-readable string representation of `this` Zhegalkin variable. Must only be used for debugging. */
-  override def toString: String = if (flexible) s"x$v" else s"x!$v"
+  override def toString: String = if (flexible) s"x$id" else s"x!$id"
 }
