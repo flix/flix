@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus, StackConsumer, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Def, Expr, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.shared.{Modifiers, SymUse}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.Exception
@@ -38,6 +38,12 @@ object HighlightProvider {
 
   }
 
+  private def getStructSymOccur(tpe: Type): Option[(Symbol.StructSym, SourceLocation)] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Struct(sym, _), loc), _, _) => Some((sym, loc))
+    case Type.Apply(tpe1: Type.Apply, _, _) => getStructSymOccur(tpe1)
+    case _ => None
+  }
+
   private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
     case Expr.Var(varSym, _, loc) => highlightVarSym(uri, varSym, loc)
     case Binder(sym, _) => highlightVarSym(uri, sym, sym.loc)
@@ -45,7 +51,38 @@ object HighlightProvider {
     case SymUse.CaseSymUse(sym, loc) => highlightCaseSym(uri, sym, loc)
     case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym, sym.loc)
     case SymUse.DefSymUse(sym, loc) => highlightDefnSym(uri, sym, loc)
+    case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym, sym.loc)
+    case tpe: Type.Apply => getStructSymOccur(tpe) match {
+      case Some((sym, loc)) => highlightStructSym(uri, sym, loc)
+      case None => mkNotFound(uri, pos)
+    }
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightStructSym(uri: String, sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+    def add(x: SourceLocation): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.StructSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
+
+    object StructSymConsumer extends Consumer {
+      override def consumeStruct(struct: TypedAst.Struct): Unit = check(struct.sym, struct.sym.loc)
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.StructNew(sym, _, _, _, _, loc) => check(sym, loc)
+        case _ => ()
+      }
+      override def consumeType(tpe: Type): Unit = getStructSymOccur(tpe).foreach{case (sym, loc) => check(sym, loc)}
+    }
+
+    Visitor.visitRoot(root, StructSymConsumer, Visitor.FileAcceptor(uri))
+
+    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightDefnSym(uri: String, sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): JObject = {
