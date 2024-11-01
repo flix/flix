@@ -42,30 +42,30 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (Substitution, List[TypeError]) = defn match {
     case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0)
   }
 
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None, _) => Validation.success(Substitution.empty)
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): (Substitution, List[TypeError]) = sig match {
+    case KindedAst.Sig(_, _, None, _) => (Substitution.empty, List.empty)
     case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0)
   }
 
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): (Substitution, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -101,18 +101,20 @@ object ConstraintSolver {
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
+
       resolve(constrs, initialSubst, renv)(Scope.Top, cenv, eenv, flix) match {
         case Result.Ok(ResolutionResult(subst, deferred, _)) =>
           Debug.stopRecording()
 
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
+          // TODO now that we return list we can report all errors
           getFirstError(deferred, renv) match {
-            case None => Validation.success(subst)
-            case Some(err) => Validation.toSoftFailure(subst, err)
+            case None => (subst, List.empty)
+            case Some(err) => (subst, List(err))
           }
 
-        case Result.Err(err) => Validation.toSoftFailure(Substitution.empty, err)
+        case Result.Err(err) => (Substitution.empty, List(err))
       }
   }
 

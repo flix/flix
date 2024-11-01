@@ -520,7 +520,8 @@ class Flix {
       afterResolver <- resolverValidation
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      (typerValidation, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      afterTyper <- typerValidation
       () = EffectVerifier.run(afterTyper)
       (afterRegions, regionErrors) = Regions.run(afterTyper)
       (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
@@ -541,8 +542,8 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      errors ++= readerErrors ::: lexerErrors ::: parserErrors ::: weederErrors ::: namerErrors ::: resolutionErrors ::: kinderErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
-      afterStratifier
+      errors ++= readerErrors ::: lexerErrors ::: parserErrors ::: weederErrors ::: namerErrors ::: resolutionErrors ::: kinderErrors :: typeErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      afterSafety
     }
 
     // Shutdown fork-join thread pool.
