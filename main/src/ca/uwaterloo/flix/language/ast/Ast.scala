@@ -25,11 +25,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
-    */
-  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
-
-  /**
     *
     * Represents that `tpe1` and `tpe2` are equivalent types.
     */

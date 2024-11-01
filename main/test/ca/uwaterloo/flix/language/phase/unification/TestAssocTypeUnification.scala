@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
@@ -41,8 +41,8 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
     val result = Unification.unifyTypes(tpe1, tpe2, renv, eqEnv)
 
     val expectedSubst = Substitution.empty
-    val expectedEconstrs = List(Ast.EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))
-    val expectedResult: Result[(Substitution, List[Ast.EqualityConstraint]), ?] = Ok((expectedSubst, expectedEconstrs))
+    val expectedEconstrs = List(EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))
+    val expectedResult: Result[(Substitution, List[EqualityConstraint]), ?] = Ok((expectedSubst, expectedEconstrs))
 
     assert(result == expectedResult)
   }
