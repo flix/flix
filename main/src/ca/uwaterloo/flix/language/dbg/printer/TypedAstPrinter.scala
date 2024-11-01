@@ -41,9 +41,9 @@ object TypedAstPrinter {
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
+    case Expr.LocalDef(TypedAst.Binder(sym, _), _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
     case Expr.Region(_, _) => DocAst.Expr.Region
-    case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
+    case Expr.Scope(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
@@ -123,7 +123,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+    case TypedAst.CatchRule(bnd, clazz, exp) => (bnd.sym, clazz, print(exp))
   }
 
   /**
@@ -138,7 +138,7 @@ object TypedAstPrinter {
     */
   private def printPattern(pattern: TypedAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
-    case Pattern.Var(sym, _, _) => printVar(sym)
+    case Pattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(sym, pat, _, _) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
@@ -168,8 +168,8 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
     */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.Ascription = {
-    val TypedAst.FormalParam(sym, _, tpe, _, _) = fp
-    DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
+    val TypedAst.FormalParam(bnd, _, tpe, _, _) = fp
+    DocAst.Expr.Ascription(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
   }
 
   /**

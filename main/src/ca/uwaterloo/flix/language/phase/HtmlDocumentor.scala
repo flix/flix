@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Doc, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Doc, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -1172,7 +1172,7 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[Ast.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
@@ -1275,7 +1275,7 @@ object HtmlDocumentor {
       // the compiler will introduce a single parameter of the unit type
       case _ =>
         docList(fparams.sortBy(_.loc)) { p =>
-          sb.append(s"<span><span>${esc(p.sym.text)}</span>: ")
+          sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
         }
