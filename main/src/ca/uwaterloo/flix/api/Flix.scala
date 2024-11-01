@@ -517,7 +517,8 @@ class Flix {
       afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
+      (typerValidation, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      afterTyper <- typerValidation
       () = EffectVerifier.run(afterTyper)
       (afterRegions, regionErrors) = Regions.run(afterTyper)
       (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
@@ -527,7 +528,7 @@ class Flix {
       (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
       (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
       (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
-      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      errors = kinderErrors ::: derivationErrors ::: typeErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
       output <- Validation.toSuccessOrSoftFailure(afterSafety, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
     } yield {
       // Update caches for incremental compilation.
