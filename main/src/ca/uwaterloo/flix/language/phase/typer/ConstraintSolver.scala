@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
@@ -42,7 +42,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (Substitution, List[TypeError]) = defn match {
     case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -53,8 +53,8 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None, _) => Validation.success(Substitution.empty)
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (Substitution, List[TypeError]) = sig match {
+    case KindedAst.Sig(_, _, None, _) => (Substitution.empty, List.empty)
     case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -65,7 +65,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (Substitution, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -108,11 +108,11 @@ object ConstraintSolver {
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
           getFirstError(deferred, renv) match {
-            case None => Validation.success(subst)
-            case Some(err) => Validation.toSoftFailure(subst, err)
+            case None => (subst, List.empty)
+            case Some(err) => (subst, List(err))
           }
 
-        case Result.Err(err) => Validation.toSoftFailure(Substitution.empty, err)
+        case Result.Err(err) => (Substitution.empty, List(err))
       }
   }
 

@@ -517,8 +517,7 @@ class Flix {
       afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-      (typerValidation, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
-      afterTyper <- typerValidation
+      (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
       () = EffectVerifier.run(afterTyper)
       (afterRegions, regionErrors) = Regions.run(afterTyper)
       (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
