@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expr
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
@@ -29,18 +30,17 @@ object Optimizer {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
-    var result = root
-
-    // only perform optimization if it is not disabled
-    if (!flix.options.xnooptimizer) {
+    if (flix.options.xnooptimizer) {
+      root
+    } else {
+      var result = root
       for (_ <- 1 to 2) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
-        val afterInliner = Inliner.run(afterOccurrenceAnalyzer.unsafeGet)
+        val afterInliner = Inliner.run(afterOccurrenceAnalyzer)
         result = afterInliner.unsafeGet
       }
+      result
     }
-
-    result
   }
 
   /**
@@ -51,9 +51,9 @@ object Optimizer {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  def isTrivialExp(exp0: Expression): Boolean = exp0 match {
-    case Expression.Constant(_, _, _) => true
-    case Expression.Var(_, _, _) => true
+  def isTrivialExp(exp0: Expr): Boolean = exp0 match {
+    case Expr.Cst(_, _, _) => true
+    case Expr.Var(_, _, _) => true
     case _ => false
   }
 }

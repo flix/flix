@@ -1,5 +1,7 @@
 mod TestRedBlackTree {
 
+    import java.util.Random
+
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
 
@@ -192,10 +194,9 @@ mod TestRedBlackTree {
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
-        let seed = 42i64;
-        let r = Random.newWithSeed(seed);
+        let rnd = new Random();
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
-            List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+            List.map(_ -> rnd.nextInt(), List.range(0, n)))
     }
 
 
@@ -218,7 +219,7 @@ mod TestRedBlackTree {
 
     @test
     def mapWithKey01(): Bool =
-        let Map.Map(t) = Map#{}: Map[Unit, Unit];
+        let Map.Map(t) = (Map#{}: Map[Unit, Unit]);
         let m = Map.Map(RedBlackTree.mapWithKey((_, v) -> v, t));
         m == Map#{}
 
@@ -250,8 +251,8 @@ mod TestRedBlackTree {
     def mapWithKey06(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new(rc);
-        discard Map.mapWithKey((k, v) -> { let b = MutList.new(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = MutList.empty(rc);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 
@@ -326,11 +327,11 @@ mod TestRedBlackTree {
 
     @test
     def eq01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] == RedBlackTree.empty(): RedBlackTree[Int32, Int32]
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == (RedBlackTree.empty(): RedBlackTree[Int32, Int32])
 
     @test
     def eq02(): Bool =
-        toRedBlackTree(Nil): RedBlackTree[Int32, Int32] == toRedBlackTree(Nil): RedBlackTree[Int32, Int32]
+        (toRedBlackTree(Nil): RedBlackTree[Int32, Int32]) == (toRedBlackTree(Nil): RedBlackTree[Int32, Int32])
 
     @test
     def eq03(): Bool =
@@ -394,18 +395,18 @@ mod TestRedBlackTree {
 
     @test
     def forEach01(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
-        RedBlackTree.forEach((k, _) -> x := k, t);
-        21 == deref x
+        RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
+        21 == Ref.get(x)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.forEach((k, _) -> x := k, t);
-        1 == deref x
+        RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
+        1 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -414,18 +415,18 @@ mod TestRedBlackTree {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
-        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
-        21 == deref x
+        RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
+        21 == Ref.get(x)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
-        0 == deref x
+        RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
+        0 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -586,7 +587,7 @@ mod TestRedBlackTree {
 
     @test
     def joinKeys01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinKeys(",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinKeys(",") == ""
 
     @test
     def joinKeys02(): Bool =
@@ -610,7 +611,7 @@ mod TestRedBlackTree {
 
     @test
     def joinValues01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinValues(",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinValues(",") == ""
 
     @test
     def joinValues02(): Bool =
@@ -634,7 +635,7 @@ mod TestRedBlackTree {
 
     @test
     def joinWith01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
 
     @test
     def joinWith02(): Bool =
@@ -657,7 +658,7 @@ mod TestRedBlackTree {
 
     @test
     def filter01(): Bool =
-        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        RedBlackTree.filter(x -> x > 1, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty()
 
     @test
     def filter02(): Bool =
@@ -674,7 +675,7 @@ mod TestRedBlackTree {
 
     @test
     def filterMap01(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree[Int32, Int32])
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, (RedBlackTree.empty(): RedBlackTree[Int32, Int32]))
             == RedBlackTree.empty()
 
     @test
@@ -693,10 +694,10 @@ mod TestRedBlackTree {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let t = RedBlackTree.empty(): RedBlackTree[Int32, Int32];
+        let t = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -706,7 +707,7 @@ mod TestRedBlackTree {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, 1), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -718,7 +719,7 @@ mod TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((2, 2), d2);
         MutDeque.pushBack((3, 3), d2);
         MutDeque.pushBack((4, 4), d2);
@@ -733,7 +734,7 @@ mod TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront((4, 'd'), d2);
         MutDeque.pushFront((3, 'c'), d2);
         MutDeque.pushFront((2, 'b'), d2);
@@ -749,36 +750,36 @@ mod TestRedBlackTree {
 
     @test
     def mapAWithKey01(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty()) and deref st == '#'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty()) and Ref.get(st) == '#'
     }
 
     @test
     def mapAWithKey02(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and Ref.get(st) == 'a'
     }
 
     @test
     def mapAWithKey03(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and Ref.get(st) == 'b'
     }
 
     @test
     def mapAWithKey04(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
-                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and Ref.get(st) == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -787,7 +788,7 @@ mod TestRedBlackTree {
 
     @test
     def iterator01(): Bool = region rc {
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.iterator(rc) |> Iterator.toList == Nil
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test

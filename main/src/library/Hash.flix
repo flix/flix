@@ -14,6 +14,14 @@
  *  limitations under the License.
  */
 
+import java.lang.Byte
+import java.lang.Character
+import java.lang.Double
+import java.lang.Float
+import java.lang.Integer
+import java.lang.Long
+import java.lang.Short
+
 ///
 /// A trait for types that can be hashed.
 ///
@@ -38,63 +46,43 @@ instance Hash[Bool] {
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int32 =
-        import static java.lang.Character.hashCode(Char): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Char): Int32 = unsafe Character.hashCode(x)
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int32 =
-        import static java.lang.Float.hashCode(Float32): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Float32): Int32 = unsafe Float.hashCode(x)
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int32 =
-        import static java.lang.Double.hashCode(Float64): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Float64): Int32 = unsafe Double.hashCode(x)
 }
 
 instance Hash[BigDecimal] {
-    pub def hash(x: BigDecimal): Int32 =
-        import java.math.BigDecimal.hashCode(): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: BigDecimal): Int32 = unsafe x.hashCode()
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int32 =
-        import static java.lang.Byte.hashCode(Int8): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Int8): Int32 = unsafe Byte.hashCode(x)
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 =
-        import static java.lang.Short.hashCode(Int16): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Int16): Int32 = unsafe Short.hashCode(x)
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int32 =
-        import static java.lang.Integer.hashCode(Int32): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Int32): Int32 = unsafe Integer.hashCode(x)
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 =
-        import static java.lang.Long.hashCode(Int64): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: Int64): Int32 = unsafe Long.hashCode(x)
 }
 
 instance Hash[String] {
-    pub def hash(x: String): Int32 =
-        import java.lang.String.hashCode(): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: String): Int32 = unsafe x.hashCode()
 }
 
 instance Hash[BigInt] {
-    pub def hash(x: BigInt): Int32 =
-        import java.math.BigInteger.hashCode(): Int32 \ {};
-        hashCode(x)
+    pub def hash(x: BigInt): Int32 = unsafe x.hashCode()
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {
@@ -179,4 +167,5 @@ mod Hash {
     /// Returns a number used for combining hash values.
     ///
     pub def magic(): Int32 = -1640531535
+
 }

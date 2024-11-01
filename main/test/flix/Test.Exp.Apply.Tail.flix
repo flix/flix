@@ -28,13 +28,37 @@ mod Test.Exp.Apply.Tail {
     def testApplyTail09(): Bool = a1(42, z -> z + 1)
 
     @test
-    def testApplyTail10(): Int32 =  ping(123, x -> x)
+    def testApplyTail10(): Int32 = ping(123, x -> x)
 
     @test
-    def testApplyTail11(): Int32 =  ping(12345, x -> x)
+    def testApplyTail11(): Int32 = ping(12345, x -> x)
 
     @test
-    def testApplyTail12(): Int32 =  ping(1234567, x -> x)
+    def testApplyTail12(): Int32 = ping(1234567, x -> x)
+
+    @test
+    def testApplyTail13(): Bool = region rc {
+        let n = Ref.fresh(rc, 1);
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail14(): Bool = region rc {
+        let n = Ref.fresh(rc, 12);
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail15(): Bool = region rc {
+        let n = Ref.fresh(rc, 1234);
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail16(): Bool = region rc {
+        let n = Ref.fresh(rc, 1234567);
+        stmtRecursion(n)
+    }
 
     def odd(n: Int32): Bool = match n {
         case 0 => false
@@ -70,6 +94,11 @@ mod Test.Exp.Apply.Tail {
         case 0 => c(0)
         case 1 => c(1)
         case x => ping(x - 1, z -> c(z + 1))
+    }
+
+    def stmtRecursion(n: Ref[Int32, r]): Bool \ r = {
+        Ref.put(Ref.get(n) - 1, n);
+        if (Ref.get(n) == 0) true else stmtRecursion(n)
     }
 
 }

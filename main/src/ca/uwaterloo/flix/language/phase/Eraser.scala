@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -14,22 +14,20 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Ref
-  *   - component type erasure
-  *   - deref casting
-  * - Tuple
-  *   - component type erasure
-  *   - index casting
-  * - Record
-  *   - component type erasure
-  *   - select casting
-  * - Lazy
-  *   - component type erasure
-  *   - force casting
-  * - Enum (todo)
-  * - Function
-  *   - result type boxing, this includes return types of defs and their applications
-  *   - function call return value casting
+  *   - Ref
+  *     - component type erasure
+  *   - Tuple
+  *     - component type erasure
+  *     - index casting
+  *   - Record
+  *     - component type erasure
+  *     - select casting
+  *   - Lazy
+  *     - component type erasure
+  *     - force casting
+  *   - Function
+  *     - result type boxing, this includes return types of defs and their applications
+  *     - function call return value casting
   */
 object Eraser {
 
@@ -40,10 +38,10 @@ object Eraser {
   }
 
   private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), purity, loc)
+      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
@@ -106,10 +104,9 @@ object Eraser {
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Deref =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.Assign => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unbox => ApplyAtomic(op, es, t, purity, loc)
@@ -121,6 +118,7 @@ object Eraser {
         case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Throw => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
@@ -131,12 +129,10 @@ object Eraser {
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == CallType.TailCall) ac
-      else castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == CallType.TailCall) ad
-      else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -147,16 +143,14 @@ object Eraser {
       JumpTo(sym, visitType(tpe), purity, loc)
     case Let(sym, exp1, exp2, tpe, purity, loc) =>
       Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
-    case LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      LetRec(varSym, index, defSym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Stmt(exp1, exp2, tpe, purity, loc) =>
       Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Scope(sym, exp, tpe, purity, loc) =>
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
-    case TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), box(tpe), purity, loc)
+    case TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
@@ -183,8 +177,9 @@ object Eraser {
   }
 
   private def visitType(tpe: MonoType): MonoType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
+      case Void => Void
       case AnyType => AnyType
       case Unit => Unit
       case Bool => Bool
@@ -200,11 +195,12 @@ object Eraser {
       case String => String
       case Regex => Regex
       case Region => Region
+      case Null => Null
       case Array(tpe) => Array(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
-      case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
-      case MonoType.Enum(sym) => MonoType.Enum(sym)
+      case MonoType.Enum(sym, targs) => MonoType.Enum(sym, targs.map(erase))
+      case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
@@ -213,7 +209,7 @@ object Eraser {
   }
 
   private def erase(tpe: MonoType): MonoType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => Bool
       case Char => Char
@@ -223,9 +219,9 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) | Lazy(_) | Tuple(_) | MonoType.Enum(_, _) |
+           MonoType.Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }

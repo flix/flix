@@ -18,8 +18,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -36,7 +37,7 @@ object JvmBackend {
     implicit val r: Root = root
 
     // Generate all classes.
-    val allClasses = flix.subphase("CodeGen") {
+    val allClasses = {
 
       //
       // First, collect information and types needed to generate classes.
@@ -61,11 +62,11 @@ object JvmBackend {
       val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
-      val erasedRefTypes = JvmOps.getErasedRefsOf(types)
       val erasedLazyTypes = JvmOps.getErasedLazyTypesOf(types)
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
       val erasedTuplesTypes = JvmOps.getErasedTupleTypesOf(types)
+      val erasedStructTypes = JvmOps.getErasedStructTypesOf(types)
 
       //
       // Second, generate classes.
@@ -82,16 +83,15 @@ object JvmBackend {
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
-      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
+      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(List(tpe)))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
+      val structClasses = erasedStructTypes.map(genClass).toMap
 
       // Generate record classes.
       val recordInterfaces = Map(genClass(BackendObjType.Record))
       val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty))
       val recordExtendClasses = erasedExtendTypes.map(genClass).toMap
-
-      val refClasses = erasedRefTypes.map(genClass).toMap
 
       val lazyClasses = erasedLazyTypes.map(genClass).toMap
 
@@ -127,7 +127,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -139,10 +139,10 @@ object JvmBackend {
         taggedAbstractClass,
         tagClasses,
         tupleClasses,
+        structClasses,
         recordInterfaces,
         recordEmptyClasses,
         recordExtendClasses,
-        refClasses,
         lazyClasses,
         anonClasses,
         unitClass,
@@ -175,11 +175,9 @@ object JvmBackend {
     // Write each class (and interface) to disk.
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.output.nonEmpty) {
-      flix.subphase("WriteClasses") {
-        for ((_, jvmClass) <- allClasses) {
-          flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
-        }
+      for ((_, jvmClass) <- allClasses) {
+        flix.subtask(jvmClass.name.toBinaryName, sample = true)
+        JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
       }
     }
 
@@ -199,7 +197,7 @@ object JvmBackend {
       // Return the compilation result.
       new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
-  }
+  }(DebugNoOp())
 
   private def genClass(g: Generatable)(implicit flix: Flix): (JvmName, JvmClass) = {
     (g.jvmName, JvmClass(g.jvmName, g.genByteCode()))
@@ -229,7 +227,7 @@ object JvmBackend {
     // Construct the reflected function.
     (args: Array[AnyRef]) => {
       // Construct the arguments array.
-      val argsArray = if (args.isEmpty) Array(null) else args
+      val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
       val parameterCount = defn.method.getParameterCount
       val argumentCount = argsArray.length
       if (argumentCount != parameterCount) {
@@ -239,7 +237,7 @@ object JvmBackend {
       // Perform the method call using reflection.
       try {
         // Call the method passing the arguments.
-        val result = defn.method.invoke(null, argsArray: _*)
+        val result = defn.method.invoke(null, argsArray *)
         result
       } catch {
         case e: InvocationTargetException =>

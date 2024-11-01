@@ -76,7 +76,7 @@ object Tester {
 
       // Import formatter.
       val formatter = flix.getFormatter
-      import formatter._
+      import formatter.*
 
       // Initialize the terminal.
       implicit val terminal: Terminal = TerminalBuilder
@@ -148,7 +148,7 @@ object Tester {
             terminal.flush()
             finished = true
 
-          case _ => // nop
+          case null => () // tester have not started yet, retry
         }
       }
     }

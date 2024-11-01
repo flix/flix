@@ -35,6 +35,6 @@ def _f(): Unit =
 /// However, the type system ensures that we do not mix facts of
 /// different type:
 def _g(): Unit =
-    /// Uncomment to see that the composition does not type check:
-    /// let _r1 = solve getEdgesWithColor() <+> getEdgesWithNumbers();
+    // Uncomment to see that the composition does not type check:
+    // let _r1 = solve getEdgesWithColor() <+> getEdgesWithNumbers();
     ()

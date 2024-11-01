@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
@@ -35,8 +36,10 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   private val FileH = "FileH.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
-
   private var flix: Flix = _
+
+  // The default security context.
+  private implicit val sctx: SecurityContext = SecurityContext.AllPermissions
 
   before {
     flix = new Flix()
@@ -53,7 +56,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {
@@ -61,7 +64,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |    pub def cga(g: G[a]): a =
          |        let G.G(r) = g;
-         |        r.el
+         |        r#el
          |}
          |""".stripMargin)
     flix.addSourceCode(FileD,
@@ -84,7 +87,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -105,7 +108,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Int32, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cg(x: a): a
          |}
@@ -131,13 +134,13 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
          |}
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -147,7 +150,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.03") {
     flix.addSourceCode(FileA,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): D[a] = D.DA(x)
          |    pub def cda(d: D[a]): a = match d {
@@ -186,7 +189,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
          |    pub def cd(x: a): D[a]
          |    pub def cda(d: D[a]): a = match d {
@@ -215,7 +218,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
          |""".stripMargin)
@@ -237,7 +240,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (F.f(x) == x) y else z
          |    pub def cd(x: a): DDD.D[a] =
          |        use DDD.D;
@@ -272,10 +275,10 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.07") {
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = { x = x }
-         |    pub def cda(l: L[a]): a = l.x
+         |    pub def cda(l: L[a]): a = l#x
          |}
          |""".stripMargin)
     flix.addSourceCode(FileF,
@@ -289,7 +292,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.08") {
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {

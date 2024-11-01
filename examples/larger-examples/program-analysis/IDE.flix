@@ -53,22 +53,22 @@ mod IDE {
              Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
-        let main = ide.main;
+        let main = ide#main;
 
         // Extract apply and compose.
-        let apply = ide.apply;
-        let compose = ide.compose;
+        let apply = ide#apply;
+        let compose = ide#compose;
 
-        def prependId(v) = Vector.append(Vector#{(ide.zero, ide.id)}, v);
-        def augmentForZero(d, v) = if (d == ide.zero) prependId(v) else v;
+        def prependId(v) = Vector#{(ide#zero, ide#id)} ++ v;
+        def augmentForZero(d, v) = if (d == ide#zero) prependId(v) else v;
 
-        def eshIntra1(n, d) = augmentForZero(d, ide.eshIntra(n, d));
-        def eshCallStart1(n, d, p) = augmentForZero(d, ide.eshCallStart(n, d, p));
-        def eshEndReturn1(p, d, n) = augmentForZero(d, ide.eshEndReturn(p, d, n));
+        def eshIntra1(n, d) = augmentForZero(d, ide#eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ide#eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ide#eshEndReturn(p, d, n));
 
-        ///
-        /// The core IDE Framework.
-        ///
+        //
+        // The core IDE Framework.
+        //
         let p = #{
             // nodes in a given procedure
             InProc(p, start) :- StartNode(p, start).
@@ -94,12 +94,12 @@ mod IDE {
                 CallGraph(call, target),
                 let (d3, f) = eshCallStart1(call, d2, target).
 
-            JumpFn(d3, start, d3; ide.id) :-
+            JumpFn(d3, start, d3; ide#id) :-
                 EshCallStart(call, d2, target, d3, nonbottom2),
                 StartNode(target, start).
 
             // Phase I line [6] from paper
-            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
+            JumpFn(ide#zero, n, ide#zero; ide#id) :- StartNode(main, n).
 
             // compute summary
             SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
@@ -116,7 +116,7 @@ mod IDE {
                 EshCallStart(call, d, proc, dp, cs).
 
             // Phase II line [2] from paper
-            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
+            ResultProc(ide#main, ide#zero; UpperBound.maxValue()).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -127,7 +127,7 @@ mod IDE {
         };
 
 
-        let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG, CallGraph, StartNode, EndNode;
 
         query p, f1 select (n, d, l) from Results(n, d; l)
 
@@ -256,7 +256,6 @@ mod ConstantProp {
     /// The Partial Order.
     ///
     instance PartialOrder[MicroFunction] {
-        // TODO: Ondrej: This seems a bit lazy. Can we do better? :)
         pub def lessEqual(x: MicroFunction, y: MicroFunction): Bool = y == JoinLattice.leastUpperBound(x, y)
     }
 
@@ -272,7 +271,7 @@ mod ConstantProp {
                 case (MicroFunction.NonBot(a1, b1, c1), MicroFunction.NonBot(a2, b2, c2)) =>
                     if (a1 == a2 and b1 == b2)
                         MicroFunction.NonBot(a1, b1, lub(c1, c2))
-                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.rem` (a2 - a1))
+                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.remainder` (a2 - a1))
                         // Divisible.
                         MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
                     else
@@ -335,8 +334,6 @@ pub enum IR with Eq {
 def main(): Unit \ IO =
     println("Running IDE");
 
-    // TODO: Magnus: Use sets?
-
     let cfg =
         ("smain","n1") ::
         ("n1","n2") ::
@@ -352,7 +349,6 @@ def main(): Unit \ IO =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
-    // TODO: Build call graph from CallConst and CallVar instructions
     let callGraph =
         ("n1","p") ::
         ("n6","p") :: Nil;
@@ -364,7 +360,7 @@ def main(): Unit \ IO =
     let endNodes =
         ("main","emain") ::
         ("p","ep") :: Nil;
-    
+
     def procedureParameters(p) = match p {
         case "p" => "a"
         case _ => ?unreachable
@@ -388,19 +384,19 @@ def main(): Unit \ IO =
         case "n8" => IR.Assign("a", 1, "a", 2)
         case "n9" => IR.Assign("x", -2, "a", 5)
         case "ep" => IR.Nop
-    
+
         case _ => ?unreachable
     };
 
     def eshIntra(n, d) = match instruction(n) {
-        case IR.MainEntry(vars) => 
+        case IR.MainEntry(vars) =>
             if (d == "zero") Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
             else Vector#{}
-        case IR.Assign(v1, c1, v2, c2) => 
+        case IR.Assign(v1, c1, v2, c2) =>
           let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
           let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
           let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
-          Vector.append(kill, gen)
+          kill ++ gen
         case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
         case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
         case _ => Vector#{(d, ConstantProp.id())}

@@ -56,7 +56,7 @@ def main(): Unit =
         //
         // AddrOf
         // ---------
-        Pt(p: String,a: String) :- AddrOf(p,a).
+        Pt((p: String), (a: String)) :- AddrOf(p,a).
         //
         // Copy
         // ---------
@@ -64,9 +64,9 @@ def main(): Unit =
         //
         // Store
         // ---------
-        SU(l: String, a: String; f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
+        SU((l: String), (a: String); f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
         //
-        PtH(a: String,b: String) :- Store(_l,p,q), Pt(p,a), Pt(q,b).
+        PtH((a: String), (b: String)) :- Store(_l,p,q), Pt(p,a), Pt(q,b).
         PtH(a,b) :- FIStore(p,q), Pt(p,a), Pt(q,b).
         //
         // Load
@@ -92,7 +92,7 @@ def main(): Unit =
 
         // Kill
         // ---------
-        Kill(l: String; f(b)) :- Store(l,p,_q), Pt(p,b).
+        Kill((l: String); f(b)) :- Store(l,p,_q), Pt(p,b).
         Kill(l;SULattice.Top) :- Phi(l).
     };
     let _m = solve p;

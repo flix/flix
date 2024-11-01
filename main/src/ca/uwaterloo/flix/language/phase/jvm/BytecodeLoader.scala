@@ -26,7 +26,7 @@ object BytecodeLoader {
   /**
     * Loads the given JVM `classes` using a custom class loader.
     */
-  def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix): Map[JvmName, Class[_]] = flix.subphase("LoadClasses") {
+  def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix): Map[JvmName, Class[?]] = {
     //
     // Compute a map from binary names (strings) to JvmClasses.
     //
@@ -42,7 +42,7 @@ object BytecodeLoader {
     //
     // Attempt to load each class using its internal name.
     //
-    classes.foldLeft(Map.empty[JvmName, Class[_]]) {
+    classes.foldLeft(Map.empty[JvmName, Class[?]]) {
       case (macc, (jvmName, _)) =>
         // Attempt to load class.
         val loadedClass = loader.loadClass(jvmName.toBinaryName)

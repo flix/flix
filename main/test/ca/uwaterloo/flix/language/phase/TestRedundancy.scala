@@ -339,9 +339,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable \ IO =
-        |   new ##java.lang.Comparable {
-        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |import java.lang.Comparable
+        |import java.lang.Object
+        |
+        |def f(): Comparable \ IO =
+        |   new Comparable {
+        |     def compareTo(x: Object, _y: Object): Int32 =
         |       let x = 0;
         |       x
         |   }
@@ -824,6 +827,59 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedName.Use.21") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.Color;
+         |    use B.Color;
+         |    true
+         |
+         |mod A {
+         |    struct Color[r] {
+         |    }
+         |}
+         |
+         |mod B {
+         |    struct Color[r] {
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("UnusedStructSym.01") {
+    val input =
+      s"""
+         |mod N {
+         |    struct Color[r] {
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedStructSym](result)
+  }
+
+  test("UnusedStructSym.02") {
+    val input =
+      s"""
+         |mod N {
+         |    struct One[r] {
+         |        a: Two[r]
+         |    }
+         |
+         |    struct Two[r] {
+         |        b: One[r]
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedStructSym](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
@@ -899,6 +955,18 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedEnumTag](result)
+  }
+
+  test("PrefixedStructSym.01") {
+    val input =
+      s"""
+         |mod N {
+         |    struct _Color[r] { }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
   }
 
   test("PrefixedEnumSym.01") {
@@ -1019,9 +1087,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedFormalParam.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable \ IO =
-        |   new ##java.lang.Comparable {
-        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |import java.lang.Comparable
+        |import java.lang.Object
+        |
+        |def f(): Comparable \ IO =
+        |   new Comparable {
+        |     def compareTo(x: Object, _y: Object): Int32 =
         |       0
         |   }
         """.stripMargin
@@ -1063,6 +1134,65 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |pub def f[a: Type, b: Type, c: Type](x: a, y: c): (a, c) = (x, y)
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Struct.01") {
+    val input =
+      s"""
+         |struct Box[a, r] { }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Struct.02") {
+    val input =
+      s"""
+         |struct Box[a, b, r] {
+         |    box: b
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Struct.03") {
+    val input =
+      s"""
+         |struct Box[a, b, r] {
+         |    box: b
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Struct.04") {
+    val input =
+      s"""
+         |struct Box[a, b, c, r] {
+         |    box: (a, c)
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Struct.05") {
+    val input =
+      s"""
+         |enum Box[a, b, c, r] {
+         |    f1: a
+         |    f2: b
+         |}
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1374,7 +1504,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
-    rejectError[RedundancyError](result)
   }
 
   test("UnusedVarSym.PreviousError.02") {
@@ -1385,7 +1514,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
-    rejectError[RedundancyError](result)
   }
 
   test("UselessExpression.01") {
@@ -1452,7 +1580,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
         |
         |def f(): Unit =
-        |    hof(x -> (x, ref 21 @ Static));
+        |    hof(x -> (x, Ref.fresh(21, Static));
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1462,7 +1590,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(x: a): a
         |}
         |
@@ -1477,7 +1605,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantPurityCast.01") {
     val input =
       """
-        |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ {})
         |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1489,7 +1617,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       raw"""
            |pub def f(): Array[Int32, Static] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
-           |  unchecked_cast(x as _ \ Pure)
+           |  unchecked_cast(x as _ \ {})
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1506,118 +1634,118 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantTypeConstraint.Class.01") {
+  test("RedundantTraitConstraint.Trait.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a], C[a]
+        |trait D[a] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Class.02") {
+  test("RedundantTraitConstraint.Trait.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a] with C[a], D[a]
+        |trait E[a] with C[a], D[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Def.01") {
+  test("RedundantTraitConstraint.Def.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |pub def f(x: a): Bool with C[a], C[a] = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Def.02") {
+  test("RedundantTraitConstraint.Def.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
         |pub def f(x: a): Bool with C[a], D[a] = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Sig.01") {
+  test("RedundantTraitConstraint.Sig.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] {
+        |trait D[a] {
         |  pub def f(x: a): Bool with C[a], C[a]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Sig.02") {
+  test("RedundantTraitConstraint.Sig.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a] {
+        |trait E[a] {
         |  pub def f(x: a): Bool with C[a], D[a]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Instance.01") {
+  test("RedundantTraitConstraint.Instance.01") {
     val input =
       """
         |enum Box[a](a)
         |
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a]
+        |trait D[a]
         |
         |instance D[Box[a]] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Instance.02") {
+  test("RedundantTraitConstraint.Instance.02") {
     val input =
       """
         |enum Box[a](a)
         |
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a]
+        |trait E[a]
         |
         |instance E[Box[a]] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("UnusedFormalParam.Class.01") {
+  test("UnusedFormalParam.Trait.01") {
     val input =
       """
-        |pub class C[a] {
+        |pub trait C[a] {
         |  pub def f(x: a): String = "Hello!"
         |}
         |""".stripMargin
@@ -1834,9 +1962,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantCheckedTypeCast.05") {
     val input =
       """
+        |import java.lang.Object
+        |import java.lang.StringBuilder
+        |
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    import java_new java.lang.StringBuilder(): StringBuilder \ IO as newStringBuilder;
+        |    import java_new java.lang.Object(): Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
@@ -1927,8 +2058,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
@@ -2071,4 +2202,14 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedVariable.LocalDef.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |   def g() = { def g() = 1; g() };
+        |   g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
 }

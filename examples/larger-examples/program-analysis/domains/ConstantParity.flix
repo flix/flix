@@ -1,6 +1,6 @@
-/**
- * An implementation of the parity domain lifted over the constant propagation domain.
- */
+///
+/// An implementation of the parity domain lifted over the constant propagation domain.
+///
 mod Domain.ConstantParity {
 
     ///
@@ -175,7 +175,7 @@ mod Domain.ConstantParity {
     ///
     /// Returns `true` iff the given number `n` is ConstantParity.Odd.
     ///
-    pub def isOdd(n: BigInt): Bool = (n `BigInt.rem` 2ii) != 0ii
+    pub def isOdd(n: BigInt): Bool = (n `BigInt.remainder` 2ii) != 0ii
 
     ///
     /// Returns `true` iff the given number `n` is ConstantParity.Even.

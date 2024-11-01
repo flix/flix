@@ -40,6 +40,6 @@ def main(): Unit \ IO =
     let header = "Usage: <program> [OPTION...] files...";
     let options1 = options();
     match getOpt(Permute, options1, args2) {
-        case Validation.Success(opts)   => {println("Optionals: ${opts.options}"); println("Non-optionals: ${opts.nonOptions}")}
+        case Validation.Success(opts)   => {println("Optionals: ${opts#options}"); println("Non-optionals: ${opts#nonOptions}")}
         case Validation.Failure(errs)   => {println("Errors: ${errs}");  println(usageInfo(header, options1))}
     }

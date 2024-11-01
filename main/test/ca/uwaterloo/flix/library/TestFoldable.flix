@@ -60,7 +60,7 @@ mod TestFoldable {
 
     @test
     def head01(): Bool =
-        Foldable.head(Nil: List[String]) == None
+        Foldable.head((Nil: List[String])) == None
 
     @test
     def head02(): Bool =
@@ -76,7 +76,7 @@ mod TestFoldable {
 
     @test
     def last01(): Bool =
-        Foldable.last(Nil: List[String]) == None
+        Foldable.last((Nil: List[String])) == None
 
     @test
     def last02(): Bool =
@@ -92,19 +92,19 @@ mod TestFoldable {
 
     @test
     def findLeft01(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, Nil: List[Int32]) == None
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, (Nil: List[Int32])) == None
 
     @test
     def findLeft02(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: Nil) == None
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: Nil) == None
 
     @test
     def findLeft03(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: Nil) == Some(2)
 
     @test
     def findLeft04(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -136,7 +136,7 @@ mod TestFoldable {
 
     @test
     def fold01(): Bool =
-        Foldable.fold(Nil: List[String]) == ""
+        Foldable.fold((Nil: List[String])) == ""
 
     @test
     def fold02(): Bool =
@@ -196,7 +196,7 @@ mod TestFoldable {
 
     @test
     def length01(): Bool =
-        Foldable.length(Nil: List[String]) == 0
+        Foldable.length((Nil: List[String])) == 0
 
     @test
     def length02(): Bool =
@@ -205,6 +205,22 @@ mod TestFoldable {
     @test
     def length03(): Bool =
         Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        Foldable.size((Nil: List[String])) == 0
+
+    @test
+    def size02(): Bool =
+        Foldable.size("a" :: "b" :: Nil) == 2
+
+    @test
+    def size03(): Bool =
+        Foldable.size(Some(5) :: None :: Some(18) :: None :: Nil) == 4
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
@@ -324,7 +340,7 @@ mod TestFoldable {
 
     @test
     def toChain01(): Bool =
-        Foldable.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
+        Foldable.toChain((Nil: List[Int32])) == (Chain.empty(): Chain[Int32])
 
     @test
     def toChain02(): Bool =
@@ -340,7 +356,7 @@ mod TestFoldable {
 
     @test
     def toDelayList01(): Bool =
-        Foldable.toDelayList(Nil: List[Int32]) == DelayList.empty(): DelayList[Int32]
+        Foldable.toDelayList((Nil: List[Int32])) == (DelayList.empty(): DelayList[Int32])
 
     @test
     def toDelayList02(): Bool =
@@ -391,7 +407,7 @@ mod TestFoldable {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let l = Nil: List[Unit];
+        let l = (Nil: List[Unit]);
         let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
@@ -427,7 +443,7 @@ mod TestFoldable {
 
     @test
     def toMutSet01(): Bool = region rc {
-        let s1 = Set#{}: Set[Int32];
+        let s1 = (Set#{}: Set[Int32]);
         let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
@@ -487,7 +503,7 @@ mod TestFoldable {
 
     @test
     def toDelayMap01(): Bool =
-        let l = Nil: List[(Int32, Int32)];
+        let l = (Nil: List[(Int32, Int32)]);
         let d1 = Foldable.toDelayMap(List.toChain(l));
         (d1 |> DelayMap.toList) == l
 
@@ -509,7 +525,7 @@ mod TestFoldable {
 
     @test
     def toMutMap01(): Bool = region rc {
-        let l = Nil: List[(Unit, Unit)];
+        let l = (Nil: List[(Unit, Unit)]);
         let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
@@ -545,7 +561,7 @@ mod TestFoldable {
 
     @test
     def toNec01(): Bool =
-        Foldable.toNec(Nil: List[Int32]) == None
+        Foldable.toNec((Nil: List[Int32])) == None
 
     @test
     def toNec02(): Bool =
@@ -561,7 +577,7 @@ mod TestFoldable {
 
     @test
     def toNel01(): Bool =
-        Foldable.toNel(Nil: List[Int32]) == None
+        Foldable.toNel((Nil: List[Int32])) == None
 
     @test
     def toNel02(): Bool =
@@ -577,7 +593,7 @@ mod TestFoldable {
 
     @test
     def join01(): Bool =
-        Foldable.join(",", Nil: List[Int32]) == ""
+        Foldable.join(",", (Nil: List[Int32])) == ""
 
     @test
     def join02(): Bool =
@@ -597,7 +613,7 @@ mod TestFoldable {
 
     @test
     def joinWith01(): Bool =
-        Foldable.joinWith(x -> "${x + 1}", ",", Nil: List[Int32]) == ""
+        Foldable.joinWith(x -> "${x + 1}", ",", (Nil: List[Int32])) == ""
 
     @test
     def joinWith02(): Bool =

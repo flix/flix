@@ -27,16 +27,16 @@ object TypeNormalization {
     * normalized form, which will be the same for all other equivalent types.
     *
     * Returns a type where
-    * 1. Formulas in types have been fully evaluated (and ordered in the case of
-    *    sets)
-    * 2. Types involving rows have been sorted alphabetically (respecting
-    *    duplicate label ordering)
-    * 3. The assumptions still hold
+    *   1. Formulas in types have been fully evaluated (and ordered in the case of
+    *      sets)
+    *   1. Types involving rows have been sorted alphabetically (respecting
+    *      duplicate label ordering)
+    *   1. The assumptions still hold
     *
     * Assumes that
-    * 1. `tpe` is ground (no type variables)
-    * 2. `tpe` has no aliases
-    * 3. `tpe` has no associated types
+    *   1. `tpe` is ground (no type variables)
+    *   1. `tpe` has no aliases
+    *   1. `tpe` has no associated types
     */
   def normalizeType(tpe: Type): Type = tpe match {
     case Type.Var(sym, loc) =>
@@ -69,6 +69,7 @@ object TypeNormalization {
             case (Type.Univ, Type.Univ) => Type.Univ
             case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
+        case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), _, _) => throw InternalCompilerException("Not supported", SourceLocation.Unknown)
 
         // Simplify boolean formulas.
         case Type.Cst(TypeConstructor.Not, _) => t2 match {
@@ -123,10 +124,16 @@ object TypeNormalization {
         // Else just apply
         case x => Type.Apply(x, t2, applyLoc)
       }
-    case Type.Alias(cst, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
-    case Type.AssocType(cst, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+
+    case Type.Alias(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
+
+    case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+
+    case t@Type.JvmToType(_, loc) => throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
+
+    case t@Type.JvmToEff(_, loc) => throw InternalCompilerException(s"Unexpected JVM effect: '$t", loc)
+
+    case t@Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
   }
 
   /**

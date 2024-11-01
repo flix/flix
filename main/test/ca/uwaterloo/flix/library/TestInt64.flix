@@ -107,43 +107,43 @@ mod TestInt64 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (120000000000i64 `Int64.mod` 20000000000i64) == 0i64
+    def modulo01(): Bool = (120000000000i64 `Int64.modulo` 20000000000i64) == 0i64
 
     @test
-    def mod02(): Bool = (120000000000i64 `Int64.mod` 50000000000i64) == 20000000000i64
+    def modulo02(): Bool = (120000000000i64 `Int64.modulo` 50000000000i64) == 20000000000i64
 
     @test
-    def mod03(): Bool = (-120000000000i64 `Int64.mod` 50000000000i64) == 30000000000i64
+    def modulo03(): Bool = (-120000000000i64 `Int64.modulo` 50000000000i64) == 30000000000i64
 
     @test
-    def mod04(): Bool = (120000000000i64 `Int64.mod` -50000000000i64) == -30000000000i64
+    def modulo04(): Bool = (120000000000i64 `Int64.modulo` -50000000000i64) == -30000000000i64
 
     @test
-    def mod05(): Bool = (-120000000000i64 `Int64.mod` -50000000000i64) == -20000000000i64
+    def modulo05(): Bool = (-120000000000i64 `Int64.modulo` -50000000000i64) == -20000000000i64
 
     @test
-    def mod06(): Bool = (1i64 `Int64.mod` 0i64) == 0i64
+    def modulo06(): Bool = (1i64 `Int64.modulo` 0i64) == 0i64
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (120000000000i64 `Int64.rem` 20000000000i64) == 0i64
+    def remainder01(): Bool = (120000000000i64 `Int64.remainder` 20000000000i64) == 0i64
 
     @test
-    def rem02(): Bool = (120000000000i64 `Int64.rem` 50000000000i64) == 20000000000i64
+    def remainder02(): Bool = (120000000000i64 `Int64.remainder` 50000000000i64) == 20000000000i64
 
     @test
-    def rem03(): Bool = (-120000000000i64 `Int64.rem` 50000000000i64) == -20000000000i64
+    def remainder03(): Bool = (-120000000000i64 `Int64.remainder` 50000000000i64) == -20000000000i64
 
     @test
-    def rem04(): Bool = (120000000000i64 `Int64.rem` -50000000000i64) == 20000000000i64
+    def remainder04(): Bool = (120000000000i64 `Int64.remainder` -50000000000i64) == 20000000000i64
 
     @test
-    def rem05(): Bool = (-120000000000i64 `Int64.rem` -50000000000i64) == -20000000000i64
+    def remainder05(): Bool = (-120000000000i64 `Int64.remainder` -50000000000i64) == -20000000000i64
 
     @test
-    def rem06(): Bool = (1i64 `Int64.rem` 0i64) == 0i64
+    def remainder06(): Bool = (1i64 `Int64.remainder` 0i64) == 0i64
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
@@ -1203,20 +1203,17 @@ mod TestInt64 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
         let i = Int64.valueOf(0i64);
-        equals(i, checked_cast(Int64.valueOf(0i64)))
+        unsafe i.equals(Int64.valueOf(0i64))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
         let i = Int64.valueOf(1i64);
-        equals(i, checked_cast(Int64.valueOf(1i64)))
+        unsafe i.equals(Int64.valueOf(1i64))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
         let i = Int64.valueOf(-1i64);
-        equals(i, checked_cast(Int64.valueOf(-1i64)))
+        unsafe i.equals(Int64.valueOf(-1i64))
 
 }

@@ -23,14 +23,14 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumCompletio
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
-object UseEnumCompleter extends Completer {
+object UseEnumCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
       case regex(word) =>
         val enums = getLocalEnumSyms(word)
-        enums.map(enum => getUseEnumCompletion(root.enums(enum)))
+        enums.map(enum0 => getUseEnumCompletion(root.enums(enum0)))
       case _ => Nil
     }
   }

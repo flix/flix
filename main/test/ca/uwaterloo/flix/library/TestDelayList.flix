@@ -23,7 +23,7 @@ mod TestDelayList {
 
     @test
     def eq01(): Bool =
-        ENil: DelayList[Unit] == ENil: DelayList[Unit]
+        ((ENil: DelayList[Unit])) == ((ENil: DelayList[Unit]))
 
     @test
     def eq02(): Bool =
@@ -148,7 +148,7 @@ mod TestDelayList {
 
     @test
     def empty01(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.toList == Nil
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.toList == Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -157,11 +157,23 @@ mod TestDelayList {
 
     @test
     def isEmpty01(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.isEmpty
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.isEmpty
 
     @test
     def isEmpty02(): Bool =
         not (DelayList.range(0, 1000) |> DelayList.isEmpty)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        not ((DelayList.empty(): DelayList[Int32]) |> DelayList.nonEmpty)
+
+    @test
+    def nonEmpty02(): Bool =
+        DelayList.range(0, 1000) |> DelayList.nonEmpty
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -203,7 +215,7 @@ mod TestDelayList {
 
     @test
     def head01(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.head == None
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.head == None
 
     @test
     def head02(): Bool =
@@ -222,11 +234,11 @@ mod TestDelayList {
 
     @test
     def tail01(): Bool =
-        DelayList.tail(ENil: DelayList[Unit]) == ENil
+        DelayList.tail((ENil: DelayList[Unit])) == ENil
 
     @test
     def tail02(): Bool =
-        DelayList.tail(LList(lazy ENil): DelayList[Unit]) == ENil
+        DelayList.tail((LList(lazy ENil): DelayList[Unit])) == ENil
 
     @test
     def tail03(): Bool =
@@ -275,25 +287,25 @@ mod TestDelayList {
 
     @test
     def take01(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.take(1000) |> DelayList.isEmpty
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.take(1000) |> DelayList.isEmpty
 
     @test
     def take02(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.take(0) |> DelayList.isEmpty
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty
 
     @test
     def take03(): Bool =
-        (DelayList.range(0, 1000)): DelayList[Int32] |> DelayList.take(0) |> DelayList.isEmpty
+        (DelayList.range(0, 1000): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty
 
     @test
     def take04(): Bool =
-        (DelayList.range(0, 1000)): DelayList[Int32]
+        (DelayList.range(0, 1000): DelayList[Int32])
             |> DelayList.take(500)
             |> DelayList.toList == List.range(0, 500)
 
     @test
     def take05(): Bool =
-        (DelayList.range(0, 1000)): DelayList[Int32]
+        (DelayList.range(0, 1000): DelayList[Int32])
             |> DelayList.take(1)
             |> DelayList.toList == List.range(0, 1)
 
@@ -304,11 +316,24 @@ mod TestDelayList {
 
     @test
     def length01(): Bool =
-        (DelayList.empty()): DelayList[Int32] |> DelayList.length == 0
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.length == 0
 
     @test
     def length02(): Bool =
         DelayList.range(0, 100000) |> DelayList.length == 100000
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.size == 0
+
+    @test
+    def size02(): Bool =
+        DelayList.range(0, 100000) |> DelayList.size == 100000
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -317,7 +342,7 @@ mod TestDelayList {
 
     @test
     def reverse01(): Bool =
-        DelayList.reverse(DelayList.empty(): DelayList[Unit]) |> DelayList.toList == Nil
+        DelayList.reverse((DelayList.empty(): DelayList[Unit])) |> DelayList.toList == Nil
 
     @test
     def reverse02(): Bool =
@@ -429,21 +454,21 @@ mod TestDelayList {
 
     @test
     def mapFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(x -> { l := "a" :: deref l; x }) |>
-        DelayList.map(x -> { l := "b" :: deref l; x });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.map(x -> { Ref.put("a" :: Ref.get(l), l); x }) |>
+        DelayList.map(x -> { Ref.put("b" :: Ref.get(l), l); x });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def mapFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(x -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
-        DelayList.map(x -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
+        DelayList.map(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
+        DelayList.map(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -547,21 +572,21 @@ mod TestDelayList {
 
     @test
     def filterFusion01(): Bool= region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList     |>
-        DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
-        DelayList.filter(_ -> { l := "b" :: deref l; true });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.filter(_ -> { Ref.put("a" :: Ref.get(l), l); true }) |>
+        DelayList.filter(_ -> { Ref.put("b" :: Ref.get(l), l); true });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def filterFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
-        DelayList.filter(_x -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
-        DelayList.filter(_x -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
+        DelayList.filter(_x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
+        DelayList.filter(_x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -570,21 +595,21 @@ mod TestDelayList {
 
     @test
     def mapFilterFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(   x -> { l := "a" :: deref l; x }) |>
-        DelayList.filter(_ -> { l := "b" :: deref l; true });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.map(   x -> { Ref.put("a" :: Ref.get(l), l); x }) |>
+        DelayList.filter(_ -> { Ref.put("b" :: Ref.get(l), l); true });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def mapFilterFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(   x -> unchecked_cast({ l := "a" :: deref l; x }    as _ \ {})) |>
-        DelayList.filter(_ -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
+        DelayList.map(   x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x }    as _ \ {})) |>
+        DelayList.filter(_ -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -593,21 +618,21 @@ mod TestDelayList {
 
     @test
     def filterThenMapFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
-        DelayList.map(   x -> { l := "b" :: deref l; x    });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.filter(_ -> { Ref.put("a" :: Ref.get(l), l); true }) |>
+        DelayList.map(   x -> { Ref.put("b" :: Ref.get(l), l); x    });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def filterThenMapFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_ -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
-        DelayList.map(   x -> unchecked_cast({ l := "b" :: deref l; x    } as _ \ {})) |>
+        DelayList.filter(_ -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
+        DelayList.map(   x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x    } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -616,23 +641,23 @@ mod TestDelayList {
 
     @test
     def foldLeft01(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldLeft02(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldLeft03(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ENil)) == 198
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ENil)) == 198
 
     @test
     def foldLeft04(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == 196
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == 196
 
     @test
     def foldLeft05(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 386
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 386
 
     @test
     def foldLeft06(): Bool =
@@ -645,23 +670,23 @@ mod TestDelayList {
 
     @test
     def foldRight01(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
@@ -673,23 +698,23 @@ mod TestDelayList {
 
     @test
     def foldRightWithCont01(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldRightWithCont02(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRightWithCont03(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRightWithCont04(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRightWithCont05(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRightWithCont06(): Bool =
@@ -731,7 +756,7 @@ mod TestDelayList {
     @test
     def forEach01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -740,7 +765,7 @@ mod TestDelayList {
     @test
     def forEach02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -749,7 +774,7 @@ mod TestDelayList {
     @test
     def forEach03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -758,7 +783,7 @@ mod TestDelayList {
     @test
     def forEach04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -767,7 +792,7 @@ mod TestDelayList {
     @test
     def forEach05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -780,7 +805,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -789,7 +814,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -798,7 +823,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -807,7 +832,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -816,7 +841,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
@@ -828,12 +853,12 @@ mod TestDelayList {
 
     @test
     def toArray01(): Bool = region rc {
-    	DelayList.toArray(rc, ENil: DelayList[Unit])`Array.sameElements` Array#{} @ rc
+    	DelayList.toArray(rc, (ENil: DelayList[Unit]))`Array.sameElements` Array#{} @ rc
     }
 
     @test
     def toArray02(): Bool = region rc {
-    	DelayList.toArray(rc, LList(lazy ENil): DelayList[Unit])`Array.sameElements` Array#{} @ rc
+    	DelayList.toArray(rc, (LList(lazy ENil): DelayList[Unit]))`Array.sameElements` Array#{} @ rc
     }
 
     @test
@@ -873,11 +898,11 @@ mod TestDelayList {
 
     @test
     def toList01(): Bool =
-    	DelayList.toList(ENil): List[Unit] == Nil
+    	(DelayList.toList(ENil): List[Unit]) == Nil
 
     @test
     def toList02(): Bool =
-    	DelayList.toList(LList(lazy ENil)): List[Unit] == Nil
+    	(DelayList.toList(LList(lazy ENil)): List[Unit]) == Nil
 
     @test
     def toList03(): Bool =
@@ -902,10 +927,10 @@ mod TestDelayList {
 
     @test
     def toMutDeque01(): Bool = region rc {
-    	let l = ENil: DelayList[Int32];
+    	let l = (ENil: DelayList[Int32]);
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
 
         d1 `MutDeque.sameElements` d2
 
@@ -913,10 +938,10 @@ mod TestDelayList {
 
     @test
     def toMutDeque02(): Bool = region rc {
-    	let l = LList(lazy ENil): DelayList[Int32];
+    	let l = (LList(lazy ENil): DelayList[Int32]);
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
 
         d1 `MutDeque.sameElements` d2
 
@@ -927,7 +952,7 @@ mod TestDelayList {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);
@@ -941,10 +966,10 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMap01(): Bool = DelayList.toMap(ENil: DelayList[(Unit, Unit)]) == Map#{}
+    def toMap01(): Bool = DelayList.toMap((ENil: DelayList[(Unit, Unit)])) == Map#{}
 
     @test
-    def toMap02(): Bool = DelayList.toMap(LList(lazy ENil): DelayList[(Unit, Unit)]) == Map#{}
+    def toMap02(): Bool = DelayList.toMap((LList(lazy ENil): DelayList[(Unit, Unit)])) == Map#{}
 
     @test
     def toMap03(): Bool = DelayList.toMap(ECons((1, true), ENil)) == Map#{1 => true}
@@ -962,11 +987,11 @@ mod TestDelayList {
 
     @test
     def toSet01(): Bool =
-    	DelayList.toSet(ENil): Set[Unit] == Set.empty()
+    	(DelayList.toSet(ENil): Set[Unit]) == Set.empty()
 
     @test
     def toSet02(): Bool =
-    	DelayList.toSet(LList(lazy ENil)): Set[Unit] == Set.empty()
+    	(DelayList.toSet(LList(lazy ENil)): Set[Unit]) == Set.empty()
 
     @test
     def toSet03(): Bool =
@@ -987,11 +1012,11 @@ mod TestDelayList {
 
     @test
     def append01(): Bool =
-    	DelayList.append(ENil: DelayList[Unit], ENil: DelayList[Unit]) == ENil
+    	DelayList.append((ENil: DelayList[Unit]), (ENil: DelayList[Unit])) == ENil
 
     @test
     def append02(): Bool =
-    	DelayList.append(LList(lazy ENil): DelayList[Unit], ENil: DelayList[Unit]) == ENil
+    	DelayList.append((LList(lazy ENil): DelayList[Unit]), (ENil: DelayList[Unit])) == ENil
 
     @test
     def append03(): Bool =
@@ -1053,15 +1078,15 @@ mod TestDelayList {
 
     @test
     def drop01(): Bool =
-        DelayList.drop(-1, ENil: DelayList[Unit]) == ENil
+        DelayList.drop(-1, (ENil: DelayList[Unit])) == ENil
 
     @test
     def drop02(): Bool =
-        DelayList.drop(0, ENil: DelayList[Unit]) == ENil
+        DelayList.drop(0, (ENil: DelayList[Unit])) == ENil
 
     @test
     def drop03(): Bool =
-        DelayList.drop(1, ENil: DelayList[Unit]) == ENil
+        DelayList.drop(1, (ENil: DelayList[Unit])) == ENil
 
     @test
     def drop04(): Bool =
@@ -1094,15 +1119,15 @@ mod TestDelayList {
 
     @test
     def flatten01(): Bool =
-        DelayList.flatten(ENil: DelayList[DelayList[Unit]]) == ENil
+        DelayList.flatten((ENil: DelayList[DelayList[Unit]])) == ENil
 
     @test
     def flatten02(): Bool =
-        DelayList.flatten(ECons(ENil, ENil)): DelayList[Unit] == ENil
+        (DelayList.flatten(ECons(ENil, ENil)): DelayList[Unit]) == ENil
 
     @test
     def flatten03(): Bool =
-        DelayList.flatten(ECons(ENil, ECons(ENil, ENil))): DelayList[Unit] == ENil
+        (DelayList.flatten(ECons(ENil, ECons(ENil, ENil))): DelayList[Unit]) == ENil
 
     @test
     def flatten04(): Bool =
@@ -1253,40 +1278,40 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def from01(): Bool =
-        DelayList.from(-1) |> DelayList.take(0) == ENil
+    def startFrom01(): Bool =
+        DelayList.startFrom(-1) |> DelayList.take(0) == ENil
 
     @test
-    def from02(): Bool =
-        DelayList.from(0) |> DelayList.take(0) == ENil
+    def startFrom02(): Bool =
+        DelayList.startFrom(0) |> DelayList.take(0) == ENil
 
     @test
-    def from04(): Bool =
-        DelayList.from(100) |> DelayList.take(-1) == ENil
+    def startFrom04(): Bool =
+        DelayList.startFrom(100) |> DelayList.take(-1) == ENil
 
     @test
-    def from05(): Bool =
-    	DelayList.from(-1) |> DelayList.take(1) == ECons(-1, ENil)
+    def startFrom05(): Bool =
+    	DelayList.startFrom(-1) |> DelayList.take(1) == ECons(-1, ENil)
 
     @test
-    def from06(): Bool =
-    	DelayList.from(5) |> DelayList.take(1) == ECons(5, ENil)
+    def startFrom06(): Bool =
+    	DelayList.startFrom(5) |> DelayList.take(1) == ECons(5, ENil)
 
     @test
-    def from07(): Bool =
-    	DelayList.from(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
+    def startFrom07(): Bool =
+    	DelayList.startFrom(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
-    def from08(): Bool =
-    	DelayList.from(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
+    def startFrom08(): Bool =
+    	DelayList.startFrom(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
 
     @test
-    def from09(): Bool =
-    	DelayList.from(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
+    def startFrom09(): Bool =
+    	DelayList.startFrom(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
 
     @test
-    def from10(): Bool =
-    	DelayList.from(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
+    def startFrom10(): Bool =
+    	DelayList.startFrom(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1295,11 +1320,11 @@ mod TestDelayList {
 
     @test
     def last01(): Bool =
-        DelayList.last(ENil: DelayList[Unit]) == None
+        DelayList.last((ENil: DelayList[Unit])) == None
 
     @test
     def last02(): Bool =
-        DelayList.last(LList(lazy ENil): DelayList[Unit]) == None
+        DelayList.last((LList(lazy ENil): DelayList[Unit])) == None
 
     @test
     def last03(): Bool =
@@ -1324,12 +1349,12 @@ mod TestDelayList {
 
     @test
     def toIter01(): Bool = region rc {
-    	DelayList.iterator(rc, ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    	DelayList.iterator(rc, (ENil: DelayList[Unit])) |> Iterator.toList == Nil
     }
 
     @test
     def toIter02(): Bool = region rc {
-    	DelayList.iterator(rc, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    	DelayList.iterator(rc, (LList(lazy ENil): DelayList[Unit])) |> Iterator.toList == Nil
     }
 
     @test
@@ -1349,27 +1374,27 @@ mod TestDelayList {
 
     @test
     def zip01(): Bool =
-        DelayList.zip(ENil: DelayList[Int32], ENil: DelayList[String]) == ENil
+        DelayList.zip((ENil: DelayList[Int32]), (ENil: DelayList[String])) == ENil
 
     @test
     def zip02(): Bool =
-        DelayList.zip(LList(lazy ENil): DelayList[Int32], ENil: DelayList[String]) == ENil
+        DelayList.zip((LList(lazy ENil): DelayList[Int32]), (ENil: DelayList[String])) == ENil
 
     @test
     def zip03(): Bool =
-    	DelayList.zip(ENil: DelayList[Int32], LList(lazy ENil): DelayList[String]) == ENil
+    	DelayList.zip((ENil: DelayList[Int32]),( LList(lazy ENil): DelayList[String])) == ENil
 
     @test
     def zip04(): Bool =
-    	DelayList.zip(LList(lazy ENil): DelayList[Int32], LList(lazy ENil): DelayList[String]) == ENil
+    	DelayList.zip((LList(lazy ENil): DelayList[Int32]), (LList(lazy ENil): DelayList[String])) == ENil
 
     @test
     def zip05(): Bool =
-        DelayList.zip(ECons(1, ECons(2, ENil)), ENil: DelayList[String]) == ENil
+        DelayList.zip(ECons(1, ECons(2, ENil)), (ENil: DelayList[String])) == ENil
 
     @test
     def zip06(): Bool =
-    	DelayList.zip(ENil: DelayList[String], ECons(1, ECons(2, ENil))) == ENil
+    	DelayList.zip((ENil: DelayList[String]), ECons(1, ECons(2, ENil))) == ENil
 
     @test
     def zip07(): Bool =
@@ -1390,19 +1415,19 @@ mod TestDelayList {
 
     @test
     def zipWithPure01(): Bool =
-        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y, ENil: DelayList[Int32]) == ENil
+        (ENil: DelayList[Int32]) |> DelayList.zipWith((x, y) -> x + y, (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithPure02(): Bool =
-    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> x + y, ENil: DelayList[Int32]) == ENil
+    	LList(lazy ((ENil: DelayList[Int32]))) |> DelayList.zipWith((x, y) -> x + y, (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithPure03(): Bool =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y, ENil: DelayList[Int32]) == ENil
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y, (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithPure04(): Bool =
-    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ENil))) == ENil
+    	(ENil: DelayList[Int32]) |> DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ENil))) == ENil
 
     @test
     def zipWithPure05(): Bool =
@@ -1423,19 +1448,19 @@ mod TestDelayList {
 
     @test
     def zipWithImpure01(): Bool \ IO =
-        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
+        (ENil: DelayList[Int32]) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithImpure02(): Bool \ IO =
-    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
+    	LList(lazy ((ENil: DelayList[Int32]))) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithImpure03(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), (ENil: DelayList[Int32])) == ENil
 
     @test
     def zipWithImpure04(): Bool \ IO =
-    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ENil))) == ENil
+    	(ENil: DelayList[Int32]) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ENil))) == ENil
 
     @test
     def zipWithImpure05(): Bool \ IO =
@@ -1485,21 +1510,21 @@ mod TestDelayList {
 
     @test
     def zipWithFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.zipWith((x, y) -> { Ref.put("a" :: Ref.get(l), l); (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> { Ref.put("b" :: Ref.get(l), l); (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def zipWithFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.zipWith((x, y) -> unchecked_cast({ l := "a" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.zipWith((x, y) -> unchecked_cast({ l := "b" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1508,7 +1533,7 @@ mod TestDelayList {
 
     @test
     def zipWithIndex01(): Bool =
-        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Int32, Unit)]
+        DelayList.zipWithIndex((ENil: DelayList[Unit])) == (ENil: DelayList[(Int32, Unit)])
 
     @test
     def zipWithIndex02(): Bool =
@@ -1546,7 +1571,7 @@ mod TestDelayList {
 
     @test
     def reduceLeft01(): Bool =
-        DelayList.reduceLeft((a, b) -> a + b, ENil: DelayList[Int32]) == None
+        DelayList.reduceLeft((a, b) -> a + b, (ENil: DelayList[Int32])) == None
 
     @test
     def reduceLeft02(): Bool =
@@ -1575,11 +1600,11 @@ mod TestDelayList {
 
     @test
     def reduceRight01(): Bool =
-        DelayList.reduceRight((a, b) -> a + b, ENil: DelayList[Int32]) == None
+        DelayList.reduceRight((a, b) -> a + b, (ENil: DelayList[Int32])) == None
 
     @test
     def reduceRight02(): Bool =
-        DelayList.reduceRight((a, b) -> a + b, LList(lazy ENil): DelayList[Int32]) == None
+        DelayList.reduceRight((a, b) -> a + b, (LList(lazy ENil): DelayList[Int32])) == None
 
     @test
     def reduceRight03(): Bool =
@@ -1608,7 +1633,7 @@ mod TestDelayList {
 
     @test
     def minimum01(): Bool =
-        DelayList.minimum(ENil: DelayList[Int32]) == None
+        DelayList.minimum((ENil: DelayList[Int32])) == None
 
     @test
     def minimum02(): Bool =
@@ -1633,7 +1658,7 @@ mod TestDelayList {
 
     @test
     def minimumBy01(): Bool =
-        DelayList.minimumBy((x, y) -> x <=> y, ENil: DelayList[Int32]) == None
+        DelayList.minimumBy((x, y) -> x <=> y, (ENil: DelayList[Int32])) == None
 
     @test
     def minimumBy02(): Bool =
@@ -1658,7 +1683,7 @@ mod TestDelayList {
 
     @test
     def maximum01(): Bool =
-        DelayList.maximum(ENil: DelayList[Int32]) == None
+        DelayList.maximum((ENil: DelayList[Int32])) == None
 
     @test
     def maximum02(): Bool =
@@ -1683,7 +1708,7 @@ mod TestDelayList {
 
     @test
     def maximumBy01(): Bool =
-        DelayList.maximumBy((x, y) -> x <=> y, ENil: DelayList[Int32]) == None
+        DelayList.maximumBy((x, y) -> x <=> y, (ENil: DelayList[Int32])) == None
 
     @test
     def maximumBy02(): Bool =
@@ -1708,7 +1733,7 @@ mod TestDelayList {
 
     @test
     def flatMapPure01(): Bool =
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i), ENil: DelayList[Int32]) == ENil
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i), (ENil: DelayList[Int32])) == ENil
 
     @test
     def flatMapPure02(): Bool =
@@ -1729,7 +1754,7 @@ mod TestDelayList {
 
     @test
     def flatMapImpure01(): Bool \ IO =
-        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ENil: DelayList[Int32]) == ENil
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), (ENil: DelayList[Int32])) == ENil
 
     @test
     def flatMapImpure02(): Bool \ IO =
@@ -1791,21 +1816,21 @@ mod TestDelayList {
 
     @test
     def flatMapFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) }) |>
-        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.flatMap(i -> { Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) }) |>
+        DelayList.flatMap(i -> { Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def flatMapFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> unchecked_cast({ l := "a" :: deref l; ECons(i, ENil) } as _ \ {})) |>
-        DelayList.flatMap(i -> unchecked_cast({ l := "b" :: deref l; ECons(i, ENil) } as _ \ {})) |>
+        DelayList.flatMap(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
+        DelayList.flatMap(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1859,35 +1884,35 @@ mod TestDelayList {
 
     @test
     def replace01(): Bool =
-        DelayList.replace(from = 3, to = 4, ENil) == ENil
+        DelayList.replace(src = 3, dst = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace03(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace04(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace05(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace06(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace07(): Bool =
-        DelayList.replace(from = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        DelayList.replace(src = 0, dst = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =
-        DelayList.replace(from = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1896,7 +1921,7 @@ mod TestDelayList {
 
     @test
     def findLeft01(): Bool =
-        DelayList.findLeft(i -> i > 2, ENil: DelayList[Int32]) == None
+        DelayList.findLeft(i -> i > 2, (ENil: DelayList[Int32])) == None
 
     @test
     def findLeft02(): Bool =
@@ -1929,7 +1954,7 @@ mod TestDelayList {
 
     @test
     def findRight01(): Bool =
-        DelayList.findRight(i -> i > 2, ENil: DelayList[Int32]) == None
+        DelayList.findRight(i -> i > 2, (ENil: DelayList[Int32])) == None
 
     @test
     def findRight02(): Bool =
@@ -2049,22 +2074,22 @@ mod TestDelayList {
 
     @test
     def mapWithIndexFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x }) |>
-        DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x }) |>
+        DelayList.mapWithIndex((_, x) -> { Ref.put("a" :: Ref.get(l), l); x }) |>
+        DelayList.mapWithIndex((_, x) -> { Ref.put("b" :: Ref.get(l), l); x }) |>
         DelayList.toList;
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def mapWithIndexFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
-        DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
+        DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
+        DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2282,41 +2307,41 @@ mod TestDelayList {
 
     @test
     def takeWhileFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.takeWhile(i -> { Ref.put("a" :: Ref.get(l), l); i < 4 }) |>
+        DelayList.takeWhile(i -> { Ref.put("b" :: Ref.get(l), l); i < 4 });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def takeWhileFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 4 } as _ \ {})) |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     @test
     def takeWhileFusion03(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 2 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     @test
     def takeWhileFusion04(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
-        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2436,41 +2461,41 @@ mod TestDelayList {
 
     @test
     def dropWhileFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        DelayList.dropWhile(i -> { Ref.put("a" :: Ref.get(l), l); i < 3 }) |>
+        DelayList.dropWhile(i -> { Ref.put("b" :: Ref.get(l), l); i < 4 });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
     }
 
     @test
     def dropWhileFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
     }
 
     @test
     def dropWhileFusion03(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 1 } as _ \ {})) |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 1 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def dropWhileFusion04(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 2 } as _ \ {})) |>
-        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "b" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2479,39 +2504,39 @@ mod TestDelayList {
 
     @test
     def findMap01(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ENil) == None
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == None
 
     @test
     def findMap02(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
 
     @test
     def findMap03(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
 
 	@test
 	def findMap04(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
 
 	@test
 	def findMap05(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
 
 	@test
 	def findMap06(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
 
 	@test
 	def findMap07(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
 
     @test
 	def findMap08(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
 
     @test
 	def findMap09(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None,
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
 		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
 		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
@@ -2524,39 +2549,39 @@ mod TestDelayList {
 
     @test
     def filterMapPure01(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ENil) == ENil
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == ENil
 
     @test
     def filterMapPure02(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
 
     @test
     def filterMapPure03(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
 	def filterMapPure04(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
 
 	@test
 	def filterMapPure05(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
 	def filterMapPure06(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
 	def filterMapPure07(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
 	def filterMapPure08(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
 	def filterMapPure09(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None,
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2570,39 +2595,39 @@ mod TestDelayList {
 
     @test
     def filterMapImpure01(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
 
     @test
     def filterMapImpure02(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
 
     @test
     def filterMapImpure03(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
 	def filterMapImpure04(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
 
 	@test
 	def filterMapImpure05(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
 	def filterMapImpure06(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
 	def filterMapImpure07(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
 	def filterMapImpure08(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
 	def filterMapImpure09(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO),
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO),
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2617,25 +2642,25 @@ mod TestDelayList {
     @test
     def filterMapFilterMap01(): Bool =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
             DelayList.filterMap(i -> if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap02(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
             DelayList.filterMap(i ->             if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap03(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i ->             if (i `Int32.rem` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i ->             if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
             DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap04(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
             DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
 
@@ -2645,21 +2670,21 @@ mod TestDelayList {
 
     @test
     def filterMapFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
-        DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) });
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.filterMap(x -> { Ref.put("a" :: Ref.get(l), l); Some(x) }) |>
+        DelayList.filterMap(x -> { Ref.put("b" :: Ref.get(l), l); Some(x) });
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def filterMapFusion02(): Bool \ IO = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filterMap(x -> unchecked_cast({ l := "a" :: deref l; Some(x) } as _ \ {})) |>
-        DelayList.filterMap(x -> unchecked_cast({ l := "b" :: deref l; Some(x) } as _ \ {})) |>
+        DelayList.filterMap(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
+        DelayList.filterMap(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
         DelayList.toList as _ \ IO);
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2770,22 +2795,22 @@ mod TestDelayList {
 
     @test
     def spanSpanFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
-        DelayList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
-        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+        DelayList.span(x -> { Ref.put("a" :: Ref.get(l), l); x < 3 }) |> fst |>
+        DelayList.span(x -> { Ref.put("b" :: Ref.get(l), l); x < 3 }); // The working list is `1 :: 2 :: Nil`
+        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
     }
 
     //@test
     //def spanSpanFusion02(): Bool = region rc {
-    //    let l = ref Nil @ rc;
+    //    let l = Ref.fresh(rc, Nil);
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-    //    DelayList.span(x -> unchecked_cast({ l := "a" :: deref l; x < 3 } as _ \ {})) |> fst |>
-    //    DelayList.span(x -> unchecked_cast({ l := "b" :: deref l; x < 3 } as _ \ {})) |> fst |>
+    //    DelayList.span(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x < 3 } as _ \ {})) |> fst |>
+    //    DelayList.span(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x < 3 } as _ \ {})) |> fst |>
     //    DelayList.toList;
-    //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+    //    List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
     //}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2856,15 +2881,15 @@ mod TestDelayList {
 
     @test
     def order01(): Bool =
-        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == Comparison.EqualTo
+        ((ENil: DelayList[Unit]) <=> (ENil: DelayList[Unit])) == Comparison.EqualTo
 
     @test
     def order02(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == Comparison.GreaterThan
+        (((1 :: Nil) |> List.toDelayList) <=> (ENil: DelayList[Int32])) == Comparison.GreaterThan
 
     @test
     def order03(): Bool =
-        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
+        ((ENil: DelayList[Int32]) <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
     @test
     def order04(): Bool =
@@ -2939,7 +2964,7 @@ mod TestDelayList {
 
     @test
     def ap01(): Bool =
-        DelayList.ap(ENil, ENil) == ENil: DelayList[Int32]
+        DelayList.ap(ENil, ENil) == (ENil: DelayList[Int32])
 
     @test
     def ap02(): Bool =
@@ -2947,7 +2972,7 @@ mod TestDelayList {
 
     @test
     def ap03(): Bool =
-        DelayList.ap(ENil, ECons(5, ENil)) == ENil: DelayList[Int32]
+        DelayList.ap(ENil, ECons(5, ENil)) == (ENil: DelayList[Int32])
 
     @test
     def ap04(): Bool =
@@ -2995,34 +3020,34 @@ mod TestDelayList {
 
     @test
     def traverse01(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = ENil;
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(ENil) and deref st == 0
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(ENil) and Ref.get(st) == 0
     }
 
     @test
     def traverse02(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: Nil)) and deref st == 1
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: Nil)) and Ref.get(st) == 1
     }
 
     @test
     def traverse03(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: 2 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and Ref.get(st) == 2
     }
 
     @test
     def traverse04(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3030,30 +3055,30 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let l1: List[Int32] = Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let l1 = 1 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

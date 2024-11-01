@@ -20,14 +20,13 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind,
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{InstanceError, RedundancyError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = {
-    getActionsFromErrors(uri, range, currentErrors) ++
-      getActionsFromIndex(uri, range, currentErrors)
+    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range, currentErrors)
   }
 
   /**
@@ -39,9 +38,9 @@ object CodeActionProvider {
         mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
-    case ResolutionError.UndefinedClass(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
-        mkUseClass(qn.ident, uri)
+        mkUseTrait(qn.ident, uri)
       else
         Nil
     case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
@@ -63,7 +62,7 @@ object CodeActionProvider {
       mkUnusedDefCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
       mkUnusedParamCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedTypeParam(sym) if onSameLine(range, sym.loc) =>
+    case RedundancyError.UnusedTypeParam(sym, _) if onSameLine(range, sym.loc) =>
       mkUnusedTypeParamCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedEffectCodeAction(sym, uri) :: Nil
@@ -78,7 +77,8 @@ object CodeActionProvider {
       mkDeriveMissingOrder(tpe, uri)
     case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
-
+    case InstanceError.MissingSuperTraitInstance(tpe, sub, sup, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingSuperTrait(tpe, sup, uri)
     case _ => Nil
   }
 
@@ -120,10 +120,10 @@ object CodeActionProvider {
   }
 
   /**
-    * Returns a code action that proposes to `use` a class.
+    * Returns a code action that proposes to `use` a trait.
     */
-  private def mkUseClass(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
-    val syms = root.classes.map {
+  private def mkUseTrait(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+    val syms = root.traits.map {
       case (sym, _) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri)
@@ -145,10 +145,10 @@ object CodeActionProvider {
   private def mkUseType(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
     val names = root.enums.map { case (sym, _) => sym.name } ++
       root.restrictableEnums.map { case (sym, _) => sym.name } ++
-      root.classes.map { case (sym, _) => sym.name } ++
+      root.traits.map { case (sym, _) => sym.name } ++
       root.typeAliases.map { case (sym, _) => sym.name }
 
-    val syms = (root.enums ++ root.restrictableEnums ++ root.classes ++ root.typeAliases).map {
+    val syms = (root.enums ++ root.restrictableEnums ++ root.traits ++ root.typeAliases).map {
       case (sym, _) => sym
     }
 
@@ -187,7 +187,7 @@ object CodeActionProvider {
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
-              Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the use.
+              Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the use.
               s"use $sym;\n"
             )))
           )),
@@ -309,7 +309,7 @@ object CodeActionProvider {
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the new enum.
+        Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the new enum.
         s"""
            |enum $name {
            |
@@ -353,85 +353,91 @@ object CodeActionProvider {
     )
 
   /**
-    * Returns a quickfix code action to derive the `Eq` type class for the given type `tpe` if it is an enum.
+    * Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum.
     */
   private def mkDeriveMissingEq(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Eq", uri)
 
   /**
-    * Returns a quickfix code action to derive the `Order` type class for the given type `tpe` if it is an enum.
+    * Returns a quickfix code action to derive the `Order` trait for the given type `tpe` if it is an enum.
     */
   private def mkDeriveMissingOrder(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Order", uri)
 
   /**
-    * Returns a quickfix code action to derive the `ToString` type class for the given type `tpe` if it is an enum.
+    * Returns a quickfix code action to derive the `ToString` trait for the given type `tpe` if it is an enum.
     */
   private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "ToString", uri)
 
   /**
+   * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
+   */
+  private def mkDeriveMissingSuperTrait(tpe: Type, superTrait: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
+    mkDeriveMissing(tpe, superTrait.name, uri)
+
+  /**
     * Internal helper function for all `mkDeriveMissingX`.
-    * Returns a quickfix code action to derive the given type class `clazz`
+    * Returns a quickfix code action to derive the given trait `trt`
     * for the given type `tpe` if it is an enum in the root.
     */
-  private def mkDeriveMissing(tpe: Type, clazz: String, uri: String)(implicit root: Root): Option[CodeAction] = tpe.typeConstructor match {
+  private def mkDeriveMissing(tpe: Type, trt: String, uri: String)(implicit root: Root): Option[CodeAction] = tpe.typeConstructor match {
     case Some(TypeConstructor.Enum(sym, _)) =>
       root.enums.get(sym).map { e =>
         CodeAction(
-          title = s"Derive $clazz",
+          title = s"Derive $trt",
           kind = CodeActionKind.QuickFix,
-          edit = Some(addDerivation(e, clazz, uri)),
+          edit = Some(addDerivation(e, trt, uri)),
           command = None
         )
       }
     case _ => None
   }
 
-  // TODO: We should only offer to derive type classes which have not already been derived.
+  // TODO: We should only offer to derive traits which have not already been derived.
 
   /**
-    * Returns a code action to derive the `Eq` type class.
+    * Returns a code action to derive the `Eq` trait.
     */
   private def mkDeriveEq(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Eq", uri)
 
   /**
-    * Returns a code action to derive the `Order` type class.
+    * Returns a code action to derive the `Order` trait.
     */
   private def mkDeriveOrder(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Order", uri)
 
   /**
-    * Returns a code action to derive the `ToString` type class.
+    * Returns a code action to derive the `ToString` trait.
     */
   private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
 
-  // TODO: Add derivation for the Hash and Sendable type classes.
+  // TODO: Add derivation for the Hash and Sendable traits.
 
   /**
-    * Returns a code action to derive the given type class `clazz` for the given enum `e` if it isn't already.
+    * Returns a code action to derive the given trait `trt` for the given enum `e` if it isn't already.
     * `None` otherwise.
     */
-  private def mkDerive(e: TypedAst.Enum, clazz: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.classes.exists(d => d.clazz.name == clazz)
+  private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
+    val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
     if (alreadyDerived) None
     else Some(
       CodeAction(
-        title = s"Derive $clazz",
+        title = s"Derive $trt",
         kind = CodeActionKind.Refactor,
-        edit = Some(addDerivation(e, clazz, uri)),
+        edit = Some(addDerivation(e, trt, uri)),
         command = None
       )
     )
   }
 
   /**
-    * Returns a workspace edit that properly derives the given type class, `clazz`, for the enum, `e`.
+    * Returns a workspace edit that properly derives the given trait, `trt`, for the enum, `e`.
     *
     * For example, if we have:
     * {{{
     *   enum Abc {}
     * }}}
-    * we could derive the type class 'Eq' like so:
+    * we could derive the trait 'Eq' like so:
     * {{{
     *   enum Abc with Eq { }
     * }}}
@@ -445,12 +451,12 @@ object CodeActionProvider {
     *   enum Abc with ToString, Eq { }
     * }}}
     */
-  private def addDerivation(e: TypedAst.Enum, clazz: String, uri: String): WorkspaceEdit = {
+  private def addDerivation(e: TypedAst.Enum, trt: String, uri: String): WorkspaceEdit = {
     val text =
-      if (e.derives.classes.isEmpty)
-        s" with $clazz"
+      if (e.derives.traits.isEmpty)
+        s" with $trt"
       else
-        s", $clazz"
+        s", $trt"
 
     val end = Position.fromEnd(e.derives.loc)
 

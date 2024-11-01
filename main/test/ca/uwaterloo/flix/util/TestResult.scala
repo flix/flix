@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.Result._
+import ca.uwaterloo.flix.util.Result.*
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestResult extends AnyFunSuite {
@@ -105,4 +105,43 @@ class TestResult extends AnyFunSuite {
     assertResult(Ok(List(1, 2, 3, 4)))(sequence(List(a, b, c, d)))
   }
 
+  test("traverse01") {
+    val actual = Result.traverse(List.empty[Int])(x => Ok(x + 1))
+    assertResult(actual)(Ok(List.empty))
+  }
+
+  test("traverse02") {
+    val actual = Result.traverse(List(1))(x => Ok(x + 1))
+    assertResult(actual)(Ok(List(2)))
+  }
+
+  test("traverse03") {
+    val actual = Result.traverse(List(1, 2))(x => Ok(x + 1))
+    assertResult(actual)(Ok(List(2, 3)))
+  }
+
+  test("traverse04") {
+    val actual = Result.traverse(List(1, 2, 3))(x => Ok(x + 1))
+    assertResult(actual)(Ok(List(2, 3, 4)))
+  }
+
+  test("traverse05") {
+    val actual = Result.traverse(List(1, 2, 3))(x => if (x == 1) Err("one") else Ok(x))
+    assertResult(actual)(Err("one"))
+  }
+
+  test("traverse06") {
+    val actual = Result.traverse(List(1, 2, 3))(x => if (x == 2) Err("two") else Ok(x))
+    assertResult(actual)(Err("two"))
+  }
+
+  test("traverse07") {
+    val actual = Result.traverse(List(1, 2, 3))(x => if (x == 3) Err("three") else Ok(x))
+    assertResult(actual)(Err("three"))
+  }
+
+  test("traverse08") {
+    val actual = Result.traverse(List(1, 2, 3))(_ => Ok(42))
+    assertResult(actual)(Ok(List(42, 42, 42)))
+  }
 }

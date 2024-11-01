@@ -34,33 +34,33 @@ mod TestReducible {
 
     @test
     def reduceLeft04(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
 
     @test
     def reduceLeft05(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
 
     @test
     def reduceLeft06(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
 
     @test
     def reduceLeft07(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
     @test
     def reduceLeft08(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
             if (acc == 0)
-                l := a :: deref l
+                Ref.put(a :: Ref.get(l), l)
             else
-                l := a :: acc :: deref l;
+                Ref.put(a :: acc :: Ref.get(l), l);
             0
         };
         discard Reducible.reduceLeft(f, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -81,33 +81,33 @@ mod TestReducible {
 
     @test
     def reduceRight04(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
 
     @test
     def reduceRight05(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
 
     @test
     def reduceRight06(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
 
     @test
     def reduceRight07(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
     @test
     def reduceRight08(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
             if (acc == 0)
-                l := a :: deref l
+                Ref.put(a :: Ref.get(l), l)
             else
-                l := a :: acc :: deref l;
+                Ref.put(a :: acc :: Ref.get(l), l);
             0
         };
         discard Reducible.reduceRight(f, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -162,21 +162,21 @@ mod TestReducible {
 
     @test
     def foldLeft04(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldLeft05(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
 
     @test
     def foldLeft06(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
 
     @test
     def foldLeft07(): Bool = region rc {
-        let l = ref Nil @ rc;
-        discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        let l = Ref.fresh(rc, Nil);
+        discard Reducible.foldLeft((_, x) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -197,21 +197,21 @@ mod TestReducible {
 
     @test
     def foldRight04(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldRight05(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRight06(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRight07(): Bool = region rc {
-        let l = ref Nil @ rc;
-        discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        let l = Ref.fresh(rc, Nil);
+        discard Reducible.foldRight((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -232,21 +232,21 @@ mod TestReducible {
 
     @test
     def foldRightWithCont04(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldRightWithCont05(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRightWithCont06(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRightWithCont07(): Bool = region rc {
-        let l = ref Nil @ rc;
-        discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        let l = Ref.fresh(rc, Nil);
+        discard Reducible.foldRightWithCont((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -401,6 +401,23 @@ mod TestReducible {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        Reducible.size(Nel.Nel(1, Nil)) == 1
+
+    @test
+    def size02(): Bool =
+        Reducible.size(Nel.Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def size03(): Bool =
+        Reducible.size(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -508,16 +525,16 @@ mod TestReducible {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
-        1 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, Nil));
+        1 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
-        3 == deref ri
+        let ri = Ref.fresh(rc, 21);
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, 2 :: 3 :: Nil));
+        3 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -550,9 +567,9 @@ mod TestReducible {
 
     @test
     def findLeft07(): Bool = region rc {
-        let l = ref Nil @ rc;
-        discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        let l = Ref.fresh(rc, Nil);
+        discard Reducible.findLeft(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -585,9 +602,9 @@ mod TestReducible {
 
     @test
     def findRight07(): Bool = region rc {
-        let l = ref Nil @ rc;
-        discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        let l = Ref.fresh(rc, Nil);
+        discard Reducible.findRight(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
+        Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////

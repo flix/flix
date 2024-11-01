@@ -18,11 +18,9 @@ package ca.uwaterloo.flix.language.fmt
 /**
   * Options for formatting types.
   *
-  * @param ignorePur whether function purity should be ignored
-  * @param ignoreEff whether function effect should be ignored
-  * @param varNames  the formatting style of variable names
+  * @param varNames the formatting style of variable names
   */
-case class FormatOptions(ignorePur: Boolean, ignoreEff: Boolean, varNames: FormatOptions.VarName)
+case class FormatOptions(varNames: FormatOptions.VarName)
 
 object FormatOptions {
 
@@ -30,8 +28,6 @@ object FormatOptions {
     * The format options to use for internal
     */
   val Internal: FormatOptions = FormatOptions(
-    ignorePur = false,
-    ignoreEff = false,
     varNames = VarName.IdBased
   )
 

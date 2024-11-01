@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 
 /**
@@ -65,6 +66,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
             case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _) => Type.mkSymmetricDiff(x, y, loc)
 
             // Simplify set expressions
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
@@ -83,6 +85,15 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
         case Type.AssocType(cst, args0, kind, loc) =>
           val args = args0.map(visit)
           Type.AssocType(cst, args, kind, loc)
+        case Type.JvmToType(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToType(tpe, loc)
+        case Type.JvmToEff(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToEff(tpe, loc)
+        case Type.UnresolvedJvmType(member0, loc) =>
+          val member = member0.map(visit)
+          Type.UnresolvedJvmType(member, loc)
 
       }
 
@@ -98,7 +109,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given type constraint `tc`.
     */
-  def apply(tc: Ast.TypeConstraint): Ast.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+  def apply(tc: TraitConstraint): TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Applies `this` substitution to the given type scheme `sc`.
@@ -113,8 +124,8 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given pair of types `ts`.
     */
-  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
+    case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
 
   /**

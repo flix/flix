@@ -10,24 +10,23 @@ def main(): Unit \ IO = region rc {
         // Print contents of `xs`.
         Array.forEach(println, xs);
 
-        ///
-        /// Enumerator loops are not currently supported
-        /// in Flix. Supported for them will be revived
-        /// when `foreach` loops desugar to Streams
-        /// rather than Iterators.
-        ///
+        //
+        // Enumerator loops are not currently supported
+        // in Flix. Supported for them will be revived
+        // when `foreach` loops desugar to Streams
+        // rather than Iterators.
+        //
         // ~~~Enumerate the chars of `s` along
         // with the index of the char.
         // The loop has a guard to avoid
         // out of bounds errors.
         // It also matches the pattern of the
         // value returned by `enumerator.`~~~
-        /// foreach ((x, i) <- String.enumerator(rc, s);
-        ///          if i < Array.length(xs))
-        ///             xs[i] = x;
-
-        /// Enumerator loops can currently be simulated
-        /// with `forEach` or `forEachWithIndex`.
+        // foreach ((x, i) <- String.enumerator(rc, s);
+        //          if i < Array.length(xs))
+        //             xs[i] = x;
+        // Enumerator loops can currently be simulated
+        // with `forEach` or `forEachWithIndex`.
         Iterator.forEach(match (i, x) -> {
             if (i < Array.length(xs))
                 Array.put(x, i, xs)

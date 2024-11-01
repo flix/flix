@@ -221,8 +221,8 @@ object SetFormula {
     * Creates an environment for mapping between proper types and formulas.
     */
   def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
-    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
-    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
+    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var.apply)
+    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case.apply)
     // TODO RESTR-VARS do I even need the ts part here?
 
     val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
@@ -258,7 +258,7 @@ object SetFormula {
     }
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
       val cases = syms.toSet
-        .map(VarOrCase.Case) // convert to case
+        .map(VarOrCase.Case.apply) // convert to case
         .map(m.getForward) // lookup in the map
         .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
 

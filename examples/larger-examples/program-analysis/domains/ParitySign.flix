@@ -1,6 +1,6 @@
-/**
- * An implementation of the reduced product of the Parity and Sign domains.
- */
+///
+/// An implementation of the reduced product of the Parity and Sign domains.
+///
 mod Domain.ParitySign {
 
     ///
@@ -83,8 +83,8 @@ mod Domain.ParitySign {
     ///
     pub def alpha(i: Int32): ParitySign = {
         if      (i == 0)    ParitySign.Zer
-        else if (i <= 0)    if (i `Int32.rem` 2 != 0) ParitySign.ONeg else ParitySign.ENeg
-        else                if (i `Int32.rem` 2 != 0) ParitySign.OPos else ParitySign.EPos
+        else if (i <= 0)    if (i `Int32.remainder` 2 != 0) ParitySign.ONeg else ParitySign.ENeg
+        else                if (i `Int32.remainder` 2 != 0) ParitySign.OPos else ParitySign.EPos
     }
 
     ///

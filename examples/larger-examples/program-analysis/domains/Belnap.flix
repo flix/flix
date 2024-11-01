@@ -1,6 +1,6 @@
-/**
- * An implementation of the four-valued boolean lattice named for Nuel Belnap.
- */
+///
+/// An implementation of the four-valued boolean lattice named for Nuel Belnap.
+///
 mod Belnap {
 
     ///
@@ -75,11 +75,11 @@ mod Belnap {
     pub def alpha(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
 
     ///
-    /// Over-approximates the logical `not` operator.
+    /// Over-approximates logical negation.
     ///
-//    #safe1(x -> not x)
+//    #safe1(x -> neg x)
 //    #strict1 #monotone1
-    pub def not(e: Belnap): Belnap =
+    pub def neg(e: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match e {
             case Bot    => Bot
@@ -93,7 +93,7 @@ mod Belnap {
     ///
 //    #safe2((x, y) -> x and y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Belnap, e2: Belnap): Belnap =
+    pub def band(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
             case (Bot, _)       => Bot
@@ -110,7 +110,7 @@ mod Belnap {
     ///
 //    #safe2((x, y) -> x or y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Belnap, e2: Belnap): Belnap =
+    pub def bor(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
             case (Bot, _)       => Bot
@@ -127,7 +127,7 @@ mod Belnap {
     ///
 //    #safe2((x, y) -> x ⊕ y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Belnap, e2: Belnap): Belnap =
+    pub def bxor(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
             case (Bot, _)       => Bot

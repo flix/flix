@@ -23,7 +23,7 @@ mod Test.Exp.Choose.Polymorphic {
     }
 
     pub def testChoose03(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst(123) else open Expr.Var("hi");
+        let cstOrVar = if (true) open_variant Expr.Cst(123) else open_variant Expr.Var("hi");
         choose cstOrVar {
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
@@ -31,7 +31,7 @@ mod Test.Exp.Choose.Polymorphic {
     }
 
     pub def testChoose04(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst(123) else open Expr.Var("hi");
+        let cstOrVar = if (true) open_variant Expr.Cst(123) else open_variant Expr.Var("hi");
         choose cstOrVar {
             case Expr.Xor(_) => false
             case Expr.Cst(_) => true
@@ -65,7 +65,7 @@ mod Test.Exp.Choose.Polymorphic {
         };
         let h = if (true) f else g;
 
-        let cstOrNot = if (true) open Expr.Cst("hello") else open Expr.Not(Some("hello"));
+        let cstOrNot = if (true) open_variant Expr.Cst("hello") else open_variant Expr.Not(Some("hello"));
         h(cstOrNot)
     }
 }

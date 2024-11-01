@@ -39,24 +39,26 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
-    xbddthreshold = None,
-    xnoboolcache = false,
-    xnoboolspecialcases = false,
-    xnobooltable = false,
-    xnoboolunif = false,
+    xnoverify = false,
     xnooptimizer = false,
-    xprintphase = Set.empty,
-    xnoqmc = false,
+    xprintphases = false,
+    xnodeprecated = false,
     xsummary = false,
-    xparser = false,
+    xfuzzer = false,
+    xprinttyper = None,
+    xverifyeffects = false,
+    xsubeffecting = Set.empty,
+    xzhegalkin = false,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    XPerfPar = false,
+    xiterations = 5000
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
 
   /**
     * Default test options with the standard library.
@@ -80,7 +82,7 @@ object Options {
   * @param lib                 selects the level of libraries to include.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
-  * @param githubToken           the API key to use for GitHub dependency resolution.
+  * @param githubToken         the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -91,14 +93,6 @@ object Options {
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
   * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache        disable Boolean caches.
-  * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnobooltable        disable Boolean minimization via tabling.
-  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xprintphase         prints the chosen phase ASTs to the build folder.
-  * @param xsummary            prints a summary of the compiled modules.
-  * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -114,18 +108,20 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
-                   xbddthreshold: Option[Int],
-                   xnoboolcache: Boolean,
-                   xnoboolspecialcases: Boolean,
-                   xnobooltable: Boolean,
-                   xnoboolunif: Boolean,
-                   xnoqmc: Boolean,
+                   xnoverify: Boolean,
                    xnooptimizer: Boolean,
-                   xprintphase: Set[String],
+                   xprintphases: Boolean,
+                   xnodeprecated: Boolean,
                    xsummary: Boolean,
-                   xparser: Boolean,
+                   xfuzzer: Boolean,
+                   xprinttyper: Option[String],
+                   xverifyeffects: Boolean,
+                   xsubeffecting: Set[Subeffecting],
+                   xzhegalkin: Boolean,
                    XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
                    XPerfN: Option[Int],
+                   xiterations: Int,
                   )
 
 /**
@@ -160,5 +156,26 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+
+}
+
+sealed trait Subeffecting
+
+object Subeffecting {
+
+  /**
+    * Enable sub-effecting for module-level definitions.
+    */
+  case object ModDefs extends Subeffecting
+
+  /**
+    * Enable sub-effecting for instance-level defs.
+    */
+  case object InsDefs extends Subeffecting
+
+  /**
+    * Enable sub-effecting for lambda expressions.
+    */
+  case object Lambdas extends Subeffecting
 
 }
