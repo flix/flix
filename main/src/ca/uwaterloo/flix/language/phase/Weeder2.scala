@@ -3004,21 +3004,62 @@ object Weeder2 {
 
     private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
-      flatMapN(pickQName(tree), Types.pickType(tree)) {
+      mapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
-          if (!isAllVariables(tpe)) { // TODO: report error for each non-var type and replace it with a var?
-            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
-          } else {
-            Validation.success(TraitConstraint(qname, tpe, tree.loc))
-          }
+          val (tpe1, errors) = replaceWithTypeVars(tpe)
+          errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
+          TraitConstraint(qname, tpe1, tree.loc)
       }
     }
 
-    private def isAllVariables(tpe: Type): Boolean = tpe match {
-      case _: Type.Var => true
-      case Type.Apply(t1, ts, _) => isAllVariables(t1) && isAllVariables(ts)
-      case _ => false
+    private def replaceWithTypeVars(tpe: Type): (Type, List[SourceLocation]) = {
+      val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
+
+      def replace(tpe0: Type): Type = tpe0 match {
+        case Type.Var(ident, loc) => Type.Var(ident, loc)
+        case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
+        case Type.Error(loc) => Type.Error(loc) // Do not add loc to error since an error has already been reported
+        case t =>
+          val loc = getLoc(t)
+          errorLocations += loc
+          val ident = Name.Ident(t.toString, loc)
+          Type.Var(ident, loc) // TODO: Use a better string for ident? Maybe use an implicit Flix?
+      }
+
+      def getLoc(tpe0: Type): SourceLocation = tpe0 match {
+        case Type.Var(ident, loc) => loc
+        case Type.Ambiguous(qname, loc) => loc
+        case Type.Unit(loc) => loc
+        case Type.Tuple(tpes, loc) => loc
+        case Type.RecordRowEmpty(loc) => loc
+        case Type.RecordRowExtend(label, tpe, rest, loc) => loc
+        case Type.Record(row, loc) => loc
+        case Type.SchemaRowEmpty(loc) => loc
+        case Type.SchemaRowExtendByAlias(qname, targs, rest, loc) => loc
+        case Type.SchemaRowExtendByTypes(name, den, tpes, rest, loc) => loc
+        case Type.Schema(row, loc) => loc
+        case Type.Native(fqn, loc) => loc
+        case Type.Arrow(tparams, eff, tresult, loc) => loc
+        case Type.Apply(tpe1, tpe2, loc) => loc
+        case Type.True(loc) => loc
+        case Type.False(loc) => loc
+        case Type.Not(tpe, loc) => loc
+        case Type.And(tpe1, tpe2, loc) => loc
+        case Type.Or(tpe1, tpe2, loc) => loc
+        case Type.Complement(tpe, loc) => loc
+        case Type.Union(tpe1, tpe2, loc) => loc
+        case Type.Intersection(tpe1, tpe2, loc) => loc
+        case Type.Pure(loc) => loc
+        case Type.CaseSet(cases, loc) => loc
+        case Type.CaseUnion(tpe1, tpe2, loc) => loc
+        case Type.CaseIntersection(tpe1, tpe2, loc) => loc
+        case Type.CaseComplement(tpe, loc) => loc
+        case Type.Ascribe(tpe, kind, loc) => loc
+        case Type.Error(loc) => loc
+      }
+
+      (replace(tpe), errorLocations.toList)
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
