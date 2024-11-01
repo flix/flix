@@ -209,14 +209,6 @@ object ZhegalkinExpr {
     }
   }
 
-  /**
-    * Returns *ALL* variables (both flexible and rigid) in the given Zhegalkin expression `e`.
-    */
-  def allVars(e: ZhegalkinExpr): SortedSet[ZhegalkinVar] =
-    e.terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
-      case (s, t) => s ++ t.vars
-    }
-
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
@@ -235,5 +227,5 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
       cst.toString
     else
       s"$cst ⊕ ${terms.map(t => s"($t)").mkString(" ⊕ ")}"
-}
 
+}

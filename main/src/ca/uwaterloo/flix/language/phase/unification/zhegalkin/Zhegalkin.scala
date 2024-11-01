@@ -46,7 +46,15 @@ object Zhegalkin {
 
   /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
   def toSetFormula(z: ZhegalkinExpr): SetFormula = {
-    val variables = ZhegalkinExpr.allVars(z)
+    /**
+      * Returns *ALL* variables (both flexible and rigid) in the given Zhegalkin expression `e`.
+      */
+    def allVars(e0: ZhegalkinExpr): SortedSet[ZhegalkinVar] =
+      e0.terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+        case (s, t) => s ++ t.vars
+      }
+
+    val variables = allVars(z)
     val disjs = variables.subsets().map(pos => {
       val insts = variables.iterator.map {
         case zv@ZhegalkinVar(i, isFlexible) =>
