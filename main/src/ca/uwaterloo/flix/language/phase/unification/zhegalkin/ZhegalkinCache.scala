@@ -15,30 +15,75 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
-
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
 object ZhegalkinCache {
 
   /**
-    * A cache that represents the xor of the two given expressions.
+    * Controls what caches are enabled.
+    */
+  private val EnableUnionCache: Boolean = false
+  private val EnableInterCache: Boolean = false // Experiments suggest: Not worth it.
+  private val EnableXorCache: Boolean = true
+
+  /**
+    * A cache that represents the union of the two given Zhegalkin expressions.
+    */
+  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+
+  /**
+    * A cache that represents the intersection of the two given Zhegalkin expressions.
+    */
+  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+
+  /**
+    * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
     */
   private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
 
   /**
-    * Returns the xor of the two given Zhegalkin expressions `e1` and `e2`.
+    * Returns the union of the two given Zhegalkin expressions `e1` and `e2`.
     *
     * Performs a lookup in the cache or computes the result.
     */
-  def lookupXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, xor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
-    cachedXor.computeIfAbsent((e1, e2), _ => xor(e1, e2))
+  def lookupOrComputeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkUnion: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableUnionCache) {
+      return mkUnion(e1, e2)
+    }
+    cachedUnion.computeIfAbsent((e1, e2), _ => mkUnion(e1, e2))
+  }
+
+  /**
+    * Returns the intersection of the two given Zhegalkin expressions `e1` and `e2`.
+    *
+    * Performs a lookup in the cache or computes the result.
+    */
+  def lookupOrComputeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkInter: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableInterCache) {
+      return mkInter(e1, e2)
+    }
+    cachedInter.computeIfAbsent((e1, e2), _ => mkInter(e1, e2))
+  }
+
+  /**
+    * Returns the exclusive-or of the two given Zhegalkin expressions `e1` and `e2`.
+    *
+    * Performs a lookup in the cache or computes the result.
+    */
+  def lookupOrComputeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkXor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableXorCache) {
+      return mkXor(e1, e2)
+    }
+
+    cachedXor.computeIfAbsent((e1, e2), _ => mkXor(e1, e2))
   }
 
   /**
     * Clears all caches.
     */
   def clearCaches(): Unit = {
+    cachedUnion.clear()
+    cachedInter.clear()
     cachedXor.clear()
   }
 

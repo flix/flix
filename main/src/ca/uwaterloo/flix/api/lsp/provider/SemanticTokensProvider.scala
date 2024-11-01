@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -798,8 +798,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given equality constraint `tc0`.
     */
-  private def visitEqualityConstraint(ec0: Ast.EqualityConstraint): Iterator[SemanticToken] = ec0 match {
-    case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+  private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
       visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 

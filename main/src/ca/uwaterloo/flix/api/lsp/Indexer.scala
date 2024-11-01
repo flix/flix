@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 
 object Indexer {
 
@@ -623,8 +623,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given equality constraint `econstr0`.
     */
-  private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
-    case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
+  private def visitEqualityConstraint(econstr0: EqualityConstraint): Index = econstr0 match {
+    case EqualityConstraint(cst, tpe1, tpe2, loc) =>
       visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 

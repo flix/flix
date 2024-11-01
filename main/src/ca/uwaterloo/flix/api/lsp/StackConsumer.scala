@@ -16,11 +16,11 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
-import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations, EqualityConstraint}
+import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivation, Derivations}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
