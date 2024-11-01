@@ -28,13 +28,30 @@ object ZhegalkinExpr {
 
   /**
     * A smart constructor for Zhegalkin expressions that filters empty intersections.
+    *
+    * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  private def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+  def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
     case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
     case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
     case _ =>
-      // Construct a new polynomial, but skip any terms where the coefficient is the empty set.
-      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+      // Construct a new polynomial.
+
+      // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
+      val ts = terms.filter(t => !t.cst.s.isEmpty)
+
+      // Special case: If ts is empty then this could be 0 or 1.
+      if (ts.isEmpty) {
+        if (cst eq ZhegalkinCst.empty) {
+          return ZhegalkinExpr.zero
+        }
+        if (cst eq ZhegalkinCst.universe) {
+          return ZhegalkinExpr.one
+        }
+      }
+
+      // General case:
+      ZhegalkinExpr(cst, ts)
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
@@ -129,10 +146,6 @@ object ZhegalkinExpr {
       return e1
     }
 
-    assert(e2 != ZhegalkinExpr.one)
-
-    println(s"${e1} -- ${e2}")
-
     computeInter(e1, e2)
   }
 
@@ -200,6 +213,14 @@ object ZhegalkinExpr {
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
 case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
 
+  // Representation Invariants:
+  if (this == ZhegalkinExpr.zero) {
+    assert(this eq ZhegalkinExpr.zero)
+  }
+  if (this == ZhegalkinExpr.one) {
+    assert(this eq ZhegalkinExpr.one)
+  }
+
   /**
     * Returns all flexible variables in the given Zhegalkin expression `e`.
     */
@@ -220,7 +241,7 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
       return this
     }
 
-    terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
+    terms.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
       case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
     }
   }
