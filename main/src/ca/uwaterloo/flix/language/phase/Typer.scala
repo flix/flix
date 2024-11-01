@@ -200,8 +200,6 @@ object Typer {
 
   /**
     * Performs type inference and reassembly on all traits in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
   private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] = {
       val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
