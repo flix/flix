@@ -3277,7 +3277,8 @@ object Weeder2 {
       case Some(t) => Validation.success(t)
       case None =>
         val error = NeedAtLeastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
-        Validation.HardFailure(Chain(error))
+        sctx.errors.add(error)
+        Validation.HardFailure(Chain.empty)
     }
   }
 
