@@ -58,11 +58,11 @@ mod EffectExamples.Queens {
             Nil
         else
             let sol = findOneSolution(size, queens - 1);
-            let next = do Searchable.pick(size);
+            let next = Searchable.pick(size);
             if (isSafePosition(next, 1, sol))
                 next :: sol
             else
-                do Searchable.fail()
+                Searchable.fail()
 
     ///
     /// Returns the number of possible solutions for a board
