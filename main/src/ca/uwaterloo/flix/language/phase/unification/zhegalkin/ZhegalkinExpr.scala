@@ -28,13 +28,30 @@ object ZhegalkinExpr {
 
   /**
     * A smart constructor for Zhegalkin expressions that filters empty intersections.
+    *
+    * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  private def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+  def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
     case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
     case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
     case _ =>
-      // Construct a new polynomial, but skip any terms where the coefficient is the empty set.
-      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+      // Construct a new polynomial.
+
+      // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
+      val ts = terms.filter(t => !t.cst.s.isEmpty)
+
+      // Special case: If ts is empty then this could be 0 or 1.
+      if (ts.isEmpty) {
+        if (cst eq ZhegalkinCst.empty) {
+          return ZhegalkinExpr.zero
+        }
+        if (cst eq ZhegalkinCst.universe) {
+          return ZhegalkinExpr.one
+        }
+      }
+
+      // General case:
+      ZhegalkinExpr(cst, ts)
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
@@ -47,8 +64,12 @@ object ZhegalkinExpr {
     */
   def isEmpty(e: ZhegalkinExpr): Boolean = e == ZhegalkinExpr.zero
 
-  /** Returns the complement of the given Zhegalkin expression `e`. */
-  def zmkNot(e: ZhegalkinExpr): ZhegalkinExpr = {
+  /**
+    * Returns the complement of the given Zhegalkin expression `e`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkCompl(e: ZhegalkinExpr): ZhegalkinExpr = {
     // ¬Ø = 𝓤
     if (e eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.one
@@ -80,7 +101,7 @@ object ZhegalkinExpr {
     }
 
     // Perform a cache lookup or an actual computation.
-    ZhegalkinCache.lookupXor(z1, z2, computeXor)
+    ZhegalkinCache.lookupOrComputeXor(z1, z2, computeXor)
   }
 
   /**
@@ -106,8 +127,36 @@ object ZhegalkinExpr {
       mkZhegalkinExpr(c, resTerms)
   }
 
-  // TOOD: Docs
-  def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+  /**
+    * Returns the union of the given two Zhegalkin expressions `e1` and `e2`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Ø ∪ a = a
+    if (e1 eq ZhegalkinExpr.zero) {
+      return e2
+    }
+    // a ∪ Ø = a
+    if (e2 eq ZhegalkinExpr.zero) {
+      return e1
+    }
+
+    ZhegalkinCache.lookupOrComputeUnion(e1, e2, computeUnion)
+  }
+
+  // TODO: Docs
+  private def computeUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
+    /** a ∪ b = a ⊕ b ⊕ (a ∩ b) */
+    mkXor(mkXor(a, b), mkInter(a, b))
+  }
+
+  /**
+    * Returns the intersection of the given two Zhegalkin expressions `e1` and `e2`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
     // Ø ∩ a = Ø
     if (e1 eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.zero
@@ -120,11 +169,13 @@ object ZhegalkinExpr {
     if (e1 eq ZhegalkinExpr.one) {
       return e2
     }
+    // a ∩ 𝓤 = a
     if (e2 eq ZhegalkinExpr.one) {
       return e1
     }
 
-    computeInter(e1, e2)
+    // Perform a cache lookup or an actual computation.
+    ZhegalkinCache.lookupOrComputeInter(e1, e2, computeInter)
   }
 
   //
@@ -133,7 +184,7 @@ object ZhegalkinExpr {
   //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def computeInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, z2)
@@ -145,7 +196,7 @@ object ZhegalkinExpr {
   //
   // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
     case ZhegalkinTerm(c2, vars) =>
       ZhegalkinTerm(c.inter(c2), vars)
@@ -154,7 +205,7 @@ object ZhegalkinExpr {
   //
   // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterConstantExpr(c: ZhegalkinCst, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
@@ -164,7 +215,7 @@ object ZhegalkinExpr {
   //
   // t ∩ (c2 ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c2) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
@@ -174,57 +225,49 @@ object ZhegalkinExpr {
   }
 
   // (c1 ∩ x11 ∩ x12 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ x22 ∩ ... ∩ x2m)
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = (t1, t2) match {
     case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
       ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
   }
 
-  /** Returns the union of the two Zhegalkin expressions. */
-  // TOOD: Docs
-  def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
-    mkXor(mkXor(a, b), zmkInter(a, b))
-  }
-
-  //
-  // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
-  //
-  // TOOD: Docs
-  def mapExpr(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = z match {
-    case ZhegalkinExpr(_, Nil) => z
-
-    case ZhegalkinExpr(cst, terms) => terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, term) => mkXor(acc, mapTerm(f, term))
-    }
-  }
-
-  //
-  // map(f, c ∩ x1 ∩ x2 ∩ ... ∩ xn) = c ∩ map(f, x1) ∩ map(f, x2) ∩ ... ∩ map(f, xn)
-  //
-  // TOOD: Docs
-  private def mapTerm(f: Int => ZhegalkinExpr, t: ZhegalkinTerm): ZhegalkinExpr = t match {
-    case ZhegalkinTerm(cst, vars) => vars.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, x) => zmkInter(f(x.v), acc)
-    }
-  }
-
-
-  // TODO: Need to distinguish free and rigid variables.
-  def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
-    case ZhegalkinExpr(_, terms) => terms.foldLeft(SortedSet.empty[Int]) {
-      case (acc, term) => acc ++ term.freeVars
-    }
-  }
 
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
 case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
 
-  // TODO: Used where?
-  def vars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
-    case (s, t) => s ++ t.vars
+  // Representation Invariants:
+  //  if (this == ZhegalkinExpr.zero) {
+  //    assert(this eq ZhegalkinExpr.zero)
+  //  }
+  //  if (this == ZhegalkinExpr.one) {
+  //    assert(this eq ZhegalkinExpr.one)
+  //  }
+
+  /**
+    * Returns all flexible variables in the given Zhegalkin expression `e`.
+    */
+  def freeVars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+    case (acc, term) => acc ++ term.freeVars
+  }
+
+  /**
+    * Maps the given function `f` over the variables in `this` Zhegalkin expression.
+    *
+    * {{{
+    *   map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
+    * }}}
+    *
+    */
+  def map(f: Int => ZhegalkinExpr): ZhegalkinExpr = {
+    if (terms == Nil) {
+      return this
+    }
+
+    terms.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
+      case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
+    }
   }
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */
@@ -233,5 +276,5 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
       cst.toString
     else
       s"$cst ⊕ ${terms.map(t => s"($t)").mkString(" ⊕ ")}"
-}
 
+}
