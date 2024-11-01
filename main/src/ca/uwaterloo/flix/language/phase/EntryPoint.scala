@@ -202,7 +202,7 @@ object EntryPoint {
 
       // Case 2: XYZ -> a with ToString[a]
       val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-      val hasToStringConstraint = TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
+      val hasToStringConstraint = TraitEnvironment.holds(TraitConstraint(TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
 
       // Case 3: Bad result type. Error.
       val isBadResultType = !isUnitResult && !hasToStringConstraint
@@ -232,7 +232,7 @@ object EntryPoint {
       ann = Annotations.Empty,
       mod = Modifiers.Empty,
       tparams = Nil,
-      fparams = List(TypedAst.FormalParam(argSym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
+      fparams = List(TypedAst.FormalParam(TypedAst.Binder(argSym, Type.Unit), Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
       eff = Type.IO,

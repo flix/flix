@@ -30,7 +30,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): (Unit, List[SafetyError]) = flix.phaseNew("Safety") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     //
     // Collect all errors.
     //
@@ -44,7 +44,7 @@ object Safety {
     //
     // Check if any errors were found.
     //
-    ((), errors.toList)
+    (root, errors.toList)
   }
 
   /**
@@ -417,7 +417,7 @@ object Safety {
       case Expr.TryCatch(exp, rules, _, _, loc) =>
         val nestedTryCatchError = if (inTryCatch) List(IllegalNestedTryCatch(loc)) else Nil
         nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
-          rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
+          rules.flatMap { case CatchRule(bnd, clazz, e) => checkCatchClass(clazz, bnd.sym.loc) ++ visit(e) }
 
       case Expr.Throw(exp, _, _, loc) =>
         val res = visit(exp) ++ checkThrow(exp)
@@ -727,7 +727,7 @@ object Safety {
     //
     // A lexically bound variable does not appear in this set and is never free.
     //
-    val quantVars = c0.cparams.map(_.sym).toSet
+    val quantVars = c0.cparams.map(_.bnd.sym).toSet
 
     //
     // Check that all negative atoms only use positively defined variable symbols

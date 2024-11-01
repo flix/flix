@@ -153,6 +153,7 @@ object FormatType {
       case SimpleType.Or(_) => false
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
+      case SimpleType.SymmetricDiff(_) => false
       case SimpleType.Difference(_, _) => false
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
@@ -308,6 +309,9 @@ object FormatType {
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")
+      case SimpleType.SymmetricDiff(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" ⊕ ")
       case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>

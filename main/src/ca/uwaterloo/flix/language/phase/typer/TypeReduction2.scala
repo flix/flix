@@ -36,10 +36,13 @@ object TypeReduction2 {
     case t: Type.Cst => t
 
     case Type.Apply(tpe1, tpe2, loc) =>
-      // TODO CONSTR-SOLVER-2 this is recursive. Might be a hot-spot for performance?
       val t1 = reduce(tpe1, scope, renv)
       val t2 = reduce(tpe2, scope, renv)
-      Type.Apply(t1, t2, loc)
+      // Performance: Reuse this, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2))
+        tpe0
+      else
+        Type.Apply(t1, t2, loc)
 
     case Type.Alias(_, _, tpe, _) => tpe
 

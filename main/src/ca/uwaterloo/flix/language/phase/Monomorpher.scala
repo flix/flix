@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
@@ -315,6 +316,7 @@ object Monomorpher {
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
+    implicit val is = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
     val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
 
@@ -380,6 +382,16 @@ object Monomorpher {
     )
   }
 
+  /**
+    * Creates a table for fast lookup of instances.
+    */
+  def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+    for {
+      (sym, insts) <- instances
+      inst <- insts
+    } yield (sym, inst.tpe.typeConstructor.get) -> inst
+  }
+
   def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
@@ -403,7 +415,7 @@ object Monomorpher {
   /**
     * Adds a specialized def for the given symbol `freshSym` and def `defn` with the given substitution `subst`.
     */
-  private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Unit = {
+  private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Unit = {
     // Specialize the formal parameters and introduce fresh local variable symbols.
     val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
@@ -439,7 +451,7 @@ object Monomorpher {
     * If a specialized version of a function does not yet exist, a fresh symbol is created for it,
     * and the definition and substitution is enqueued.
     */
-  private def visitExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
+  private def visitExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
@@ -649,7 +661,7 @@ object Monomorpher {
     *
     * Returns the new method.
     */
-  private def visitJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+  private def visitJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = visitExp(exp0, env0 ++ env1, subst)
@@ -678,18 +690,20 @@ object Monomorpher {
     *
     * The given type must be a normalized type.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
+    val trt = root.traits(sym.trt)
+
+    // find out what we're specializing the sig to by unifying with the type
+    val subst = Unification.unifyTypesIgnoreLeftoverAssocs(sig.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv).get
+    val specialization = subst.m(trt.tparam.sym)
+    val tycon = specialization.typeConstructor.get
 
     // lookup the instance corresponding to this type
-    val instances = root.instances(sig.sym.trt)
+    val instance = instances((sym.trt, tycon))
 
-    val defns = instances.flatMap {
-      inst =>
-        inst.defs.find {
-          defn =>
-            defn.sym.text == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv)
-        }
+    val defns = instance.defs.filter {
+      d => d.sym.text == sig.sym.name
     }
 
     (sig.exp, defns) match {
@@ -701,6 +715,26 @@ object Monomorpher {
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // Case 4: No matching defs and no default. Should have been caught previously.
       case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
+    }
+  }
+
+  /**
+    * Returns `false` if it is *impossible* for `tpe1` and `tpe2` to unify.
+    *
+    * For example, the two function types: `Option[a] -> Unit` and `Bool -> b` cannot possibly unify.
+    *
+    * If the function returns `true` it does not reveal any information: the two types may unify, or they may not unify.
+    */
+  private def fastCanMaybeUnify(tpe1: Type, tpe2: Type): Boolean = {
+    // We only inspect star-types.
+    if (tpe1.kind != Kind.Star || tpe2.kind != Kind.Star) {
+      return true // No information -- may or may not unify.
+    }
+
+    (tpe1, tpe2) match {
+      case (Type.Cst(tc1, _), Type.Cst(tc2, _)) => tc1 == tc2
+      case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) => fastCanMaybeUnify(tpe11, tpe21) && fastCanMaybeUnify(tpe12, tpe22)
+      case _ => true // No information -- may or may not unify.
     }
   }
 
@@ -828,6 +862,7 @@ object Monomorpher {
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y) => Type.mkSymmetricDiff(x, y, loc)
 
       // Simplify case equations.
       case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)

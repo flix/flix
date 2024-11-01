@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, RestrictableCaseSymUse, RestrictableEnumSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Doc, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -33,10 +33,10 @@ import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 /**
   * The Resolver phase performs name resolution on the program.
@@ -82,7 +82,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError & Recoverable]) = flix.phaseNew("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -100,7 +100,7 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
         val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
@@ -126,7 +126,9 @@ object Resolver {
                 )
             }
         }
-    }.withSoftFailures(sctx.errors.asScala)
+    }
+
+    (resolvedRoot, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
@@ -438,7 +440,7 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(List(tparam))
           // ignore the parameter of the super traits; we don't use it
           val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, env, taenv, ns0, root))
-          val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
           val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
           val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env)(ns0, taenv, sctx, root, flix))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
@@ -466,7 +468,7 @@ object Resolver {
           flatMapN(traitVal, tpeVal, tconstrsVal) {
             case (trt, tpe, tconstrs) =>
               val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, env, taenv, ns0, root, loc)
-              val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
+              val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
@@ -482,7 +484,7 @@ object Resolver {
     */
   private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
-      val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
+      val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
       flatMapN(specVal) {
         case spec =>
@@ -940,7 +942,7 @@ object Resolver {
           val env = env0 ++ mkFormalParamEnv(List(p))
           val eVal = resolveExp(exp, env)
           mapN(eVal) {
-            case e => ResolvedAst.Expr.Lambda(p, e, loc)
+            case e => ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
           }
       }
 
@@ -1351,16 +1353,6 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.Do(op, exps, loc) =>
-      val opVal = lookupOp(op, env0, ns0, root)
-      val expsVal = traverse(exps)(resolveExp(_, env0))
-      mapN(opVal, expsVal) {
-        case (o, es) =>
-          checkOpArity(o, exps.length, loc)
-          val opUse = OpSymUse(o.sym, op.loc)
-          ResolvedAst.Expr.Do(opUse, es, loc)
-      }
-
     case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val esVal = traverse(exps)(resolveExp(_, env0))
       flatMapN(esVal) {
@@ -1681,7 +1673,7 @@ object Resolver {
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1711,7 +1703,7 @@ object Resolver {
       val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
     }
   }
 
@@ -1752,7 +1744,9 @@ object Resolver {
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
     // For typing performance we make pure lambdas for all except the last.
     val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
-      case (fp, (acc, first)) => if (first) (ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic), false) else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+      case (fp, (acc, first)) =>
+        if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -2187,7 +2181,7 @@ object Resolver {
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          val head = TraitConstraint.Head(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
@@ -2219,7 +2213,7 @@ object Resolver {
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          val head = TraitConstraint.Head(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
@@ -3685,6 +3679,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -4159,8 +4154,8 @@ object Resolver {
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
-  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), loc)
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, allowSubeffecting: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting, loc)
   }
 
   /**

@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, LocalDefSymUse, RestrictableCaseSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 
 object Indexer {
 
@@ -254,7 +255,7 @@ object Indexer {
     case Expr.Let(bnd, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(bnd.sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // We construct the type manually here, since we do not have immediate access to it
       // like with normal defs.
       val arrowType = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), exp1.eff, exp1.tpe, sym.loc)
@@ -269,7 +270,7 @@ object Indexer {
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expr.Scope(sym, _, exp, _, _, loc) =>
+    case Expr.Scope(Binder(sym, _), _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -292,7 +293,7 @@ object Indexer {
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
-        case TypeMatchRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitType(tpe) ++ visitExp(exp)
+        case TypeMatchRule(bnd, tpe, exp) => Index.occurrenceOf(bnd.sym, tpe) ++ visitType(tpe) ++ visitExp(exp)
       }
       i0 ++ i1
 
@@ -449,7 +450,7 @@ object Indexer {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = traverse(rules) {
-        case SelectChannelRule(sym, chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body) =>
           Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
@@ -505,7 +506,7 @@ object Indexer {
     */
   private def visitPat(pat0: Pattern): Index = pat0 match {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Var(sym, tpe, _) =>
+    case Pattern.Var(Binder(sym, _), tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
     case Pattern.Tag(CaseSymUse(sym, loc), pat, _, _) =>
@@ -608,22 +609,22 @@ object Indexer {
   /**
     * Returns a reverse index for the given trait constraint `tconstr0`.
     */
-  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint): Index = tconstr0 match {
-    case Ast.TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tconstr0: TraitConstraint): Index = tconstr0 match {
+    case TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
     * Returns a reverse index for the given trait constraint `head`.
     */
-  private def visitTraitConstraintHead(head0: Ast.TraitConstraint.Head): Index = head0 match {
-    case Ast.TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Index = head0 match {
+    case TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
   /**
     * Returns a reverse index for the given equality constraint `econstr0`.
     */
-  private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
-    case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
+  private def visitEqualityConstraint(econstr0: EqualityConstraint): Index = econstr0 match {
+    case EqualityConstraint(cst, tpe1, tpe2, loc) =>
       visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 

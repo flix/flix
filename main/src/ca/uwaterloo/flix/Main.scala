@@ -102,6 +102,7 @@ object Main {
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
+      xzhegalkin = cmdOpts.xzhegalkin,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
@@ -350,6 +351,7 @@ object Main {
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
+                     xzhegalkin: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
@@ -414,7 +416,7 @@ object Main {
       case "mod-defs" => Subeffecting.ModDefs
       case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -567,6 +569,10 @@ object Main {
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xzhegalkin
+      opt[Unit]("Xzhegalkin").action((_, c) => c.copy(xzhegalkin = true)).
+        text("[experimental] enables Zhegalkin polynomials")
 
       // Xiterations
       opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).

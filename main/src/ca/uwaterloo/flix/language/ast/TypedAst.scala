@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -46,15 +46,15 @@ object TypedAst {
                   names: MultiMap[List[String], String],
                   precedenceGraph: LabelledPrecedenceGraph)
 
-  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
+  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.EqualityConstraint])
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
   case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
@@ -124,13 +124,13 @@ object TypedAst {
 
     case class Let(bnd: Binder, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Region(tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Scope(bnd: Binder, regionVar: Type.Var, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -282,7 +282,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -309,7 +309,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends VarOrWild
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends VarOrWild
 
     case class Tag(sym: RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
@@ -337,7 +337,7 @@ object TypedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
 
-      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
+      case class Functional(outBnds: List[Binder], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
       case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -355,15 +355,15 @@ object TypedAst {
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
+  case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
@@ -371,9 +371,9 @@ object TypedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

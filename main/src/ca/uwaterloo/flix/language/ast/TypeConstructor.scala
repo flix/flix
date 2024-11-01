@@ -385,6 +385,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the exclusive or (symmetric difference) of two effect sets.
+    */
+  case object SymmetricDiff extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
     * A type constructor that represents a single effect.
     */
   case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {

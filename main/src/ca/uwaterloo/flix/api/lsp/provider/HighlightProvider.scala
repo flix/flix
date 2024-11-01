@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
@@ -63,10 +63,10 @@ object HighlightProvider {
 
         case Entity.Label(label) => highlightLabel(uri, label)
 
-        case Entity.FormalParam(fparam) => highlightVar(uri, fparam.sym)
+        case Entity.FormalParam(fparam) => highlightVar(uri, fparam.bnd.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => highlightVar(uri, sym)
+          case Pattern.Var(Binder(sym, _), _, _) => highlightVar(uri, sym)
           case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => highlightCase(uri, sym)
           case _ => mkNotFound(uri, pos)
         }

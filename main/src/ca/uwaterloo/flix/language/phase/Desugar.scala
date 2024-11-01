@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Modifier, Modifiers}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -217,7 +217,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TraitConstraint]] `tconstr0`.
+    * Desugars the given [[WeededTraitConstraint]] `tconstr0`.
     */
   private def visitTraitConstraint(tconstr0: WeededAst.TraitConstraint): DesugaredAst.TraitConstraint = tconstr0 match {
     case WeededAst.TraitConstraint(trt, tpe0, loc) =>
@@ -726,10 +726,6 @@ object Desugar {
           val rs = handler.rules.map(visitHandlerRule)
           Expr.TryWith(acc, handler.eff, rs, loc)
       }
-
-    case WeededAst.Expr.Do(op, exps, loc) =>
-      val es = visitExps(exps)
-      Expr.Do(op, es, loc)
 
     case WeededAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val es = visitExps(exps)

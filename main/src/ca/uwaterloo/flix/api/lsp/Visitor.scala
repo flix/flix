@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
@@ -466,8 +466,8 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(varSym, regionVar, exp, _, _, _) =>
-        visitVarBinder(varSym, regionVar)
+      case Expr.Scope(bnd, regionVar, exp, _, _, _) =>
+        visitBinder(bnd)
         visitType(regionVar)
         visitExpr(exp)
 
@@ -746,25 +746,25 @@ object Visitor {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val SelectChannelRule(varSym, chan, exp) = rule
+    val SelectChannelRule(bnd, chan, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
     val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeSelectChannelRule(rule)
 
-    visitVarBinder(varSym, chan.tpe)
+    visitBinder(bnd)
     visitExpr(chan)
     visitExpr(exp)
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(varSym, _, tpe, _, loc) = fparam
+    val FormalParam(bnd, _, tpe, _, loc) = fparam
     if (!a.accept(loc)) { return }
 
     c.consumeFormalParam(fparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
     visitType(tpe)
   }
 
@@ -812,13 +812,14 @@ object Visitor {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(sym, tpe, exp) = rule
+    val TypeMatchRule(bnd, tpe, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeTypeMatchRule(rule)
 
+    visitBinder(bnd)
     visitType(tpe)
     visitExpr(exp)
   }
@@ -841,13 +842,14 @@ object Visitor {
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val CatchRule(sym, _, exp) = rule
+    val CatchRule(bnd, _, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeCatchRule(rule)
 
+    visitBinder(bnd)
     visitExpr(exp)
   }
 
@@ -863,12 +865,12 @@ object Visitor {
   }
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val ConstraintParam(varSym, tpe, loc) = cparam
+    val ConstraintParam(bnd, _, loc) = cparam
     if (!a.accept(loc)) { return }
 
     c.consumeConstraintParam(cparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -891,7 +893,7 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(varSym, tpe, _) => visitVarBinder(varSym, tpe)
+    	case Var(varSym, _, _) => visitBinder(varSym)
     	case Cst(_, _, _) => ()
     	case Tag(sym, pat, _, _) =>
     	  visitCaseSymUse(sym)
