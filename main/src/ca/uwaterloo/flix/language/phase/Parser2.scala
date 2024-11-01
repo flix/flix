@@ -612,7 +612,7 @@ object Parser2 {
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
-      Some(NeedAtleastOne(namedTokenSet, context, loc = loc))
+      Some(NeedAtLeastOne(namedTokenSet, context, loc = loc))
     } else {
       None
     }

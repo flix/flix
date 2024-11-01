@@ -226,7 +226,7 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+  case class NeedAtLeastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."

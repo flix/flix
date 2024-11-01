@@ -1357,7 +1357,7 @@ object Weeder2 {
       flatMapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
         // Case: no valid match rule found in match expr
         case (expr, Nil) =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = NeedAtLeastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.success(Expr.Error(error))
         case (expr, rules) => Validation.success(Expr.Match(expr, rules, tree.loc))
@@ -3276,7 +3276,7 @@ object Weeder2 {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
       case None =>
-        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        val error = NeedAtLeastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
         Validation.HardFailure(Chain(error))
     }
   }
