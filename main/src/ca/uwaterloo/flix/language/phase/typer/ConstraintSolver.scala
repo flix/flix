@@ -106,7 +106,11 @@ object ConstraintSolver {
           Debug.stopRecording()
 
           // If there are any constraints we could not resolve, then we report an error.
-          (subst, getErrorsFromTypeConstraints(deferred, renv))
+          // TODO ASSOC-TYPES here we only consider the first error
+          getFirstError(deferred, renv) match {
+            case None => (subst, List.empty)
+            case Some(err) => (subst, List(err))
+          }
 
         case Result.Err(err) => (Substitution.empty, List(err))
       }
@@ -476,12 +480,13 @@ object ConstraintSolver {
   }
 
   /**
-    * Returns the errors from the list of unresolved constraints.
+    * Gets an error from the list of unresolved constraints.
     */
-  private def getErrorsFromTypeConstraints(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): List[TypeError] = deferred.flatMap {
-    case TypeConstraint.Equality(tpe1, tpe2, prov) => List(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.Trait(sym, tpe, loc) => List(mkMissingInstance(sym, tpe, renv, loc))
-    case TypeConstraint.Purification(_, _, _, _, nested) => getErrorsFromTypeConstraints(nested, renv)
+  private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
+    case Nil => None
+    case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
+    case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
