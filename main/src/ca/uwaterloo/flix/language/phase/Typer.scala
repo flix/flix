@@ -256,8 +256,6 @@ object Typer {
 
   /**
     * Performs type inference and reassembly on all instances in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] = {
       val instances0 = for {
