@@ -775,6 +775,11 @@ object SemanticTokensProvider {
     case TypeConstructor.JvmConstructor(_) => false
     case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Error(_, _) => false
+
+    // backend constructors
+    case TypeConstructor.ArrowBackend(_) => false
+    case TypeConstructor.ArrayBackend => false
+    case TypeConstructor.RegionBackend => false
   }
 
   /**

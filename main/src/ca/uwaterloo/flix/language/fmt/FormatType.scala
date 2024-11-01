@@ -158,6 +158,7 @@ object FormatType {
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
+      case SimpleType.ArrowBackend(_, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -178,6 +179,7 @@ object FormatType {
       case SimpleType.Str => true
       case SimpleType.Regex => true
       case SimpleType.Array => true
+      case SimpleType.ArrayBackend => true
       case SimpleType.Vector => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
@@ -187,6 +189,7 @@ object FormatType {
       case SimpleType.Pure => true
       case SimpleType.Univ => true
       case SimpleType.Region => true
+      case SimpleType.RegionBackend => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -250,6 +253,7 @@ object FormatType {
       case SimpleType.Str => "String"
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
+      case SimpleType.ArrayBackend => "ArrayBackend"
       case SimpleType.Vector => "Vector"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
@@ -262,6 +266,7 @@ object FormatType {
       }
       case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
+      case SimpleType.RegionBackend => "RegionBackend"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"{ $labelString }"
@@ -331,6 +336,10 @@ object FormatType {
         val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
+      case SimpleType.ArrowBackend(arg, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val retString = delimit(ret, Mode.Type)
+        s"$argString --> $retString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>

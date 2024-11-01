@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, Simplifier}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -136,6 +136,14 @@ object TypeConstructor {
   @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.mkArrow(arity)
+  }
+
+  /**
+    * A type constructor that represents the type of functions in the backend.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case class ArrowBackend(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
@@ -278,6 +286,17 @@ object TypeConstructor {
       * The shape of an array is `Array[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represent the type of arrays for the backend (no region).
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object ArrayBackend extends TypeConstructor {
+    /**
+      * The shape of an array is `ArrayBackend[t]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -434,6 +453,17 @@ object TypeConstructor {
       * The shape of a star-kind region is Region[l].
       */
     def kind: Kind = Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor for a region value in the backend.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object RegionBackend extends TypeConstructor {
+    /**
+      * The shape of a region is RegionBackend.
+      */
+    def kind: Kind = Kind.Star
   }
 
   /**

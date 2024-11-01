@@ -787,6 +787,12 @@ object Type {
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
+    * Returns the type `ArrayBackend[tpe]` with the given source location `loc`.
+    */
+  def mkArrayBackend(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.ArrayBackend, loc), tpe, loc)
+
+  /**
     * Returns the type `Array[tpe]` with the given source location `loc`.
     */
   def mkVector(tpe: Type, loc: SourceLocation): Type =
@@ -841,6 +847,17 @@ object Type {
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x, loc)
+    }
+    Apply(inner, b, loc)
+  }
+
+  /**
+    * Constructs the backend arrow type (A_1, ..., A_n) -> B
+    */
+  def mkArrowBackend(as: List[Type], b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.Cst(TypeConstructor.ArrowBackend(as.length + 1), loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }

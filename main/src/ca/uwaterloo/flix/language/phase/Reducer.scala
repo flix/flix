@@ -43,9 +43,12 @@ object Reducer {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
+    // This is an over approximation of the types in enums and structs since they are erased.
+    val enumTypes = MonoType.erasedTypes
+    val structTypes = MonoType.erasedTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
-    val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ effectTypes))
+    val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ enumTypes ++ structTypes ++ effectTypes))
 
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
@@ -228,7 +231,7 @@ object Reducer {
           case Lazy(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
           case Enum(_, targs) => taskList.enqueueAll(targs)
-          case Struct(_, elms, _) => taskList.enqueueAll(elms)
+          case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }
