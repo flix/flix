@@ -103,6 +103,149 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     standardInput = System.in
 }
 
+task testApiSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.api.ApiSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testBenchmarkSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.BenchmarkSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testCompilerSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'flix.CompilerSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testFuzzerSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'flix.fuzzers.FuzzerSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testExampleSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.ExampleSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testExperimentalSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'flix.experimental.ExperimentalSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testLanguageSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.language.LanguageSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testLibrarySuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.library.LibrarySuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testMain(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.TestMain', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testToolsSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.tools.ToolsSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testUtilSuite(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    // Note: We do not use the -P (parallelism) flag for two reasons:
+    // (A) It may use excessive amounts of memory (running many instances of the compiler).
+    // (B) It may garble the order of the output (when an error occurs).
+    // Of course we still benefit from parallelism inside Flix itself.
+    args = ['-s', 'ca.uwaterloo.flix.util.UtilSuite', '-o']
+    // We also enforce that all tests can complete with 4GB of memory:
+    jvmArgs = ['-Xmx3g']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
 test.dependsOn testAll
 
 task vscode(type: Copy, dependsOn: [clean, jar]) {
