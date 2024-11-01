@@ -12,7 +12,7 @@ mod EffectExamples.NonDeterminism {
     }
 
     pub def decide(): Bool \ Decision =
-        do Decision.decide()
+        Decision.decide()
 
     pub def chooseTrue(f: Unit -> a \ Decision): a =
         try {
@@ -39,7 +39,7 @@ mod EffectExamples.NonDeterminism {
 
     pub def chooseInt(m: Int32, n: Int32): Int32 \ Failure + Decision =
         if (m > n)
-            do Failure.fail()
+            Failure.fail()
         else if (decide())
             m
         else
@@ -71,7 +71,7 @@ mod EffectExamples.NonDeterminism {
         let b = chooseInt(a, n);
         // Check if they are part of a pythagorean triple
         match sqrt(a * a + b * b) {
-            case None    => do Failure.fail()
+            case None    => Failure.fail()
             case Some(c) => (a, b, c)
         }
 
@@ -88,7 +88,7 @@ mod EffectExamples.NonDeterminism {
         }
 
     pub def chooseOne(l: List[a]): a \ Decision + Failure = match l {
-        case Nil     => do Failure.fail()
+        case Nil     => Failure.fail()
         case x :: xs => if (decide()) x else chooseOne(xs)
     }
 
