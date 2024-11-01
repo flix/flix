@@ -65,7 +65,7 @@ object CompletionUtils {
         Nil
       else
         fparams.map {
-          fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
         }
 
       val retTpe = FormatType.formatType(retTpe0)
@@ -87,7 +87,7 @@ object CompletionUtils {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
     if (functionIsUnit)
       s"$name()"

@@ -363,7 +363,7 @@ sealed trait Completion {
     case Completion.HoleCompletion(sym, decl, priority, loc) =>
       val name = decl.sym.toString
       val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
-        case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+        case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
       } ::: sym.text :: Nil
       val params = args.mkString(", ")
       val snippet = s"$name($params)"

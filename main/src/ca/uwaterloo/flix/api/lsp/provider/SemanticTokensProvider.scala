@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -378,7 +378,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, loc) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -390,7 +390,7 @@ object SemanticTokensProvider {
     case Expr.Region(_, _) =>
       Iterator.empty
 
-    case Expr.Scope(sym, _, exp, _, _, _) =>
+    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -412,9 +412,9 @@ object SemanticTokensProvider {
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, TypeMatchRule(sym, tpe, exp)) =>
-          val o = getSemanticTokenType(sym, tpe)
-          val t = SemanticToken(o, Nil, sym.loc)
+        case (acc, TypeMatchRule(bnd, tpe, exp)) =>
+          val o = getSemanticTokenType(bnd.sym, tpe)
+          val t = SemanticToken(o, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
@@ -509,8 +509,8 @@ object SemanticTokensProvider {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
-        case (acc, CatchRule(sym, _, exp)) =>
-          val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+        case (acc, CatchRule(bnd, _, exp)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
@@ -573,7 +573,7 @@ object SemanticTokensProvider {
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (acc, SelectChannelRule(sym, chan, exp)) =>
+        case (acc, SelectChannelRule(Binder(sym, _), chan, exp)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitExp(chan) ++ visitExp(exp)
       }
@@ -635,7 +635,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
 
-    case Pattern.Var(sym, tpe, loc) =>
+    case Pattern.Var(Binder(sym, _), tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
@@ -798,8 +798,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given equality constraint `tc0`.
     */
-  private def visitEqualityConstraint(ec0: Ast.EqualityConstraint): Iterator[SemanticToken] = ec0 match {
-    case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+  private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
       visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
@@ -825,9 +825,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(sym, _, tpe, _, _) =>
-      val o = getSemanticTokenType(sym, tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
+    case FormalParam(bnd, _, tpe, _, _) =>
+      val o = getSemanticTokenType(bnd.sym, tpe)
+      val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
@@ -890,8 +890,8 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 
-    case Body.Functional(outVars, exp, loc) =>
-      val ts = outVars.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
+    case Body.Functional(outBnds, exp, loc) =>
+      val ts = outBnds.map(bnd => SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc))
       visitExp(exp) ++ ts
 
     case Body.Guard(exp, _) =>
