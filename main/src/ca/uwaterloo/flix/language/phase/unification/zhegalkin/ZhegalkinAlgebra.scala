@@ -42,6 +42,6 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = f.freeVars.map(_.id)
 
-  override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mapExpr(fn, f)
+  override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = f.map(fn)
 
 }
