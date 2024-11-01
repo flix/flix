@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
-
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
 object ZhegalkinCache {

@@ -43,7 +43,7 @@ case class ZhegalkinCst(s: CofiniteIntSet) {
   /** Returns the intersection of `this` Zhegalkin constant with `that`. */
   def inter(that: ZhegalkinCst): ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.intersection(s, that.s))
 
-  /** A human-readable string representation of `this` Zhegalkin constant. Must only be used for debugging. */
+  /** Returns a human-readable string representation of `this` Zhegalkin constant. Must only be used for debugging. */
   override def toString: String = {
     if (s.isEmpty) "Ø"
     else if (s.isUniverse) "𝓤"
