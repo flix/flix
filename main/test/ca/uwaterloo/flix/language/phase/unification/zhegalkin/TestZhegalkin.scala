@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestZhegalkin extends AnyFunSuite with TestUtils {
