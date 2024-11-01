@@ -34,7 +34,7 @@ mod EffectExamples.Range {
         }
         else {
             // Raise the effect to signal the caller with a value.
-            do Emission.emit(lo);
+            Emission.emit(lo);
             range(lo + 1, hi)
         }
 
@@ -42,7 +42,7 @@ mod EffectExamples.Range {
     /// Returns the sum from `0` to `n`.
     ///
     pub def sumTo(n: Int32): Int32 = region rc {
-        let s = Ref.new(rc, 0);
+        let s = Ref.fresh(rc, 0);
         try {
             // Call an effectful function.
             // Note that `sumTo` does not
