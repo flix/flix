@@ -509,10 +509,11 @@ class Flix {
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+      afterWeeder <- weederValidation
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       (afterNamer, namerErrors) = Namer.run(afterDesugar)
       (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
@@ -540,7 +541,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      errors ++= readerErrors ::: lexerErrors ::: parserErrors ::: namerErrors ::: resolutionErrors ::: kinderErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
+      errors ++= readerErrors ::: lexerErrors ::: parserErrors ::: weederErrors ::: namerErrors ::: resolutionErrors ::: kinderErrors ::: derivationErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
       afterStratifier
     }
 
