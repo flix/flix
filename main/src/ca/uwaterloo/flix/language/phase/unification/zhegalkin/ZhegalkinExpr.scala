@@ -147,7 +147,7 @@ object ZhegalkinExpr {
 
   // TODO: Docs
   private def computeUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
+    /** a ∪ b = a ⊕ b ⊕ (a ∩ b) */
     mkXor(mkXor(a, b), mkInter(a, b))
   }
 
