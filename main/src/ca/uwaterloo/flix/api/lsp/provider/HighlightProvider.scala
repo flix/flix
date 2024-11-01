@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.Exception
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
+import scala.annotation.tailrec
+
 object HighlightProvider {
 
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
@@ -38,6 +40,7 @@ object HighlightProvider {
 
   }
 
+  @tailrec
   private def getStructSymOccur(tpe: Type): Option[(Symbol.StructSym, SourceLocation)] = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Struct(sym, _), loc), _, _) => Some((sym, loc))
     case Type.Apply(tpe1: Type.Apply, _, _) => getStructSymOccur(tpe1)
@@ -56,7 +59,30 @@ object HighlightProvider {
       case Some((sym, loc)) => highlightStructSym(uri, sym, loc)
       case None => mkNotFound(uri, pos)
     }
+    case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym, sym.loc)
+    case SymUse.StructFieldSymUse(sym, loc) => highlightStructFieldSym(uri, sym, loc)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightStructFieldSym(uri: String, sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+    def add(x: SourceLocation): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.StructFieldSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
+
+    object StructFieldSymConsumer extends Consumer {
+      override def consumeStructField(field: TypedAst.StructField): Unit = check(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = check(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, StructFieldSymConsumer, Visitor.FileAcceptor(uri))
+    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightStructSym(uri: String, sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): JObject = {
