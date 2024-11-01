@@ -27,26 +27,34 @@ object Zhegalkin {
     * Returns the given set formula as a Zhegalkin polynomial.
     */
   def toZhegalkin(f: SetFormula): ZhegalkinExpr = f match {
-    case SetFormula.Univ => ZhegalkinExpr(ZhegalkinCst.universe, Nil)
-    case SetFormula.Empty => ZhegalkinExpr(ZhegalkinCst.empty, Nil)
+    case SetFormula.Univ => ZhegalkinExpr.one
+    case SetFormula.Empty => ZhegalkinExpr.zero
     case Cst(c) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
     case Var(x) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
-    case Compl(f) => ZhegalkinExpr.zmkNot(toZhegalkin(f))
+    case Compl(f) => ZhegalkinExpr.mkCompl(toZhegalkin(f))
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
-      polys.reduce(ZhegalkinExpr.zmkInter)
+      polys.reduce(ZhegalkinExpr.mkInter)
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
-      polys.reduce(ZhegalkinExpr.zmkUnion)
+      polys.reduce(ZhegalkinExpr.mkUnion)
   }
 
   /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
   def toSetFormula(z: ZhegalkinExpr): SetFormula = {
-    val variables = z.vars
+    /**
+      * Returns *ALL* variables (both flexible and rigid) in the given Zhegalkin expression `e`.
+      */
+    def allVars(e0: ZhegalkinExpr): SortedSet[ZhegalkinVar] =
+      e0.terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+        case (s, t) => s ++ t.vars
+      }
+
+    val variables = allVars(z)
     val disjs = variables.subsets().map(pos => {
       val insts = variables.iterator.map {
         case zv@ZhegalkinVar(i, isFlexible) =>
