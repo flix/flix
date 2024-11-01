@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus, StackConsumer, Visitor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Expr, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Def, Expr, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -42,8 +42,32 @@ object HighlightProvider {
     case Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
     case Binder(sym, _) => highlightVarSym(uri, sym)
     case Case(sym, _, _, _) => highlightCaseSym(uri, sym)
-    case CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
+    case SymUse.CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
+    case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym)
+    case SymUse.DefSymUse(sym, _) => highlightDefnSym(uri, sym)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightDefnSym(uri: String, sym: Symbol.DefnSym)(implicit root: Root): JObject = {
+    var occurs: List[Symbol.DefnSym] = Nil
+    def add(x: Symbol.DefnSym): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.DefnSym): Unit = if (x == sym) { add(x) }
+
+    object DefnSymConsumer extends Consumer {
+      override def consumeDef(defn: TypedAst.Def): Unit = check(defn.sym)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = check(sym.sym)
+    }
+
+    Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
+
+    val write = DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(sym => DocumentHighlight(Range.from(sym.loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightCaseSym(uri: String, sym: Symbol.CaseSym)(implicit root: Root): JObject = {
