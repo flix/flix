@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.{ZhegalkinExpr, ZhegalkinVar}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 
 import scala.collection.immutable.SortedSet
 

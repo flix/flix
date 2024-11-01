@@ -15,40 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
-import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
+import ca.uwaterloo.flix.util.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
 object Zhegalkin {
-
-  /** Represents a variable. */
-  case class ZhegalkinVar(v: Int, flexible: Boolean) extends Ordered[ZhegalkinVar] {
-    override def toString: String = if (flexible) s"x$v" else s"x!$v"
-
-    override def compare(that: ZhegalkinVar): Int = {
-      val cmp = this.v - that.v
-      if (cmp != 0) {
-        return cmp
-      }
-      val x = if (this.flexible) 0 else 1
-      val y = if (that.flexible) 0 else 1
-      x - y
-    }
-  }
-
-
-  /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
-  case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
-    override def toString: String =
-      if (vars.isEmpty)
-        cst.toString
-      else
-        s"$cst ∩ ${vars.mkString(" ∩ ")}"
-  }
 
   /** Companion object for [[ZhegalkinExpr]] */
   object ZhegalkinExpr {
@@ -66,13 +39,6 @@ object Zhegalkin {
   case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
     def vars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
       case (s, t) => s ++ t.vars
-    }
-
-    // TODO: Remove expensive assertions:
-    private val grouped: Map[SortedSet[ZhegalkinVar], List[ZhegalkinTerm]] = terms.groupBy(_.vars)
-
-    if (grouped.exists(_._2.length > 1)) {
-      throw InternalCompilerException("Invariant violated: Duplicate term", SourceLocation.Unknown)
     }
 
     override def toString: String =
@@ -93,23 +59,17 @@ object Zhegalkin {
       ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
   }
 
-  /** Returns the xor of the two Zhegalkin constants */
-  private def mkXor(c1: ZhegalkinCst, c2: ZhegalkinCst): ZhegalkinCst = {
-    // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
-    c1.union(c2).inter(c1.inter(c2).compl)
-  }
-
   /**
     * Returns the xor of the two Zhegalkin expressions.
     *
     * Uses identity laws and caching to speedup the computation.
     */
   def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
-    // 0 ⊕ a = a (Identity Law)
+    // 0 ⊕ a = a
     if (z1 eq ZhegalkinExpr.zero) {
       return z2
     }
-    // a ⊕ 0 = a (Identity Law)
+    // a ⊕ 0 = a
     if (z2 eq ZhegalkinExpr.zero) {
       return z1
     }
@@ -125,7 +85,7 @@ object Zhegalkin {
     */
   private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = mkXor(c1, c2)
+      val c = ZhegalkinCst.mkXor(c1, c2)
       // Eliminate duplicates: t ⊕ t = 0
       val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
 
@@ -134,7 +94,7 @@ object Zhegalkin {
       val resTerms = grouped.map {
         case (vars, l) =>
           val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst(CofiniteIntSet.empty)) { // Neutral element for Xor
-            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
           }
           ZhegalkinTerm(mergedCst, vars)
       }
@@ -147,13 +107,33 @@ object Zhegalkin {
     // ¬a = 1 ⊕ a
     mkXor(ZhegalkinExpr.one, a)
 
+  def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Ø ∩ a = Ø
+    if (e1 eq ZhegalkinExpr.zero) {
+      return ZhegalkinExpr.zero
+    }
+    // a ∩ Ø = Ø
+    if (e2 eq ZhegalkinExpr.zero) {
+      return ZhegalkinExpr.zero
+    }
+    // 𝓤 ∩ a = a
+    if (e1 eq ZhegalkinExpr.one) {
+      return e2
+    }
+    if (e2 eq ZhegalkinExpr.one) {
+      return e1
+    }
+
+    computeInter(e1, e2)
+  }
+
   //
   // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //   =   (c1  ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
-  def zmkInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
+  private def computeInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, z2)
       ts1.foldLeft(zero) {
@@ -231,12 +211,8 @@ object Zhegalkin {
   // TODO: Need to distinguish free and rigid variables.
   def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
     case ZhegalkinExpr(_, terms) => terms.foldLeft(SortedSet.empty[Int]) {
-      case (acc, term) => acc ++ freeVarsTerm(term)
+      case (acc, term) => acc ++ term.freeVars
     }
-  }
-
-  private def freeVarsTerm(t: Zhegalkin.ZhegalkinTerm): SortedSet[Int] = t match {
-    case ZhegalkinTerm(_, vars) => vars.filter(x => x.flexible).map(_.v)
   }
 
   /**
