@@ -29,6 +29,17 @@ object ZhegalkinExpr {
   /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
   val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.universe, Nil)
 
+  /**
+    * A smart constructor for Zhegalkin expressions that filters empty intersections.
+    */
+  private def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
+    case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
+    case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
+    case _ =>
+      // Construct a new polynomial, but skip any terms where the coefficient is the empty set.
+      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  }
+
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
   def mkVar(x: ZhegalkinVar): ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(x))))
 
@@ -39,15 +50,10 @@ object ZhegalkinExpr {
     */
   def isEmpty(e: ZhegalkinExpr): Boolean = e == ZhegalkinExpr.zero
 
-  /**
-    * A smart constructor for Zhegalkin expressions that filters empty intersections.
-    */
-  def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
-    case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
-    case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
-    case _ =>
-      // Construct a new polynomial, but skip any terms where the coefficient is the empty set.
-      ZhegalkinExpr(cst, terms.filter(t => !t.cst.s.isEmpty))
+  /** Returns the complement of the given Zhegalkin expression `e`. */
+  def zmkNot(e: ZhegalkinExpr): ZhegalkinExpr = {
+    // ¬a = 1 ⊕ a
+    mkXor(ZhegalkinExpr.one, e)
   }
 
   /**
@@ -92,11 +98,6 @@ object ZhegalkinExpr {
       mkZhegalkinExpr(c, resTerms)
   }
 
-
-  /** Returns the complement of the Zhegalkin expr. */
-  def zmkNot(a: ZhegalkinExpr): ZhegalkinExpr =
-    // ¬a = 1 ⊕ a
-    mkXor(ZhegalkinExpr.one, a)
 
   def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
     // Ø ∩ a = Ø
