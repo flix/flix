@@ -58,7 +58,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true, xzhegalkin = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
 
   /**
     * Default test options with the standard library.
