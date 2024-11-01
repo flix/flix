@@ -106,7 +106,7 @@ object ZhegalkinExpr {
       mkZhegalkinExpr(c, resTerms)
   }
 
-  // TOOD: Docs
+  // TODO: Docs
   def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
     // Ø ∩ a = Ø
     if (e1 eq ZhegalkinExpr.zero) {
@@ -133,7 +133,7 @@ object ZhegalkinExpr {
   //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def computeInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, z2)
@@ -145,7 +145,7 @@ object ZhegalkinExpr {
   //
   // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
     case ZhegalkinTerm(c2, vars) =>
       ZhegalkinTerm(c.inter(c2), vars)
@@ -154,7 +154,7 @@ object ZhegalkinExpr {
   //
   // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterConstantExpr(c: ZhegalkinCst, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
@@ -164,7 +164,7 @@ object ZhegalkinExpr {
   //
   // t ∩ (c2 ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c2) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
   //
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
@@ -174,41 +174,18 @@ object ZhegalkinExpr {
   }
 
   // (c1 ∩ x11 ∩ x12 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ x22 ∩ ... ∩ x2m)
-  // TOOD: Docs
+  // TODO: Docs
   private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = (t1, t2) match {
     case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
       ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
   }
 
   /** Returns the union of the two Zhegalkin expressions. */
-  // TOOD: Docs
+  // TODO: Docs
   def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
     /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
     mkXor(mkXor(a, b), zmkInter(a, b))
   }
-
-  //
-  // map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
-  //
-  // TOOD: Docs
-  def mapExpr(f: Int => ZhegalkinExpr, z: ZhegalkinExpr): ZhegalkinExpr = z match {
-    case ZhegalkinExpr(_, Nil) => z
-
-    case ZhegalkinExpr(cst, terms) => terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, term) => mkXor(acc, mapTerm(f, term))
-    }
-  }
-
-  //
-  // map(f, c ∩ x1 ∩ x2 ∩ ... ∩ xn) = c ∩ map(f, x1) ∩ map(f, x2) ∩ ... ∩ map(f, xn)
-  //
-  // TOOD: Docs
-  private def mapTerm(f: Int => ZhegalkinExpr, t: ZhegalkinTerm): ZhegalkinExpr = t match {
-    case ZhegalkinTerm(cst, vars) => vars.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, x) => zmkInter(f(x.id), acc)
-    }
-  }
-
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
@@ -219,6 +196,24 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
     */
   def freeVars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
     case (acc, term) => acc ++ term.freeVars
+  }
+
+  /**
+    * Maps the given function `f` over the variables in `this` Zhegalkin expression.
+    *
+    * {{{
+    *   map(f, c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = c ⊕ map(f, t1) ⊕ map(f, t2) ⊕ ... ⊕ map(f, tn)
+    * }}}
+    *
+    */
+  def map(f: Int => ZhegalkinExpr): ZhegalkinExpr = {
+    if (terms == Nil) {
+      return this
+    }
+
+    terms.foldLeft(ZhegalkinExpr(cst, Nil)) {
+      case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
+    }
   }
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */
