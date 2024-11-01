@@ -40,7 +40,7 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
   // Performance: We must override the default implementation of `mkXor` to increase performance.
   override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkXor(f1, f2)
 
-  override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = ZhegalkinExpr.zfreeVars(f)
+  override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = f.freeVars.map(_.id)
 
   override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mapExpr(fn, f)
 

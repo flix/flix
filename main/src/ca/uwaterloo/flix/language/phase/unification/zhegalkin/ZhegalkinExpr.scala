@@ -205,26 +205,28 @@ object ZhegalkinExpr {
   // TOOD: Docs
   private def mapTerm(f: Int => ZhegalkinExpr, t: ZhegalkinTerm): ZhegalkinExpr = t match {
     case ZhegalkinTerm(cst, vars) => vars.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, x) => zmkInter(f(x.v), acc)
+      case (acc, x) => zmkInter(f(x.id), acc)
     }
   }
 
-
-  // TODO: Need to distinguish free and rigid variables.
-  def zfreeVars(z: ZhegalkinExpr): SortedSet[Int] = z match {
-    case ZhegalkinExpr(_, terms) => terms.foldLeft(SortedSet.empty[Int]) {
-      case (acc, term) => acc ++ term.freeVars
+  /**
+    * Returns *ALL* variables (both flexible and rigid) in the given Zhegalkin expression `e`.
+    */
+  def allVars(e: ZhegalkinExpr): SortedSet[ZhegalkinVar] =
+    e.terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+      case (s, t) => s ++ t.vars
     }
-  }
 
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
 case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
 
-  // TODO: Used where?
-  def vars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
-    case (s, t) => s ++ t.vars
+  /**
+    * Returns all flexible variables in the given Zhegalkin expression `e`.
+    */
+  def freeVars: SortedSet[ZhegalkinVar] = terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
+    case (acc, term) => acc ++ term.freeVars
   }
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */

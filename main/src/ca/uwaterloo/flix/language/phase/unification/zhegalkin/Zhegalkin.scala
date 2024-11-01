@@ -46,7 +46,7 @@ object Zhegalkin {
 
   /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
   def toSetFormula(z: ZhegalkinExpr): SetFormula = {
-    val variables = z.vars
+    val variables = ZhegalkinExpr.allVars(z)
     val disjs = variables.subsets().map(pos => {
       val insts = variables.iterator.map {
         case zv@ZhegalkinVar(i, isFlexible) =>

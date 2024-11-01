@@ -23,7 +23,7 @@ case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
   /**
     * Returns the free (i.e. flexible) variables in `this` Zhegalkin term.
     */
-  def freeVars: SortedSet[Int] = vars.filter(x => x.flexible).map(_.v)
+  def freeVars: SortedSet[ZhegalkinVar] = vars.filter(x => x.flexible)
 
   /** Returns a human-readable string representation of `this` Zhegalkin term. Must only be used for debugging. */
   override def toString: String =
