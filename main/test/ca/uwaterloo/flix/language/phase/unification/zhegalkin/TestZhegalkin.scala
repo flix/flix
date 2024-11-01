@@ -2,12 +2,11 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin.ZhegalkinExpr
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestZhegalkin extends AnyFunSuite with TestUtils {
 
-  implicit val alg: BoolAlg[ZhegalkinExpr] = Zhegalkin.ZhegalkinAlgebra
+  implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
 
   test("Test.Zhegalkin.Success.01") {
     val f1 = alg.mkBot
