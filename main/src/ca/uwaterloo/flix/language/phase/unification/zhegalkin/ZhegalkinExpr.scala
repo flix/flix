@@ -57,17 +57,13 @@ object ZhegalkinExpr {
 
     // Performance: A common case.
     // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
-    //if ((e.cst == ZhegalkinCst.universe) && e.terms.forall(t => t.cst == ZhegalkinCst.universe)) {
-    //  println(c.getAndIncrement())
-    //}
+    if ((e.cst eq ZhegalkinCst.empty) && e.terms.forall(t => t.cst eq ZhegalkinCst.universe)) {
+      return e.copy(cst = ZhegalkinCst.universe)
+    }
 
     // ¬a = 1 ⊕ a
-    val r = mkXor(ZhegalkinExpr.one, e)
-    //println(r)
-    r
+    mkXor(ZhegalkinExpr.one, e)
   }
-
-  val c = new AtomicLong()
 
   /**
     * Returns the xor of the two Zhegalkin expressions.
