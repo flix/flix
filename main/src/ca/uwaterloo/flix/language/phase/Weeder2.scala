@@ -3135,6 +3135,7 @@ object Weeder2 {
     expect(tree, TreeKind.QName)
     val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
     assert(idents.nonEmpty) // We require at least one element to construct a qname
+    // TODO make error for the assertion above
     val first = idents.head
     val ident = idents.last
     val nnameIdents = idents.dropRight(1)
@@ -3181,6 +3182,7 @@ object Weeder2 {
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
       case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
+        // TODO: Do the same thing do the top level tree `tree` (the parameter to this function)
         val name = text(tree).mkString("")
         Name.Ident(name, tree.loc)
       case Some(t: Tree) if t.kind == TreeKind.CommentList =>
@@ -3189,6 +3191,7 @@ object Weeder2 {
         val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
         sctx.errors.add(error)
         Name.Ident(name, tree.loc)
+      // TODO: Replace exception below with error?
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }
