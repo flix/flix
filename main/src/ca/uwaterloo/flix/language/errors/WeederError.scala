@@ -1058,17 +1058,21 @@ object WeederError {
   /**
     * An error raised to indicate an invalid function call in a select rule.
     *
-    * @param qname the name of the function being called
+    * @param optQname the name of the function being called.
+    * @param loc      the location of `qname` if it exists.
     */
-  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError with Recoverable {
+  case class UnexpectedSelectChannelRuleFunction(optQname: Option[Name.QName], loc: SourceLocation) extends WeederError with Recoverable {
 
-    val loc: SourceLocation = qname.loc
+    private val qname = optQname match {
+      case Some(name) => s" '$name'"
+      case None => ""
+    }
 
-    override def summary: String = s"Unexpected channel function '$qname'."
+    override def summary: String = s"Unexpected channel function$qname."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected channel function.
+      s""">> Unexpected channel function$qname.
          |
          |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
          |
