@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.mkXor
-import ca.uwaterloo.flix.util.CofiniteIntSet
-
+import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.SortedSet
 
 /** Companion object for [[ZhegalkinExpr]] */
@@ -52,9 +50,24 @@ object ZhegalkinExpr {
 
   /** Returns the complement of the given Zhegalkin expression `e`. */
   def zmkNot(e: ZhegalkinExpr): ZhegalkinExpr = {
+    // ¬Ø = 𝓤
+    if (e eq ZhegalkinExpr.zero) {
+      return ZhegalkinExpr.one
+    }
+
+    // Performance: A common case.
+    // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
+    //if ((e.cst == ZhegalkinCst.universe) && e.terms.forall(t => t.cst == ZhegalkinCst.universe)) {
+    //  println(c.getAndIncrement())
+    //}
+
     // ¬a = 1 ⊕ a
-    mkXor(ZhegalkinExpr.one, e)
+    val r = mkXor(ZhegalkinExpr.one, e)
+    //println(r)
+    r
   }
+
+  val c = new AtomicLong()
 
   /**
     * Returns the xor of the two Zhegalkin expressions.
@@ -90,7 +103,7 @@ object ZhegalkinExpr {
       val grouped = tsr1.groupBy(_.vars).toList
       val resTerms = grouped.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst(CofiniteIntSet.empty)) { // Neutral element for Xor
+          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor
             case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
           }
           ZhegalkinTerm(mergedCst, vars)
