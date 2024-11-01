@@ -77,11 +77,10 @@ import scala.collection.mutable
   *
   * Type normalization details:
   *
-  *   - Record fields are in sorted order
-  *   - Schema fields are in sorted order
-  *   - Effect formulas are flat unions of effects in sorted order.
+  *   - Record fields are in alphabetical order
+  *   - Schema fields are in alphabetical order
+  *   - Effect formulas are flat unions of effects in alphabetical order.
   *   - Case set formulas are a single CaseSet literal.
-  *   - No aliases, associated types, or interop-related types.
   *
   */
 object Monomorpher {
