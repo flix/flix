@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
   *     - result type boxing, this includes return types of defs and their applications
   *     - function call return value casting
   *   - Enums and Structs
-  *     - type arguments are erased.
+  *     - type arguments are erased
   *     - polymorphic term types in the declaration are polymorphically erased (see [[polymorphicErasure]])
   */
 object Eraser {
