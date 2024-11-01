@@ -10,7 +10,7 @@ mod EffectExamples.Threads {
 
     pub enum Status {
         case Complete(Int32)
-        case Suspended(Int32, Int32 -> Int32 \ Exchangeable)
+        case Suspended(Int32, Int32 -> Int32)
     }
 
     def step(f: Unit -> Int32 \ Exchangeable): Status =
@@ -34,9 +34,9 @@ mod EffectExamples.Threads {
                 runBoth(() -> k1(m2), () -> k2(m1))
 
             case (Complete(vf), Suspended(m2, k2)) =>
-                runBoth(() -> vf, () -> k2(m2))
+                runBoth(checked_cast(() -> vf), () -> k2(m2))
 
             case (Suspended(m1, k1), Complete(vg)) =>
-                runBoth(() -> k1(m1), () -> vg)
+                runBoth(() -> k1(m1), checked_cast(() -> vg))
         }
 }
