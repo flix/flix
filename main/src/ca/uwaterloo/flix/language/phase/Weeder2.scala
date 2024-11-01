@@ -3007,7 +3007,7 @@ object Weeder2 {
       flatMapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
-          if (!isAllVariables(tpe)) {
+          if (!isAllVariables(tpe)) { // TODO: report error for each non-var type and replace it with a var?
             Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
           } else {
             Validation.success(TraitConstraint(qname, tpe, tree.loc))
