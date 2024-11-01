@@ -105,19 +105,20 @@ mod PrettyPrinter {
     }
 
     def example3(): Unit \ Pretty = {
-        group(() -> {
+        let content = () -> {
             text("this");
-            (() -> {
+            nest(() -> {
                 line();
                 group(() -> {
                     text("takes");
                     line();
                     text("four")
                 })
-            }) |> nest(9);
+            }, 9);
             line();
             text("lines")
-        })
+        };
+        group(content)
     }
 
     pub def main(): Unit \ IO = {
