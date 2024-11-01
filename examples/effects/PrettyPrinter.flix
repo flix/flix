@@ -28,19 +28,19 @@ mod PrettyPrinter {
         pub def emitNewline(): Unit
     }
 
-    def text(content: String): Unit \ Emit = do Emit.emitText(content)
+    def text(content: String): Unit \ Emit = Emit.emitText(content)
 
-    def newline(): Unit \ Emit = do Emit.emitNewline()
+    def newline(): Unit \ Emit = Emit.emitNewline()
 
     def space(): Unit \ Emit = text(" ")
 
     def spaces(n: Int32): Unit \ Emit = if (n > 0) text(String.repeat(n, " ")) else ()
 
-    def lineOr(replace: String): Unit \ Flow + Emit + Indent = match do Flow.flow() {
+    def lineOr(replace: String): Unit \ Flow + Emit + Indent = match Flow.flow() {
         case Direction.Horizontal => text(replace)
         case Direction.Vertical   =>
             newline();
-            text(String.repeat(do Indent.indent(), " "))
+            text(String.repeat(Indent.indent(), " "))
     }
 
     def line(): Unit \ Flow + Emit + Indent = lineOr(" ")
@@ -55,10 +55,10 @@ mod PrettyPrinter {
         }
 
     def nest(doc: Unit -> a \ Layout, j: Int32): a \ Layout =
-        (do Indent.indent() + j) |> in(doc)
+        (Indent.indent() + j) |> in(doc)
 
     def nested(doc: Unit -> a \ Layout): a \ Layout =
-        nest(doc, do DefaultIndentation.defaultIndentation())
+        nest(doc, DefaultIndentation.defaultIndentation())
 
     def inDirection(doc: Unit -> a \ Layout, direction: Direction): a \ Indent + DefaultIndentation =
         try {
@@ -81,7 +81,7 @@ mod PrettyPrinter {
     type alias Pretty = Emit + Layout + LayoutChoice
 
     def group(p: Unit -> Unit \ Layout): Unit \ Indent + DefaultIndentation + LayoutChoice =
-        (do LayoutChoice.choice()) |> inDirection(p)
+        (LayoutChoice.choice()) |> inDirection(p)
 
     def softLine(): Unit \ Indent + DefaultIndentation + LayoutChoice = group(line)
 
