@@ -404,7 +404,12 @@ object Simplifier {
     }
   }
 
-  /** Adaptation of [[visitType]] that returns [[Type]] instead. */
+  /**
+    * Adaptation of [[visitType]] that returns [[Type]] instead.
+    *
+    * The change from [[visitType]] is that here we might have type variables and we also cannot
+    * eliminate rows (a type could be `a[#(x=Char | b)]` for example).
+    */
   private def visitPolyType(tpe: Type): Type = {
     val base = tpe.baseType
     base match {
@@ -518,16 +523,15 @@ object Simplifier {
           case TypeConstructor.CaseIntersection(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseUnion(_) => Type.mkUnit(loc)
 
+          case TypeConstructor.SchemaRowEmpty => Type.mkSchemaRowEmpty(loc)
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            val List(predType, restType) = tpe.typeArguments
+            Type.mkSchemaRowExtend(pred, visitPolyType(predType), visitPolyType(restType), loc)
+
           case TypeConstructor.Relation =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowExtend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
