@@ -37,7 +37,7 @@ object Zhegalkin {
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
-      polys.reduce(ZhegalkinExpr.zmkInter)
+      polys.reduce(ZhegalkinExpr.mkInter)
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)

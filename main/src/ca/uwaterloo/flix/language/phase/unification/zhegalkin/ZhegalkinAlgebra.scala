@@ -35,7 +35,7 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.zmkUnion(f1, f2)
 
-  override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.zmkInter(f1, f2)
+  override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkInter(f1, f2)
 
   // Performance: We must override the default implementation of `mkXor` to increase performance.
   override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkXor(f1, f2)

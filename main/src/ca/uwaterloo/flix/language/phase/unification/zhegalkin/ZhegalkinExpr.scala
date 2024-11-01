@@ -106,8 +106,12 @@ object ZhegalkinExpr {
       mkZhegalkinExpr(c, resTerms)
   }
 
-  // TODO: Docs
-  def zmkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+  /**
+    * Returns the intersection of the given two Zhegalkin expressions `e1` and `e2`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
     // Ø ∩ a = Ø
     if (e1 eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.zero
@@ -120,9 +124,14 @@ object ZhegalkinExpr {
     if (e1 eq ZhegalkinExpr.one) {
       return e2
     }
+    // a ∩ 𝓤 = a
     if (e2 eq ZhegalkinExpr.one) {
       return e1
     }
+
+    assert(e2 != ZhegalkinExpr.one)
+
+    println(s"${e1} -- ${e2}")
 
     computeInter(e1, e2)
   }
@@ -184,7 +193,7 @@ object ZhegalkinExpr {
   // TODO: Docs
   def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
     /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
-    mkXor(mkXor(a, b), zmkInter(a, b))
+    mkXor(mkXor(a, b), mkInter(a, b))
   }
 }
 

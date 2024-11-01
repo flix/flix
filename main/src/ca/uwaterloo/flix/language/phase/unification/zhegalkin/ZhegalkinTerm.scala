@@ -35,7 +35,7 @@ case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
     */
   def map(f: Int => ZhegalkinExpr): ZhegalkinExpr = {
     vars.foldLeft(ZhegalkinExpr(cst, Nil)) {
-      case (acc, x) => ZhegalkinExpr.zmkInter(f(x.id), acc)
+      case (acc, x) => ZhegalkinExpr.mkInter(f(x.id), acc)
     }
   }
 
