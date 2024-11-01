@@ -34,7 +34,7 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[TypedAst.Root, TypeError], List[TypeError & Recoverable]) = flix.phaseNew("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[TypedAst.Root, TypeError], List[TypeError]) = flix.phaseNew("Typer") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val traitEnv = mkTraitEnv(root.traits, root.instances)
