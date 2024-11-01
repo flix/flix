@@ -64,8 +64,12 @@ object ZhegalkinExpr {
     */
   def isEmpty(e: ZhegalkinExpr): Boolean = e == ZhegalkinExpr.zero
 
-  /** Returns the complement of the given Zhegalkin expression `e`. */
-  def zmkNot(e: ZhegalkinExpr): ZhegalkinExpr = {
+  /**
+    * Returns the complement of the given Zhegalkin expression `e`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkCompl(e: ZhegalkinExpr): ZhegalkinExpr = {
     // ¬Ø = 𝓤
     if (e eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.one
@@ -97,7 +101,7 @@ object ZhegalkinExpr {
     }
 
     // Perform a cache lookup or an actual computation.
-    ZhegalkinCache.lookupXor(z1, z2, computeXor)
+    ZhegalkinCache.lookupOrComputeXor(z1, z2, computeXor)
   }
 
   /**
@@ -124,6 +128,30 @@ object ZhegalkinExpr {
   }
 
   /**
+    * Returns the union of the given two Zhegalkin expressions `e1` and `e2`.
+    *
+    * Uses identity laws to speed up the computation.
+    */
+  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // Ø ∪ a = a
+    if (e1 eq ZhegalkinExpr.zero) {
+      return e2
+    }
+    // a ∪ Ø = a
+    if (e2 eq ZhegalkinExpr.zero) {
+      return e1
+    }
+
+    ZhegalkinCache.lookupOrComputeUnion(e1, e2, computeUnion)
+  }
+
+  // TODO: Docs
+  private def computeUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
+    /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
+    mkXor(mkXor(a, b), mkInter(a, b))
+  }
+
+  /**
     * Returns the intersection of the given two Zhegalkin expressions `e1` and `e2`.
     *
     * Uses identity laws to speed up the computation.
@@ -146,7 +174,8 @@ object ZhegalkinExpr {
       return e1
     }
 
-    computeInter(e1, e2)
+    // Perform a cache lookup or an actual computation.
+    ZhegalkinCache.lookupOrComputeInter(e1, e2, computeInter)
   }
 
   //
@@ -202,12 +231,7 @@ object ZhegalkinExpr {
       ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
   }
 
-  /** Returns the union of the two Zhegalkin expressions. */
-  // TODO: Docs
-  def zmkUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ⊕ b = a ⊕ b ⊕ (a ∩ b) */
-    mkXor(mkXor(a, b), mkInter(a, b))
-  }
+
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */

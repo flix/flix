@@ -31,9 +31,9 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
 
-  override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.zmkNot(f)
+  override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkCompl(f)
 
-  override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.zmkUnion(f1, f2)
+  override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkUnion(f1, f2)
 
   override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkInter(f1, f2)
 

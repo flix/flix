@@ -33,7 +33,7 @@ object Zhegalkin {
     case Var(x) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
-    case Compl(f) => ZhegalkinExpr.zmkNot(toZhegalkin(f))
+    case Compl(f) => ZhegalkinExpr.mkCompl(toZhegalkin(f))
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
@@ -41,7 +41,7 @@ object Zhegalkin {
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
-      polys.reduce(ZhegalkinExpr.zmkUnion)
+      polys.reduce(ZhegalkinExpr.mkUnion)
   }
 
   /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
