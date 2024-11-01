@@ -3108,13 +3108,13 @@ object Weeder2 {
       )
     }
 
-    private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
+    private def pickQNameIdents(tree: Tree)(implicit sctx: SharedContext): Validation[List[String], CompilationMessage] = {
       flatMapN(pick(TreeKind.QName, tree)) {
         qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
       }
     }
 
-    private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
+    private def pickJavaClassMember(tree: Tree)(implicit sctx: SharedContext): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       flatMapN(idents) {
         case _ :: Nil => throw InternalCompilerException("JvmOp incomplete name", tree.loc)
@@ -3123,7 +3123,7 @@ object Weeder2 {
       }
     }
 
-    def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+    def pickJavaName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.JavaName, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       mapN(idents) {
         idents => Name.JavaName(idents, tree.loc)
@@ -3272,7 +3272,7 @@ object Weeder2 {
   /**
     * Picks out the first sub-tree of a specific [[TreeKind]].
     */
-  private def pick(kind: TreeKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
+  private def pick(kind: TreeKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown)(implicit sctx: SharedContext): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
       case None =>
