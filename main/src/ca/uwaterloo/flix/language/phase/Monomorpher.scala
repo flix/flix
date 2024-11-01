@@ -57,6 +57,10 @@ import scala.collection.mutable
   * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
   * that `Print + (Crash + Print)` becomes `Crash + Print`.
   *
+  * Enums and structs can both express type-recursion which cannot be resolved without erasure. This
+  * means that those definitions are left polymorphic, but the types are still resolved of associated
+  * types fx.
+  *
   * At a high-level, monomorphization works as follows:
   *
   *   1. We maintain a queue of functions and the concrete, normalized types they must be
@@ -69,15 +73,15 @@ import scala.collection.mutable
   *         copied).
   *      a. We enqueue (or re-used) other functions referenced by the current function which require
   *         specialization.
-  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions
-  *      (Enum declarations are deleted to avoid specializing them).
+  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
   *
-  *   - Record fields are in alphabetical order
-  *   - Schema fields are in alphabetical order
-  *   - Effect formulas are flat unions of effects in alphabetical order.
+  *   - Record fields are in sorted order
+  *   - Schema fields are in sorted order
+  *   - Effect formulas are flat unions of effects in sorted order.
   *   - Case set formulas are a single CaseSet literal.
+  *   - No aliases, associated types, or interop-related types.
   *
   */
 object Monomorpher {
