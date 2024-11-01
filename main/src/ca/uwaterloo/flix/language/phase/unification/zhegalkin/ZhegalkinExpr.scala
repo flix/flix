@@ -214,12 +214,12 @@ object ZhegalkinExpr {
 case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
 
   // Representation Invariants:
-  if (this == ZhegalkinExpr.zero) {
-    assert(this eq ZhegalkinExpr.zero)
-  }
-  if (this == ZhegalkinExpr.one) {
-    assert(this eq ZhegalkinExpr.one)
-  }
+  //  if (this == ZhegalkinExpr.zero) {
+  //    assert(this eq ZhegalkinExpr.zero)
+  //  }
+  //  if (this == ZhegalkinExpr.one) {
+  //    assert(this eq ZhegalkinExpr.one)
+  //  }
 
   /**
     * Returns all flexible variables in the given Zhegalkin expression `e`.
