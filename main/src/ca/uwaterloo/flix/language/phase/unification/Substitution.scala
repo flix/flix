@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException

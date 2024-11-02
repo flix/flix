@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 
 object FormatEqualityConstraint {
