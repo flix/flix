@@ -181,19 +181,11 @@ mod FilePath {
             Ok(f(x))
         } with FilePath {
             def exists(f, k) = {
-                let existsRes = try {
-                    let restPath: Vector[String] = Vector.empty();
-                    let path = Paths.get(f, restPath);
-                    let linkOpts: Vector[LinkOption] = Vector.empty();
-                    let exists = Files.exists(path, linkOpts);
-                    Ok(exists)
+                try {
+                    let path = Paths.get(f, (...{}: Vector[String]));
+                    k(Files.exists(path, (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException => Err(IOError.InvalidPath(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-                };
-                match existsRes {
-                    case Ok(exists) => k(exists)
-                    case Err(e) => Err(e)
                 }
             }
         }
