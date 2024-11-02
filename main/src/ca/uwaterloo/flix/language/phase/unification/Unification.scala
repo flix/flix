@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, Scope}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint2}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -30,7 +30,7 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val t: Progress = Progress()
     implicit val r: RigidityEnv = renv
     val (leftovers, subst) = ConstraintSolver2.makeSubstitution(TypeConstraint2.Equality(x, tpe, SourceLocation.Unknown))
@@ -40,7 +40,7 @@ object Unification {
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint], Boolean), UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[BroadEqualityConstraint], Boolean), UnificationError] = {
     implicit val r: RigidityEnv = renv
     implicit val e: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = eqEnv
     val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown)))

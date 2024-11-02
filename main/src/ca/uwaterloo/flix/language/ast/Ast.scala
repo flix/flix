@@ -25,12 +25,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    *
-    * Represents that `tpe1` and `tpe2` are equivalent types.
-    */
-  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
-
-  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[TraitConstraint])

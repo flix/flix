@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Instance
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -482,8 +482,8 @@ object ConstraintSolver2 {
     *
     * The type constraint must be an equality constraint.
     */
-  def unsafeTypeConstraintToBroadEqualityConstraint(constr: TypeConstraint2): Ast.BroadEqualityConstraint = constr match {
-    case TypeConstraint2.Equality(tpe1, tpe2, loc) => Ast.BroadEqualityConstraint(tpe1, tpe2)
+  def unsafeTypeConstraintToBroadEqualityConstraint(constr: TypeConstraint2): BroadEqualityConstraint = constr match {
+    case TypeConstraint2.Equality(tpe1, tpe2, loc) => BroadEqualityConstraint(tpe1, tpe2)
     case c => throw InternalCompilerException("unexpected constraint: " + c, SourceLocation.Unknown)
   }
 
