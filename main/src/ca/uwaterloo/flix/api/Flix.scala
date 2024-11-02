@@ -507,28 +507,47 @@ class Flix {
     val errors = mutable.ListBuffer.empty[CompilationMessage]
 
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    errors ++= readerErrors
+
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    errors ++= lexerErrors
+
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    errors ++= parserErrors
+
     val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    errors ++= weederErrors
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterWeeder <- weederValidation
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       (afterNamer, namerErrors) = Namer.run(afterDesugar)
+      _ = errors ++= namerErrors
       (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+      _ = errors ++= resolutionErrors
       afterResolver <- resolverValidation
       (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      _ = errors ++= kinderErrors
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+      _ = errors ++= derivationErrors
       (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      _ = errors ++= typeErrors
       () = EffectVerifier.run(afterTyper)
       (afterRegions, regionErrors) = Regions.run(afterTyper)
+      _ = errors ++= regionErrors
       (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+      _ = errors ++= entryPointErrors
       (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      _ = errors ++= instanceErrors
       (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+      _ = errors ++= predDepErrors
       (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+      _ = errors ++= stratificationErrors
       (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+      _ = errors ++= patMatchErrors
       (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+      _ = errors ++= redundancyErrors
       (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
@@ -541,22 +560,6 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      errors ++= readerErrors
-      errors ++= lexerErrors
-      errors ++= parserErrors
-      errors ++= weederErrors
-      errors ++= namerErrors
-      errors ++= resolutionErrors
-      errors ++= kinderErrors
-      errors ++= derivationErrors
-      errors ++= typeErrors
-      errors ++= regionErrors
-      errors ++= entryPointErrors
-      errors ++= instanceErrors
-      errors ++= predDepErrors
-      errors ++= stratificationErrors
-      errors ++= patMatchErrors
-      errors ++= redundancyErrors
       errors ++= safetyErrors
       afterSafety
     }
@@ -576,9 +579,8 @@ class Flix {
     }
 
     // Return the result (which could contain soft failures).
-    // return errors here as well
     result match {
-      case Validation.HardFailure(failures) => Validation.HardFailure(failures ++ Chain.from(errors))
+      case Validation.HardFailure(failures) => Validation.HardFailure(Chain.from(errors) ++ failures)
       case _ =>
         if (errors.isEmpty)
           result
