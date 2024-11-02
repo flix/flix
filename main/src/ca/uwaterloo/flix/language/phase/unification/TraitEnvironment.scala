@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Result, Validation}
@@ -115,7 +115,7 @@ object TraitEnvironment {
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
-      def tryInst(inst: Ast.Instance): Validation[List[TraitConstraint], UnificationError] = {
+      def tryInst(inst: Instance): Validation[List[TraitConstraint], UnificationError] = {
         val substOpt = Unification.fullyUnifyTypes(inst.tpe, arg, renv, eqEnv)
         substOpt match {
           case Some(subst) => Validation.success(inst.tconstrs.map(subst.apply))
