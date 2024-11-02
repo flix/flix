@@ -175,6 +175,7 @@ mod FilePath {
     import java.nio.file.Paths
     import java.nio.file.StandardOpenOption
     import java.util.{List => JList}
+    import java.util.stream.Collectors
 
     ///
     /// Handles the `FilePath` effect of the given function `f`.
@@ -417,15 +418,15 @@ mod FilePath {
                 }
             }
 
-            def list(f, k) = {
-                try {
-                    k(FromJava.fromJava(Files.list(Paths.get(f))))
-                } catch {
-                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
-                }
-            }
+//            def list(f, k) = {
+//                try {
+//                    k(FromJava.fromJava(Files.list(Paths.get(f))))
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
         }
 
         ///
