@@ -180,7 +180,8 @@ mod FilePath {
         } with FilePath {
             def exists(f, k) = {
                 let existsRes = try {
-                    let path = Paths.get(f);
+                    let restPath: Vector[String] = Vector.empty();
+                    let path = Paths.get(f, restPath);
                     let linkOpts: Vector[LinkOption] = Vector.empty();
                     let exists = Files.exists(path, linkOpts);
                     Ok(exists)
