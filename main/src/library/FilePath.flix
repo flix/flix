@@ -159,12 +159,14 @@ pub eff FilePath {
 mod FilePath {
 
     import java.io.File
+    import java.io.IOException
     import java.lang.Class
     import java.lang.Exception
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.BasicFileAttributes
     import java.nio.file.Files
+    import java.nio.file.InvalidPathException
     import java.nio.file.LinkOption
     import java.nio.file.Path
     import java.nio.file.Paths
@@ -186,8 +188,8 @@ mod FilePath {
                     let exists = Files.exists(path, linkOpts);
                     Ok(exists)
                 } catch {
-                    case ex: Exception =>
-                        Err(IOError.Generic(ex.getMessage()))
+                    case ex: InvalidPathException => Err(IOError.InvalidPath(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 };
                 match existsRes {
                     case Ok(exists) => k(exists)
