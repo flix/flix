@@ -147,7 +147,7 @@ pub eff FilePath {
     ///
     /// Creates the directory `d` and all its parent directories.
     ///
-    pub def mkdDirs(d: String): Unit
+    pub def mkDirs(d: String): Unit
 
     ///
     /// Returns a list with the names of all files and directories in the given directory `d`.
@@ -158,18 +158,23 @@ pub eff FilePath {
 
 mod FilePath {
 
-    import java.io.File
     import java.io.IOException
     import java.lang.Class
-    import java.lang.Exception
     import java.lang.{String => JString}
+    import java.lang.UnsupportedOperationException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.BasicFileAttributes
+    import java.nio.file.attribute.FileAttribute
+    import java.nio.file.FileAlreadyExistsException
     import java.nio.file.Files
     import java.nio.file.InvalidPathException
     import java.nio.file.LinkOption
+    import java.nio.file.NotDirectoryException
+    import java.nio.file.OpenOption
     import java.nio.file.Path
     import java.nio.file.Paths
+    import java.nio.file.StandardOpenOption
+    import java.util.{List => JList}
 
     ///
     /// Handles the `FilePath` effect of the given function `f`.
@@ -187,11 +192,252 @@ mod FilePath {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
+
+            def isDirectory(f, k) = {
+                try {
+                    k(Files.isDirectory(Paths.get(f), (...{}: Vector[LinkOption])))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def isRegularFile(f, k) = {
+                try {
+                    k(Files.isRegularFile(Paths.get(f), (...{}: Vector[LinkOption])))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def isReadable(f, k) = {
+                try {
+                    k(Files.isReadable(Paths.get(f)))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def isSymbolicLink(f, k) = {
+                try {
+                    k(Files.isSymbolicLink(Paths.get(f)))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def isWritable(f, k) = {
+                try {
+                    k(Files.isWritable(Paths.get(f)))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def isExecutable(f, k) = {
+                try {
+                    k(Files.isExecutable(Paths.get(f)))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def accessTime(f, k) = {
+                try {
+                    k(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def creationTime(f, k) = {
+                try {
+                    k(fileAttributes(Paths.get(f)).creationTime().toMillis())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def modificationTime(f, k) = {
+                try {
+                    k(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def size(f, k) = {
+                try {
+                    k(Files.size(Paths.get(f)))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def read(f, k) = {
+                try {
+                    k(new JString(Files.readAllBytes(Paths.get(f))))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def readLines(f, k) = {
+                try {
+                    k(FromJava.fromJava(Files.readAllLines(Paths.get(f))))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def readBytes(f, k) = {
+                try {
+                    k(Array.toVector(Files.readAllBytes(Paths.get(f))))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def write(data, f, k) = {
+                try {
+                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+                    Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+//            def writeLines(data, f, k) = {
+//                try {
+//                    let jLines: JList = ToJava.toJava(data#lines);
+//                    Files.write(Paths.get(f), jLines, (...{}: Vector[OpenOption]));
+//                    k(())
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
+
+            def writeBytes(data, f, k) = {
+                try {
+                    region rc {
+                        let bytes = Vector.toArray(rc, data);
+                        Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                        k(())
+                    }
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+//            def append(data, f, k) = {
+//                try {
+//                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+//                    Files.write(Paths.get(f), bytes, ...{StandardOpenOption.APPEND});
+//                    k(())
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
+
+//            def appendLines(data, f, k) = {
+//                try {
+//                    let jLines: JList = ToJava.toJava(data#lines);
+//                    Files.write(Paths.get(f), jLines, ...{StandardOpenOption.APPEND});
+//                    k(())
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
+
+//            def appendBytes(data, f, k) = {
+//                try {
+//                    region rc {
+//                        let bytes = Vector.toArray(rc, data);
+//                        Files.write(Paths.get(f), bytes, ...{StandardOpenOption.APPEND});
+//                        k(())
+//                    }
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
+
+//            def truncate(f, k) = {
+//                try {
+//                    region rc {
+//                        Files.write(Paths.get(f), Array#{} @ rc, ...{StandardOpenOption.TRUNCATE_EXISTING});
+//                        k(())
+//                    }
+//                } catch {
+//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+//                }
+//            }
+
+            def mkDir(d, k) = {
+                try {
+                    Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: FileAlreadyExistsException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def mkDirs(d, k) = {
+                try {
+                    Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: FileAlreadyExistsException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
+
+            def list(f, k) = {
+                try {
+                    k(FromJava.fromJava(Files.list(Paths.get(f))))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
         }
 
-//        def fileAttributes(path: Path): BasicFileAttributes \ IO = {
-//            let varargs: Vector[LinkOption] = Vector.empty();
-//            Files.readAttributes(path, Class.forName("java.nio.file.attribute.BasicFileAttributes"), varargs)
-//        }
+        ///
+        /// Returns the attributes of the given file `f`.
+        /// May throw `IOException` and `SecurityException`.
+        ///
+        def fileAttributes(path: Path): BasicFileAttributes \ IO =
+            Files.readAttributes(
+                path,
+                // "[...] invoking this method with a type parameter of BasicFileAttributes.class will not throw UnsupportedOperationException."
+                Class.forName("java.nio.file.attribute.BasicFileAttributes"),
+                (...{}: Vector[LinkOption])
+            )
 
 }
