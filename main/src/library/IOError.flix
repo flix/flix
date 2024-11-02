@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 pub enum IOError with Eq, Order, ToString, Hash, Sendable {
-    case InvalidPath(String)
     case Generic(String)
 }
 

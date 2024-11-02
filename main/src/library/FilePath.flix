@@ -185,7 +185,7 @@ mod FilePath {
                     let path = Paths.get(f, (...{}: Vector[String]));
                     k(Files.exists(path, (...{}: Vector[LinkOption])))
                 } catch {
-                    case ex: InvalidPathException => Err(IOError.InvalidPath(ex.getMessage()))
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
         }
