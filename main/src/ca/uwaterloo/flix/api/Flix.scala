@@ -577,7 +577,14 @@ class Flix {
 
     // Return the result (which could contain soft failures).
     // return errors here as well
-    result
+    result match {
+      case Validation.HardFailure(failures) => Validation.HardFailure(failures ++ Chain.from(errors))
+      case _ =>
+        if (errors.isEmpty)
+          result
+        else
+          Validation.HardFailure(Chain.from(errors))
+    }
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
