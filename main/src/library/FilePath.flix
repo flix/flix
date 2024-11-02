@@ -182,8 +182,7 @@ mod FilePath {
         } with FilePath {
             def exists(f, k) = {
                 try {
-                    let path = Paths.get(f, (...{}: Vector[String]));
-                    k(Files.exists(path, (...{}: Vector[LinkOption])))
+                    k(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                 }
