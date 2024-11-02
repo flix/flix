@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -34,30 +33,29 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[TypedAst.Root, TypeError], List[TypeError]) = flix.phaseNew("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[TypeError]) = flix.phaseNew("Typer") {
+    implicit val sctx: SharedContext = SharedContext.mk()
+
     val traitEnv = mkTraitEnv(root.traits, root.instances)
     val eqEnv = mkEqualityEnv(root.traits, root.instances)
 
-    val traitsVal = visitTraits(root, traitEnv, eqEnv, oldRoot, changeSet)
-    val instancesVal = visitInstances(root, traitEnv, eqEnv)
-    val (defs, defErrors) = visitDefs(root, oldRoot, changeSet, traitEnv, eqEnv)
+    val traits = visitTraits(root, traitEnv, eqEnv, oldRoot, changeSet)
+    val instances = visitInstances(root, traitEnv, eqEnv)
+    val defs = visitDefs(root, oldRoot, changeSet, traitEnv, eqEnv)
     val enums = visitEnums(root)
     val structs = visitStructs(root)
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
+    val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
+    val modules = collectModules(root)
 
-    val typedRoot = mapN(traitsVal, instancesVal) {
-      case (traits, instances) =>
-        val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-        val modules = collectModules(root)
-        TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.names, precedenceGraph)
-    }
+    val result = TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.names, precedenceGraph)
 
-    (typedRoot, defErrors)
+    (result, sctx.errors.asScala.toList)
 
-  }(DebugValidation())
+  }
 
   /**
     * Collects the symbols in the given root into a map.
@@ -164,24 +162,21 @@ object Typer {
   /**
     * Reconstructs types in the given defs.
     */
-  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): (Map[Symbol.DefnSym, TypedAst.Def], List[TypeError]) = {
+  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val errors = new ConcurrentLinkedQueue[TypeError]()
     val updatedDefs = ParOps.parMapValues(staleDefs) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
-        val (updatedDefn, typeErrors) = visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
-        typeErrors.foreach(errors.add)
-        updatedDefn
+        visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
     }
-    (updatedDefs ++ freshDefs, errors.asScala.toList)
+    updatedDefs ++ freshDefs
   }
 
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean)(implicit flix: Flix): (TypedAst.Def, List[TypeError]) = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -193,26 +188,25 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
-    val (subst, substErrors) = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
-    val assocErrors = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    (TypeReconstruction.visitDef(defn, subst), substErrors ::: assocErrors)
+    val (subst, constraintErrors) = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    constraintErrors.foreach(sctx.errors.add)
+    checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    TypeReconstruction.visitDef(defn, subst)
   }
 
   /**
     * Performs type inference and reassembly on all traits in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] = {
+  private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    ParOps.parMapValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv))
-    ) (_ ++ freshTraits)
+    val updatedTrais = ParOps.parMapValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv))
+    updatedTrais ++ freshTraits
   }
 
   /**
     * Reassembles a single trait.
     */
-  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): (TypedAst.Trait, List[TypeError]) = trt match {
+  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Trait = trt match {
     case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
@@ -223,21 +217,20 @@ object Typer {
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, tpe, loc) // TODO ASSOC-TYPES trivial
       }
       val tconstr = TraitConstraint(TraitConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val (sigs, sigErrors) = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).unzip
-      val (laws, lawErrors) = laws0.map(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv, open = false)).unzip
-      val errors = sigErrors ++ lawErrors
-      (TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toList, laws, loc), errors.flatten.toList)
+      val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
+      val laws = laws0.map(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv, open = false))
+      TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
   }
 
   /**
     * Performs type inference and reassembly on the given signature `sig`.
     */
-  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): (TypedAst.Sig, List[TypeError]) = {
+  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     sig.exp match {
-      case None => (TypeReconstruction.visitSig(sig, Substitution.empty), List.empty)
+      case None => TypeReconstruction.visitSig(sig, Substitution.empty)
       case Some(exp) =>
         val (tpe, eff0) = ConstraintGen.visitExp(exp)
         val renv = context.getRigidityEnv
@@ -249,37 +242,32 @@ object Typer {
         val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
-        val (subst, contraintErrors) = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv)
-        (TypeReconstruction.visitSig(sig, subst), contraintErrors)
+        val (subst, constraintErrors) = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+        constraintErrors.foreach(sctx.errors.add)
+        TypeReconstruction.visitSig(sig, subst)
     }
   }
 
   /**
     * Performs type inference and reassembly on all instances in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] = {
+  private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
     val instances0 = for {
       (_, insts) <- root.instances
       inst <- insts
     } yield inst
 
-    val instancesVal = ParOps.parTraverse(instances0)(visitInstance(_, root, traitEnv, eqEnv))
-
-    mapN(instancesVal) {
-      case instances =>
-        val map = instances.map {
-          case instance => instance.trt.sym -> instance
-        }
-        ListMap.from(map)
+    val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
+    val mapping = instances.map {
+      case instance => instance.trt.sym -> instance
     }
+    ListMap.from(mapping)
   }
 
   /**
     * Reassembles a single instance.
     */
-  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
+  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
       val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
@@ -289,14 +277,13 @@ object Typer {
           TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
 
-      val defsVal = Validation.traverse(defs0)(defn => {
-        // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-        val open = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.InsDefs)
-        visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
-      })
-      mapN(defsVal) {
-        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      val defs = defs0.map {
+        defn =>
+          // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+          val open = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.InsDefs)
+          visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
       }
+      TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -423,7 +410,7 @@ object Typer {
   /**
     * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
     */
-  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit flix: Flix): List[TypeError.MissingTraitConstraint] = {
+  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = {
     def getAssocTypes(t: Type): List[Type.AssocType] = t match {
       case Type.Var(_, _) => Nil
       case Type.Cst(_, _) => Nil
@@ -445,7 +432,7 @@ object Typer {
         }
 
         // check that they are all covered by the type constraints
-        tpes.flatMap(getAssocTypes).flatMap {
+        tpes.flatMap(getAssocTypes).foreach {
           case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
             val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
@@ -454,10 +441,12 @@ object Typer {
               case _ => false
             }
             if (matches) {
-              List.empty
+              ()
             } else {
               val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              List(TypeError.MissingTraitConstraint(trtSym, arg, renv, loc))
+              val error = TypeError.MissingTraitConstraint(trtSym, arg, renv, loc)
+              sctx.errors.add(error)
+              ()
             }
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
@@ -477,5 +466,24 @@ object Typer {
     }
     enabled && !useless && !redundant
   }
+
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[TypeError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[TypeError])
+
 
 }
