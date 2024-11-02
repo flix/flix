@@ -455,9 +455,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with FileRead {}
+        |    try g() with FsRead {}
         |
-        |def g(): Unit \ FileRead = ???
+        |def g(): Unit \ FsRead = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.BaseEffectInTryWith](result)
