@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, S
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 object EffUnification3 {
@@ -287,6 +288,7 @@ object EffUnification3 {
     case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
+    @tailrec
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)

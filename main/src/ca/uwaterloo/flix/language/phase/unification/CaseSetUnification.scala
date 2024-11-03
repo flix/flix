@@ -104,26 +104,6 @@ object CaseSetUnification {
   }
 
   /**
-    * A heuristic used to determine the order in which to eliminate variable.
-    *
-    * Semantically the order of variables is immaterial. Changing the order may
-    * yield different unifiers, but they are all equivalent. However, changing
-    * the can lead to significant speed-ups / slow-downs.
-    *
-    * We make the following observation:
-    *
-    * We want to have synthetic variables (i.e. fresh variables introduced during
-    * type inference) expressed in terms of real variables (i.e. variables that
-    * actually occur in the source code). We can ensure this by eliminating the
-    * synthetic variables first.
-    */
-  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
-    val realVars = l.filter(_.sym.isReal)
-    val synthVars = l.filterNot(_.sym.isReal)
-    synthVars ::: realVars
-  }
-
-  /**
     * Performs successive variable elimination on the given set expression `f`.
     */
   private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit univ: Set[Int], flix: Flix): CaseSetSubstitution = fvs match {
@@ -196,12 +176,12 @@ object CaseSetUnification {
     /**
       * The bottom value is an empty union.
       */
-    val Empty = Union(Set())
+    val Empty: Union = Union(Set())
 
     /**
       * The top value is an empty intersection.
       */
-    val All = Union(Set(Set()))
+    val All: Union = Union(Set(Set()))
   }
 
   /**

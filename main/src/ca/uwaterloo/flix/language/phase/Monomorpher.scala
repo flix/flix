@@ -176,7 +176,7 @@ object Monomorpher {
     *
     * This class is thread-safe.
     */
-  private class Context() {
+  private class Context {
 
     /**
       * A queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -316,7 +316,7 @@ object Monomorpher {
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
-    implicit val is = mkFastInstanceLookup(root.instances)
+    implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
     val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
 
@@ -821,7 +821,7 @@ object Monomorpher {
       case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
       case None =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '$sym'", tpe1.loc)
     }
   }
 

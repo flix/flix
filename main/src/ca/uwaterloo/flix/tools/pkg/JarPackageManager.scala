@@ -59,7 +59,7 @@ object JarPackageManager {
         }
       } catch {
         case e: IOException =>
-          out.println(s"ERROR: ${e.getMessage}.");
+          out.println(s"ERROR: ${e.getMessage}.")
           return Err(PackageError.DownloadErrorJar(dep.url.toString, dep.fileName, Some(e.getMessage)))
       }
       if (Files.exists(assetPath)) {

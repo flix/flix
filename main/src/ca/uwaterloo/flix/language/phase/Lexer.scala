@@ -348,7 +348,7 @@ object Lexer {
       case '₹' =>
         // Don't include the rupee sign in the name
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        acceptName(false)
+        acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()

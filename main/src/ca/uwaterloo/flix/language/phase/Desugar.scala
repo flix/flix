@@ -374,12 +374,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given list of [[WeededAst.Type]] `tpes0`.
-    */
-  private def visitTypes(tpes0: List[WeededAst.Type]): List[DesugaredAst.Type] =
-    tpes0.map(visitType)
-
-  /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
     */
   private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
@@ -1057,20 +1051,6 @@ object Desugar {
   }
 
   /**
-    * Returns an unchecked cast to the given type and effect, avoiding redundant
-    * effect casts to syntactic IO.
-    */
-  private def jvmCast(exp: Expr, tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], loc0: SourceLocation): Expr = {
-    // ignore redundant effect casts to IO
-    val correctedEff = eff match {
-      case None => None
-      case Some(DesugaredAst.Type.Ambiguous(Name.QName(Name.NName(Nil, _), Name.Ident("IO", _), _), _)) => None
-      case Some(v) => Some(v)
-    }
-    DesugaredAst.Expr.UncheckedCast(exp, Some(tpe), correctedEff, loc0)
-  }
-
-  /**
     * Rewrites a `ForA` loop into a series of `Applicative.ap` calls.
     * {{{
     *   forA (
@@ -1541,16 +1521,6 @@ object Desugar {
   }
 
   /**
-    * Returns a curried version of the given expression `exp0` for each formal parameter in `fparams0`.
-    */
-  private def mkCurried(fparams0: List[DesugaredAst.FormalParam], exp0: DesugaredAst.Expr, loc0: SourceLocation): DesugaredAst.Expr = {
-    val l = loc0.asSynthetic
-    fparams0.foldRight(exp0) {
-      case (fparam, acc) => DesugaredAst.Expr.Lambda(fparam, acc, l)
-    }
-  }
-
-  /**
     * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
     */
   private def withAscription(exp0: DesugaredAst.Expr, tpe0: Option[DesugaredAst.Type]): DesugaredAst.Expr = {
@@ -1561,14 +1531,4 @@ object Desugar {
     }
   }
 
-  /**
-    * Returns the class and member name constructed from the given `fqn0`
-    */
-  private def splitClassAndMember(fqn0: WeededAst.JavaClassMember): (String, String) = fqn0 match {
-    case WeededAst.JavaClassMember(prefix, suffix, _) =>
-      // The Parser ensures that suffix is non-empty.
-      val className = prefix + "." + suffix.init.mkString(".")
-      val memberName = suffix.last
-      (className, memberName)
-  }
 }

@@ -186,8 +186,8 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.StructNew(sym, fields, region, _, _, _) =>
-      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region)
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.map { case (_, v) => v }.flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)

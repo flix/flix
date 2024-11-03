@@ -26,7 +26,7 @@ object CompletionUtils {
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
   def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
     arity match {
@@ -113,47 +113,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * Return a class object if the class exists
-    */
-  def classFromString(clazz: String): Option[(Class[?], String)] = {
-    try {
-      Some((java.lang.Class.forName(clazz), clazz))
-    }
-    catch {
-      case _: ClassNotFoundException => None
-    }
-  }
-
-  /**
-    * Converts a Java Class Object into a string representing the type in flix syntax.
-    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
-    */
-  def convertJavaClassToFlixType(clazz: Class[?]): String = {
-    if (clazz.isArray()) {
-      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
-    }
-    else {
-      clazz.getName() match {
-        case "byte" => "Int8"
-        case "short" => "Int16"
-        case "int" => "Int32"
-        case "long" => "Int64"
-        case "float" => "Float32"
-        case "double" => "Float64"
-        case "boolean" => "Bool"
-        case "char" => "Char"
-        case "java.lang.String" => "String"
-        case "java.math.BigInteger" => "BigInt"
-        case "java.math.BigDecimal" => "BigDecimal"
-        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
-        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
-        case "void" => "Unit"
-        case other => s"##$other"
-      }
-    }
   }
 
   def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {

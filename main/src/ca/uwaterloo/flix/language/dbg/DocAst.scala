@@ -137,10 +137,6 @@ object DocAst {
     val Wild: Expr =
       AsIs("_")
 
-    /** e.g. `x_2` */
-    def VarWithOffset(sym: Symbol.VarSym): Expr =
-      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
-
     def Hole(sym: Symbol.HoleSym): Expr =
       AsIs("?" + sym.toString)
 
@@ -166,10 +162,6 @@ object DocAst {
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))
-
-    /** The control separated return statement */
-    def Ret(d: Expr): Expr =
-      Keyword("ret", d)
 
     def Discard(d: Expr): Expr =
       Keyword("discard", d)
@@ -309,9 +301,6 @@ object DocAst {
 
     val Absent: Expr =
       AsIs("Absent")
-
-    def Present(d: Expr): Expr =
-      App(AsIs("Present"), List(d))
 
   }
 

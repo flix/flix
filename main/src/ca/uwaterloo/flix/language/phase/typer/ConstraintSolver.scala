@@ -482,6 +482,7 @@ object ConstraintSolver {
   /**
     * Gets an error from the list of unresolved constraints.
     */
+  @tailrec
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))

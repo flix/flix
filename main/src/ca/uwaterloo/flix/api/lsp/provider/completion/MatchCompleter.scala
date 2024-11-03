@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
 
@@ -24,7 +22,7 @@ object MatchCompleter {
   /**
     * Returns a List of Completion for match.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MatchCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[MatchCompletion] = {
     val matchPattern = raw".*\s*match(\s\S*)?".r
 
     if (!(matchPattern matches context.prefix)) {
