@@ -15,14 +15,14 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.shared.Instance
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.{Instance, TraitContext}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * The trait environment stores information about traits.
   */
-case class TraitEnv(private val m: Map[Symbol.TraitSym, Ast.TraitContext]) {
+case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
 
   /**
     * Returns the instances of the given trait.
@@ -87,7 +87,7 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, Ast.TraitContext]) {
       case (acc, s) =>
         val inst = Instance(tpe, Nil)
         val context = m.get(s) match {
-          case Some(Ast.TraitContext(supers, insts)) => Ast.TraitContext(supers, inst :: insts)
+          case Some(TraitContext(supers, insts)) => TraitContext(supers, inst :: insts)
           case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", sym.loc)
         }
         acc + (s -> context)
@@ -98,7 +98,7 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, Ast.TraitContext]) {
   /**
     * Returns a map from trait symbols to trait context.
     */
-  def toMap: Map[Symbol.TraitSym, Ast.TraitContext] = m
+  def toMap: Map[Symbol.TraitSym, TraitContext] = m
 
   /**
     * Returns the super traits of the symbol, as well as the super traits' super traits, etc.

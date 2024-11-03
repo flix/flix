@@ -129,7 +129,7 @@ object Typer {
         }
         // ignore the super trait parameters since they should all be the same as the trait param
         val superTraits = trt.superTraits.map(_.head.sym)
-        (traitSym, Ast.TraitContext(superTraits, envInsts))
+        (traitSym, TraitContext(superTraits, envInsts))
     }
     TraitEnv(m)
   }
