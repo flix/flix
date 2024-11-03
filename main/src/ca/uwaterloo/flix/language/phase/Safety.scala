@@ -219,8 +219,8 @@ object Safety {
     defn.spec.eff.effects.forall {
       case Symbol.Env => true
       case Symbol.Exec => true
-      case Symbol.FileRead => true
-      case Symbol.FileWrite => true
+      case Symbol.FsRead => true
+      case Symbol.FsWrite => true
       case Symbol.IO => true
       case Symbol.Net => true
       case Symbol.NonDet => true

@@ -99,7 +99,7 @@ object BaseEffects {
     * {{{
     * {
     *   "classes": {
-    *     "java.lang.ProcessBuilder": "Exec, FileRead",
+    *     "java.lang.ProcessBuilder": "Exec, FsRead",
     *     "java.lang.reflect.Method": "Sys"
     *   }
     * }

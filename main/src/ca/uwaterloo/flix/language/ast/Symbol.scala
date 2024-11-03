@@ -34,8 +34,8 @@ object Symbol {
     */
   val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
-  val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
+  val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
+  val FsWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
@@ -47,8 +47,8 @@ object Symbol {
   def isBaseEff(sym: EffectSym): Boolean = sym match {
     case Env => true
     case Exec => true
-    case FileRead => true
-    case FileWrite => true
+    case FsRead => true
+    case FsWrite => true
     case IO => true
     case Net => true
     case NonDet => true
@@ -64,8 +64,8 @@ object Symbol {
   def parseBaseEff(s: String): Symbol.EffectSym = s match {
     case "Env" => Env
     case "Exec" => Exec
-    case "FileRead" => FileRead
-    case "FileWrite" => FileWrite
+    case "FsRead" => FsRead
+    case "FsWrite" => FsWrite
     case "IO" => IO
     case "Net" => Net
     case "NonDet" => NonDet
