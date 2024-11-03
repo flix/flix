@@ -3346,21 +3346,6 @@ object Parser2 {
       }
     }
 
-    private def nativeType()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      var continue = true
-      while (continue && !eof()) {
-        nth(0) match {
-          case TokenKind.NameUpperCase
-               | TokenKind.NameLowerCase
-               | TokenKind.Dot
-               | TokenKind.Dollar => advance()
-          case _ => continue = false
-        }
-      }
-      close(mark, TreeKind.Type.Native)
-    }
-
     private def caseSetType()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.AngleL))
       val mark = open()

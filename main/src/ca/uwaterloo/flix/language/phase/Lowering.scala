@@ -1698,15 +1698,6 @@ object Lowering {
   }
 
   /**
-    * Returns a `GetChannel` expression based on `sym` and `exp`.
-    */
-  private def mkParWait(exp: LoweredAst.Expr, sym: Symbol.VarSym): LoweredAst.Expr = {
-    val loc = exp.loc.asSynthetic
-    val chExp = mkChannelExp(sym, exp.tpe, loc)
-    mkGetChannel(chExp, exp.tpe, Type.IO, loc)
-  }
-
-  /**
     * Returns a full `par exp` expression.
     */
   private def mkParChannels(exp: LoweredAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, LoweredAst.Expr)]): LoweredAst.Expr = {

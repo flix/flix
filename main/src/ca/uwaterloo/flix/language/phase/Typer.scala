@@ -61,7 +61,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, loc) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -148,7 +148,7 @@ object Typer {
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
           AssocTypeDef(inst.tpe, tpe)
-        case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
+        case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
           AssocTypeDef(arg, tpe)
       }
     } yield (assocSig.sym, assocDef)
@@ -333,7 +333,7 @@ object Typer {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.zipWithIndex.map {
-        case (field, idx) =>
+        case (field, _) =>
           field.sym -> TypedAst.StructField(field.sym, field.tpe, field.loc)
       }
 
