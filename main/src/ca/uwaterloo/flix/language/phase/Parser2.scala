@@ -1884,7 +1884,6 @@ object Parser2 {
         case TokenKind.KeywordStatic => nth(1) match {
           case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
@@ -3592,14 +3591,6 @@ object Parser2 {
       if (eat(TokenKind.KeywordAs)) {
         name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
       }
-    }
-
-    def staticMethod()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      methodBody()
-      close(mark, TreeKind.JvmOp.StaticMethod)
     }
 
     private def fieldGetBody()(implicit s: State): Unit = {

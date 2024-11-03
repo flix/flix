@@ -896,9 +896,9 @@ object Resolver {
             // Returns out of resolveExp
             return flatMapN(expsVal) {
               case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, Nil, outerLoc))
               case es =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, es, outerLoc))
             }
           case _ =>
           // Fallthrough to below.
@@ -1380,24 +1380,6 @@ object Resolver {
       mapN(eVal) {
         case e =>
           ResolvedAst.Expr.GetField2(e, name, loc)
-      }
-
-    case NamedAst.Expr.InvokeStaticMethodOld(className, methodName, args, sig, retTpe, loc) =>
-      val argsVal = traverse(args)(resolveExp(_, env0))
-      val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
-      val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-      val clazzVal = lookupJvmClass(className, loc).toValidation
-      flatMapN(sigVal, argsVal, retVal, clazzVal) {
-        case (signature, as, ret, clazz) =>
-          flatMapN(lookupSignature(signature, loc)) {
-            case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
-              case Result.Ok(method) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethodOld(method, as, loc))
-              case Result.Err(error) =>
-                sctx.errors.add(error)
-                Validation.success(ResolvedAst.Expr.Error(error))
-            }
-          }
       }
 
     case NamedAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>

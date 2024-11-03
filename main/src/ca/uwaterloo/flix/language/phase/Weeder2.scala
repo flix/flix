@@ -3049,23 +3049,11 @@ object Weeder2 {
       expect(tree, TreeKind.JvmOp.JvmOp)
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.JvmOp.StaticMethod => visitMethod(inner)
         case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
         case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField.apply)
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
-      }
-    }
-
-    private def visitMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaClassMember(tree)
-      val signature = pickSignature(tree)
-      val ascription = pickAscription(tree)
-      val ident = tryPickNameIdent(tree)
-      mapN(fqn, signature, ascription) {
-        case (fqn, signature, (tpe, eff)) =>
-          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
       }
     }
 

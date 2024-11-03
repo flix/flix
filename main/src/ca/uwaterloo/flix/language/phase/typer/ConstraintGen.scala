@@ -811,7 +811,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
@@ -834,12 +834,6 @@ object ConstraintGen {
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.InvokeStaticMethodOld(method, exps, _) =>
-        val (_, _) = exps.map(visitExp).unzip
-        val resTpe = Type.getFlixType(method.getReturnType)
-        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.GetFieldOld(field, clazz, exp, _) =>
