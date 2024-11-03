@@ -125,7 +125,7 @@ object Typer {
       case (traitSym, trt) =>
         val instances = instances0.getOrElse(traitSym, Nil)
         val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
+          case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Instance(tpe, tconstrs)
         }
         // ignore the super trait parameters since they should all be the same as the trait param
         val superTraits = trt.superTraits.map(_.head.sym)
