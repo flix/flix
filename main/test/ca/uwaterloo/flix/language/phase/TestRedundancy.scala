@@ -1959,27 +1959,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.05") {
-    val input =
-      """
-        |import java.lang.Object
-        |import java.lang.StringBuilder
-        |
-        |def f(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(): StringBuilder \ IO as newStringBuilder;
-        |    import java_new java.lang.Object(): Object \ IO as newObject;
-        |    let _ =
-        |        if (true)
-        |            checked_cast((newObject(), newObject()))
-        |        else
-        |            (newObject(), newObject());
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
-  }
-
   test("RedundantCheckedTypeCast.06") {
     val input =
       """
@@ -2047,24 +2026,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |            checked_ecast((1, "a"))
         |        else
         |            (1, "a");
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedEffectCast](result)
-  }
-
-  ignore("RedundantCheckedEffectCast.04") {
-    val input =
-      """
-        |def f(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
-        |    let _ =
-        |        if (true)
-        |            checked_cast((newObject(), newObject()))
-        |        else
-        |            (newObject(), newObject());
         |    ()
         |""".stripMargin
 

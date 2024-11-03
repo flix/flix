@@ -784,7 +784,7 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
@@ -834,13 +834,6 @@ object ConstraintGen {
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.InvokeConstructorOld(constructor, exps, _) =>
-        val classTpe = Type.getFlixType(constructor.getDeclaringClass)
-        val (_, _) = exps.map(visitExp).unzip
-        val resTpe = classTpe
-        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.InvokeMethodOld(method, clazz, exp, exps, loc) =>

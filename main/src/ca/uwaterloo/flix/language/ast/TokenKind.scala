@@ -94,7 +94,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
       case TokenKind.KeywordJavaGetField => "'java_get_field'"
-      case TokenKind.KeywordJavaNew => "'java_new'"
       case TokenKind.KeywordJavaSetField => "'java_set_field'"
       case TokenKind.KeywordLaw => "'law'"
       case TokenKind.KeywordLawful => "'lawful'"
@@ -249,7 +248,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
     case TokenKind.KeywordJavaGetField => true
-    case TokenKind.KeywordJavaNew => true
     case TokenKind.KeywordJavaSetField => true
     case TokenKind.KeywordLaw => true
     case TokenKind.KeywordLawful => true
@@ -739,8 +737,6 @@ object TokenKind {
   case object KeywordInto extends TokenKind
 
   case object KeywordJavaGetField extends TokenKind
-
-  case object KeywordJavaNew extends TokenKind
 
   case object KeywordJavaSetField extends TokenKind
 

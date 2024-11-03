@@ -734,21 +734,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.PossibleCheckedTypeCast.01") {
-    val input =
-      """
-        |import dev.flix.test.TestClassWithDefaultConstructor
-        |import dev.flix.test.TestClassWithInheritedMethod
-        |
-        |def f(): TestClassWithDefaultConstructor \ IO =
-        |    import java_new TestClassWithInheritedMethod(): TestClassWithInheritedMethod as newObj;
-        |    let x: TestClassWithDefaultConstructor = newObj();
-        |    x
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
   test("TestParYield.01") {
     val input =
       """

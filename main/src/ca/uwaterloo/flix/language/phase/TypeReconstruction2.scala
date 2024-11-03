@@ -440,7 +440,7 @@ object TypeReconstruction2 {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
+    case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
@@ -488,12 +488,6 @@ object TypeReconstruction2 {
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
-
-    case KindedAst.Expr.InvokeConstructorOld(constructor, args, loc) =>
-      val as = args.map(visitExp(_))
-      val tpe = getFlixType(constructor.getDeclaringClass)
-      val eff = Type.IO
-      TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeMethodOld(method, _, exp, args, loc) =>
       val e = visitExp(exp)

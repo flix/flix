@@ -1353,13 +1353,13 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
+    case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>
       val esVal = traverse(exps)(resolveExp(_, env0))
       flatMapN(esVal) {
         es =>
           env0.get(className.name) match {
             case Some(List(Resolution.JavaClass(clazz))) =>
-              Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+              Validation.success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
               val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
               sctx.errors.add(error)
@@ -1380,28 +1380,6 @@ object Resolver {
       mapN(eVal) {
         case e =>
           ResolvedAst.Expr.GetField2(e, name, loc)
-      }
-
-    case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
-      lookupJvmClass(className, loc) match {
-        case Result.Ok(clazz) =>
-          val argsVal = traverse(args)(resolveExp(_, env0))
-          val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
-          flatMapN(sigVal, argsVal) {
-            case (sig, as) =>
-              flatMapN(lookupSignature(sig, loc)) {
-                case ts => lookupJvmConstructor(clazz, ts, loc) match {
-                  case Result.Ok(constructor) =>
-                    Validation.success(ResolvedAst.Expr.InvokeConstructorOld(constructor, as, loc))
-                  case Result.Err(error) =>
-                    sctx.errors.add(error)
-                    Validation.success(ResolvedAst.Expr.Error(error))
-                }
-              }
-          }
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          Validation.success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
