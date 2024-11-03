@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
+import ca.uwaterloo.flix.util.Validation.Implicit.AsHardFailure
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
@@ -442,7 +443,7 @@ object CompilerPerf {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
-        flix.compile().toHardFailure.unsafeGet.getTotalLines
+        flix.compile().unsafeGet.getTotalLines
       }
 
     val phases = flix.phaseTimers.map {

@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Validation.Implicit.AsHardFailure
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
@@ -158,7 +159,7 @@ object BenchmarkCompilerOld {
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.unsafeGet
+        val compilationResult = flix.compile().unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }

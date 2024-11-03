@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -37,7 +38,7 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage & Recoverable]) =
     flix.phaseNew("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]

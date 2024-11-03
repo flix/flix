@@ -38,14 +38,6 @@ sealed trait Validation[+T, +E] {
   def errors: Chain[E]
 
   /**
-    * Converts a soft failure to a hard failure.
-    */
-  def toHardFailure: Validation[T, E] = this match {
-    case Validation.Success(t) => Validation.Success(t)
-    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
-  }
-
-  /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
@@ -90,6 +82,14 @@ object Validation {
           case Validation.HardFailure(thatErrors) => Validation.HardFailure(v.errors ++ thatErrors)
         }
         case Validation.HardFailure(errors) => Validation.HardFailure(errors)
+      }
+    }
+
+    implicit class AsHardFailure[T, E](v: (Validation[T, E], Iterable[E])) {
+      final def toHardFailure: Validation[T, E] = v match {
+        case (Validation.Success(t), Nil) => Validation.Success(t)
+        case (Validation.Success(t), es) => Validation.HardFailure(Chain.from(es))
+        case (Validation.HardFailure(fs), es) => Validation.HardFailure(Chain.from(es) ++ fs)
       }
     }
   }
@@ -457,8 +457,8 @@ object Validation {
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
 
   /**
-   * FlatMaps over t1, t2, t3, t4, t5, t6, t7 and t8.
-   */
+    * FlatMaps over t1, t2, t3, t4, t5, t6, t7 and t8.
+    */
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                      t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                      t7: Validation[T7, E], t8: Validation[T8, E])
@@ -466,8 +466,8 @@ object Validation {
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8))
 
   /**
-   * FlatMaps over t1, t2, t3, t4, t5, t6, t7 t8 and t9
-   */
+    * FlatMaps over t1, t2, t3, t4, t5, t6, t7 t8 and t9
+    */
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                          t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                          t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])

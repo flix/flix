@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -27,6 +28,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation.Implicit.AsHardFailure
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
@@ -485,7 +487,7 @@ class Flix {
   /**
     * Compiles the Flix program and returns a typed ast.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = {
+  def check(): (Validation[TypedAst.Root, CompilationMessage], List[CompilationMessage & Recoverable]) = {
     try {
       import Validation.Implicit.AsMonad
 
@@ -506,7 +508,7 @@ class Flix {
       }
 
       // The list of combined errors from all phases
-      val errors = mutable.ListBuffer.empty[CompilationMessage]
+      val errors = mutable.ListBuffer.empty[CompilationMessage & Recoverable]
 
       val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
       errors ++= readerErrors
@@ -521,9 +523,7 @@ class Flix {
       errors ++= weederErrors
 
       val result = weederValidation match {
-        case Validation.HardFailure(weederFailures) =>
-          errors ++= weederFailures.toSeq
-          Validation.HardFailure(Chain.from(errors))
+        case Validation.HardFailure(weederFailures) => Validation.HardFailure(weederFailures)
 
         case Validation.Success(afterWeeder) =>
           val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
@@ -534,10 +534,7 @@ class Flix {
           errors ++= resolutionErrors
 
           resolverValidation match {
-            case Validation.HardFailure(resolverFailures) =>
-              errors ++= resolverFailures.toSeq
-
-              Validation.HardFailure(Chain.from(errors))
+            case Validation.HardFailure(resolverFailures) => Validation.HardFailure(resolverFailures)
 
             case Validation.Success(afterResolver) =>
               val (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -584,13 +581,7 @@ class Flix {
                 this.cachedResolverAst = afterResolver
                 this.cachedTyperAst = afterTyper
               }
-
-
-              if (errors.isEmpty) {
-                Validation.success(afterSafety)
-              } else {
-                Validation.HardFailure(Chain.from(errors))
-              }
+              Validation.success(afterSafety)
           }
       }
 
@@ -610,7 +601,7 @@ class Flix {
       }
 
       // Return the result (which could contain soft failures).
-      result
+      (result, errors.toList)
     } catch {
       case ex: InternalCompilerException =>
         CrashHandler.handleCrash(ex)(this)

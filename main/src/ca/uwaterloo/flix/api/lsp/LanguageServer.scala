@@ -335,20 +335,20 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check().toSoftResult match {
-        case Result.Ok((root, Chain.empty)) =>
+      flix.check() match {
+        case (Validation.Success(root), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
 
-        case Result.Ok((root, errors)) =>
+        case (Validation.Success(root), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case Result.Err(errors) =>
+        case (Validation.HardFailure(failures), errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Update the current errors.
-          this.currentErrors = errors.toList
+          this.currentErrors = errors ++ failures.toList
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
@@ -366,7 +366,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
     this.currentErrors = errors.toList

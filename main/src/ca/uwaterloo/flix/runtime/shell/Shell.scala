@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation.Implicit.AsHardFailure
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
