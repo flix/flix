@@ -28,16 +28,6 @@ import ca.uwaterloo.flix.util.collection.ListMap
 object Unification {
 
   /**
-    * Unifies the given variable `x` with the given non-variable type `tpe`.
-    */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[BroadEqualityConstraint], Boolean), UnificationError] = {
-    implicit val t: Progress = Progress()
-    implicit val r: RigidityEnv = renv
-    val (leftovers, subst) = ConstraintSolver2.makeSubstitution(TypeConstraint2.Equality(x, tpe, SourceLocation.Unknown))
-    Result.Ok((subst.root, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), t.query()))
-  }
-
-  /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[BroadEqualityConstraint], Boolean), UnificationError] = {
