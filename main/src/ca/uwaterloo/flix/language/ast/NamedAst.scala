@@ -188,8 +188,6 @@ object NamedAst {
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class GetFieldOld(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
-
     case class PutField(className: String, fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetStaticField(className: String, fieldName: String, loc: SourceLocation) extends Expr

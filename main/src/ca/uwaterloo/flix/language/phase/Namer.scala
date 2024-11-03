@@ -788,10 +788,6 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.GetField2(e, name, loc)
 
-    case DesugaredAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetFieldOld(className, fieldName, e, loc)
-
     case DesugaredAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)

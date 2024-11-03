@@ -252,8 +252,6 @@ object SyntaxTree {
 
       case object LambdaMatch extends Expr
 
-      case object LetImport extends Expr
-
       case object LetMatch extends Expr
 
       case object Literal extends Expr
@@ -496,29 +494,6 @@ object SyntaxTree {
       case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    /// JVM_OP                                                                              //
-    //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait JvmOp extends TreeKind
-
-    object JvmOp {
-
-      case object Ascription extends JvmOp
-
-      case object GetField extends JvmOp
-
-      case object JvmOp extends JvmOp
-
-      case object PutField extends JvmOp
-
-      case object Sig extends JvmOp
-
-      case object StaticGetField extends JvmOp
-
-      case object StaticPutField extends JvmOp
 
     }
 

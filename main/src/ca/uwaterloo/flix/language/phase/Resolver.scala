@@ -1382,17 +1382,6 @@ object Resolver {
           ResolvedAst.Expr.GetField2(e, name, loc)
       }
 
-    case NamedAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
-      lookupJvmField(className, fieldName, static = false, loc) match {
-        case Result.Ok((clazz, field)) =>
-          mapN(resolveExp(exp, env0)) {
-            case e => ResolvedAst.Expr.GetFieldOld(field, clazz, e, loc)
-          }
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          Validation.success(ResolvedAst.Expr.Error(error))
-      }
-
     case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
       lookupJvmField(className, fieldName, static = false, loc) match {
         case Result.Ok((clazz, field)) =>

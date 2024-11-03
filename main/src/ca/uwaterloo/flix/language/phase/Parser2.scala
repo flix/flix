@@ -1603,7 +1603,6 @@ object Parser2 {
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
-        case TokenKind.KeywordImport => letImportExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
         case TokenKind.KeywordTypeMatch => typematchExpr()
@@ -1871,31 +1870,6 @@ object Parser2 {
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LocalDef)
-    }
-
-    private def letImportExpr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordImport))
-      val mark = open()
-      expect(TokenKind.KeywordImport, SyntacticContext.Expr.OtherExpr)
-      val markJvmOp = open()
-      nth(0) match {
-        case TokenKind.KeywordJavaGetField => JvmOp.getField()
-        case TokenKind.KeywordJavaSetField => JvmOp.putField()
-        case TokenKind.KeywordStatic => nth(1) match {
-          case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
-          case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case t =>
-            val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
-            advanceWithError(error)
-        }
-        case t =>
-          val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
-          advanceWithError(error)
-      }
-      close(markJvmOp, TreeKind.JvmOp.JvmOp)
-      expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
-      statement()
-      close(mark, TreeKind.Expr.LetImport)
     }
 
     private def scopeExpr()(implicit s: State): Mark.Closed = {
@@ -3561,80 +3535,6 @@ object Parser2 {
         })
       )
       close(mark, kind)
-    }
-  }
-
-  private object JvmOp {
-    private def signature()(implicit s: State): Unit = {
-      val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Type,
-        getItem = () => Type.ttype(),
-        checkForItem = _.isFirstType,
-        breakWhen = _.isRecoverType,
-        context = SyntacticContext.Type.OtherType
-      )
-      close(mark, TreeKind.JvmOp.Sig)
-    }
-
-    private def ascription()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
-      Type.typeAndEffect()
-      close(mark, TreeKind.JvmOp.Ascription)
-    }
-
-    private def methodBody()(implicit s: State): Unit = {
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      signature()
-      ascription()
-      if (eat(TokenKind.KeywordAs)) {
-        name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-      }
-    }
-
-    private def fieldGetBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordJavaGetField, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-    }
-
-    private def putBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordJavaSetField, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-    }
-
-    def getField()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      fieldGetBody()
-      close(mark, TreeKind.JvmOp.GetField)
-    }
-
-    def staticGetField()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      fieldGetBody()
-      close(mark, TreeKind.JvmOp.StaticGetField)
-    }
-
-    def putField()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      putBody()
-      close(mark, TreeKind.JvmOp.PutField)
-    }
-
-    def staticPutField()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      putBody()
-      close(mark, TreeKind.JvmOp.StaticPutField)
     }
   }
 

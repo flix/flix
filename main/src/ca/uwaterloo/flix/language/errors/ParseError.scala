@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for parser errors.
@@ -76,14 +76,6 @@ object ParseError {
 
     case object ForFragment extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<for-generator>")
-    }
-
-    case object JavaImport extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<java-import>")
-    }
-
-    case object JvmOp extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<jvm-op>")
     }
 
     case object KeyValuePair extends NamedTokenSet {
