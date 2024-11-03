@@ -518,8 +518,6 @@ object SyntaxTree {
 
       case object StaticGetField extends JvmOp
 
-      case object StaticMethod extends JvmOp
-
       case object StaticPutField extends JvmOp
 
     }
