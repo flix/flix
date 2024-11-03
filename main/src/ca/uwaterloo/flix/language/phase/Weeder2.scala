@@ -3019,7 +3019,9 @@ object Weeder2 {
       def replace(tpe0: Type): Type = tpe0 match {
         case Type.Var(ident, loc) => Type.Var(ident, loc)
         case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
-        case t => Type.Error(t.loc)
+        case t =>
+          errorLocations += t.loc
+          Type.Error(t.loc)
       }
 
       (replace(tpe), errorLocations.toList)
