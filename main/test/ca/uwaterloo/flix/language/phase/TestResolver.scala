@@ -1518,18 +1518,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalWildType](result)
   }
 
-  test("IllegalWildType.06") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
   test("UndefinedName.ForEachYield.01") {
     val input =
       """

@@ -271,7 +271,7 @@ object DocAst {
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
-    def JavaInvokeMethod2(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
+    def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(methodName.name)), ds)
 
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =

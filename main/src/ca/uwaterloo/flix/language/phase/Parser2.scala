@@ -1384,7 +1384,7 @@ object Parser2 {
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation
             if (at(TokenKind.ParenL)) {
               arguments()
-              lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+              lhs = close(mark, TreeKind.Expr.InvokeMethod)
             } else {
               lhs = close(mark, TreeKind.Expr.GetField2)
             }
@@ -1889,7 +1889,6 @@ object Parser2 {
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
         }
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
           val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           advanceWithError(error)
@@ -3593,12 +3592,6 @@ object Parser2 {
       if (eat(TokenKind.KeywordAs)) {
         name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
       }
-    }
-
-    def method()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      methodBody()
-      close(mark, TreeKind.JvmOp.Method)
     }
 
     def staticMethod()(implicit s: State): Mark.Closed = {

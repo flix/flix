@@ -198,7 +198,7 @@ object SyntaxTree {
 
       case object InvokeConstructor extends Expr
 
-      case object InvokeMethod2 extends Expr
+      case object InvokeMethod extends Expr
 
       case object Debug extends Expr
 
@@ -511,8 +511,6 @@ object SyntaxTree {
       case object GetField extends JvmOp
 
       case object JvmOp extends JvmOp
-
-      case object Method extends JvmOp
 
       case object PutField extends JvmOp
 

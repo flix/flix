@@ -905,7 +905,7 @@ object Weeder2 {
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
-        case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
+        case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
@@ -1109,7 +1109,7 @@ object Weeder2 {
     }
 
     /**
-      * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
+      * This method is the same as visitArguments but for InvokeMethod. It does not consider named arguments
       * as they are not allowed and it doesn't add unit arguments for empty arguments.
       */
     private def visitMethodArguments(tree: Tree)(implicit sctx: SharedContext): Validation[List[Expr], CompilationMessage] = {
@@ -1833,14 +1833,14 @@ object Weeder2 {
       }
     }
 
-    private def visitInvokeMethod2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.InvokeMethod2)
+    private def visitInvokeMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeMethod)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
       val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
       mapN(baseExp, method, argsExps) {
         case (b, m, as) =>
-          val result = Expr.InvokeMethod2(b, m, as, tree.loc)
+          val result = Expr.InvokeMethod(b, m, as, tree.loc)
           result
       }
     }
@@ -3049,8 +3049,7 @@ object Weeder2 {
       expect(tree, TreeKind.JvmOp.JvmOp)
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.JvmOp.Method => visitMethod(inner)
-        case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
+        case TreeKind.JvmOp.StaticMethod => visitMethod(inner)
         case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
         case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
@@ -3059,17 +3058,14 @@ object Weeder2 {
       }
     }
 
-    private def visitMethod(tree: Tree, isStatic: Boolean = false)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
+    private def visitMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
       val fqn = pickJavaClassMember(tree)
       val signature = pickSignature(tree)
       val ascription = pickAscription(tree)
       val ident = tryPickNameIdent(tree)
       mapN(fqn, signature, ascription) {
         case (fqn, signature, (tpe, eff)) =>
-          if (isStatic)
-            WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
-          else
-            WeededAst.JvmOp.Method(fqn, signature, tpe, eff, ident)
+          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
       }
     }
 

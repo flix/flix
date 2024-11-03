@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeMethod2 {
+mod Test.Exp.Jvm.InvokeMethod {
     import java.awt.Point
 
     @test

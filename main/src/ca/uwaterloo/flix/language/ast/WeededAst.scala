@@ -197,7 +197,7 @@ object WeededAst {
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
@@ -483,8 +483,6 @@ object WeededAst {
   sealed trait JvmOp
 
   object JvmOp {
-
-    case class Method(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     case class StaticMethod(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
