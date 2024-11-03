@@ -480,13 +480,6 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
 
-    case KindedAst.Expr.InvokeMethodOld(method, _, exp, args, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp(_))
-      val tpe = getFlixType(method.getReturnType)
-      val eff = Type.IO
-      TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
-
     case KindedAst.Expr.InvokeStaticMethodOld(method, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)

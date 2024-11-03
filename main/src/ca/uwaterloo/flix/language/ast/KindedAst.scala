@@ -182,8 +182,6 @@ object KindedAst {
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeMethodOld(method: Method, clazz: java.lang.Class[?], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
-
     case class InvokeStaticMethodOld(method: Method, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetFieldOld(field: Field, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation) extends Expr

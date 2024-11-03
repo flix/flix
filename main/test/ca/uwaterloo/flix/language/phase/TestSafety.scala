@@ -926,11 +926,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    def run(_this: Runnable): Unit \ Ask =
         |        Ask.ask(); ()
         |}
-        |
-        |def main(): Unit \ IO =
-        |    import java.lang.Runnable.run(): Unit \ IO;
-        |    let r = newRunnable();
-        |    run(r)
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalMethodEffect](result)

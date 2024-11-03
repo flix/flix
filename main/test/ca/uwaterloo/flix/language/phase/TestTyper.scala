@@ -1417,15 +1417,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def catchIO(f: Unit -> Unit \ ef): Res = {
         |    try {f(); Res.Ok} catch {
         |        case ex: IOError =>
-        |            import java.lang.Throwable.getMessage(): String;
-        |            Res.Err(getMessage(ex))
+        |            Res.Err(ex.getMessage())
         |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
-
 
   test("TypeError.MissingConstraint.01") {
     val input =

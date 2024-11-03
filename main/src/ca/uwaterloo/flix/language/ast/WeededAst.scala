@@ -484,8 +484,6 @@ object WeededAst {
 
   object JvmOp {
 
-    case class Method(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
-
     case class StaticMethod(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     case class GetField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp

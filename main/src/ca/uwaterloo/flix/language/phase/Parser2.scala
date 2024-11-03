@@ -1889,7 +1889,6 @@ object Parser2 {
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
         }
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
           val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           advanceWithError(error)
@@ -3593,12 +3592,6 @@ object Parser2 {
       if (eat(TokenKind.KeywordAs)) {
         name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
       }
-    }
-
-    def method()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      methodBody()
-      close(mark, TreeKind.JvmOp.Method)
     }
 
     def staticMethod()(implicit s: State): Mark.Closed = {

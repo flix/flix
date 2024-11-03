@@ -657,11 +657,6 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.InvokeMethodOld(method, clazz, exp0, exps0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      KindedAst.Expr.InvokeMethodOld(method, clazz, exp, exps, loc)
-
     case ResolvedAst.Expr.InvokeStaticMethodOld(method, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       KindedAst.Expr.InvokeStaticMethodOld(method, exps, loc)

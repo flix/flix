@@ -512,8 +512,6 @@ object SyntaxTree {
 
       case object JvmOp extends JvmOp
 
-      case object Method extends JvmOp
-
       case object PutField extends JvmOp
 
       case object Sig extends JvmOp

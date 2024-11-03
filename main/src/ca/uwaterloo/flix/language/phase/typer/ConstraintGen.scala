@@ -836,15 +836,6 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethodOld(method, clazz, exp, exps, loc) =>
-        val classTpe = Type.getFlixType(clazz)
-        val (thisTpe, _) = visitExp(exp)
-        c.unifyType(thisTpe, classTpe, loc)
-        val (_, _) = exps.map(visitExp).unzip
-        val resTpe = Type.getFlixType(method.getReturnType)
-        val resEff = Type.IO
-        (resTpe, resEff)
-
       case Expr.InvokeStaticMethodOld(method, exps, _) =>
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)

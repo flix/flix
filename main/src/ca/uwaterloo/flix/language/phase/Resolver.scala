@@ -1382,25 +1382,6 @@ object Resolver {
           ResolvedAst.Expr.GetField2(e, name, loc)
       }
 
-    case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
-      val expVal = resolveExp(exp, env0)
-      val argsVal = traverse(args)(resolveExp(_, env0))
-      val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
-      val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-      val clazzVal = lookupJvmClass(className, loc).toValidation
-      flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
-        case (signature, e, as, ret, clazz) =>
-          flatMapN(lookupSignature(signature, loc)) {
-            case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
-              case Result.Ok(method) =>
-                Validation.success(ResolvedAst.Expr.InvokeMethodOld(method, clazz, e, as, loc))
-              case Result.Err(error) =>
-                sctx.errors.add(error)
-                Validation.success(ResolvedAst.Expr.Error(error))
-            }
-          }
-      }
-
     case NamedAst.Expr.InvokeStaticMethodOld(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(resolveExp(_, env0))
       val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))

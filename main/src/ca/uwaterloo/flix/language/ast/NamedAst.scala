@@ -188,8 +188,6 @@ object NamedAst {
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
     case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class GetFieldOld(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr

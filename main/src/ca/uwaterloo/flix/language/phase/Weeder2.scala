@@ -3049,8 +3049,7 @@ object Weeder2 {
       expect(tree, TreeKind.JvmOp.JvmOp)
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.JvmOp.Method => visitMethod(inner)
-        case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
+        case TreeKind.JvmOp.StaticMethod => visitMethod(inner)
         case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
         case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
@@ -3059,17 +3058,14 @@ object Weeder2 {
       }
     }
 
-    private def visitMethod(tree: Tree, isStatic: Boolean = false)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
+    private def visitMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
       val fqn = pickJavaClassMember(tree)
       val signature = pickSignature(tree)
       val ascription = pickAscription(tree)
       val ident = tryPickNameIdent(tree)
       mapN(fqn, signature, ascription) {
         case (fqn, signature, (tpe, eff)) =>
-          if (isStatic)
-            WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
-          else
-            WeededAst.JvmOp.Method(fqn, signature, tpe, eff, ident)
+          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
       }
     }
 

@@ -788,19 +788,6 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.GetField2(e, name, loc)
 
-    case DesugaredAst.Expr.InvokeMethodOld(className, methodName, exp, exps, sig, tpe, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      val t = visitType(tpe)
-      NamedAst.Expr.InvokeMethodOld(className, methodName, e, es, ts, t, loc)
-
     case DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, exps, sig, tpe, loc) =>
       if (flix.options.xnodeprecated) {
         val m = NameError.Deprecated(loc)
