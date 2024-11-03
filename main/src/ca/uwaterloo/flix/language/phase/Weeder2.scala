@@ -904,7 +904,7 @@ object Weeder2 {
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
-        case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
+        case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
@@ -1818,13 +1818,13 @@ object Weeder2 {
       mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
     }
 
-    private def visitInvokeConstructor2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.InvokeConstructor2)
+    private def visitInvokeConstructorExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeConstructor)
       mapN(Types.pickType(tree), pickRawArguments(tree, synctx = SyntacticContext.Expr.New)) {
         (tpe, exps) =>
           tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
-              Expr.InvokeConstructor2(qname.ident, exps, tree.loc)
+              Expr.InvokeConstructor(qname.ident, exps, tree.loc)
             case _ =>
               val error = IllegalQualifiedName(tree.loc)
               sctx.errors.add(error)
@@ -3049,7 +3049,6 @@ object Weeder2 {
       expect(tree, TreeKind.JvmOp.JvmOp)
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.JvmOp.Constructor => visitConstructor(inner)
         case TreeKind.JvmOp.Method => visitMethod(inner)
         case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
         case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
@@ -3057,16 +3056,6 @@ object Weeder2 {
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField.apply)
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
-      }
-    }
-
-    private def visitConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaName(tree)
-      val signature = pickSignature(tree)
-      val ascription = pickAscription(tree)
-      val ident = pickNameIdent(tree)
-      mapN(fqn, signature, ascription, ident) {
-        case (fqn, signature, (tpe, eff), ident) => WeededAst.JvmOp.Constructor(fqn, signature, tpe, eff, ident)
       }
     }
 

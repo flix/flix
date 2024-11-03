@@ -775,9 +775,9 @@ object Namer {
       val rs = rules.map(visitTryWithRule(_, ns0))
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
-    case DesugaredAst.Expr.InvokeConstructor2(className, exps, loc) =>
+    case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.InvokeConstructor2(className, es, loc)
+      NamedAst.Expr.InvokeConstructor(className, es, loc)
 
     case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       val e = visitExp(exp, ns0)
@@ -787,17 +787,6 @@ object Namer {
     case DesugaredAst.Expr.GetField2(exp, name, loc) =>
       val e = visitExp(exp, ns0)
       NamedAst.Expr.GetField2(e, name, loc)
-
-    case DesugaredAst.Expr.InvokeConstructorOld(className, exps, sig, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      NamedAst.Expr.InvokeConstructorOld(className, es, ts, loc)
 
     case DesugaredAst.Expr.InvokeMethodOld(className, methodName, exp, exps, sig, tpe, loc) =>
       if (flix.options.xnodeprecated) {

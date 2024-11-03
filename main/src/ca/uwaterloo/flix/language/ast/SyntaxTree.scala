@@ -196,7 +196,7 @@ object SyntaxTree {
 
       case object IndexMut extends Expr
 
-      case object InvokeConstructor2 extends Expr
+      case object InvokeConstructor extends Expr
 
       case object InvokeMethod2 extends Expr
 
@@ -507,8 +507,6 @@ object SyntaxTree {
     object JvmOp {
 
       case object Ascription extends JvmOp
-
-      case object Constructor extends JvmOp
 
       case object GetField extends JvmOp
 

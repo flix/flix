@@ -1879,7 +1879,6 @@ object Parser2 {
       expect(TokenKind.KeywordImport, SyntacticContext.Expr.OtherExpr)
       val markJvmOp = open()
       nth(0) match {
-        case TokenKind.KeywordJavaNew => JvmOp.constructor()
         case TokenKind.KeywordJavaGetField => JvmOp.getField()
         case TokenKind.KeywordJavaSetField => JvmOp.putField()
         case TokenKind.KeywordStatic => nth(1) match {
@@ -2581,7 +2580,7 @@ object Parser2 {
       } else {
         // Case 3: new Type(exps...)
         arguments()
-        close(mark, TreeKind.Expr.InvokeConstructor2)
+        close(mark, TreeKind.Expr.InvokeConstructor)
       }
     }
 
@@ -3585,18 +3584,6 @@ object Parser2 {
       expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
       Type.typeAndEffect()
       close(mark, TreeKind.JvmOp.Ascription)
-    }
-
-    def constructor()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordJavaNew))
-      val mark = open()
-      expect(TokenKind.KeywordJavaNew, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      signature()
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-      close(mark, TreeKind.JvmOp.Constructor)
     }
 
     private def methodBody()(implicit s: State): Unit = {
