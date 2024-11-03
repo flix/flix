@@ -101,11 +101,11 @@ object TypeReduction2 {
       reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          BaseEffects.getConstructorEffs(constructor, loc)
+          PrimitiveEffects.getConstructorEffs(constructor, loc)
 
         case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
           progress.markProgress()
-          BaseEffects.getMethodEffs(method, loc)
+          PrimitiveEffects.getMethodEffs(method, loc)
 
         case t => Type.JvmToType(t, loc)
       }

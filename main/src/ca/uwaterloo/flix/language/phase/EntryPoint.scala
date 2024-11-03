@@ -214,10 +214,10 @@ object EntryPoint {
   }
 
   /**
-    * Returns `true` iff `declaredEff` is not `Pure` and contains some non-base effect.
+    * Returns `true` iff `declaredEff` is not `Pure` and contains some non-primitive effect.
     */
   private def isBadEntryPointEffect(declaredEff: Type) = {
-    declaredEff.effects.exists(sym => !Symbol.isBaseEff(sym))
+    declaredEff.effects.exists(sym => !Symbol.isPrimitiveEff(sym))
   }
 
   /**

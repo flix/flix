@@ -23,16 +23,16 @@ import org.json4s.native.JsonMethods.parse
 
 import java.lang.reflect.{Constructor, Method}
 
-object BaseEffects {
+object PrimitiveEffects {
 
   /** The path to the class effects. */
-  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Classes.json"
+  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Classes.json"
 
   /** The path to the constructor effects. */
-  private val ConstructorEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Constructors.json"
+  private val ConstructorEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Constructors.json"
 
   /** The path to the method effects. */
-  private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Methods.json"
+  private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
 
   /**
     * A pre-computed map from classes to effects.
@@ -52,7 +52,7 @@ object BaseEffects {
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
 
   /**
-    * Returns the base effects of calling the given constructor `c`.
+    * Returns the primitive effects of calling the given constructor `c`.
     */
   def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
     case None =>
@@ -73,7 +73,7 @@ object BaseEffects {
   }
 
   /**
-    * Returns the base effects of calling the given method `m`.
+    * Returns the primitive effects of calling the given method `m`.
     */
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None =>
@@ -113,7 +113,7 @@ object BaseEffects {
       case JObject(l) => l.map {
         case (className, JString(s)) =>
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
           (clazz, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -145,7 +145,7 @@ object BaseEffects {
       case JObject(l) => l.flatMap {
         case (className, JString(s)) =>
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
           clazz.getConstructors.map(c => (c, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -179,7 +179,7 @@ object BaseEffects {
           val className = classNameAndMethod.substring(0, cc)
           val methodName = classNameAndMethod.substring(cc + 2)
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
           clazz.getMethods.filter(_.getName == methodName).map(m => (m, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }

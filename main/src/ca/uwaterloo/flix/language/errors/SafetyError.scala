@@ -206,7 +206,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a base effect.
+      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a primitive effect.
          |
          |${code(loc, "illegal effect.")}
          |""".stripMargin
@@ -224,7 +224,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a base effect.
+      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a primitive effect.
          |
          |${code(loc, "illegal effect.")}
          |""".stripMargin
@@ -574,12 +574,12 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a base effect is attempted to be handled in a try-with expression.
+    * An error raised to indicate that a primitive effect is attempted to be handled in a try-with expression.
     *
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class BaseEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {

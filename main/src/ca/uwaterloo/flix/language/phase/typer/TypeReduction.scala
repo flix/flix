@@ -110,10 +110,10 @@ object TypeReduction {
     case Type.JvmToEff(j0, _) =>
       simplify(j0, renv0, loc).map {
         case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) =>
-          (BaseEffects.getConstructorEffs(constructor, loc), true)
+          (PrimitiveEffects.getConstructorEffs(constructor, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) =>
-          (BaseEffects.getMethodEffs(method, loc), true)
+          (PrimitiveEffects.getMethodEffs(method, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmField(_), _), _) =>
           // Fields should never have any effect other than IO.

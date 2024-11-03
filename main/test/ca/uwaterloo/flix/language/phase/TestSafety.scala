@@ -436,7 +436,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    try println("Hello, World!") with IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.02") {
@@ -448,7 +448,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Exec = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.03") {
@@ -460,7 +460,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ FsRead = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.04") {
@@ -472,7 +472,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ FsWrite = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.05") {
@@ -484,7 +484,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Net = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.06") {
@@ -496,7 +496,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ NonDet = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("TestBaseEffectInTryWith.07") {
@@ -508,7 +508,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Sys = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.BaseEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
   test("UnableToDeriveSendable.01") {
