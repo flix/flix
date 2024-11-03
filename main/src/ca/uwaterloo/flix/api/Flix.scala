@@ -504,6 +504,7 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    // The list of combined errors from all phases
     val errors = mutable.ListBuffer.empty[CompilationMessage]
 
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
