@@ -42,8 +42,9 @@ object HighlightProvider {
 
   @tailrec
   private def getTypeSymOccur(tpe: Type): Option[(Symbol, SourceLocation)] = tpe match {
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some((sym, loc))
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some((sym, loc))
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(sym, loc)
+    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(sym, loc)
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(sym, loc)
     case Type.Apply(tpe1, _, _) => getTypeSymOccur(tpe1)
     case _ => None
   }
@@ -58,14 +59,43 @@ object HighlightProvider {
     case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym, sym.loc)
     case SymUse.DefSymUse(sym, loc) => highlightDefnSym(uri, sym, loc)
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym, sym.loc)
-    case tpe: Type.Apply => getTypeSymOccur(tpe) match {
+    case tpe: Type => getTypeSymOccur(tpe) match {
       case Some((sym: Symbol.StructSym, loc)) => highlightStructSym(uri, sym, loc)
       case Some((sym: Symbol.EnumSym, loc)) => highlightEnumSym(uri, sym, loc)
+      case Some((sym: Symbol.EffectSym, loc)) => highlightEffectSym(uri, sym, loc)
       case _ => mkNotFound(uri, pos)
     }
     case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym, sym.loc)
     case SymUse.StructFieldSymUse(sym, loc) => highlightStructFieldSym(uri, sym, loc)
+    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym, sym.loc)
+    case SymUse.EffectSymUse(sym, loc) => highlightEffectSym(uri, sym, loc)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightEffectSym(uri: String, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+    def add(x: SourceLocation): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.EffectSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
+
+    object EffectSymConsumer extends Consumer {
+      override def consumeEff(eff: TypedAst.Effect): Unit = check(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = check(effUse.sym, effUse.loc)
+      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
+        case Some((sym: Symbol.EffectSym, loc)) => check(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EffectSymConsumer, Visitor.FileAcceptor(uri))
+
+    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightEnumSym(uri: String, sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): JObject = {
