@@ -16,12 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
-import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range, ResponseStatus, StackConsumer, Visitor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Def, Expr, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{Modifiers, SymUse}
+import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Expr, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.Exception
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
@@ -72,6 +71,15 @@ object HighlightProvider {
     case _ => mkNotFound(uri, pos)
   }
 
+  private def mkHighlights(cursor: SourceLocation, occurs: List[SourceLocation]): JObject = {
+    val write = DocumentHighlight(Range.from(cursor), DocumentHighlightKind.Write)
+    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+
+    val highlights = write :: reads
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+  }
+
   private def highlightEffectSym(uri: String, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
     def add(x: SourceLocation): Unit = {
@@ -90,12 +98,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, EffectSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightEnumSym(uri: String, sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -115,12 +118,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, EnumSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightStructFieldSym(uri: String, sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -136,12 +134,8 @@ object HighlightProvider {
     }
 
     Visitor.visitRoot(root, StructFieldSymConsumer, Visitor.FileAcceptor(uri))
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
 
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightStructSym(uri: String, sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -165,12 +159,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, StructSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightDefnSym(uri: String, sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -187,12 +176,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightCaseSym(uri: String, sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -210,12 +194,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    mkHighlights(loc, occurs)
   }
 
   private def highlightVarSym(uri: String, sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root): JObject = {
@@ -238,13 +217,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, VarSymConsumer, Visitor.FileAcceptor(uri))
 
-    val write = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
-    val reads = occurs.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-    val highlights = write :: reads
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
-
+    mkHighlights(loc, occurs)
   }
 
   /**
