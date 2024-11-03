@@ -12,19 +12,19 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.14!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.14!!'
+    implementation 'org.scala-lang:scala-library:2.13.15!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.15!!'
 
-    implementation('org.java-websocket:Java-WebSocket:1.5.6')
-    implementation('org.jline:jline:3.25.1')
+    implementation('org.java-websocket:Java-WebSocket:1.5.7')
+    implementation('org.jline:jline:3.26.2')
     implementation('org.json4s:json4s-native_2.13:4.0.7')
     implementation('org.ow2.asm:asm:9.7')
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
-    implementation('com.google.guava:guava:33.2.0-jre')
+    implementation('com.google.guava:guava:33.3.1-jre')
     implementation 'org.apache.commons:commons-lang3:3.17.0'
 
-    implementation('io.get-coursier:coursier_2.13:2.1.4')
+    implementation('io.get-coursier:coursier_2.13:2.1.14')
 
     // Note: The tomlj library determines the antlr library.
     // We cannot upgrade the antlr library independently.
@@ -33,10 +33,10 @@ dependencies {
 
     implementation('org.slf4j:slf4j-nop:2.0.13')
 
-    testImplementation('org.scalatest:scalatest_2.13:3.2.18')
+    testImplementation('org.scalatest:scalatest_2.13:3.2.19')
 }
 
-tasks.withType(ScalaCompile) {
+tasks.withType(ScalaCompile).configureEach {
     scalaCompileOptions.forkOptions.with {
         memoryMaximumSize = '1536m'
     }
@@ -90,7 +90,8 @@ jar {
     duplicatesStrategy = 'exclude'
 }
 
-task testAll(dependsOn: ['testClasses'], type: JavaExec) {
+tasks.register('testAll', JavaExec) {
+    dependsOn['testClasses']
     mainClass = 'org.scalatest.tools.Runner'
     // Note: We do not use the -P (parallelism) flag for two reasons:
     // (A) It may use excessive amounts of memory (running many instances of the compiler).
@@ -105,7 +106,8 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 
 test.dependsOn testAll
 
-task vscode(type: Copy, dependsOn: [clean, jar]) {
+tasks.register('vscode', Copy) {
+    dependsOn[clean, jar]
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
 }
