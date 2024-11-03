@@ -317,17 +317,21 @@ mod FilePath {
                 }
             }
 
-//            def writeLines(data, f, k) = {
-//                try {
-//                    let jLines: JList = ToJava.toJava(data#lines);
-//                    Files.write(Paths.get(f), jLines, (...{}: Vector[OpenOption]));
-//                    k(())
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def writeLines(data, f, k) = {
+                try {
+                    let bf = Files.newBufferedWriter(Paths.get(f), (...{}: Vector[OpenOption]));
+                    List.forEach(line -> {
+                        bf.write(line, 0, String.length(line));
+                        bf.newLine()
+                    }, data#lines);
+                    bf.close();
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
 
             def writeBytes(data, f, k) = {
                 try {
