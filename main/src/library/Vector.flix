@@ -166,7 +166,7 @@ mod Vector {
     }
 
     ///
-    /// Version of `Array.updateSequence!` where sub is a vector rather than an array,
+    /// Version of `Array.updateSequence` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
     def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
@@ -1507,7 +1507,7 @@ mod Vector {
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
         let arr = toArray(rc, v);
-        Array.sortWith!(cmp, arr);
+        Array.sortWith(cmp, arr);
         Array.toVector(arr)
     }
 
