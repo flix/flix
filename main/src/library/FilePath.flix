@@ -313,8 +313,8 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -329,8 +329,8 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -343,8 +343,8 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -356,8 +356,8 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -373,8 +373,8 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -388,8 +388,8 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -403,8 +403,8 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -414,9 +414,9 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
                     case ex: FileAlreadyExistsException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -426,9 +426,9 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
                     case ex: FileAlreadyExistsException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
 
@@ -439,8 +439,8 @@ mod FilePath {
                     k(Array.toList(file.list()))
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                     case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
                 }
             }
         }
