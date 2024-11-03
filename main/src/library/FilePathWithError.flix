@@ -321,7 +321,7 @@ mod FilePath {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
                     Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
@@ -338,7 +338,7 @@ mod FilePath {
                         bf.newLine()
                     }, data#lines);
                     bf.close();
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
@@ -352,7 +352,7 @@ mod FilePath {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
                         Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
-                        k(())
+                        Ok(())
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
@@ -367,7 +367,7 @@ mod FilePath {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
                     Files.write(Paths.get(f), bytes, ...{opt});
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
@@ -385,7 +385,7 @@ mod FilePath {
                         bf.newLine()
                     }, data#lines);
                     bf.close();
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
@@ -400,7 +400,7 @@ mod FilePath {
                         let bytes = Vector.toArray(rc, data);
                         let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
                         Files.write(Paths.get(f), bytes, ...{opt});
-                        k(())
+                        Ok(())
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
@@ -416,7 +416,7 @@ mod FilePath {
                         let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
                         let arr: Array[Int8, rc] = Array#{} @ rc;
                         Files.write(Paths.get(f), arr, ...{opt});
-                        k(())
+                        Ok(())
                     }
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
@@ -429,7 +429,7 @@ mod FilePath {
             def mkDir(d, k) = {
                 let res = try {
                     Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
@@ -442,7 +442,7 @@ mod FilePath {
             def mkDirs(d, k) = {
                 let res = try {
                     Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
-                    k(())
+                    Ok(())
                 } catch {
                     case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
