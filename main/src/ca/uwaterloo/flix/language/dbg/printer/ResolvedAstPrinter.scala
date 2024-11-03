@@ -97,7 +97,7 @@ object ResolvedAstPrinter {
     })
     case Expr.Do(op, exps, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeMethod2(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod2(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetField2(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethodOld(_, _, _) => DocAst.Expr.Unknown

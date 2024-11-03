@@ -1384,7 +1384,7 @@ object Parser2 {
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation
             if (at(TokenKind.ParenL)) {
               arguments()
-              lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+              lhs = close(mark, TreeKind.Expr.InvokeMethod)
             } else {
               lhs = close(mark, TreeKind.Expr.GetField2)
             }

@@ -731,10 +731,10 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeConstructor(className, es, loc)
 
-    case WeededAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+    case WeededAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
-      Expr.InvokeMethod2(e, name, es, loc)
+      Expr.InvokeMethod(e, name, es, loc)
 
     case WeededAst.Expr.GetField2(exp, name, loc) =>
       val e = visitExp(exp)

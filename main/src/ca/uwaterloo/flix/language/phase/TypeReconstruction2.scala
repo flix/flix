@@ -452,7 +452,7 @@ object TypeReconstruction2 {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeMethod2(exp, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeMethod(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)

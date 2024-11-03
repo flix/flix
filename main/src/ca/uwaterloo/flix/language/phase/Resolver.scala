@@ -1367,12 +1367,12 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+    case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val eVal = resolveExp(exp, env0)
       val esVal = traverse(exps)(resolveExp(_, env0))
       mapN(eVal, esVal) {
         case (e, es) =>
-          ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
       }
 
     case NamedAst.Expr.GetField2(exp, name, loc) =>

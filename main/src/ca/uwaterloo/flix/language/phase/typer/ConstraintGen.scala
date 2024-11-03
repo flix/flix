@@ -797,7 +797,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]

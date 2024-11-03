@@ -193,7 +193,7 @@ object ResolvedAst {
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod2(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 

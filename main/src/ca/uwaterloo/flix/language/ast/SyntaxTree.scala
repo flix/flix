@@ -198,7 +198,7 @@ object SyntaxTree {
 
       case object InvokeConstructor extends Expr
 
-      case object InvokeMethod2 extends Expr
+      case object InvokeMethod extends Expr
 
       case object Debug extends Expr
 
