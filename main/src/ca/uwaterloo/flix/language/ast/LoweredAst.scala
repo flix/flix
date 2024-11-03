@@ -36,7 +36,7 @@ object LoweredAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   traitEnv: Map[Symbol.TraitSym, TraitContext],
-                  eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])
+                  eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef])
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], signatures: List[Sig], laws: List[Def], loc: SourceLocation)
 

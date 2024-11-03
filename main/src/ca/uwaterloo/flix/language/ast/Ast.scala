@@ -24,13 +24,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    * Represents the definition of an associated type.
-    * If this associated type is named `Assoc`, then
-    * Assoc[arg] = ret.
-    */
-  case class AssocTypeDef(arg: Type, ret: Type)
-
-  /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
   case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
