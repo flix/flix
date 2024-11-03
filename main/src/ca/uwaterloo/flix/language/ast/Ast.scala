@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.Instance
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
@@ -25,20 +25,9 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    *
-    * Represents that `tpe1` and `tpe2` are equivalent types.
-    */
-  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
-
-  /**
-    * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
-    */
-  case class Instance(tpe: Type, tconstrs: List[TraitConstraint])
-
-  /**
     * Represents the super traits and instances available for a particular traits.
     */
-  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
+  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Instance])
 
   /**
     * Represents the definition of an associated type.
