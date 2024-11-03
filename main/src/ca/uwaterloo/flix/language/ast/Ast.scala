@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Instance
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
