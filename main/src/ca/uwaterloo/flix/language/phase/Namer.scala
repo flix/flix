@@ -784,9 +784,9 @@ object Namer {
       val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
-    case DesugaredAst.Expr.GetField2(exp, name, loc) =>
+    case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetField2(e, name, loc)
+      NamedAst.Expr.GetField(e, name, loc)
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)

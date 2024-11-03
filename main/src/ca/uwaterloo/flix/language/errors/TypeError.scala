@@ -738,7 +738,7 @@ object TypeError {
 
   /**
    * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField2.
+   * This is a dummy error used in Java field type reconstruction for GetField.
    */
   case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved field"

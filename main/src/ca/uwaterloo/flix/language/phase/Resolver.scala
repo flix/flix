@@ -1366,11 +1366,11 @@ object Resolver {
           ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
       }
 
-    case NamedAst.Expr.GetField2(exp, name, loc) =>
+    case NamedAst.Expr.GetField(exp, name, loc) =>
       val eVal = resolveExp(exp, env0)
       mapN(eVal) {
         case e =>
-          ResolvedAst.Expr.GetField2(e, name, loc)
+          ResolvedAst.Expr.GetField(e, name, loc)
       }
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>

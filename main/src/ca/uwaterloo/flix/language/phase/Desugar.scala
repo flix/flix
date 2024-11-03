@@ -733,9 +733,9 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeMethod(e, name, es, loc)
 
-    case WeededAst.Expr.GetField2(exp, name, loc) =>
+    case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
-      Expr.GetField2(e, name, loc)
+      Expr.GetField(e, name, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)

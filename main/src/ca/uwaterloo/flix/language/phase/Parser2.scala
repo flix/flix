@@ -1386,7 +1386,7 @@ object Parser2 {
               arguments()
               lhs = close(mark, TreeKind.Expr.InvokeMethod)
             } else {
-              lhs = close(mark, TreeKind.Expr.GetField2)
+              lhs = close(mark, TreeKind.Expr.GetField)
             }
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup

@@ -468,7 +468,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.GetField(exp, _, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val fieldType = subst(tvar)
       val jvarType = subst(jvar)
@@ -479,12 +479,6 @@ object TypeReconstruction {
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
-
-    case KindedAst.Expr.GetFieldOld(field, _, exp, loc) =>
-      val e = visitExp(exp)
-      val tpe = getFlixType(field.getType)
-      val eff = Type.IO
-      TypedAst.Expr.GetField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.PutField(field, _, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
