@@ -347,56 +347,65 @@ mod FilePath {
                 }
             }
 
-//            def append(data, f, k) = {
-//                try {
-//                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-//                    Files.write(Paths.get(f), bytes, ...{StandardOpenOption.APPEND});
-//                    k(())
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def append(data, f, k) = {
+                try {
+                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+                    let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
+                    Files.write(Paths.get(f), bytes, ...{opt});
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
 
-//            def appendLines(data, f, k) = {
-//                try {
-//                    let jLines: JList = ToJava.toJava(data#lines);
-//                    Files.write(Paths.get(f), jLines, ...{StandardOpenOption.APPEND});
-//                    k(())
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def appendLines(data, f, k) = {
+                try {
+                    let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
+                    let bf = Files.newBufferedWriter(Paths.get(f), ...{opt});
+                    List.forEach(line -> {
+                        bf.write(line, 0, String.length(line));
+                        bf.newLine()
+                    }, data#lines);
+                    bf.close();
+                    k(())
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
 
-//            def appendBytes(data, f, k) = {
-//                try {
-//                    region rc {
-//                        let bytes = Vector.toArray(rc, data);
-//                        Files.write(Paths.get(f), bytes, ...{StandardOpenOption.APPEND});
-//                        k(())
-//                    }
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def appendBytes(data, f, k) = {
+                try {
+                    region rc {
+                        let bytes = Vector.toArray(rc, data);
+                        let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
+                        Files.write(Paths.get(f), bytes, ...{opt});
+                        k(())
+                    }
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
 
-//            def truncate(f, k) = {
-//                try {
-//                    region rc {
-//                        Files.write(Paths.get(f), Array#{} @ rc, ...{StandardOpenOption.TRUNCATE_EXISTING});
-//                        k(())
-//                    }
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def truncate(f, k) = {
+                try {
+                    region rc {
+                        let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
+                        let arr: Array[Int8, rc] = Array#{} @ rc;
+                        Files.write(Paths.get(f), arr, ...{opt});
+                        k(())
+                    }
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
 
             def mkDir(d, k) = {
                 try {
