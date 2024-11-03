@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Validation.Implicit.AsHardFailure
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -34,6 +36,14 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    new Flix().setOptions(o).addSourceCode("<test>", s).check().toHardFailure
+  }
+
+  /**
+    * Checks the given input string `s` with the given compilation options `o`.
+    */
+  def softCheck(s: String, o: Options): (Validation[TypedAst.Root, CompilationMessage], List[CompilationMessage & Recoverable]) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     new Flix().setOptions(o).addSourceCode("<test>", s).check()
   }
