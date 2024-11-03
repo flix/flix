@@ -158,6 +158,7 @@ pub eff FilePath {
 
 mod FilePath {
 
+    import java.io.File
     import java.io.IOException
     import java.lang.Class
     import java.lang.{String => JString}
@@ -431,15 +432,17 @@ mod FilePath {
                 }
             }
 
-//            def list(f, k) = {
-//                try {
-//                    k(FromJava.fromJava(Files.list(Paths.get(f))))
-//                } catch {
-//                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
-//                    case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
-//                }
-//            }
+            def list(f, k) = {
+                try {
+                    // TODO: Use java.nio.file.Files.list, but it returns a generic Stream<Path> which Flix's type system currently doesn't support.
+                    let file = new File(f);
+                    k(Array.toList(file.list()))
+                } catch {
+                    case ex: InvalidPathException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: IOException => Err(IOError.Generic(ex.getMessage()))
+                    case ex: NotDirectoryException => Err(IOError.Generic(ex.getMessage()))
+                }
+            }
         }
 
         ///
