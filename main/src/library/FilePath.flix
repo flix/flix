@@ -434,7 +434,7 @@ mod FilePath {
 
             def list(f, k) = {
                 try {
-                    // TODO: Use java.nio.file.Files.list, but it returns a generic Stream<Path> which Flix's type system currently doesn't support.
+                    // TODO: Use java.nio.file.Files.list when we have support for Java generics.
                     let file = new File(f);
                     k(Array.toList(file.list()))
                 } catch {
