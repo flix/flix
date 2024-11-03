@@ -220,7 +220,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.04") {
     val input =
       """
-        |def main(): Int64 \ FileRead = checked_ecast(42i64)
+        |def main(): Int64 \ FsRead = checked_ecast(42i64)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -229,7 +229,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.05") {
     val input =
       """
-        |def main(): Int64 \ FileWrite = checked_ecast(42i64)
+        |def main(): Int64 \ FsWrite = checked_ecast(42i64)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
