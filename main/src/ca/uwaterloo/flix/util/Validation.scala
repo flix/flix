@@ -117,7 +117,7 @@ object Validation {
   /**
     * Represents a success `value`.
     */
-  private case class Success[T, E](t: T) extends Validation[T, E] {
+  case class Success[T, E](t: T) extends Validation[T, E] {
     def errors: Chain[E] = Chain.empty
   }
 
