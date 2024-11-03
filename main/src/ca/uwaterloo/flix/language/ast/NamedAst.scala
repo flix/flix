@@ -188,12 +188,6 @@ object NamedAst {
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class PutField(className: String, fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class GetStaticField(className: String, fieldName: String, loc: SourceLocation) extends Expr
-
-    case class PutStaticField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
-
     case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
