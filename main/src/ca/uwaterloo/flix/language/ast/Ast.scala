@@ -16,18 +16,12 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Instance
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Represents the super traits and instances available for a particular traits.
-    */
-  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Instance])
 
   /**
     * Represents the definition of an associated type.
