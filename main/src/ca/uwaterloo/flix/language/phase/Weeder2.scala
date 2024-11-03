@@ -150,7 +150,7 @@ object Weeder2 {
 
   private def visitImport(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
     expect(tree, TreeKind.UsesOrImports.Import)
-    mapN(JvmOp.pickJavaName(tree)) {
+    mapN(pickJavaName(tree)) {
       jname =>
         val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree).map(visitImportMany(_, jname.fqn))
         maybeImportMany match {
@@ -872,7 +872,6 @@ object Weeder2 {
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
-        case TreeKind.Expr.LetImport => visitLetImportExpr(tree)
         case TreeKind.Expr.Scope => visitScopeExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatchExpr(tree)
@@ -881,7 +880,7 @@ object Weeder2 {
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
         case TreeKind.Expr.Foreach => visitForeachExpr(tree)
         case TreeKind.Expr.ForMonadic => visitForMonadicExpr(tree)
-        case TreeKind.Expr.GetField2 => visitGetField2Expr(tree)
+        case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
         case TreeKind.Expr.ForeachYield => visitForeachYieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
@@ -1331,15 +1330,6 @@ object Weeder2 {
       ) {
         case ((exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
           Expr.LocalDef(ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
-      }
-    }
-
-    private def visitLetImportExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.LetImport)
-      val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree))(JvmOp.visitJvmOp)
-      val expr = pickExpr(tree)
-      mapN(jvmOp, expr) {
-        (jvmOp, expr) => Expr.LetImport(jvmOp, expr, tree.loc)
       }
     }
 
@@ -1845,12 +1835,12 @@ object Weeder2 {
       }
     }
 
-    private def visitGetField2Expr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.GetField2)
+    private def visitGetFieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.GetField)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
       mapN(baseExp, method) {
-        case (b, m) => Expr.GetField2(b, m, tree.loc)
+        case (b, m) => Expr.GetField(b, m, tree.loc)
       }
     }
 
@@ -3044,66 +3034,6 @@ object Weeder2 {
     }
   }
 
-  private object JvmOp {
-    def visitJvmOp(tree: Tree)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
-      expect(tree, TreeKind.JvmOp.JvmOp)
-      val inner = unfold(tree)
-      inner.kind match {
-        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
-        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
-        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
-        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField.apply)
-        case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
-      }
-    }
-
-    private type AstField = (WeededAst.JavaClassMember, Type, Option[WeededAst.Type], Name.Ident) => JvmOp
-
-    private def visitField(tree: Tree, astKind: AstField)(implicit sctx: SharedContext): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaClassMember(tree)
-      val ascription = pickAscription(tree)
-      val ident = pickNameIdent(tree)
-      mapN(fqn, ascription, ident) {
-        case (fqn, (tpe, eff), ident) => astKind(fqn, tpe, eff, ident)
-      }
-    }
-
-    private def pickSignature(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
-      flatMapN(pick(TreeKind.JvmOp.Sig, tree)) {
-        sig => traverse(pickAll(TreeKind.Type.Type, sig))(Types.visitType)
-      }
-    }
-
-    private def pickAscription(tree: Tree)(implicit sctx: SharedContext): Validation[(Type, Option[Type]), CompilationMessage] = {
-      val ascription = pick(TreeKind.JvmOp.Ascription, tree)
-      flatMapN(ascription)(
-        ascTree => mapN(Types.pickType(ascTree), Types.tryPickEffect(ascTree))((tpe, eff) => (tpe, eff))
-      )
-    }
-
-    private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
-      flatMapN(pick(TreeKind.QName, tree)) {
-        qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
-      }
-    }
-
-    private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
-      val idents = pickQNameIdents(tree)
-      flatMapN(idents) {
-        case _ :: Nil => throw InternalCompilerException("JvmOp incomplete name", tree.loc)
-        case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
-        case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
-      }
-    }
-
-    def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
-      val idents = pickQNameIdents(tree)
-      mapN(idents) {
-        idents => Name.JavaName(idents, tree.loc)
-      }
-    }
-  }
-
   private def pickQName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.QName, CompilationMessage] = {
     mapN(pick(TreeKind.QName, tree))(visitQName)
   }
@@ -3126,6 +3056,19 @@ object Weeder2 {
 
   private def tryPickNameIdent(tree: Tree)(implicit sctx: SharedContext): Option[Name.Ident] = {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
+  }
+
+  def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+    val idents = pickQNameIdents(tree)
+    mapN(idents) {
+      idents => Name.JavaName(idents, tree.loc)
+    }
+  }
+
+  private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
+    flatMapN(pick(TreeKind.QName, tree)) {
+      qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
+    }
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -3190,7 +3133,7 @@ object Weeder2 {
     */
   private def unfold(tree: Tree): Tree = {
     assert(tree.kind match {
-      case TreeKind.Type.Type | TreeKind.Type.Effect | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp | TreeKind.Predicate.Body => true
+      case TreeKind.Type.Type | TreeKind.Type.Effect | TreeKind.Expr.Expr | TreeKind.Predicate.Body => true
       case _ => false
     })
 

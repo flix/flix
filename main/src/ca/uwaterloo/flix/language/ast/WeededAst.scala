@@ -117,8 +117,6 @@ object WeededAst {
 
     case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
-
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
@@ -199,7 +197,7 @@ object WeededAst {
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -477,20 +475,6 @@ object WeededAst {
     case object DebugWithLoc extends DebugKind
 
     case object DebugWithLocAndSrc extends DebugKind
-
-  }
-
-  sealed trait JvmOp
-
-  object JvmOp {
-
-    case class GetField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class PutField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class GetStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class PutStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
 
   }
 

@@ -784,25 +784,9 @@ object Namer {
       val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
-    case DesugaredAst.Expr.GetField2(exp, name, loc) =>
+    case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetField2(e, name, loc)
-
-    case DesugaredAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetFieldOld(className, fieldName, e, loc)
-
-    case DesugaredAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.PutField(className, fieldName, e1, e2, loc)
-
-    case DesugaredAst.Expr.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expr.GetStaticField(className, fieldName, loc)
-
-    case DesugaredAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.PutStaticField(className, fieldName, e, loc)
+      NamedAst.Expr.GetField(e, name, loc)
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)

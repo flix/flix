@@ -99,8 +99,7 @@ object ResolvedAstPrinter {
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.GetField2(_, _, _) => DocAst.Expr.Unknown
-    case Expr.GetFieldOld(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.GetField(_, _, _) => DocAst.Expr.Unknown
     case Expr.PutField(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetStaticField(_, _) => DocAst.Expr.Unknown
     case Expr.PutStaticField(_, _, _) => DocAst.Expr.Unknown

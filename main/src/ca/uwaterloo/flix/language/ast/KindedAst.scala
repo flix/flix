@@ -180,9 +180,7 @@ object KindedAst {
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class GetField2(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class GetFieldOld(field: Field, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 

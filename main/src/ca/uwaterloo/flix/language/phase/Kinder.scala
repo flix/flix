@@ -650,16 +650,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.GetField2(exp0, fieldName, loc) =>
+    case ResolvedAst.Expr.GetField(exp0, fieldName, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc)
-
-    case ResolvedAst.Expr.GetFieldOld(field, clazz, exp0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.GetFieldOld(field, clazz, exp, loc)
+      KindedAst.Expr.GetField(exp, fieldName, jvar, tvar, evar, loc)
 
     case ResolvedAst.Expr.PutField(field, clazz, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
