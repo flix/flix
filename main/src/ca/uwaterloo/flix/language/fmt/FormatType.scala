@@ -75,13 +75,6 @@ object FormatType {
   /**
     * Transforms the given kinded type variable symbol into a string.
     */
-  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
-    formatTypeVarSymWithOptions(sym, flix.getFormatOptions)
-  }
-
-  /**
-    * Transforms the given kinded type variable symbol into a string.
-    */
   def formatTypeVarSymWithOptions(sym: Symbol.KindedTypeVarSym, fmt: FormatOptions): String = {
     val tpe = Type.Var(sym, SourceLocation.Unknown)
     formatTypeWithOptions(tpe, fmt)

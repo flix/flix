@@ -182,25 +182,11 @@ object NamedAst {
 
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
-
-    case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
-
-    case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class GetFieldOld(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
-
-    case class PutField(className: String, fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class GetStaticField(className: String, fieldName: String, loc: SourceLocation) extends Expr
-
-    case class PutStaticField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 

@@ -222,7 +222,7 @@ object InstanceError {
     * Error indicating a missing super trait instance.
     *
     * @param tpe        the type for which the super trait instance is missing.
-    * @param Trait      the symbol of the sub trait.
+    * @param subTrait   the symbol of the sub trait.
     * @param superTrait the symbol of the super trait.
     * @param loc        the location where the error occurred.
     */

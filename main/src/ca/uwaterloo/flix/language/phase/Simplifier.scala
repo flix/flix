@@ -38,7 +38,7 @@ object Simplifier {
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
-    implicit val r = root
+    implicit val r: MonoAst.Root = root
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
@@ -319,7 +319,7 @@ object Simplifier {
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
           case TypeConstructor.Array =>
-            val List(elm, reg) = tpe.typeArguments
+            val List(elm, _) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
           case TypeConstructor.Vector =>
@@ -334,7 +334,7 @@ object Simplifier {
 
           case TypeConstructor.Arrow(_) =>
             // arrow type arguments are ordered (effect, args.., result type)
-            val eff :: targs = tpe.typeArguments
+            val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
             MonoType.Arrow(args.map(visitType), visitType(res))
 

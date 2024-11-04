@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
@@ -106,7 +106,7 @@ object Monomorpher {
     * mapped to their default representation. `s` is used without the [[StrictSubstitution]] to
     * support variables in typematch, where it is not only used on variables.
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -179,7 +179,7 @@ object Monomorpher {
     *
     * This class is thread-safe.
     */
-  private class Context() {
+  private class Context {
 
     /**
       * A queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -319,7 +319,7 @@ object Monomorpher {
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
-    implicit val is = mkFastInstanceLookup(root.instances)
+    implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
     val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
 
@@ -841,12 +841,12 @@ object Monomorpher {
       case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
       case None =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '$sym'", tpe1.loc)
     }
   }
 
   /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = {
+  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
     EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
       case Ok(t) => t
       case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
@@ -857,7 +857,7 @@ object Monomorpher {
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
     */
-  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)

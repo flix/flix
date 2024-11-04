@@ -210,7 +210,6 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMapN04") {
-    val ex = new RuntimeException()
     val result = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => flatMapN(Validation.toSoftFailure(x.toUpperCase, DummyRecoverable(1))) {
         case y => flatMapN(Validation.success(y.reverse)) {
@@ -340,7 +339,7 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse02") {
     val result = traverse(List(1, 2, 3)) {
-      case x => HardFailure(Chain(42))
+      case _ => HardFailure(Chain(42))
     }
     assertResult(HardFailure(Chain(42, 42, 42)))(result)
   }

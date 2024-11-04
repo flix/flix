@@ -389,7 +389,7 @@ mod MutList {
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v |> MutList.forEach(bs -> {
             let destIndex = Ref.get(rdestIndex);
-            Array.patch!(destIndex, length(bs), bs->values, destArray);
+            Array.patch(destIndex, length(bs), bs->values, destArray);
             Ref.put(destIndex + length(bs), rdestIndex)
         });
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
@@ -584,7 +584,7 @@ mod MutList {
             reserve!(v->length, v)
         else ();
         let sub = Array.copyOfRange(v->r, i, v->length, v->values);
-        Array.updateSequence!(i + 1, sub, v->values);
+        Array.updateSequence(i + 1, sub, v->values);
         Array.put(x, i, v->values);
         v->length = v->length + 1
 
@@ -698,7 +698,7 @@ mod MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             v->length = l;
-            Array.updateSequence!(0, v->values, Array.empty(v->r, c))
+            Array.updateSequence(0, v->values, Array.empty(v->r, c))
         }
         else
             ()
@@ -924,7 +924,7 @@ mod MutList {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: MutList[a, r]): Unit \ r =
-        Array.sortWithin!(cmp, 0, v->length - 1, v->values)
+        Array.sortWithin(cmp, 0, v->length - 1, v->values)
 
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.

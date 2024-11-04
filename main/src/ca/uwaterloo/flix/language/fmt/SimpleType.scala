@@ -579,14 +579,14 @@ object SimpleType {
           val set = SimpleType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
-        case TypeConstructor.CaseComplement(sym) =>
+        case TypeConstructor.CaseComplement(_) =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.CaseIntersection(sym) =>
+        case TypeConstructor.CaseIntersection(_) =>
           t.typeArguments.map(visit) match {
             case Nil => Intersection(Hole :: Hole :: Nil)
             case arg :: Nil => Intersection(arg :: Hole :: Nil)
@@ -594,7 +594,7 @@ object SimpleType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.CaseUnion(sym) =>
+        case TypeConstructor.CaseUnion(_) =>
           t.typeArguments.map(visit) match {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
@@ -716,15 +716,6 @@ object SimpleType {
 
   /**
     * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
-    * and leaves non-union types as singletons.
-    */
-  private def splitUnions(tpe: SimpleType): List[SimpleType] = tpe match {
-    case Union(tpes) => tpes
-    case t => List(t)
-  }
-
-  /**
-    * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
     * and leaves non-plus types as singletons.
     */
   private def splitPluses(tpe: SimpleType): List[SimpleType] = tpe match {
@@ -739,16 +730,6 @@ object SimpleType {
   private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
     case Intersection(tpes) => tpes
     case t => List(t)
-  }
-
-  /**
-    * Joins `t1 :: t2 :: Nil` into `t1 & t2`
-    * and leaves singletons as non-intersection types.
-    */
-  private def joinIntersection(tpes: List[SimpleType]): SimpleType = tpes match {
-    case Nil => throw InternalCompilerException("unexpected empty type list", SourceLocation.Unknown)
-    case t :: Nil => t
-    case ts => Intersection(ts)
   }
 
   /**

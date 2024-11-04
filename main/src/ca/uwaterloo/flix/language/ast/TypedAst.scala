@@ -41,8 +41,8 @@ object TypedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  traitEnv: Map[Symbol.TraitSym, Ast.TraitContext],
-                  eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
+                  traitEnv: Map[Symbol.TraitSym, TraitContext],
+                  eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
                   names: MultiMap[List[String], String],
                   precedenceGraph: LabelledPrecedenceGraph)
 

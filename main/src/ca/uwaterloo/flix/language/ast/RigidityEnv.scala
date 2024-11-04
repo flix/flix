@@ -29,7 +29,7 @@ object RigidityEnv {
   /**
     * Returns the rigidity environment where only the given variables are marked rigid.
     */
-  def ofRigidVars(tvars: Iterable[Symbol.KindedTypeVarSym]) = RigidityEnv(tvars.to(SortedSet))
+  def ofRigidVars(tvars: Iterable[Symbol.KindedTypeVarSym]): RigidityEnv = RigidityEnv(tvars.to(SortedSet))
 }
 
 /**
