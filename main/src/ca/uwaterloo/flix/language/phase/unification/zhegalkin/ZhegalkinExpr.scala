@@ -198,14 +198,6 @@ object ZhegalkinExpr {
       }
   }
 
-  //
-  // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
-  //
-  // TODO: Docs
-  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
-    case ZhegalkinTerm(c2, vars) =>
-      ZhegalkinTerm(c.inter(c2), vars)
-  }
 
   //
   // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
@@ -217,16 +209,29 @@ object ZhegalkinExpr {
       mkZhegalkinExpr(c.inter(c2), ts)
   }
 
-  //
-  // t ∩ (c2 ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c2) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
-  //
-  // TODO: Docs
-  private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  /**
+    * Computes the intersection of the given Zhegalkin term `t` and the given Zhegalkin expression `e`.
+    *
+    * {{{
+    *   t ∩ (c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
+    * }}}
+    *
+    */
+  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
         case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInter(t, t2))))
       }
+  }
+
+  //
+  // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
+  //
+  // TODO: Docs
+  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
+    case ZhegalkinTerm(c2, vars) =>
+      ZhegalkinTerm(c.inter(c2), vars)
   }
 
   /**
