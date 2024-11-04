@@ -49,31 +49,39 @@ object HighlightProvider {
   }
 
   private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
-    case Expr.Var(varSym, _, loc) => highlightVarSym(uri, varSym, loc)
+    // Variables
     case Binder(sym, _) => highlightVarSym(uri, sym, sym.loc)
+    case TypedAst.Expr.Var(varSym, _, loc) => highlightVarSym(uri, varSym, loc)
+    // Enums & Cases
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(uri, sym, sym.loc)
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => highlightEnumSym(uri, sym, loc)
-    case Case(sym, _, _, _) => highlightCaseSym(uri, sym, sym.loc)
+    case TypedAst.Case(sym, _, _, _) => highlightCaseSym(uri, sym, sym.loc)
     case SymUse.CaseSymUse(sym, loc) => highlightCaseSym(uri, sym, loc)
+    // Defs
     case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym, sym.loc)
     case SymUse.DefSymUse(sym, loc) => highlightDefnSym(uri, sym, loc)
+    // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym, sym.loc)
+    case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym, sym.loc)
+    case SymUse.StructFieldSymUse(sym, loc) => highlightStructFieldSym(uri, sym, loc)
+    // Effects
+    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym, sym.loc)
+    case SymUse.EffectSymUse(sym, loc) => highlightEffectSym(uri, sym, loc)
+    // Traits
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym, sym.loc)
+    case SymUse.TraitSymUse(sym, loc) => highlightTraitSym(uri, sym, loc)
+    case TraitConstraint.Head(sym, loc) => highlightTraitSym(uri, sym, loc)
+    case Ast.Derivation(sym, loc) => highlightTraitSym(uri, sym, loc)
+    // Signatures
+    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym, sym.loc)
+    case SymUse.SigSymUse(sym, loc) => highlightSigSym(uri, sym, loc)
+    // Symbols in types
     case tpe: Type => getTypeSymOccur(tpe) match {
       case Some((sym: Symbol.StructSym, loc)) => highlightStructSym(uri, sym, loc)
       case Some((sym: Symbol.EnumSym, loc)) => highlightEnumSym(uri, sym, loc)
       case Some((sym: Symbol.EffectSym, loc)) => highlightEffectSym(uri, sym, loc)
       case _ => mkNotFound(uri, pos)
     }
-    case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym, sym.loc)
-    case SymUse.StructFieldSymUse(sym, loc) => highlightStructFieldSym(uri, sym, loc)
-    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym, sym.loc)
-    case SymUse.EffectSymUse(sym, loc) => highlightEffectSym(uri, sym, loc)
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym, sym.loc)
-    case SymUse.TraitSymUse(sym, loc) => highlightTraitSym(uri, sym, loc)
-    case TraitConstraint.Head(sym, loc) => highlightTraitSym(uri, sym, loc)
-    case Ast.Derivation(sym, loc) => highlightTraitSym(uri, sym, loc)
-    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym, sym.loc)
-    case SymUse.SigSymUse(sym, loc) => highlightSigSym(uri, sym, loc)
     case _ => mkNotFound(uri, pos)
   }
 
