@@ -27,7 +27,7 @@ object RenameProvider {
   /**
     * Processes a rename request.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
+  def processRename(newName: String, uri: String, pos: Position)(implicit index: Index): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 

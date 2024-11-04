@@ -446,13 +446,13 @@ object Verifier {
           checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
       val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
@@ -466,7 +466,7 @@ object Verifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, _) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
@@ -474,12 +474,12 @@ object Verifier {
       checkEq(tpe, thenType, exp2.loc)
       checkEq(tpe, elseType, exp3.loc)
 
-    case Expr.Branch(exp, branches, tpe, _, loc) =>
+    case Expr.Branch(_, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
       branches.foreach {
-        case (label, body) =>
+        case (_, body) =>
           checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
       }
       tpe
@@ -495,7 +495,6 @@ object Verifier {
       checkEq(bodyType, tpe, loc)
 
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
-      val firstType = visitExpr(exp1)
       val secondType = visitExpr(exp2)
       checkEq(secondType, tpe, loc)
 
@@ -509,7 +508,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+    case Expr.TryWith(exp, effUse, rules, _, tpe, _, loc) =>
       val exptype = visitExpr(exp) match {
         case MonoType.Arrow(List(MonoType.Unit), t) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
@@ -533,7 +532,7 @@ object Verifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.Do(opUse, exps, tpe, purity, loc) =>
+    case Expr.Do(opUse, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
       val eff = root.effects.getOrElse(opUse.sym.eff,
         throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))

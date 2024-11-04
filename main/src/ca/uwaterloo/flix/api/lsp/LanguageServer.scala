@@ -299,7 +299,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.Rename(id, newName, uri, pos) =>
       synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
@@ -311,7 +311,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
 
     case Request.InlayHint(id, _, _) =>
       // InlayHints disabled due to poor ergonomics.
