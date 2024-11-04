@@ -225,7 +225,7 @@ object ZhegalkinExpr {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInter(t, t2))))
       }
   }
 
@@ -237,11 +237,28 @@ object ZhegalkinExpr {
     * }}}
     */
   //
-  private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = (t1, t2) match {
-    case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
-      ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
-  }
+  private def mkInter(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = {
+    // a ∩ a = a
+    if (t1 eq t2) {
+      return t1
+    }
 
+    (t1, t2) match {
+      case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
+        if (c1 == c2) {
+          // Order of cases determined by profiling.
+          if (vars1.subsetOf(vars2)) { // We have that t1 is fully contained within t2.
+            return t2
+          }
+
+          if (vars2.subsetOf(vars1)) { // We have that t2 is fully contained within t1.
+            return t1
+          }
+        }
+        // General case:
+        ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
+    }
+  }
 
 }
 
