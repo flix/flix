@@ -112,19 +112,19 @@ object ZhegalkinExpr {
   private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = ZhegalkinCst.mkXor(c1, c2)
-      // Eliminate duplicates: t ⊕ t = 0
-      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+      // Eliminate duplicates: a ⊕ a = 0
+      val allTermsNonDup = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
-      val grouped = tsr1.groupBy(_.vars).toList
-      val resTerms = grouped.map {
+      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
+      val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
+      val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor
-            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor.
+            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst)              // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
       }
-      mkZhegalkinExpr(c, resTerms)
+      mkZhegalkinExpr(c, mergedTerms)
   }
 
   /**
