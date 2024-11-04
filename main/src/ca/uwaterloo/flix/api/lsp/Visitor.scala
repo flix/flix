@@ -824,7 +824,6 @@ object Visitor {
     c.consumeType(tpe)
 
     tpe match {
-      case _: Type.BaseType => ()
       case Type.Var(_, _) => ()
       case Type.Cst(_, _) => ()
       case Type.Apply(tpe1, tpe2, _) =>
