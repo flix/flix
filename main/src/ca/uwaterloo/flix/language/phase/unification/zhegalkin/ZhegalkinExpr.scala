@@ -52,7 +52,7 @@ object ZhegalkinExpr {
       }
 
       // General case:
-      ZhegalkinExpr(cst, ts)
+      ZhegalkinExpr(cst, ts.sortBy(t => t.vars.size))
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
