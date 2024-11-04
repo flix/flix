@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Case, Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
@@ -68,7 +68,30 @@ object HighlightProvider {
     case SymUse.StructFieldSymUse(sym, loc) => highlightStructFieldSym(uri, sym, loc)
     case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym, sym.loc)
     case SymUse.EffectSymUse(sym, loc) => highlightEffectSym(uri, sym, loc)
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym, sym.loc)
+    case SymUse.TraitSymUse(sym, loc) => highlightTraitSym(uri, sym, loc)
+    case TraitConstraint.Head(sym, loc) => highlightTraitSym(uri, sym, loc)
+    case Ast.Derivation(sym, loc) => highlightTraitSym(uri, sym, loc)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightTraitSym(uri: String, sym: Symbol.TraitSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+    def add(x: SourceLocation): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.TraitSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
+
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = check(traitt.sym, traitt.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = check(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = check(tcHead.sym, tcHead.loc)
+      override def consumeDerivation(derive: Ast.Derivation): Unit = check(derive.trt, derive.loc)
+    }
+
+    Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
+
+    mkHighlights(loc, occurs)
   }
 
   private def mkHighlights(cursor: SourceLocation, occurs: List[SourceLocation]): JObject = {
