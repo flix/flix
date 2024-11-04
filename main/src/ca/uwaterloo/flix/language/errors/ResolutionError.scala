@@ -1069,4 +1069,24 @@ object ResolutionError {
     }
   }
 
+  /**
+    * An error raised to indicate a handler is missing a definition.
+    *
+    * @param sym   the symbol of the missing definition.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Missing handler definition: ${sym.name}"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
+         |
+         |${code(loc, "missing handler definition")}
+         |
+         |Add a handler definition for ${sym.name}
+         |""".stripMargin
+    }
+  }
+
 }

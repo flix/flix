@@ -1808,7 +1808,14 @@ object Resolver {
             }
         }
         mapN(rulesVal) {
-          case rules => Result.Ok((effUse, rules))
+          case rules =>
+            // Check that all the operations have respective definitions
+            val allOps = decl.ops.map(_.sym)
+            val missingDefs = allOps.toSet -- rules.map(_.op.sym)
+            missingDefs.foreach {
+              case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, eff.loc))
+            }
+            Result.Ok((effUse, rules))
         }
       case Result.Err(error) =>
         sctx.errors.add(error)
