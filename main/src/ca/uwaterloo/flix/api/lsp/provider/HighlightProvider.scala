@@ -70,7 +70,6 @@ object HighlightProvider {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym, sym.loc)
     case SymUse.TraitSymUse(sym, loc) => highlightTraitSym(uri, sym, loc)
     case TraitConstraint.Head(sym, loc) => highlightTraitSym(uri, sym, loc)
-    case Ast.Derivation(sym, loc) => highlightTraitSym(uri, sym, loc)
     // Signatures
     case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym, sym.loc)
     case SymUse.SigSymUse(sym, loc) => highlightSigSym(uri, sym, loc)
@@ -116,7 +115,6 @@ object HighlightProvider {
       override def consumeTrait(traitt: TypedAst.Trait): Unit = consider(traitt.sym, traitt.sym.loc)
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
       override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
-      override def consumeDerivation(derive: Ast.Derivation): Unit = consider(derive.trt, derive.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
