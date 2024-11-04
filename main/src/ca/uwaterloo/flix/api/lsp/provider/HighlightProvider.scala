@@ -54,7 +54,6 @@ object HighlightProvider {
     case TypedAst.Expr.Var(varSym, _, loc) => highlightVarSym(uri, varSym, loc)
     // Enums & Cases
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(uri, sym, sym.loc)
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => highlightEnumSym(uri, sym, loc)
     case TypedAst.Case(sym, _, _, _) => highlightCaseSym(uri, sym, sym.loc)
     case SymUse.CaseSymUse(sym, loc) => highlightCaseSym(uri, sym, loc)
     // Defs
