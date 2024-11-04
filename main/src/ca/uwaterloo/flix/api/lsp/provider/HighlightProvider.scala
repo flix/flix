@@ -79,14 +79,16 @@ object HighlightProvider {
 
   private def highlightSigSym(uri: String, sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.SigSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.SigSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object SigSymConsumer extends Consumer {
-      override def consumeSig(sig: TypedAst.Sig): Unit = check(sig.sym, sig.sym.loc)
-      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = check(symUse.sym, symUse.loc)
+      override def consumeSig(sig: TypedAst.Sig): Unit = consider(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, SigSymConsumer, Visitor.FileAcceptor(uri))
@@ -96,16 +98,18 @@ object HighlightProvider {
 
   private def highlightTraitSym(uri: String, sym: Symbol.TraitSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.TraitSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.TraitSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = check(traitt.sym, traitt.sym.loc)
-      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = check(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = check(tcHead.sym, tcHead.loc)
-      override def consumeDerivation(derive: Ast.Derivation): Unit = check(derive.trt, derive.loc)
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = consider(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
+      override def consumeDerivation(derive: Ast.Derivation): Unit = consider(derive.trt, derive.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
@@ -124,16 +128,18 @@ object HighlightProvider {
 
   private def highlightEffectSym(uri: String, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.EffectSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object EffectSymConsumer extends Consumer {
-      override def consumeEff(eff: TypedAst.Effect): Unit = check(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = check(effUse.sym, effUse.loc)
+      override def consumeEff(eff: TypedAst.Effect): Unit = consider(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.loc)
       override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.EffectSym, loc)) => check(sym, loc)
+        case Some((sym: Symbol.EffectSym, loc)) => consider(sym, loc)
         case _ => ()
       }
     }
@@ -145,15 +151,17 @@ object HighlightProvider {
 
   private def highlightEnumSym(uri: String, sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.EnumSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.EnumSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object EnumSymConsumer extends Consumer {
-      override def consumeEnum(enm: TypedAst.Enum): Unit = check(enm.sym, enm.sym.loc)
+      override def consumeEnum(enm: TypedAst.Enum): Unit = consider(enm.sym, enm.sym.loc)
       override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.EnumSym, loc)) => check(sym, loc)
+        case Some((sym: Symbol.EnumSym, loc)) => consider(sym, loc)
         case _ => ()
       }
     }
@@ -165,14 +173,16 @@ object HighlightProvider {
 
   private def highlightStructFieldSym(uri: String, sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.StructFieldSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object StructFieldSymConsumer extends Consumer {
-      override def consumeStructField(field: TypedAst.StructField): Unit = check(field.sym, field.sym.loc)
-      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = check(symUse.sym, symUse.loc)
+      override def consumeStructField(field: TypedAst.StructField): Unit = consider(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, StructFieldSymConsumer, Visitor.FileAcceptor(uri))
@@ -182,19 +192,21 @@ object HighlightProvider {
 
   private def highlightStructSym(uri: String, sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.StructSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.StructSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object StructSymConsumer extends Consumer {
-      override def consumeStruct(struct: TypedAst.Struct): Unit = check(struct.sym, struct.sym.loc)
+      override def consumeStruct(struct: TypedAst.Struct): Unit = consider(struct.sym, struct.sym.loc)
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.StructNew(sym, _, _, _, _, loc) => check(sym, loc)
+        case Expr.StructNew(sym, _, _, _, _, loc) => consider(sym, loc)
         case _ => ()
       }
       override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.StructSym, loc)) => check(sym, loc)
+        case Some((sym: Symbol.StructSym, loc)) => consider(sym, loc)
         case _ => ()
       }
     }
@@ -206,14 +218,16 @@ object HighlightProvider {
 
   private def highlightDefnSym(uri: String, sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(x: SourceLocation): Unit = {
-      occurs = x :: occurs
+
+    def consider(x: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
-    def check(x: Symbol.DefnSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object DefnSymConsumer extends Consumer {
-      override def consumeDef(defn: TypedAst.Def): Unit = check(defn.sym, defn.sym.loc)
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = check(sym.sym, sym.loc)
+      override def consumeDef(defn: TypedAst.Def): Unit = consider(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
@@ -223,15 +237,16 @@ object HighlightProvider {
 
   private def highlightCaseSym(uri: String, sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
-    def add(loc: SourceLocation): Unit = {
-      occurs = loc :: occurs
+
+    def consider(x: Symbol.CaseSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
 
-    def check(x: Symbol.CaseSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
-
     object CaseSymConsumer extends Consumer {
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = check(sym.sym, sym.loc)
-      override def consumeCase(cse: TypedAst.Case): Unit = check(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
@@ -242,17 +257,17 @@ object HighlightProvider {
   private def highlightVarSym(uri: String, sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root): JObject = {
     var occurs: List[SourceLocation] = Nil
 
-    def check(x: Symbol.VarSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
-
-    def add(loc: SourceLocation): Unit = {
-      occurs = loc :: occurs
+    def consider(x: Symbol.VarSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
     }
 
     object VarSymConsumer extends Consumer {
-      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = check(symUse.sym, symUse.loc)
-      override def consumeBinder(bnd: TypedAst.Binder): Unit = check(bnd.sym, bnd.sym.loc)
+      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeBinder(bnd: TypedAst.Binder): Unit = consider(bnd.sym, bnd.sym.loc)
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Var(sym, _, loc) => check(sym, loc)
+        case Expr.Var(sym, _, loc) => consider(sym, loc)
         case _ => ()
       }
     }
