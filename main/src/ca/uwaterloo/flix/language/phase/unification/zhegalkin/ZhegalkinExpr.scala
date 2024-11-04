@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import java.util.Objects
 import scala.collection.immutable.SortedSet
 
 /** Companion object for [[ZhegalkinExpr]] */
@@ -120,7 +121,7 @@ object ZhegalkinExpr {
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
           val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor.
-            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst)              // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
+            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
       }
@@ -315,6 +316,21 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
       case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
     }
   }
+
+  /**
+    * Returns `true` if `this` is equal to `that`.
+    */
+  override def equals(obj: Any): Boolean = obj match {
+    case that: ZhegalkinExpr => (this eq that) || (this.cst == that.cst && this.terms == that.terms)
+    case _ => false
+  }
+
+  /**
+    * Returns the hashCode of `this` Zhegalkin expression.
+    *
+    * Caching the hashCode leads to speed-ups.
+    */
+  override val hashCode: Int = Objects.hash(cst, terms)
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */
   override def toString: String =
