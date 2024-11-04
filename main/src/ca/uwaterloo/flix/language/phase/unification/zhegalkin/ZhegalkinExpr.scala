@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import java.util.Objects
 import scala.collection.immutable.SortedSet
 
 /** Companion object for [[ZhegalkinExpr]] */
@@ -51,7 +52,7 @@ object ZhegalkinExpr {
       }
 
       // General case:
-      ZhegalkinExpr(cst, ts)
+      ZhegalkinExpr(cst, ts.sortBy(t => t.vars.size))
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
@@ -112,19 +113,19 @@ object ZhegalkinExpr {
   private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = ZhegalkinCst.mkXor(c1, c2)
-      // Eliminate duplicates: t ⊕ t = 0
-      val tsr1 = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+      // Eliminate duplicates: a ⊕ a = 0
+      val allTermsNonDup = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2)
-      val grouped = tsr1.groupBy(_.vars).toList
-      val resTerms = grouped.map {
+      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
+      val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
+      val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor
-            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor.
+            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
       }
-      mkZhegalkinExpr(c, resTerms)
+      mkZhegalkinExpr(c, mergedTerms)
   }
 
   /**
@@ -145,10 +146,15 @@ object ZhegalkinExpr {
     ZhegalkinCache.lookupOrComputeUnion(e1, e2, computeUnion)
   }
 
-  // TODO: Docs
-  private def computeUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ∪ b = a ⊕ b ⊕ (a ∩ b) */
-    mkXor(mkXor(a, b), mkInter(a, b))
+  /**
+    * Computes the union of the given two Zhegalkin expressions `e1` and `e2`.
+    */
+  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // a ∪ b = 1 ⊕ (1 ⊕ a)(1 ⊕ b)
+    //mkXor(ZhegalkinExpr.one, mkInter(mkXor(ZhegalkinExpr.one, e1), mkXor(ZhegalkinExpr.one, e2)))
+
+    // a ∪ b = a ⊕ b ⊕ (a ∩ b)
+    mkXor(mkXor(e1, e2), mkInter(e1, e2))
   }
 
   /**
@@ -178,45 +184,63 @@ object ZhegalkinExpr {
     ZhegalkinCache.lookupOrComputeInter(e1, e2, computeInter)
   }
 
-  //
-  // (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
-  //   =   (c1  ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
-  //     ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
-  //     ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
-  //
-  // TODO: Docs
-  private def computeInter(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = z1 match {
+  /**
+    * Computes the intersection of the given Zhegalkin expressions `e1` and `e2`.
+    *
+    * {{{
+    *   (c1 ⊕ t11 ⊕ t12 ⊕ ... ⊕ t1n) ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+    *     =   (c1  ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+    *       ⊕ (t11 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+    *       ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
+    *       ⊕ ...
+    * }}}
+    */
+  private def computeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = e1 match {
     case ZhegalkinExpr(c1, ts1) =>
-      val zero = mkInterConstantExpr(c1, z2)
+      val zero = mkInterConstantExpr(c1, e2)
       ts1.foldLeft(zero) {
-        case (acc, z) => mkXor(acc, mkInterTermExpr(z, z2))
+        case (acc, z) => mkXor(acc, mkInterTermExpr(z, e2))
       }
   }
 
-  //
-  // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
-  //
-  // TODO: Docs
-  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
-    case ZhegalkinTerm(c2, vars) =>
-      ZhegalkinTerm(c.inter(c2), vars)
-  }
-
-  //
-  // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
-  //
-  // TODO: Docs
-  private def mkInterConstantExpr(c: ZhegalkinCst, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
+    *
+    * {{{
+    *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
+    * }}}
+    */
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)
   }
 
-  //
-  // t ∩ (c2 ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c2) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
-  //
-  // TODO: Docs
-  private def mkInterTermExpr(t: ZhegalkinTerm, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin term `t`.
+    *
+    * {{{
+    *   c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
+    * }}}
+    */
+  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
+    case ZhegalkinTerm(c2, vars) =>
+      if (c == c2) {
+        return t
+      }
+
+      ZhegalkinTerm(c.inter(c2), vars)
+  }
+
+  /**
+    * Computes the intersection of the given Zhegalkin term `t` and the given Zhegalkin expression `e`.
+    *
+    * {{{
+    *   t ∩ (c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
+    * }}}
+    *
+    */
+  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
@@ -224,13 +248,36 @@ object ZhegalkinExpr {
       }
   }
 
-  // (c1 ∩ x11 ∩ x12 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ x22 ∩ ... ∩ x2m)
-  // TODO: Docs
-  private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = (t1, t2) match {
-    case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
-      ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
-  }
+  /**
+    * Computes the intersection of the two given Zhegalkin terms `t1` and `t2`.
+    *
+    * {{{
+    *   (c1 ∩ x11 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ ... ∩ x2m) = (c1 ∩ c2) ∩ x11 ∩ ... ∩ x1n ∩ x21 ∩ ... ∩ x2m
+    * }}}
+    */
+  //
+  private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = {
+    // a ∩ a = a
+    if (t1 eq t2) {
+      return t1
+    }
 
+    (t1, t2) match {
+      case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
+        if (c1 == c2) {
+          // Order of cases determined by profiling.
+          if (vars1.subsetOf(vars2)) { // We have that t1 is fully contained within t2.
+            return t2
+          }
+
+          if (vars2.subsetOf(vars1)) { // We have that t2 is fully contained within t1.
+            return t1
+          }
+        }
+        // General case:
+        ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
+    }
+  }
 
 }
 
@@ -269,6 +316,21 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
       case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
     }
   }
+
+  /**
+    * Returns `true` if `this` is equal to `that`.
+    */
+  override def equals(obj: Any): Boolean = obj match {
+    case that: ZhegalkinExpr => (this eq that) || (this.cst == that.cst && this.terms == that.terms)
+    case _ => false
+  }
+
+  /**
+    * Returns the hashCode of `this` Zhegalkin expression.
+    *
+    * Caching the hashCode leads to speed-ups.
+    */
+  override val hashCode: Int = Objects.hash(cst, terms)
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */
   override def toString: String =

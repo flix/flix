@@ -22,8 +22,8 @@ object ZhegalkinCache {
   /**
     * Controls what caches are enabled.
     */
-  private val EnableUnionCache: Boolean = false
-  private val EnableInterCache: Boolean = false // Experiments suggest: Not worth it.
+  private val EnableUnionCache: Boolean = true
+  private val EnableInterCache: Boolean = true
   private val EnableXorCache: Boolean = true
 
   /**
