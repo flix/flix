@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -30,7 +30,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
@@ -53,7 +53,7 @@ object TypeReduction2 {
 
       // Find the instance that matches
       val matches = assocs.flatMap {
-        case Ast.AssocTypeDef(assocTpe, ret) =>
+        case AssocTypeDef(assocTpe, ret) =>
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
@@ -101,11 +101,11 @@ object TypeReduction2 {
       reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          BaseEffects.getConstructorEffs(constructor, loc)
+          PrimitiveEffects.getConstructorEffs(constructor, loc)
 
         case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
           progress.markProgress()
-          BaseEffects.getMethodEffs(method, loc)
+          PrimitiveEffects.getMethodEffs(method, loc)
 
         case t => Type.JvmToType(t, loc)
       }

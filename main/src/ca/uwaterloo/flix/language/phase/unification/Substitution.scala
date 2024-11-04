@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -146,15 +146,15 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given equality constraint.
     */
-  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
+    case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
 
   /**
     * Applies `this` substitution to the given equality constraint.
     */
-  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
+  def apply(ec: BroadEqualityConstraint): BroadEqualityConstraint = if (isEmpty) ec else ec match {
+    case BroadEqualityConstraint(t1, t2) => BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
   /**

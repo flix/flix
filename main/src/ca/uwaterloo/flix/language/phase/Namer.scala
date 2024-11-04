@@ -138,7 +138,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       fields.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.StructField(_, sym, tpe, loc) =>
+    case NamedAst.Declaration.StructField(_, sym, _, _) =>
       // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
       tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
 
@@ -775,70 +775,18 @@ object Namer {
       val rs = rules.map(visitTryWithRule(_, ns0))
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
-    case DesugaredAst.Expr.InvokeConstructor2(className, exps, loc) =>
+    case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.InvokeConstructor2(className, es, loc)
+      NamedAst.Expr.InvokeConstructor(className, es, loc)
 
-    case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+    case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp, ns0)
       val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.InvokeMethod2(e, name, es, loc)
+      NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
-    case DesugaredAst.Expr.GetField2(exp, name, loc) =>
+    case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetField2(e, name, loc)
-
-    case DesugaredAst.Expr.InvokeConstructorOld(className, exps, sig, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      NamedAst.Expr.InvokeConstructorOld(className, es, ts, loc)
-
-    case DesugaredAst.Expr.InvokeMethodOld(className, methodName, exp, exps, sig, tpe, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      val t = visitType(tpe)
-      NamedAst.Expr.InvokeMethodOld(className, methodName, e, es, ts, t, loc)
-
-    case DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, exps, sig, tpe, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      val t = visitType(tpe)
-      NamedAst.Expr.InvokeStaticMethodOld(className, methodName, es, ts, t, loc)
-
-    case DesugaredAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetFieldOld(className, fieldName, e, loc)
-
-    case DesugaredAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.PutField(className, fieldName, e1, e2, loc)
-
-    case DesugaredAst.Expr.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expr.GetStaticField(className, fieldName, loc)
-
-    case DesugaredAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.PutStaticField(className, fieldName, e, loc)
+      NamedAst.Expr.GetField(e, name, loc)
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1389,7 +1337,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.TypeParam] = {
+  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case tparams@(_ :: _) => visitExplicitTypeParams(tparams)

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
@@ -629,50 +629,33 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc)
       KindedAst.Expr.Do(op, exps, tvar, loc)
 
-    case ResolvedAst.Expr.InvokeConstructor2(clazz, exps0, loc) =>
+    case ResolvedAst.Expr.InvokeConstructor(clazz, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc)
+      KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc)
 
-    case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
+    case ResolvedAst.Expr.InvokeMethod(exp0, methodName, exps0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc)
+      KindedAst.Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
+    case ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc)
+      KindedAst.Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.GetField2(exp0, fieldName, loc) =>
+    case ResolvedAst.Expr.GetField(exp0, fieldName, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc)
-
-    case ResolvedAst.Expr.InvokeConstructorOld(constructor, exps0, loc) =>
-      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      KindedAst.Expr.InvokeConstructorOld(constructor, exps, loc)
-
-    case ResolvedAst.Expr.InvokeMethodOld(method, clazz, exp0, exps0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      KindedAst.Expr.InvokeMethodOld(method, clazz, exp, exps, loc)
-
-    case ResolvedAst.Expr.InvokeStaticMethodOld(method, exps0, loc) =>
-      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      KindedAst.Expr.InvokeStaticMethodOld(method, exps, loc)
-
-    case ResolvedAst.Expr.GetFieldOld(field, clazz, exp0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.GetFieldOld(field, clazz, exp, loc)
+      KindedAst.Expr.GetField(exp, fieldName, jvar, tvar, evar, loc)
 
     case ResolvedAst.Expr.PutField(field, clazz, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
@@ -1217,11 +1200,11 @@ object Kinder {
   /**
     * Performs kinding on the given equality constraint under the given kind environment.
     */
-  private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Ast.EqualityConstraint = econstr match {
+  private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): EqualityConstraint = econstr match {
     case ResolvedAst.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1, Kind.Wild, kenv, taenv, root)
       val t2 = visitType(tpe2, Kind.Wild, kenv, taenv, root)
-      Ast.EqualityConstraint(cst, t1, t2, loc)
+      EqualityConstraint(cst, t1, t2, loc)
   }
 
   /**

@@ -348,7 +348,7 @@ object Lexer {
       case '₹' =>
         // Don't include the rupee sign in the name
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        acceptName(false)
+        acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -418,9 +418,6 @@ object Lexer {
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("java_get_field") => TokenKind.KeywordJavaGetField
-      case _ if isKeyword("java_set_field") => TokenKind.KeywordJavaSetField
-      case _ if isKeyword("java_new") => TokenKind.KeywordJavaNew
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject

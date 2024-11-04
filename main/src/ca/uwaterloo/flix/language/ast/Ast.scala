@@ -16,41 +16,12 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
-    */
-  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
-
-  /**
-    *
-    * Represents that `tpe1` and `tpe2` are equivalent types.
-    */
-  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
-
-  /**
-    * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
-    */
-  case class Instance(tpe: Type, tconstrs: List[TraitConstraint])
-
-  /**
-    * Represents the super traits and instances available for a particular traits.
-    */
-  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
-
-  /**
-    * Represents the definition of an associated type.
-    * If this associated type is named `Assoc`, then
-    * Assoc[arg] = ret.
-    */
-  case class AssocTypeDef(arg: Type, ret: Type)
 
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).

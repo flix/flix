@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, BroadEqualityConstraint, EqualityConstraint, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -26,12 +26,12 @@ object EqualityEnvironment {
   /**
     * Checks that the given `econstrs` entail the given `econstr`.
     */
-  def entail(econstrs: List[Ast.EqualityConstraint], econstr: Ast.BroadEqualityConstraint, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
+  def entail(econstrs: List[EqualityConstraint], econstr: BroadEqualityConstraint, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
     // create assoc-type substitution using econstrs
     val subst = toSubst(econstrs)
 
     // extract the types
-    val Ast.BroadEqualityConstraint(tpe1, tpe2) = econstr
+    val BroadEqualityConstraint(tpe1, tpe2) = econstr
 
     // apply the substitution to them
     val newTpe1 = subst(tpe1)
@@ -54,7 +54,7 @@ object EqualityEnvironment {
   /**
     * Checks that the `givenEconstrs` entail all the given `wantedEconstrs`.
     */
-  def entailAll(givenEconstrs: List[Ast.EqualityConstraint], wantedEconstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
+  def entailAll(givenEconstrs: List[EqualityConstraint], wantedEconstrs: List[BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
     Validation.fold(wantedEconstrs, Substitution.empty) {
       case (subst, wantedEconstr) =>
         Validation.mapN(entail(givenEconstrs, subst(wantedEconstr), renv, eqEnv)) {
@@ -66,28 +66,28 @@ object EqualityEnvironment {
   /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.
     */
-  def narrow(econstr: Ast.BroadEqualityConstraint): Ast.EqualityConstraint = econstr match {
-    case Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, _, _), tpe2) =>
-      Ast.EqualityConstraint(cst, tpe1, tpe2, SourceLocation.Unknown)
+  def narrow(econstr: BroadEqualityConstraint): EqualityConstraint = econstr match {
+    case BroadEqualityConstraint(Type.AssocType(cst, tpe1, _, _), tpe2) =>
+      EqualityConstraint(cst, tpe1, tpe2, SourceLocation.Unknown)
     case _ => throw InternalCompilerException("unexpected broad equality constraint", SourceLocation.Unknown)
   }
 
   /**
     * Converts the given Equality
     */
-  def broaden(econstr: Ast.EqualityConstraint): Ast.BroadEqualityConstraint = econstr match {
-    case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
-      Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
+  def broaden(econstr: EqualityConstraint): BroadEqualityConstraint = econstr match {
+    case EqualityConstraint(cst, tpe1, tpe2, loc) =>
+      BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
   }
 
   /**
     * Converts the list of equality constraints to a substitution.
     */
-  private def toSubst(econstrs: List[Ast.EqualityConstraint]): AssocTypeSubstitution = {
+  private def toSubst(econstrs: List[EqualityConstraint]): AssocTypeSubstitution = {
     econstrs.foldLeft(AssocTypeSubstitution.empty) {
-      case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
+      case (acc, EqualityConstraint(Ast.AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
         acc ++ AssocTypeSubstitution.singleton(sym, tvar, tpe2)
-      case (_, Ast.EqualityConstraint(cst, tpe1, tpe2, loc)) => throw InternalCompilerException("unexpected econstr", loc) // TODO ASSOC-TYPES
+      case (_, EqualityConstraint(cst, tpe1, tpe2, loc)) => throw InternalCompilerException("unexpected econstr", loc) // TODO ASSOC-TYPES
     }
   }
 
@@ -96,7 +96,7 @@ object EqualityEnvironment {
     *
     * Only performs one reduction step. The result may itself contain associated types.
     */
-  def reduceAssocTypeStep(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocTypeStep(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     val renv = arg.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
@@ -113,7 +113,7 @@ object EqualityEnvironment {
   /**
     * Fully reduces the given associated type.
     */
-  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     for {
       tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
       res <- reduceType(tpe, eqEnv)
@@ -123,7 +123,7 @@ object EqualityEnvironment {
   /**
     * Reduces associated types in the equality environment.
     */
-  def reduceType(t0: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceType(t0: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     // TODO ASSOC-TYPE require that AssocTypeDefs which themselves include assoc types are supported by tconstrs
     def visit(t: Type): Result[Type, UnificationError] = t match {
       case t: Type.Var => Result.Ok(t)

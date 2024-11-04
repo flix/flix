@@ -29,27 +29,27 @@ pub enum Proxy[_] {
 pub eff Exec
 
 ///
-/// The uninterpretable `FileRead` effect.
+/// The uninterpretable `FsRead` effect.
 ///
-/// The `FileRead` effect represents the actions to required to read from the file system.
+/// The `FsRead` effect represents the actions to required to read from the file system.
 ///
-/// The `FileRead` effect is uninterpretable which means that it cannot be handled.
+/// The `FsRead` effect is uninterpretable which means that it cannot be handled.
 ///
-pub eff FileRead
+pub eff FsRead
 
 ///
-/// The uninterpretable `FileWrite` effect.
+/// The uninterpretable `FsWrite` effect.
 ///
-/// The `FileWrite` effect represents the actions to required to write to the file system.
+/// The `FsWrite` effect represents the actions to required to write to the file system.
 ///
-/// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
+/// The `FsWrite` effect is uninterpretable which means that it cannot be handled.
 ///
-pub eff FileWrite
+pub eff FsWrite
 
 ///
 /// A type alias for the `FileRead` and `FileWrite` effects.
 ///
-type alias FileIO = {FileRead, FileWrite}
+type alias FileIO = {FsRead, FsWrite}
 
 ///
 /// The uninterpretable IO effect.

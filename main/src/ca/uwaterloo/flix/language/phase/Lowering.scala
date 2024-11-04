@@ -414,7 +414,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(bnd.sym, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -425,7 +425,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, t, Type.Pure, loc)
 
-    case TypedAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Scope(TypedAst.Binder(sym, _), regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expr.Scope(sym, regionVar, e, t, eff, loc)
@@ -830,7 +830,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Pattern.Wild(t, loc)
 
-    case TypedAst.Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(TypedAst.Binder(sym, _), tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Pattern.Var(sym, t, loc)
 
@@ -939,9 +939,9 @@ object Lowering {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: TypedAst.FormalParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.FormalParam = fparam0 match {
-    case TypedAst.FormalParam(sym, mod, tpe, src, loc) =>
+    case TypedAst.FormalParam(bnd, mod, tpe, src, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(sym, mod, t, src, loc)
+      LoweredAst.FormalParam(bnd.sym, mod, t, src, loc)
   }
 
   /**
@@ -953,7 +953,7 @@ object Lowering {
       pat match {
         case TypedAst.RestrictableChoosePattern.Tag(sym, pat0, tpe, loc) =>
           val termPatterns = pat0.map {
-            case TypedAst.RestrictableChoosePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
+            case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, _), tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
             case TypedAst.RestrictableChoosePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
             case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable", loc)
           }
@@ -973,9 +973,9 @@ object Lowering {
     * Lowers the given catch rule `rule0`.
     */
   private def visitCatchRule(rule0: TypedAst.CatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.CatchRule = rule0 match {
-    case TypedAst.CatchRule(sym, clazz, exp) =>
+    case TypedAst.CatchRule(bnd, clazz, exp) =>
       val e = visitExp(exp)
-      LoweredAst.CatchRule(sym, clazz, e)
+      LoweredAst.CatchRule(bnd.sym, clazz, e)
   }
 
   /**
@@ -1003,16 +1003,16 @@ object Lowering {
     * Lowers the given match rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: TypedAst.TypeMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
-    case TypedAst.TypeMatchRule(sym, tpe, exp) =>
+    case TypedAst.TypeMatchRule(bnd, tpe, exp) =>
       val e = visitExp(exp)
-      LoweredAst.TypeMatchRule(sym, tpe, e)
+      LoweredAst.TypeMatchRule(bnd.sym, tpe, e)
   }
 
   /**
     * Lowers the given select channel rule `rule0`.
     */
   private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
-    case TypedAst.SelectChannelRule(sym, chan, exp) =>
+    case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp) =>
       val c = visitExp(chan)
       val e = visitExp(exp)
       LoweredAst.SelectChannelRule(sym, c, e)
@@ -1068,7 +1068,8 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case TypedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+    case TypedAst.Predicate.Body.Functional(outBnds, exp0, loc) =>
+      val outVars = outBnds.map(_.sym)
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val inVars = quantifiedVars(cparams0, exp0)
       val exp = visitExp(exp0)
@@ -1126,7 +1127,7 @@ object Lowering {
     case TypedAst.Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case TypedAst.Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(TypedAst.Binder(sym, _), tpe, loc) =>
       if (isQuantifiedVar(sym, cparams0)) {
         // Case 1: Quantified variable.
         mkBodyTermVar(sym)
@@ -1586,7 +1587,7 @@ object Lowering {
 
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
-    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${numberOfInVars}X${numberOfOutVars}")
+    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${numberOfInVars}X$numberOfOutVars")
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
@@ -1694,15 +1695,6 @@ object Lowering {
     */
   private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
     LoweredAst.Expr.Var(sym, mkChannelTpe(tpe, loc), loc)
-  }
-
-  /**
-    * Returns a `GetChannel` expression based on `sym` and `exp`.
-    */
-  private def mkParWait(exp: LoweredAst.Expr, sym: Symbol.VarSym): LoweredAst.Expr = {
-    val loc = exp.loc.asSynthetic
-    val chExp = mkChannelExp(sym, exp.tpe, loc)
-    mkGetChannel(chExp, exp.tpe, Type.IO, loc)
   }
 
   /**
@@ -1847,7 +1839,7 @@ object Lowering {
     * That is, the variable symbol is *NOT* lexically bound.
     */
   private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
-    cparams0.exists(p => p.sym == sym)
+    cparams0.exists(p => p.bnd.sym == sym)
 
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.
