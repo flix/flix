@@ -102,7 +102,7 @@ object HighlightProvider {
     def check(x: Symbol.TraitSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
 
     object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = check(traitt.sym, traitt.loc)
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = check(traitt.sym, traitt.sym.loc)
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = check(symUse.sym, symUse.loc)
       override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = check(tcHead.sym, tcHead.loc)
       override def consumeDerivation(derive: Ast.Derivation): Unit = check(derive.trt, derive.loc)
