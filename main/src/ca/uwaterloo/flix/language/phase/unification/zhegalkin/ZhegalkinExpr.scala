@@ -145,10 +145,15 @@ object ZhegalkinExpr {
     ZhegalkinCache.lookupOrComputeUnion(e1, e2, computeUnion)
   }
 
-  // TODO: Docs
-  private def computeUnion(a: ZhegalkinExpr, b: ZhegalkinExpr): ZhegalkinExpr = {
-    /** a ∪ b = a ⊕ b ⊕ (a ∩ b) */
-    mkXor(mkXor(a, b), mkInter(a, b))
+  /**
+    * Computes the union of the given two Zhegalkin expressions `e1` and `e2`.
+    */
+  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+    // a ∪ b = 1 ⊕ (1 ⊕ a)(1 ⊕ b)
+    //mkXor(ZhegalkinExpr.one, mkInter(mkXor(ZhegalkinExpr.one, e1), mkXor(ZhegalkinExpr.one, e2)))
+
+    // a ∪ b = a ⊕ b ⊕ (a ∩ b)
+    mkXor(mkXor(e1, e2), mkInter(e1, e2))
   }
 
   /**
@@ -224,8 +229,14 @@ object ZhegalkinExpr {
       }
   }
 
-  // (c1 ∩ x11 ∩ x12 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ x22 ∩ ... ∩ x2m)
-  // TODO: Docs
+  /**
+    * Computes the intersection of the two given Zhegalkin terms `t1` and `t2`.
+    *
+    * {{{
+    *   (c1 ∩ x11 ∩ ... ∩ x1n) ∩ (c2 ∩ x21 ∩ ... ∩ x2m) = (c1 ∩ c2) ∩ x11 ∩ ... ∩ x1n ∩ x21 ∩ ... ∩ x2m
+    * }}}
+    */
+  //
   private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = (t1, t2) match {
     case (ZhegalkinTerm(c1, vars1), ZhegalkinTerm(c2, vars2)) =>
       ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
