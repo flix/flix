@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
+
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
   * The result of constraint solving is a substitution and a list of constraints that could not be resolved.
@@ -121,8 +123,8 @@ object ConstraintSolver2 {
   def fullyUnify(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv)(implicit eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
     val constr = TypeConstraint2.Equality(tpe1, tpe2, SourceLocation.Unknown)
-    implicit val r = renv
-    implicit val s = scope
+    implicit val r: RigidityEnv = renv
+    implicit val s: Scope = scope
     solveAllTypes(List(constr)) match {
       // Case 1: No constraints left. Success.
       case (Nil, subst) => Some(subst)
@@ -489,6 +491,7 @@ object ConstraintSolver2 {
   /**
     * Returns true if the kind should be unified syntactically.
     */
+  @tailrec
   private def isSyntactic(k: Kind): Boolean = k match {
     case Kind.Wild => false // MATT ?
     case Kind.WildCaseSet => false

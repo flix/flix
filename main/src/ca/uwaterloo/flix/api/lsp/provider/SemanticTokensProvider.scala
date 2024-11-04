@@ -804,7 +804,7 @@ object SemanticTokensProvider {
   }
 
   /**
-    * Returns all semantic tokens in the given associated type constructor `cst.
+    * Returns all semantic tokens in the given associated type constructor `cst`.
     */
   private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Iterator[SemanticToken] = cst match {
     case Ast.AssocTypeConstructor(_, loc) =>

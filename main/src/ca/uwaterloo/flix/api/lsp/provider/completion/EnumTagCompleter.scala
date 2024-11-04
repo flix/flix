@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
@@ -26,7 +24,7 @@ object EnumTagCompleter {
   /**
     * Returns a List of Completion for enum tags.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
     val fqn = context.word.split('.').toList
 

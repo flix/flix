@@ -15,15 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
 object ModuleCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ModCompletion] = {
-
+  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
     val nestedModules = CompletionUtils.getNestedModules(ctx.word)
     nestedModules.map(mod => Completion.ModCompletion(mod))
   }

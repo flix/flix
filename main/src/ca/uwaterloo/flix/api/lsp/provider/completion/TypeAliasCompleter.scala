@@ -25,7 +25,7 @@ object TypeAliasCompleter {
   /**
     * Returns a List of Completion for alias types.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeAliasCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[TypeAliasCompletion] = {
     root.typeAliases.map { case (_, t) =>
       val name = t.sym.name
       val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)

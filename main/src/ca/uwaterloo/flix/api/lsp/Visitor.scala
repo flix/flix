@@ -108,7 +108,7 @@ object Visitor {
       * @param loc  [[SourceLocation]] of the AST node
       * @return     true if the AST node should be visited, `false` otherwise
       */
-    def accept(loc: SourceLocation): Boolean;
+    def accept(loc: SourceLocation): Boolean
   }
 
   /**

@@ -61,7 +61,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -323,7 +323,7 @@ object Typer {
     }
 
     // Sequence the results and convert them back to a map.
-    result.toMap
+    result
   }
 
   /**

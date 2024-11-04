@@ -25,7 +25,7 @@ object WithCompleter {
   /**
     * Returns a List of Completion based on with type class constraints.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[WithCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[WithCompletion] = {
     /*
      * When used with `enum`, `with` needs to be treated differently: we should only show derivable
      * type classes, and we shouldn't include the type parameter

@@ -15,16 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
+import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
     val enumsInModule = getEnumSymsInModule(ctx)
     getEnumCompletions(enumsInModule, ctx)
   }
@@ -58,7 +57,6 @@ object EnumCompleter {
 
   private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
     val sym = decl.sym
-    val name = decl.sym.name
     val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
     Completion.EnumCompletion(sym, formatTParams(decl.tparams), internalPriority,
       TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))

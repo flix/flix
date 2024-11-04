@@ -39,12 +39,12 @@ object EntryPointError {
     * @param loc the location where the error occurred.
     */
   case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
-    override def summary: String = s"Entry point ${sym} not found."
+    override def summary: String = s"Entry point $sym not found."
 
     // NB: We do not print the source location,
     // as it is arbitrary and not related to the error.
     override def message(formatter: Formatter): String = {
-      s""">> The entry point ${sym} cannot be found.
+      s""">> The entry point $sym cannot be found.
          |""".stripMargin
     }
 
@@ -53,7 +53,7 @@ object EntryPointError {
          |Possible fixes:
          |
          |  (1)  Change the specified entry point to an existing function.
-         |  (2)  Add an entry point function ${sym}.
+         |  (2)  Add an entry point function $sym.
          |
          |""".stripMargin
     })

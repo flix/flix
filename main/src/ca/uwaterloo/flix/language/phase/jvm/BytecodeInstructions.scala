@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
+import scala.annotation.tailrec
+
 object BytecodeInstructions {
 
   /**
@@ -685,6 +687,7 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  @tailrec
   private def opcodeOf(c: Condition): Int = c match {
     case Condition.ACMPEQ => Opcodes.IF_ACMPEQ
     case Condition.ACMPNE => Opcodes.IF_ACMPNE
@@ -701,6 +704,7 @@ object BytecodeInstructions {
     case Condition.NULL => Opcodes.IFNULL
   }
 
+  @tailrec
   private def negated(c: Condition): Condition = c match {
     case Condition.ACMPEQ => Condition.ACMPNE
     case Condition.ACMPNE => Condition.ACMPEQ

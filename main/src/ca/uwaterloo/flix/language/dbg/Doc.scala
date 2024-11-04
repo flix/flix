@@ -226,14 +226,6 @@ object Doc {
     d1 |:: breakWith("") |:: d2
 
   /**
-    * Concatenates two docs with a space _or_ a grouped optional newline with
-    * indentation.
-    * `d2` is included in the group.
-    */
-  def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 |:: group(nest(breakWith(" ") |:: d2))
-
-  /**
     * Prefix `d` with a space, or an indented newline if space is needed.
     */
   def breakIndent(d: Doc)(implicit i: Indent): Doc =
@@ -284,12 +276,6 @@ object Doc {
     */
   def parens(x: Doc)(implicit i: Indent): Doc =
     group(enclose("(", x, ")"))
-
-  /**
-    * Enclose `x` with `(..)` with ungrouped newlines inside.
-    */
-  def parensOpen(x: Doc)(implicit i: Indent): Doc =
-    enclose("(", x, ")")
 
   /**
     * Enclose `x` with `{..}` with grouped newlines inside.

@@ -34,6 +34,6 @@ object FormatEqualityConstraint {
     case BroadEqualityConstraint(tpe1, tpe2) =>
       val tpe1String = FormatType.formatTypeWithOptions(tpe1, fmt)
       val tpe2String = FormatType.formatTypeWithOptions(tpe2, fmt)
-      s"${tpe1String} ~ ${tpe2String}"
+      s"$tpe1String ~ $tpe2String"
   }
 }

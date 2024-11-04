@@ -15,15 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
-import ca.uwaterloo.flix.language.ast.{Name, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Type}
 import ca.uwaterloo.flix.util.JvmUtils
 
 object InvokeMethodCompleter {
 
-  def getCompletions(obj: Type, name: Name.Ident, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MethodCompletion] = {
+  def getCompletions(obj: Type, name: Name.Ident): Iterable[MethodCompletion] = {
     Type.classFromFlixType(obj) match {
       case None =>
         Nil
