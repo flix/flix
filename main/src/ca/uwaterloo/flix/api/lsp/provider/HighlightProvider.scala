@@ -34,7 +34,7 @@ object HighlightProvider {
 
     stackConsumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)
-      case Some(x) => highlightAny(uri, pos, x)
+      case Some(x) => println(x); highlightAny(uri, pos, x)
     }
 
   }
@@ -44,6 +44,7 @@ object HighlightProvider {
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(sym, loc)
     case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(sym, loc)
     case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(sym, loc)
+    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => Some(sym, loc)
     case Type.Apply(tpe1, _, _) => getTypeSymOccur(tpe1)
     case _ => None
   }
@@ -73,14 +74,39 @@ object HighlightProvider {
     // Signatures
     case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym, sym.loc)
     case SymUse.SigSymUse(sym, loc) => highlightSigSym(uri, sym, loc)
+    // Type Aliases
+    case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(uri, sym, sym.loc)
     // Symbols in types
     case tpe: Type => getTypeSymOccur(tpe) match {
+      case Some((sym: Symbol.TypeAliasSym, loc)) => highlightTypeAliasSym(uri, sym, loc)
       case Some((sym: Symbol.StructSym, loc)) => highlightStructSym(uri, sym, loc)
       case Some((sym: Symbol.EnumSym, loc)) => highlightEnumSym(uri, sym, loc)
       case Some((sym: Symbol.EffectSym, loc)) => highlightEffectSym(uri, sym, loc)
       case _ => mkNotFound(uri, pos)
     }
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightTypeAliasSym(uri: String, sym: Symbol.TypeAliasSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+
+    def consider(x: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
+      if (x == sym) {
+        occurs = loc :: occurs
+      }
+    }
+
+    object TypeAliasSymConsumer extends Consumer {
+      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = consider(alias.sym, alias.sym.loc)
+      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
+        case Some((sym: Symbol.TypeAliasSym, loc)) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeAliasSymConsumer, Visitor.FileAcceptor(uri))
+
+    mkHighlights(loc, occurs)
   }
 
   private def highlightSigSym(uri: String, sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root): JObject = {
