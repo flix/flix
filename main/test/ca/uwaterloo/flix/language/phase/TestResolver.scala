@@ -676,50 +676,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
-  test("UndefinedJvmClass.04") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_get_field foo.bar.Baz.f: Unit \ IO as getF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.05") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_set_field foo.bar.Baz.f: Unit \ IO as setF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.06") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_get_field foo.bar.Baz.f: Unit \ IO as getF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.07") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_set_field foo.bar.Baz.f: Unit \ IO as setF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
@@ -1515,18 +1471,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.06") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.IllegalWildType](result)
   }
 

@@ -248,7 +248,7 @@ object Verifier {
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
-              check(MonoType.Region)(region, exps(0).loc)
+              check(MonoType.Region)(region, exps.head.loc)
               tpe
             case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }

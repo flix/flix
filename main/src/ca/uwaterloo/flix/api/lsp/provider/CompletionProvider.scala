@@ -66,7 +66,7 @@ object CompletionProvider {
       // Expressions.
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, ctx)
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
@@ -84,8 +84,8 @@ object CompletionProvider {
       //
       // Types.
       //
-      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(ctx)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx) ++ EffSymCompleter.getCompletions(ctx)
+      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions()
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx) ++ EffSymCompleter.getCompletions()
 
       //
       // Patterns.
@@ -127,7 +127,7 @@ object CompletionProvider {
       //
       // Imports.
       //
-      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err, ctx)
+      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
 
       case _ => Nil
     })

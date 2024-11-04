@@ -538,7 +538,7 @@ object Summary {
   }
 
   /** Keeps track of max lengths in columns */
-  class Table() {
+  class Table {
 
     /** The rows collected so far */
     private val rows: mutable.ListBuffer[List[String]] = mutable.ListBuffer.empty

@@ -431,7 +431,7 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
+    case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
@@ -443,7 +443,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeMethod2(exp, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeMethod(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)
@@ -456,7 +456,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
@@ -468,7 +468,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.GetField(exp, _, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val fieldType = subst(tvar)
       val jvarType = subst(jvar)
@@ -479,31 +479,6 @@ object TypeReconstruction {
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
-
-    case KindedAst.Expr.InvokeConstructorOld(constructor, args, loc) =>
-      val as = args.map(visitExp(_))
-      val tpe = getFlixType(constructor.getDeclaringClass)
-      val eff = Type.IO
-      TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
-
-    case KindedAst.Expr.InvokeMethodOld(method, _, exp, args, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp(_))
-      val tpe = getFlixType(method.getReturnType)
-      val eff = Type.IO
-      TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
-
-    case KindedAst.Expr.InvokeStaticMethodOld(method, args, loc) =>
-      val as = args.map(visitExp(_))
-      val tpe = getFlixType(method.getReturnType)
-      val eff = Type.IO
-      TypedAst.Expr.InvokeStaticMethod(method, as, tpe, eff, loc)
-
-    case KindedAst.Expr.GetFieldOld(field, _, exp, loc) =>
-      val e = visitExp(exp)
-      val tpe = getFlixType(field.getType)
-      val eff = Type.IO
-      TypedAst.Expr.GetField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.PutField(field, _, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

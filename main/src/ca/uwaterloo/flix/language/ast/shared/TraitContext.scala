@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Jonathan Lindegaard Starup
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.language.dbg
+import ca.uwaterloo.flix.language.ast.Symbol
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-
-object FormatSourceLocation {
-
-  def format(loc: SourceLocation): String = loc.source.name + ":" + loc.beginLine
-
-}
+/**
+  * Represents the super traits and instances available for a particular traits.
+  */
+case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Instance])

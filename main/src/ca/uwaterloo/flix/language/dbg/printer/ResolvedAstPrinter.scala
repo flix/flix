@@ -93,17 +93,13 @@ object ResolvedAstPrinter {
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.TryWith(exp, eff, rules, _) => DocAst.Expr.TryWith(print(exp), eff.sym, rules.map {
-      case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam).toList, print(exp))
+      case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.Do(op, exps, _) => DocAst.Expr.Do(op.sym, exps.map(print))
-    case Expr.InvokeConstructor2(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeMethod2(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeStaticMethod2(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.GetField2(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeConstructorOld(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeMethodOld(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeStaticMethodOld(_, _, _) => DocAst.Expr.Unknown
-    case Expr.GetFieldOld(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.GetField(_, _, _) => DocAst.Expr.Unknown
     case Expr.PutField(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetStaticField(_, _) => DocAst.Expr.Unknown
     case Expr.PutStaticField(_, _, _) => DocAst.Expr.Unknown
