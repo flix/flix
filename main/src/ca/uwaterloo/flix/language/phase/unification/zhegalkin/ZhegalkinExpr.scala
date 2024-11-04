@@ -202,22 +202,32 @@ object ZhegalkinExpr {
       }
   }
 
-  //
-  // c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m
-  //
-  // TODO: Docs
-  private def mkInterConstantExpr(c: ZhegalkinCst, z: ZhegalkinExpr): ZhegalkinExpr = z match {
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
+    *
+    * {{{
+    *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
+    * }}}
+    */
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)
   }
 
-  //
-  // c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
-  //
-  // TODO: Docs
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin term `t`.
+    *
+    * {{{
+    *   c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
+    * }}}
+    */
   private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
     case ZhegalkinTerm(c2, vars) =>
+      if (c == c2) {
+        return t
+      }
+
       ZhegalkinTerm(c.inter(c2), vars)
   }
 
