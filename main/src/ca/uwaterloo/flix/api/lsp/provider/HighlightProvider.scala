@@ -72,7 +72,26 @@ object HighlightProvider {
     case SymUse.TraitSymUse(sym, loc) => highlightTraitSym(uri, sym, loc)
     case TraitConstraint.Head(sym, loc) => highlightTraitSym(uri, sym, loc)
     case Ast.Derivation(sym, loc) => highlightTraitSym(uri, sym, loc)
+    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym, sym.loc)
+    case SymUse.SigSymUse(sym, loc) => highlightSigSym(uri, sym, loc)
     case _ => mkNotFound(uri, pos)
+  }
+
+  private def highlightSigSym(uri: String, sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root): JObject = {
+    var occurs: List[SourceLocation] = Nil
+    def add(x: SourceLocation): Unit = {
+      occurs = x :: occurs
+    }
+    def check(x: Symbol.SigSym, loc: SourceLocation): Unit = if (x == sym) { add(loc) }
+
+    object SigSymConsumer extends Consumer {
+      override def consumeSig(sig: TypedAst.Sig): Unit = check(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = check(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, SigSymConsumer, Visitor.FileAcceptor(uri))
+
+    mkHighlights(loc, occurs)
   }
 
   private def highlightTraitSym(uri: String, sym: Symbol.TraitSym, loc: SourceLocation)(implicit root: Root): JObject = {
