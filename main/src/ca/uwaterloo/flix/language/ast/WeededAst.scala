@@ -414,8 +414,6 @@ object WeededAst {
 
   }
 
-  case class JavaClassMember(prefix: String, suffix: List[String], loc: SourceLocation)
-
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)

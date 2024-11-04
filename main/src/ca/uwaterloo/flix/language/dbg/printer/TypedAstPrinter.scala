@@ -48,10 +48,10 @@ object TypedAstPrinter {
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.Tag(sym, exp, tpe, _, _) => DocAst.Expr.Tag(sym.sym, List(print(exp)))
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Tag(sym, exp, _, _, _) => DocAst.Expr.Tag(sym.sym, List(print(exp)))
+    case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
     case Expr.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))
@@ -62,18 +62,18 @@ object TypedAstPrinter {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
     case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
-    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, print(region))
-    case Expr.StructGet(exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
-    case Expr.StructPut(exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))
+    case Expr.StructNew(sym, fields, region, _, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, print(region))
+    case Expr.StructGet(exp, field, _, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
+    case Expr.StructPut(exp1, field, exp2, _, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
     case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.Without(exp, effUse, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.UncheckedMaskingCast(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.TryWith(exp, _Use, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), _Use.sym, rules.map(printHandlerRule))
@@ -86,21 +86,21 @@ object TypedAstPrinter {
     case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
     case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methods.map(printJvmMethod))
-    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.GetChannel(exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.NewChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
-    case Expr.ParYield(frags, exp, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
     case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointSolve(exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolve(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInject(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
 

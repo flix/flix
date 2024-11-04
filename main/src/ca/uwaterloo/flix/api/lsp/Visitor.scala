@@ -686,12 +686,6 @@ object Visitor {
     c.consumeBinder(bnd)
   }
 
-  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(varSym.loc)) { return }
-
-    c.consumeVarBinder(varSym, tpe)
-  }
-
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
