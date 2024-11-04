@@ -24,32 +24,9 @@ import java.lang.reflect.{Constructor, Executable, Method}
 
 object CompletionUtils {
 
-  /**
-    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest an alias for the function if applicable.
-    */
-  def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String], context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[? <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = exec match {
-      case method: Method => method.getReturnType
-      case _ => exec.getDeclaringClass
-    }
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.toSortText(Priority.Highest, s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
-  }
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
   def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
     arity match {
@@ -136,60 +113,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * Returns a class object if the string is a class or removing the last "part" makes it a class
-    */
-  def classFromDotSeperatedString(clazz: String): Option[(Class[?], String)] = {
-    // If the last charachter is . then this drops that
-    // I.e if we have java.lang.String. this converts to java.lang.String
-    // while if it does not end with . it is unchanged
-    val clazz1 = clazz.split('.').mkString(".")
-    // If we are typing the method/field to import we drop that
-    val clazz2 = clazz.split('.').dropRight(1).mkString(".")
-    classFromString(clazz1).orElse(classFromString(clazz2))
-  }
-
-  /**
-    * Return a class object if the class exists
-    */
-  def classFromString(clazz: String): Option[(Class[?], String)] = {
-    try {
-      Some((java.lang.Class.forName(clazz), clazz))
-    }
-    catch {
-      case _: ClassNotFoundException => None
-    }
-  }
-
-  /**
-    * Converts a Java Class Object into a string representing the type in flix syntax.
-    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
-    */
-  def convertJavaClassToFlixType(clazz: Class[?]): String = {
-    if (clazz.isArray()) {
-      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
-    }
-    else {
-      clazz.getName() match {
-        case "byte" => "Int8"
-        case "short" => "Int16"
-        case "int" => "Int32"
-        case "long" => "Int64"
-        case "float" => "Float32"
-        case "double" => "Float64"
-        case "boolean" => "Bool"
-        case "char" => "Char"
-        case "java.lang.String" => "String"
-        case "java.math.BigInteger" => "BigInt"
-        case "java.math.BigDecimal" => "BigDecimal"
-        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
-        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
-        case "void" => "Unit"
-        case other => s"##$other"
-      }
-    }
   }
 
   def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {

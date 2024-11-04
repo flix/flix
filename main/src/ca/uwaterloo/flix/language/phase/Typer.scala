@@ -61,7 +61,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -129,7 +129,7 @@ object Typer {
         }
         // ignore the super trait parameters since they should all be the same as the trait param
         val superTraits = trt.superTraits.map(_.head.sym)
-        (traitSym, Ast.TraitContext(superTraits, envInsts))
+        (traitSym, TraitContext(superTraits, envInsts))
     }
     TraitEnv(m)
   }
@@ -137,7 +137,7 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     val assocs = for {
       (traitSym, trt) <- traits0.iterator
       inst <- instances0.getOrElse(traitSym, Nil)
@@ -147,14 +147,14 @@ object Typer {
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
-          Ast.AssocTypeDef(inst.tpe, tpe)
-        case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
-          Ast.AssocTypeDef(arg, tpe)
+          AssocTypeDef(inst.tpe, tpe)
+        case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
+          AssocTypeDef(arg, tpe)
       }
     } yield (assocSig.sym, assocDef)
 
 
-    assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
+    assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, AssocTypeDef]) {
       case (acc, (sym, defn)) => acc + (sym -> defn)
     }
   }
@@ -162,7 +162,7 @@ object Typer {
   /**
     * Reconstructs types in the given defs.
     */
-  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
+  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
     val updatedDefs = ParOps.parMapValues(staleDefs) {
       case defn =>
@@ -176,7 +176,7 @@ object Typer {
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -197,7 +197,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on all traits in the given AST root.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
+  private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
     val updatedTrais = ParOps.parMapValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv))
     updatedTrais ++ freshTraits
@@ -206,7 +206,7 @@ object Typer {
   /**
     * Reassembles a single trait.
     */
-  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Trait = trt match {
+  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Trait = trt match {
     case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
@@ -225,7 +225,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on the given signature `sig`.
     */
-  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
+  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -251,7 +251,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on all instances in the given AST root.
     */
-  private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
+  private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
     val instances0 = for {
       (_, insts) <- root.instances
       inst <- insts
@@ -267,7 +267,7 @@ object Typer {
   /**
     * Reassembles a single instance.
     */
-  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
+  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
       val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
@@ -323,7 +323,7 @@ object Typer {
     }
 
     // Sequence the results and convert them back to a map.
-    result.toMap
+    result
   }
 
   /**
@@ -333,7 +333,7 @@ object Typer {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.zipWithIndex.map {
-        case (field, idx) =>
+        case (field, _) =>
           field.sym -> TypedAst.StructField(field.sym, field.tpe, field.loc)
       }
 

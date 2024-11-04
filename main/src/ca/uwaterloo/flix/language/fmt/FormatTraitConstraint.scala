@@ -33,6 +33,6 @@ object FormatTraitConstraint {
   def formatTraitConstraintWithOptions(tconstr: TraitConstraint, fmt: FormatOptions): String = tconstr match {
     case TraitConstraint(head, arg, _) =>
       val typeString = FormatType.formatTypeWithOptions(arg, fmt)
-      s"${head.sym}[${typeString}]"
+      s"${head.sym}[$typeString]"
   }
 }

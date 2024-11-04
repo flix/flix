@@ -108,7 +108,7 @@ object Visitor {
       * @param loc  [[SourceLocation]] of the AST node
       * @return     true if the AST node should be visited, `false` otherwise
       */
-    def accept(loc: SourceLocation): Boolean;
+    def accept(loc: SourceLocation): Boolean
   }
 
   /**
@@ -684,12 +684,6 @@ object Visitor {
     if (!a.accept(bnd.sym.loc)) { return }
 
     c.consumeBinder(bnd)
-  }
-
-  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(varSym.loc)) { return }
-
-    c.consumeVarBinder(varSym, tpe)
   }
 
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {

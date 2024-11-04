@@ -728,7 +728,7 @@ object TypeError {
 
   /**
    * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
+   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved constructor"
@@ -738,7 +738,7 @@ object TypeError {
 
   /**
    * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField2.
+   * This is a dummy error used in Java field type reconstruction for GetField.
    */
   case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved field"
@@ -748,7 +748,7 @@ object TypeError {
 
   /**
    * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
+   * This is a dummy error used in Java method type reconstruction for InvokeMethod.
    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved method"
@@ -758,7 +758,7 @@ object TypeError {
 
   /**
    * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod2.
+   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
    */
   case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved static method"

@@ -35,11 +35,6 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Returns `this` validation with an additional recoverable error.
-    */
-  final def withSoftFailure[R >: E](e: R): Validation[T, R] = withSoftFailures(List(e))
-
-  /**
     * Returns `this` validation with additional recoverable errors (if any).
     *
     * Returns `this` if `es` is empty.
@@ -233,13 +228,6 @@ object Validation {
       case SoftFailure(t, errs) => SoftFailure(Some(t), errs)
       case HardFailure(errs) => HardFailure(errs)
     }
-  }
-
-  /**
-    * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
-    */
-  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[?, E]): Validation[Unit, E] = {
-    mapN(traverse(xs)(f))(_ => ())
   }
 
   /**

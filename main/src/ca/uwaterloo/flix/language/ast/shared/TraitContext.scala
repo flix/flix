@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Symbol
 
-object FormatEff {
-
-  def formatEff(eff: Type)(implicit flix: Flix): String = eff match {
-    case Type.Cst(TypeConstructor.Pure, _) => "Pure"
-    case Type.Cst(TypeConstructor.Univ, _) => "Univ"
-    case _ => FormatType.formatType(eff)
-  }
-
-}
+/**
+  * Represents the super traits and instances available for a particular traits.
+  */
+case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Instance])

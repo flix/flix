@@ -16,11 +16,11 @@ object TypedAstOps {
     * Returns the set of variable symbols bound by the given pattern `pat0`.
     */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
-    case Pattern.Wild(tpe, loc) => Map.empty
-    case Pattern.Var(Binder(sym, _), tpe, loc) => Map(sym -> tpe)
+    case Pattern.Wild(_, _) => Map.empty
+    case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
-    case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
-    case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+    case Pattern.Tag(_, pat, _, _) => binds(pat)
+    case Pattern.Tuple(elms, _, _) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
     case Pattern.Record(pats, pat, _, _) =>
@@ -253,7 +253,7 @@ object TypedAstOps {
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      freeVars(region) ++ fields.flatMap { case (k, v) => freeVars(v) }
+      freeVars(region) ++ fields.flatMap { case (_, v) => freeVars(v) }
 
     case Expr.StructGet(e, _, _, _, _) =>
       freeVars(e)
@@ -407,7 +407,7 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
-    case Pattern.Record(pats, pat, tpe, loc) =>
+    case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, rfp) => acc ++ freeVars(rfp.pat)
       }

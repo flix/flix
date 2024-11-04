@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -25,14 +24,14 @@ import ca.uwaterloo.flix.util.Similarity
 
 object CodeActionProvider {
 
-  def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = {
-    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range, currentErrors)
+  def getCodeActions(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root): List[CodeAction] = {
+    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range)
   }
 
   /**
     * Returns code actions based on the current errors.
     */
-  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = currentErrors.flatMap {
+  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = currentErrors.flatMap {
     case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
@@ -77,7 +76,7 @@ object CodeActionProvider {
       mkDeriveMissingOrder(tpe, uri)
     case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
-    case InstanceError.MissingSuperTraitInstance(tpe, sub, sup, loc) if onSameLine(range, loc) =>
+    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if onSameLine(range, loc) =>
       mkDeriveMissingSuperTrait(tpe, sup, uri)
     case _ => Nil
   }
@@ -85,7 +84,7 @@ object CodeActionProvider {
   /**
     * Returns code actions based on the current index and the given range.
     */
-  private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] =
+  private def getActionsFromIndex(uri: String, range: Range)(implicit index: Index): List[CodeAction] =
     index.query(uri, range.start) match {
       case None => Nil // No code actions.
 
