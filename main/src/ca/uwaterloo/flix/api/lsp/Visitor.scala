@@ -108,7 +108,7 @@ object Visitor {
       * @param loc  [[SourceLocation]] of the AST node
       * @return     true if the AST node should be visited, `false` otherwise
       */
-    def accept(loc: SourceLocation): Boolean;
+    def accept(loc: SourceLocation): Boolean
   }
 
   /**
@@ -686,12 +686,6 @@ object Visitor {
     c.consumeBinder(bnd)
   }
 
-  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(varSym.loc)) { return }
-
-    c.consumeVarBinder(varSym, tpe)
-  }
-
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
@@ -826,7 +820,21 @@ object Visitor {
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(tpe.loc)) { return }
+
     c.consumeType(tpe)
+
+    tpe match {
+      case Type.Var(_, _) => ()
+      case Type.Cst(_, _) => ()
+      case Type.Apply(tpe1, tpe2, _) =>
+        visitType(tpe1)
+        visitType(tpe2)
+      case Type.Alias(_, args, _, _) => args.foreach(visitType)
+      case Type.AssocType(_, _, _, _) => visitType(tpe)
+      case Type.JvmToType(tpe, _) => visitType(tpe)
+      case Type.JvmToEff(tpe, _) => visitType(tpe)
+      case Type.UnresolvedJvmType(_, _) => ()
+    }
   }
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {

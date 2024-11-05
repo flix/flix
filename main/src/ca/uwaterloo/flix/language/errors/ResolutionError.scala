@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 /**
   * A common super-type for resolution errors.
   */
@@ -384,30 +382,6 @@ object ResolutionError {
     })
   }
 
-  /**
-    * Inaccessible Op Error.
-    *
-    * @param sym the sig symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = "Inaccessible."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
-         |
-         |${code(loc, "inaccessible operation.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the operation as public."
-    })
-
-  }
 
   /**
     * Inaccessible Restrictable Enum Error.
@@ -486,29 +460,6 @@ object ResolutionError {
 
   }
 
-  /**
-    * An error raised to indicate that the method return type doesn't match.
-    *
-    * @param className    the class name.
-    * @param methodName   the method name.
-    * @param declaredType the declared type.
-    * @param expectedType the expected type.
-    * @param loc          the location of the method name.
-    */
-  case class MismatchedReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = "Mismatched return type."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
-         |
-         |${code(loc, "mismatched return type.")}
-         |
-         |Declared type: $declaredType
-         |Expected type: $expectedType
-         |""".stripMargin
-    }
-  }
 
   /**
     * An error raised to indicate a missing associated type definition.
@@ -663,76 +614,6 @@ object ResolutionError {
     }
   }
 
-  /**
-    * An error raised to indicate that a matching constructor was not found.
-    *
-    * @param clazz        the class name.
-    * @param signature    the signature of the constructor.
-    * @param constructors the constructors in the class.
-    * @param loc          the location of the constructor name.
-    */
-  case class UndefinedJvmConstructor(clazz: Class[?], signature: List[Class[?]], constructors: List[Constructor[?]], loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = "Undefined constructor."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Undefined constructor in class '${cyan(clazz.getName)}' with the given signature.
-         |
-         |${code(loc, "undefined constructor.")}
-         |
-         |No constructor matches the signature:
-         |  $clazz (${signature.map(_.toString).mkString(",")})
-         |
-         |Available constructors:
-         |$appendConstructors
-         |""".stripMargin
-    }
-
-    private def appendConstructors: String = {
-      var res = ""
-      for (constructor <- constructors) {
-        res += "  " + stripAccessModifier(constructor.toString) + System.lineSeparator()
-      }
-      res
-    }
-  }
-
-  /**
-    * An error raised to indicate that the field name was not found.
-    *
-    * @param className the class name.
-    * @param fieldName the field name.
-    * @param static    whether the field is static.
-    * @param fields    the fields of the class.
-    * @param loc       the location of the method name.
-    */
-  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = {
-      if (!static) {
-        s"Undefined object field."
-      } else {
-        s"Undefined static field."
-      }
-    }
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
-         |
-         |${code(loc, "undefined field.")}
-         |Available fields:
-         |$appendFields
-         |""".stripMargin
-    }
-
-    private def keyword: String = {
-      if (static) "static" else "object"
-    }
-
-    private def appendFields: String = {
-      fields.map(f => "  " + stripAccessModifier(f.toString) + System.lineSeparator()).mkString
-    }
-  }
 
   /**
     * An error raised to indicate that a static field name was not found.
@@ -753,47 +634,6 @@ object ResolutionError {
     }
   }
 
-  /**
-    * An error raised to indicate that a matching method was not found.
-    *
-    * @param className  the class name.
-    * @param methodName the method name.
-    * @param static     whether the method is static.
-    * @param signature  the signature of the method.
-    * @param methods    the methods of the class.
-    * @param loc        the location of the method name.
-    */
-  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[?]], methods: List[Method], loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = {
-      if (!static) {
-        s"Undefined object method."
-      } else {
-        s"Undefined static method."
-      }
-    }
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
-         |
-         |${code(loc, "undefined method.")}
-         |No method matches the signature:
-         |  $methodName(${signature.map(_.toString).mkString(",")})
-         |
-         |
-         |Available methods:
-         |$appendMethods
-         |""".stripMargin
-    }
-
-    private def keyword: String = {
-      if (static) "static" else "object"
-    }
-
-    private def appendMethods: String = {
-      methods.map(m => "  " + stripAccessModifier(m.toString) + System.lineSeparator()).mkString
-    }
-  }
 
   /**
     * Undefined Kind Error.
@@ -1230,11 +1070,23 @@ object ResolutionError {
   }
 
   /**
-    * Removes all access modifiers from the given string `s`.
+    * An error raised to indicate a handler is missing a definition.
+    *
+    * @param sym   the symbol of the missing definition.
+    * @param loc   the location where the error occurred.
     */
-  private def stripAccessModifier(s: String): String =
-    s.replace("public", "").
-      replace("protected", "").
-      replace("private", "")
+  case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Missing handler definition: ${sym.name}"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
+         |
+         |${code(loc, "missing handler definition")}
+         |
+         |Add a handler definition for ${sym.name}
+         |""".stripMargin
+    }
+  }
 
 }

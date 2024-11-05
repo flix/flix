@@ -267,26 +267,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal effect set member.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalEffectSetMember(loc: SourceLocation) extends WeederError with Recoverable {
-    override def summary: String = "Illegal effect set member."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal effect set member.
-         |
-         |${code(loc, s"Effect sets may only contain variables and constants.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate that type parameters are present on an effect or operation.
     *
     * @param loc the location where the error occurred.
@@ -507,30 +487,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that the name of a module does not begin with an uppercase symbol.
-    *
-    * @param name the part of the module name that does not begin with an uppercase symbol.
-    * @param loc  the location where the error occurred
-    */
-  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError with Recoverable {
-
-    override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Lowercase module name.
-         |
-         |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "A module name must begin with an uppercase letter."
-    })
-  }
-
-  /**
     * An error raised to indicate an illegal null pattern.
     *
     * @param loc the location where the illegal pattern occurs.
@@ -610,26 +566,6 @@ object WeederError {
       import formatter.*
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
-  }
-
-  /**
-    * An error raised to indicate the presence of a guard in a restrictable choice rule.
-    *
-    * @param star whether the choose is of the star kind.
-    * @param loc  the location where the error occurs.
-    */
-  case class IllegalRestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
-    private val operationName: String = if (star) "choose*" else "choose"
-
-    def summary: String = s"Cases of $operationName do not allow guards."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> $summary
-         |
-         |${code(loc, "Disallowed guard.")}
-         |""".stripMargin
-    }
   }
 
   /**
@@ -975,31 +911,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-  }
-
-  /**
-    * An error raised to indicate that a newly defined name is reserved.
-    *
-    * @param ident the reserved name that conflicts.
-    * @param loc   the location where the error occurred.
-    */
-  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "Re-definition of a reserved name."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Re-definition of reserved name '${red(ident.name)}'.
-         |
-         |${code(loc, "re-definition of a reserved name")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
-    })
-
   }
 
   /**

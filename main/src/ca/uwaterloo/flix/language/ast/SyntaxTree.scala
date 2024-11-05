@@ -196,9 +196,9 @@ object SyntaxTree {
 
       case object IndexMut extends Expr
 
-      case object InvokeConstructor2 extends Expr
+      case object InvokeConstructor extends Expr
 
-      case object InvokeMethod2 extends Expr
+      case object InvokeMethod extends Expr
 
       case object Debug extends Expr
 
@@ -234,7 +234,7 @@ object SyntaxTree {
 
       case object ForFragmentLet extends Expr
 
-      case object GetField2 extends Expr
+      case object GetField extends Expr
 
       case object Hole extends Expr
 
@@ -251,8 +251,6 @@ object SyntaxTree {
       case object Lambda extends Expr
 
       case object LambdaMatch extends Expr
-
-      case object LetImport extends Expr
 
       case object LetMatch extends Expr
 
@@ -496,35 +494,6 @@ object SyntaxTree {
       case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    /// JVM_OP                                                                              //
-    //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait JvmOp extends TreeKind
-
-    object JvmOp {
-
-      case object Ascription extends JvmOp
-
-      case object Constructor extends JvmOp
-
-      case object GetField extends JvmOp
-
-      case object JvmOp extends JvmOp
-
-      case object Method extends JvmOp
-
-      case object PutField extends JvmOp
-
-      case object Sig extends JvmOp
-
-      case object StaticGetField extends JvmOp
-
-      case object StaticMethod extends JvmOp
-
-      case object StaticPutField extends JvmOp
 
     }
 

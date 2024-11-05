@@ -159,7 +159,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
-    case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, _) => None // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => None
     case Type.JvmToEff(_, _) => None
     case Type.UnresolvedJvmType(_, _) => None
@@ -189,7 +189,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
-    case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, _) => Nil // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => Nil
     case Type.JvmToEff(_, _) => Nil
     case Type.UnresolvedJvmType(_, _) => Nil
@@ -259,7 +259,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -269,7 +269,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.last
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -279,7 +279,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.head
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -291,10 +291,10 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.AssocType(_, arg, kind, _) => arg.size + 1
+    case Type.AssocType(_, arg, _, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
     case Type.JvmToEff(tpe, _) => tpe.size + 1
-    case Type.UnresolvedJvmType(member, loc) => member.getTypeArguments.map(_.size).sum + 1
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.map(_.size).sum + 1
   }
 
   /**
@@ -508,11 +508,6 @@ object Type {
     def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
-
-    /**
-      * Removes the kind from this var.
-      */
-    def withoutKind: UnkindedType.Var = UnkindedType.Var(sym.withoutKind, loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
@@ -811,11 +806,6 @@ object Type {
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
-
-  /**
-    * Constructs the IO curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ IO.
-    */
-  def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
@@ -1135,18 +1125,6 @@ object Type {
     */
   def mkRegion(r: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
-
-  /**
-    * Returns the type `tpe1 => tpe2`.
-    */
-  def mkImplies(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(Type.mkComplement(tpe1, loc), tpe2, loc)
-
-  /**
-    * Returns a Boolean type that represents the equivalence of `x` and `y`.
-    *
-    * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
-    */
-  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 
   /**
     * Replace type aliases with the types they represent.

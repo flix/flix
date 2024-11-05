@@ -22,7 +22,7 @@ object Similarity {
     */
   def closestMatch[V](needle: String, haystacks: Map[String, V]): V = {
     val (smallestKey, smallestValue) = haystacks.minBy {
-      case (k, v) =>
+      case (k, _) =>
         if (needle.headOption != k.headOption) {
           // If the needle and key do not start with the same letter then they are infinitely apart.
           1_000_000
