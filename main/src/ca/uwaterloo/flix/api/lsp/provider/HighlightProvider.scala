@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeCo
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
-import scala.annotation.tailrec
-
 object HighlightProvider {
 
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
@@ -39,22 +37,13 @@ object HighlightProvider {
 
   }
 
-  @tailrec
-  private def getTypeSymOccur(tpe: Type): Option[(Symbol, SourceLocation)] = tpe match {
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(sym, loc)
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(sym, loc)
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(sym, loc)
-    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => Some(sym, loc)
-    case Type.Apply(tpe1, _, _) => getTypeSymOccur(tpe1)
-    case _ => None
-  }
-
   private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
     // Variables
     case Binder(sym, _) => highlightVarSym(uri, sym)
     case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
     // Enums & Cases
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(uri, sym)
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(uri, sym)
     case TypedAst.Case(sym, _, _, _) => highlightCaseSym(uri, sym)
     case SymUse.CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
     // Defs
@@ -62,10 +51,12 @@ object HighlightProvider {
     case SymUse.DefSymUse(sym, _) => highlightDefnSym(uri, sym)
     // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym)
+    case Type.Cst(TypeConstructor.Struct(sym, _), _) => highlightStructSym(uri, sym)
     case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym)
     case SymUse.StructFieldSymUse(sym, _) => highlightStructFieldSym(uri, sym)
     // Effects
     case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym)
+    case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(uri, sym)
     case SymUse.EffectSymUse(sym, _) => highlightEffectSym(uri, sym)
     // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym)
@@ -76,14 +67,8 @@ object HighlightProvider {
     case SymUse.SigSymUse(sym, _) => highlightSigSym(uri, sym)
     // Type Aliases
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(uri, sym)
-    // Symbols in types
-    case tpe: Type => getTypeSymOccur(tpe) match {
-      case Some((sym: Symbol.TypeAliasSym, _)) => highlightTypeAliasSym(uri, sym)
-      case Some((sym: Symbol.StructSym, _)) => highlightStructSym(uri, sym)
-      case Some((sym: Symbol.EnumSym, _)) => highlightEnumSym(uri, sym)
-      case Some((sym: Symbol.EffectSym, _)) => highlightEffectSym(uri, sym)
-      case _ => mkNotFound(uri, pos)
-    }
+    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(uri, sym)
+
     case _ => mkNotFound(uri, pos)
   }
 
@@ -117,8 +102,8 @@ object HighlightProvider {
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
-      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.TypeAliasSym, loc)) => builder.considerRead(sym, loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
     }
@@ -161,8 +146,8 @@ object HighlightProvider {
     object EffectSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.loc)
-      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.EffectSym, loc)) => builder.considerRead(sym, loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
     }
@@ -177,8 +162,8 @@ object HighlightProvider {
 
     object EnumSymConsumer extends Consumer {
       override def consumeEnum(enm: TypedAst.Enum): Unit = builder.considerWrite(enm.sym, enm.sym.loc)
-      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.EnumSym, loc)) => builder.considerRead(sym, loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
     }
@@ -210,8 +195,8 @@ object HighlightProvider {
         case Expr.StructNew(sym, _, _, _, _, loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
-      override def consumeType(tpe: Type): Unit = getTypeSymOccur(tpe) match {
-        case Some((sym: Symbol.StructSym, loc)) => builder.considerRead(sym, loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
     }
