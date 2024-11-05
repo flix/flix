@@ -125,9 +125,6 @@ Did you know that:
 - the Flix type and effect system enforces that equality and ordering functions
   must be pure.
 
-- by convention, operations that mutate data structures end with an exclamation
-  mark. For example `Array.transform!`.
-
 - the Flix standard library uses records to avoid confusion when a function
   takes multiple arguments of the same type. For example, `String.contains` must
   be called as `String.contains(substr = "foo", "bar")`.

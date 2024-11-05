@@ -448,16 +448,6 @@ object Request {
   }
 
   /**
-    * Attempts to parse the `projectRootUri` from the given JSON value `v`.
-    */
-  private def parseProjectRootUri(v: JValue): Result[String, String] = {
-    v \\ "projectRootUri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected projectRootUri: '$s'.")
-    }
-  }
-
-  /**
     * Tries to parse the given `json` value as a [[CodeAction]] request.
     */
   def parseCodeAction(json: json4s.JValue): Result[Request, String] = {

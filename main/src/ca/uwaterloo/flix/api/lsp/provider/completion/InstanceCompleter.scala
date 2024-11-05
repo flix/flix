@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.InstanceCompletion
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Symbol, Type, TypeConstructor, TypedAst}
@@ -26,7 +25,7 @@ object InstanceCompleter {
   /**
     * Returns a List of Completion based on traits.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
       return Nil
     }
@@ -81,7 +80,7 @@ object InstanceCompleter {
     /**
       * Formats the given associated type `assoc`.
       */
-    def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
       s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
     }
 

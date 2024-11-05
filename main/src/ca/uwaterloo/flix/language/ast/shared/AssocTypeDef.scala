@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.language
+import ca.uwaterloo.flix.language.ast.Type
 
-import java.util.concurrent.atomic.AtomicInteger
-
-final class GenSym {
-
-  /**
-    * An internal counter.
-    */
-  private val counter: AtomicInteger = new AtomicInteger(0)
-
-  /**
-    * Returns a freshly generated unique id.
-    */
-  def freshId(): Int = {
-    counter.getAndIncrement()
-  }
-
-}
+/**
+  * Represents the definition of an associated type.
+  * If this associated type is named `Assoc`, then
+  * Assoc[arg] = ret.
+  */
+case class AssocTypeDef(arg: Type, ret: Type)

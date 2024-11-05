@@ -885,7 +885,7 @@ mod Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Chain[a]): Chain[a] with Order[a] = region rc {
-        toArray(rc, c) !> Array.sort! |> Array.toChain
+        toArray(rc, c) !> Array.sort |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -896,7 +896,7 @@ mod Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region rc {
-        toArray(rc, c) !> Array.sortBy!(f) |> Array.toChain
+        toArray(rc, c) !> Array.sortBy(f) |> Array.toChain
     }
 
     ///
@@ -907,7 +907,7 @@ mod Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region rc {
-        toArray(rc, c) !> Array.sortWith!(cmp) |> Array.toChain
+        toArray(rc, c) !> Array.sortWith(cmp) |> Array.toChain
     }
 
     ///

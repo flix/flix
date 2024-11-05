@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -49,7 +49,7 @@ object TypeReduction {
     *   Elm[Elm[a]]   ~> Elm[Elm[a]]
     * }}}
     */
-  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
 
@@ -110,10 +110,10 @@ object TypeReduction {
     case Type.JvmToEff(j0, _) =>
       simplify(j0, renv0, loc).map {
         case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) =>
-          (BaseEffects.getConstructorEffs(constructor, loc), true)
+          (PrimitiveEffects.getConstructorEffs(constructor, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) =>
-          (BaseEffects.getMethodEffs(method, loc), true)
+          (PrimitiveEffects.getMethodEffs(method, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmField(_), _), _) =>
           // Fields should never have any effect other than IO.

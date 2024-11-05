@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object WithHandlerCompleter {
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     // TODO: infer the effect of the expression
     root.effects.map { case (sym, eff) =>
       val effString = sym.name

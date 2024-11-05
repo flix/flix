@@ -219,8 +219,8 @@ object Safety {
     defn.spec.eff.effects.forall {
       case Symbol.Env => true
       case Symbol.Exec => true
-      case Symbol.FileRead => true
-      case Symbol.FileWrite => true
+      case Symbol.FsRead => true
+      case Symbol.FsWrite => true
       case Symbol.IO => true
       case Symbol.Net => true
       case Symbol.NonDet => true
@@ -435,8 +435,8 @@ object Safety {
         val res = visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
-        if (Symbol.isBaseEff(effUse.sym)) {
-          BaseEffectInTryWith(effUse.sym, effUse.loc) :: res
+        if (Symbol.isPrimitiveEff(effUse.sym)) {
+          PrimitiveEffectInTryWith(effUse.sym, effUse.loc) :: res
         } else {
           res
         }
@@ -1026,7 +1026,7 @@ object Safety {
     val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
 
     //
-    // Check that methods are pure or only have base effects.
+    // Check that methods are pure or only have primitive effects.
     //
     val methodErrors = methods.filter(m => getControlEffs(m.eff).nonEmpty).map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc))
 
@@ -1092,7 +1092,7 @@ object Safety {
     */
   private def getControlEffs(tpe: Type): Set[Symbol.EffectSym] =
     tpe.typeConstructors.foldLeft(Set.empty[Symbol.EffectSym]) {
-      case (acc, TypeConstructor.Effect(sym)) if !Symbol.isBaseEff(sym) => acc + sym
+      case (acc, TypeConstructor.Effect(sym)) if !Symbol.isPrimitiveEff(sym) => acc + sym
       case (acc, _) => acc
     }
 
