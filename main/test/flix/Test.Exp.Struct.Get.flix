@@ -1,11 +1,10 @@
 struct Get[r] {
     fstName: String,
     lstName: String,
-    age: Int32,
+    mut age: Int32,
     cowboy: Bool
 }
 mod Get {
-
 
     @test
     def testStructGet01(): Bool =
@@ -78,12 +77,31 @@ mod Get {
             let fstName2 = s->fstName;
             fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
+
+    @test
+    def testStructPureGet01(): Bool = {
+        let f = region rc {
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+            msg -> "${msg} ${s->fstName}"
+        };
+        f("Hello") == "Hello Lucky"
+    }
+
+    def getLastName(g: Get[rc]): String \ {} = g->lstName
+
+    @test
+    def testStructPureGet02(): Bool = {
+        region rc {
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+            getLastName(s) == "Luke"
+        }
+    }
 }
 
 struct BinaryTree[t, r] {
-    left: Option[BinaryTree[t, r]],
-    right: Option[BinaryTree[t, r]],
-    value: t
+    mut left: Option[BinaryTree[t, r]],
+    mut right: Option[BinaryTree[t, r]],
+    mut value: t
 }
 
 mod BinaryTree {
@@ -116,7 +134,7 @@ mod BinaryTree {
 }
 
 struct Nested[v, r] {
-    v: v
+    mut v: v
 }
 mod Nested {
 
