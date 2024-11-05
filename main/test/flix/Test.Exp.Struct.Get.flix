@@ -90,9 +90,9 @@ mod Get {
 }
 
 struct BinaryTree[t, r] {
-    left: Option[BinaryTree[t, r]],
-    right: Option[BinaryTree[t, r]],
-    value: t
+    mut left: Option[BinaryTree[t, r]],
+    mut right: Option[BinaryTree[t, r]],
+    mut value: t
 }
 
 mod BinaryTree {
@@ -125,7 +125,7 @@ mod BinaryTree {
 }
 
 struct Nested[v, r] {
-    v: v
+    mut v: v
 }
 mod Nested {
 
