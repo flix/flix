@@ -826,13 +826,13 @@ object Visitor {
     tpe match {
       case Type.Var(_, _) => ()
       case Type.Cst(_, _) => ()
-      case Type.Apply(tpe1, tpe2, _) =>
-        visitType(tpe1)
-        visitType(tpe2)
+      case Type.Apply(t1, t2, _) =>
+        visitType(t1)
+        visitType(t2)
       case Type.Alias(_, args, _, _) => args.foreach(visitType)
-      case Type.AssocType(_, _, _, _) => visitType(tpe)
-      case Type.JvmToType(tpe, _) => visitType(tpe)
-      case Type.JvmToEff(tpe, _) => visitType(tpe)
+      case Type.AssocType(_, t, _, _) => visitType(t)
+      case Type.JvmToType(t, _) => visitType(t)
+      case Type.JvmToEff(t, _) => visitType(t)
       case Type.UnresolvedJvmType(_, _) => ()
     }
   }
