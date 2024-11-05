@@ -110,12 +110,31 @@ object HighlightProvider {
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(sym)
       case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(sym)
+      // Type Variables
+      case TypedAst.TypeParam(_, sym, _) => highlightTypeVarSym(sym)
+      case Type.Var(sym, _) => highlightTypeVarSym(sym)
       // Variables
       case Binder(sym, _) => highlightVarSym(sym)
       case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(varSym)
 
       case _ => mkNotFound(uri, pos)
     }
+  }
+
+  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = HighlightBuilder(sym)
+
+    object TypeVarSymConsumer extends Consumer {
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = builder.considerWrite(tparam.sym, tparam.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Var(sym, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeVarSymConsumer, acceptor)
+
+    builder.build
   }
 
   private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
