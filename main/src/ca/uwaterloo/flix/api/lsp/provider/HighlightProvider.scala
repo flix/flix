@@ -30,46 +30,50 @@ object HighlightProvider {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
+
     stackConsumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)
-      case Some(x) => println(x); highlightAny(uri, pos, x)
+      case Some(x) => println(x); highlightAny(x, uri, pos)
     }
 
   }
 
-  private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
-    // Defs
-    case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym)
-    case SymUse.DefSymUse(sym, _) => highlightDefnSym(uri, sym)
-    // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym)
-    case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(uri, sym)
-    case SymUse.EffectSymUse(sym, _) => highlightEffectSym(uri, sym)
-    // Enums & Cases
-    case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(uri, sym)
-    case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(uri, sym)
-    case TypedAst.Case(sym, _, _, _) => highlightCaseSym(uri, sym)
-    case SymUse.CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
-    // Signatures
-    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym)
-    case SymUse.SigSymUse(sym, _) => highlightSigSym(uri, sym)
-    // Structs
-    case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym)
-    case Type.Cst(TypeConstructor.Struct(sym, _), _) => highlightStructSym(uri, sym)
-    case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym)
-    case SymUse.StructFieldSymUse(sym, _) => highlightStructFieldSym(uri, sym)
-    // Traits
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym)
-    case SymUse.TraitSymUse(sym, _) => highlightTraitSym(uri, sym)
-    case TraitConstraint.Head(sym, _) => highlightTraitSym(uri, sym)
-    // Type Aliases
-    case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(uri, sym)
-    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(uri, sym)
-    // Variables
-    case Binder(sym, _) => highlightVarSym(uri, sym)
-    case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
+  private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): JObject = {
+    implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
+    x match {
+      // Defs
+      case TypedAst.Def(sym, _, _, _) => highlightDefnSym(sym)
+      case SymUse.DefSymUse(sym, _) => highlightDefnSym(sym)
+      // Effects
+      case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(sym)
+      case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(sym)
+      case SymUse.EffectSymUse(sym, _) => highlightEffectSym(sym)
+      // Enums & Cases
+      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(sym)
+      case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(sym)
+      case TypedAst.Case(sym, _, _, _) => highlightCaseSym(sym)
+      case SymUse.CaseSymUse(sym, _) => highlightCaseSym(sym)
+      // Signatures
+      case TypedAst.Sig(sym, _, _, _) => highlightSigSym(sym)
+      case SymUse.SigSymUse(sym, _) => highlightSigSym(sym)
+      // Structs
+      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(sym)
+      case Type.Cst(TypeConstructor.Struct(sym, _), _) => highlightStructSym(sym)
+      case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(sym)
+      case SymUse.StructFieldSymUse(sym, _) => highlightStructFieldSym(sym)
+      // Traits
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(sym)
+      case SymUse.TraitSymUse(sym, _) => highlightTraitSym(sym)
+      case TraitConstraint.Head(sym, _) => highlightTraitSym(sym)
+      // Type Aliases
+      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(sym)
+      case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(sym)
+      // Variables
+      case Binder(sym, _) => highlightVarSym(sym)
+      case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(varSym)
 
-    case _ => mkNotFound(uri, pos)
+      case _ => mkNotFound(uri, pos)
+    }
   }
 
   private case class HighlightBuilder[T <: Symbol](sym: T) {
@@ -97,7 +101,7 @@ object HighlightProvider {
     }
   }
 
-  private def highlightCaseSym(uri: String, sym: Symbol.CaseSym)(implicit root: Root): JObject = {
+  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object CaseSymConsumer extends Consumer {
@@ -105,12 +109,12 @@ object HighlightProvider {
       override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
     }
 
-    Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, CaseSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightDefnSym(uri: String, sym: Symbol.DefnSym)(implicit root: Root): JObject = {
+  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object DefnSymConsumer extends Consumer {
@@ -118,12 +122,12 @@ object HighlightProvider {
       override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
     }
 
-    Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, DefnSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightEffectSym(uri: String, sym: Symbol.EffectSym)(implicit root: Root): JObject = {
+  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object EffectSymConsumer extends Consumer {
@@ -135,12 +139,12 @@ object HighlightProvider {
       }
     }
 
-    Visitor.visitRoot(root, EffectSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, EffectSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightEnumSym(uri: String, sym: Symbol.EnumSym)(implicit root: Root): JObject = {
+  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object EnumSymConsumer extends Consumer {
@@ -151,12 +155,12 @@ object HighlightProvider {
       }
     }
 
-    Visitor.visitRoot(root, EnumSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, EnumSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightSigSym(uri: String, sym: Symbol.SigSym)(implicit root: Root): JObject = {
+  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object SigSymConsumer extends Consumer {
@@ -164,12 +168,12 @@ object HighlightProvider {
       override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
     }
 
-    Visitor.visitRoot(root, SigSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, SigSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightStructFieldSym(uri: String, sym: Symbol.StructFieldSym)(implicit root: Root): JObject = {
+  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object StructFieldSymConsumer extends Consumer {
@@ -177,12 +181,12 @@ object HighlightProvider {
       override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
     }
 
-    Visitor.visitRoot(root, StructFieldSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightStructSym(uri: String, sym: Symbol.StructSym)(implicit root: Root): JObject = {
+  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object StructSymConsumer extends Consumer {
@@ -197,12 +201,12 @@ object HighlightProvider {
       }
     }
 
-    Visitor.visitRoot(root, StructSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, StructSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightTypeAliasSym(uri: String, sym: Symbol.TypeAliasSym)(implicit root: Root): JObject = {
+  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object TypeAliasSymConsumer extends Consumer {
@@ -213,12 +217,12 @@ object HighlightProvider {
       }
     }
 
-    Visitor.visitRoot(root, TypeAliasSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, TypeAliasSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightTraitSym(uri: String, sym: Symbol.TraitSym)(implicit root: Root): JObject = {
+  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object TraitSymConsumer extends Consumer {
@@ -227,12 +231,12 @@ object HighlightProvider {
       override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
     }
 
-    Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, TraitSymConsumer, acceptor)
 
     builder.build
   }
 
-  private def highlightVarSym(uri: String, sym: Symbol.VarSym)(implicit root: Root): JObject = {
+  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = HighlightBuilder(sym)
 
     object VarSymConsumer extends Consumer {
@@ -244,7 +248,7 @@ object HighlightProvider {
       }
     }
 
-    Visitor.visitRoot(root, VarSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, VarSymConsumer, acceptor)
 
     builder.build
   }
