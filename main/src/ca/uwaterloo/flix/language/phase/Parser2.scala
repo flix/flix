@@ -319,6 +319,7 @@ object Parser2 {
     * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
     * Does not consume fuel if parser has hit end-of-file.
+    * Does not consume fuel if `consume` is false. This should be used sparingly.
     * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
     */
   private def nth(lookahead: Int, consume: Boolean = true)(implicit s: State): TokenKind = {
