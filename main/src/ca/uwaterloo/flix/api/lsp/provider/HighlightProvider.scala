@@ -34,12 +34,12 @@ object HighlightProvider {
     * when the cursor is at `pos` in the file at `uri`.
     *
     * Given cursor [[Position]] `pos`, if there is a [[Symbol]] under it, every occurrence of
-    * it in this file (at `uri`) is collected and a [[DocumentHighlight]] is created for each.
+    * it in the file at `uri` is collected and a [[DocumentHighlight]] is created for each.
     * These are then put in a [[JObject]] representing an LSP highlight response. It takes the form
     *
     * `{'status': 'success', 'message': [...]}` where `[...]` is a [[JArray]] containing each [[DocumentHighlight]].
     *
-    * If there is no [[Symbol]] at `pos`, a [[JObject]] representing an LSP failure response is return. It takes the form
+    * If there is no [[Symbol]] at `pos`, a [[JObject]] representing an LSP failure response is returned. It takes the form
     *
     * `{'status': 'failure', 'message': "Nothing found in <uri> at <pos>`.
     *
