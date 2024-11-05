@@ -86,6 +86,16 @@ mod Get {
         };
         f("Hello") == "Hello Lucky"
     }
+
+    @test
+    def testStructPureGet02(): Bool = {
+        def mustBePure(x: a -> b \ {}): a -> b \ {} = x;
+        def f(g): _ \ {} = f->lstName;
+        region rc {
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+            mustBePure(() -> f(s))() == "Luke"
+        }
+    }
 }
 
 struct BinaryTree[t, r] {
