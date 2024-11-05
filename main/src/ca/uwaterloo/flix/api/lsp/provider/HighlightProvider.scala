@@ -24,6 +24,9 @@ import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeCo
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
+/**
+  * Provides the means to handle an LSP highlight request.
+  */
 object HighlightProvider {
 
   /**
@@ -110,21 +113,55 @@ object HighlightProvider {
     }
   }
 
+  /**
+    * A builder for creating an LSP highlight response containing a [[DocumentHighlight]] for each recorded
+    * occurrence of the [[Symbol]].
+    *
+    * An occurrence of a [[Symbol]] is "considered" by invoking [[considerRead]] or [[considerWrite]] for resp.
+    * "write" and "read" occurrences. By a "write" occurrence, we mean an occurrence where the [[Symbol]] is being
+    * defined or otherwise bound to something. By "read" we mean an occurrence where the [[Symbol]] is merely read.
+    * When we say "consider", we mean first checking if the occurrence is an occurrence of `sym` specifically.
+    * If so, it's added to our list of either "read" or "write" occurrences, depending on the type.
+    *
+    * When we're done considering [[Symbol]]s, we can construct the LSP response by calling [[build]]
+    *
+    * @param sym  the [[Symbol]] we're finding occurrences of.
+    * @tparam T   the type of [[Symbol]] that `sym` is.
+    */
   private case class HighlightBuilder[T <: Symbol](sym: T) {
     private var writes: List[SourceLocation] = Nil
     private var reads: List[SourceLocation] = Nil
 
+    /**
+      * If `x` is an occurrence of `sym`, adds it to our list of "write" occurrences.
+      *
+      * @param x    the [[Symbol]] we're considering.
+      * @param loc  the [[SourceLocation]] of the occurrence.
+      */
     def considerWrite(x: T, loc: SourceLocation): Unit = {
       if (x == sym) {
         writes = loc :: writes
       }
     }
+
+    /**
+      * If `x` is an occurrence of `sym`, adds it to our list of "read" occurrences.
+      *
+      * @param x    the [[Symbol]] we're considering.
+      * @param loc  the [[SourceLocation]] of the occurrence.
+      */
     def considerRead(x: T, loc: SourceLocation): Unit = {
       if (x == sym) {
         reads = loc :: reads
       }
     }
 
+    /**
+      * Builds a [[JObject]] representing a successful LSP highlight response containing a [[DocumentHighlight]] for each read and write
+      * occurrence of `sym` recorded.
+      *
+      * @return A [[JObject]] representing a successful LSP highlight response containing a highlight of each recorded occurrence of `sym`
+      */
     def build: JObject = {
       val writeHighlights = writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
       val readHighlights = reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
