@@ -90,7 +90,7 @@ mod Get {
     @test
     def testStructPureGet02(): Bool = {
         def mustBePure(x: _ -> _ \ {}): _ -> _ \ {} = x;
-        def f(g): _ \ {} = f->lstName;
+        def f(g): _ \ {} = g->lstName;
         region rc {
             let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             mustBePure(() -> f(s))() == "Luke"
