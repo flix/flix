@@ -38,36 +38,36 @@ object HighlightProvider {
   }
 
   private def highlightAny(uri: String, pos: Position, x: AnyRef)(implicit root: Root): JObject = x match {
-    // Variables
-    case Binder(sym, _) => highlightVarSym(uri, sym)
-    case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
+    // Defs
+    case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym)
+    case SymUse.DefSymUse(sym, _) => highlightDefnSym(uri, sym)
+    // Effects
+    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym)
+    case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(uri, sym)
+    case SymUse.EffectSymUse(sym, _) => highlightEffectSym(uri, sym)
     // Enums & Cases
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(uri, sym)
     case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(uri, sym)
     case TypedAst.Case(sym, _, _, _) => highlightCaseSym(uri, sym)
     case SymUse.CaseSymUse(sym, _) => highlightCaseSym(uri, sym)
-    // Defs
-    case TypedAst.Def(sym, _, _, _) => highlightDefnSym(uri, sym)
-    case SymUse.DefSymUse(sym, _) => highlightDefnSym(uri, sym)
+    // Signatures
+    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym)
+    case SymUse.SigSymUse(sym, _) => highlightSigSym(uri, sym)
     // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(uri, sym)
     case Type.Cst(TypeConstructor.Struct(sym, _), _) => highlightStructSym(uri, sym)
     case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(uri, sym)
     case SymUse.StructFieldSymUse(sym, _) => highlightStructFieldSym(uri, sym)
-    // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(uri, sym)
-    case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(uri, sym)
-    case SymUse.EffectSymUse(sym, _) => highlightEffectSym(uri, sym)
     // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(uri, sym)
     case SymUse.TraitSymUse(sym, _) => highlightTraitSym(uri, sym)
     case TraitConstraint.Head(sym, _) => highlightTraitSym(uri, sym)
-    // Signatures
-    case TypedAst.Sig(sym, _, _, _) => highlightSigSym(uri, sym)
-    case SymUse.SigSymUse(sym, _) => highlightSigSym(uri, sym)
     // Type Aliases
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(uri, sym)
     case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(uri, sym)
+    // Variables
+    case Binder(sym, _) => highlightVarSym(uri, sym)
+    case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(uri, varSym)
 
     case _ => mkNotFound(uri, pos)
   }
@@ -97,45 +97,28 @@ object HighlightProvider {
     }
   }
 
-  private def highlightTypeAliasSym(uri: String, sym: Symbol.TypeAliasSym)(implicit root: Root): JObject = {
+  private def highlightCaseSym(uri: String, sym: Symbol.CaseSym)(implicit root: Root): JObject = {
     val builder = HighlightBuilder(sym)
 
-    object TypeAliasSymConsumer extends Consumer {
-      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
     }
 
-    Visitor.visitRoot(root, TypeAliasSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
 
     builder.build
   }
 
-  private def highlightSigSym(uri: String, sym: Symbol.SigSym)(implicit root: Root): JObject = {
+  private def highlightDefnSym(uri: String, sym: Symbol.DefnSym)(implicit root: Root): JObject = {
     val builder = HighlightBuilder(sym)
 
-    object SigSymConsumer extends Consumer {
-      override def consumeSig(sig: TypedAst.Sig): Unit = builder.considerWrite(sig.sym, sig.sym.loc)
-      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    object DefnSymConsumer extends Consumer {
+      override def consumeDef(defn: TypedAst.Def): Unit = builder.considerWrite(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
     }
 
-    Visitor.visitRoot(root, SigSymConsumer, Visitor.FileAcceptor(uri))
-
-    builder.build
-  }
-
-  private def highlightTraitSym(uri: String, sym: Symbol.TraitSym)(implicit root: Root): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
-      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
-    }
-
-    Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
 
     builder.build
   }
@@ -173,6 +156,19 @@ object HighlightProvider {
     builder.build
   }
 
+  private def highlightSigSym(uri: String, sym: Symbol.SigSym)(implicit root: Root): JObject = {
+    val builder = HighlightBuilder(sym)
+
+    object SigSymConsumer extends Consumer {
+      override def consumeSig(sig: TypedAst.Sig): Unit = builder.considerWrite(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, SigSymConsumer, Visitor.FileAcceptor(uri))
+
+    builder.build
+  }
+
   private def highlightStructFieldSym(uri: String, sym: Symbol.StructFieldSym)(implicit root: Root): JObject = {
     val builder = HighlightBuilder(sym)
 
@@ -206,28 +202,32 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightDefnSym(uri: String, sym: Symbol.DefnSym)(implicit root: Root): JObject = {
+  private def highlightTypeAliasSym(uri: String, sym: Symbol.TypeAliasSym)(implicit root: Root): JObject = {
     val builder = HighlightBuilder(sym)
 
-    object DefnSymConsumer extends Consumer {
-      override def consumeDef(defn: TypedAst.Def): Unit = builder.considerWrite(defn.sym, defn.sym.loc)
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    object TypeAliasSymConsumer extends Consumer {
+      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
     }
 
-    Visitor.visitRoot(root, DefnSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, TypeAliasSymConsumer, Visitor.FileAcceptor(uri))
 
     builder.build
   }
 
-  private def highlightCaseSym(uri: String, sym: Symbol.CaseSym)(implicit root: Root): JObject = {
+  private def highlightTraitSym(uri: String, sym: Symbol.TraitSym)(implicit root: Root): JObject = {
     val builder = HighlightBuilder(sym)
 
-    object CaseSymConsumer extends Consumer {
-      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
     }
 
-    Visitor.visitRoot(root, CaseSymConsumer, Visitor.FileAcceptor(uri))
+    Visitor.visitRoot(root, TraitSymConsumer, Visitor.FileAcceptor(uri))
 
     builder.build
   }
