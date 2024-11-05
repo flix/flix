@@ -80,12 +80,13 @@ mod Get {
         }
 
     @test
-    def testStructPureGet01(): Bool =
+    def testStructPureGet01(): Bool = {
         let f = region rc {
             let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             msg -> "${msg} ${s->fstName}"
         };
         f("Hello") == "Hello Lucky"
+    }
 }
 
 struct BinaryTree[t, r] {
