@@ -6,7 +6,6 @@ struct Get[r] {
 }
 mod Get {
 
-
     @test
     def testStructGet01(): Bool =
         region rc {
