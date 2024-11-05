@@ -79,6 +79,10 @@ object HighlightProvider {
   private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): JObject = {
     implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
     x match {
+      // Assoc Types
+      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => highlightAssocTypeSym(sym)
+      case SymUse.AssocTypeSymUse(sym, _) => highlightAssocTypeSym(sym)
+      case Type.AssocType(Ast.AssocTypeConstructor(sym, _), _, _, _) => highlightAssocTypeSym(sym)
       // Defs
       case TypedAst.Def(sym, _, _, _) => highlightDefnSym(sym)
       case SymUse.DefSymUse(sym, _) => highlightDefnSym(sym)
@@ -112,6 +116,19 @@ object HighlightProvider {
 
       case _ => mkNotFound(uri, pos)
     }
+  }
+
+  private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = HighlightBuilder(sym)
+
+    object AssocTypeSymConsumer extends Consumer {
+      override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = builder.considerWrite(tsig.sym, tsig.sym.loc)
+      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, AssocTypeSymConsumer, acceptor)
+
+    builder.build
   }
 
   /**
