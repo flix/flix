@@ -26,7 +26,6 @@ object ExprCompleter {
     DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
-      MatchCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
