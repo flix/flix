@@ -66,7 +66,8 @@ object CompletionProvider {
       // Expressions.
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name)
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) =>
+        MagicMatchCompleter.getCompletions(name.name, tpe, ctx) ++ InvokeMethodCompleter.getCompletions(tpe, name)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
