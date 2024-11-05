@@ -73,7 +73,8 @@ object HighlightProvider {
     * @param uri  the URI of the file in question.
     * @param pos  the [[Position]] of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
-    * @return
+    * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
+    *             for each occurrence of the symbol under the cursor.
     */
   private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): JObject = {
     implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
