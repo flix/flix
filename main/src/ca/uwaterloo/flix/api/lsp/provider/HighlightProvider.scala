@@ -26,6 +26,26 @@ import org.json4s.JsonDSL.*
 
 object HighlightProvider {
 
+  /**
+    * Handles an LSP highlight request by constructing an LSP highlight response for
+    * when the cursor is at `pos` in the file at `uri`.
+    *
+    * Given cursor [[Position]] `pos`, if there is a [[Symbol]] under it, every occurrence of
+    * it in this file (at `uri`) is collected and a [[DocumentHighlight]] is created for each.
+    * These are then put in a [[JObject]] representing an LSP highlight response. It takes the form
+    *
+    * `{'status': 'success', 'message': [...]}` where `[...]` is a [[JArray]] containing each [[DocumentHighlight]].
+    *
+    * If there is no [[Symbol]] at `pos`, a [[JObject]] representing an LSP failure response is return. It takes the form
+    *
+    * `{'status': 'failure', 'message': "Nothing found in <uri> at <pos>`.
+    *
+    * @param uri  the URI of the file in question.
+    * @param pos  the [[Position]] of the cursor.
+    * @param root the [[Root]] AST node of the Flix project.
+    * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
+    *             for each occurrence of the symbol under the cursor.
+    */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
@@ -38,6 +58,20 @@ object HighlightProvider {
 
   }
 
+  /**
+    * Constructs the LSP highlight response for when the cursor is on an arbitrary [[AnyRef]] `x`.
+    *
+    * If `x` is a [[Symbol]], finds all occurrences of it in the file at `uri`, makes a
+    * [[DocumentHighlight]] for each, collecting them all in a successful LSP highlight response.
+    *
+    * If `x` is __not__ a [[Symbol]], returns a failure LSP highlight response.
+    *
+    * @param x    the object under the cursor.
+    * @param uri  the URI of the file in question.
+    * @param pos  the [[Position]] of the cursor.
+    * @param root the [[Root]] AST node of the Flix project.
+    * @return
+    */
   private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): JObject = {
     implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
     x match {
