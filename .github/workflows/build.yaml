@@ -8,7 +8,7 @@ concurrency:
   group: build-${{ github.ref }}
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
