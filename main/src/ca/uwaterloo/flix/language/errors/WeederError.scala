@@ -630,7 +630,7 @@ object WeederError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected qualified name.
+      s""">> Unexpected qualified name. Java names must be imported, e.g., `import java.lang.Object`.
          |
          |${code(loc, "illegal qualified name")}
          |
