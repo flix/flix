@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.util.Similarity
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
-    getActionsFromRange(uri, range) ++ getActionsFromErrors(uri, range, errors)
+    getActionsFromErrors(uri, range, errors) ++ getActionsFromRange(uri, range)
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
