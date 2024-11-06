@@ -1,6 +1,6 @@
 name: Compiler Tests
 
-on: [pull_request, merge_group]
+on: [ pull_request, merge_group ]
 
 # Cancel previous runs if the PR is updated
 concurrency:
@@ -12,6 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
+    strategy:
+      # collect all the failures
+      fail-fast: false
+      matrix:
+        suite:
+          - "test"
+          - "testFuzzerSuite"
 
     steps:
       - name: Check out master
@@ -25,4 +32,4 @@ jobs:
         run: ./gradlew clean compileTestScala --console=plain
       - name: Run tests with timeout
         timeout-minutes: 20
-        run: ./gradlew test --console=plain
+        run: ./gradlew ${{ matrix.suite }} --console=plain
