@@ -49,7 +49,7 @@ mod Eff {
         ///
         /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = handle(f)()
+        pub def runWithHandler(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = handle(f)()
 
     }
 

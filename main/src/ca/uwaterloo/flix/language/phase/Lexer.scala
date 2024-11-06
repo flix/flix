@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation.*
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.collection.mutable
 import scala.util.Random
@@ -447,6 +445,7 @@ object Lexer {
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
+      case _ if isKeyword("run") => TokenKind.KeywordRun
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
       case _ if isKeyword("rvand") => TokenKind.KeywordRvand
       case _ if isKeyword("rvsub") => TokenKind.KeywordRvsub

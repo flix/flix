@@ -77,7 +77,7 @@ mod Random {
     ///
     /// In other words, re-interprets the `Random` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
+    pub def runWithHandler(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.

@@ -50,6 +50,6 @@ mod Abort {
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def run(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handle(f)()
+    pub def runWithHandler(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handle(f)()
 
 }
