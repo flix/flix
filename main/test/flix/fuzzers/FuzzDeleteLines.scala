@@ -28,7 +28,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
   /**
     * Number of variants to make for each file. Each variant has a single line deleted.
     */
-  private val N = 20
+  private val N = 40
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/simple-card-game.flix")

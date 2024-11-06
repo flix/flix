@@ -28,7 +28,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
   /**
     * Number of variants to make of each file. Each variant has a single line duplicated.
     */
-  private val N = 20
+  private val N = 40
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/simple-card-game.flix")
