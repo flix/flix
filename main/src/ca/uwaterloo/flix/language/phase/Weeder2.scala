@@ -1265,12 +1265,24 @@ object Weeder2 {
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
-              mapN(pickQName(exprs(1))) {
-                case qname if qname.isUnqualified => Expr.InstanceOf(e1, qname.ident, tree.loc)
-                case _ =>
-                  val error = IllegalQualifiedName(exprs(1).loc)
+              tryPickQName(exprs(1)) match {
+                case Some(qname) =>
+                  if (qname.isUnqualified) Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                  else {
+                    val error = IllegalQualifiedName(exprs(1).loc)
+                    sctx.errors.add(error)
+                    Validation.success(Expr.Error(error))
+                  }
+                case None =>
+                  val error = UnexpectedToken(
+                    NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
+                    None,
+                    SyntacticContext.Expr.OtherExpr,
+                    hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
+                    loc = exprs(1).loc
+                  )
                   sctx.errors.add(error)
-                  Expr.Error(error)
+                  Validation.success(Expr.Error(error))
               }
             // UNRECOGNIZED
             case id =>
@@ -3036,6 +3048,10 @@ object Weeder2 {
 
   private def pickQName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.QName, CompilationMessage] = {
     mapN(pick(TreeKind.QName, tree))(visitQName)
+  }
+
+  private def tryPickQName(tree: Tree)(implicit sctx: SharedContext): Option[Name.QName] = {
+    tryPick(TreeKind.QName, tree).map(visitQName)
   }
 
   private def visitQName(tree: Tree)(implicit sctx: SharedContext): Name.QName = {
