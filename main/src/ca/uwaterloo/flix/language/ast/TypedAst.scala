@@ -42,7 +42,7 @@ object TypedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   traitEnv: Map[Symbol.TraitSym, TraitContext],
-                  eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
+                  eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
                   names: MultiMap[List[String], String],
                   precedenceGraph: LabelledPrecedenceGraph)
 

@@ -30,7 +30,7 @@ sealed trait Symbol
 object Symbol {
 
   /**
-    * The set of base effects defined in the Prelude.
+    * The set of primitive effects defined in the Prelude.
     */
   val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
@@ -42,9 +42,9 @@ object Symbol {
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
-    * Returns `true` if the given effect symbol is a base effect.
+    * Returns `true` if the given effect symbol is a primitive effect.
     */
-  def isBaseEff(sym: EffectSym): Boolean = sym match {
+  def isPrimitiveEff(sym: EffectSym): Boolean = sym match {
     case Env => true
     case Exec => true
     case FsRead => true
@@ -59,9 +59,9 @@ object Symbol {
   /**
     * Parses the given String `s` into an effect symbol.
     *
-    * The String must be a valid name of a base effect.
+    * The String must be a valid name of a primitive effect.
     */
-  def parseBaseEff(s: String): Symbol.EffectSym = s match {
+  def parsePrimitiveEff(s: String): Symbol.EffectSym = s match {
     case "Env" => Env
     case "Exec" => Exec
     case "FsRead" => FsRead
@@ -70,7 +70,7 @@ object Symbol {
     case "Net" => Net
     case "NonDet" => NonDet
     case "Sys" => Sys
-    case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
+    case _ => throw InternalCompilerException(s"Unknown primitive effect: '$s'.", SourceLocation.Unknown)
   }
 
   /**
@@ -377,11 +377,6 @@ object Symbol {
       * Returns the same symbol with the given kind.
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, scope, loc)
-
-    /**
-      * Returns the same symbol without a kind.
-      */
-    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, scope, loc)
 
     def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
 

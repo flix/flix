@@ -1212,7 +1212,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region rc {
-        toArray(rc, l) !> Array.sort! |> Array.toList
+        toArray(rc, l) !> Array.sort |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1223,7 +1223,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
-        toArray(rc, l) !> Array.sortBy!(f) |> Array.toList
+        toArray(rc, l) !> Array.sortBy(f) |> Array.toList
     }
 
     ///
@@ -1234,7 +1234,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
-        toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList
+        toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
     }
 
     ///

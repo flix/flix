@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -27,7 +27,7 @@ object RenameProvider {
   /**
     * Processes a rename request.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
+  def processRename(newName: String, uri: String, pos: Position)(implicit index: Index): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 
@@ -49,7 +49,7 @@ object RenameProvider {
 
         case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
 
-        case Entity.Exp(exp) => mkNotFound(uri, pos)
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Label(label) => renameLabel(label, newName)
 
@@ -71,7 +71,7 @@ object RenameProvider {
             case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
             case _ => mkNotFound(uri, pos)
           }
-          case Type.Var(sym, loc) => renameTypeVar(sym, newName)
+          case Type.Var(sym, _) => renameTypeVar(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -95,7 +95,7 @@ object RenameProvider {
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
-  private def rename(newName: String, occurrences: Set[SourceLocation])(implicit index: Index, root: Root): JObject = {
+  private def rename(newName: String, occurrences: Set[SourceLocation]): JObject = {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
@@ -114,55 +114,55 @@ object RenameProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
   }
 
-  private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameTypeAlias(sym: Symbol.TypeAliasSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameTypeAlias(sym: Symbol.TypeAliasSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameLabel(label: Name.Label, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameLabel(label: Name.Label, newName: String)(implicit index: Index): JObject = {
     val defs = index.defsOf(label)
     val uses = index.usesOf(label)
     rename(newName, defs ++ uses)
   }
 
-  private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index): JObject = {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     rename(newName, defs ++ uses)
   }
 
-  private def renameCase(sym: Symbol.CaseSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameCase(sym: Symbol.CaseSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameStructField(sym: Symbol.StructFieldSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameStructField(sym: Symbol.StructFieldSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
-  private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)

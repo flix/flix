@@ -15,14 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EffectCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object EffSymCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EffectCompletion] = {
+  def getCompletions()(implicit root: TypedAst.Root): Iterable[EffectCompletion] = {
     root.effects.map {
       case (sym, eff) => Completion.EffectCompletion(sym, eff.doc.text)
     }

@@ -88,27 +88,4 @@ object FormatScheme {
     quantifiersPart + typePart
   }
 
-  /**
-    * Construct a string representation of the type scheme, including equality constraints but excluding type constraints, e.g.,
-    * `∀(a, b).a -> Int -> b where Elem[a] ~ String`
-    */
-  def formatSchemeWithOnlyEqualityConstraints(sc: Scheme)(implicit flix: Flix): String = {
-    val fmt = flix.getFormatOptions
-    // TODO ASSOC-TYPES just make a helper for each "part" and call them
-    val quantifiersPart =
-      if (sc.quantifiers.isEmpty)
-        ""
-      else
-        "∀(" + sc.quantifiers.map(FormatType.formatTypeVarSymWithOptions(_, fmt)).mkString(", ") + "). "
-
-    val typePart = FormatType.formatTypeWithOptions(sc.base, fmt)
-
-    val econstrPart =
-      if (sc.econstrs.isEmpty)
-        ""
-      else
-        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
-
-    quantifiersPart + typePart + econstrPart
-  }
 }
