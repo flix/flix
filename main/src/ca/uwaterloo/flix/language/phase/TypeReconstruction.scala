@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeCons
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
 
-import java.lang.reflect.{Executable, Method}
+import java.lang.reflect.Executable
 
 object TypeReconstruction {
 
