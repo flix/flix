@@ -3000,11 +3000,11 @@ object Weeder2 {
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
-        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
+        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitTraitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
       mapN(pickQName(tree), Types.pickType(tree)) {
         case (qname, tpe: Type.Var) =>
