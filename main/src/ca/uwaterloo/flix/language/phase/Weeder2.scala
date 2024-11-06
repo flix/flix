@@ -1180,8 +1180,8 @@ object Weeder2 {
 
     private def visitUnaryExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Unary)
-      val exprTree = pick(TreeKind.Operator, tree)
-      val opTree = exprTree
+      val opTree = pick(TreeKind.Operator, tree)
+      val exprTree = pick(TreeKind.Expr.Expr, tree)
       opTree.children.headOption match {
         case Some(opToken@Token(_, _, _, _, _, _)) =>
           val literalToken = tryPickNumberLiteralToken(exprTree)
