@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeCons
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
 
+import java.lang.reflect.Executable
+
 object TypeReconstruction {
 
   /**
@@ -432,12 +434,13 @@ object TypeReconstruction {
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
+          val es = getArgumentsWithVarArgs(constructor, es0, loc)
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
@@ -445,24 +448,26 @@ object TypeReconstruction {
 
     case KindedAst.Expr.InvokeMethod(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
     case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
@@ -612,6 +617,24 @@ object TypeReconstruction {
       val tpe = subst(tvar)
       val eff = subst(evar)
       TypedAst.Expr.Error(m, tpe, eff)
+  }
+
+  /**
+    * Returns the given arguments `es` possibly with an empty VarArgs array added as the last argument.
+    */
+  private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
+    val declaredArity = exc.getParameterCount
+    val actualArity = es.length
+    // Check if (a) an argument is missing and (b) the constructor/method is VarArgs.
+    if (actualArity == declaredArity - 1 && exc.isVarArgs) {
+      // Case 1: Argument missing. Introduce a new empty vector argument.
+      val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
+      val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
+      es ::: varArgs :: Nil
+    } else {
+      // Case 2: No argument missing. Return the arguments as-is.
+      es
+    }
   }
 
   /**
