@@ -1629,7 +1629,7 @@ object Parser2 {
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
-        case TokenKind.KeywordRun => tryExpr()
+        case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
@@ -2421,6 +2421,17 @@ object Parser2 {
         expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
       }
       close(mark, TreeKind.Expr.UncheckedMaskingCast)
+    }
+
+    private def runExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRun))
+      val mark = open()
+      expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
+      expression()
+      while (at(TokenKind.KeywordWith)) {
+        withBody()
+      }
+      close(mark, TreeKind.Expr.Try)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
