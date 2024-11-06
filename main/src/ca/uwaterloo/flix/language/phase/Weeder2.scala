@@ -2814,12 +2814,12 @@ object Weeder2 {
       expect(tree, TreeKind.Type.Unary)
       val types = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
       val op = pick(TreeKind.Operator, tree)
-      flatMapN(types) {
-        case (t :: Nil) =>
+      mapN(types) {
+        case t :: Nil =>
           text(op).head match {
-            case "~" => Validation.success(Type.Complement(t, tree.loc))
-            case "rvnot" => Validation.success(Type.CaseComplement(t, tree.loc))
-            case "not" => Validation.success(Type.Not(t, tree.loc))
+            case "~" => Type.Complement(t, tree.loc)
+            case "rvnot" => Type.CaseComplement(t, tree.loc)
+            case "not" => Type.Not(t, tree.loc)
             // UNRECOGNIZED
             case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
