@@ -2596,27 +2596,23 @@ object Weeder2 {
       expect(tree, TreeKind.Predicate.Atom)
       val fixity = if (hasToken(TokenKind.KeywordFix, tree)) Fixity.Fixed else Fixity.Loose
       val polarity = if (hasToken(TokenKind.KeywordNot, tree)) Polarity.Negative else Polarity.Positive
-
       val patternListTree = pick(TreeKind.Predicate.PatternList, tree)
-      flatMapN(pickNameIdent(tree)) {
-        ident =>
-          val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, patternListTree))(tree => Patterns.visitPattern(tree))
-          val maybeLatTerm = tryPickLatticeTermPattern(patternListTree)
-          mapN(exprs, maybeLatTerm) {
-            case (pats, None) =>
-              // Check for `[[IllegalFixedAtom]]`.
-              val isNegativePolarity = polarity == Polarity.Negative
-              val isFixedFixity = fixity == Fixity.Fixed
-              val isIllegalFixedAtom = isNegativePolarity && isFixedFixity
-              if (isIllegalFixedAtom) {
-                val error = IllegalFixedAtom(patternListTree.loc)
-                sctx.errors.add(error)
-              }
-              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, patternListTree.loc)
-
-            case (pats, Some(term)) =>
-              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, patternListTree.loc)
+      val exprsVal = traverse(pickAll(TreeKind.Pattern.Pattern, patternListTree))(Patterns.visitPattern(_))
+      val maybeLatTermVal = tryPickLatticeTermPattern(patternListTree)
+      mapN(pickNameIdent(tree), exprsVal, maybeLatTermVal) {
+        case (ident, pats, None) =>
+          // Check for `[[IllegalFixedAtom]]`.
+          val isNegativePolarity = polarity == Polarity.Negative
+          val isFixedFixity = fixity == Fixity.Fixed
+          val isIllegalFixedAtom = isNegativePolarity && isFixedFixity
+          if (isIllegalFixedAtom) {
+            val error = IllegalFixedAtom(patternListTree.loc)
+            sctx.errors.add(error)
           }
+          Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, patternListTree.loc)
+
+        case (ident, pats, Some(term)) =>
+          Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, patternListTree.loc)
       }
     }
 
