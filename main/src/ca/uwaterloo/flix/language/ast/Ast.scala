@@ -194,6 +194,8 @@ object Ast {
 
       case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
 
+      case class AccessField(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
       case object New extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
