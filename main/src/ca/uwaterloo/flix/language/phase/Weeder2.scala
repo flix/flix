@@ -1222,7 +1222,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Binary)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       val op = pick(TreeKind.Operator, tree)
-      flatMapN(traverse(exprs)(visitExpr)) {
+      mapN(traverse(exprs)(visitExpr)) {
         case e1 :: e2 :: Nil =>
           val isInfix = op.children.head match {
             case Token(kind, _, _, _, _, _) => kind == TokenKind.InfixFunction
@@ -1245,32 +1245,32 @@ object Weeder2 {
 
           text(op).head match {
             // BUILTINS
-            case "+" => Validation.success(mkApply("Add.add"))
-            case "-" => Validation.success(mkApply("Sub.sub"))
-            case "*" => Validation.success(mkApply("Mul.mul"))
-            case "/" => Validation.success(mkApply("Div.div"))
-            case "<" => Validation.success(mkApply("Order.less"))
-            case "<=" => Validation.success(mkApply("Order.lessEqual"))
-            case ">" => Validation.success(mkApply("Order.greater"))
-            case ">=" => Validation.success(mkApply("Order.greaterEqual"))
-            case "==" => Validation.success(mkApply("Eq.eq"))
-            case "!=" => Validation.success(mkApply("Eq.neq"))
-            case "<=>" => Validation.success(mkApply("Order.compare"))
+            case "+" => mkApply("Add.add")
+            case "-" => mkApply("Sub.sub")
+            case "*" => mkApply("Mul.mul")
+            case "/" => mkApply("Div.div")
+            case "<" => mkApply("Order.less")
+            case "<=" => mkApply("Order.lessEqual")
+            case ">" => mkApply("Order.greater")
+            case ">=" => mkApply("Order.greaterEqual")
+            case "==" => mkApply("Eq.eq")
+            case "!=" => mkApply("Eq.neq")
+            case "<=>" => mkApply("Order.compare")
             // SEMANTIC OPS
-            case "and" => Validation.success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-            case "or" => Validation.success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+            case "and" => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
+            case "or" => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
             // SPECIAL
-            case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
-            case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
-            case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
+            case "::" => Expr.FCons(e1, e2, tree.loc)
+            case ":::" => Expr.FAppend(e1, e2, tree.loc)
+            case "<+>" => Expr.FixpointMerge(e1, e2, tree.loc)
             case "instanceof" =>
               tryPickQName(exprs(1)) match {
                 case Some(qname) =>
-                  if (qname.isUnqualified) Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                  if (qname.isUnqualified) Expr.InstanceOf(e1, qname.ident, tree.loc)
                   else {
                     val error = IllegalQualifiedName(exprs(1).loc)
                     sctx.errors.add(error)
-                    Validation.success(Expr.Error(error))
+                    Expr.Error(error)
                   }
                 case None =>
                   val error = UnexpectedToken(
@@ -1281,12 +1281,12 @@ object Weeder2 {
                     loc = exprs(1).loc
                   )
                   sctx.errors.add(error)
-                  Validation.success(Expr.Error(error))
+                  Expr.Error(error)
               }
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(id, op.loc)
-              Validation.success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
+              Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
           }
         case operands => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
