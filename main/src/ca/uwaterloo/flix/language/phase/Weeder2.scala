@@ -2573,14 +2573,11 @@ object Weeder2 {
     def pickHead(tree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Head.Atom, CompilationMessage] = {
       val pheadTree = pick(TreeKind.Predicate.Head, tree)
       val termListTree = pick(TreeKind.Predicate.TermList, pheadTree)
-      flatMapN(pickNameIdent(pheadTree)) {
-        ident =>
-          val exprs = traverse(pickAll(TreeKind.Expr.Expr, termListTree))(Exprs.visitExpr)
-          val maybeLatTerm = tryPickLatticeTermExpr(termListTree)
-          mapN(exprs, maybeLatTerm) {
-            case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, termListTree.loc)
-            case (exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, termListTree.loc)
-          }
+      val exprsVal = traverse(pickAll(TreeKind.Expr.Expr, termListTree))(Exprs.visitExpr)
+      val maybeLatTermVal = tryPickLatticeTermExpr(termListTree)
+      mapN(pickNameIdent(pheadTree), exprsVal, maybeLatTermVal) {
+        case (ident, exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, termListTree.loc)
+        case (ident, exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, termListTree.loc)
       }
     }
 
