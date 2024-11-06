@@ -3007,15 +3007,26 @@ object Weeder2 {
     private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
       mapN(pickQName(tree), Types.pickType(tree)) {
-        case (qname, tpe: Type.Var) =>
-          TraitConstraint(qname, tpe, tree.loc)
-
-        // Check for illegal type constraint parameter
-        case (qname, tpe) =>
-          val error = IllegalTraitConstraintParameter(tpe.loc)
-          sctx.errors.add(error)
-          TraitConstraint(qname, Type.Error(tpe.loc), tree.loc)
+        (qname, tpe) =>
+          // Check for illegal type constraint parameter
+          val (tpe1, errors) = replaceWithTypeVars(tpe)
+          errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
+          TraitConstraint(qname, tpe1, tree.loc)
       }
+    }
+
+    private def replaceWithTypeVars(tpe: Type): (Type, List[SourceLocation]) = {
+      val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
+
+      def replace(tpe0: Type): Type = tpe0 match {
+        case Type.Var(ident, loc) => Type.Var(ident, loc)
+        case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
+        case t =>
+          errorLocations += t.loc
+          Type.Error(t.loc)
+      }
+
+      (replace(tpe), errorLocations.toList)
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
