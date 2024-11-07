@@ -139,7 +139,9 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of functions in the backend.
+    * A type constructor that represents an arrow type where the effect has been erased.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
   case class ArrowBackend(arity: Int) extends TypeConstructor {
@@ -289,7 +291,10 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of arrays for the backend (no region).
+    * A type constructor that represents that represents an array type where the region has been
+    * erased.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
   case object ArrayBackend extends TypeConstructor {
@@ -456,7 +461,9 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor for a region value in the backend.
+    * A type constructor that represents that a region value where the region has been erased.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
   case object RegionBackend extends TypeConstructor {
