@@ -178,6 +178,8 @@ mod FilePath {
     import java.util.{List => JList}
     import java.util.stream.Collectors
 
+    use IoError.ErrorKind
+
     ///
     /// Handles the `FilePath` effect of the given function `f`.
     ///
@@ -192,7 +194,7 @@ mod FilePath {
                     k(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -201,7 +203,7 @@ mod FilePath {
                     k(Files.isDirectory(Paths.get(f), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -210,7 +212,7 @@ mod FilePath {
                     k(Files.isRegularFile(Paths.get(f), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -219,7 +221,7 @@ mod FilePath {
                     k(Files.isReadable(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -228,7 +230,7 @@ mod FilePath {
                     k(Files.isSymbolicLink(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -237,7 +239,7 @@ mod FilePath {
                     k(Files.isWritable(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -246,7 +248,7 @@ mod FilePath {
                     k(Files.isExecutable(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
@@ -255,9 +257,9 @@ mod FilePath {
                     k(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -266,9 +268,9 @@ mod FilePath {
                     k(fileAttributes(Paths.get(f)).creationTime().toMillis())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -277,9 +279,9 @@ mod FilePath {
                     k(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -288,9 +290,9 @@ mod FilePath {
                     k(Files.size(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -299,9 +301,9 @@ mod FilePath {
                     k(new JString(Files.readAllBytes(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -310,9 +312,9 @@ mod FilePath {
                     k(FromJava.fromJava(Files.readAllLines(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -321,9 +323,9 @@ mod FilePath {
                     k(Array.toVector(Files.readAllBytes(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -334,11 +336,11 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -353,11 +355,11 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -370,11 +372,11 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -386,11 +388,11 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -406,11 +408,11 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -424,11 +426,11 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -442,11 +444,11 @@ mod FilePath {
                     }
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -456,13 +458,13 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: FileAlreadyExistsException =>
-                        Err(IoError.IoError(IoError.ErrorKind.AlreadyExists, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.AlreadyExists, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -472,13 +474,13 @@ mod FilePath {
                     k(())
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Unsupported, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: FileAlreadyExistsException =>
-                        Err(IoError.IoError(IoError.ErrorKind.AlreadyExists, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.AlreadyExists, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
@@ -489,11 +491,11 @@ mod FilePath {
                     k(Array.toList(file.list()))
                 } catch {
                     case ex: InvalidPathException =>
-                        Err(IoError.IoError(IoError.ErrorKind.InvalidPath, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: NotDirectoryException =>
-                        Err(IoError.IoError(IoError.ErrorKind.NotDirectory, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.NotDirectory, ex.getMessage()))
                     case ex: IOException =>
-                        Err(IoError.IoError(IoError.ErrorKind.Other, ex.getMessage()))
+                        Err(IoError.IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
         }
