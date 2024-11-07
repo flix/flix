@@ -67,7 +67,6 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
       case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name)
-      case SyntacticContext.Expr.AccessField(tpe, name) => MagicMatchCompleter.getCompletions(tpe, ctx)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
@@ -129,6 +128,7 @@ object CompletionProvider {
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.tpe, ctx)
 
       case _ => Nil
     })
@@ -217,7 +217,7 @@ object CompletionProvider {
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
       case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
-      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.AccessField(err.tpe, err.fieldName))
+      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
       case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
       case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)
