@@ -4247,16 +4247,16 @@ mod TestVector {
     @test
     def toMutList02(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!(1, l);
+        MutList.push(1, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
     }
 
     @test
     def toMutList03(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!(1, l);
-        MutList.push!(2, l);
-        MutList.push!(3, l);
+        MutList.push(1, l);
+        MutList.push(2, l);
+        MutList.push(3, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l)
     }
 
@@ -4268,18 +4268,18 @@ mod TestVector {
     @test
     def toMutList05(): Bool = region rc {
         let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push!(4, l);
+        MutList.push(4, l);
         Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4})
     }
 
     @test
     def toMutList06(): Bool = region rc {
         let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push!(4, l);
-        discard MutList.pop!(l);
-        discard MutList.pop!(l);
-        discard MutList.pop!(l);
-        discard MutList.pop!(l);
+        MutList.push(4, l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
         Vector.equals(MutList.toVector(l), Vector#{})
     }
 

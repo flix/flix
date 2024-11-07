@@ -11,8 +11,8 @@ mod Test.Exp.NewRegion {
     def testEmptyMutList1Region05(): Int32 =
         region rc {
             let l = MutList.empty(rc);
-            MutList.push!(1, l);
-            match MutList.pop!(l) {
+            MutList.push(1, l);
+            match MutList.pop(l) {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
@@ -34,16 +34,16 @@ mod Test.Exp.NewRegion {
     def testEmptyMutList2RegionsFlat05(): Bool =
         let res1 = region rc {
             let l = MutList.empty(rc);
-            MutList.push!(1, l);
-            match MutList.pop!(l) {
+            MutList.push(1, l);
+            match MutList.pop(l) {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
         };
         let res2 = region rc {
             let l = MutList.empty(rc);
-            MutList.push!(1, l);
-            match MutList.pop!(l) {
+            MutList.push(1, l);
+            match MutList.pop(l) {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
@@ -55,8 +55,8 @@ mod Test.Exp.NewRegion {
         region rc {
             region _ {
                 let l = MutList.empty(rc);
-                MutList.push!(1, l);
-                match MutList.pop!(l) {
+                MutList.push(1, l);
+                match MutList.pop(l) {
                     case Some(1) => 1
                     case _       => unreachable!()
                 }
@@ -68,8 +68,8 @@ mod Test.Exp.NewRegion {
         region _ {
             region rc2 {
                 let l = MutList.empty(rc2);
-                MutList.push!(1, l);
-                match MutList.pop!(l) {
+                MutList.push(1, l);
+                match MutList.pop(l) {
                     case Some(1) => 1
                     case _       => unreachable!()
                 }
@@ -82,9 +82,9 @@ mod Test.Exp.NewRegion {
             region _ {
                 let l1 = MutList.empty(rc);
                 let l2 = MutList.empty(rc);
-                MutList.push!(1, l1);
-                MutList.push!(2, l2);
-                match (MutList.pop!(l1), MutList.pop!(l2)) {
+                MutList.push(1, l1);
+                MutList.push(2, l2);
+                match (MutList.pop(l1), MutList.pop(l2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
                 }
@@ -97,9 +97,9 @@ mod Test.Exp.NewRegion {
             region rc2 {
                 let l1 = MutList.empty(rc1);
                 let l2 = MutList.empty(rc2);
-                MutList.push!(1, l1);
-                MutList.push!(2, l2);
-                match (MutList.pop!(l1), MutList.pop!(l2)) {
+                MutList.push(1, l1);
+                MutList.push(2, l2);
+                match (MutList.pop(l1), MutList.pop(l2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
                 }
@@ -110,11 +110,11 @@ mod Test.Exp.NewRegion {
     def testEmpty2MutLists2NestedRegions05(): Int32 =
         region rc1 {
             let l1 = MutList.empty(rc1);
-            MutList.push!(1, l1);
+            MutList.push(1, l1);
             region rc2 {
                 let l2 = MutList.empty(rc2);
-                MutList.push!(2, l2);
-                match (MutList.pop!(l1), MutList.pop!(l2)) {
+                MutList.push(2, l2);
+                match (MutList.pop(l1), MutList.pop(l2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
                 }
@@ -126,10 +126,10 @@ mod Test.Exp.NewRegion {
         region rc1 {
             let l1 = MutList.empty(rc1);
             region rc2 {
-                MutList.push!(1, l1);
+                MutList.push(1, l1);
                 let l2 = MutList.empty(rc2);
-                MutList.push!(2, l2);
-                match (MutList.pop!(l1), MutList.pop!(l2)) {
+                MutList.push(2, l2);
+                match (MutList.pop(l1), MutList.pop(l2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
                 }
