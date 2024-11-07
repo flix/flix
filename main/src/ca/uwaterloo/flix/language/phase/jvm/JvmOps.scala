@@ -356,8 +356,8 @@ object JvmOps {
     }
 
   /**
-    * Returns the ordered list of stuct fields based on the given type `sym[targs..]`. It is assumed
-    * that both `targs` and the structs in `root` use erased types.
+    * Returns the ordered list of struct fields based on the given type `sym[targs..]`. It is
+    * assumed that both `targs` and the structs in `root` use erased types.
     *
     * Example:
     *   - `instantiateStruct(S, List(Int32, IO)) = List(Int32, Int32, Object)`
