@@ -339,7 +339,9 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
-          case TypeConstructor.RegionToStar => MonoType.Region
+          case TypeConstructor.RegionToStar =>
+            // Remove the type argument.
+            MonoType.Region
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
@@ -500,6 +502,7 @@ object Simplifier {
             Type.mkArrayBackend(visitPolyType(elm), loc)
 
           case TypeConstructor.RegionToStar =>
+            // Remove the type argument.
             Type.Cst(TypeConstructor.RegionBackend, loc)
 
           case TypeConstructor.Tuple(_) =>
