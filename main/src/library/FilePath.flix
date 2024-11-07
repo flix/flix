@@ -175,8 +175,6 @@ mod FilePath {
     import java.nio.file.Path
     import java.nio.file.Paths
     import java.nio.file.StandardOpenOption
-    import java.util.{List => JList}
-    import java.util.stream.Collectors
 
     use IoError.ErrorKind
 
