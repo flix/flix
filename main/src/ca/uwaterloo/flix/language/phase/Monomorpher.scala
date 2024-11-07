@@ -370,14 +370,14 @@ object Monomorpher {
     val enums = ParOps.parMapValues(root.enums) {
       case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
         val newCases = MapOps.mapValues(cases)(visitEnumCase)
-        val tparams = tparams0.map { case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc) }
+        val tparams = tparams0.map(visitTypeParam)
         MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
     }
 
     val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
         val newFields = fields.map(visitStructField)
-        val tparams = tparams0.map { case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc) }
+        val tparams = tparams0.map(visitTypeParam)
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
@@ -417,6 +417,11 @@ object Monomorpher {
       case LoweredAst.Case(sym, tpe, _, loc) =>
         MonoAst.Case(sym, simplify(tpe, root.eqEnv, isGround = false), loc)
     }
+  }
+
+  /** Convert the type param directly. */
+  private def visitTypeParam(tp: LoweredAst.TypeParam): MonoAst.TypeParam = tp match {
+    case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
   }
 
   /**
