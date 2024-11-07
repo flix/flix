@@ -44,8 +44,8 @@ object Reducer {
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
     // This is an over approximation of the types in enums and structs since they are erased.
-    val enumTypes = MonoType.erasedTypes
-    val structTypes = MonoType.erasedTypes
+    val enumTypes = MonoType.ErasedTypes
+    val structTypes = MonoType.ErasedTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
     val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ enumTypes ++ structTypes ++ effectTypes))
