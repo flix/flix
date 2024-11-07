@@ -3083,6 +3083,19 @@ object Weeder2 {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
+  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+    val idents = pickQNameIdents(tree)
+    mapN(idents) {
+      idents => Name.JavaName(idents, tree.loc)
+    }
+  }
+
+  private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
+    flatMapN(pick(TreeKind.QName, tree)) {
+      qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////////////////
   /// HELPERS ////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
