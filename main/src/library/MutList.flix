@@ -859,41 +859,6 @@ mod MutList {
         Array.length(v->values)
 
     ///
-    /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
-    /// their `Order` instance.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sort(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[a] =
-        sortWith(rc1, Order.compare, v)
-
-    ///
-    /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
-    /// the `Order` instance for the values obtained by applying `f` to each element.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortBy(rc1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[b] =
-        sortWith(rc1, Order.compare `on` f, v)
-
-    ///
-    /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
-    /// the comparison function `cmp`.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortWith(rc1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
-        let vCopy = copy(rc1, v);
-        sortWith(cmp, vCopy);
-        vCopy
-
-    ///
     /// Sort MutList `v` so that elements are ordered from low to high according to their `Order` instance.
     /// The MutList is mutated in-place.
     ///
