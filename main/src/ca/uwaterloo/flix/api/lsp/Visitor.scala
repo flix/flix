@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
 
@@ -73,7 +73,6 @@ object Visitor {
     def consumeHandlerRule(rule: HandlerRule): Unit = ()
     def consumeInstance(ins: Instance): Unit = ()
     def consumeJvmMethod(method: JvmMethod): Unit = ()
-    def consumeLabel(label: Name.Label): Unit = ()
     def consumeLocalDefSym(symUse: LocalDefSymUse): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumeOp(op: Op): Unit = ()
@@ -505,17 +504,14 @@ object Visitor {
 
       case Expr.RecordEmpty(_, _) => ()
 
-      case Expr.RecordSelect(exp, label, _, _, _) =>
+      case Expr.RecordSelect(exp, _, _, _, _) =>
         visitExpr(exp)
-        visitLabel(label)
 
-      case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
-        visitLabel(label)
+      case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.RecordRestrict(label, exp, _, _, _) =>
-        visitLabel(label)
+      case Expr.RecordRestrict(_, exp, _, _, _) =>
         visitExpr(exp)
 
       case Expr.ArrayLit(exps, exp, _, _, _) =>
@@ -682,12 +678,6 @@ object Visitor {
 
       case Expr.Error(_, _, _) => ()
     }
-  }
-
-  private def visitLabel(label: Name.Label)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(label.loc)) { return }
-
-    c.consumeLabel(label)
   }
 
   private def visitBinder(bnd: Binder)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -927,13 +917,12 @@ object Visitor {
   }
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
-    val RecordLabelPattern(label, p, _, loc) = pat
+    val RecordLabelPattern(_, p, _, loc) = pat
 
     if (!a.accept(loc)) { return }
 
     c.consumeRecordLabelPattern(pat)
 
-    visitLabel(label)
     visitPattern(p)
   }
 
