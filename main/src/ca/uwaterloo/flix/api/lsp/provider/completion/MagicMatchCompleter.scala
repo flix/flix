@@ -15,8 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.api.lsp.{Range, Position, TextEdit}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
+import ca.uwaterloo.flix.language.errors.TypeError
+
 import scala.annotation.TypeConstraint
 
 object MagicMatchCompleter {
@@ -34,17 +36,16 @@ object MagicMatchCompleter {
     *   case Blue => ???
     * }
     */
-  def getCompletions(tpe: Type ,ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val ident = extractIdentifier(ctx)
-    val range = extractRange(ctx)
-    getEnumSym(tpe) match {
-      case Some(sym) =>
-        val casesString = generateCasesString(root.enums(sym).cases)
-        val matchExpr = s"match $ident {\n$casesString}"
-        val name = s"$ident.match"
-        val textEdit = TextEdit(range, matchExpr)
-        Completion.MagicMatchCompletion(name, textEdit, "Expand to a full match expression.") :: Nil
-      case None => Nil
+  def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    for {
+      sym <- getEnumSym(err.tpe)
+      ident <- extractIdentifier(err)
+    } yield {
+      val name = s"$ident.match"
+      val range = sourceLocation2Range(err.loc)
+      val casesString = generateCasesString(root.enums(sym).cases)
+      val snippet = s"match $ident {\n$casesString}"
+      Completion.MagicMatchCompletion(name, range, snippet, "Expand to a full match expression.")
     }
   }
 
@@ -66,25 +67,27 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Extract the substring from the last " " to the last "." as the identifier.
+    * Extract the identifier by deleting the field from the end of the text.
     */
-  private def extractIdentifier(ctx: CompletionContext): String = {
-    val line = ctx.prefix
-    val start = line.lastIndexOf(" ") + 1
-    val end = line.lastIndexOf(".")
-    line.substring(start, end)
+  private def extractIdentifier(err: TypeError.FieldNotFound): Option[String] = {
+    val fieldLength = err.fieldName.name.length + 1
+    err.loc.text.map(_.dropRight(fieldLength))
   }
 
   /**
-   * Extract the range for the completion.
+   * Converts a [[SourceLocation]] to an [[Range]].
    */
-  private def extractRange(ctx: CompletionContext): Range = {
-    val line = ctx.prefix
-    val startChar = line.lastIndexOf(" ") + 2
-    val start = Position(ctx.pos.line, startChar)
-    val end = ctx.range.end
-    Range(start, end)
+
+  def sourceLocation2Range(loc: SourceLocation): Range = {
+    Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
   }
+
+  /**
+   * Converts a [[SourcePosition]] to a [[Position]].
+   */
+
+  def sourcePosition2Position(pos: SourcePosition): Position =
+    Position(pos.line, pos.col)
 
   /**
    * Returns the enum symbol of the given type, if it is an enum.

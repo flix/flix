@@ -167,11 +167,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.MagicMatchCompletion(name, textEdit, documentation) =>
+    case Completion.MagicMatchCompletion(name, range, snippet, documentation) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.High, name),
-        textEdit         = textEdit,
+        textEdit         = TextEdit(range, snippet),
         documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Snippet
@@ -541,7 +541,7 @@ object Completion {
    * @param textEdit      the TextEdit.
    * @param documentation a human-readable string that represents a doc-comment.
    */
-  case class MagicMatchCompletion(name: String, textEdit: TextEdit, documentation: String) extends Completion
+  case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Var completion

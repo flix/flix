@@ -128,7 +128,7 @@ object CompletionProvider {
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.tpe, ctx)
+      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
 
       case _ => Nil
     })
