@@ -539,7 +539,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let s = range |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.count(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+        discard Set.count(x -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); true }, s);
         MutList.toList(a) == range
     }
 
@@ -610,7 +610,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -965,7 +965,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let s = List.toSet(range);
         let a = MutList.empty(rc);
-        discard Set.map(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+        discard Set.map(x -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); x }, s);
         MutList.toList(a) == range
     }
 
@@ -1564,7 +1564,7 @@ mod TestSet {
     def minimumBy05(): Bool = region rc {
         let s = List.range(0, 2000) |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

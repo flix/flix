@@ -209,7 +209,7 @@ pub trait Foldable[t : Type -> Type] {
     ///
     pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ (r + Foldable.Aef[t]) = region rc2 {
         let l = MutList.empty(rc2);
-        Foldable.forEach(a -> MutList.push!(a, l), t);
+        Foldable.forEach(a -> MutList.push(a, l), t);
         MutList.toArray(rc, l)
     }
 
@@ -218,7 +218,7 @@ pub trait Foldable[t : Type -> Type] {
     ///
     pub def toVector(t: t[a]): Vector[a] \ Foldable.Aef[t] = region rc {
         let l = MutList.empty(rc);
-        Foldable.forEach(a -> MutList.push!(a, l), t);
+        Foldable.forEach(a -> MutList.push(a, l), t);
         MutList.toVector(l)
     }
 

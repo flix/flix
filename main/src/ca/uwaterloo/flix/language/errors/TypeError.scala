@@ -100,10 +100,11 @@ object TypeError {
   /**
     * Java field not found type error.
     *
+    * @param base the source location of the receiver expression.
     * @param tpe the type of the receiver object.
     * @param loc the location where the error occurred.
     */
-  case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
 
     def message(formatter: Formatter): String = {

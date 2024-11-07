@@ -120,7 +120,7 @@ object TypeReduction2 {
             case _ => unresolved
           }
 
-        case JvmMember.JvmField(tpe, name) =>
+        case JvmMember.JvmField(_, tpe, name) =>
           lookupField(tpe, name.name) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()

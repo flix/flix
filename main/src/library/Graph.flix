@@ -333,7 +333,7 @@ mod Graph {
         // Extract nodes in fixed order.
         res |>
             Vector.sortBy(match (x, i) -> (i, x)) |>
-            Vector.forEach(match (x, _) -> MutList.push!(x, ml));
+            Vector.forEach(match (x, _) -> MutList.push(x, ml));
         MutList.toList(ml)
     }
 

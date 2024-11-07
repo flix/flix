@@ -988,7 +988,7 @@ mod Vector {
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         let m = MutList.empty(rc);
-        forEach(a -> if (f(a)) MutList.push!(a, m) else (), v);
+        forEach(a -> if (f(a)) MutList.push(a, m) else (), v);
         MutList.toVector(m)
     }
 
@@ -1364,7 +1364,7 @@ mod Vector {
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
         let l = MutList.empty(rc);
-        forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
+        forEachWithIndex((i, x) -> if (f(x)) MutList.push(i, l) else (), v);
         MutList.toVector(l)
     }
 
