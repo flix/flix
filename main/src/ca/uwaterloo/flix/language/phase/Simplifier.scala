@@ -252,6 +252,17 @@ object Simplifier {
 
   }
 
+  /**
+    * Returns the [[MonoType]] representation of `tpe`.
+    *
+    * This includes:
+    *   - Removing regions from Array.
+    *   - Removing effects from Arrow.
+    *   - Removing type arguments from Region.
+    *   - Converting restrictable enums into regular enums.
+    *   - Flattening schema- and record rows into types without their Schema/Record constructor.
+    *   - Converting set/caseset/bool formulas into Unit.
+    */
   private def visitType(tpe: Type): MonoType = {
     val base = tpe.typeConstructor
     base match {
