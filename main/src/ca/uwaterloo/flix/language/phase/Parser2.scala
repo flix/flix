@@ -319,9 +319,10 @@ object Parser2 {
     * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
     * Does not consume fuel if parser has hit end-of-file.
+    * Does not consume fuel if `consume` is false. This should be used sparingly.
     * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
     */
-  private def nth(lookahead: Int)(implicit s: State): TokenKind = {
+  private def nth(lookahead: Int, consume: Boolean = true)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
       throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
@@ -329,7 +330,9 @@ object Parser2 {
     if (s.position + lookahead >= s.tokens.length - 1) {
       TokenKind.Eof
     } else {
-      s.fuel -= 1
+      if (consume) {
+        s.fuel -= 1
+      }
       s.tokens(s.position + lookahead).kind
     }
   }
@@ -1430,7 +1433,10 @@ object Parser2 {
       // Handle binary operators
       continue = true
       while (continue) {
-        val right = nth(0)
+        // We want to allow an unbounded number of cons (a :: b :: c :: ...).
+        // Hence we special case on whether the left token is ::. If it is,
+        // we avoid consuming any fuel.
+        val right = nth(0, consume = left != TokenKind.ColonColon)
         if (rightBindsTighter(left, right, leftIsUnary)) {
           val mark = openBefore(lhs)
           val markOp = open()

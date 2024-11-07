@@ -592,7 +592,7 @@ object ConstraintGen {
         } {
           instantiatedFieldTpes.get(fieldSym.sym) match {
             case None => () // if not an actual field, there is nothing to unify
-            case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
+            case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
         c.unifyType(Type.mkRegion(regionVar, loc), regionTpe, region.loc)
@@ -605,9 +605,11 @@ object ConstraintGen {
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
-        val fieldTpe = instantiatedFieldTpes(field.sym)
+        val (mutable, fieldTpe) = instantiatedFieldTpes(field.sym)
         c.unifyType(fieldTpe, tvar, loc)
-        c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
+        // If the field is mutable, then it emits a region effect, otherwise not.
+        val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
+        c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -617,7 +619,7 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
-        val fieldTpe = instantiatedFieldTpes(field.sym)
+        val (_, fieldTpe) = instantiatedFieldTpes(field.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
         c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
@@ -1252,7 +1254,7 @@ object ConstraintGen {
     * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
     * The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
@@ -1260,8 +1262,8 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map {
-      case KindedAst.StructField(fieldSym, tpe, _) =>
-        fieldSym -> subst(tpe)
+      case KindedAst.StructField(mod, fieldSym, tpe, _) =>
+        fieldSym -> (mod.isMutable, subst(tpe))
     }
     (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
   }
