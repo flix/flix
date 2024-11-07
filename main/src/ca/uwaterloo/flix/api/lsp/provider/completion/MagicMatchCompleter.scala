@@ -34,8 +34,6 @@ object MagicMatchCompleter {
     * }
     */
   def getCompletions(name: String, tpe: Type ,ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (!"match".startsWith(name)) return Nil
-
     val ident = extractIdentifier(ctx.word)
     getEnumSym(tpe) match {
       case Some(sym) =>
