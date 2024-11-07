@@ -831,7 +831,7 @@ object ConstraintGen {
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, fieldName), loc), loc)
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(exp.loc, tpe, fieldName), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
