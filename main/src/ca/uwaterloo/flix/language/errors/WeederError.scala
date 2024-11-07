@@ -1028,4 +1028,25 @@ object WeederError {
          |""".stripMargin
     }
   }
+
+
+  /**
+    * An error raised to indicate expression nesting beyond the threshold.
+    *
+    * @param hint     Optional hint with more details about the error
+    * @param loc      The source location.
+    */
+  case class TooNested(hint: Option[String] = None, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = {
+      s"Expression is too nested."
+    }
+
+    def message(fmt: Formatter): String = {
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s""">> Expression is too nested.
+         |
+         |${fmt.code(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+  }
 }
