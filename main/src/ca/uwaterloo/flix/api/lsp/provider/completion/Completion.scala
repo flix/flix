@@ -167,6 +167,16 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
+    case Completion.MagicMatchCompletion(name, textEdit, documentation) =>
+      CompletionItem(
+        label            = name,
+        sortText         = Priority.toSortText(Priority.High, name),
+        textEdit         = textEdit,
+        documentation    = Some(documentation),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind             = CompletionItemKind.Snippet
+      )
+
     case Completion.VarCompletion(sym, tpe) =>
       CompletionItem(
         label    = sym.text,
@@ -523,6 +533,15 @@ object Completion {
     * @param documentation a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
+
+  /**
+   * Represents a Snippet completion
+   *
+   * @param name          the name of the snippet.
+   * @param textEdit      the TextEdit.
+   * @param documentation a human-readable string that represents a doc-comment.
+   */
+  case class MagicMatchCompletion(name: String, textEdit: TextEdit, documentation: String) extends Completion
 
   /**
     * Represents a Var completion

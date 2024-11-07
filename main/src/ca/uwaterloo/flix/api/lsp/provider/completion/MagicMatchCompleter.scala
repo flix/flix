@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp.{Range, Position, TextEdit}
 import scala.annotation.TypeConstraint
 
 object MagicMatchCompleter {
@@ -33,14 +34,16 @@ object MagicMatchCompleter {
     *   case Blue => ???
     * }
     */
-  def getCompletions(name: String, tpe: Type ,ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val ident = extractIdentifier(ctx.word)
+  def getCompletions(tpe: Type ,ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val ident = extractIdentifier(ctx)
+    val range = extractRange(ctx)
     getEnumSym(tpe) match {
       case Some(sym) =>
         val casesString = generateCasesString(root.enums(sym).cases)
         val matchExpr = s"match $ident {\n$casesString}"
-        val prompt = s"$ident.match"
-        Completion.SnippetCompletion(prompt, matchExpr, "Expand to a full match expression.") :: Nil
+        val name = s"$ident.match"
+        val textEdit = TextEdit(range, matchExpr)
+        Completion.MagicMatchCompletion(name, textEdit, "Expand to a full match expression.") :: Nil
       case None => Nil
     }
   }
@@ -63,10 +66,24 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Extract the substring before the last . as the identifier
+    * Extract the substring from the last " " to the last "." as the identifier.
     */
-  private def extractIdentifier(word: String): String = {
-    word.substring(0, word.lastIndexOf("."))
+  private def extractIdentifier(ctx: CompletionContext): String = {
+    val line = ctx.prefix
+    val start = line.lastIndexOf(" ") + 1
+    val end = line.lastIndexOf(".")
+    line.substring(start, end)
+  }
+
+  /**
+   * Extract the range for the completion.
+   */
+  private def extractRange(ctx: CompletionContext): Range = {
+    val line = ctx.prefix
+    val startChar = line.lastIndexOf(" ") + 2
+    val start = Position(ctx.pos.line, startChar)
+    val end = ctx.range.end
+    Range(start, end)
   }
 
   /**
