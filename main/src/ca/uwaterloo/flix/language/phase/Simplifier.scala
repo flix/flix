@@ -259,6 +259,7 @@ object Simplifier {
     *   - Removing regions from Array.
     *   - Removing effects from Arrow.
     *   - Removing type arguments from Region.
+    *   - Converting Vector into Array (with no region as above).
     *   - Converting restrictable enums into regular enums.
     *   - Flattening schema- and record rows into types without their Schema/Record constructor.
     *   - Converting set/caseset/bool formulas into Unit.
@@ -330,6 +331,7 @@ object Simplifier {
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
           case TypeConstructor.Array =>
+            // Remove the region from the array.
             val List(elm, _) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
@@ -489,7 +491,8 @@ object Simplifier {
           case TypeConstructor.Native(_) => cst
 
           case TypeConstructor.Array =>
-            val List(elm, reg) = tpe.typeArguments
+            // Remove the region from the array.
+            val List(elm, _) = tpe.typeArguments
             Type.mkArrayBackend(visitPolyType(elm), loc)
 
           case TypeConstructor.Vector =>
