@@ -82,24 +82,24 @@ mod Fixpoint.Phase.Compiler {
             let full = RamSym.Full(predSym, arity, den);
             let delta = RamSym.Delta(predSym, arity, den);
             let mergeDelta = RamStmt.Merge(full, delta);
-            MutList.push!(mergeDelta, stmts)
+            MutList.push(mergeDelta, stmts)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
             let purge = RamStmt.Purge(RamSym.New(predSym, arity, den));
-            MutList.push!(purge, loopBody)
+            MutList.push(purge, loopBody)
         }, idb);
         List.forEach(compileRuleIncr(loopBody), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
             let newr = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
             let mergeNew = RamStmt.Merge(newr, full);
-            MutList.push!(mergeNew, loopBody)
+            MutList.push(mergeNew, loopBody)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
             let delta = RamSym.Delta(predSym, arity, den);
             let newr = RamSym.New(predSym, arity, den);
             let assign = RamStmt.Assign(delta, newr);
-            MutList.push!(assign, loopBody)
+            MutList.push(assign, loopBody)
         }, idb);
         let loopTest =
             Map.mapWithKey(predSym -> match (arity, den) -> {
@@ -109,7 +109,7 @@ mod Fixpoint.Phase.Compiler {
             List.toVector;
         let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
-        MutList.push!(fixpoint, stmts)
+        MutList.push(fixpoint, stmts)
     }
 
     ///
@@ -148,10 +148,10 @@ mod Fixpoint.Phase.Compiler {
                 RamStmt.Insert;
             if (Fixpoint.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
-                MutList.push!(comment, stmts);
-                MutList.push!(insert, stmts)
+                MutList.push(comment, stmts);
+                MutList.push(insert, stmts)
             } else {
-                MutList.push!(insert, stmts)
+                MutList.push(insert, stmts)
             }
     }
 
@@ -207,7 +207,7 @@ mod Fixpoint.Phase.Compiler {
                         case _ => acc
                     }, loopBody, augBody) |>
                     RamStmt.Insert;
-                MutList.push!(insert, stmts)
+                MutList.push(insert, stmts)
             };
 
             let positiveAtoms = Vector.filter(match (atom, _) -> match atom {
@@ -216,7 +216,7 @@ mod Fixpoint.Phase.Compiler {
             }, augBody);
             if (Fixpoint.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
-                MutList.push!(comment, stmts);
+                MutList.push(comment, stmts);
                 Vector.forEach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
             } else {
                 Vector.forEach(match (_, rowVar) -> compile(rowVar), positiveAtoms)

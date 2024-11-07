@@ -5356,16 +5356,16 @@ mod TestArray {
     @test
     def toMutList02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(1, v);
+        MutList.push(1, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v)
     }
 
     @test
     def toMutList03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.push!(3, v);
+        MutList.push(1, v);
+        MutList.push(2, v);
+        MutList.push(3, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1, 2, 3} @ rc), v)
     }
 
@@ -5377,18 +5377,18 @@ mod TestArray {
     @test
     def toMutList05(): Bool = region rc {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push!(4, v);
+        MutList.push(4, v);
         Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3, 4} @ rc)
     }
 
     @test
     def toMutList06(): Bool = region rc {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push!(4, v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
+        MutList.push(4, v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
         Array.sameElements(MutList.toArray(rc, v), Array#{} @ rc)
     }
 
