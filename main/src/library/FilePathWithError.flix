@@ -172,8 +172,6 @@ mod FilePath {
     import java.nio.file.Path
     import java.nio.file.Paths
     import java.nio.file.StandardOpenOption
-    import java.util.{List => JList}
-    import java.util.stream.Collectors
 
     ///
     /// Handles the `FilePath` effect of the given function `f`.
