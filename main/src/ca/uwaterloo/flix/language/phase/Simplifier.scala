@@ -333,7 +333,8 @@ object Simplifier {
             MonoType.Tuple(targs.map(visitType))
 
           case TypeConstructor.Arrow(_) =>
-            // arrow type arguments are ordered (effect, args.., result type)
+            // Remove the effect from the arrow.
+            // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
             MonoType.Arrow(args.map(visitType), visitType(res))
@@ -492,7 +493,8 @@ object Simplifier {
             Type.mkTuple(targs.map(visitPolyType), loc)
 
           case TypeConstructor.Arrow(_) =>
-            // arrow type arguments are ordered (effect, args.., result type)
+            // Remove the effect from the arrow.
+            // Arrow type arguments are ordered (effect, args.., result type).
             val eff :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
             Type.mkArrowBackend(args.map(visitPolyType), visitPolyType(res), loc)
