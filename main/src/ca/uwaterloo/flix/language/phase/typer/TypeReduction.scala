@@ -235,23 +235,23 @@ object TypeReduction {
     // This method is checking an existing match, so zip is fine.
     args.zip(params).exists {
       // Primitive type boxing.
-      case (clazz, java.lang.Boolean.TYPE) if clazz == classOf[java.lang.Boolean] => true
-      case (clazz, java.lang.Byte.TYPE) if clazz == classOf[java.lang.Byte] => true
-      case (clazz, java.lang.Short.TYPE) if clazz == classOf[java.lang.Short] => true
-      case (clazz, java.lang.Integer.TYPE) if clazz == classOf[java.lang.Integer] => true
-      case (clazz, java.lang.Long.TYPE) if clazz == classOf[java.lang.Long] => true
-      case (clazz, java.lang.Character.TYPE) if clazz == classOf[java.lang.Character] => true
-      case (clazz, java.lang.Float.TYPE) if clazz == classOf[java.lang.Float] => true
-      case (clazz, java.lang.Double.TYPE) if clazz == classOf[java.lang.Double] => true
+      case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
+      case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true
+      case (clazz, java.lang.Short.TYPE) if clazz != java.lang.Short.TYPE => true
+      case (clazz, java.lang.Integer.TYPE) if clazz != java.lang.Integer.TYPE => true
+      case (clazz, java.lang.Long.TYPE) if clazz != java.lang.Long.TYPE => true
+      case (clazz, java.lang.Character.TYPE) if clazz != java.lang.Character.TYPE => true
+      case (clazz, java.lang.Float.TYPE) if clazz != java.lang.Float.TYPE => true
+      case (clazz, java.lang.Double.TYPE) if clazz != java.lang.Double.TYPE => true
       // Symmetric cases.
-      case (java.lang.Boolean.TYPE, clazz) if clazz == classOf[java.lang.Boolean] => true
-      case (java.lang.Byte.TYPE, clazz) if clazz == classOf[java.lang.Byte] => true
-      case (java.lang.Short.TYPE, clazz) if clazz == classOf[java.lang.Short] => true
-      case (java.lang.Integer.TYPE, clazz) if clazz == classOf[java.lang.Integer] => true
-      case (java.lang.Long.TYPE, clazz) if clazz == classOf[java.lang.Long] => true
-      case (java.lang.Character.TYPE, clazz) if clazz == classOf[java.lang.Character] => true
-      case (java.lang.Float.TYPE, clazz) if clazz == classOf[java.lang.Float] => true
-      case (java.lang.Double.TYPE, clazz) if clazz == classOf[java.lang.Double] => true
+      case (java.lang.Boolean.TYPE, clazz) if clazz != java.lang.Boolean.TYPE => true
+      case (java.lang.Byte.TYPE, clazz) if clazz != java.lang.Byte.TYPE => true
+      case (java.lang.Short.TYPE, clazz) if clazz != java.lang.Short.TYPE => true
+      case (java.lang.Integer.TYPE, clazz) if clazz != java.lang.Integer.TYPE => true
+      case (java.lang.Long.TYPE, clazz) if clazz != java.lang.Long.TYPE => true
+      case (java.lang.Character.TYPE, clazz) if clazz != java.lang.Character.TYPE => true
+      case (java.lang.Float.TYPE, clazz) if clazz != java.lang.Float.TYPE => true
+      case (java.lang.Double.TYPE, clazz) if clazz != java.lang.Double.TYPE => true
       // Otherwise it is not boxing.
       case _ => false
     }
