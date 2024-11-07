@@ -588,7 +588,7 @@ mod RedBlackTree {
     ///
     pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
         let buffer = MutList.empty(rc);
-        let g = k -> v -> MutList.push!(f(k, v), buffer);
+        let g = k -> v -> MutList.push(f(k, v), buffer);
         rangeQueryWith(p, g, t);
         MutList.toList(buffer)
     }

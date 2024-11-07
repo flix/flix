@@ -1346,7 +1346,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push!(i, l) else ();
+                if (f(get(i, a))) MutList.push(i, l) else ();
                 loop(i + 1)
             }
         };

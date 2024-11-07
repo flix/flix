@@ -167,6 +167,9 @@ object Visitor {
     implicit val c: Consumer = consumer
     implicit val a: Acceptor = acceptor
 
+    // NB: the signatures in `root.sigs` are not visited here, since they will be visited after
+    // their corresponding trait
+
     root.defs.values.foreach(visitDef)
 
     root.effects.values.foreach(visitEffect)
@@ -174,8 +177,6 @@ object Visitor {
     root.enums.values.foreach(visitEnum)
 
     root.instances.values.flatten.foreach(visitInstance)
-
-    root.sigs.values.foreach(visitSig)
 
     root.structs.values.foreach(visitStruct)
 
