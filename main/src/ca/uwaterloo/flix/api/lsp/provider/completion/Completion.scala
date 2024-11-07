@@ -538,7 +538,8 @@ object Completion {
    * Represents a Snippet completion
    *
    * @param name          the name of the snippet.
-   * @param textEdit      the TextEdit.
+   * @param range         the range for TextEdit.
+   * @param snippet       the snippet for TextEdit.
    * @param documentation a human-readable string that represents a doc-comment.
    */
   case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
