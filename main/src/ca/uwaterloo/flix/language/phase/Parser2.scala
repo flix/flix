@@ -1449,6 +1449,8 @@ object Parser2 {
           continue = false
         }
       }
+      // fuel for the next eat, when goin down the callstack for cons.
+      if (left == TokenKind.ColonColon) s.fuel += 1 // recu
       // Handle without expressions
       if (eat(TokenKind.KeywordWithout)) {
         val mark = open()
