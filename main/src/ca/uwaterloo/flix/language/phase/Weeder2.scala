@@ -3069,7 +3069,8 @@ object Weeder2 {
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
     tryPick(TreeKind.Ident, tree) match {
       case None =>
-        // The TreeKind.Ident is missing. We should return an error, but we don't have such a thing yet.
+        // The tree is missing a child of kind `TreeKind.Ident`.
+        // We should return something like Name.IdentWithError, but we lack such a thing.
         // Instead, we construct a bogus Name.Ident-- which is not great, but should not crash the compiler.
         // We do not have to add a compiler error because the Parser should already have emitted one.
         val ident = Name.Ident("", tree.loc)
