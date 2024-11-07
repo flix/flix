@@ -205,7 +205,7 @@ object TypeReduction2 {
   }
 
   /**
-    * Returns `true` if `args` and `params` have indices that are equivalent by boxing.
+    * Returns `true` if `args` and `params` have indices that are equivalent only by boxing.
     *
     * This function is used to check [[MethodUtils.getMatchingAccessibleMethod]] and
     * [[ConstructorUtils.getMatchingAccessibleConstructor]] matches.
