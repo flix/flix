@@ -3072,7 +3072,9 @@ object Weeder2 {
         // The tree is missing a child of kind `TreeKind.Ident`.
         // We should return something like Name.IdentWithError, but we lack such a thing.
         // Instead, we construct a bogus Name.Ident-- which is not great, but should not crash the compiler.
-        // We do not have to add a compiler error because the Parser should already have emitted one.
+        // Note 1: We do not have to add a compiler error because the Parser should already have emitted one.
+        // Note 2: We use the empty string instead of some random string because it matches the idea
+        // of the user having not yet typed anything. This also works correctly with auto-complete.
         val ident = Name.Ident("", tree.loc)
         Validation.success(ident)
       case Some(t) => Validation.success(tokenToIdent(t))
