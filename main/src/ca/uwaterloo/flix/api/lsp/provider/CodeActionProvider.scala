@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Holger Dal Mogensen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,86 +16,78 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.errors.{InstanceError, RedundancyError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 
+/**
+  * The CodeActionProvider offers quickfix suggestions.
+  *
+  * The space of possible quickfixes is huge. Hence, we should only offer quickfixes that are meaningfully useful.
+  *
+  * That is, quickfix suggestions that will often be used: either because they offer good ergonomics or because they resolve a tricky issue.
+  */
 object CodeActionProvider {
 
-  def getCodeActions(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root): List[CodeAction] = {
-    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range)
+  def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
+    getActionsFromErrors(uri, range, errors) ++ getActionsFromRange(uri, range)
   }
 
-  /**
-    * Returns code actions based on the current errors.
-    */
-  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = currentErrors.flatMap {
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-      else
-        Nil
-    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseTrait(qn.ident, uri)
-      else
-        Nil
+  private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
     case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseEffect(qn.ident, uri)
       else
         Nil
+
+    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
+      if (qn.namespace.isRoot)
+        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+      else
+        Nil
+
+    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
+      if (qn.namespace.isRoot)
+        mkUseTrait(qn.ident, uri)
+      else
+        Nil
+
     case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
-      mkIntroduceNewEnum(qn.ident.name, uri) :: {
+      mkNewEnum(qn.ident.name, uri) :: {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
         else
           Nil
       }
 
-    case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedVarCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedDefSym(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedDefCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedParamCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedTypeParam(sym, _) if onSameLine(range, sym.loc) =>
-      mkUnusedTypeParamCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedEffectCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedEnumSym(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedEnumCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedEnumTag(_, caseSym) if onSameLine(range, caseSym.loc) =>
-      mkUnusedEnumTagCodeAction(caseSym, uri) :: Nil
-
     case TypeError.MissingInstanceEq(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
+
     case TypeError.MissingInstanceOrder(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingOrder(tpe, uri)
+
     case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
+
     case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if onSameLine(range, loc) =>
       mkDeriveMissingSuperTrait(tpe, sup, uri)
+
     case _ => Nil
   }
 
   /**
     * Returns code actions based on the current index and the given range.
     */
-  private def getActionsFromIndex(uri: String, range: Range)(implicit index: Index): List[CodeAction] =
-    index.query(uri, range.start) match {
-      case None => Nil // No code actions.
-
-      case Some(entity) => entity match {
-        case Entity.Enum(e) =>
-          List(mkDeriveEq(e, uri), mkDeriveOrder(e, uri), mkDeriveToString(e, uri)).flatten
-        case _ =>
-          Nil // No code actions.
-      }
+  private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
+    root.enums.foldLeft(List.empty[CodeAction]) {
+      case (acc, (sym, enm)) if onSameLine(range, sym.loc) =>
+        List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
+      case (acc, _) => acc
     }
+  }
 
   /**
     * Returns a code action that proposes to `use` a def.
@@ -177,7 +170,7 @@ object CodeActionProvider {
     *              These should include the same number and be in the same order.
     * @param uri   URI of the document the change should be made in.
     */
-  // Names have to be included seperately because symbols aren't guaranteed to have a name
+  // Names have to be included separately because symbols aren't guaranteed to have a name
   private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String): List[CodeAction] = {
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
@@ -196,100 +189,6 @@ object CodeActionProvider {
   }
 
   /**
-    * Returns a code action that proposes to prefix an unused variable by an underscore.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   let abc = 123
-    * }}}
-    *
-    * where `abc` is unused this code action proposes to replace it by `_abc`.
-    */
-  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      "Prefix unused variable with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused function by an underscore.
-    */
-  private def mkUnusedDefCodeAction(sym: Symbol.DefnSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      "Prefix unused function with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused formal parameter by an underscore.
-    */
-  private def mkUnusedParamCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      "Prefix unused parameter with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused type parameter by an underscore.
-    */
-  private def mkUnusedTypeParamCodeAction(sym: Name.Ident, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      "Prefix unused type parameter with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused effect by an underscore.
-    */
-  private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      "Prefix unused effect with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused enum by an underscore.
-    */
-  private def mkUnusedEnumCodeAction(sym: Symbol.EnumSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      s"Prefix unused enum with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Returns a code action that proposes to prefix the name of an unused enum case by an underscore.
-    */
-  private def mkUnusedEnumTagCodeAction(sym: Symbol.CaseSym, uri: String): CodeAction =
-    mkPrefixWithUnderscore(
-      s"Prefix unused case with underscore",
-      Position.fromBegin(sym.loc),
-      uri,
-    )
-
-  /**
-    * Internal helper function for all `mkUnusedXCodeAction`.
-    * Returns a code action that proposes to insert an underscore at `beginPos`.
-    */
-  private def mkPrefixWithUnderscore(title: String, beginPos: Position, uri: String): CodeAction = CodeAction(
-    title,
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(beginPos, beginPos),
-        "_"
-      )))
-    )),
-    command = None
-  )
-
-  /**
     * Returns a code action that proposes to create a new enum.
     *
     * For example, if we have:
@@ -303,7 +202,7 @@ object CodeActionProvider {
     *   enum Abc { }
     * }}}
     */
-  private def mkIntroduceNewEnum(name: String, uri: String): CodeAction = CodeAction(
+  private def mkNewEnum(name: String, uri: String): CodeAction = CodeAction(
     title = s"Introduce new enum $name",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
@@ -321,13 +220,14 @@ object CodeActionProvider {
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
-    * Uses Levenshtein Distance to find closed spellings.
+    *
+    * Uses Levenshtein Distance to find close spellings.
     */
   private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: Map[String, Symbol.VarSym], uri: String): List[CodeAction] = {
     val minLength = 3
     val maxDistance = 3
     val possibleNames: List[String] = env.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
-                                                          .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
+      .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
     if (qn.ident.name.length > minLength)
       possibleNames.map(n => mkCorrectSpelling(n, loc, uri))
     else
@@ -370,8 +270,8 @@ object CodeActionProvider {
     mkDeriveMissing(tpe, "ToString", uri)
 
   /**
-   * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
-   */
+    * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
+    */
   private def mkDeriveMissingSuperTrait(tpe: Type, superTrait: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, superTrait.name, uri)
 
@@ -393,8 +293,6 @@ object CodeActionProvider {
     case _ => None
   }
 
-  // TODO: We should only offer to derive traits which have not already been derived.
-
   /**
     * Returns a code action to derive the `Eq` trait.
     */
@@ -410,15 +308,14 @@ object CodeActionProvider {
     */
   private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
 
-  // TODO: Add derivation for the Hash and Sendable traits.
-
   /**
     * Returns a code action to derive the given trait `trt` for the given enum `e` if it isn't already.
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
     val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
-    if (alreadyDerived) None
+    if (alreadyDerived)
+      None
     else Some(
       CodeAction(
         title = s"Derive $trt",
@@ -457,11 +354,14 @@ object CodeActionProvider {
       else
         s", $trt"
 
-    val end = Position.fromEnd(e.derives.loc)
+    // Compute the end source location.
+    // If there is already a derives clause we use its source location.
+    // Otherwise, we use the source location of the enum symbol.
+    val end = if (e.derives.loc != SourceLocation.Unknown) e.derives.loc else e.sym.loc
 
     WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(end, end),
+        Range(Position.fromEnd(end), Position.fromEnd(end)),
         text
       )))
     )
