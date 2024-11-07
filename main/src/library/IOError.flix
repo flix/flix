@@ -24,21 +24,25 @@
 ///
 /// The second element is a string that describes the error, meant to be used for debugging purposes.
 ///
-pub enum IoError(ErrorKind, String) with Eq, Order, ToString, Hash, Sendable
+pub enum IoError(IoError.ErrorKind, String) with Eq, Order, ToString, Hash, Sendable
 
-pub enum ErrorKind with Eq, Order, ToString, Hash, Sendable {
-    case AlreadyExists,
-    case PermissionDenied,
-    case Interrupted,
-    case InvalidPath,
-    case InvalidInput,
-    case InvalidData,
-    case NotFound,
-    case NotFile,
-    case NotDirectory,
-    case UnexpectedEof,
-    case Unsupported,
-    case Other
+mod IoError {
+
+    pub enum ErrorKind with Eq, Order, ToString, Hash, Sendable {
+        case AlreadyExists,
+        case PermissionDenied,
+        case Interrupted,
+        case InvalidPath,
+        case InvalidInput,
+        case InvalidData,
+        case NotFound,
+        case NotFile,
+        case NotDirectory,
+        case UnexpectedEof,
+        case Unsupported,
+        case Other
+    }
+
 }
 
 pub enum IOError with Eq, Order, ToString, Hash, Sendable {
