@@ -155,13 +155,13 @@ object TypeReduction {
           Result.Ok((meth, false))
       }
 
-    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
+    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(base, tpe, name), _) =>
       lookupField(tpe, name.name) match {
         case JavaFieldResolution.Resolved(field) =>
           val tpe = Type.Cst(TypeConstructor.JvmField(field), loc)
           Result.Ok((tpe, true))
         case JavaFieldResolution.NotFound =>
-          Result.Err(TypeError.FieldNotFound(name, tpe, loc))
+          Result.Err(TypeError.FieldNotFound(base, name, tpe, loc))
         case JavaFieldResolution.UnresolvedTypes =>
           Result.Ok((field, false))
       }
