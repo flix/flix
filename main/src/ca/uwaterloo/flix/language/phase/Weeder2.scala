@@ -3000,27 +3000,33 @@ object Weeder2 {
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
-        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
+        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitTraitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+      def replaceIllegalTypesWithErrors(tpe: Type): (Type, List[SourceLocation]) = {
+        val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
+
+        def replace(tpe0: Type): Type = tpe0 match {
+          case Type.Var(ident, loc) => Type.Var(ident, loc)
+          case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
+          case t =>
+            errorLocations += t.loc
+            Type.Error(t.loc)
+        }
+
+        (replace(tpe), errorLocations.toList)
+      }
+
       expect(tree, TreeKind.Type.Constraint)
-      flatMapN(pickQName(tree), Types.pickType(tree)) {
+      mapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
-          if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
-          } else {
-            Validation.success(TraitConstraint(qname, tpe, tree.loc))
-          }
+          val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
+          errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
+          TraitConstraint(qname, tpe1, tree.loc)
       }
-    }
-
-    private def isAllVariables(tpe: Type): Boolean = tpe match {
-      case _: Type.Var => true
-      case Type.Apply(t1, ts, _) => isAllVariables(t1) && isAllVariables(ts)
-      case _ => false
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
