@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Posi
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
@@ -96,6 +96,8 @@ object HighlightProvider {
       case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(sym)
       case TypedAst.Case(sym, _, _, _) => highlightCaseSym(sym)
       case SymUse.CaseSymUse(sym, _) => highlightCaseSym(sym)
+      // Records
+      case label: Name.Label => highlightLabel(label)
       // Signatures
       case TypedAst.Sig(sym, _, _, _) => highlightSigSym(sym)
       case SymUse.SigSymUse(sym, _) => highlightSigSym(sym)
@@ -120,6 +122,23 @@ object HighlightProvider {
 
       case _ => mkNotFound(uri, pos)
     }
+  }
+
+  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = HighlightBuilder(label)
+
+    object LabelConsumer extends Consumer {
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.RecordExtend(l, _, _, _, _, _) => builder.considerWrite(l, l.loc)
+        case Expr.RecordSelect(_, l, _, _, _) => builder.considerRead(l, l.loc)
+        case Expr.RecordRestrict(l, _, _, _, _) => builder.considerWrite(l, l.loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, LabelConsumer, acceptor)
+
+    builder.build
   }
 
   private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
@@ -153,52 +172,52 @@ object HighlightProvider {
 
   /**
     * A builder for creating an LSP highlight response containing a [[DocumentHighlight]] for each recorded
-    * occurrence of the [[Symbol]].
+    * occurrence of a given token [[tok]].
     *
-    * An occurrence of a [[Symbol]] is "considered" by invoking [[considerRead]] or [[considerWrite]] for resp.
-    * "write" and "read" occurrences. By a "write" occurrence, we mean an occurrence where the [[Symbol]] is being
-    * defined or otherwise bound to something. By "read" we mean an occurrence where the [[Symbol]] is merely read.
-    * When we say "consider", we mean first checking if the occurrence is an occurrence of `sym` specifically.
+    * An occurrence of a token of type [[T]] is "considered" by invoking [[considerRead]] or [[considerWrite]] for resp.
+    * "write" and "read" occurrences. By a "write" occurrence, we mean an occurrence where the token is being
+    * defined or otherwise bound to something. By "read" we mean an occurrence where the token is merely read.
+    * When we say "consider", we mean first checking if the occurrence is an occurrence of [[tok]] specifically.
     * If so, it's added to our list of either "read" or "write" occurrences, depending on the type.
     *
-    * When we're done considering [[Symbol]]s, we can construct the LSP response by calling [[build]]
+    * When we're done considering tokens, we can construct the LSP response by calling [[build]]
     *
-    * @param sym  the [[Symbol]] we're finding occurrences of.
-    * @tparam T   the type of [[Symbol]] that `sym` is.
+    * @param tok  the token we're finding occurrences of.
+    * @tparam T   the type of token that [[tok]] is.
     */
-  private case class HighlightBuilder[T <: Symbol](sym: T) {
+  private case class HighlightBuilder[T](tok: T) {
     private var writes: List[SourceLocation] = Nil
     private var reads: List[SourceLocation] = Nil
 
     /**
-      * If `x` is an occurrence of `sym`, adds it to our list of "write" occurrences.
+      * If [[x]] is an occurrence of [[tok]], adds it to our list of "write" occurrences.
       *
-      * @param x    the [[Symbol]] we're considering.
+      * @param x    the token we're considering.
       * @param loc  the [[SourceLocation]] of the occurrence.
       */
     def considerWrite(x: T, loc: SourceLocation): Unit = {
-      if (x == sym) {
+      if (x == tok) {
         writes = loc :: writes
       }
     }
 
     /**
-      * If `x` is an occurrence of `sym`, adds it to our list of "read" occurrences.
+      * If [[x]] is an occurrence of [[tok]], adds it to our list of "read" occurrences.
       *
-      * @param x    the [[Symbol]] we're considering.
+      * @param x    the token we're considering.
       * @param loc  the [[SourceLocation]] of the occurrence.
       */
     def considerRead(x: T, loc: SourceLocation): Unit = {
-      if (x == sym) {
+      if (x == tok) {
         reads = loc :: reads
       }
     }
 
     /**
       * Builds a [[JObject]] representing a successful LSP highlight response containing a [[DocumentHighlight]] for each read and write
-      * occurrence of `sym` recorded.
+      * occurrence of [[tok]] recorded.
       *
-      * @return A [[JObject]] representing a successful LSP highlight response containing a highlight of each recorded occurrence of `sym`
+      * @return A [[JObject]] representing a successful LSP highlight response containing a highlight of each recorded occurrence of [[tok]]
       */
     def build: JObject = {
       val writeHighlights = writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
