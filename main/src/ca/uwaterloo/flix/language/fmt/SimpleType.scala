@@ -246,7 +246,7 @@ object SimpleType {
   /**
     * A backend function (no effect).
     */
-  case class ArrowBackend(arg: SimpleType, ret: SimpleType) extends SimpleType
+  case class ArrowWithoutEffect(arg: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
@@ -399,9 +399,9 @@ object SimpleType {
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
-        case TypeConstructor.ArrowBackend(arity) =>
+        case TypeConstructor.ArrowWithoutEffect(arity) =>
           val args = t.typeArguments.map(visit)
-          args.padTo(arity, Hole).reduceRight(ArrowBackend.apply)
+          args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
 

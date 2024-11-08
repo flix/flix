@@ -408,7 +408,7 @@ object Simplifier {
           case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.ArrowBackend(_) =>
+          case TypeConstructor.ArrowWithoutEffect(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.ArrayWithoutRegion =>
@@ -514,7 +514,7 @@ object Simplifier {
             // Arrow type arguments are ordered (effect, args.., result type).
             val eff :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            Type.mkArrowBackend(args.map(visitPolyType), visitPolyType(res), loc)
+            Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments
@@ -568,7 +568,7 @@ object Simplifier {
           case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.ArrowBackend(_) =>
+          case TypeConstructor.ArrowWithoutEffect(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.ArrayWithoutRegion =>

@@ -139,12 +139,12 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents an arrow type where the effect has been erased.
+    * A type constructor that represents an arrow type where the effect has been removed.
     *
     * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
-  case class ArrowBackend(arity: Int) extends TypeConstructor {
+  case class ArrowWithoutEffect(arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.mkArrow(arity)
   }
 

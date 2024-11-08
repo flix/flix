@@ -777,7 +777,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Error(_, _) => false
 
     // backend constructors
-    case TypeConstructor.ArrowBackend(_) => false
+    case TypeConstructor.ArrowWithoutEffect(_) => false
     case TypeConstructor.ArrayWithoutRegion => false
     case TypeConstructor.RegionBackend => false
   }

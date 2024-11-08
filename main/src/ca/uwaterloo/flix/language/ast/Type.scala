@@ -846,8 +846,8 @@ object Type {
   /**
     * Constructs the backend arrow type (A_1, ..., A_n) -> B
     */
-  def mkArrowBackend(as: List[Type], b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.Cst(TypeConstructor.ArrowBackend(as.length + 1), loc)
+  def mkArrowWithoutEffect(as: List[Type], b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }

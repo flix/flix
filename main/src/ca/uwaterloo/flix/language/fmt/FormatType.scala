@@ -151,7 +151,7 @@ object FormatType {
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
-      case SimpleType.ArrowBackend(_, _) => false
+      case SimpleType.ArrowWithoutEffect(_, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -329,7 +329,7 @@ object FormatType {
         val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
-      case SimpleType.ArrowBackend(arg, ret) =>
+      case SimpleType.ArrowWithoutEffect(arg, ret) =>
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString --> $retString"
