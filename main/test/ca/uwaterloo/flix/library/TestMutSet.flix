@@ -29,18 +29,18 @@ mod TestMutSet {
     @test
     def toString02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.toString(s) == "MutSet#{1}"
     }
 
     @test
     def toString03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
-        MutSet.add!(4, s);
-        MutSet.add!(5, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        MutSet.add(4, s);
+        MutSet.add(5, s);
         MutSet.toString(s) == "MutSet#{1, 2, 3, 4, 5}"
     }
 
@@ -58,10 +58,10 @@ mod TestMutSet {
     @test
     def sameElements02(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
+        MutSet.add(1, s1);
 
         let s2 = MutSet.empty(rc);
-        MutSet.add!(1, s2);
+        MutSet.add(1, s2);
 
         MutSet.sameElements(s1, s2)
     }
@@ -69,10 +69,10 @@ mod TestMutSet {
     @test
     def sameElements03(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
+        MutSet.add(1, s1);
 
         let s2 = MutSet.empty(rc);
-        MutSet.add!(2, s2);
+        MutSet.add(2, s2);
 
         not MutSet.sameElements(s1, s2)
     }
@@ -80,14 +80,14 @@ mod TestMutSet {
     @test
     def sameElements04(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
-        MutSet.add!(2, s1);
-        MutSet.add!(3, s1);
+        MutSet.add(1, s1);
+        MutSet.add(2, s1);
+        MutSet.add(3, s1);
 
         let s2 = MutSet.empty(rc);
-        MutSet.add!(2, s2);
-        MutSet.add!(3, s2);
-        MutSet.add!(1, s2);
+        MutSet.add(2, s2);
+        MutSet.add(3, s2);
+        MutSet.add(1, s2);
 
         MutSet.sameElements(s1, s2)
     }
@@ -95,14 +95,14 @@ mod TestMutSet {
     @test
     def sameElements05(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!("a", s1);
-        MutSet.add!("b", s1);
-        MutSet.add!("c", s1);
+        MutSet.add("a", s1);
+        MutSet.add("b", s1);
+        MutSet.add("c", s1);
 
         let s2 = MutSet.empty(rc);
-        MutSet.add!("c", s2);
-        MutSet.add!("a", s2);
-        MutSet.add!("b", s2);
+        MutSet.add("c", s2);
+        MutSet.add("a", s2);
+        MutSet.add("b", s2);
 
         MutSet.sameElements(s1, s2)
     }
@@ -110,13 +110,13 @@ mod TestMutSet {
     @test
     def setSameElements06(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!("a", s1);
-        MutSet.add!("b", s1);
-        MutSet.add!("c", s1);
+        MutSet.add("a", s1);
+        MutSet.add("b", s1);
+        MutSet.add("c", s1);
 
         let s2 = MutSet.empty(rc);
-        MutSet.add!("c", s2);
-        MutSet.add!("a", s2);
+        MutSet.add("c", s2);
+        MutSet.add("a", s2);
 
         not MutSet.sameElements(s1, s2)
     }
@@ -135,7 +135,7 @@ mod TestMutSet {
     def addAll01(): Bool = region rc {
         let s1 = (MutSet.empty(rc): MutSet[Int32, _]);
         let s2 = (MutSet.empty(rc): MutSet[Int32, _]);
-        MutSet.addAll!(MutSet.toSet(s1), s2);
+        MutSet.addAll(MutSet.toSet(s1), s2);
         MutSet.isEmpty(s2)
     }
 
@@ -143,9 +143,9 @@ mod TestMutSet {
     def addAll02(): Bool = region rc {
         let s1 = MutSet.empty(rc);
         let s2 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
-        MutSet.add!(1, s1);
-        MutSet.addAll!(MutSet.toSet(s1), s2);
+        MutSet.add(1, s1);
+        MutSet.add(1, s1);
+        MutSet.addAll(MutSet.toSet(s1), s2);
         MutSet.sameElements(s1, s2)
     }
 
@@ -153,9 +153,9 @@ mod TestMutSet {
     def addAll03(): Bool = region rc {
         let s1 = MutSet.empty(rc);
         let s2 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
-        MutSet.add!(2, s1);
-        MutSet.addAll!(MutSet.toSet(s1), s2);
+        MutSet.add(1, s1);
+        MutSet.add(2, s1);
+        MutSet.addAll(MutSet.toSet(s1), s2);
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 3
     }
 
@@ -163,23 +163,23 @@ mod TestMutSet {
     def addAll04(): Bool = region rc {
         let s1 = MutSet.empty(rc);
         let s2 = MutSet.empty(rc);
-        MutSet.add!(1, s1);
-        MutSet.add!(2, s1);
-        MutSet.add!(3, s1);
-        MutSet.addAll!(MutSet.toSet(s1), s2);
+        MutSet.add(1, s1);
+        MutSet.add(2, s1);
+        MutSet.add(3, s1);
+        MutSet.addAll(MutSet.toSet(s1), s2);
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 6
     }
 
     @test
     def addAll05(): Bool = region rc1 {
         let s1 = MutSet.empty(rc1);
-        MutSet.add!("a", s1);
-        MutSet.add!("b", s1);
-        MutSet.add!("c", s1);
+        MutSet.add("a", s1);
+        MutSet.add("b", s1);
+        MutSet.add("c", s1);
 
         region rc2 {
             let s2 = MutSet.empty(rc2);
-            MutSet.addAll!(MutSet.toSet(s1), s2);
+            MutSet.addAll(MutSet.toSet(s1), s2);
             MutSet.toList(s2) == "a" :: "b" :: "c" :: Nil
         }
     }
@@ -187,13 +187,13 @@ mod TestMutSet {
     @test
     def addAll06(): Bool = region rc {
         let s1 = MutSet.empty(rc);
-        MutSet.add!("a", s1);
-        MutSet.add!("b", s1);
-        MutSet.add!("c", s1);
+        MutSet.add("a", s1);
+        MutSet.add("b", s1);
+        MutSet.add("c", s1);
 
         region rc2 {
             let s2 = MutSet.empty(rc2);
-            MutSet.addAll!(MutSet.toSet(s1), s2);
+            MutSet.addAll(MutSet.toSet(s1), s2);
             MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
             }
         }
@@ -211,44 +211,44 @@ mod TestMutSet {
     @test
     def sum02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.sum(s) == 1
     }
 
     @test
     def sum03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
         MutSet.sum(s) == 6
     }
 
     @test
     def sum04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
-        MutSet.add!(-3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        MutSet.add(-3, s);
         MutSet.sum(s) == 3
     }
 
     @test
     def sum05(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(-3, s);
-        MutSet.add!(-4, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(-3, s);
+        MutSet.add(-4, s);
         MutSet.sum(s) == -4
     }
 
     @test
     def sum06(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(10, s);
-        MutSet.add!(-10, s);
+        MutSet.add(10, s);
+        MutSet.add(-10, s);
         MutSet.sum(s) == 0
     }
 
@@ -265,44 +265,44 @@ mod TestMutSet {
     @test
     def sumWith02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.sumWith(x -> x + 1, s) == 2
     }
 
     @test
     def sumWith03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
         MutSet.sumWith(x -> x + 1, s) == 9
     }
 
     @test
     def sumWith04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
-        MutSet.add!(-3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        MutSet.add(-3, s);
         MutSet.sumWith(x -> x + 1, s) == 7
     }
 
     @test
     def sumWith05(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(-1, s);
-        MutSet.add!(-2, s);
-        MutSet.add!(-3, s);
-        MutSet.add!(-4, s);
+        MutSet.add(-1, s);
+        MutSet.add(-2, s);
+        MutSet.add(-3, s);
+        MutSet.add(-4, s);
         MutSet.sumWith(x -> x + 1, s) == -6
     }
 
     @test
     def sumWith06(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(10, s);
-        MutSet.add!(-10, s);
+        MutSet.add(10, s);
+        MutSet.add(-10, s);
         MutSet.sumWith(x -> x + 1, s) == 2
     }
 
@@ -320,25 +320,25 @@ mod TestMutSet {
     @test
     def join02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.join(",", s) == "1"
     }
 
     @test
     def join03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
         MutSet.join(",", s) == "1,2,3"
     }
 
     @test
     def join04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!("1", s);
-        MutSet.add!("2", s);
-        MutSet.add!("3", s);
+        MutSet.add("1", s);
+        MutSet.add("2", s);
+        MutSet.add("3", s);
         MutSet.join(",", s) == "1,2,3"
     }
 
@@ -355,24 +355,24 @@ mod TestMutSet {
     @test
     def foldRight02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 198
     }
 
     @test
     def foldRight03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(2, s);
-        MutSet.add!(1, s);
+        MutSet.add(2, s);
+        MutSet.add(1, s);
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 194
     }
 
     @test
     def foldRight04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(3, s);
-        MutSet.add!(2, s);
-        MutSet.add!(1, s);
+        MutSet.add(3, s);
+        MutSet.add(2, s);
+        MutSet.add(1, s);
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 382
     }
 
@@ -388,24 +388,24 @@ mod TestMutSet {
     @test
     def foldRightWithCont02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
+        MutSet.add(1, s);
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 198
     }
 
     @test
     def foldRightWithCont03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(2, s);
-        MutSet.add!(1, s);
+        MutSet.add(2, s);
+        MutSet.add(1, s);
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 194
     }
 
     @test
     def foldRightWithCont04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(3, s);
-        MutSet.add!(2, s);
-        MutSet.add!(1, s);
+        MutSet.add(3, s);
+        MutSet.add(2, s);
+        MutSet.add(1, s);
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 382
     }
 
@@ -421,33 +421,33 @@ mod TestMutSet {
     @test
     def foldMap02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
         MutSet.foldMap(x -> 2 * x, s) == 6
     }
 
     @test
     def foldMap03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!("a", s);
+        MutSet.add("a", s);
         MutSet.foldMap(x -> if (x == "a") "b" else x, s) == "b"
     }
 
     @test
     def foldMap04(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!("a", s);
-        MutSet.add!("b", s);
-        MutSet.add!("c", s);
+        MutSet.add("a", s);
+        MutSet.add("b", s);
+        MutSet.add("c", s);
         MutSet.foldMap(x -> if (x == "c") "b" else x, s) == "abb"
     }
 
     @test
     def foldMap05(): Bool = region rc {
         let s = MutSet.empty(rc);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
-        MutSet.add!(3, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
         MutSet.foldMap(Int32.toString, s) == "123"
     }
 
@@ -520,7 +520,7 @@ mod TestMutSet {
     def forEach02(): Bool = region rc {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutSet.add!(0, s);
+        MutSet.add(0, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
         0 == Ref.get(ri)
     }
@@ -529,9 +529,9 @@ mod TestMutSet {
     def forEach03(): Bool = region rc {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutSet.add!(0, s);
-        MutSet.add!(1, s);
-        MutSet.add!(2, s);
+        MutSet.add(0, s);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
         2 == Ref.get(ri)
     }
@@ -552,7 +552,7 @@ mod TestMutSet {
     def forEachWithIndex02(): Bool = region rc {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutSet.add!(100, s);
+        MutSet.add(100, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
         0 == Ref.get(ri)
     }
@@ -561,9 +561,9 @@ mod TestMutSet {
     def forEachWithIndex03(): Bool = region rc {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutSet.add!(100, s);
-        MutSet.add!(101, s);
-        MutSet.add!(102, s);
+        MutSet.add(100, s);
+        MutSet.add(101, s);
+        MutSet.add(102, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
         2 == Ref.get(ri)
     }
