@@ -1471,6 +1471,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: 1 :: Nil
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.TooNested](result)
+    expectError[WeederError.NestedTooDeeply](result)
   }
 }

@@ -869,7 +869,7 @@ object Weeder2 {
           if (endsWithCons) Some("Use 'List#{..}' instead of 'x :: y :: Nil' if applicable.")
           else None
         }
-        val error = TooNested(hint, exprTree.loc)
+        val error = NestedTooDeeply(hint, exprTree.loc)
         sctx.errors.add(error)
         lctx.depth -= 1
         return Validation.success(Expr.Error(error))
