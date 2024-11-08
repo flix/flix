@@ -292,14 +292,14 @@ object TypeConstructor {
 
   /**
     * A type constructor that represents that represents an array type where the region has been
-    * erased.
+    * removed.
     *
     * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
-  case object ArrayBackend extends TypeConstructor {
+  case object ArrayWithoutRegion extends TypeConstructor {
     /**
-      * The shape of an array is `ArrayBackend[t]`.
+      * The shape of an array is `ArrayWithoutRegion[t]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Star
   }

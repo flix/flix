@@ -172,7 +172,7 @@ object FormatType {
       case SimpleType.Str => true
       case SimpleType.Regex => true
       case SimpleType.Array => true
-      case SimpleType.ArrayBackend => true
+      case SimpleType.ArrayWithoutRegion => true
       case SimpleType.Vector => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
@@ -246,7 +246,7 @@ object FormatType {
       case SimpleType.Str => "String"
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
-      case SimpleType.ArrayBackend => "ArrayBackend"
+      case SimpleType.ArrayWithoutRegion => "ArrayWithoutRegion"
       case SimpleType.Vector => "Vector"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"

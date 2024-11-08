@@ -411,7 +411,7 @@ object Simplifier {
           case TypeConstructor.ArrowBackend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.ArrayBackend =>
+          case TypeConstructor.ArrayWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionBackend =>
@@ -495,11 +495,11 @@ object Simplifier {
           case TypeConstructor.Array =>
             // Remove the region from the array.
             val List(elm, _) = tpe.typeArguments
-            Type.mkArrayBackend(visitPolyType(elm), loc)
+            Type.mkArrayWithoutRegion(visitPolyType(elm), loc)
 
           case TypeConstructor.Vector =>
             val List(elm) = tpe.typeArguments
-            Type.mkArrayBackend(visitPolyType(elm), loc)
+            Type.mkArrayWithoutRegion(visitPolyType(elm), loc)
 
           case TypeConstructor.RegionToStar =>
             // Remove the type argument.
@@ -571,7 +571,7 @@ object Simplifier {
           case TypeConstructor.ArrowBackend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.ArrayBackend =>
+          case TypeConstructor.ArrayWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionBackend =>

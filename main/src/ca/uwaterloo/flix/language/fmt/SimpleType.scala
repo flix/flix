@@ -78,7 +78,7 @@ object SimpleType {
 
   case object Array extends SimpleType
 
-  case object ArrayBackend extends SimpleType
+  case object ArrayWithoutRegion extends SimpleType
 
   case object Vector extends SimpleType
 
@@ -468,7 +468,7 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
-        case TypeConstructor.ArrayBackend => mkApply(ArrayBackend, t.typeArguments.map(visit))
+        case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))

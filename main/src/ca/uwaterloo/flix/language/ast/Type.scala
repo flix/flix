@@ -782,10 +782,10 @@ object Type {
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
-    * Returns the type `ArrayBackend[tpe]` with the given source location `loc`.
+    * Returns the type `ArrayWithoutRegion[tpe]` with the given source location `loc`.
     */
-  def mkArrayBackend(tpe: Type, loc: SourceLocation): Type =
-    Apply(Cst(TypeConstructor.ArrayBackend, loc), tpe, loc)
+  def mkArrayWithoutRegion(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.ArrayWithoutRegion, loc), tpe, loc)
 
   /**
     * Returns the type `Array[tpe]` with the given source location `loc`.
