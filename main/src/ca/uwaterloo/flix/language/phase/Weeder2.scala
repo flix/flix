@@ -3351,6 +3351,8 @@ object Weeder2 {
 
   /**
     * A local context.
+    *
+    * The nesting of expressions is tracked via `depth` to avoid stack overflow in the compiler.
     */
   private case class LocalContext(var depth: Int)
 
