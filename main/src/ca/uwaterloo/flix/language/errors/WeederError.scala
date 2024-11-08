@@ -1036,9 +1036,7 @@ object WeederError {
     * @param loc      The source location of the expression that is nested too deeply.
     */
   case class TooNested(hint: Option[String] = None, loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = {
-      s"Expression is too nested."
-    }
+    def summary: String = s"Expression is too nested."
 
     def message(fmt: Formatter): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
