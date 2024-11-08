@@ -1295,6 +1295,7 @@ object Desugar {
 
   /**
     * Rewrites [[WeededAst.Expr.FCons]] (`x :: xs`) into a call to `List.Cons(x, xs)`.
+    * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val e1 = visitExp(exp1)
@@ -1315,19 +1316,11 @@ object Desugar {
 
   /**
     * Rewrites [[WeededAst.Expr.ListLit]] (`1 :: 2 :: Nil`) expression into `List.Nil` with `List.Cons`.
-    * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
     */
   private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
-    if (es.length <= 20) {
-      val nil: Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc0)
-      es.foldRight(nil) {
-        case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc0)
-      }
-    } else {
-      val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
-      mkApplyFqn("Vector.toList", List(vectorLit), loc0)
-    }
+    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+    mkApplyFqn("Vector.toList", List(vectorLit), loc0)
   }
 
   /**
