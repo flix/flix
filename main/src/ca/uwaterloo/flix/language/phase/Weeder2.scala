@@ -877,7 +877,7 @@ object Weeder2 {
         return Validation.success(Expr.Error(error))
       }
 
-      val res = tree.kind match {
+      val result = tree.kind match {
         case TreeKind.Ident =>
           val ident = tokenToIdent(tree)
           Validation.success(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
@@ -959,7 +959,7 @@ object Weeder2 {
       }
       // Decrease depth now that the call is returning.
       lctx.depth -= 1
-      res
+      result
     }
 
     private def visitQnameExpr(tree: Tree)(implicit sctx: SharedContext): Expr.Ambiguous = {
