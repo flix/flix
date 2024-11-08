@@ -367,7 +367,7 @@ object HighlightProvider {
     private var writes: List[SourceLocation] = Nil
 
     /**
-      * If [[x]] is an occurrence of [[tok]], adds it to our list of "read" occurrences.
+      * If `x` is an occurrence of [[tok]], adds it to our list of "read" occurrences.
       *
       * @param x    the token we're considering.
       * @param loc  the [[SourceLocation]] of the occurrence.
@@ -379,7 +379,7 @@ object HighlightProvider {
     }
 
     /**
-      * If [[x]] is an occurrence of [[tok]], adds it to our list of "write" occurrences.
+      * If `x` is an occurrence of [[tok]], adds it to our list of "write" occurrences.
       *
       * @param x    the token we're considering.
       * @param loc  the [[SourceLocation]] of the occurrence.
