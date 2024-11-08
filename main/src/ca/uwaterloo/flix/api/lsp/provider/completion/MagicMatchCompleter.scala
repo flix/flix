@@ -39,7 +39,7 @@ object MagicMatchCompleter {
   def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       sym <- getEnumSym(err.tpe)
-      ident <- extractIdentifier(err)
+      ident <- err.base.text
     } yield {
       val name = s"$ident.match"
       val range = sourceLocation2Range(err.loc)
@@ -66,13 +66,6 @@ object MagicMatchCompleter {
     })._1
   }
 
-  /**
-    * Extract the identifier by deleting the field from the end of the text.
-    */
-  private def extractIdentifier(err: TypeError.FieldNotFound): Option[String] = {
-    val fieldLength = err.fieldName.name.length + 1
-    err.loc.text.map(_.dropRight(fieldLength))
-  }
 
   /**
    * Converts a [[SourceLocation]] to an [[Range]].
