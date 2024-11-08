@@ -177,7 +177,7 @@ object HighlightProvider {
     * occurrence of a given token [[tok]].
     *
     * An occurrence of a token of type [[T]] is "considered" by invoking [[considerRead]] or [[considerWrite]] for resp.
-    * "write" and "read" occurrences. By a "write" occurrence, we mean an occurrence where the token is being
+    * "read" and "write" occurrences. By a "write" occurrence, we mean an occurrence where the token is being
     * defined or otherwise bound to something. By "read" we mean an occurrence where the token is merely read.
     * When we say "consider", we mean first checking if the occurrence is an occurrence of [[tok]] specifically.
     * If so, it's added to our list of either "read" or "write" occurrences, depending on the type.
@@ -188,20 +188,8 @@ object HighlightProvider {
     * @tparam T   the type of token that [[tok]] is.
     */
   private case class HighlightBuilder[T](tok: T) {
-    private var writes: List[SourceLocation] = Nil
     private var reads: List[SourceLocation] = Nil
-
-    /**
-      * If [[x]] is an occurrence of [[tok]], adds it to our list of "write" occurrences.
-      *
-      * @param x    the token we're considering.
-      * @param loc  the [[SourceLocation]] of the occurrence.
-      */
-    def considerWrite(x: T, loc: SourceLocation): Unit = {
-      if (x == tok) {
-        writes = loc :: writes
-      }
-    }
+    private var writes: List[SourceLocation] = Nil
 
     /**
       * If [[x]] is an occurrence of [[tok]], adds it to our list of "read" occurrences.
@@ -212,6 +200,18 @@ object HighlightProvider {
     def considerRead(x: T, loc: SourceLocation): Unit = {
       if (x == tok) {
         reads = loc :: reads
+      }
+    }
+
+    /**
+      * If [[x]] is an occurrence of [[tok]], adds it to our list of "write" occurrences.
+      *
+      * @param x    the token we're considering.
+      * @param loc  the [[SourceLocation]] of the occurrence.
+      */
+    def considerWrite(x: T, loc: SourceLocation): Unit = {
+      if (x == tok) {
+        writes = loc :: writes
       }
     }
 
