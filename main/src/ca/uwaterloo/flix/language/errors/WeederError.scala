@@ -1029,7 +1029,6 @@ object WeederError {
     }
   }
 
-
   /**
     * An error raised to indicate expression nesting beyond the threshold.
     *
