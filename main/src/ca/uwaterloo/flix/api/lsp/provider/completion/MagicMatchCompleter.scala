@@ -66,34 +66,41 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Generates the string representation of the cases of an enum.
+    * Creates a case string and its corresponding right-hand side string.
     */
 
-  private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
-    val maxCaseLength = cases.values.map(getCaseLength).max
-    cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
-      case ((acc, z), (sym, cas)) =>
-        val (lhs, rhs, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) =>
-            (s"$sym", s"$${${z + 1}:???}", z + 1)
-          case Some(TypeConstructor.Tuple(arity)) =>
-            val elements = List.range(1, arity + 1).map { elem =>
-              s"$${${elem + z}:_elem$elem}"
-            }.mkString(", ")
-            (s"$sym($elements)", s"$${${arity + z + 1}:???}", z + arity + 1)
-          case _ =>
-            (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2)
-        }
-        val paddedLhs = padLhs(lhs, maxCaseLength)
-        (acc + s"    case $paddedLhs => $rhs\n", k)
-    })._1
+  private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, String, Int) = {
+    cas.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) =>
+        (s"$sym", s"$${${z + 1}:???}", z + 1)
+      case Some(TypeConstructor.Tuple(arity)) =>
+        val elements = List.range(1, arity + 1).map(i => s"$${${i + z}:_elem$i}").mkString(", ")
+        (s"$sym($elements)", s"$${${arity + z + 1}:???}", z + arity + 1)
+      case _ =>
+        (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2)
+    }
   }
 
   /**
-   * Pads the left-hand side (lhs) of a case string to the specified maximum length,
-   * accounting for the extra padding required by invisible characters in the case string.
-   * For example, "${1:???}" will be displayed as "???", so the extra padding length is the length of "${1:}".
-   */
+    * Formats the cases of an enum into a string.
+    */
+
+  private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]) = {
+   val maxCaseLength = cases.values.map(getCaseLength).max
+   cases.toList
+     .sortBy(_._1.loc)
+     .foldLeft(("", 1)) { case ((acc, z), (sym, cas)) =>
+       val (lhs, rhs, nextZ) = createCase(sym, cas, z)
+       val paddedLhs = padLhs(lhs, maxCaseLength)
+       (acc + s"    case $paddedLhs => $rhs\n", nextZ)
+     }._1
+  }
+
+  /**
+    * Pads the left-hand side (lhs) of a case string to the specified maximum length,
+    * accounting for the extra padding required by invisible characters in the case string.
+    * For example, "${1:???}" will be displayed as "???", so the extra padding length is the length of "${1:}".
+    */
 
   private def padLhs(lhs: String, maxLength: Int): String = {
     val arity = lhs.count(_ == '$')
