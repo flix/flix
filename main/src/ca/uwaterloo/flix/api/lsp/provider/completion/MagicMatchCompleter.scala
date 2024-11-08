@@ -51,11 +51,11 @@ object MagicMatchCompleter {
   }
 
   /**
-   * Returns the length of the case String in the following form:
-   *  Unit: case Red => ???
-   *  Tuple: case Red(_elem1, _elem2) => ???
-   *  Normal: case Red(_elem) => ???
-   */
+    * Returns the length of the case String in the following form:
+    *  Unit: case Red => ???
+    *  Tuple: case Red(_elem1, _elem2) => ???
+    *  Normal: case Red(_elem) => ???
+    */
 
   private def getCaseLength(cas: TypedAst.Case): Int = {
     cas.tpe.typeConstructor match {
@@ -103,23 +103,23 @@ object MagicMatchCompleter {
   }
 
   /**
-   * Converts a [[SourceLocation]] to an [[Range]].
-   */
+    * Converts a [[SourceLocation]] to an [[Range]].
+    */
 
   private def sourceLocation2Range(loc: SourceLocation): Range = {
     Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
   }
 
   /**
-   * Converts a [[SourcePosition]] to a [[Position]].
-   */
+    * Converts a [[SourcePosition]] to a [[Position]].
+    */
 
   private def sourcePosition2Position(pos: SourcePosition): Position =
     Position(pos.line, pos.col)
 
   /**
-   * Returns the enum symbol of the given type, if it is an enum.
-   */
+    * Returns the enum symbol of the given type, if it is an enum.
+    */
 
   private def getEnumSym(tpe: Type): Option[Symbol.EnumSym] = tpe.typeConstructor match {
     case Some(TypeConstructor.Enum(sym, _)) => Some(sym)
