@@ -97,7 +97,9 @@ object HighlightProvider {
       case TypedAst.Case(sym, _, _, _) => highlightCaseSym(sym)
       case SymUse.CaseSymUse(sym, _) => highlightCaseSym(sym)
       // Records
-      case label: Name.Label => highlightLabel(label)
+      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => highlightLabel(label)
+      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => highlightLabel(label)
+      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => highlightLabel(label)
       // Signatures
       case TypedAst.Sig(sym, _, _, _) => highlightSigSym(sym)
       case SymUse.SigSymUse(sym, _) => highlightSigSym(sym)
