@@ -66,7 +66,6 @@ case class StackConsumer() extends Consumer {
   override def consumeHandlerRule(rule: HandlerRule): Unit = push(rule)
   override def consumeInstance(ins: Instance): Unit = push(ins)
   override def consumeJvmMethod(method: JvmMethod): Unit = push(method)
-  override def consumeLabel(label: Name.Label): Unit = push(label)
   override def consumeLocalDefSym(symUse: LocalDefSymUse): Unit = push(symUse)
   override def consumeMatchRule(rule: MatchRule): Unit = push(rule)
   override def consumeOp(op: Op): Unit = push(op)
