@@ -1030,7 +1030,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate expression nesting beyond the threshold.
+    * An error raised to indicate that an expression is nested too deeply.
     *
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location of the expression that is nested too deeply.
