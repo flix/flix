@@ -16,13 +16,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol.isPrimitiveEff
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -216,8 +217,46 @@ object EntryPoint {
   /**
     * Returns `true` iff `declaredEff` is not `Pure` and contains some non-primitive effect.
     */
-  private def isBadEntryPointEffect(declaredEff: Type) = {
-    declaredEff.effects.exists(sym => !Symbol.isPrimitiveEff(sym))
+  private def isBadEntryPointEffect(declaredEff: Type): Boolean = {
+    if (declaredEff.typeVars.nonEmpty) return true
+    // Now that we have the monomorphic effect, we can evaluate it.
+    eval(declaredEff) match {
+      case Some(CofiniteEffSet.Set(s)) =>
+        // Check that it is a set of only primitive effects.
+        s.exists(!isPrimitiveEff(_))
+      case Some(CofiniteEffSet.Compl(_)) =>
+        // A set like `not IO` can never be allowed
+        true
+      case None =>
+        // The effect has an Error, don't throw more errors
+        false
+    }
+  }
+
+  /** Returns the evaluated effect, or `None` if the effect contains `Error`. */
+  private def eval(eff: Type): Option[CofiniteEffSet] = eff match {
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Pure => Some(CofiniteEffSet.empty)
+      case TypeConstructor.Univ => Some(CofiniteEffSet.universe)
+      case TypeConstructor.Effect(sym) => Some(CofiniteEffSet.mkSet(sym))
+      case TypeConstructor.Error(_, _) => None
+      case _ => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    }
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
+      eval(x).map(CofiniteEffSet.complement)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+      eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+      eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+      eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
+    case Type.Alias(_, _, tpe, _) => eval(tpe)
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
   }
 
   /**
