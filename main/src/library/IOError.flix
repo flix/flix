@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// TODO: Replace IOError with IoError once File and Files are removed
-
 ///
 /// An error that can occur when performing I/O operations involving the file system.
 ///
