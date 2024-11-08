@@ -414,7 +414,7 @@ object Simplifier {
           case TypeConstructor.ArrayWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.RegionBackend =>
+          case TypeConstructor.RegionWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
@@ -503,7 +503,7 @@ object Simplifier {
 
           case TypeConstructor.RegionToStar =>
             // Remove the type argument.
-            Type.Cst(TypeConstructor.RegionBackend, loc)
+            Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
@@ -574,7 +574,7 @@ object Simplifier {
           case TypeConstructor.ArrayWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.RegionBackend =>
+          case TypeConstructor.RegionWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
 

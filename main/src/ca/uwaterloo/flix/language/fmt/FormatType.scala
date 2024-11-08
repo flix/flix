@@ -182,7 +182,7 @@ object FormatType {
       case SimpleType.Pure => true
       case SimpleType.Univ => true
       case SimpleType.Region => true
-      case SimpleType.RegionBackend => true
+      case SimpleType.RegionWithoutRegion => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -259,7 +259,7 @@ object FormatType {
       }
       case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
-      case SimpleType.RegionBackend => "RegionBackend"
+      case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"{ $labelString }"

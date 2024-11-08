@@ -461,14 +461,17 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents that a region value where the region has been erased.
+    * A type constructor that represents that a region type where the region argument has been
+    * removed.
+    *
+    * I.e., The normal `Region[r]` type is `RegionWithoutRegion` where `r` has been removed.
     *
     * Warning: This is not part of the frontend; it only exists post Simplification.
     */
   @IntroducedBy(Simplifier.getClass)
-  case object RegionBackend extends TypeConstructor {
+  case object RegionWithoutRegion extends TypeConstructor {
     /**
-      * The shape of a region is RegionBackend.
+      * The shape of a region is RegionWithoutRegion.
       */
     def kind: Kind = Kind.Star
   }

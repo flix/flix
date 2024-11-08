@@ -3450,7 +3450,7 @@ object Resolver {
         case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.ArrowWithoutEffect(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.ArrayWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.RegionBackend => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.RegionWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 
