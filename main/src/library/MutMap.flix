@@ -37,7 +37,7 @@ instance Indexable[MutMap[k, v, r]] with Order[k] {
 instance IndexableMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
 
-    pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put!(i, v, t)
+    pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put(i, v, t)
 }
 
 instance Iterable[MutMap[k, v, r]] {
@@ -220,7 +220,7 @@ mod MutMap {
     ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
-    pub def put!(k: k, v: v, m: MutMap[k, v, r]): Unit \ r with Order[k] =
+    pub def put(k: k, v: v, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.insert(k, v, Ref.get(mm)), mm)
 
@@ -229,7 +229,7 @@ mod MutMap {
     ///
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
     ///
-    pub def putWith!(f: (v, v) -> v \ ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
+    pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.insertWith(f, k, v, Ref.get(mm)), mm)
 
@@ -238,22 +238,22 @@ mod MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjust!(f: v -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
-        adjustWithKey!((_, v1) -> f(v1), k, m)
+    pub def adjust(f: v -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
+        adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates the mutable map `m` with `k -> f(k, v)` if `k -> v` is in `m`.
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjustWithKey!(f: (k, v) -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
+    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.adjustWithKey(f, k, Ref.get(mm)), mm)
 
     ///
     /// Removes all mappings from the mutable map `m`.
     ///
-    pub def clear!(m: MutMap[k, v, r]): Unit \ r =
+    pub def clear(m: MutMap[k, v, r]): Unit \ r =
         let MutMap(_, mm) = m;
         Ref.put(Map.empty(), mm)
 
@@ -262,7 +262,7 @@ mod MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut!(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
+    pub def getOrElsePut(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
         let MutMap(_, mm) = m;
         match Map.get(k, Ref.get(mm)) {
             case None    => Ref.put(Map.insert(k, d, Ref.get(mm)), mm); d
@@ -274,19 +274,19 @@ mod MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge!(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { r1, r2 } with Order[k] =
-        mergeWithKey!((_, v1, _) -> v1, m1, m2)
+    pub def merge(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { r1, r2 } with Order[k] =
+        mergeWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
-        mergeWithKey!(_ -> f, m1, m2)
+    pub def mergeWith(f: (v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
+        mergeWithKey(_ -> f, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
+    pub def mergeWithKey(f: (k, v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
         let MutMap(_, mm1) = m1;
         let MutMap(_, mm2) = m2;
         Ref.put(Map.unionWithKey(f, Ref.get(mm1), Ref.get(mm2)), mm2)
@@ -296,15 +296,15 @@ mod MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine!(f: v -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
-        refineWithKey!(_ -> f, m)
+    pub def refine(f: v -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
+        refineWithKey(_ -> f, m)
 
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `(k, v)` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def refineWithKey!(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
+    pub def refineWithKey(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.filterWithKey(f, Ref.get(mm)), mm)
 
@@ -313,21 +313,21 @@ mod MutMap {
     ///
     /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
     ///
-    pub def remove!(k: k, m: MutMap[k, v, r]): Unit \ r with Order[k] =
+    pub def remove(k: k, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.remove(k, Ref.get(mm)), mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transform!(f: v -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
+    pub def transform(f: v -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.map(f, Ref.get(mm)), mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transformWithKey!(f: (k, v) -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
+    pub def transformWithKey(f: (k, v) -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
         Ref.put(Map.mapWithKey(f, Ref.get(mm)), mm)
 

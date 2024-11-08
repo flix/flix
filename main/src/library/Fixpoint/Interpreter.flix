@@ -37,16 +37,16 @@ mod Fixpoint.Interpreter {
         match stmt {
             case RamStmt.Insert(relOp) => evalOp(rc, db, allocEnv(rc, 0, relOp), relOp)
             case RamStmt.Merge(srcSym, dstSym) =>
-                let dst = MutMap.getOrElsePut!(dstSym, MutMap.empty(rc), db);
+                let dst = MutMap.getOrElsePut(dstSym, MutMap.empty(rc), db);
                 match toDenotation(srcSym) {
                     case Denotation.Relational =>
-                        MutMap.merge!(MutMap.getWithDefault(srcSym, MutMap.empty(rc), db), dst)
+                        MutMap.merge(MutMap.getWithDefault(srcSym, MutMap.empty(rc), db), dst)
                     case Denotation.Latticenal(_, _, lub, _) =>
-                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, MutMap.empty(rc), db), dst)
+                        MutMap.mergeWith(lub, MutMap.getWithDefault(srcSym, MutMap.empty(rc), db), dst)
                 }
             case RamStmt.Assign(lhs, rhs) =>
-                MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.empty(rc), db), db)
-            case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
+                MutMap.put(lhs, MutMap.getWithDefault(rhs, MutMap.empty(rc), db), db)
+            case RamStmt.Purge(ramSym) => MutMap.remove(ramSym, db)
             case RamStmt.Seq(stmts) => Vector.forEach(evalStmt(rc, db), stmts)
             case RamStmt.Until(test, body) =>
                 if (evalBoolExp(rc, db, (Array#{} @ rc, Array#{} @ rc), test)) {
@@ -92,11 +92,11 @@ mod Fixpoint.Interpreter {
                     evalOp(rc1, db, env, body)
                 }
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(rc1), db);
+                let rel = MutMap.getOrElsePut(ramSym, MutMap.empty(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Vector.map(evalTerm(env), terms);
-                        MutMap.put!(tuple, Reflect.default(), rel)
+                        MutMap.put(tuple, Reflect.default(), rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
                         let len = Vector.length(terms);
@@ -107,7 +107,7 @@ mod Fixpoint.Interpreter {
                             case Some(k) => k
                         };
                         if (latVal `leq` bot) ()
-                        else MutMap.putWith!(lub, key, latVal, rel)
+                        else MutMap.putWith(lub, key, latVal, rel)
                 }
             case RelOp.If(test, then) =>
                 if (evalBoolExp(rc1, db, env, test)) {

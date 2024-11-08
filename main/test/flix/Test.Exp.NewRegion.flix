@@ -147,7 +147,7 @@ mod Test.Exp.NewRegion {
     def testEmptyMutMap1Region05(): Int32 =
         region rc {
             let m = MutMap.empty(rc);
-            MutMap.put!(1, 1, m);
+            MutMap.put(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
                 case _       => unreachable!()
@@ -170,7 +170,7 @@ mod Test.Exp.NewRegion {
     def testEmptyMutMap2RegionsFlat05(): Bool =
         let res1 = region rc {
             let m = MutMap.empty(rc);
-            MutMap.put!(1, 1, m);
+            MutMap.put(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
                 case _       => unreachable!()
@@ -178,7 +178,7 @@ mod Test.Exp.NewRegion {
         };
         let res2 = region rc {
             let m = MutMap.empty(rc);
-            MutMap.put!(1, 1, m);
+            MutMap.put(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
                 case _       => unreachable!()
@@ -191,7 +191,7 @@ mod Test.Exp.NewRegion {
         region rc {
             region _ {
                 let m = MutMap.empty(rc);
-                MutMap.put!(1, 1, m);
+                MutMap.put(1, 1, m);
                 match MutMap.get(1, m) {
                     case Some(1) => 1
                     case _       => unreachable!()
@@ -204,7 +204,7 @@ mod Test.Exp.NewRegion {
         region _ {
             region rc2 {
                 let m = MutMap.empty(rc2);
-                MutMap.put!(1, 1, m);
+                MutMap.put(1, 1, m);
                 match MutMap.get(1, m) {
                     case Some(1) => 1
                     case _       => unreachable!()
@@ -218,8 +218,8 @@ mod Test.Exp.NewRegion {
             region _ {
                 let m1 = MutMap.empty(rc);
                 let m2 = MutMap.empty(rc);
-                MutMap.put!(1, 1, m1);
-                MutMap.put!(2, 2, m2);
+                MutMap.put(1, 1, m1);
+                MutMap.put(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
@@ -233,8 +233,8 @@ mod Test.Exp.NewRegion {
             region rc2 {
                 let m1 = MutMap.empty(rc1);
                 let m2 = MutMap.empty(rc2);
-                MutMap.put!(1, 1, m1);
-                MutMap.put!(2, 2, m2);
+                MutMap.put(1, 1, m1);
+                MutMap.put(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
@@ -246,10 +246,10 @@ mod Test.Exp.NewRegion {
     def testEmpty2MutMaps2NestedRegions05(): Int32 =
         region rc1 {
             let m1 = MutMap.empty(rc1);
-            MutMap.put!(1, 1, m1);
+            MutMap.put(1, 1, m1);
             region rc2 {
                 let m2 = MutMap.empty(rc2);
-                MutMap.put!(2, 2, m2);
+                MutMap.put(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
@@ -262,9 +262,9 @@ mod Test.Exp.NewRegion {
         region rc1 {
             let m1 = MutMap.empty(rc1);
             region rc2 {
-                MutMap.put!(1, 1, m1);
+                MutMap.put(1, 1, m1);
                 let m2 = MutMap.empty(rc2);
-                MutMap.put!(2, 2, m2);
+                MutMap.put(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2
                     case _                  => unreachable!()
