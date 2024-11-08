@@ -127,7 +127,7 @@ object HighlightProvider {
   }
 
   private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(label)
+    val builder = new HighlightBuilder(label)
 
     object LabelConsumer extends Consumer {
       override def consumeExpr(exp: Expr): Unit = exp match {
@@ -144,7 +144,7 @@ object HighlightProvider {
   }
 
   private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
+    val builder = new HighlightBuilder(sym)
 
     object TypeVarSymConsumer extends Consumer {
       override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = builder.considerWrite(tparam.sym, tparam.sym.loc)
@@ -160,7 +160,7 @@ object HighlightProvider {
   }
 
   private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
+    val builder = new HighlightBuilder(sym)
 
     object AssocTypeSymConsumer extends Consumer {
       override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = builder.considerWrite(tsig.sym, tsig.sym.loc)
@@ -170,6 +170,165 @@ object HighlightProvider {
     Visitor.visitRoot(root, AssocTypeSymConsumer, acceptor)
 
     builder.build
+  }
+
+  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, CaseSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object DefnSymConsumer extends Consumer {
+      override def consumeDef(defn: TypedAst.Def): Unit = builder.considerWrite(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, DefnSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object EffectSymConsumer extends Consumer {
+      override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EffectSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object EnumSymConsumer extends Consumer {
+      override def consumeEnum(enm: TypedAst.Enum): Unit = builder.considerWrite(enm.sym, enm.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EnumSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object SigSymConsumer extends Consumer {
+      override def consumeSig(sig: TypedAst.Sig): Unit = builder.considerWrite(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, SigSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object StructFieldSymConsumer extends Consumer {
+      override def consumeStructField(field: TypedAst.StructField): Unit = builder.considerWrite(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object StructSymConsumer extends Consumer {
+      override def consumeStruct(struct: TypedAst.Struct): Unit = builder.considerWrite(struct.sym, struct.sym.loc)
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.StructNew(sym, _, _, _, _, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, StructSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object TypeAliasSymConsumer extends Consumer {
+      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeAliasSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
+    }
+
+    Visitor.visitRoot(root, TraitSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object VarSymConsumer extends Consumer {
+      override def consumeBinder(bnd: TypedAst.Binder): Unit = builder.considerWrite(bnd.sym, bnd.sym.loc)
+      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Var(sym, _, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, VarSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  /**
+    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
+    */
+  private def mkNotFound(uri: String, pos: Position): JObject = {
+    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
   }
 
   /**
@@ -187,7 +346,7 @@ object HighlightProvider {
     * @param tok  the token we're finding occurrences of.
     * @tparam T   the type of token that [[tok]] is.
     */
-  private case class HighlightBuilder[T](tok: T) {
+  private class HighlightBuilder[T](tok: T) {
     private var reads: List[SourceLocation] = Nil
     private var writes: List[SourceLocation] = Nil
 
@@ -230,163 +389,4 @@ object HighlightProvider {
       ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
     }
   }
-
-  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object CaseSymConsumer extends Consumer {
-      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
-    }
-
-    Visitor.visitRoot(root, CaseSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object DefnSymConsumer extends Consumer {
-      override def consumeDef(defn: TypedAst.Def): Unit = builder.considerWrite(defn.sym, defn.sym.loc)
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
-    }
-
-    Visitor.visitRoot(root, DefnSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object EffectSymConsumer extends Consumer {
-      override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, EffectSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object EnumSymConsumer extends Consumer {
-      override def consumeEnum(enm: TypedAst.Enum): Unit = builder.considerWrite(enm.sym, enm.sym.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, EnumSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object SigSymConsumer extends Consumer {
-      override def consumeSig(sig: TypedAst.Sig): Unit = builder.considerWrite(sig.sym, sig.sym.loc)
-      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-    }
-
-    Visitor.visitRoot(root, SigSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object StructFieldSymConsumer extends Consumer {
-      override def consumeStructField(field: TypedAst.StructField): Unit = builder.considerWrite(field.sym, field.sym.loc)
-      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-    }
-
-    Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object StructSymConsumer extends Consumer {
-      override def consumeStruct(struct: TypedAst.Struct): Unit = builder.considerWrite(struct.sym, struct.sym.loc)
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.StructNew(sym, _, _, _, _, loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, StructSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object TypeAliasSymConsumer extends Consumer {
-      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, TypeAliasSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
-      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
-    }
-
-    Visitor.visitRoot(root, TraitSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = HighlightBuilder(sym)
-
-    object VarSymConsumer extends Consumer {
-      override def consumeBinder(bnd: TypedAst.Binder): Unit = builder.considerWrite(bnd.sym, bnd.sym.loc)
-      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Var(sym, _, loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, VarSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }
