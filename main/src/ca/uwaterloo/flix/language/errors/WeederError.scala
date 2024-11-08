@@ -1033,7 +1033,7 @@ object WeederError {
     * An error raised to indicate expression nesting beyond the threshold.
     *
     * @param hint     Optional hint with more details about the error
-    * @param loc      The source location.
+    * @param loc      The source location of the expression that is nested too deeply.
     */
   case class TooNested(hint: Option[String] = None, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = {
