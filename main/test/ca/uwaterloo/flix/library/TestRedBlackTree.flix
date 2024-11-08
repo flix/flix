@@ -252,7 +252,7 @@ mod TestRedBlackTree {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 

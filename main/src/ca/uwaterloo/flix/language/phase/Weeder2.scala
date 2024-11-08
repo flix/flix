@@ -3000,27 +3000,33 @@ object Weeder2 {
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
-        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
+        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitTraitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+      def replaceIllegalTypesWithErrors(tpe: Type): (Type, List[SourceLocation]) = {
+        val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
+
+        def replace(tpe0: Type): Type = tpe0 match {
+          case Type.Var(ident, loc) => Type.Var(ident, loc)
+          case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
+          case t =>
+            errorLocations += t.loc
+            Type.Error(t.loc)
+        }
+
+        (replace(tpe), errorLocations.toList)
+      }
+
       expect(tree, TreeKind.Type.Constraint)
-      flatMapN(pickQName(tree), Types.pickType(tree)) {
+      mapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
-          if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
-          } else {
-            Validation.success(TraitConstraint(qname, tpe, tree.loc))
-          }
+          val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
+          errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
+          TraitConstraint(qname, tpe1, tree.loc)
       }
-    }
-
-    private def isAllVariables(tpe: Type): Boolean = tpe match {
-      case _: Type.Var => true
-      case Type.Apply(t1, ts, _) => isAllVariables(t1) && isAllVariables(ts)
-      case _ => false
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
@@ -3067,14 +3073,25 @@ object Weeder2 {
   }
 
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
-    mapN(pick(TreeKind.Ident, tree))(tokenToIdent)
+    tryPick(TreeKind.Ident, tree) match {
+      case None =>
+        // The tree is missing a child of kind `TreeKind.Ident`.
+        // We should return something like Name.IdentWithError, but we lack such a thing.
+        // Instead, we construct a bogus Name.Ident-- which is not great, but should not crash the compiler.
+        // Note 1: We do not have to add a compiler error because the Parser should already have emitted one.
+        // Note 2: We use the empty string instead of some random string because it matches the idea
+        // of the user having not yet typed anything. This also works correctly with auto-complete.
+        val ident = Name.Ident("", tree.loc)
+        Validation.success(ident)
+      case Some(t) => Validation.success(tokenToIdent(t))
+    }
   }
 
   private def tryPickNameIdent(tree: Tree)(implicit sctx: SharedContext): Option[Name.Ident] = {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
     val idents = pickQNameIdents(tree)
     mapN(idents) {
       idents => Name.JavaName(idents, tree.loc)
@@ -3207,9 +3224,7 @@ object Weeder2 {
   private def pick(kind: TreeKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
-      case None =>
-        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
-        Validation.HardFailure(Chain(error))
+      case None => throw InternalCompilerException(s"Missing '$kind' in tree. Bug in parser!?", tree.loc)
     }
   }
 

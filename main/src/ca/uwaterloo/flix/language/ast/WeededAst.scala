@@ -324,7 +324,9 @@ object WeededAst {
 
   }
 
-  sealed trait Type
+  sealed trait Type {
+    def loc: SourceLocation
+  }
 
   object Type {
 

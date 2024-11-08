@@ -12,7 +12,7 @@ mod RewindExample {
         let checkpoints = MutMap.empty(rc);
         try search(10) with Rewind {
             def save(label, k) = {
-                MutMap.put!(label, k, checkpoints);
+                MutMap.put(label, k, checkpoints);
                 k()
             }
             def rewind(label, _k) = match MutMap.get(label, checkpoints) {

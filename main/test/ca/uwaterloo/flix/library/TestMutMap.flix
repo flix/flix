@@ -29,18 +29,18 @@ mod TestMutMap {
     @test
     def toString02(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, 101, m);
+        MutMap.put(1, 101, m);
         MutMap.toString(m) == "MutMap#{1 => 101}"
     }
 
     @test
     def toString03(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
-        MutMap.put!(3, 103, m);
-        MutMap.put!(4, 104, m);
-        MutMap.put!(5, 105, m);
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
+        MutMap.put(3, 103, m);
+        MutMap.put(4, 104, m);
+        MutMap.put(5, 105, m);
         MutMap.toString(m) == "MutMap#{1 => 101, 2 => 102, 3 => 103, 4 => 104, 5 => 105}"
     }
 
@@ -58,10 +58,10 @@ mod TestMutMap {
     @test
     def sameElements02(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
         MutMap.sameElements(m, m2)
     }
@@ -69,11 +69,11 @@ mod TestMutMap {
     @test
     def sameElements03(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
-        MutMap.put!(1, "b", m);
+        MutMap.put(1, "a", m);
+        MutMap.put(1, "b", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
         not MutMap.sameElements(m, m2)
     }
@@ -81,11 +81,11 @@ mod TestMutMap {
     @test
     def sameElements04(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
-        MutMap.put!(2, "b", m);
+        MutMap.put(1, "a", m);
+        MutMap.put(2, "b", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
         not MutMap.sameElements(m, m2)
     }
@@ -93,11 +93,11 @@ mod TestMutMap {
     @test
     def sameElements05(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
+        MutMap.put(1, "a", m2);
+        MutMap.put(2, "b", m2);
 
         not MutMap.sameElements(m, m2)
     }
@@ -105,14 +105,14 @@ mod TestMutMap {
     @test
     def sameElements06(): Bool = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(2, "b", m);
-        MutMap.put!(3, "c", m);
-        MutMap.put!(1, "a", m);
+        MutMap.put(2, "b", m);
+        MutMap.put(3, "c", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
-        MutMap.put!(3, "c", m2);
+        MutMap.put(1, "a", m2);
+        MutMap.put(2, "b", m2);
+        MutMap.put(3, "c", m2);
 
         MutMap.sameElements(m, m2)
     }
@@ -125,7 +125,7 @@ mod TestMutMap {
     def merge01(): Bool = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
-        MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
+        MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
         MutMap.isEmpty(m2)
     }
 
@@ -133,9 +133,9 @@ mod TestMutMap {
     def merge02(): Bool = region rc {
         let m1 = MutMap.empty(rc);
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, 0, m1);
-        MutMap.put!(2, 0, m2);
-        MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
+        MutMap.put(1, 0, m1);
+        MutMap.put(2, 0, m2);
+        MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
     }
 
@@ -518,7 +518,7 @@ mod TestMutMap {
     def forEach02(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutMap.put!(0, 100, m);
+        MutMap.put(0, 100, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
         100 == Ref.get(ri)
     }
@@ -527,9 +527,9 @@ mod TestMutMap {
     def forEach03(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutMap.put!(0, 100, m);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
+        MutMap.put(0, 100, m);
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
         104 == Ref.get(ri)
     }
@@ -550,7 +550,7 @@ mod TestMutMap {
     def forEachWithIndex02(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutMap.put!(0, 100, m);
+        MutMap.put(0, 100, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
         0 == Ref.get(ri)
     }
@@ -559,9 +559,9 @@ mod TestMutMap {
     def forEachWithIndex03(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
-        MutMap.put!(0, 100, m);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
+        MutMap.put(0, 100, m);
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
         2 == Ref.get(ri)
     }

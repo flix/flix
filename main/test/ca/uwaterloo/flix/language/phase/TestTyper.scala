@@ -1584,6 +1584,80 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TypeError.ConstructorBoxing.01") {
+    val input =
+      """
+        |import java.util.{AbstractMap$SimpleEntry => SimpleEntry}
+        |
+        |def f(): Int32 \ IO = new SimpleEntry(12, true).hashCode()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.ConstructorUnboxing.01") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Bool \ IO =
+        |    let boxed = new Boolean(true);
+        |    new Boolean(boxed).booleanValue()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodBoxing.01") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Int32 \ IO =
+        |    let boxed = new Boolean(true);
+        |    boxed.compareTo(false)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodBoxing.02") {
+    val input =
+      """
+        |import java.util.Objects
+        |
+        |def f(): Bool \ IO = Objects.isNull(true)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodUnboxing.01") {
+    val input =
+      """
+        |import java.lang.Integer
+        |
+        |def f(): Char \ IO =
+        |    let boxed = new Integer(0);
+        |    "s".charAt(boxed)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodUnboxing.02") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Int32 \ IO =
+        |    let boxed = new Boolean(true);
+        |    Boolean.compare(true, boxed)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("Subeffecting.Def.01") {
     val input =
       """

@@ -20,8 +20,8 @@ mod Reachable.Imperative {
             // collect edge lists
             let edgeMap = MutMap.empty(rc);
             foreach((start, end) <- edges) {
-                let startEdges = MutMap.getOrElsePut!(start, MutList.empty(rc), edgeMap);
-                MutList.push!(end, startEdges)
+                let startEdges = MutMap.getOrElsePut(start, MutList.empty(rc), edgeMap);
+                MutList.push(end, startEdges)
             };
             // define the reachable set
             let reachable = MutSet.empty(rc);

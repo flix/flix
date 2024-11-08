@@ -134,7 +134,7 @@ mod Iterator {
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
         let m = MutList.empty(rc1);
-        forEach(a -> MutList.push!(a, m), iter);
+        forEach(a -> MutList.push(a, m), iter);
         MutList.toArray(rc, m)
     }
 
@@ -145,7 +145,7 @@ mod Iterator {
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
         let m = MutList.empty(rc);
-        forEach(a -> MutList.push!(a, m), iter);
+        forEach(a -> MutList.push(a, m), iter);
         MutList.toVector(m)
     }
 

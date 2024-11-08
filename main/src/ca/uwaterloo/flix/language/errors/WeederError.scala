@@ -573,7 +573,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Illegal type constraint parameter."
 
     def message(formatter: Formatter): String = {
