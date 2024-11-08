@@ -475,17 +475,17 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
+  def mkMessages(errors: List[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse(""))
     else
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
   }
 
   /**
     * Compiles the Flix program and returns a typed ast.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = try {
+  def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
     import Validation.Implicit.AsMonad
 
     // Mark this object as implicit.
@@ -558,7 +558,11 @@ class Flix {
     }
 
     // Return the result (which could contain soft failures).
-    result
+    val errors = result.errors.toList
+    result match {
+      case Validation.HardFailure(_) => (None, errors)
+      case _ => (Some(result.unsafeGet), errors)
+    }
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -612,8 +616,12 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val result = check().toHardFailure
-    Validation.flatMapN(result)(codeGen)
+    val (result, errors) = check()
+    if (errors.isEmpty) {
+      codeGen(result.get)
+    } else {
+      Validation.HardFailure(Chain.from(errors))
+    }
   }
 
   /**
