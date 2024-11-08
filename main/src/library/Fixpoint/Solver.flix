@@ -498,8 +498,8 @@ mod Fixpoint.Solver {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(rc), db);
-                MutMap.put!(List.toVector(vs), Reflect.default(), rel)
+                let rel = MutMap.getOrElsePut(ramSym, MutMap.empty(rc), db);
+                MutMap.put(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }
