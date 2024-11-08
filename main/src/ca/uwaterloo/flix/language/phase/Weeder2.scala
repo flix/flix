@@ -1265,12 +1265,24 @@ object Weeder2 {
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
-              mapN(pickQName(exprs(1))) {
-                case qname if qname.isUnqualified => Expr.InstanceOf(e1, qname.ident, tree.loc)
-                case _ =>
-                  val error = IllegalQualifiedName(exprs(1).loc)
+              tryPickQName(exprs(1)) match {
+                case Some(qname) =>
+                  if (qname.isUnqualified) Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                  else {
+                    val error = IllegalQualifiedName(exprs(1).loc)
+                    sctx.errors.add(error)
+                    Validation.success(Expr.Error(error))
+                  }
+                case None =>
+                  val error = UnexpectedToken(
+                    NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
+                    None,
+                    SyntacticContext.Expr.OtherExpr,
+                    hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
+                    loc = exprs(1).loc
+                  )
                   sctx.errors.add(error)
-                  Expr.Error(error)
+                  Validation.success(Expr.Error(error))
               }
             // UNRECOGNIZED
             case id =>
@@ -2988,27 +3000,33 @@ object Weeder2 {
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
-        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
+        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitTraitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+      def replaceIllegalTypesWithErrors(tpe: Type): (Type, List[SourceLocation]) = {
+        val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
+
+        def replace(tpe0: Type): Type = tpe0 match {
+          case Type.Var(ident, loc) => Type.Var(ident, loc)
+          case Type.Apply(t1, t2, loc) => Type.Apply(replace(t1), replace(t2), loc)
+          case t =>
+            errorLocations += t.loc
+            Type.Error(t.loc)
+        }
+
+        (replace(tpe), errorLocations.toList)
+      }
+
       expect(tree, TreeKind.Type.Constraint)
-      flatMapN(pickQName(tree), Types.pickType(tree)) {
+      mapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
-          if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
-          } else {
-            Validation.success(TraitConstraint(qname, tpe, tree.loc))
-          }
+          val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
+          errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
+          TraitConstraint(qname, tpe1, tree.loc)
       }
-    }
-
-    private def isAllVariables(tpe: Type): Boolean = tpe match {
-      case _: Type.Var => true
-      case Type.Apply(t1, ts, _) => isAllVariables(t1) && isAllVariables(ts)
-      case _ => false
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
@@ -3036,6 +3054,10 @@ object Weeder2 {
 
   private def pickQName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.QName, CompilationMessage] = {
     mapN(pick(TreeKind.QName, tree))(visitQName)
+  }
+
+  private def tryPickQName(tree: Tree)(implicit sctx: SharedContext): Option[Name.QName] = {
+    tryPick(TreeKind.QName, tree).map(visitQName)
   }
 
   private def visitQName(tree: Tree)(implicit sctx: SharedContext): Name.QName = {

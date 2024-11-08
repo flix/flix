@@ -166,7 +166,7 @@ mod Vector {
     }
 
     ///
-    /// Version of `Array.updateSequence!` where sub is a vector rather than an array,
+    /// Version of `Array.updateSequence` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
     def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
@@ -988,7 +988,7 @@ mod Vector {
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         let m = MutList.empty(rc);
-        forEach(a -> if (f(a)) MutList.push!(a, m) else (), v);
+        forEach(a -> if (f(a)) MutList.push(a, m) else (), v);
         MutList.toVector(m)
     }
 
@@ -1364,7 +1364,7 @@ mod Vector {
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
         let l = MutList.empty(rc);
-        forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
+        forEachWithIndex((i, x) -> if (f(x)) MutList.push(i, l) else (), v);
         MutList.toVector(l)
     }
 
@@ -1507,7 +1507,7 @@ mod Vector {
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
         let arr = toArray(rc, v);
-        Array.sortWith!(cmp, arr);
+        Array.sortWith(cmp, arr);
         Array.toVector(arr)
     }
 

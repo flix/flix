@@ -53,7 +53,7 @@ object CompletionProvider {
         // We were able to compute the completion context. Compute suggestions.
         val sctx = getSyntacticContext(uri, pos, currentErrors)
         val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, index, root)
-        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(flix, index, root)
+        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(root)
         val completions = syntacticCompletions ++ semanticCompletions
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
         ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
@@ -66,7 +66,8 @@ object CompletionProvider {
       // Expressions.
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name)
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) =>
+        MagicMatchCompleter.getCompletions(name.name, tpe, ctx) ++ InvokeMethodCompleter.getCompletions(tpe, name)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
@@ -121,7 +122,7 @@ object CompletionProvider {
     }
   }
 
-  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
     errorsAt(ctx.uri, ctx.pos, errors).flatMap({
 
       //

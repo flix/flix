@@ -346,7 +346,7 @@ object SimpleType {
       case Type.UnresolvedJvmType(member, _) => member match {
         case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
         case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
+        case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
         case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {

@@ -54,7 +54,7 @@ object BoolUnification {
   /**
     * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
-  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Result[Substitution, UnificationError] = {
     implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
 
     //

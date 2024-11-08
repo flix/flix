@@ -1015,34 +1015,34 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // transform!                                                              //
+    // transform                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def transform01!(): Bool = region rc {
+    def transform01(): Bool = region rc {
         let a: Array[Int32, _] = Array#{} @ rc;
-        Array.transform!(x -> x+1, a);
+        Array.transform(x -> x+1, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
-    def transform02!(): Bool = region rc {
+    def transform02(): Bool = region rc {
         let a = Array#{0} @ rc;
-        Array.transform!(x -> x+1, a);
+        Array.transform(x -> x+1, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
-    def transform03!(): Bool = region rc {
+    def transform03(): Bool = region rc {
         let a = Array#{0,1} @ rc;
-        Array.transform!(x -> x+1, a);
+        Array.transform(x -> x+1, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
-    def transform04!(): Bool = region rc {
+    def transform04(): Bool = region rc {
         let a = Array#{0,1,2} @ rc;
-        Array.transform!(x -> x+1, a);
+        Array.transform(x -> x+1, a);
         Array.sameElements(a, Array#{1,2,3} @ rc)
     }
 
@@ -1093,55 +1093,55 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // transformWithIndex!                                                     //
+    // transformWithIndex                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def transformWithIndex01!(): Bool = region rc {
+    def transformWithIndex01(): Bool = region rc {
         let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
-    def transformWithIndex02!(): Bool = region rc {
+    def transformWithIndex02(): Bool = region rc {
         let a = Array#{1} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{11} @ rc)
     }
 
     @test
-    def transformWithIndex03!(): Bool = region rc {
+    def transformWithIndex03(): Bool = region rc {
         let a = Array#{3} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{13} @ rc)
     }
 
     @test
-    def transformWithIndex04!(): Bool = region rc {
+    def transformWithIndex04(): Bool = region rc {
         let a = Array#{1,2} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{11,2} @ rc)
     }
 
     @test
-    def transformWithIndex05!(): Bool = region rc {
+    def transformWithIndex05(): Bool = region rc {
         let a = Array#{1,8} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{11,8} @ rc)
     }
 
     @test
-    def transformWithIndex06!(): Bool = region rc {
+    def transformWithIndex06(): Bool = region rc {
         let a = Array#{8,1} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{18,1} @ rc)
     }
 
     @test
-    def transformWithIndex07!(): Bool = region rc {
+    def transformWithIndex07(): Bool = region rc {
         let a = Array#{7,8,9} @ rc;
-        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, Array#{17,8,9} @ rc)
     }
 
@@ -1193,83 +1193,43 @@ mod TestArray {
 
     @test
     def reverse01(): Bool = region rc {
-        let a = Array.reverse(rc, ((Array#{} @ rc): Array[Int32, _]));
+        let a: Array[Int32, _] = Array#{} @ rc;
+        Array.reverse(a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def reverse02(): Bool = region rc {
-        let a = Array.reverse(rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.reverse(a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def reverse03(): Bool = region rc {
-        let a = Array.reverse(rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.reverse(a);
         Array.sameElements(a, Array#{2,1} @ rc)
     }
 
     @test
     def reverse04(): Bool = region rc {
-        let a = Array.reverse(rc, Array#{1,1} @ rc);
+        let a = Array#{1,1} @ rc;
+        Array.reverse(a);
         Array.sameElements(a, Array#{1,1} @ rc)
     }
 
     @test
     def reverse05(): Bool = region rc {
-        let a = Array.reverse(rc, Array#{1,2,3} @ rc);
+        let a = Array#{1,2,3} @ rc;
+        Array.reverse(a);
         Array.sameElements(a, Array#{3,2,1} @ rc)
     }
 
     @test
     def reverse06(): Bool = region rc {
-        let a = Array.reverse(rc, Array#{1,2,3,4} @ rc);
-        Array.sameElements(a, Array#{4,3,2,1} @ rc)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // reverse!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def reverse01!(): Bool = region rc {
-        let a: Array[Int32, _] = Array#{} @ rc;
-        Array.reverse!(a);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def reverse02!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.reverse!(a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def reverse03!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.reverse!(a);
-        Array.sameElements(a, Array#{2,1} @ rc)
-    }
-
-    @test
-    def reverse04!(): Bool = region rc {
-        let a = Array#{1,1} @ rc;
-        Array.reverse!(a);
-        Array.sameElements(a, Array#{1,1} @ rc)
-    }
-
-    @test
-    def reverse05!(): Bool = region rc {
-        let a = Array#{1,2,3} @ rc;
-        Array.reverse!(a);
-        Array.sameElements(a, Array#{3,2,1} @ rc)
-    }
-
-    @test
-    def reverse06!(): Bool = region rc {
         let a = Array#{1,2,3,4} @ rc;
-        Array.reverse!(a);
+        Array.reverse(a);
         Array.sameElements(a, Array#{4,3,2,1} @ rc)
     }
 
@@ -1465,109 +1425,57 @@ mod TestArray {
 
     @test
     def replace01(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{} @ rc);
+        let a: Array[Int32, _] = Array#{} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def replace02(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def replace03(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{3} @ rc);
+        let a = Array#{3} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace04(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{4} @ rc);
+        let a = Array#{4} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace05(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{1, 2} @ rc);
+        let a = Array#{1, 2} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def replace06(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{1,3} @ rc);
+        let a = Array#{1,3} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1,4} @ rc)
     }
 
     @test
     def replace07(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{3,4} @ rc);
+        let a = Array#{3,4} @ rc;
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 
     @test
     def replace08(): Bool = region rc {
-        let a = Array.replace(rc, src = 3, dst =  4, Array#{3,3} @ rc);
-        Array.sameElements(a, Array#{4,4} @ rc)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // replace!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def replace01!(): Bool = region rc {
-        let a: Array[Int32, _] = Array#{} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def replace02!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def replace03!(): Bool = region rc {
-        let a = Array#{3} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{4} @ rc)
-    }
-
-    @test
-    def replace04!(): Bool = region rc {
-        let a = Array#{4} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{4} @ rc)
-    }
-
-    @test
-    def replace05!(): Bool = region rc {
-        let a = Array#{1, 2} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def replace06!(): Bool = region rc {
-        let a = Array#{1,3} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{1,4} @ rc)
-    }
-
-    @test
-    def replace07!(): Bool = region rc {
-        let a = Array#{3,4} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
-        Array.sameElements(a, Array#{4,4} @ rc)
-    }
-
-    @test
-    def replace08!(): Bool = region rc {
         let a = Array#{3,3} @ rc;
-        Array.replace!(src = 3, dst =  4, a);
+        Array.replace(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 
@@ -1577,369 +1485,197 @@ mod TestArray {
 
     @test
     def patch01(): Bool = region rc {
-        let a = Array.patch(rc, 0, 0, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.patch(0, 0, ((Array#{} @ rc): Array[Int32, _]), a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def patch02(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{1,2} @ rc, Array#{} @ rc);
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.patch(0, 2, Array#{1,2} @ rc, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def patch03(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(0, 2, Array#{} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def patch04(): Bool = region rc {
-        let a = Array.patch(rc, -3, 3, Array#{1,2,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(-3, 3, Array#{1,2,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def patch05(): Bool = region rc {
-        let a = Array.patch(rc, 2, 3, Array#{1,2,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(2, 3, Array#{1,2,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def patch06(): Bool = region rc {
-        let a = Array.patch(rc, 0, 0, Array#{} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.patch(0, 0, Array#{} @ rc, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def patch07(): Bool = region rc {
-        let a = Array.patch(rc, 1, 0, Array#{2} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.patch(1, 0, Array#{2} @ rc, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def patch08(): Bool = region rc {
-        let a = Array.patch(rc, 0, 1, Array#{2} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.patch(0, 1, Array#{2} @ rc, a);
         Array.sameElements(a, Array#{2} @ rc)
     }
 
     @test
     def patch09(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{2,4} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.patch(0, 2, Array#{2,4} @ rc, a);
         Array.sameElements(a, Array#{2} @ rc)
     }
 
     @test
     def patch10(): Bool = region rc {
-        let a = Array.patch(rc, -1, 2, Array#{2,4} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.patch(-1, 2, Array#{2,4} @ rc, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def patch11(): Bool = region rc {
-        let a = Array.patch(rc, -1, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(-1, 2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{4,2} @ rc)
     }
 
     @test
     def patch12(): Bool = region rc {
-        let a = Array.patch(rc, 1, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(1, 2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,3} @ rc)
     }
 
     @test
     def patch13(): Bool = region rc {
-        let a = Array.patch(rc, -2, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(-2, 2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def patch14(): Bool = region rc {
-        let a = Array.patch(rc, 2, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(2, 2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def patch15(): Bool = region rc {
-        let a = Array.patch(rc, 1, 1, Array#{3} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(1, 1, Array#{3} @ rc, a);
         Array.sameElements(a, Array#{1,3} @ rc)
     }
 
     @test
     def patch16(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.patch(0, 2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{3,4} @ rc)
     }
 
     @test
     def patch17(): Bool = region rc {
-        let a = Array.patch(rc, 0, 1, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 1, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{4, 2, 3} @ rc)
     }
 
     @test
     def patch18(): Bool = region rc {
-        let a = Array.patch(rc, 1, 1, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(1, 1, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{1, 4, 3} @ rc)
     }
 
     @test
     def patch19(): Bool = region rc {
-        let a = Array.patch(rc, 2, 1, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(2, 1, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 4} @ rc)
     }
 
     @test
     def patch20(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{4, 5} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 2, Array#{4, 5} @ rc, a);
         Array.sameElements(a, Array#{4, 5, 3} @ rc)
     }
 
     @test
     def patch21(): Bool = region rc {
-        let a = Array.patch(rc, 1, 2, Array#{4, 5} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(1, 2, Array#{4, 5} @ rc, a);
         Array.sameElements(a, Array#{1, 4, 5} @ rc)
     }
 
     @test
     def patch22(): Bool = region rc {
-        let a = Array.patch(rc, 0, 2, Array#{4, 5, 6} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 2, Array#{4, 5, 6} @ rc, a);
         Array.sameElements(a, Array#{4, 5, 3} @ rc)
     }
 
     @test
     def patch23(): Bool = region rc {
-        let a = Array.patch(rc, 0, 3, Array#{4, 5, 6} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 3, Array#{4, 5, 6} @ rc, a);
         Array.sameElements(a, Array#{4, 5, 6} @ rc)
     }
 
     @test
     def patch24(): Bool = region rc {
-        let a = Array.patch(rc, 2, 4, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(2, 4, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc)
     }
 
     @test
     def patch25(): Bool = region rc {
-        let a = Array.patch(rc, -2, 4, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(-2, 4, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc)
     }
 
     @test
     def patch26(): Bool = region rc {
-        let a = Array.patch(rc, 4, 5, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(4, 5, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc)
     }
 
     @test
     def patch27(): Bool = region rc {
-        let a = Array.patch(rc, 4, 2, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(4, 2, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc)
     }
 
     @test
     def patch28(): Bool = region rc {
-        let a = Array.patch(rc, -1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
-        Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // patch!                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def patch01!(): Bool = region rc {
-        let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.patch!(0, 0, ((Array#{} @ rc): Array[Int32, _]), a);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def patch02!(): Bool = region rc {
-        let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.patch!(0, 2, Array#{1,2} @ rc, a);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def patch03!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(0, 2, Array#{} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def patch04!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(-3, 3, Array#{1,2,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def patch05!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(2, 3, Array#{1,2,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def patch06!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.patch!(0, 0, Array#{} @ rc, a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def patch07!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.patch!(1, 0, Array#{2} @ rc, a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def patch08!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.patch!(0, 1, Array#{2} @ rc, a);
-        Array.sameElements(a, Array#{2} @ rc)
-    }
-
-    @test
-    def patch09!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.patch!(0, 2, Array#{2,4} @ rc, a);
-        Array.sameElements(a, Array#{2} @ rc)
-    }
-
-    @test
-    def patch10!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.patch!(-1, 2, Array#{2,4} @ rc, a);
-        Array.sameElements(a, Array#{4} @ rc)
-    }
-
-    @test
-    def patch11!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(-1, 2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{4,2} @ rc)
-    }
-
-    @test
-    def patch12!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(1, 2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,3} @ rc)
-    }
-
-    @test
-    def patch13!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(-2, 2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def patch14!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(2, 2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def patch15!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(1, 1, Array#{3} @ rc, a);
-        Array.sameElements(a, Array#{1,3} @ rc)
-    }
-
-    @test
-    def patch16!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.patch!(0, 2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{3,4} @ rc)
-    }
-
-    @test
-    def patch17!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(0, 1, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{4, 2, 3} @ rc)
-    }
-
-    @test
-    def patch18!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(1, 1, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{1, 4, 3} @ rc)
-    }
-
-    @test
-    def patch19!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(2, 1, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 4} @ rc)
-    }
-
-    @test
-    def patch20!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(0, 2, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 3} @ rc)
-    }
-
-    @test
-    def patch21!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(1, 2, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{1, 4, 5} @ rc)
-    }
-
-    @test
-    def patch22!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(0, 2, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 3} @ rc)
-    }
-
-    @test
-    def patch23!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.patch!(0, 3, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 6} @ rc)
-    }
-
-    @test
-    def patch24!(): Bool = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.patch!(2, 4, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc)
-    }
-
-    @test
-    def patch25!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.patch!(-2, 4, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc)
-    }
-
-    @test
-    def patch26!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.patch!(4, 5, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc)
-    }
-
-    @test
-    def patch27!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.patch!(4, 2, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc)
-    }
-
-    @test
-    def patch28!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.patch!(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
+        Array.patch(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
         Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc)
     }
 
@@ -4669,372 +4405,199 @@ mod TestArray {
 
     @test
     def updateSequence01(): Bool = region rc {
-         let a = Array.updateSequence(rc, 0, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+         let a = ((Array#{} @ rc): Array[Int32, _]);
+         Array.updateSequence(0, ((Array#{} @ rc): Array[Int32, _]), a);
          Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
      }
 
     @test
     def updateSequence02(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{1,2} @ rc, Array#{} @ rc);
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.updateSequence(0, Array#{1,2} @ rc, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def updateSequence03(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(0, Array#{} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def updateSequence04(): Bool = region rc {
-        let a = Array.updateSequence(rc, -3, Array#{1,2,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-3, Array#{1,2,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def updateSequence05(): Bool = region rc {
-        let a = Array.updateSequence(rc, 2, Array#{1,2,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(2, Array#{1,2,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def updateSequence06(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{} @ rc, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def updateSequence07(): Bool = region rc {
-        let a = Array.updateSequence(rc, 1, Array#{2} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.updateSequence(1, Array#{2} @ rc, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def updateSequence08(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{2} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{2} @ rc, a);
         Array.sameElements(a, Array#{2} @ rc)
     }
 
     @test
     def updateSequence09(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{2,4} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{2,4} @ rc, a);
         Array.sameElements(a, Array#{2} @ rc)
     }
 
     @test
     def updateSequence10(): Bool = region rc {
-        let a = Array.updateSequence(rc, -1, Array#{2,4} @ rc, Array#{1} @ rc);
+        let a = Array#{1} @ rc;
+        Array.updateSequence(-1, Array#{2,4} @ rc, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def updateSequence11(): Bool = region rc {
-        let a = Array.updateSequence(rc, -1, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-1, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{4,2} @ rc)
     }
 
     @test
     def updateSequence12(): Bool = region rc {
-        let a = Array.updateSequence(rc, 1, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(1, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,3} @ rc)
     }
 
     @test
     def updateSequence13(): Bool = region rc {
-        let a = Array.updateSequence(rc, -2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def updateSequence14(): Bool = region rc {
-        let a = Array.updateSequence(rc, 2, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(2, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def updateSequence15(): Bool = region rc {
-        let a = Array.updateSequence(rc, 1, Array#{3} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(1, Array#{3} @ rc, a);
         Array.sameElements(a, Array#{1,3} @ rc)
     }
 
     @test
     def updateSequence16(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{3,4} @ rc, Array#{1,2} @ rc);
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(0, Array#{3,4} @ rc, a);
         Array.sameElements(a, Array#{3,4} @ rc)
     }
 
     @test
     def updateSequence17(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{4, 2, 3} @ rc)
     }
 
     @test
     def updateSequence18(): Bool = region rc {
-        let a = Array.updateSequence(rc, 1, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(1, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{1, 4, 3} @ rc)
     }
 
     @test
     def updateSequence19(): Bool = region rc {
-        let a = Array.updateSequence(rc, 2, Array#{4} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(2, Array#{4} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 4} @ rc)
     }
 
     @test
     def updateSequence20(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{4, 5} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4, 5} @ rc, a);
         Array.sameElements(a, Array#{4, 5, 3} @ rc)
     }
 
     @test
     def updateSequence21(): Bool = region rc {
-        let a = Array.updateSequence(rc, 1, Array#{4, 5} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(1, Array#{4, 5} @ rc, a);
         Array.sameElements(a, Array#{1, 4, 5} @ rc)
     }
 
     @test
     def updateSequence22(): Bool = region rc {
-        let a = Array.updateSequence(rc, -1, Array#{4, 5, 6} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(-1, Array#{4, 5, 6} @ rc, a);
         Array.sameElements(a, Array#{5, 6, 3} @ rc)
     }
 
     @test
     def updateSequence23(): Bool = region rc {
-        let a = Array.updateSequence(rc, 0, Array#{4, 5, 6} @ rc, Array#{1, 2, 3} @ rc);
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4, 5, 6} @ rc, a);
         Array.sameElements(a, Array#{4, 5, 6} @ rc)
     }
 
     @test
     def updateSequence24(): Bool = region rc {
-        let a = Array.updateSequence(rc, 2, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(2, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc)
     }
 
     @test
     def updateSequence25(): Bool = region rc {
-        let a = Array.updateSequence(rc, -2, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(-2, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc)
     }
 
     @test
     def updateSequence26(): Bool = region rc {
-        let a = Array.updateSequence(rc, 4, Array#{14, 15, 16, 17} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(4, Array#{14, 15, 16, 17} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc)
     }
 
     @test
     def updateSequence27(): Bool = region rc {
-        let a = Array.updateSequence(rc, 4, Array#{14, 15} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(4, Array#{14, 15} @ rc, a);
         Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc)
     }
 
     @test
     def updateSequence28(): Bool = region rc {
-        let a = Array.updateSequence(rc, -1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, Array#{1, 2, 3, 4, 5, 6, 7} @ rc);
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
         Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc)
     }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // updateSequence!                                                         //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def updateSequence01!(): Bool = region rc {
-         let a = ((Array#{} @ rc): Array[Int32, _]);
-         Array.updateSequence!(0, ((Array#{} @ rc): Array[Int32, _]), a);
-         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-     }
-
-    @test
-    def updateSequence02!(): Bool = region rc {
-        let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.updateSequence!(0, Array#{1,2} @ rc, a);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def updateSequence03!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(0, Array#{} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def updateSequence04!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(-3, Array#{1,2,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def updateSequence05!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(2, Array#{1,2,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def updateSequence06!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.updateSequence!(0, Array#{} @ rc, a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def updateSequence07!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.updateSequence!(1, Array#{2} @ rc, a);
-        Array.sameElements(a, Array#{1} @ rc)
-    }
-
-    @test
-    def updateSequence08!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.updateSequence!(0, Array#{2} @ rc, a);
-        Array.sameElements(a, Array#{2} @ rc)
-    }
-
-    @test
-    def updateSequence09!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.updateSequence!(0, Array#{2,4} @ rc, a);
-        Array.sameElements(a, Array#{2} @ rc)
-    }
-
-    @test
-    def updateSequence10!(): Bool = region rc {
-        let a = Array#{1} @ rc;
-        Array.updateSequence!(-1, Array#{2,4} @ rc, a);
-        Array.sameElements(a, Array#{4} @ rc)
-    }
-
-    @test
-    def updateSequence11!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(-1, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{4,2} @ rc)
-    }
-
-    @test
-    def updateSequence12!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(1, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,3} @ rc)
-    }
-
-    @test
-    def updateSequence13!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(-2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def updateSequence14!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(2, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{1,2} @ rc)
-    }
-
-    @test
-    def updateSequence15!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(1, Array#{3} @ rc, a);
-        Array.sameElements(a, Array#{1,3} @ rc)
-    }
-
-    @test
-    def updateSequence16!(): Bool = region rc {
-        let a = Array#{1,2} @ rc;
-        Array.updateSequence!(0, Array#{3,4} @ rc, a);
-        Array.sameElements(a, Array#{3,4} @ rc)
-    }
-
-    @test
-    def updateSequence17!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(0, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{4, 2, 3} @ rc)
-    }
-
-    @test
-    def updateSequence18!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(1, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{1, 4, 3} @ rc)
-    }
-
-    @test
-    def updateSequence19!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(2, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 4} @ rc)
-    }
-
-    @test
-    def updateSequence20!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(0, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 3} @ rc)
-    }
-
-    @test
-    def updateSequence21!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(1, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{1, 4, 5} @ rc)
-    }
-
-    @test
-    def updateSequence22!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(-1, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{5, 6, 3} @ rc)
-    }
-
-    @test
-    def updateSequence23!(): Bool = region rc {
-        let a = Array#{1, 2, 3} @ rc;
-        Array.updateSequence!(0, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 6} @ rc)
-    }
-
-    @test
-    def updateSequence24!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.updateSequence!(2, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc)
-    }
-
-    @test
-    def updateSequence25!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.updateSequence!(-2, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc)
-    }
-
-    @test
-    def updateSequence26!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.updateSequence!(4, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc)
-    }
-
-    @test
-    def updateSequence27!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.updateSequence!(4, Array#{14, 15} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc)
-    }
-
-    @test
-    def updateSequence28!(): Bool = region rc {
-        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
-        Array.updateSequence!(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
-        Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc)
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -5047,79 +4610,92 @@ mod TestArray {
 
     @test
     def sortWith01(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, ((Array#{} @ rc): Array[Int32, _]));
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.sortWith(cmp, a);
         a `sameElements` ((Array#{} @ rc): Array[Int32, _])
     }
 
     @test
     def sortWith02(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{0} @ rc);
+        let a = Array#{0} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0} @ rc
     }
 
     @test
     def sortWith03(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{0,1} @ rc);
+        let a = Array#{0,1} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1} @ rc
     }
 
     @test
     def sortWith04(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{1,0} @ rc);
+        let a = Array#{1,0} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1} @ rc
     }
 
     @test
     def sortWith05(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{1,1} @ rc);
+        let a = Array#{1,1} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{1,1} @ rc
     }
 
     @test
     def sortWith06(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{0,1,2,3,4,5} @ rc);
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1,2,3,4,5} @ rc
     }
 
     @test
     def sortWith07(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{5,4,3,2,1,0} @ rc);
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1,2,3,4,5} @ rc
     }
 
     @test
     def sortWith08(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{5,3,0,4,1,2} @ rc);
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1,2,3,4,5} @ rc
     }
 
     @test
     def sortWith09(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, Array#{2,3,0,4,1,2} @ rc);
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortWith(cmp, a);
         a `sameElements` Array#{0,1,2,2,3,4} @ rc
     }
 
     @test
     def sortWith10(): Bool = region rc {
-        let a = Array.sortWith(rc, flip(cmp), Array#{0,1,2,3,4,5} @ rc);
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortWith(flip(cmp), a);
         a `sameElements` Array#{5,4,3,2,1,0} @ rc
     }
 
     @test
     def sortWith11(): Bool = region rc {
-        let a = Array.sortWith(rc, flip(cmp), Array#{5,4,3,2,1,0} @ rc);
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortWith(flip(cmp), a);
         a `sameElements` Array#{5,4,3,2,1,0} @ rc
     }
 
     @test
     def sortWith12(): Bool = region rc {
-        let a = Array.sortWith(rc, flip(cmp), Array#{5,3,0,4,1,2} @ rc);
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortWith(flip(cmp), a);
         a `sameElements` Array#{5,4,3,2,1,0} @ rc
     }
 
     @test
     def sortWith13(): Bool = region rc {
-        let a = Array.sortWith(rc, flip(cmp), Array#{2,3,0,4,1,2} @ rc);
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortWith(flip(cmp), a);
         a `sameElements` Array#{4,3,2,2,1,0} @ rc
     }
 
@@ -5128,7 +4704,11 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def testSortVsSortWith(a: Array[Int32, r]): Bool \ r = region rc1 {
-        Array.sort(rc1, a) `sameElements` Array.sortWith(rc1, cmp, a)
+        let b = Array.slice(rc1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(rc1, start = 0, end = Array.length(a), a);
+        Array.sort(b);
+        Array.sortWith(cmp, c);
+        b `sameElements` c
     }
 
     @test
@@ -5177,285 +4757,97 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // sortWith!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sortWith01!(): Bool = region rc {
-        let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.sortWith!(cmp, a);
-        a `sameElements` ((Array#{} @ rc): Array[Int32, _])
-    }
-
-    @test
-    def sortWith02!(): Bool = region rc {
-        let a = Array#{0} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0} @ rc
-    }
-
-    @test
-    def sortWith03!(): Bool = region rc {
-        let a = Array#{0,1} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1} @ rc
-    }
-
-    @test
-    def sortWith04!(): Bool = region rc {
-        let a = Array#{1,0} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1} @ rc
-    }
-
-    @test
-    def sortWith05!(): Bool = region rc {
-        let a = Array#{1,1} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{1,1} @ rc
-    }
-
-    @test
-    def sortWith06!(): Bool = region rc {
-        let a = Array#{0,1,2,3,4,5} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1,2,3,4,5} @ rc
-    }
-
-    @test
-    def sortWith07!(): Bool = region rc {
-        let a = Array#{5,4,3,2,1,0} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1,2,3,4,5} @ rc
-    }
-
-    @test
-    def sortWith08!(): Bool = region rc {
-        let a = Array#{5,3,0,4,1,2} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1,2,3,4,5} @ rc
-    }
-
-    @test
-    def sortWith09!(): Bool = region rc {
-        let a = Array#{2,3,0,4,1,2} @ rc;
-        Array.sortWith!(cmp, a);
-        a `sameElements` Array#{0,1,2,2,3,4} @ rc
-    }
-
-    @test
-    def sortWith10!(): Bool = region rc {
-        let a = Array#{0,1,2,3,4,5} @ rc;
-        Array.sortWith!(flip(cmp), a);
-        a `sameElements` Array#{5,4,3,2,1,0} @ rc
-    }
-
-    @test
-    def sortWith11!(): Bool = region rc {
-        let a = Array#{5,4,3,2,1,0} @ rc;
-        Array.sortWith!(flip(cmp), a);
-        a `sameElements` Array#{5,4,3,2,1,0} @ rc
-    }
-
-    @test
-    def sortWith12!(): Bool = region rc {
-        let a = Array#{5,3,0,4,1,2} @ rc;
-        Array.sortWith!(flip(cmp), a);
-        a `sameElements` Array#{5,4,3,2,1,0} @ rc
-    }
-
-    @test
-    def sortWith13!(): Bool = region rc {
-        let a = Array#{2,3,0,4,1,2} @ rc;
-        Array.sortWith!(flip(cmp), a);
-        a `sameElements` Array#{4,3,2,2,1,0} @ rc
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sort!                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ r = region rc1 {
-        let b = Array.slice(rc1, start = 0, end = Array.length(a), a);
-        let c = Array.slice(rc1, start = 0, end = Array.length(a), a);
-        Array.sort!(b);
-        Array.sortWith!(cmp, c);
-        b `sameElements` c
-    }
-
-    @test
-    def sort!01(): Bool = region rc {
-        testSort!VsSortWith!(((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def sort!02(): Bool = region rc {
-        testSort!VsSortWith!(Array#{0} @ rc)
-    }
-
-    @test
-    def sort!03(): Bool = region rc {
-        testSort!VsSortWith!(Array#{0,1} @ rc)
-    }
-
-    @test
-    def sort!04(): Bool = region rc {
-        testSort!VsSortWith!(Array#{1,0} @ rc)
-    }
-
-    @test
-    def sort!05(): Bool = region rc {
-        testSort!VsSortWith!(Array#{1,1} @ rc)
-    }
-
-    @test
-    def sort!06(): Bool = region rc {
-        testSort!VsSortWith!(Array#{0,1,2,3,4,5} @ rc)
-    }
-
-    @test
-    def sort!07(): Bool = region rc {
-        testSort!VsSortWith!(Array#{5,4,3,2,1,0} @ rc)
-    }
-
-    @test
-    def sort!08(): Bool = region rc {
-        testSort!VsSortWith!(Array#{5,3,0,4,1,2} @ rc)
-    }
-
-    @test
-    def sort!09(): Bool = region rc {
-        testSort!VsSortWith!(Array#{2,3,0,4,1,2} @ rc)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: Array[Int32, r]): Bool \ r = region rc1 {
-        (Array.sortBy(rc1, identity, a) `sameElements` Array.sort(rc1, a)) and
-        (Array.sortBy(rc1, x -> 4 * x + 7, a) `sameElements` Array.sort(rc1, a)) and
-        (Array.sortBy(rc1, x -> -x, a) `sameElements` Array.sortWith(rc1, flip(cmp),a))
-    }
-
     @test
     def sortBy01(): Bool = region rc {
-        testSortByVsSort(((Array#{} @ rc): Array[Int32, _]))
+        let a: Array[Int32, rc] = Array#{} @ rc;
+        Array.sortBy(identity, a);
+        let b: Array[Int32, rc] = Array#{} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{} @ rc)
+            and (b `sameElements` Array#{} @ rc)
     }
 
     @test
     def sortBy02(): Bool = region rc {
-        testSortByVsSort(Array#{0} @ rc)
+        let a = Array#{0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0} @ rc)
+            and (b `sameElements` Array#{0} @ rc)
     }
 
     @test
     def sortBy03(): Bool = region rc {
-        testSortByVsSort(Array#{0,1} @ rc)
+        let a = Array#{0,1} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0,1} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc)
     }
 
     @test
     def sortBy04(): Bool = region rc {
-        testSortByVsSort(Array#{1,0} @ rc)
+        let a = Array#{1,0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{1,0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc)
     }
 
     @test
     def sortBy05(): Bool = region rc {
-        testSortByVsSort(Array#{1,1} @ rc)
+        let a = Array#{1,1} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{1,1} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{1,1} @ rc)
+            and (b `sameElements` Array#{1,1} @ rc)
     }
 
     @test
     def sortBy06(): Bool = region rc {
-        testSortByVsSort(Array#{0,1,2,3,4,5} @ rc)
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortBy07(): Bool = region rc {
-        testSortByVsSort(Array#{5,4,3,2,1,0} @ rc)
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortBy08(): Bool = region rc {
-        testSortByVsSort(Array#{5,3,0,4,1,2} @ rc)
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortBy09(): Bool = region rc {
-        testSortByVsSort(Array#{2,3,0,4,1,2} @ rc)
-    }
-
-    enum R {
-        case R({i = Int32, s = String})
-    }
-
-    instance Eq[R] {
-        pub def eq(a: R, b: R): Bool =
-            let R.R(x) = a;
-            let R.R(y) = b;
-            x#i == y#i and x#s == y#s
-    }
-
-    @test
-    def sortBy10(): Bool = region rc {
-        Array.sortBy(rc, r -> let R.R(x) = r; x#i, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ rc)
-        `sameElements` Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})} @ rc
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sortBy!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ r = region rc1 {
-        let b = Array.slice(rc1, start = 0, end = Array.length(a), a);
-        let c = Array.slice(rc1, start = 0, end = Array.length(a), a);
-        Array.sortBy!(identity, b);
-        Array.sortBy!(x -> 4 * x + 7, c);
-        (b `sameElements` Array.sortBy(rc1, x -> 4 * x + 7, a)) and
-        (c `sameElements` Array.sortBy(rc1, identity, a))
-    }
-
-    @test
-    def sortBy!01(): Bool = region rc {
-        testSortBy!VsSortBy(((Array#{} @ rc): Array[Int32, _]))
-    }
-
-    @test
-    def sortBy!02(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{0} @ rc)
-    }
-
-    @test
-    def sortBy!03(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{0,1} @ rc)
-    }
-
-    @test
-    def sortBy!04(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{1,0} @ rc)
-    }
-
-    @test
-    def sortBy!05(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{1,1} @ rc)
-    }
-
-    @test
-    def sortBy!06(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{0,1,2,3,4,5} @ rc)
-    }
-
-    @test
-    def sortBy!07(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{5,4,3,2,1,0} @ rc)
-    }
-
-    @test
-    def sortBy!08(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{5,3,0,4,1,2} @ rc)
-    }
-
-    @test
-    def sortBy!09(): Bool = region rc {
-        testSortBy!VsSortBy(Array#{2,3,0,4,1,2} @ rc)
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array#{0,1,2,2,3,4} @ rc)
+            and (b `sameElements` Array#{0,1,2,2,3,4} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5836,7 +5228,7 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                              //
+    // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -5964,16 +5356,16 @@ mod TestArray {
     @test
     def toMutList02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(1, v);
+        MutList.push(1, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v)
     }
 
     @test
     def toMutList03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.push!(3, v);
+        MutList.push(1, v);
+        MutList.push(2, v);
+        MutList.push(3, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1, 2, 3} @ rc), v)
     }
 
@@ -5985,18 +5377,18 @@ mod TestArray {
     @test
     def toMutList05(): Bool = region rc {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push!(4, v);
+        MutList.push(4, v);
         Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3, 4} @ rc)
     }
 
     @test
     def toMutList06(): Bool = region rc {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push!(4, v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
+        MutList.push(4, v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
         Array.sameElements(MutList.toArray(rc, v), Array#{} @ rc)
     }
 

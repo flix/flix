@@ -609,7 +609,7 @@ object Type {
       */
     def getTypeArguments: List[Type] = this match {
       case JvmMember.JvmConstructor(_, tpes) => tpes
-      case JvmMember.JvmField(tpe, _) => List(tpe)
+      case JvmMember.JvmField(_, tpe, _) => List(tpe)
       case JvmMember.JvmMethod(tpe, _, tpes) => tpe :: tpes
       case JvmMember.JvmStaticMethod(_, _, tpes) => tpes
     }
@@ -619,7 +619,7 @@ object Type {
       */
     def map(f: Type => Type): JvmMember = this match {
       case JvmMember.JvmConstructor(clazz, tpes) => JvmMember.JvmConstructor(clazz, tpes.map(f))
-      case JvmMember.JvmField(tpe, name) => JvmMember.JvmField(f(tpe), name)
+      case JvmMember.JvmField(base, tpe, name) => JvmMember.JvmField(base, f(tpe), name)
       case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
     }
@@ -635,7 +635,7 @@ object Type {
     /**
       * A Java field, defined by the receiver type and the field name.
       */
-    case class JvmField(tpe: Type, name: Name.Ident) extends JvmMember
+    case class JvmField(base: SourceLocation, tpe: Type, name: Name.Ident) extends JvmMember
 
     /**
       * A Java method, defined by the receiver type, the method name, and the argument types.

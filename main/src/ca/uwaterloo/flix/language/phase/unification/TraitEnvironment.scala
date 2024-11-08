@@ -110,7 +110,7 @@ object TraitEnvironment {
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
   private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
-    case TraitConstraint(head, arg, loc) =>
+    case TraitConstraint(head, arg, _) =>
       val matchingInstances = traitEnv.getInstancesOpt(head.sym).getOrElse(Nil)
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
