@@ -22,11 +22,11 @@
 ///
 /// The second element is a string that describes the error, meant to be used for debugging purposes.
 ///
-pub enum IoError(IoError.ErrorKind, String) with Eq, Order, ToString, Hash, Sendable
+pub enum IoError(IoError.ErrorKind, String) with Eq
 
 mod IoError {
 
-    pub enum ErrorKind with Eq, Order, ToString, Hash, Sendable {
+    pub enum ErrorKind with Eq {
         case AlreadyExists,
         case PermissionDenied,
         case Interrupted,
