@@ -18,7 +18,7 @@ def deduplicate(l: List[a]): List[a] with Order[a] =
             if (MutSet.memberOf(x, s))
                 false // `x` has already been seen.
             else {
-                MutSet.add!(x, s);
+                MutSet.add(x, s);
                 true
             }
         }, l)
