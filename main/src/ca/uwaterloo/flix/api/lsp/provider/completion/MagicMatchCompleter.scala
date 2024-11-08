@@ -82,7 +82,6 @@ object MagicMatchCompleter {
 
   private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
     val maxCaseLength = cases.values.map(getCaseLength).max
-    println(maxCaseLength)
     cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym, cas)) =>
         val (lhs, rhs, k, extraLength) = cas.tpe.typeConstructor match {
@@ -96,7 +95,6 @@ object MagicMatchCompleter {
           case _ =>
             (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2, getExtraPaddingLength(1))
         }
-        println(extraLength)
         val paddedLhs = lhs.padTo(maxCaseLength + extraLength, ' ')
         (acc + s"    case $paddedLhs => $rhs\n", k)
     })._1
