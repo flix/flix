@@ -1305,7 +1305,7 @@ object Desugar {
   }
 
   private def flattenFCons(expr01: WeededAst.Expr, expr02: WeededAst.Expr): List[WeededAst.Expr] = {
-    // WIP
+    // WIP Nil is ambiguous expr
     def flatten(expr: WeededAst.Expr, acc: List[WeededAst.Expr.FCons]): List[WeededAst.Expr] = expr match {
       // TODO: Figure out when to visit e1 and e2 to desugar them
       case WeededAst.Expr.FCons(e1, e2, loc) => flatten(e2, e1 :: acc)
