@@ -51,15 +51,29 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
-    val stackConsumer = StackConsumer()
 
-    Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
+    // TODO having to possibly do three searches instead of two is kinda bad. Look for a different solution to the thin cursor problem other than full search on (possibly) both sides
+    searchRightOfCursor(uri, pos)
+      .flatMap(x => highlightAny(x, uri, pos))
+      .orElse(searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri, pos)))
+      .getOrElse(mkNotFound(uri, pos))
+  }
 
-    stackConsumer.getStack.headOption match {
-      case None => mkNotFound(uri, pos)
-      case Some(x) => highlightAny(x, uri, pos)
+  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
+      case Position(line, character) if character >= 2 =>
+        val leftOfCursor = Position(line, character - 1)
+        search(uri, leftOfCursor)
+      case _ => None
     }
 
+  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    search(uri, pos)
+  }
+
+  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    val stackConsumer = StackConsumer()
+    Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
+    stackConsumer.getStack.headOption
   }
 
   /**
@@ -77,55 +91,55 @@ object HighlightProvider {
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): JObject = {
+  private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): Option[JObject] = {
     implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
     x match {
       // Assoc Types
-      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => highlightAssocTypeSym(sym)
-      case SymUse.AssocTypeSymUse(sym, _) => highlightAssocTypeSym(sym)
-      case Type.AssocType(Ast.AssocTypeConstructor(sym, _), _, _, _) => highlightAssocTypeSym(sym)
+      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(highlightAssocTypeSym(sym))
+      case SymUse.AssocTypeSymUse(sym, _) => Some(highlightAssocTypeSym(sym))
+      case Type.AssocType(Ast.AssocTypeConstructor(sym, _), _, _, _) => Some(highlightAssocTypeSym(sym))
       // Defs
-      case TypedAst.Def(sym, _, _, _) => highlightDefnSym(sym)
-      case SymUse.DefSymUse(sym, _) => highlightDefnSym(sym)
+      case TypedAst.Def(sym, _, _, _) => Some(highlightDefnSym(sym))
+      case SymUse.DefSymUse(sym, _) => Some(highlightDefnSym(sym))
       // Effects
-      case TypedAst.Effect(_, _, _, sym, _, _) => highlightEffectSym(sym)
-      case Type.Cst(TypeConstructor.Effect(sym), _) => highlightEffectSym(sym)
-      case SymUse.EffectSymUse(sym, _) => highlightEffectSym(sym)
+      case TypedAst.Effect(_, _, _, sym, _, _) => Some(highlightEffectSym(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(highlightEffectSym(sym))
+      case SymUse.EffectSymUse(sym, _) => Some(highlightEffectSym(sym))
       // Enums & Cases
-      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => highlightEnumSym(sym)
-      case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(sym)
-      case TypedAst.Case(sym, _, _, _) => highlightCaseSym(sym)
-      case SymUse.CaseSymUse(sym, _) => highlightCaseSym(sym)
+      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(highlightEnumSym(sym))
+      case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(highlightEnumSym(sym))
+      case TypedAst.Case(sym, _, _, _) => Some(highlightCaseSym(sym))
+      case SymUse.CaseSymUse(sym, _) => Some(highlightCaseSym(sym))
       // Ops
-      case TypedAst.Op(sym, _, _) => highlightOpSym(sym)
-      case SymUse.OpSymUse(sym, _) => highlightOpSym(sym)
+      case TypedAst.Op(sym, _, _) => Some(highlightOpSym(sym))
+      case SymUse.OpSymUse(sym, _) => Some(highlightOpSym(sym))
       // Records
-      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => highlightLabel(label)
-      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => highlightLabel(label)
-      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => highlightLabel(label)
+      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(highlightLabel(label))
       // Signatures
-      case TypedAst.Sig(sym, _, _, _) => highlightSigSym(sym)
-      case SymUse.SigSymUse(sym, _) => highlightSigSym(sym)
+      case TypedAst.Sig(sym, _, _, _) => Some(highlightSigSym(sym))
+      case SymUse.SigSymUse(sym, _) => Some(highlightSigSym(sym))
       // Structs
-      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => highlightStructSym(sym)
-      case Type.Cst(TypeConstructor.Struct(sym, _), _) => highlightStructSym(sym)
-      case TypedAst.StructField(sym, _, _) => highlightStructFieldSym(sym)
-      case SymUse.StructFieldSymUse(sym, _) => highlightStructFieldSym(sym)
+      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(highlightStructSym(sym))
+      case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(highlightStructSym(sym))
+      case TypedAst.StructField(sym, _, _) => Some(highlightStructFieldSym(sym))
+      case SymUse.StructFieldSymUse(sym, _) => Some(highlightStructFieldSym(sym))
       // Traits
-      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => highlightTraitSym(sym)
-      case SymUse.TraitSymUse(sym, _) => highlightTraitSym(sym)
-      case TraitConstraint.Head(sym, _) => highlightTraitSym(sym)
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(highlightTraitSym(sym))
+      case SymUse.TraitSymUse(sym, _) => Some(highlightTraitSym(sym))
+      case TraitConstraint.Head(sym, _) => Some(highlightTraitSym(sym))
       // Type Aliases
-      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => highlightTypeAliasSym(sym)
-      case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => highlightTypeAliasSym(sym)
+      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(highlightTypeAliasSym(sym))
+      case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
       // Type Variables
-      case TypedAst.TypeParam(_, sym, _) => highlightTypeVarSym(sym)
-      case Type.Var(sym, _) => highlightTypeVarSym(sym)
+      case TypedAst.TypeParam(_, sym, _) => Some(highlightTypeVarSym(sym))
+      case Type.Var(sym, _) => Some(highlightTypeVarSym(sym))
       // Variables
-      case Binder(sym, _) => highlightVarSym(sym)
-      case TypedAst.Expr.Var(varSym, _, _) => highlightVarSym(varSym)
+      case Binder(sym, _) => Some(highlightVarSym(sym))
+      case TypedAst.Expr.Var(varSym, _, _) => Some(highlightVarSym(varSym))
 
-      case _ => mkNotFound(uri, pos)
+      case _ => None
     }
   }
 
