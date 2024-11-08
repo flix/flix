@@ -57,7 +57,7 @@ object HighlightProvider {
 
     stackConsumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)
-      case Some(x) => println(x); highlightAny(x, uri, pos)
+      case Some(x) => highlightAny(x, uri, pos)
     }
 
   }
