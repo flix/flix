@@ -36,6 +36,7 @@ object MagicMatchCompleter {
     *   case Blue => ???
     * }
     */
+
   def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       sym <- getEnumSym(err.tpe)
