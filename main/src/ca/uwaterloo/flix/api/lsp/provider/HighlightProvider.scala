@@ -52,8 +52,8 @@ object HighlightProvider {
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
     val stackConsumer = StackConsumer()
-    Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
+    Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
 
     stackConsumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)
