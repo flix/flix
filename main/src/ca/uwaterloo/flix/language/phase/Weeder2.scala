@@ -862,6 +862,7 @@ object Weeder2 {
       assert(exprTree.kind == TreeKind.Expr.Expr)
       val tree = unfold(exprTree)
 
+      // Increase the depth and check that it is under the limit.
       lctx.depth += 1
       if (lctx.depth >= ExpressionNestingLimit) {
         val hint = {
@@ -871,6 +872,7 @@ object Weeder2 {
         }
         val error = NestedTooDeeply(hint, exprTree.loc)
         sctx.errors.add(error)
+        // Decrease depth now that the call is returning.
         lctx.depth -= 1
         return Validation.success(Expr.Error(error))
       }
@@ -955,6 +957,7 @@ object Weeder2 {
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
       }
+      // Decrease depth now that the call is returning.
       lctx.depth -= 1
       res
     }
