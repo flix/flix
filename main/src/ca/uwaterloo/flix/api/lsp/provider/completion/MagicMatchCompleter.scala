@@ -60,7 +60,7 @@ object MagicMatchCompleter {
   private def getCaseLength(cas: TypedAst.Case): Int = {
     cas.tpe.typeConstructor match {
       case Some(TypeConstructor.Unit) => cas.sym.toString.length
-      case Some(TypeConstructor.Tuple(arity)) => cas.sym.toString.length + arity * 7 + 1
+      case Some(TypeConstructor.Tuple(arity)) => cas.sym.toString.length + arity * 8 + 1
       case _ => cas.sym.toString.length + 7
     }
   }
@@ -71,7 +71,7 @@ object MagicMatchCompleter {
     */
 
   private def getExtraPaddingLength(arity: Int): Int = {
-    List.range(0, arity + 1).map { elem =>
+    List.range(1, arity + 1).map { elem =>
       s"$${$elem:}"
     }.mkString.length
   }
