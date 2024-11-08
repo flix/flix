@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type}
 
 /**
   * Consumer that collects every visited AST nodes on a stack where the head is the last element visited.

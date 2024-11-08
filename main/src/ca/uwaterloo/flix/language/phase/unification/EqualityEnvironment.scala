@@ -174,10 +174,10 @@ object EqualityEnvironment {
         tpes <- Result.traverse(tpes0)(f)
       } yield Type.JvmMember.JvmConstructor(clazz, tpes)
 
-    case Type.JvmMember.JvmField(tpe0, name) =>
+    case Type.JvmMember.JvmField(base, tpe0, name) =>
       for {
         tpe <- f(tpe0)
-      } yield Type.JvmMember.JvmField(tpe, name)
+      } yield Type.JvmMember.JvmField(base, tpe, name)
 
     case Type.JvmMember.JvmMethod(tpe0, name, tpes0) =>
       for {
