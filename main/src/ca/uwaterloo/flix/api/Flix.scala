@@ -484,6 +484,7 @@ class Flix {
 
   /**
     * Compiles the Flix program and returns a typed ast.
+    * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
   def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
     import Validation.Implicit.AsMonad
