@@ -66,6 +66,17 @@ object MagicMatchCompleter {
   }
 
   /**
+    * Returns the extra padding length required to account for invisible characters in the case string.
+    * For example, "${1:???}" will be displayed as "???". The extra padding length is the length of "${1:}".
+    */
+
+  private def getExtraPaddingLength(arity: Int): Int = {
+    List.range(0, arity + 1).map { elem =>
+      s"$${$elem:}"
+    }.mkString.length
+  }
+
+  /**
     * Generates the string representation of the cases of an enum.
     */
 
@@ -74,18 +85,19 @@ object MagicMatchCompleter {
     println(maxCaseLength)
     cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym, cas)) =>
-        val (lhs, rhs, k) = cas.tpe.typeConstructor match {
+        val (lhs, rhs, k, extraLength) = cas.tpe.typeConstructor match {
           case Some(TypeConstructor.Unit) =>
-            (s"$sym", s"$${${z + 1}:???}", z + 1)
+            (s"$sym", s"$${${z + 1}:???}", z + 1, getExtraPaddingLength(0))
           case Some(TypeConstructor.Tuple(arity)) =>
             val elements = List.range(1, arity + 1).map { elem =>
               s"$${${elem + z}:_elem$elem}"
             }.mkString(", ")
-            (s"$sym($elements)", s"$${${arity + z + 1}:???}", z + arity + 1)
+            (s"$sym($elements)", s"$${${arity + z + 1}:???}", z + arity + 1, getExtraPaddingLength(arity))
           case _ =>
-            (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2)
+            (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2, getExtraPaddingLength(1))
         }
-        val paddedLhs = lhs.padTo(maxCaseLength, ' ')
+        println(extraLength)
+        val paddedLhs = lhs.padTo(maxCaseLength + extraLength, ' ')
         (acc + s"    case $paddedLhs => $rhs\n", k)
     })._1
   }
