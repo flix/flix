@@ -126,39 +126,6 @@ object HighlightProvider {
     }
   }
 
-  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = new HighlightBuilder(label)
-
-    object LabelConsumer extends Consumer {
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.RecordExtend(l, _, _, _, _, _) => builder.considerWrite(l, l.loc)
-        case Expr.RecordSelect(_, l, _, _, _) => builder.considerRead(l, l.loc)
-        case Expr.RecordRestrict(l, _, _, _, _) => builder.considerWrite(l, l.loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, LabelConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
-
-    object TypeVarSymConsumer extends Consumer {
-      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = builder.considerWrite(tparam.sym, tparam.sym.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => builder.considerRead(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, TypeVarSymConsumer, acceptor)
-
-    builder.build
-  }
-
   private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
@@ -168,19 +135,6 @@ object HighlightProvider {
     }
 
     Visitor.visitRoot(root, AssocTypeSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
-
-    object CaseSymConsumer extends Consumer {
-      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
-    }
-
-    Visitor.visitRoot(root, CaseSymConsumer, acceptor)
 
     builder.build
   }
@@ -231,6 +185,36 @@ object HighlightProvider {
     builder.build
   }
 
+  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, CaseSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(label)
+
+    object LabelConsumer extends Consumer {
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.RecordExtend(l, _, _, _, _, _) => builder.considerWrite(l, l.loc)
+        case Expr.RecordSelect(_, l, _, _, _) => builder.considerRead(l, l.loc)
+        case Expr.RecordRestrict(l, _, _, _, _) => builder.considerWrite(l, l.loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, LabelConsumer, acceptor)
+
+    builder.build
+  }
+
   private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
@@ -240,19 +224,6 @@ object HighlightProvider {
     }
 
     Visitor.visitRoot(root, SigSymConsumer, acceptor)
-
-    builder.build
-  }
-
-  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
-
-    object StructFieldSymConsumer extends Consumer {
-      override def consumeStructField(field: TypedAst.StructField): Unit = builder.considerWrite(field.sym, field.sym.loc)
-      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-    }
-
-    Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
 
     builder.build
   }
@@ -277,6 +248,33 @@ object HighlightProvider {
     builder.build
   }
 
+  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object StructFieldSymConsumer extends Consumer {
+      override def consumeStructField(field: TypedAst.StructField): Unit = builder.considerWrite(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
+    }
+
+    Visitor.visitRoot(root, TraitSymConsumer, acceptor)
+
+    builder.build
+  }
+
   private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
@@ -293,16 +291,18 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
-    object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
-      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
+    object TypeVarSymConsumer extends Consumer {
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = builder.considerWrite(tparam.sym, tparam.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Var(sym, loc) => builder.considerRead(sym, loc)
+        case _ => ()
+      }
     }
 
-    Visitor.visitRoot(root, TraitSymConsumer, acceptor)
+    Visitor.visitRoot(root, TypeVarSymConsumer, acceptor)
 
     builder.build
   }
