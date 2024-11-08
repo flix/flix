@@ -316,7 +316,7 @@ mod Concurrent.Channel {
 
                 let condition = newCondition(conditionLock);
                 // Add Lock and Condition Pair to the channel
-                MutList.push!((conditionLock, condition), waitingGetters);
+                MutList.push((conditionLock, condition), waitingGetters);
 
                 // Temporarily unlock the channel while waiting. This is
                 // necessary as the condition comes from a different lock.
@@ -414,7 +414,7 @@ mod Concurrent.Channel {
     ///
     def addGetter(l: ReentrantLock, cond: Condition, c: MpmcAdmin): Unit \ IO =
         let MpmcAdmin.MpmcAdmin(_, _, _, _, _, waitingGetters, _, _) = c;
-        MutList.push!((l, cond), waitingGetters)
+        MutList.push((l, cond), waitingGetters)
 
     ///
     /// Signals and clears the waiting getters.
@@ -434,7 +434,7 @@ mod Concurrent.Channel {
 
         // Clear waitingGetters. If a waitingGetter does not receive an
         // element, it will add itself again
-        MutList.clear!(waitingGetters)
+        MutList.clear(waitingGetters)
 
     ///
     /// Signals and clears the waiting putters.

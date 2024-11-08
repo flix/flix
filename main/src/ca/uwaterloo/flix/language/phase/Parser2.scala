@@ -319,10 +319,9 @@ object Parser2 {
     * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
     * Does not consume fuel if parser has hit end-of-file.
-    * Does not consume fuel if `consume` is false. This should be used sparingly.
     * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
     */
-  private def nth(lookahead: Int, consume: Boolean = true)(implicit s: State): TokenKind = {
+  private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
       throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
@@ -330,9 +329,7 @@ object Parser2 {
     if (s.position + lookahead >= s.tokens.length - 1) {
       TokenKind.Eof
     } else {
-      if (consume) {
-        s.fuel -= 1
-      }
+      s.fuel -= 1
       s.tokens(s.position + lookahead).kind
     }
   }
@@ -1433,10 +1430,7 @@ object Parser2 {
       // Handle binary operators
       continue = true
       while (continue) {
-        // We want to allow an unbounded number of cons (a :: b :: c :: ...).
-        // Hence we special case on whether the left token is ::. If it is,
-        // we avoid consuming any fuel.
-        val right = nth(0, consume = left != TokenKind.ColonColon)
+        val right = nth(0)
         if (rightBindsTighter(left, right, leftIsUnary)) {
           val mark = openBefore(lhs)
           val markOp = open()
@@ -1446,6 +1440,12 @@ object Parser2 {
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
+          // We want to allow an unbounded number of cons (a :: b :: c :: ...).
+          // Hence we special case on whether the left token is ::. If it is,
+          // we avoid consuming any fuel.
+          // The next nth lookup will always fail, so we add fuel to account for it.
+          // The lookup for KeywordWithout will always happen to we add fuel to account for it.
+          if (left == TokenKind.ColonColon) s.fuel += 2
           continue = false
         }
       }
