@@ -96,6 +96,9 @@ object HighlightProvider {
       case Type.Cst(TypeConstructor.Enum(sym, _), _) => highlightEnumSym(sym)
       case TypedAst.Case(sym, _, _, _) => highlightCaseSym(sym)
       case SymUse.CaseSymUse(sym, _) => highlightCaseSym(sym)
+      // Ops
+      case TypedAst.Op(sym, _, _) => highlightOpSym(sym)
+      case SymUse.OpSymUse(sym, _) => highlightOpSym(sym)
       // Records
       case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => highlightLabel(label)
       case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => highlightLabel(label)
@@ -194,6 +197,19 @@ object HighlightProvider {
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, acceptor)
+
+    builder.build
+  }
+
+  private def highlightOpSym(sym: Symbol.OpSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+    val builder = new HighlightBuilder(sym)
+
+    object OpSymConsumer extends Consumer {
+      override def consumeOp(op: TypedAst.Op): Unit = builder.considerWrite(op.sym, op.sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, OpSymConsumer, acceptor)
 
     builder.build
   }
