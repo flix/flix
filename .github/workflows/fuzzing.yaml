@@ -1,4 +1,4 @@
-name: Compiler Tests
+name: Compiler Fuzzing
 
 on: [ pull_request, merge_group ]
 
@@ -8,7 +8,7 @@ concurrency:
   group: build-${{ github.ref }}
 
 jobs:
-  build:
+  build-and-fuzz:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
@@ -23,6 +23,6 @@ jobs:
           java-version: '21'
       - name: Build with gradle
         run: ./gradlew clean compileTestScala --console=plain
-      - name: Run tests with timeout
+      - name: Fuzz with timeout
         timeout-minutes: 20
-        run: ./gradlew test --console=plain
+        run: ./gradlew testFuzzerSuite --console=plain
