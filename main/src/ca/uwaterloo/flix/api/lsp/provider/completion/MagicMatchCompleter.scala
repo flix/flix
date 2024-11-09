@@ -39,7 +39,7 @@ object MagicMatchCompleter {
       sym <- getEnumSym(err.tpe)
       baseExp <- err.base.text
       cases = root.enums(sym).cases
-      if cases.nonEmpty
+      if cases.nonEmpty  // We skip empty enums (offer no suggestion)
     } yield {
       val name = s"$baseExp.match"
       val range = sourceLocation2Range(err.loc)
@@ -87,14 +87,13 @@ object MagicMatchCompleter {
   private def patternMatchBody(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
     val maxCaseLength = cases.values.map(getCaseLength).max
     val sb = new StringBuilder
-    cases.toList
-      .sortBy(_._1.loc)
-      .foldLeft(1) { case (z, (sym, cas)) =>
-        val (lhs, rhs, nextZ) = createCase(sym, cas, z)
-        val paddedLhs = padLhs(lhs, maxCaseLength)
-        sb.append(s"    case $paddedLhs => $rhs\n")
-        nextZ
-      }
+    var z = 1
+    for ((sym, cas) <- cases.toList.sortBy(_._1.loc)) {
+      val (lhs, rhs, newZ) = createCase(sym, cas, z)
+      val paddedLhs = padLhs(lhs, maxCaseLength)
+      sb.append(s"    case $paddedLhs => $rhs\n")
+      z = newZ
+    }
     sb.toString()
   }
 
