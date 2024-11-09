@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
 
+import scala.annotation.tailrec
+
 object Desugar {
 
   /**
@@ -1298,21 +1300,26 @@ object Desugar {
     * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val flattened = flattenFCons(exp1, exp2) // WIP
-    val e1 = visitExp(exp1)
-    val e2 = visitExp(exp2)
-    mkApplyFqn("List.Cons", List(e1, e2), loc0)
+    val flattened = flattenFCons(exp1, exp2)
+    if (flattened.length > 20) {
+      val es = visitExps(flattened)
+      val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+      mkApplyFqn("Vector.toList", List(vectorLit), loc0)
+    } else {
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.Cons", List(e1, e2), loc0)
+    }
   }
 
   private def flattenFCons(expr01: WeededAst.Expr, expr02: WeededAst.Expr): List[WeededAst.Expr] = {
-    // WIP Nil is ambiguous expr
-    def flatten(expr: WeededAst.Expr, acc: List[WeededAst.Expr.FCons]): List[WeededAst.Expr] = expr match {
-      // TODO: Figure out when to visit e1 and e2 to desugar them
-      case WeededAst.Expr.FCons(e1, e2, loc) => flatten(e2, e1 :: acc)
+    @tailrec
+    def flatten(expr: WeededAst.Expr, acc: List[WeededAst.Expr]): List[WeededAst.Expr] = expr match {
+      case WeededAst.Expr.FCons(e1, e2, _) => flatten(e2, e1 :: acc)
       case _ => acc.reverse
     }
 
-    flatten(expr01, List.empty)
+    flatten(expr02, List(expr01))
   }
 
   /**
