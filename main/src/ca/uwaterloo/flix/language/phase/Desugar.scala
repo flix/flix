@@ -1368,12 +1368,9 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
-    exps0.map {
-      case (k, v) => visitExp(k) -> visitExp(v)
-    }.foldLeft(empty) {
-      case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc0)
-    }
+    val es = exps0.map { case (k, v) => DesugaredAst.Expr.Tuple(List(visitExp(k), visitExp(v)), k.loc) }
+    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+    mkApplyFqn("Vector.toMap", List(vectorLit), loc0)
   }
 
   /**
