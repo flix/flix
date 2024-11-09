@@ -1356,14 +1356,12 @@ object Desugar {
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Set.empty` and `Set.insert` calls.
+    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})` calls.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
-    val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
-    es.foldLeft(empty) {
-      case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc0)
-    }
+    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+    mkApplyFqn("Vector.toSet", List(vectorLit), loc0)
   }
 
   /**
