@@ -15,11 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.errors.TypeError
-
-import scala.annotation.TypeConstraint
 
 object MagicMatchCompleter {
 
@@ -31,46 +29,46 @@ object MagicMatchCompleter {
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
-    *   case Red => ???
+    *   case Red   => ???
     *   case Green => ???
-    *   case Blue => ???
+    *   case Blue  => ???
     * }
     */
-
   def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       sym <- getEnumSym(err.tpe)
       baseExp <- err.base.text
+      cases = root.enums(sym).cases
+      if cases.nonEmpty  // We skip empty enums (offer no suggestion)
     } yield {
       val name = s"$baseExp.match"
       val range = sourceLocation2Range(err.loc)
-      val casesString = generateCasesString(root.enums(sym).cases)
+      val casesString = patternMatchBody(cases)
       val snippet = s"match $baseExp {\n$casesString}"
       Completion.MagicMatchCompletion(name, range, snippet, "Expand to a full match expression.")
     }
   }
 
   /**
-    * Returns the length of the case String in the following form:
-    *  Unit: case Red => ???
-    *  Tuple: case Red(_elem1, _elem2) => ???
-    *  Normal: case Red(_elem) => ???
+    * Returns the length of the case String between "case " and " =>".
+    *  Unit:   case Red                 => ???   where the length of "Red" is 3
+    *  Tuple:  case Red(_elem1, _elem2) => ???   where the length of "Red(_elem1, _elem2)" is 19
+    *  Normal: case Red(_elem)          => ???   where the length of "Red(_elem)" is 10
     */
-
   private def getCaseLength(cas: TypedAst.Case): Int = {
     cas.tpe.typeConstructor match {
       case Some(TypeConstructor.Unit) => cas.sym.toString.length
       case Some(TypeConstructor.Tuple(arity)) =>
-        val numberLength = List.range(1, arity + 1).map {elem => elem.toString.length}.sum
+        val numberLength = List.range(1, arity + 1).map(getIntLength).sum
         cas.sym.toString.length + "(_elem,".length * arity + numberLength
-      case _ => cas.sym.toString.length + "(_elem)".length
+      case _ =>
+        cas.sym.toString.length + "(_elem)".length
     }
   }
 
   /**
     * Creates a case string and its corresponding right-hand side string.
     */
-
   private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, String, Int) = {
     cas.tpe.typeConstructor match {
       case Some(TypeConstructor.Unit) =>
@@ -86,36 +84,33 @@ object MagicMatchCompleter {
   /**
     * Formats the cases of an enum into a string.
     */
-
-  private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]) = {
-   val maxCaseLength = cases.values.map(getCaseLength).max
-   cases.toList
-     .sortBy(_._1.loc)
-     .foldLeft(("", 1)) { case ((acc, z), (sym, cas)) =>
-       val (lhs, rhs, nextZ) = createCase(sym, cas, z)
-       val paddedLhs = padLhs(lhs, maxCaseLength)
-       (acc + s"    case $paddedLhs => $rhs\n", nextZ)
-     }._1
+  private def patternMatchBody(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
+    val maxCaseLength = cases.values.map(getCaseLength).max
+    val sb = new StringBuilder
+    var z = 1
+    for ((sym, cas) <- cases.toList.sortBy(_._1.loc)) {
+      val (lhs, rhs, newZ) = createCase(sym, cas, z)
+      val paddedLhs = padLhs(lhs, maxCaseLength)
+      sb.append(s"    case $paddedLhs => $rhs\n")
+      z = newZ
+    }
+    sb.toString()
   }
 
   /**
     * Pads the left-hand side (lhs) of a case string to the specified maximum length,
     * accounting for the extra padding required by invisible characters in the case string.
-    * For example, "${1:???}" will be displayed as "???", so the extra padding length is the length of "${1:}".
+    * For example, "${1:???}" will be displayed as "???", so the extra padding length is 4 plus the length of 1.
     */
-
   private def padLhs(lhs: String, maxLength: Int): String = {
     val arity = lhs.count(_ == '$')
-    val extraPaddingLength = List.range(1, arity + 1).map { elem =>
-      s"$${$elem:}".length
-    }.sum
+    val extraPaddingLength = List.range(1, arity + 1).map(4 + getIntLength(_)).sum
     lhs.padTo(maxLength + extraPaddingLength, ' ')
   }
 
   /**
     * Converts a [[SourceLocation]] to an [[Range]].
     */
-
   private def sourceLocation2Range(loc: SourceLocation): Range = {
     Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
   }
@@ -123,14 +118,20 @@ object MagicMatchCompleter {
   /**
     * Converts a [[SourcePosition]] to a [[Position]].
     */
-
   private def sourcePosition2Position(pos: SourcePosition): Position =
     Position(pos.line, pos.col)
 
   /**
+    * Returns the length of the given integer.
+    */
+  private def getIntLength(i: Int): Int = {
+    if (i == 0) 1
+    else Math.log10(Math.abs(i)).toInt + 1
+  }
+
+  /**
     * Returns the enum symbol of the given type, if it is an enum.
     */
-
   private def getEnumSym(tpe: Type): Option[Symbol.EnumSym] = tpe.typeConstructor match {
     case Some(TypeConstructor.Enum(sym, _)) => Some(sym)
     case _ => None
