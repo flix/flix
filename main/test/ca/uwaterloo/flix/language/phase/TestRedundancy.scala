@@ -2173,4 +2173,18 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowingName](result)
   }
+
+  test("VariableInLongListLiteral.01") {
+    val input =
+      """
+        |def f(): List[Int32] = {
+        |    let xs = 25 :: 26 :: 27 :: Nil;
+        |    let l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: 10 :: 11 :: 12 :: 13
+        |              :: 14 :: 15 :: 16 :: 17 :: 18 :: 19 :: 20 :: 21 :: 22 :: 23 :: 24 :: xs;
+        |    l
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectSuccess(result)
+  }
 }

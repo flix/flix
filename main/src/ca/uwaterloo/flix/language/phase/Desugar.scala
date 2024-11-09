@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
 
+import scala.annotation.tailrec
+
 object Desugar {
 
   /**
@@ -217,7 +219,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededTraitConstraint]] `tconstr0`.
+    * Desugars the given [[WeededAst.TraitConstraint]] `tconstr0`.
     */
   private def visitTraitConstraint(tconstr0: WeededAst.TraitConstraint): DesugaredAst.TraitConstraint = tconstr0 match {
     case WeededAst.TraitConstraint(trt, tpe0, loc) =>
@@ -426,7 +428,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
+    * Desugars the given [[WeededAst.StructField]] `field0`.
     */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(mod, name, tpe0, loc) =>
@@ -1282,7 +1284,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites empty tuples to [[Ast.Constant.Unit]] and eliminate single-element tuples.
+    * Rewrites empty tuples to [[Constant.Unit]] and eliminate single-element tuples.
     */
   private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
@@ -1295,11 +1297,58 @@ object Desugar {
 
   /**
     * Rewrites [[WeededAst.Expr.FCons]] (`x :: xs`) into a call to `List.Cons(x, xs)`.
+    * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
+    *
+    * Additionally, if there are over 20 literals and the FCons sequence does not end with the literal `Nil`,
+    * we translate it to `List.append(Vector.toList(Vector#{literals}), nonLiteral)`.
+    *
+    * E.g., `1 :: 2 :: 3 :: ... :: 25 :: xs` is translated to `List.append(Vector.toList(Vector#{1, 2, 3, ..., 25}), xs)`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val e1 = visitExp(exp1)
-    val e2 = visitExp(exp2)
-    mkApplyFqn("List.Cons", List(e1, e2), loc0)
+    val (flattened, rest) = flattenFCons(exp1, exp2)
+    if (flattened.length > 20) {
+      val desugaredFCons = desugarListLit(flattened, loc0)
+      rest match {
+        case Some(exp) =>
+          val e = visitExp(exp)
+          mkApplyFqn("List.append", List(desugaredFCons, e), loc0)
+        case None =>
+          desugaredFCons
+      }
+    } else {
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.Cons", List(e1, e2), loc0)
+    }
+  }
+
+  /**
+    * Helper function for [[desugarFCons]].
+    *
+    * Returns the list of expressions in the sequence of FCons expressions in `exp2`.
+    * Note that `exp1` is the left-hand side of an FCons expression, since it is called by
+    * [[desugarFCons]].
+    *
+    * E.g., for the Flix expression `1 :: 2 :: 3 :: 4 :: Nil` it returns a list of expressions
+    * corresponding to (Scala) `List(1, 2, 3, 4)`.
+    *
+    * Also returns `Some(exp)` if the FCons sequence ends with a non-`Nil` literal, e.g.,
+    * the Flix expression `1 :: 2 :: 3 :: xs` returns (Scala) `(List(1, 2, 3), Some(xs))`.
+    * If the Flix expression were `1 :: 2 :: 3 :: Nil` it would return (Scala) `(List(1, 2, 3), None)`.
+    *
+    * This function terminates when it encounters anything that is not an FCons expression.
+    *
+    */
+  private def flattenFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr): (List[WeededAst.Expr], Option[WeededAst.Expr]) = {
+    @tailrec
+    def flatten(exp: WeededAst.Expr, acc: List[WeededAst.Expr]): (List[WeededAst.Expr], Option[WeededAst.Expr]) = exp match {
+      case WeededAst.Expr.FCons(e1, e2, _) => flatten(e2, e1 :: acc)
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents == "List" :: Nil => (acc.reverse, None)
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents.isEmpty => (acc.reverse, None)
+      case _ => (acc.reverse, Some(exp))
+    }
+
+    flatten(exp2, List(exp1))
   }
 
   /**
@@ -1314,37 +1363,52 @@ object Desugar {
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.ListLit]] (`1 :: 2 :: Nil`) expression into `List.Nil` with `List.Cons`.
+    * Rewrites [[WeededAst.Expr.ListLit]] (`List#{1, 2, 3}`) expression into `Vector.toList(Vector#{1, 2, 3})`.
     */
   private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val nil: Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc0)
-    es.foldRight(nil) {
-      case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc0)
-    }
+    desugarCollectionLitToVec("Vector.toList", exps0, loc0)
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Set.empty` and `Set.insert` calls.
+    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})`.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
-    es.foldLeft(empty) {
-      case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc0)
+    if (exps0.isEmpty) {
+      // Vector.toSet requires an instance of Order[a]
+      // which we do not have for an empty literal
+      // so we construct the empty set directly.
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      mkApplyFqn("Set.empty", List(unit), loc0)
+    } else {
+      desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
     }
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
+    * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Vector.toMap(Vector#{(1, 2), (2, 3)})`.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
-    exps0.map {
-      case (k, v) => visitExp(k) -> visitExp(v)
-    }.foldLeft(empty) {
-      case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc0)
+    if (exps0.isEmpty) {
+      // Vector.toMap requires an instance of Order[a]
+      // which we do not have for an empty literal
+      // so we construct the empty map directly.
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      mkApplyFqn("Map.empty", List(unit), loc0)
+    } else {
+      val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
+      desugarCollectionLitToVec("Vector.toMap", es, loc0)
     }
+  }
+
+  /**
+    * Helper function for desugaring collection literals.
+    *
+    * Conceptually, it returns (in Flix): `fqn(Vector#{exps})`.
+    */
+  private def desugarCollectionLitToVec(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+    mkApplyFqn(fqn, List(vectorLit), loc0)
   }
 
   /**
