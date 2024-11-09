@@ -1355,7 +1355,15 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})`.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
+    if (exps0.isEmpty) {
+      // Vector.toSet requires an instance of Order[a]
+      // which we do not have for an empty literal
+      // so we construct the empty set directly.
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      mkApplyFqn("Set.empty", List(unit), loc0)
+    } else {
+      desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
+    }
   }
 
   /**
@@ -1363,6 +1371,9 @@ object Desugar {
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     if (exps0.isEmpty) {
+      // Vector.toMap requires an instance of Order[a]
+      // which we do not have for an empty literal
+      // so we construct the empty map directly.
       val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
