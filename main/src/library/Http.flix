@@ -26,7 +26,7 @@ mod Http {
     ///
     /// A response from an HTTP request.
     ///
-    pub enum Response({status = Int32, statusText = String, headers = String, body = String})
+    pub enum Response({status = Int32, statusText = String, headers = Map[String, String], body = String})
 
     mod Response {
         pub def status(r: Response): Int32 = match r {
@@ -35,7 +35,7 @@ mod Http {
         pub def statusText(r: Response): String = match r {
             case Response(x) => x#statusText
         }
-        pub def headers(r: Response): String = match r {
+        pub def headers(r: Response): Map[String, String] = match r {
             case Response(x) => x#headers
         }
         pub def body(r: Response): String = match r {
