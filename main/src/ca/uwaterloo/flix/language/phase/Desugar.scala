@@ -219,7 +219,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededTraitConstraint]] `tconstr0`.
+    * Desugars the given [[WeededAst.TraitConstraint]] `tconstr0`.
     */
   private def visitTraitConstraint(tconstr0: WeededAst.TraitConstraint): DesugaredAst.TraitConstraint = tconstr0 match {
     case WeededAst.TraitConstraint(trt, tpe0, loc) =>
@@ -428,7 +428,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
+    * Desugars the given [[WeededAst.StructField]] `field0`.
     */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(mod, name, tpe0, loc) =>
@@ -1284,7 +1284,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites empty tuples to [[Ast.Constant.Unit]] and eliminate single-element tuples.
+    * Rewrites empty tuples to [[Constant.Unit]] and eliminate single-element tuples.
     */
   private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
