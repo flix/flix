@@ -1336,7 +1336,7 @@ object Desugar {
     * the Flix expression `1 :: 2 :: 3 :: xs` returns (Scala) `(List(1, 2, 3), Some(xs))`.
     * If the Flix expression were `1 :: 2 :: 3 :: Nil` it would return (Scala) `(List(1, 2, 3), None)`.
     *
-    * This function terminates as soon as it encounters anything that is not an FCons expression.
+    * This function terminates when it encounters anything that is not an FCons expression.
     *
     */
   private def flattenFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr): (List[WeededAst.Expr], Option[WeededAst.Expr]) = {
