@@ -1298,6 +1298,11 @@ object Desugar {
   /**
     * Rewrites [[WeededAst.Expr.FCons]] (`x :: xs`) into a call to `List.Cons(x, xs)`.
     * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
+    *
+    * Additionally, if there are over 20 literals and the FCons sequence does not end with the literal `Nil`,
+    * we translate it to `List.append(Vector.toList(Vector#{literals}), nonLiteral)`.
+    *
+    * E.g., `1 :: 2 :: 3 :: ... :: 25 :: xs` is translated to `List.append(Vector.toList(Vector#{1, 2, 3, ..., 25}), xs)`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (flattened, rest) = flattenFCons(exp1, exp2)
@@ -1324,8 +1329,12 @@ object Desugar {
     * Note that `exp1` is the left-hand side of an FCons expression, since it is called by
     * [[desugarFCons]].
     *
-    * E.g., for the flix expression `1 :: 2 :: 3 :: 4 :: Nil` it returns a list of expressions
+    * E.g., for the Flix expression `1 :: 2 :: 3 :: 4 :: Nil` it returns a list of expressions
     * corresponding to (Scala) `List(1, 2, 3, 4)`.
+    *
+    * Also returns `Some(exp)` if the FCons sequence ends with a non-`Nil` literal, e.g.,
+    * the Flix expression `1 :: 2 :: 3 :: xs` returns (Scala) `(List(1, 2, 3), Some(xs))`.
+    * If the Flix expression were `1 :: 2 :: 3 :: Nil` it would return (Scala) `(List(1, 2, 3), None)`.
     *
     * This function terminates as soon as it encounters anything that is not an FCons expression.
     *
