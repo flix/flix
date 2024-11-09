@@ -562,10 +562,10 @@ class Flix {
     }
 
     // Return the result (which could contain soft failures).
-    val errors = result.errors.toList
     result match {
-      case Validation.HardFailure(_) => (None, errors)
-      case _ => (Some(result.unsafeGet), errors)
+      case Validation.Success(root) => (Some(root), List.empty)
+      case Validation.SoftFailure(root, errors) => (Some(root), errors.toList)
+      case Validation.HardFailure(errors) => (None, errors.toList)
     }
   } catch {
     case ex: InternalCompilerException =>
