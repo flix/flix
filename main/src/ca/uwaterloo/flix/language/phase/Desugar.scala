@@ -1302,7 +1302,7 @@ object Desugar {
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val flattened = flattenFCons(exp1, exp2)
     if (flattened.length > 20) {
-      desugarCollectionLitToVec("Vector.toList", flattened, loc0)
+      desugarListLit(flattened, loc0)
     } else {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
