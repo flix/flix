@@ -268,15 +268,15 @@ object CompilerPerf {
     // Speedup
     //
     val speedupPar =
-    ("timestamp" -> timestamp) ~
-      ("minThreads" -> MinThreads) ~
-      ("maxThreads" -> MaxThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
-        case ((phase, times1), (_, times2)) =>
-          ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-      })
+      ("timestamp" -> timestamp) ~
+        ("minThreads" -> MinThreads) ~
+        ("maxThreads" -> MaxThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+          case ((phase, times1), (_, times2)) =>
+            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+        })
     writeFile("speedupWithPar.json", speedupPar)
 
     // Note: Baseline is withPar.
@@ -295,14 +295,14 @@ object CompilerPerf {
     // Throughput
     //
     val throughoutBaseLine =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-      ("results" -> baseline.times.zipWithIndex.map({
-        case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-      }))
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+        ("results" -> baseline.times.zipWithIndex.map({
+          case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        }))
     writeFile("throughput.json", throughoutBaseLine)
 
     val throughputPar =
@@ -331,13 +331,13 @@ object CompilerPerf {
     // Time
     //
     val timeBaseline =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.map {
-        case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-      })
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.phases.map {
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+        })
     writeFile("time.json", timeBaseline)
 
     val timeWithPar =
@@ -364,11 +364,11 @@ object CompilerPerf {
     // Summary
     //
     val summaryJSON =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MaxThreads) ~
-      ("lines" -> lines) ~
-      ("iterations" -> N) ~
-      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MaxThreads) ~
+        ("lines" -> lines) ~
+        ("iterations" -> N) ~
+        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeFile("summary.json", s)
 
@@ -438,7 +438,11 @@ object CompilerPerf {
     val frontendOnly = flix.options.XPerfFrontend
     val totalLines =
       if (frontendOnly) {
-        flix.check().toHardFailure.unsafeGet.sources.foldLeft(0) {
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+        }
+        optRoot.get.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
