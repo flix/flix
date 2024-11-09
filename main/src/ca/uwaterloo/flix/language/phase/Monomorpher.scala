@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, Rig
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -57,6 +57,10 @@ import scala.collection.mutable
   * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
   * that `Print + (Crash + Print)` becomes `Crash + Print`.
   *
+  * Enums and structs can both express type-recursion which cannot be resolved without erasure. This
+  * means that those definitions are left polymorphic, but the types are still resolved of associated
+  * types fx.
+  *
   * At a high-level, monomorphization works as follows:
   *
   *   1. We maintain a queue of functions and the concrete, normalized types they must be
@@ -69,8 +73,7 @@ import scala.collection.mutable
   *         copied).
   *      a. We enqueue (or re-used) other functions referenced by the current function which require
   *         specialization.
-  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions
-  *      (Enum declarations are deleted to avoid specializing them).
+  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
   *
@@ -364,16 +367,24 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val enums = ParOps.parMapValues(root.enums) {
+      case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
+        val newCases = MapOps.mapValues(cases)(visitEnumCase)
+        val tparams = tparams0.map(visitTypeParam)
+        MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
+    }
+
     val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
         val newFields = fields.map(visitStructField)
-        val tparams = tparams0.map(_.sym)
+        val tparams = tparams0.map(visitTypeParam)
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      enums,
       structs,
       effects,
       root.entryPoint,
@@ -392,11 +403,25 @@ object Monomorpher {
     } yield (sym, inst.tpe.typeConstructor.get) -> inst
   }
 
-  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+  /** Visit a struct field, simplifying its polymorphic type. */
+  def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, tpe, loc)
+        MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv, isGround = false), loc)
     }
+  }
+
+  /** Visit an enum case, simplifying its polymorphic type. */
+  def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
+    caze match {
+      case LoweredAst.Case(sym, tpe, _, loc) =>
+        MonoAst.Case(sym, simplify(tpe, root.eqEnv, isGround = false), loc)
+    }
+  }
+
+  /** Convert the type param directly. */
+  private def visitTypeParam(tp: LoweredAst.TypeParam): MonoAst.TypeParam = tp match {
+    case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
   }
 
   /**
