@@ -783,14 +783,14 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
-      case AtomicOp.StructNew(sym, fields) =>
+      case AtomicOp.StructNew(_, fields) =>
         val region :: fieldExps = exps
         // Evaluate the region and ignore its value
         compileExpr(region)
         BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
         // We get the JvmType of the class for the struct
-        val MonoType.Struct(_, elmTypes, _) = tpe
-        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        val MonoType.Struct(sym, targs) = tpe
+        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
         val internalClassName = structType.jvmName.toInternalName
         // Instantiating a new object of struct
         mv.visitTypeInsn(NEW, internalClassName)
@@ -806,8 +806,8 @@ object GenExpression {
       case AtomicOp.StructGet(field) =>
         val idx = field.idx
         val List(exp) = exps
-        val MonoType.Struct(_, elmTypes, _) = exp.tpe
-        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        val MonoType.Struct(sym, targs) = exp.tpe
+        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
         // evaluating the `base`
         compileExpr(exp)
         // Retrieving the field `field${offset}`
@@ -816,8 +816,8 @@ object GenExpression {
       case AtomicOp.StructPut(field) =>
         val idx = field.idx
         val List(exp1, exp2) = exps
-        val MonoType.Struct(_, elmTypes, _) = exp1.tpe
-        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        val MonoType.Struct(sym, targs) = exp1.tpe
+        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
         // evaluating the `base`
         compileExpr(exp1)
         // evaluating the `rhs`

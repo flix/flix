@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, Simplifier}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -136,6 +136,16 @@ object TypeConstructor {
   @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.mkArrow(arity)
+  }
+
+  /**
+    * A type constructor that represents an arrow type where the effect has been removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case class ArrowWithoutEffect(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
@@ -278,6 +288,20 @@ object TypeConstructor {
       * The shape of an array is `Array[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents that represents an array type where the region has been
+    * removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object ArrayWithoutRegion extends TypeConstructor {
+    /**
+      * The shape of an array is `ArrayWithoutRegion[t]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -434,6 +458,22 @@ object TypeConstructor {
       * The shape of a star-kind region is Region[l].
       */
     def kind: Kind = Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents that a region type where the region argument has been
+    * removed.
+    *
+    * I.e., The normal `Region[r]` type is `RegionWithoutRegion` where `r` has been removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object RegionWithoutRegion extends TypeConstructor {
+    /**
+      * The shape of a region is RegionWithoutRegion.
+      */
+    def kind: Kind = Kind.Star
   }
 
   /**

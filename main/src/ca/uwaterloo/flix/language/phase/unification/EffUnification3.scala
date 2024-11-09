@@ -45,7 +45,7 @@ object EffUnification3 {
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
+    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
@@ -83,7 +83,7 @@ object EffUnification3 {
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
+    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
@@ -358,7 +358,12 @@ object EffUnification3 {
     }
   }
 
-  /** An exception used for partial functions that convert [[Type]] into [[Atom]]. */
+  /**
+    * An exception used for partial functions that convert [[Type]] into [[Atom]].
+    *
+    * This exception should not leak outside this phase - it should always be caught. It is used to
+    * avoid having [[Option]] types on recursive functions.
+    */
   private case object InvalidType extends RuntimeException
 
 }
