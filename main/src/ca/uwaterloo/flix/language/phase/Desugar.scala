@@ -1352,7 +1352,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})` calls.
+    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})`.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     desugarCollectionLit("Vector.toSet", exps0, loc0)
