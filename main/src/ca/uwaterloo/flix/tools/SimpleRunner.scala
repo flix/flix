@@ -113,7 +113,7 @@ object SimpleRunner {
         Result.Ok(())
 
       case Result.Err(errors) =>
-        flix.mkMessages(Chain.from(errors.toSeq.sortBy(_.source.name))).foreach(println)
+        flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         Result.Err(1)
