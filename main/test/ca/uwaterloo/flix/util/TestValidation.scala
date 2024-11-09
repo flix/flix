@@ -156,7 +156,7 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse02") {
     val result = traverse(List(1, 2, 3)) {
-      case x => HardFailure(Chain(42))
+      case _ => HardFailure(Chain(42))
     }
     assertResult(HardFailure(Chain(42, 42, 42)))(result)
   }
