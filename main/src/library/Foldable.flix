@@ -248,7 +248,7 @@ pub trait Foldable[t : Type -> Type] {
     ///
     pub def toMutSet(rc: Region[r], t: t[a]): MutSet[a, r] \ (r + Foldable.Aef[t]) with Order[a] =
         let s = MutSet.empty(rc);
-        Foldable.forEach(x -> MutSet.add!(x, s), t);
+        Foldable.forEach(x -> MutSet.add(x, s), t);
         s
 
     ///
@@ -274,7 +274,7 @@ pub trait Foldable[t : Type -> Type] {
     ///
     pub def toMutMap(rc: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ (r + Foldable.Aef[t]) with Order[k] =
         let m = MutMap.empty(rc);
-        Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
+        Foldable.forEach(x -> let (k, v) = x; MutMap.put(k, v, m), t);
         m
 
     ///

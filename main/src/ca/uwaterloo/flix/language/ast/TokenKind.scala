@@ -275,6 +275,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true

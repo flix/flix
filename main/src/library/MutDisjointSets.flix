@@ -52,7 +52,7 @@ mod MutDisjointSets {
         };
         let MutDisjointSets({ rc, forest }) = s;
         if (not memberOf(x, s)) {
-            MutMap.put!(x, singleton(rc, x), forest)
+            MutMap.put(x, singleton(rc, x), forest)
         } else {
             ()
         }

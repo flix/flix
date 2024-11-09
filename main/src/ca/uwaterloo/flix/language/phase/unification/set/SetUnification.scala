@@ -28,9 +28,9 @@ object SetUnification {
   /**
     * The static parameters of set unification.
     *
-    * @param sizeThreshold if positive, [[solve]] will give up before SVE if there are more equations than this
+    * @param sizeThreshold       if positive, [[solve]] will give up before SVE if there are more equations than this
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
-    * @param zhegalkin if true, use Zhegalkin polynomials for SVE.
+    * @param zhegalkin           if true, use Zhegalkin polynomials for SVE.
     */
   final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int, zhegalkin: Boolean)
 
@@ -47,34 +47,32 @@ object SetUnification {
     var subst: SetSubstitution = SetSubstitution.empty
   }
 
-  /**
-    * A listener that observes the operations of [[solve]].
-    *
-    *   - `onEnterPhase(phaseName: String, state: State): Unit`
-    *   - `enExitPhase(state: State): Unit`
-    *   - `onSveCall(f: SetFormula): Unit`
-    */
-  final case class SolverListener(
-                                   onEnterPhase: (String, State) => Unit,
-                                   onExitPhase: (State, Boolean) => Unit,
-                                   onSveCall: SetFormula => Unit
-                                 )
+  /** A listener that observes the operations of [[solve]]. */
+  sealed trait SolverListener {
+    /** Is called before a unification phase starts. */
+    def onEnterPhase(phaseName: String, state: State): Unit = ()
+
+    /** Is called when a unification phase completes. If it made progress, `state` is `true`. */
+    def onExitPhase(state: State, progress: Boolean): Unit = ()
+
+    /** Is called when [[successiveVariableElimination]] is called, directly or recursively. */
+    def onSveCall(f: SetFormula): Unit = ()
+  }
 
   final object SolverListener {
 
     /** The [[SolverListener]] that does nothing. */
-    val doNothing: SolverListener = SolverListener(
-      (_, _) => (),
-      (_, _) => (),
-      _ => ()
-    )
+    val DoNothing: SolverListener = new SolverListener {}
 
-    def stringListener(p: String => Unit): SolverListener = {
-      SolverListener(
-        onEnterPhase = (phaseName, _) => p(s"Phase: $phaseName"),
-        onExitPhase = (state, progress) => if (progress) p(stateString(state.eqs, state.subst)),
-        onSveCall = f => p(s"sve call: $f")
-      )
+    def stringListener(p: String => Unit): SolverListener = new SolverListener {
+      override def onEnterPhase(phaseName: String, state: State): Unit =
+        p(s"Phase: $phaseName")
+
+      override def onExitPhase(state: State, progress: Boolean): Unit =
+        if (progress) p(stateString(state.eqs, state.subst))
+
+      override def onSveCall(f: SetFormula): Unit =
+        p(s"sve call: $f")
     }
   }
 
@@ -128,10 +126,10 @@ object SetUnification {
       case Some((eqs, subst)) =>
         state.eqs = eqs
         state.subst = subst @@ state.subst
-        listener.onExitPhase(state, true)
+        listener.onExitPhase(state, progress = true)
 
       case None =>
-        listener.onExitPhase(state, false)
+        listener.onExitPhase(state, progress = false)
     }
   }
 
@@ -443,8 +441,8 @@ object SetUnification {
   }
 
   /**
-   * Runs SVE -- either using SetFormulas or Zhegalkin polynomials.
-   */
+    * Runs SVE -- either using SetFormulas or Zhegalkin polynomials.
+    */
   private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
     if (opts.zhegalkin)
       sveZhegalkin(eq)
@@ -473,13 +471,13 @@ object SetUnification {
   }
 
   /**
-   * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
-   *
-   * SVE can always make progress, so [[None]] is never returned.
-   *
-   * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
-   * [[Equation.Status.Timeout]].
-   */
+    * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
+    *
+    * SVE can always make progress, so [[None]] is never returned.
+    *
+    * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
+    * [[Equation.Status.Timeout]].
+    */
   private def sveZhegalkin(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val f1 = Zhegalkin.toZhegalkin(eq.f1)

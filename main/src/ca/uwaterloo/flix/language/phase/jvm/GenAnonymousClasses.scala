@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: List[AnonClass])(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,7 +49,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: AnonClass)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface)
@@ -96,7 +96,7 @@ object GenAnonymousClasses {
     *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
-  private def getDescriptorHacked(tpe: MonoType): String = tpe match {
+  private def getDescriptorHacked(tpe: MonoType)(implicit root: Root): String = tpe match {
     case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
     case MonoType.Unit => JvmType.Void.toDescriptor
     case _ => JvmOps.getJvmType(tpe).toDescriptor
@@ -107,7 +107,7 @@ object GenAnonymousClasses {
     *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
-  private def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType): String = {
+  private def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType)(implicit root: Root): String = {
     val resultDescriptor = getDescriptorHacked(retType)
     val argumentDescriptor = paramTypes.map(getDescriptorHacked).mkString
     s"($argumentDescriptor)$resultDescriptor"
@@ -116,7 +116,7 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass)(implicit root: Root): Unit = method match {
     case JvmMethod(ident, fparams, _, tpe, _, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
