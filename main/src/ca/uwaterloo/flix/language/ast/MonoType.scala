@@ -77,7 +77,7 @@ object MonoType {
 
   case class Enum(sym: Symbol.EnumSym, targs: List[MonoType]) extends MonoType
 
-  case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
+  case class Struct(sym: Symbol.StructSym, targs: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
@@ -88,5 +88,28 @@ object MonoType {
   case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
+
+  /** Returns `tpe` if it's a primitive type and returns [[MonoType.Object]] otherwise. */
+  def erase(tpe: MonoType): MonoType = {
+    tpe match {
+      case Bool => Bool
+      case Char => Char
+      case Float32 => Float32
+      case Float64 => Float64
+      case Int8 => Int8
+      case Int16 => Int16
+      case Int32 => Int32
+      case Int64 => Int64
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
+           RecordExtend(_, _, _) | Native(_) | Null =>
+        MonoType.Object
+    }
+  }
+
+  /** All the erased JVM types. */
+  val ErasedTypes: Set[MonoType] = Set(
+    Bool, Char, Float32, Float64, Int8, Int16, Int32, Int64, MonoType.Object
+  )
 
 }
