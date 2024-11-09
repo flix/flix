@@ -1302,9 +1302,7 @@ object Desugar {
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val flattened = flattenFCons(exp1, exp2)
     if (flattened.length > 20) {
-      val es = visitExps(flattened)
-      val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
-      mkApplyFqn("Vector.toList", List(vectorLit), loc0)
+      desugarCollectionLit("Vector.toList", flattened, loc0)
     } else {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -1350,27 +1348,33 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.ListLit]] (`List#{1, 2, 3}`) expression into `Vector.toList(Vector#{1, 2, 3})`.
     */
   private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
-    mkApplyFqn("Vector.toList", List(vectorLit), loc0)
+    desugarCollectionLit("Vector.toList", exps0, loc0)
   }
 
   /**
     * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})` calls.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
-    mkApplyFqn("Vector.toSet", List(vectorLit), loc0)
+    desugarCollectionLit("Vector.toSet", exps0, loc0)
   }
 
   /**
     * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = exps0.map { case (k, v) => DesugaredAst.Expr.Tuple(List(visitExp(k), visitExp(v)), k.loc) }
+    val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
+    desugarCollectionLit("Vector.toMap", es, loc0)
+  }
+
+  /**
+    * Helper function for desugaring collection literals.
+    *
+    * Conceptually, it returns (in Flix): `fqn(Vector#{exps})`.
+    */
+  private def desugarCollectionLit(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
     val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
-    mkApplyFqn("Vector.toMap", List(vectorLit), loc0)
+    mkApplyFqn(fqn, List(vectorLit), loc0)
   }
 
   /**
