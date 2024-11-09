@@ -15,7 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
+import ca.uwaterloo.flix.language.errors.TypeError
+
 import scala.annotation.TypeConstraint
 
 object MagicMatchCompleter {
@@ -33,47 +36,99 @@ object MagicMatchCompleter {
     *   case Blue => ???
     * }
     */
-  def getCompletions(name: String, tpe: Type ,ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (!"match".startsWith(name)) return Nil
 
-    val ident = extractIdentifier(ctx.word)
-    getEnumSym(tpe) match {
-      case Some(sym) =>
-        val casesString = generateCasesString(root.enums(sym).cases)
-        val matchExpr = s"match $ident {\n$casesString}"
-        val prompt = s"$ident.match"
-        Completion.SnippetCompletion(prompt, matchExpr, "Expand to a full match expression.") :: Nil
-      case None => Nil
+  def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    for {
+      sym <- getEnumSym(err.tpe)
+      baseExp <- err.base.text
+    } yield {
+      val name = s"$baseExp.match"
+      val range = sourceLocation2Range(err.loc)
+      val casesString = generateCasesString(root.enums(sym).cases)
+      val snippet = s"match $baseExp {\n$casesString}"
+      Completion.MagicMatchCompletion(name, range, snippet, "Expand to a full match expression.")
     }
   }
 
   /**
-    * Generates the string representation of the cases of an enum.
+    * Returns the length of the case String in the following form:
+    *  Unit: case Red => ???
+    *  Tuple: case Red(_elem1, _elem2) => ???
+    *  Normal: case Red(_elem) => ???
     */
-  private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
-    cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
-      case ((acc, z), (sym, cas)) =>
-        val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$sym => $${${z + 1}:???}", z + 1)
-          case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
-            .map(elem => s"$${${elem + z}:_elem$elem}")
-            .mkString(s"$sym(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"$sym($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
-        }
-        (acc + "    case " + str + "\n", k)
-    })._1
+
+  private def getCaseLength(cas: TypedAst.Case): Int = {
+    cas.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => cas.sym.toString.length
+      case Some(TypeConstructor.Tuple(arity)) => cas.sym.toString.length + arity * 8
+      case _ => cas.sym.toString.length + 7
+    }
   }
 
   /**
-    * Extract the substring before the last . as the identifier
+    * Creates a case string and its corresponding right-hand side string.
     */
-  private def extractIdentifier(word: String): String = {
-    word.substring(0, word.lastIndexOf("."))
+
+  private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, String, Int) = {
+    cas.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) =>
+        (s"$sym", s"$${${z + 1}:???}", z + 1)
+      case Some(TypeConstructor.Tuple(arity)) =>
+        val elements = List.range(1, arity + 1).map(i => s"$${${i + z}:_elem$i}").mkString(", ")
+        (s"$sym($elements)", s"$${${arity + z + 1}:???}", z + arity + 1)
+      case _ =>
+        (s"$sym($${${z + 1}:_elem})", s"$${${z + 2}:???}", z + 2)
+    }
   }
 
   /**
-   * Returns the enum symbol of the given type, if it is an enum.
-   */
+    * Formats the cases of an enum into a string.
+    */
+
+  private def generateCasesString(cases: Map[Symbol.CaseSym, TypedAst.Case]) = {
+   val maxCaseLength = cases.values.map(getCaseLength).max
+   cases.toList
+     .sortBy(_._1.loc)
+     .foldLeft(("", 1)) { case ((acc, z), (sym, cas)) =>
+       val (lhs, rhs, nextZ) = createCase(sym, cas, z)
+       val paddedLhs = padLhs(lhs, maxCaseLength)
+       (acc + s"    case $paddedLhs => $rhs\n", nextZ)
+     }._1
+  }
+
+  /**
+    * Pads the left-hand side (lhs) of a case string to the specified maximum length,
+    * accounting for the extra padding required by invisible characters in the case string.
+    * For example, "${1:???}" will be displayed as "???", so the extra padding length is the length of "${1:}".
+    */
+
+  private def padLhs(lhs: String, maxLength: Int): String = {
+    val arity = lhs.count(_ == '$')
+    val extraPaddingLength = List.range(1, arity + 1).map { elem =>
+      s"$${$elem:}"
+    }.mkString.length
+    lhs.padTo(maxLength + extraPaddingLength, ' ')
+  }
+
+  /**
+    * Converts a [[SourceLocation]] to an [[Range]].
+    */
+
+  private def sourceLocation2Range(loc: SourceLocation): Range = {
+    Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
+  }
+
+  /**
+    * Converts a [[SourcePosition]] to a [[Position]].
+    */
+
+  private def sourcePosition2Position(pos: SourcePosition): Position =
+    Position(pos.line, pos.col)
+
+  /**
+    * Returns the enum symbol of the given type, if it is an enum.
+    */
+
   private def getEnumSym(tpe: Type): Option[Symbol.EnumSym] = tpe.typeConstructor match {
     case Some(TypeConstructor.Enum(sym, _)) => Some(sym)
     case _ => None
