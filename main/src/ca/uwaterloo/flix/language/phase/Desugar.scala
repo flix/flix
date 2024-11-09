@@ -1312,14 +1312,27 @@ object Desugar {
     }
   }
 
-  private def flattenFCons(expr01: WeededAst.Expr, expr02: WeededAst.Expr): List[WeededAst.Expr] = {
+  /**
+    * Helper function for [[desugarFCons]].
+    *
+    * Returns the list of expressions in the sequence of FCons expressions in `exp2`.
+    * Note that `exp1` is the left-hand side of an FCons expression, since it is called by
+    * [[desugarFCons]].
+    *
+    * E.g., for the flix expression `1 :: 2 :: 3 :: 4 :: Nil` it returns a list of expressions
+    * corresponding to (Scala) `List(1, 2, 3, 4)`.
+    *
+    * This function terminates as soon as it encounters anything that is not an FCons expression.
+    *
+    */
+  private def flattenFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr): List[WeededAst.Expr] = {
     @tailrec
-    def flatten(expr: WeededAst.Expr, acc: List[WeededAst.Expr]): List[WeededAst.Expr] = expr match {
+    def flatten(exp: WeededAst.Expr, acc: List[WeededAst.Expr]): List[WeededAst.Expr] = exp match {
       case WeededAst.Expr.FCons(e1, e2, _) => flatten(e2, e1 :: acc)
       case _ => acc.reverse
     }
 
-    flatten(expr02, List(expr01))
+    flatten(exp2, List(exp1))
   }
 
   /**
