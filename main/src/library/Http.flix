@@ -26,22 +26,20 @@ mod Http {
     ///
     /// A response from an HTTP request.
     ///
-    /// The response consists of: `(status, statusText, headers, body)`
-    ///
-    pub enum Response(Int32, String, String, String)
+    pub enum Response({status = Int32, statusText = String, headers = String, body = String})
 
     mod Response {
         pub def status(r: Response): Int32 = match r {
-            case Response(status, _, _, _) => status
+            case Response(x) => x#status
         }
         pub def statusText(r: Response): String = match r {
-            case Response(_, statusText, _, _) => statusText
+            case Response(x) => x#statusText
         }
-        pub def url(r: Response): String = match r {
-            case Response(_, _, url, _) => url
+        pub def headers(r: Response): String = match r {
+            case Response(x) => x#headers
         }
         pub def body(r: Response): String = match r {
-            case Response(_, _, _, body) => body
+            case Response(x) => x#body
         }
     }
 
