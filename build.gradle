@@ -106,13 +106,7 @@ tasks.register('testAll', JavaExec) {
 
 task testFuzzerSuite(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
-    // Note: We do not use the -P (parallelism) flag for two reasons:
-    // (A) It may use excessive amounts of memory (running many instances of the compiler).
-    // (B) It may garble the order of the output (when an error occurs).
-    // Of course we still benefit from parallelism inside Flix itself.
     args = ['-s', 'flix.fuzzers.FuzzerSuite', '-o']
-    // We also enforce that all tests can complete with 4GB of memory:
-    jvmArgs = ['-Xmx3g']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
