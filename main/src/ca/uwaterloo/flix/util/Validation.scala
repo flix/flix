@@ -195,8 +195,9 @@ object Validation {
     }
 
     // Check whether we were successful or not.
+    val emp: Chain[E] = Chain.empty
     if (isFatal) {
-      HardFailure(failureStream.foldLeft(Chain.empty[E])(_ ++ _))
+      HardFailure(failureStream.foldLeft(emp)(_ ++ _))
     } else {
       Success(successValues.toList)
     }
