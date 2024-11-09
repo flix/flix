@@ -1359,7 +1359,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
+    * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Vector.toMap(Vector#{(1, 2), (2, 3)})`.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
