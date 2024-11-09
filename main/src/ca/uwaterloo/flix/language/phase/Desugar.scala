@@ -1302,7 +1302,7 @@ object Desugar {
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val flattened = flattenFCons(exp1, exp2)
     if (flattened.length > 20) {
-      desugarCollectionLit("Vector.toList", flattened, loc0)
+      desugarCollectionLitToVec("Vector.toList", flattened, loc0)
     } else {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -1348,14 +1348,14 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.ListLit]] (`List#{1, 2, 3}`) expression into `Vector.toList(Vector#{1, 2, 3})`.
     */
   private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    desugarCollectionLit("Vector.toList", exps0, loc0)
+    desugarCollectionLitToVec("Vector.toList", exps0, loc0)
   }
 
   /**
     * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})`.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    desugarCollectionLit("Vector.toSet", exps0, loc0)
+    desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
   }
 
   /**
@@ -1363,7 +1363,7 @@ object Desugar {
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
-    desugarCollectionLit("Vector.toMap", es, loc0)
+    desugarCollectionLitToVec("Vector.toMap", es, loc0)
   }
 
   /**
@@ -1371,7 +1371,7 @@ object Desugar {
     *
     * Conceptually, it returns (in Flix): `fqn(Vector#{exps})`.
     */
-  private def desugarCollectionLit(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarCollectionLitToVec(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
     mkApplyFqn(fqn, List(vectorLit), loc0)
