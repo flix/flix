@@ -509,9 +509,16 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    val errors = mutable.ListBuffer.empty[CompilationMessage]
+
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    errors ++= readerErrors
+
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    errors ++= lexerErrors
+
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    errors ++= parserErrors
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
