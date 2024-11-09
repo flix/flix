@@ -1300,9 +1300,16 @@ object Desugar {
     * If there are over 20 literals we translate it to `Vector.toList(Vector#{1, 2, ...})`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val flattened = flattenFCons(exp1, exp2)
+    val (flattened, rest) = flattenFCons(exp1, exp2)
     if (flattened.length > 20) {
-      desugarListLit(flattened, loc0)
+      val desugaredFCons = desugarListLit(flattened, loc0)
+      rest match {
+        case Some(exp) =>
+          val e = visitExp(exp)
+          mkApplyFqn("List.append", List(desugaredFCons, e), loc0)
+        case None =>
+          desugaredFCons
+      }
     } else {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -1323,11 +1330,13 @@ object Desugar {
     * This function terminates as soon as it encounters anything that is not an FCons expression.
     *
     */
-  private def flattenFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr): List[WeededAst.Expr] = {
+  private def flattenFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr): (List[WeededAst.Expr], Option[WeededAst.Expr]) = {
     @tailrec
-    def flatten(exp: WeededAst.Expr, acc: List[WeededAst.Expr]): List[WeededAst.Expr] = exp match {
+    def flatten(exp: WeededAst.Expr, acc: List[WeededAst.Expr]): (List[WeededAst.Expr], Option[WeededAst.Expr]) = exp match {
       case WeededAst.Expr.FCons(e1, e2, _) => flatten(e2, e1 :: acc)
-      case _ => acc.reverse
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents == "List" :: Nil => (acc.reverse, None)
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents.isEmpty => (acc.reverse, None)
+      case _ => (acc.reverse, Some(exp))
     }
 
     flatten(exp2, List(exp1))
