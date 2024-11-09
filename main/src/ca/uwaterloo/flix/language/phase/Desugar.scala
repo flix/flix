@@ -1362,8 +1362,13 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Vector.toMap(Vector#{(1, 2), (2, 3)})`.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
-    desugarCollectionLitToVec("Vector.toMap", es, loc0)
+    if (exps0.isEmpty) {
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      mkApplyFqn("Map.empty", List(unit), loc0)
+    } else {
+      val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
+      desugarCollectionLitToVec("Vector.toMap", es, loc0)
+    }
   }
 
   /**
