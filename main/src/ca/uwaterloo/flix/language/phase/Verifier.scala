@@ -594,7 +594,7 @@ object Verifier {
     */
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
-      case MonoType.Struct(sym, _, _) =>
+      case MonoType.Struct(sym, _) =>
         if(sym0 != sym) {
           throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
         }

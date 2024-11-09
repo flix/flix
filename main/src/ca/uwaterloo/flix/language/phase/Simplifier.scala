@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.annotation.tailrec
 
@@ -39,9 +40,11 @@ object Simplifier {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     implicit val r: MonoAst.Root = root
     val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
@@ -52,6 +55,28 @@ object Simplifier {
       val retType = visitType(funType.arrowResultType)
       val eff = simplifyEffect(funType.arrowEffectType)
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
+  }
+
+  private def visitEnum(enm: MonoAst.Enum): SimplifiedAst.Enum = enm match {
+    case MonoAst.Enum(_, ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      SimplifiedAst.Enum(ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: MonoAst.Case): SimplifiedAst.Case = caze match {
+    case MonoAst.Case(sym, tpe, loc) => SimplifiedAst.Case(sym, visitPolyType(tpe), loc)
+  }
+
+  private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
+    case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
+    case MonoAst.StructField(sym, tpe, loc) => SimplifiedAst.StructField(sym, visitPolyType(tpe), loc)
   }
 
   private def visitEffect(decl: MonoAst.Effect)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Effect = decl match {
@@ -227,7 +252,19 @@ object Simplifier {
 
   }
 
-  private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
+  /**
+    * Returns the [[MonoType]] representation of `tpe`.
+    *
+    * This includes:
+    *   - Removing regions from Array.
+    *   - Removing effects from Arrow.
+    *   - Removing type arguments from Region.
+    *   - Converting Vector into Array (with no region as above).
+    *   - Converting restrictable enums into regular enums.
+    *   - Flattening schema- and record rows into types without their Schema/Record constructor.
+    *   - Converting set/caseset/bool formulas into Unit.
+    */
+  private def visitType(tpe: Type): MonoType = {
     val base = tpe.typeConstructor
     base match {
       case None => tpe match {
@@ -284,29 +321,7 @@ object Simplifier {
 
           case TypeConstructor.Struct(sym, _) =>
             val targs = tpe.typeArguments
-            // We must do this here because the `MonoTypes` requires the individual types of each element
-            // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
-            // at this point we would know `v` but we would need the type of `a`. We also erase to avoid infinitely
-            // expanding recursive types
-            val struct = root.structs(sym)
-            val subst = Substitution(struct.tparams.zip(targs).toMap)
-            val substitutedStructFieldTypes = struct.fields.map { f =>
-              subst(f.tpe).typeConstructor match {
-                case Some(value) => value match {
-                  case TypeConstructor.Bool => MonoType.Bool
-                  case TypeConstructor.Char => MonoType.Char
-                  case TypeConstructor.Float32 => MonoType.Float32
-                  case TypeConstructor.Float64 => MonoType.Float64
-                  case TypeConstructor.Int8 => MonoType.Int8
-                  case TypeConstructor.Int16 => MonoType.Int16
-                  case TypeConstructor.Int32 => MonoType.Int32
-                  case TypeConstructor.Int64 => MonoType.Int64
-                  case _ => MonoType.Object
-                }
-                case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
-              }
-            }
-            MonoType.Struct(sym, substitutedStructFieldTypes, targs.map(visitType))
+            MonoType.Struct(sym, targs.map(visitType))
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
@@ -316,6 +331,7 @@ object Simplifier {
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
           case TypeConstructor.Array =>
+            // Remove the region from the array.
             val List(elm, _) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
@@ -323,14 +339,17 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             MonoType.Array(visitType(elm))
 
-          case TypeConstructor.RegionToStar => MonoType.Region
+          case TypeConstructor.RegionToStar =>
+            // Remove the type argument.
+            MonoType.Region
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             MonoType.Tuple(targs.map(visitType))
 
           case TypeConstructor.Arrow(_) =>
-            // arrow type arguments are ordered (effect, args.., result type)
+            // Remove the effect from the arrow.
+            // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
             MonoType.Arrow(args.map(visitType), visitType(res))
@@ -388,11 +407,186 @@ object Simplifier {
 
           case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.ArrowWithoutEffect(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.ArrayWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
   }
 
-  private def visitFormalParam(p: MonoAst.FormalParam)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.FormalParam = {
+  /**
+    * Adaptation of [[visitType]] that returns [[Type]] instead.
+    *
+    * The change from [[visitType]] is that here we might have type variables and we also cannot
+    * eliminate rows (a type could be `a[#(x=Char | b)]` for example).
+    */
+  private def visitPolyType(tpe: Type): Type = {
+    val base = tpe.baseType
+    base match {
+      case v@Type.Var(_, _) =>
+        val targs = tpe.typeArguments
+        Type.mkApply(v, targs.map(visitPolyType), tpe.loc)
+
+      case cst@Type.Cst(tc, loc) =>
+        tc match {
+          case TypeConstructor.Void => cst
+
+          case TypeConstructor.AnyType => cst
+
+          case TypeConstructor.Unit => cst
+
+          case TypeConstructor.Null => cst
+
+          case TypeConstructor.Bool => cst
+
+          case TypeConstructor.Char => cst
+
+          case TypeConstructor.Float32 => cst
+
+          case TypeConstructor.Float64 => cst
+
+          case TypeConstructor.BigDecimal => cst
+
+          case TypeConstructor.Int8 => cst
+
+          case TypeConstructor.Int16 => cst
+
+          case TypeConstructor.Int32 => cst
+
+          case TypeConstructor.Int64 => cst
+
+          case TypeConstructor.BigInt => cst
+
+          case TypeConstructor.Str => cst
+
+          case TypeConstructor.Regex => cst
+
+          case TypeConstructor.RecordRowEmpty => cst
+
+          case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
+
+          case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
+
+          case TypeConstructor.Lazy =>
+            val List(elm) = tpe.typeArguments
+            Type.mkLazy(visitPolyType(elm), loc)
+
+          case TypeConstructor.Enum(sym, _) =>
+            val targs = tpe.typeArguments
+            Type.mkEnum(sym, targs.map(visitPolyType), loc)
+
+          case TypeConstructor.Struct(sym, _) =>
+            val targs = tpe.typeArguments
+            Type.mkStruct(sym, targs.map(visitPolyType), loc)
+
+          case TypeConstructor.RestrictableEnum(sym, _) =>
+            val targs = tpe.typeArguments
+            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+            Type.mkEnum(enumSym, targs.map(visitPolyType), loc)
+
+          case TypeConstructor.Native(_) => cst
+
+          case TypeConstructor.Array =>
+            // Remove the region from the array.
+            val List(elm, _) = tpe.typeArguments
+            Type.mkArrayWithoutRegion(visitPolyType(elm), loc)
+
+          case TypeConstructor.Vector =>
+            val List(elm) = tpe.typeArguments
+            Type.mkArrayWithoutRegion(visitPolyType(elm), loc)
+
+          case TypeConstructor.RegionToStar =>
+            // Remove the type argument.
+            Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
+
+          case TypeConstructor.Tuple(_) =>
+            val targs = tpe.typeArguments
+            Type.mkTuple(targs.map(visitPolyType), loc)
+
+          case TypeConstructor.Arrow(_) =>
+            // Remove the effect from the arrow.
+            // Arrow type arguments are ordered (effect, args.., result type).
+            val eff :: targs = tpe.typeArguments
+            val (args, List(res)) = targs.splitAt(targs.length - 1)
+            Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
+
+          case TypeConstructor.RecordRowExtend(label) =>
+            val List(labelType, restType) = tpe.typeArguments
+            Type.mkRecordRowExtend(label, visitPolyType(labelType), visitPolyType(restType), loc)
+
+          case TypeConstructor.Record =>
+            val List(elm) = tpe.typeArguments
+            Type.mkRecord(visitPolyType(elm), loc)
+
+          case TypeConstructor.True => Type.mkUnit(loc)
+          case TypeConstructor.False => Type.mkUnit(loc)
+          case TypeConstructor.Not => Type.mkUnit(loc)
+          case TypeConstructor.And => Type.mkUnit(loc)
+          case TypeConstructor.Or => Type.mkUnit(loc)
+
+          case TypeConstructor.Pure => Type.mkUnit(loc)
+          case TypeConstructor.Univ => Type.mkUnit(loc)
+          case TypeConstructor.Complement => Type.mkUnit(loc)
+          case TypeConstructor.Union => Type.mkUnit(loc)
+          case TypeConstructor.Intersection => Type.mkUnit(loc)
+          case TypeConstructor.SymmetricDiff => Type.mkUnit(loc)
+          case TypeConstructor.Effect(_) => Type.mkUnit(loc)
+          case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)
+          case TypeConstructor.CaseComplement(_) => Type.mkUnit(loc)
+          case TypeConstructor.CaseIntersection(_) => Type.mkUnit(loc)
+          case TypeConstructor.CaseUnion(_) => Type.mkUnit(loc)
+
+          case TypeConstructor.SchemaRowEmpty => Type.mkSchemaRowEmpty(loc)
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            val List(predType, restType) = tpe.typeArguments
+            Type.mkSchemaRowExtend(pred, visitPolyType(predType), visitPolyType(restType), loc)
+
+          case TypeConstructor.Relation =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Lattice =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmConstructor(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmMethod(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmField(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Error(_, _) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.ArrowWithoutEffect(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.ArrayWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+        }
+
+      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+    }
+  }
+
+  private def visitFormalParam(p: MonoAst.FormalParam): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
     SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
   }
@@ -405,7 +599,7 @@ object Simplifier {
       SimplifiedAst.JvmMethod(ident, fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
-  private def pat2exp(pat0: MonoAst.Pattern)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = pat0 match {
+  private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {
     case MonoAst.Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
