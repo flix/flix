@@ -238,9 +238,16 @@ object DocAstFormatter {
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
-      case LocalDef(v, tpe, bind, _) =>
-        val bindf = aux(bind, paren = false)
-        text("local def") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
+      case LocalDef(name, parameters, resType, effect, body, _) =>
+        // val bindf = aux(body, paren = false)
+        val args = parameters.map(aux(_, paren = false))
+        val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
+        val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
+        val bodyf = format(body)
+        group(
+          text("local def") +: aux(name) |:: tuple(args) |::
+            text(":") +: group(resTypef |:: effectf +: text("=") |:: breakWith(" ")) |:: curlyOpen(bodyf)
+        )
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
     if (inBlock) group(delimitedBinders)
@@ -276,8 +283,8 @@ object DocAstFormatter {
           chase(d2, s :: acc)
         case l@Let(_, _, _, body) =>
           chase(body, l :: acc)
-        case l@LocalDef(_, _, _, body) =>
-          chase(body, l :: acc)
+        case l@LocalDef(_, _, _, _, _, next) =>
+          chase(next, l :: acc)
         case other => (acc.reverse, other)
       }
     }

@@ -108,7 +108,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LocalDef(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -194,7 +194,7 @@ object DocAst {
     def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
       val beforeRecord = "new " + sym.toString
       val name = Name.Label(sym.name, sym.loc)
-      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc)}
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
       DoubleKeyword(beforeRecord, record, "@", Left(d2))
     }
 
