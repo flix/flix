@@ -16,9 +16,6 @@
 
 mod TestFileRead {
 
-    import java.io.IOException
-    import java.nio.file.Path
-
     use IoError.IoError
     use IoError.ErrorKind
 
