@@ -31,7 +31,7 @@ mod App {
     /// Runs the given function `f` handling all effects specified in the signature where some handlers may return `Result`.
     ///
     pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, FileRead, FileWrite, Logger}) + IO =
-        let r = Clock.handle >> Console.handle >> Logger.handle;
-        let combined = (FileWrite.handle >> FileRead.handle >> (g -> g >> Result.flatten));
-        (f |> (r >> combined))()
+        let r1 = Clock.handle >> Console.handle >> Logger.handle;
+        let r2 = (FileWrite.handle >> FileRead.handle >> (g -> g >> Result.flatten));
+        (f |> (r1 >> r2))()
 }
