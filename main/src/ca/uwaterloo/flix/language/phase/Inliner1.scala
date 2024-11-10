@@ -294,8 +294,7 @@ object Inliner1 {
         }
 
       case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-        // TODO: Update this case if we want to inline
-        // Current impl is just placeholder
+        // TODO: Treat like let-binding above, except it is never trivial so some checks can be omitted
         val fps = fparams.map(visitFormalParam)
         val e1 = visit(exp1)
         val e2 = visit(exp2)
