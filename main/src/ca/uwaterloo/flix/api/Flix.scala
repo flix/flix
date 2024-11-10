@@ -509,32 +509,52 @@ class Flix {
       implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
     }
 
+    val errors = mutable.ListBuffer.empty[CompilationMessage]
+
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    errors ++= readerErrors
+
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    errors ++= lexerErrors
+
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    errors ++= parserErrors
+
     val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    errors ++= weederErrors
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterWeeder <- weederValidation.withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors).withSoftFailures(weederErrors)
+      afterWeeder <- weederValidation
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-      (afterNamer, namerErrors) = Namer.run(afterDesugar)
+      (afterNamer, nameErrors) = Namer.run(afterDesugar)
+      _ = errors ++= nameErrors
       (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
-      (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      _ = errors ++= resolutionErrors
+      afterResolver <- resolverValidation
+      (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+      _ = errors ++= kindErrors
       (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+      _ = errors ++= derivationErrors
       (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      _ = errors ++= typeErrors
       () = EffectVerifier.run(afterTyper)
       (afterRegions, regionErrors) = Regions.run(afterTyper)
+      _ = errors ++= regionErrors
       (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+      _ = errors ++= entryPointErrors
       (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      _ = errors ++= instanceErrors
       (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+      _ = errors ++= predDepErrors
       (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+      _ = errors ++= stratificationErrors
       (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+      _ = errors ++= patMatchErrors
       (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+      _ = errors ++= redundancyErrors
       (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
-      errors = kinderErrors ::: derivationErrors ::: typeErrors ::: regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
-      output <- Validation.toSuccessOrSoftFailure(afterSafety, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
+      _ = errors ++= safetyErrors
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -546,7 +566,7 @@ class Flix {
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
       }
-      output
+      afterSafety
     }
 
     // Shutdown fork-join thread pool.
@@ -565,9 +585,8 @@ class Flix {
 
     // Return the result (which could contain soft failures).
     result match {
-      case Validation.Success(root) => (Some(root), List.empty)
-      case Validation.SoftFailure(root, errors) => (Some(root), errors.toList)
-      case Validation.HardFailure(errors) => (None, errors.toList)
+      case Validation.Success(root) => (Some(root), errors.toList)
+      case Validation.HardFailure(failures) => (None, errors.toList ++ failures.toList)
     }
   } catch {
     case ex: InternalCompilerException =>
