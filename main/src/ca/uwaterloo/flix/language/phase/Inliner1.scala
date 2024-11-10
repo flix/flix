@@ -37,9 +37,10 @@ object Inliner1 {
     */
   def run(root: OccurrenceAst1.Root)(implicit flix: Flix): Validation[MonoAst.Root, CompilationMessage] = {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
-    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    Validation.success(MonoAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
+    Validation.success(MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   private type InVar = Symbol.VarSym
@@ -105,10 +106,22 @@ object Inliner1 {
       MonoAst.Spec(doc, ann, mod, fps, functionType, retTpe, eff)
   }
 
+  private def visitEnum(enum0: OccurrenceAst1.Enum): MonoAst.Enum = enum0 match {
+    case OccurrenceAst1.Enum(doc, ann, mod, sym, tparams, cases, loc) =>
+      val tps = tparams.map(visitTypeParam)
+      val cs = cases.map { case (sym, caze) => sym -> visitEnumCase(caze) }
+      MonoAst.Enum(doc, ann, mod, sym, tps, cs, loc)
+  }
+
+  private def visitEnumCase(case0: OccurrenceAst1.Case): MonoAst.Case = case0 match {
+    case OccurrenceAst1.Case(sym, tpe, loc) => MonoAst.Case(sym, tpe, loc)
+  }
+
   private def visitStruct(struct0: OccurrenceAst1.Struct): MonoAst.Struct = struct0 match {
     case OccurrenceAst1.Struct(doc, ann, mod, sym, tparams, fields, loc) =>
+      val tps = tparams.map(visitTypeParam)
       val fs = fields.map(visitStructField)
-      MonoAst.Struct(doc, ann, mod, sym, tparams, fs, loc)
+      MonoAst.Struct(doc, ann, mod, sym, tps, fs, loc)
   }
 
   private def visitStructField(field0: OccurrenceAst1.StructField): MonoAst.StructField = field0 match {
@@ -122,16 +135,20 @@ object Inliner1 {
       MonoAst.Effect(doc0, ann0, mod0, sym0, ops, loc0)
   }
 
-  private def visitEffectOp(op: OccurrenceAst1.Op): MonoAst.Op = op match {
+  private def visitEffectOp(op0: OccurrenceAst1.Op): MonoAst.Op = op0 match {
     case OccurrenceAst1.Op(sym0, fparams0, spec0, loc) =>
       val spec = visitSpec(spec0, fparams0)
       MonoAst.Op(sym0, spec, loc)
   }
 
+  private def visitTypeParam(tparam0: OccurrenceAst1.TypeParam): MonoAst.TypeParam = tparam0 match {
+    case OccurrenceAst1.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
+  }
+
   /**
     * Translates the given formal parameter `fparam` from [[OccurrenceAst1.FormalParam]] into a [[MonoAst.FormalParam]].
     */
-  private def visitFormalParam(fparam: OccurrenceAst1.FormalParam): MonoAst.FormalParam = fparam match {
+  private def visitFormalParam(fparam0: OccurrenceAst1.FormalParam): MonoAst.FormalParam = fparam0 match {
     case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
   }
 
