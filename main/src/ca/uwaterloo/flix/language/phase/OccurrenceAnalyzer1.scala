@@ -82,10 +82,10 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
-    val defs = visitDefs(root.defs)
-    val effects = visitEffects(root.effects)
-    val enums = visitEnums(root.enums)
-    val structs = visitStructs(root.structs)
+    val defs = visitDefs(root.defs) // visitDefs call parMap internally and has additional handling
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     OccurrenceAst1.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
@@ -152,10 +152,6 @@ object OccurrenceAnalyzer1 {
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, exp, defContext, defn0.loc), occurInfo)
   }
 
-  private def visitEffects(effects0: Map[Symbol.EffectSym, MonoAst.Effect]): Map[Symbol.EffectSym, OccurrenceAst1.Effect] = {
-    effects0.map { case (k, v) => k -> visitEffect(v) }
-  }
-
   private def visitEffect(effect0: MonoAst.Effect): OccurrenceAst1.Effect = effect0 match {
     case MonoAst.Effect(doc, ann, mod, sym, ops, loc) =>
       val os = ops.map(visitEffectOp)
@@ -174,10 +170,6 @@ object OccurrenceAnalyzer1 {
       OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff)
   }
 
-  private def visitEnums(enums0: Map[Symbol.EnumSym, MonoAst.Enum]): Map[Symbol.EnumSym, OccurrenceAst1.Enum] = {
-    enums0.map { case (sym, enum0) => sym -> visitEnum(enum0) }
-  }
-
   private def visitEnum(enum0: MonoAst.Enum): OccurrenceAst1.Enum = enum0 match {
     case MonoAst.Enum(doc, ann, mod, sym, tparams, cases, loc) =>
       val tps = tparams.map(visitTypeParam)
@@ -187,10 +179,6 @@ object OccurrenceAnalyzer1 {
 
   private def visitEnumCase(case0: MonoAst.Case): OccurrenceAst1.Case = case0 match {
     case MonoAst.Case(sym, tpe, loc) => OccurrenceAst1.Case(sym, tpe, loc)
-  }
-
-  private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = {
-    structs0.map { case (sym, struct) => sym -> visitStruct(struct) }
   }
 
   private def visitStruct(struct0: MonoAst.Struct): OccurrenceAst1.Struct = struct0 match {
