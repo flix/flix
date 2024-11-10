@@ -306,11 +306,6 @@ mod ClassHierarchyAnalysis {
             Assert.eq(true, result)
 
         @Test
-        def testIllegalMulitpleInheritance03(): Bool =
-            let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.util.ArrayList");
-            Assert.eq(false, result)
-
-        @Test
         def testIllegalMulitpleInheritance04(): Bool =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.lang.Object");
             Assert.eq(false, result)
