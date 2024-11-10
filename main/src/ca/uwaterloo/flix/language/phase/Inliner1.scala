@@ -499,14 +499,14 @@ object Inliner1 {
         // If the parameter is unused and the argument is NOT pure, then put it in a statement.
         val nextLet = bind(nextSymbols, nextExpressions, env)
         val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
-        MonoAst.Expr.Stm(e1, nextLet, exp0.tpe, eff, exp0.loc)
+        MonoAst.Expr.Stm(e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
       case ((OccurrenceAst1.FormalParam(sym, _, _, _, _), _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env + (sym -> freshVar)
         val nextLet = bind(nextSymbols, nextExpressions, env1)
         val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
-        MonoAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, eff, exp0.loc)
+        MonoAst.Expr.Let(freshVar, e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
       case _ => applySubst(exp0, env)(subst0, root, flix)
     }
