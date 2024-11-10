@@ -1748,7 +1748,7 @@ mod TestMutList {
     def forEach01(): Bool = region rc {
         let v = MutList.empty(rc);
         let sb = StringBuilder.empty(rc);
-        let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == ""
     }
@@ -1757,7 +1757,7 @@ mod TestMutList {
     def forEach02(): Bool = region rc {
         let v = MutList.range(rc, 0, 5);
         let sb = StringBuilder.empty(rc);
-        let f = x -> if (x `Int32.remainder` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = x -> if (x `Int32.remainder` 2 == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
     }
@@ -1766,7 +1766,7 @@ mod TestMutList {
     def forEach03(): Bool = region rc {
         let v = MutList.range(rc, 0, 2);
         let sb = StringBuilder.empty(rc);
-        let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "FT"
     }
@@ -1775,7 +1775,7 @@ mod TestMutList {
     def forEach04(): Bool = region rc {
         let v = MutList.range(rc, 0, 2);
         let sb = StringBuilder.empty(rc);
-        let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = x -> if (x < 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "FF"
     }
@@ -1800,7 +1800,7 @@ mod TestMutList {
     def forEachWithIndex02(): Bool = region rc {
         let v = MutList.range(rc, 1, 4);
         let sb = StringBuilder.empty(rc);
-        let f = (i, x) -> if (x `Int32.remainder` 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (i, x) -> if (x `Int32.remainder` 2 == 1 and i == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
     }
@@ -1809,7 +1809,7 @@ mod TestMutList {
     def forEachWithIndex03(): Bool = region rc {
         let v = MutList.range(rc, 0, 5);
         let sb = StringBuilder.empty(rc);
-        let f = (_, x) -> if (x `Int32.remainder` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (_, x) -> if (x `Int32.remainder` 2 == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
     }

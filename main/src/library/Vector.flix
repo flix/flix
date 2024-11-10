@@ -1468,10 +1468,10 @@ mod Vector {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
-        use StringBuilder.append!;
+        use StringBuilder.append;
         let lastSep = String.length(sep);
         let sb = StringBuilder.empty(rc);
-        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
+        forEach(x -> { append(f(x), sb); append(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

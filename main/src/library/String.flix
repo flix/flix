@@ -192,7 +192,7 @@ mod String {
                 StringBuilder.toString(sb)
             else {
                 let c = f(i);
-                StringBuilder.append!(c, sb);
+                StringBuilder.append(c, sb);
                 loop(i + 1)
             }
         };
@@ -204,7 +204,7 @@ mod String {
     ///
     pub def flatten(xs: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
+        List.forEach(x -> StringBuilder.appendString(x, sb), xs);
         StringBuilder.toString(sb)
     }
 
@@ -215,7 +215,7 @@ mod String {
     pub def intercalate(sep: String, xs: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
         let arr = List.toArray(rc, xs);
-        StringBuilder.intercalate!(sep, arr, sb);
+        StringBuilder.intercalate(sep, arr, sb);
         StringBuilder.toString(sb)
     }
 
@@ -227,8 +227,8 @@ mod String {
         case Nil     => ""
         case x :: rs => region rc {
             let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString!(x, sb);
-            let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
+            StringBuilder.appendString(x, sb);
+            let appendStep = s -> { StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb) };
             List.forEach(appendStep, rs);
             StringBuilder.toString(sb)
         }
@@ -633,7 +633,7 @@ mod String {
             match a1 {
                 case None         => StringBuilder.toString(sb)
                 case Some(c, st1) => {
-                    StringBuilder.append!(c, sb);
+                    StringBuilder.append(c, sb);
                     loop(st1)
                 }
             }
@@ -655,7 +655,7 @@ mod String {
             match f() {
                 case None    => StringBuilder.toString(sb)
                 case Some(c) => {
-                    StringBuilder.append!(c, sb);
+                    StringBuilder.append(c, sb);
                     loop()
                 }
             }
@@ -675,7 +675,7 @@ mod String {
             match a1 {
                 case None         => StringBuilder.toString(sb)
                 case Some(s, st1) => {
-                    StringBuilder.appendString!(s, sb);
+                    StringBuilder.appendString(s, sb);
                     loop(st1)
                 }
             }
@@ -697,7 +697,7 @@ mod String {
             match f() {
                 case None    => StringBuilder.toString(sb)
                 case Some(s) => {
-                    StringBuilder.appendString!(s, sb);
+                    StringBuilder.appendString(s, sb);
                     loop()
                 }
             }
@@ -799,9 +799,9 @@ mod String {
         let postfix = repeat(ceil, Char.toString(c));
 
         let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!(prefix, sb);
-        StringBuilder.appendString!(s, sb);
-        StringBuilder.appendString!(postfix, sb);
+        StringBuilder.appendString(prefix, sb);
+        StringBuilder.appendString(s, sb);
+        StringBuilder.appendString(postfix, sb);
         StringBuilder.toString(sb)
     }
 
@@ -877,8 +877,8 @@ mod String {
         let sb = StringBuilder.empty(rc);
         let prefix = repeat(n, " ");
         let step = x -> {
-            StringBuilder.appendString!(prefix, sb);
-            StringBuilder.appendLine!(x, sb)
+            StringBuilder.appendString(prefix, sb);
+            StringBuilder.appendLine(x, sb)
         };
         List.forEach(step, lines(s));
         StringBuilder.toString(sb)
@@ -916,7 +916,7 @@ mod String {
         };
         let step = s1 -> {
             let line = loop(s1, 0);
-            StringBuilder.appendLine!(line, sb)
+            StringBuilder.appendLine(line, sb)
         };
         List.forEach(step, lines(s));
         StringBuilder.toString(sb)
@@ -940,7 +940,7 @@ mod String {
     ///
     pub def unlines(a: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
+        List.forEach(x -> StringBuilder.appendLine(x, sb), a);
         StringBuilder.toString(sb)
     }
 
@@ -961,8 +961,8 @@ mod String {
         case Nil     => ""
         case x :: xs => region rc {
             let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString!(x, sb);
-            let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
+            StringBuilder.appendString(x, sb);
+            let f = s -> { StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb) };
             List.forEach(f, xs);
             StringBuilder.toString(sb)
         }
