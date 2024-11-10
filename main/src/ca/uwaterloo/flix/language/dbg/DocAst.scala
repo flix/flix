@@ -108,7 +108,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LetRec(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
+    case class LocalDef(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
