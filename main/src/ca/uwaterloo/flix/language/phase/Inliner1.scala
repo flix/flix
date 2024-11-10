@@ -84,7 +84,6 @@ object Inliner1 {
     case class LetBound(expr: OutExpr, occur: Occur) extends Definition
 
 
-
   }
 
   private type VarSubst = Map[InVar, OutVar]
@@ -228,8 +227,8 @@ object Inliner1 {
                 MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
             }
 
-          case OccurrenceAst1.Expr.Lambda(fparam, exp, _, _) =>
-            bindFormals(exp, List(fparam), es, subst0)
+          case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) if isPure(body.eff) =>
+            bindFormals(body, List(fparam), es, subst0)
 
           case _ =>
             val e = visit(exp)
