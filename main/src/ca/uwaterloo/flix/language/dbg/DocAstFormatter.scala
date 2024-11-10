@@ -240,12 +240,13 @@ object DocAstFormatter {
         text("let") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
       case LocalDef(name, parameters, resType, effect, body, _) =>
         val args = parameters.map(aux(_, paren = false))
+        val colon = if (resType.isDefined) text(":") else Doc.empty
         val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
         val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
         val bodyf = format(body)
         group(
           text("local def") +: aux(name) |:: tuple(args) |::
-            text(":") +: group(resTypef |:: effectf +: text("=") |:: breakWith(" ")) |:: curlyOpen(bodyf)
+            colon +: group(resTypef |:: effectf +: text("=") |:: breakWith(" ")) |:: curlyOpen(bodyf)
         )
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
