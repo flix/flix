@@ -757,7 +757,7 @@ mod TestDelayList {
     def forEach01(): Bool = region rc {
         let l = ENil;
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
     }
@@ -766,7 +766,7 @@ mod TestDelayList {
     def forEach02(): Bool = region rc {
         let l = LList(lazy ENil);
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
     }
@@ -775,7 +775,7 @@ mod TestDelayList {
     def forEach03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
     }
@@ -784,7 +784,7 @@ mod TestDelayList {
     def forEach04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
     }
@@ -793,7 +793,7 @@ mod TestDelayList {
     def forEach05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
     }
@@ -806,7 +806,7 @@ mod TestDelayList {
     def forEachWithIndex01(): Bool = region rc {
         let l = ENil;
         let sb = StringBuilder.empty(rc);
-        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
     }
@@ -815,7 +815,7 @@ mod TestDelayList {
     def forEachWithIndex02(): Bool = region rc {
         let l = LList(lazy ENil);
         let sb = StringBuilder.empty(rc);
-        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
     }
@@ -824,7 +824,7 @@ mod TestDelayList {
     def forEachWithIndex03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
     }
@@ -833,7 +833,7 @@ mod TestDelayList {
     def forEachWithIndex04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
     }
@@ -842,7 +842,7 @@ mod TestDelayList {
     def forEachWithIndex05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
         let sb = StringBuilder.empty(rc);
-        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
     }

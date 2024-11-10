@@ -72,14 +72,14 @@ mod MutDeque {
     ///
     pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        StringBuilder.appendString!("MutDeque#{", sb);
+        StringBuilder.appendString("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
+                StringBuilder.appendString("${x}", sb)
             else
-                StringBuilder.appendString!(", ${x}", sb)
+                StringBuilder.appendString(", ${x}", sb)
             }, d);
-        StringBuilder.appendString!("}", sb);
+        StringBuilder.appendString("}", sb);
         StringBuilder.toString(sb)
     }
 
@@ -383,10 +383,10 @@ mod MutDeque {
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc1 {
-        use StringBuilder.append!;
+        use StringBuilder.append;
         let lastSep = String.length(sep);
         let sb = StringBuilder.empty(rc1);
-        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
+        forEach(x -> { append(f(x), sb); append(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

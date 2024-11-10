@@ -369,10 +369,10 @@ pub trait Foldable[t : Type -> Type] {
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ (ef + Foldable.Aef[t]) = region rc {
-        use StringBuilder.append!;
+        use StringBuilder.append;
         let lastSep = String.length(sep);
         let sb = StringBuilder.empty(rc);
-        t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
+        t |> Foldable.forEach(x -> { append(f(x), sb); append(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
