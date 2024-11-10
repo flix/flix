@@ -51,6 +51,10 @@ object Inliner1 {
 
   private type OutExpr = MonoAst.Expr
 
+  private type InCase = OccurrenceAst1.Case
+
+  private type OutCase = MonoAst.Case
+
   sealed private trait SubstRange
 
   private object SubstRange {
@@ -95,11 +99,11 @@ object Inliner1 {
 
     case object Stop extends Context
 
-    case object Application extends Context
+    case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
 
-    case object Match extends Context
+    case class Argument(continuation: OutExpr => OutExpr) extends Context
 
-    case object Argument extends Context
+    case class Match(sym: InVar, cases: List[InCase], subst: Subst, context: Context) extends Context
 
   }
 
