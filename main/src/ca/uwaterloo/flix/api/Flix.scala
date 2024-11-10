@@ -261,11 +261,15 @@ class Flix {
     "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
     "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
     "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
-    "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
+    "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
+    "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
+    "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
+    "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
@@ -475,17 +479,18 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
+  def mkMessages(errors: List[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse(""))
     else
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
   }
 
   /**
     * Compiles the Flix program and returns a typed ast.
+    * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = try {
+  def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
     import Validation.Implicit.AsMonad
 
     // Mark this object as implicit.
@@ -507,10 +512,11 @@ class Flix {
     val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet).withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors)
+      afterWeeder <- weederValidation.withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors).withSoftFailures(weederErrors)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       (afterNamer, namerErrors) = Namer.run(afterDesugar)
       (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
@@ -558,7 +564,11 @@ class Flix {
     }
 
     // Return the result (which could contain soft failures).
-    result
+    result match {
+      case Validation.Success(root) => (Some(root), List.empty)
+      case Validation.SoftFailure(root, errors) => (Some(root), errors.toList)
+      case Validation.HardFailure(errors) => (None, errors.toList)
+    }
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -612,8 +622,12 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val result = check().toHardFailure
-    Validation.flatMapN(result)(codeGen)
+    val (result, errors) = check()
+    if (errors.isEmpty) {
+      codeGen(result.get)
+    } else {
+      Validation.HardFailure(Chain.from(errors))
+    }
   }
 
   /**

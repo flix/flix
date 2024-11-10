@@ -485,9 +485,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check().toHardResult match {
-      case Result.Ok(_) => Validation.success(())
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    val (_, errors) = flix.check()
+    if (errors.isEmpty) {
+      Validation.success(())
+    } else {
+      Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -506,7 +508,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Result.Ok(r: CompilationResult) =>
         Validation.success(r)
       case Result.Err(errors) =>
-        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
     }
   }
 
@@ -556,7 +558,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * It searches dependencies in the lib folder and includes everything in the generated jar file in addition.
     *
     * Note: As the buildJar does the same, this build doesn't erase previous jar-file if existing.
-    *       It doesn't do a cleanup and as such remaining previous libraries may remain.
+    * It doesn't do a cleanup and as such remaining previous libraries may remain.
     */
   def buildFatJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     // The path to the jar file.
@@ -681,14 +683,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Some(manifest) => manifest.modules
     }
 
-    Validation.mapN(flix.check()) {
-      root =>
-        HtmlDocumentor.run(root, packageModules)(flix)
-    }.toHardResult match {
-      case Result.Ok(_) =>
-        Validation.success(())
-      case Result.Err(errors) =>
-        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    val (result, errors) = flix.check()
+    if (errors.isEmpty) {
+      result.foreach(HtmlDocumentor.run(_, packageModules)(flix))
+      Validation.success(())
+    } else {
+      Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 

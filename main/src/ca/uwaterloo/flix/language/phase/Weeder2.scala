@@ -50,8 +50,8 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    flix.phase("Weeder2") {
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage & Recoverable]) = {
+    flix.phaseNew("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
@@ -60,7 +60,7 @@ object Weeder2 {
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)).withSoftFailures(sctx.errors.asScala)
+      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)), sctx.errors.asScala.toList)
     }(DebugValidation())
   }
 
@@ -3073,25 +3073,14 @@ object Weeder2 {
   }
 
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
-    tryPick(TreeKind.Ident, tree) match {
-      case None =>
-        // The tree is missing a child of kind `TreeKind.Ident`.
-        // We should return something like Name.IdentWithError, but we lack such a thing.
-        // Instead, we construct a bogus Name.Ident-- which is not great, but should not crash the compiler.
-        // Note 1: We do not have to add a compiler error because the Parser should already have emitted one.
-        // Note 2: We use the empty string instead of some random string because it matches the idea
-        // of the user having not yet typed anything. This also works correctly with auto-complete.
-        val ident = Name.Ident("", tree.loc)
-        Validation.success(ident)
-      case Some(t) => Validation.success(tokenToIdent(t))
-    }
+    mapN(pick(TreeKind.Ident, tree))(tokenToIdent)
   }
 
   private def tryPickNameIdent(tree: Tree)(implicit sctx: SharedContext): Option[Name.Ident] = {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
     val idents = pickQNameIdents(tree)
     mapN(idents) {
       idents => Name.JavaName(idents, tree.loc)
@@ -3224,7 +3213,9 @@ object Weeder2 {
   private def pick(kind: TreeKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
-      case None => throw InternalCompilerException(s"Missing '$kind' in tree. Bug in parser!?", tree.loc)
+      case None =>
+        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        Validation.HardFailure(Chain(error))
     }
   }
 
