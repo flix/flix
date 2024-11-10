@@ -78,6 +78,8 @@ object SimpleType {
 
   case object Array extends SimpleType
 
+  case object ArrayWithoutRegion extends SimpleType
+
   case object Vector extends SimpleType
 
   case object Sender extends SimpleType
@@ -95,6 +97,8 @@ object SimpleType {
   case object True extends SimpleType
 
   case object Region extends SimpleType
+
+  case object RegionWithoutRegion extends SimpleType
 
   //////////
   // Records
@@ -239,6 +243,11 @@ object SimpleType {
     */
   case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
+  /**
+    * A backend function (no effect).
+    */
+  case class ArrowWithoutEffect(arg: SimpleType, ret: SimpleType) extends SimpleType
+
   ///////
   // Tags
   ///////
@@ -346,7 +355,7 @@ object SimpleType {
       case Type.UnresolvedJvmType(member, _) => member match {
         case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
         case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
+        case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
         case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
@@ -389,6 +398,10 @@ object SimpleType {
               val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
+
+        case TypeConstructor.ArrowWithoutEffect(arity) =>
+          val args = t.typeArguments.map(visit)
+          args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
 
@@ -455,6 +468,7 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
+        case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
@@ -590,6 +604,7 @@ object SimpleType {
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error
       }

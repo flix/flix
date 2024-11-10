@@ -609,7 +609,7 @@ object Type {
       */
     def getTypeArguments: List[Type] = this match {
       case JvmMember.JvmConstructor(_, tpes) => tpes
-      case JvmMember.JvmField(tpe, _) => List(tpe)
+      case JvmMember.JvmField(_, tpe, _) => List(tpe)
       case JvmMember.JvmMethod(tpe, _, tpes) => tpe :: tpes
       case JvmMember.JvmStaticMethod(_, _, tpes) => tpes
     }
@@ -619,7 +619,7 @@ object Type {
       */
     def map(f: Type => Type): JvmMember = this match {
       case JvmMember.JvmConstructor(clazz, tpes) => JvmMember.JvmConstructor(clazz, tpes.map(f))
-      case JvmMember.JvmField(tpe, name) => JvmMember.JvmField(f(tpe), name)
+      case JvmMember.JvmField(base, tpe, name) => JvmMember.JvmField(base, f(tpe), name)
       case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
     }
@@ -635,7 +635,7 @@ object Type {
     /**
       * A Java field, defined by the receiver type and the field name.
       */
-    case class JvmField(tpe: Type, name: Name.Ident) extends JvmMember
+    case class JvmField(base: SourceLocation, tpe: Type, name: Name.Ident) extends JvmMember
 
     /**
       * A Java method, defined by the receiver type, the method name, and the argument types.
@@ -782,6 +782,12 @@ object Type {
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
+    * Returns the type `ArrayWithoutRegion[tpe]` with the given source location `loc`.
+    */
+  def mkArrayWithoutRegion(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.ArrayWithoutRegion, loc), tpe, loc)
+
+  /**
     * Returns the type `Array[tpe]` with the given source location `loc`.
     */
   def mkVector(tpe: Type, loc: SourceLocation): Type =
@@ -831,6 +837,17 @@ object Type {
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x, loc)
+    }
+    Apply(inner, b, loc)
+  }
+
+  /**
+    * Constructs the backend arrow type (A_1, ..., A_n) -> B
+    */
+  def mkArrowWithoutEffect(as: List[Type], b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }

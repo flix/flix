@@ -167,6 +167,9 @@ object Visitor {
     implicit val c: Consumer = consumer
     implicit val a: Acceptor = acceptor
 
+    // NB: the signatures in `root.sigs` are not visited here, since they will be visited after
+    // their corresponding trait
+
     root.defs.values.foreach(visitDef)
 
     root.effects.values.foreach(visitEffect)
@@ -174,8 +177,6 @@ object Visitor {
     root.enums.values.foreach(visitEnum)
 
     root.instances.values.flatten.foreach(visitInstance)
-
-    root.sigs.values.foreach(visitSig)
 
     root.structs.values.foreach(visitStruct)
 
@@ -686,12 +687,6 @@ object Visitor {
     c.consumeBinder(bnd)
   }
 
-  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(varSym.loc)) { return }
-
-    c.consumeVarBinder(varSym, tpe)
-  }
-
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
@@ -826,7 +821,21 @@ object Visitor {
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(tpe.loc)) { return }
+
     c.consumeType(tpe)
+
+    tpe match {
+      case Type.Var(_, _) => ()
+      case Type.Cst(_, _) => ()
+      case Type.Apply(t1, t2, _) =>
+        visitType(t1)
+        visitType(t2)
+      case Type.Alias(_, args, _, _) => args.foreach(visitType)
+      case Type.AssocType(_, t, _, _) => visitType(t)
+      case Type.JvmToType(t, _) => visitType(t)
+      case Type.JvmToEff(t, _) => visitType(t)
+      case Type.UnresolvedJvmType(_, _) => ()
+    }
   }
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -910,8 +919,11 @@ object Visitor {
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
     val RecordLabelPattern(_, p, _, loc) = pat
+
     if (!a.accept(loc)) { return }
+
     c.consumeRecordLabelPattern(pat)
+
     visitPattern(p)
   }
 

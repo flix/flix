@@ -602,10 +602,10 @@ object Resolver {
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
   private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.Declaration.StructField(_, sym, tpe0, loc) =>
+    case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
+        tpe => ResolvedAst.Declaration.StructField(mod, sym, tpe, loc)
       }
   }
 
@@ -1312,37 +1312,15 @@ object Resolver {
       }
 
     case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-      lookupEffect(eff, env0, ns0, root) match {
-        case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, eff.loc)
           val expVal = resolveExp(exp, env0)
-          flatMapN(expVal) {
-            case e =>
-              val effUse = EffectSymUse(decl.sym, eff.loc)
-              val rulesVal = traverse(rules) {
-                case NamedAst.HandlerRule(ident, fparams, body) =>
-                  val opVal = findOpInEffect(ident, decl)
-                  val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
-                  flatMapN(opVal, fparamsVal) {
-                    case (o, fp) =>
-                      val env = env0 ++ mkFormalParamEnv(fp)
-                      checkOpArity(o, fp.length - 1, ident.loc)
-                      val bodyVal = resolveExp(body, env)
-                      mapN(bodyVal) {
-                        case b =>
-                          val opUse = OpSymUse(o.sym, ident.loc)
-                          ResolvedAst.HandlerRule(opUse, fp, b)
-                      }
-                  }
-              }
-              mapN(rulesVal) {
-                rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-              }
+          val handlerVal = visitHandler(eff, rules, env0)
+          mapN(expVal, handlerVal) {
+            case (e, Result.Ok((effUse, rs))) =>
+              ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
+            case (_, Result.Err(error)) =>
+              sctx.errors.add(error)
+              ResolvedAst.Expr.Error(error)
           }
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          Validation.success(ResolvedAst.Expr.Error(error))
-      }
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>
       val esVal = traverse(exps)(resolveExp(_, env0))
@@ -1802,6 +1780,47 @@ object Resolver {
             case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
           }
       }
+  }
+
+  /**
+    * Performs name resolution on the handler that handles `eff` with rules `rules0`.
+    */
+  // TODO: the nested Result/Validation is ugly here, but should be fixed by the Validation removal refactoring
+  private def visitHandler(eff: Name.QName, rules0: List[NamedAst.HandlerRule], env0: ListMap[String, Resolution])(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffectSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
+    lookupEffect(eff, env0, ns, root) match {
+      case Result.Ok(decl) =>
+        checkEffectIsAccessible(decl, ns, eff.loc)
+        val effUse = EffectSymUse(decl.sym, eff.loc)
+        val rulesVal = traverse(rules0) {
+          case NamedAst.HandlerRule(ident, fparams, body) =>
+            val opVal = findOpInEffect(ident, decl)
+            val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns, root))
+            flatMapN(opVal, fparamsVal) {
+              case (o, fp) =>
+                val env = env0 ++ mkFormalParamEnv(fp)
+                checkOpArity(o, fp.length - 1, ident.loc)
+                val bodyVal = resolveExp(body, env)
+                mapN(bodyVal) {
+                  case b =>
+                    val opUse = OpSymUse(o.sym, ident.loc)
+                    ResolvedAst.HandlerRule(opUse, fp, b)
+                }
+            }
+        }
+        mapN(rulesVal) {
+          case rules =>
+            // Check that all the operations have respective definitions
+            val allOps = decl.ops.map(_.sym)
+            val missingDefs = allOps.toSet -- rules.map(_.op.sym)
+            missingDefs.foreach {
+              case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, eff.loc))
+            }
+            Result.Ok((effUse, rules))
+        }
+      case Result.Err(error) =>
+        sctx.errors.add(error)
+        Validation.success(Result.Err(error))
+    }
   }
 
 
@@ -3429,6 +3448,9 @@ object Resolver {
         case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.ArrowWithoutEffect(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.ArrayWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.RegionWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 

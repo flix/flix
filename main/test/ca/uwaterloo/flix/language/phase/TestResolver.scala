@@ -1895,4 +1895,41 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }
 
+  test("ResolutionError.MissingHandlerDef.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    try {
+        |      E.op()
+        |    } with E {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingHandlerDef](result)
+  }
+
+  test("ResolutionError.MissingHandlerDef.02") {
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    try {
+        |      E.op1()
+        |    } with E {
+        |      def op1(k): Unit = k()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingHandlerDef](result)
+  }
 }

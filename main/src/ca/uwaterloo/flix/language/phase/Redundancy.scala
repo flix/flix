@@ -166,7 +166,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, (name, field)) =>
+        case (acc, (_, field)) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
@@ -608,7 +608,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map { case (k, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (_, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())

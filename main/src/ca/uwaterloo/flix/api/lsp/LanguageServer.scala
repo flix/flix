@@ -299,7 +299,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.Rename(id, newName, uri, pos) =>
       synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
@@ -311,7 +311,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
 
     case Request.InlayHint(id, _, _) =>
       // InlayHints disabled due to poor ergonomics.
@@ -322,7 +322,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
     case Request.CodeAction(id, uri, range, context) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(index, root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
 
   }
 
@@ -335,16 +335,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check().toSoftResult match {
-        case Result.Ok((root, Chain.empty)) =>
+      flix.check() match {
+        case (Some(root), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
 
-        case Result.Ok((root, errors)) =>
+        case (Some(root), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case Result.Err(errors) =>
+        case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Update the current errors.
@@ -366,7 +366,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
     this.currentErrors = errors.toList

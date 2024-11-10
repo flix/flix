@@ -124,7 +124,7 @@ object Command {
   /**
     * Parses the given `input` into a command.
     */
-  def parse(input: String)(implicit terminal: Terminal): Command = {
+  def parse(input: String): Command = {
     //
     // Eof
     //

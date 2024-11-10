@@ -20,8 +20,8 @@ mod Reachable.Imperative {
             // collect edge lists
             let edgeMap = MutMap.empty(rc);
             foreach((start, end) <- edges) {
-                let startEdges = MutMap.getOrElsePut!(start, MutList.empty(rc), edgeMap);
-                MutList.push!(end, startEdges)
+                let startEdges = MutMap.getOrElsePut(start, MutList.empty(rc), edgeMap);
+                MutList.push(end, startEdges)
             };
             // define the reachable set
             let reachable = MutSet.empty(rc);
@@ -31,7 +31,7 @@ mod Reachable.Imperative {
             def whileLoop() = {
                 MutDeque.popFront(taskList) |> Option.forEach(node -> {
                     // this node has now been reached
-                    reachable |> MutSet.add!(node);
+                    reachable |> MutSet.add(node);
                     // add all non-reached end points to tasklist
                     let endPoints = MutMap.getWithDefault(node, MutList.empty(rc), edgeMap);
                     MutList.forEach(nextNode -> {

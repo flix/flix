@@ -34,7 +34,7 @@ object SemanticTokensProvider {
   /**
     * Processes a request for (full) semantic tokens.
     */
-  def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
+  def provideSemanticTokens(uri: String)(implicit root: Root): JObject = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -195,7 +195,7 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, and the fields.
     */
   private def visitStruct(struct0: TypedAst.Struct): Iterator[SemanticToken] = struct0 match {
-    case TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
+    case TypedAst.Struct(_, _, _, sym, tparams, _, fields, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -210,7 +210,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given field `field0`
     */
   private def visitField(field0: StructField): Iterator[SemanticToken] = field0 match {
-    case StructField(sym, tpe, loc) =>
+    case StructField(sym, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
@@ -378,7 +378,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, loc) =>
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -648,9 +648,9 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
-    case Pattern.Record(pats, pat, tpe, loc) =>
+    case Pattern.Record(pats, pat, tpe, _) =>
       val patsVal = pats.flatMap {
-        case Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
+        case Pattern.Record.RecordLabelPattern(_, pat1, tpe1, loc1) =>
           val f = SemanticToken(SemanticTokenType.Property, Nil, loc1)
           Iterator(f) ++ visitType(tpe1) ++ visitPat(pat1)
       }.iterator
@@ -658,7 +658,7 @@ object SemanticTokensProvider {
       val tVal = visitType(tpe)
       patsVal ++ patVal ++ tVal
 
-    case Pattern.RecordEmpty(tpe, _) => Iterator.empty
+    case Pattern.RecordEmpty(_, _) => Iterator.empty
 
     case Pattern.Error(_, _) => Iterator.empty
   }
@@ -667,7 +667,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given pattern `pat0`.
     */
   private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
-    case RestrictableChoosePattern.Tag(RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
+    case RestrictableChoosePattern.Tag(RestrictableCaseSymUse(_, tagLoc), pat1, _, _) =>
       val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
       val ts = pat1.iterator.flatMap {
         case RestrictableChoosePattern.Wild(_, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))
@@ -775,6 +775,11 @@ object SemanticTokensProvider {
     case TypeConstructor.JvmConstructor(_) => false
     case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Error(_, _) => false
+
+    // backend constructors
+    case TypeConstructor.ArrowWithoutEffect(_) => false
+    case TypeConstructor.ArrayWithoutRegion => false
+    case TypeConstructor.RegionWithoutRegion => false
   }
 
   /**
@@ -890,7 +895,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 
-    case Body.Functional(outBnds, exp, loc) =>
+    case Body.Functional(outBnds, exp, _) =>
       val ts = outBnds.map(bnd => SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc))
       visitExp(exp) ++ ts
 

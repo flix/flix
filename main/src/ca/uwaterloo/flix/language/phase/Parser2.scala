@@ -1440,6 +1440,12 @@ object Parser2 {
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
+          // We want to allow an unbounded number of cons (a :: b :: c :: ...).
+          // Hence we special case on whether the left token is ::. If it is,
+          // we avoid consuming any fuel.
+          // The next nth lookup will always fail, so we add fuel to account for it.
+          // The lookup for KeywordWithout will always happen to we add fuel to account for it.
+          if (left == TokenKind.ColonColon) s.fuel += 2
           continue = false
         }
       }

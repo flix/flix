@@ -32,18 +32,18 @@ mod TestMutList {
     @test
     def toString02(): Bool = region rc {
         let l: MutList[Int32, rc] = MutList.empty(rc);
-        MutList.push!(1, l);
+        MutList.push(1, l);
         MutList.toString(l) == "MutList#{1}"
     }
 
     @test
     def toString03(): Bool = region rc {
         let l: MutList[Int32, rc] = MutList.empty(rc);
-        MutList.push!(1, l);
-        MutList.push!(2, l);
-        MutList.push!(3, l);
-        MutList.push!(4, l);
-        MutList.push!(5, l);
+        MutList.push(1, l);
+        MutList.push(2, l);
+        MutList.push(3, l);
+        MutList.push(4, l);
+        MutList.push(5, l);
         MutList.toString(l) == "MutList#{1, 2, 3, 4, 5}"
     }
 
@@ -61,7 +61,7 @@ mod TestMutList {
     @test
     def sameElements02(): Bool = region rc {
         let u = MutList.empty(rc);
-        MutList.push!(0, u);
+        MutList.push(0, u);
         let v = MutList.empty(rc);
         (u `sameElements` v) == false
     }
@@ -69,29 +69,29 @@ mod TestMutList {
     @test
     def sameElements03(): Bool = region rc {
         let u = MutList.empty(rc);
-        MutList.push!(2, u);
-        MutList.push!(3, u);
+        MutList.push(2, u);
+        MutList.push(3, u);
         let v = MutList.empty(rc);
-        MutList.push!(2, v);
-        MutList.push!(3, v);
+        MutList.push(2, v);
+        MutList.push(3, v);
         u `sameElements` v
     }
 
     @test
     def sameElements04(): Bool = region rc {
         let u = MutList.empty(rc);
-        MutList.push!(2, u);
-        MutList.push!(3, u);
+        MutList.push(2, u);
+        MutList.push(3, u);
         let v = MutList.empty(rc);
-        MutList.push!(2, v);
-        MutList.push!(2, v);
+        MutList.push(2, v);
+        MutList.push(2, v);
         (u `sameElements` v) == false
     }
 
     @test
     def sameElements05(): Bool = region rc {
         let u = MutList.empty(rc);
-        MutList.push!(1, u);
+        MutList.push(1, u);
         let v = MutList.empty(rc);
         (u `sameElements` v) == false
     }
@@ -119,7 +119,7 @@ mod TestMutList {
     @test
     def get02(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!("item", l);
+        MutList.push("item", l);
         let r = try MutList.get(0, l) with OutOfBounds {
             def outOfBounds(_, _) = "error"
         };
@@ -129,7 +129,7 @@ mod TestMutList {
     @test
     def get03(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!("item", l);
+        MutList.push("item", l);
         let r = try MutList.get(1, l) with OutOfBounds {
             def outOfBounds(msg, _) = msg
         };
@@ -206,7 +206,7 @@ mod TestMutList {
     def put02(): Bool = region rc {
         let error = Ref.fresh(rc, None);
         let l = MutList.empty(rc);
-        MutList.push!("item", l);
+        MutList.push("item", l);
 
         try MutList.put("new item", 0, l) with OutOfBounds {
             def outOfBounds(msg, _) = Ref.put(Some(msg), error)
@@ -218,7 +218,7 @@ mod TestMutList {
     def put03(): Bool = region rc {
         let error = Ref.fresh(rc, None);
         let l = MutList.empty(rc);
-        MutList.push!("item", l);
+        MutList.push("item", l);
 
         try MutList.put("new item", 1, l) with OutOfBounds {
             def outOfBounds(msg, _) = Ref.put(Some(msg), error)
@@ -294,14 +294,14 @@ mod TestMutList {
     @test
     def nth02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.nth(0, v) == Some(42)
     }
 
     @test
     def nth03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.nth(1, v) == None
     }
 
@@ -343,7 +343,7 @@ mod TestMutList {
     @test
     def length02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.length(v) == 1
     }
 
@@ -375,7 +375,7 @@ mod TestMutList {
     @test
     def size02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.size(v) == 1
     }
 
@@ -467,14 +467,14 @@ mod TestMutList {
     @test
     def memberOf02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(2, v);
+        MutList.push(2, v);
         MutList.memberOf(2, v)
     }
 
     @test
     def memberOf03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.memberOf(2, v) == false
     }
 
@@ -581,7 +581,7 @@ mod TestMutList {
     @test
     def head01(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
+        MutList.push(42, v);
         MutList.head(v) == Some(42)
     }
 
@@ -593,8 +593,8 @@ mod TestMutList {
     @test
     def head03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(101, v);
-        MutList.push!(102, v);
+        MutList.push(101, v);
+        MutList.push(102, v);
         MutList.head(v) == Some(101)
     }
 
@@ -616,8 +616,8 @@ mod TestMutList {
     @test
     def last03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!('A', v);
-        MutList.push!('B', v);
+        MutList.push('A', v);
+        MutList.push('B', v);
         MutList.last(v) == Some('B')
     }
 
@@ -639,9 +639,9 @@ mod TestMutList {
     @test
     def indexOfLeft03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!('A', v);
-        MutList.push!('B', v);
-        MutList.push!('C', v);
+        MutList.push('A', v);
+        MutList.push('B', v);
+        MutList.push('C', v);
         MutList.indexOfLeft('B', v) == Some(1)
     }
 
@@ -667,9 +667,9 @@ mod TestMutList {
     @test
     def indexOfRight03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!('A', v);
-        MutList.push!('B', v);
-        MutList.push!('A', v);
+        MutList.push('A', v);
+        MutList.push('B', v);
+        MutList.push('A', v);
         MutList.indexOfRight('A', v) == Some(2)
     }
 
@@ -677,7 +677,7 @@ mod TestMutList {
     def indexOfRight04(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 4);
         let v2 = MutList.range(rc, 0, 4);
-        MutList.append!(MutList.toList(v2), v1);
+        MutList.append(MutList.toList(v2), v1);
         MutList.indexOfRight(2, v1) == Some(6)
     }
 
@@ -744,12 +744,12 @@ mod TestMutList {
     def scanLeft02(): Bool = region rc {
         let v1 = MutList.range(rc, 1, 6);
         let v2 = MutList.empty(rc);
-        MutList.push!(0, v2);
-        MutList.push!(1, v2);
-        MutList.push!(3, v2);
-        MutList.push!(6, v2);
-        MutList.push!(10, v2);
-        MutList.push!(15, v2);
+        MutList.push(0, v2);
+        MutList.push(1, v2);
+        MutList.push(3, v2);
+        MutList.push(6, v2);
+        MutList.push(10, v2);
+        MutList.push(15, v2);
         let v3 = MutList.scanLeft(rc, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
@@ -775,12 +775,12 @@ mod TestMutList {
     def scanRight02(): Bool = region rc {
         let v1 = MutList.range(rc, 1, 6);
         let v2 = MutList.empty(rc);
-        MutList.push!(15, v2);
-        MutList.push!(14, v2);
-        MutList.push!(12, v2);
-        MutList.push!(9, v2);
-        MutList.push!(5, v2);
-        MutList.push!(0, v2);
+        MutList.push(15, v2);
+        MutList.push(14, v2);
+        MutList.push(12, v2);
+        MutList.push(9, v2);
+        MutList.push(5, v2);
+        MutList.push(0, v2);
         let v3 = MutList.scanRight(rc, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
@@ -881,34 +881,34 @@ mod TestMutList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // transform!                                                              //
+    // transform                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def transform!01(): Bool = region rc {
+    def transform01(): Bool = region rc {
         let v = MutList.range(rc, 0, 6);
-        MutList.transform!(x -> x * 2, v);
+        MutList.transform(x -> x * 2, v);
         MutList.sameElements(v, Array.toMutList(rc, Array#{0, 2, 4, 6, 8, 10} @ rc))
     }
 
     @test
-    def transform!02(): Bool = region rc {
+    def transform02(): Bool = region rc {
         let v = MutList.range(rc, 0, 10);
-        MutList.transform!(identity, v);
+        MutList.transform(identity, v);
         MutList.sameElements(v, MutList.range(rc, 0, 10))
     }
 
     @test
-    def transform!03(): Bool = region rc {
+    def transform03(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
-        MutList.transform!(identity, v);
+        MutList.transform(identity, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def transform!04(): Bool = region rc {
+    def transform04(): Bool = region rc {
         let v = MutList.range(rc, 0, 100);
-        MutList.transform!(x -> x + 1, v);
+        MutList.transform(x -> x + 1, v);
         MutList.sameElements(v, MutList.range(rc, 1, 101))
     }
 
@@ -937,27 +937,27 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // transformWithIndex!                                                     //
+    // transformWithIndex                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def transformWithIndex!01(): Bool = region rc {
+    def transformWithIndex01(): Bool = region rc {
         let v = MutList.range(rc, 0, 6);
-        MutList.transformWithIndex!((i, _) -> if (i < 3) 0 else 1, v);
+        MutList.transformWithIndex((i, _) -> if (i < 3) 0 else 1, v);
         MutList.sameElements(v, Array.toMutList(rc, Array#{0, 0, 0, 1, 1, 1} @ rc))
     }
 
     @test
-    def transformWithIndex!02(): Bool = region rc {
+    def transformWithIndex02(): Bool = region rc {
         let v = MutList.range(rc, 7, 10);
-        MutList.transformWithIndex!((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
+        MutList.transformWithIndex((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
         MutList.sameElements(v, Array.toMutList(rc, Array#{0, 42, 0} @ rc))
     }
 
     @test
-    def transformWithIndex!03(): Bool = region rc {
+    def transformWithIndex03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.transformWithIndex!((i, _) -> if (i == 0) 42 else 0, v);
+        MutList.transformWithIndex((i, _) -> if (i == 0) 42 else 0, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
@@ -975,7 +975,7 @@ mod TestMutList {
     def foldLeft02(): Bool = region rc {
         let v1 = MutList.empty(rc);
         let v2 = MutList.range(rc, 0, 10);
-        MutList.foldLeft((_, x) -> MutList.push!(x, v1), (), v2);
+        MutList.foldLeft((_, x) -> MutList.push(x, v1), (), v2);
         MutList.sameElements(v1, v2)
     }
 
@@ -1135,29 +1135,29 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // clear!                                                                  //
+    // clear                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def clear!01(): Bool = region rc {
+    def clear01(): Bool = region rc {
         let v = MutList.range(rc, 0, 1);
         let len = MutList.length(v);
-        MutList.clear!(v);
+        MutList.clear(v);
         len == 1 and MutList.isEmpty(v)
     }
 
     @test
-    def clear!02(): Bool = region rc {
+    def clear02(): Bool = region rc {
         let v = MutList.empty(rc);
         let len = MutList.length(v);
-        MutList.clear!(v);
+        MutList.clear(v);
         len == MutList.length(v)
     }
 
     @test
-    def clear!03(): Bool = region rc {
+    def clear03(): Bool = region rc {
         let v = MutList.range(rc, 0, 100);
-        MutList.clear!(v);
+        MutList.clear(v);
         MutList.isEmpty(v)
     }
 
@@ -1177,7 +1177,7 @@ mod TestMutList {
     def copy02(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 100);
         let v2 = MutList.copy(rc, v1);
-        MutList.transform!(x -> x + 1, v2);
+        MutList.transform(x -> x + 1, v2);
         MutList.last(v1) == Some(99) and MutList.last(v2) == Some(100)
     }
 
@@ -1185,7 +1185,7 @@ mod TestMutList {
     def copy03(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 6);
         let v2 = MutList.copy(rc, v1);
-        MutList.clear!(v1);
+        MutList.clear(v1);
         MutList.length(v1) == 0 and MutList.length(v2) == 6
     }
 
@@ -1206,23 +1206,23 @@ mod TestMutList {
     def pop01(): Bool = region rc {
         let v = MutList.range(rc, 0, 6);
         let len = MutList.length(v);
-        let last = MutList.pop!(v);
+        let last = MutList.pop(v);
         MutList.length(v) == len - 1 and last == Some(5)
     }
 
     @test
     def pop02(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
-        MutList.pop!(v) == None
+        MutList.pop(v) == None
     }
 
     @test
     def pop03(): Bool = region rc {
         let v = MutList.range(rc, 1, 4);
-        let three = MutList.pop!(v);
-        let two = MutList.pop!(v);
-        let one = MutList.pop!(v);
-        let none = MutList.pop!(v);
+        let three = MutList.pop(v);
+        let two = MutList.pop(v);
+        let one = MutList.pop(v);
+        let none = MutList.pop(v);
         three == Some(3) and two == Some(2) and one == Some(1) and none == None
     }
 
@@ -1235,7 +1235,7 @@ mod TestMutList {
     def push01(): Bool = region rc {
         let v = MutList.empty(rc);
         let len = MutList.length(v);
-        MutList.push!(1, v);
+        MutList.push(1, v);
         MutList.last(v) == Some(1) and MutList.length(v) == len + 1
     }
 
@@ -1243,449 +1243,449 @@ mod TestMutList {
     def push02(): Bool = region rc {
         let v = MutList.empty(rc);
         let len = MutList.length(v);
-        List.forEach(x -> MutList.push!(x, v), List.range(0, 97));
+        List.forEach(x -> MutList.push(x, v), List.range(0, 97));
         MutList.head(v) == Some(0) and MutList.last(v) == Some(96) and MutList.length(v) == len + 97
     }
 
     @test
     def push03(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(42, v);
-        MutList.push!(31, v);
-        MutList.push!(1019, v);
+        MutList.push(42, v);
+        MutList.push(31, v);
+        MutList.push(1019, v);
         MutList.length(v) == 3 and MutList.nth(0, v) == Some(42) and MutList.nth(1, v) == Some(31) and MutList.nth(2, v) == Some(1019)
     }
 
     @test
     def push04(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(0, v);
-        MutList.push!(0, v);
-        MutList.push!(0, v);
-        MutList.push!(0, v);
+        MutList.push(0, v);
+        MutList.push(0, v);
+        MutList.push(0, v);
+        MutList.push(0, v);
         MutList.length(v) == 4 and MutList.nth(0, v) == Some(0) and MutList.nth(1, v) == Some(0) and MutList.nth(2, v) == Some(0) and MutList.nth(3, v) == Some(0)
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // insert!                                                                 //
+    // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def insert!01(): Bool = region rc {
+    def insert01(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.insert!(42, 0, v);
+        MutList.insert(42, 0, v);
         MutList.length(v) == 1 and MutList.head(v) == Some(42)
     }
 
     @test
-    def insert!02(): Bool = region rc {
+    def insert02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.insert!(107, 0, v);
-        MutList.insert!(7, 0, v);
+        MutList.insert(107, 0, v);
+        MutList.insert(7, 0, v);
         MutList.length(v) == 2 and MutList.head(v) == Some(7)
     }
 
     @test
-    def insert!03(): Bool = region rc {
+    def insert03(): Bool = region rc {
         let v = MutList.empty(rc);
-        List.forEach(x -> MutList.insert!(x, 0, v), List.range(0, 107));
+        List.forEach(x -> MutList.insert(x, 0, v), List.range(0, 107));
         MutList.length(v) == 107 and MutList.head(v) == Some(106)
     }
 
     @test
-    def insert!04(): Bool = region rc {
+    def insert04(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(3, 1, v);
-        MutList.insert!(5, 2, v);
-        MutList.insert!(6, 0, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(3, 1, v);
+        MutList.insert(5, 2, v);
+        MutList.insert(6, 0, v);
         MutList.length(v) == 4 and MutList.head(v) == Some(6) and MutList.last(v) == Some(5)
     }
 
     @test
-    def insert!05(): Bool = region rc {
+    def insert05(): Bool = region rc {
         let v = MutList.empty(rc);
-        List.forEach(x -> MutList.push!(x, v), List.range(97, 147));
-        MutList.insert!(42, 0, v);
-        MutList.insert!(49, 0, v);
+        List.forEach(x -> MutList.push(x, v), List.range(97, 147));
+        MutList.insert(42, 0, v);
+        MutList.insert(49, 0, v);
         MutList.length(v) == 52 and MutList.head(v) == Some(49) and MutList.last(v) == Some(146)
     }
 
     @test
-    def insert!06(): Bool = region rc {
+    def insert06(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 1, v);
-        MutList.insert!(97, 0, v);
-        MutList.insert!(98, 2, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 1, v);
+        MutList.insert(97, 0, v);
+        MutList.insert(98, 2, v);
         MutList.length(v) == 6 and MutList.head(v) == Some(97) and MutList.last(v) == Some(42)
     }
 
     @test
-    def insert!07(): Bool = region rc {
+    def insert07(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.insert!(97, 0, v);
-        MutList.insert!(98, 1, v);
-        MutList.insert!(99, 2, v);
-        MutList.insert!(107, 1, v);
+        MutList.insert(97, 0, v);
+        MutList.insert(98, 1, v);
+        MutList.insert(99, 2, v);
+        MutList.insert(107, 1, v);
         MutList.length(v) == 4 and MutList.nth(1, v) == Some(107)
     }
 
     @test
-    def insert!08(): Bool = region rc {
+    def insert08(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 4);
-        MutList.insert!(42, 3, l1);
-        MutList.insert!(41, 2, l1);
-        MutList.insert!(40, 1, l1);
-        MutList.insert!(55, 0, l1);
-        MutList.insert!(33, 1, l1);
+        MutList.insert(42, 3, l1);
+        MutList.insert(41, 2, l1);
+        MutList.insert(40, 1, l1);
+        MutList.insert(55, 0, l1);
+        MutList.insert(33, 1, l1);
         let l2 = MutList.empty(rc);
         let xs = 55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // remove!                                                                 //
+    // remove                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def remove!01(): Bool = region rc {
+    def remove01(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
-        MutList.remove!(0, v);
+        MutList.remove(0, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def remove!02(): Bool = region rc {
+    def remove02(): Bool = region rc {
         let v = MutList.range(rc, 0, 4);
-        MutList.remove!(0, v);
+        MutList.remove(0, v);
         MutList.sameElements(v, MutList.range(rc, 1, 4))
     }
 
     @test
-    def remove!03(): Bool = region rc {
+    def remove03(): Bool = region rc {
         let v = MutList.range(rc, 0, 4);
-        MutList.remove!(3, v);
+        MutList.remove(3, v);
         MutList.sameElements(v, MutList.range(rc, 0, 3))
     }
 
     @test
-    def remove!04(): Bool = region rc {
+    def remove04(): Bool = region rc {
         let v = MutList.range(rc, 3, 7);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
         MutList.sameElements(v, MutList.range(rc, 6, 7))
     }
 
     @test
-    def remove!05(): Bool = region rc {
+    def remove05(): Bool = region rc {
         let v = MutList.range(rc, 9, 12);
-        MutList.remove!(2, v);
-        MutList.remove!(1, v);
-        MutList.remove!(0, v);
+        MutList.remove(2, v);
+        MutList.remove(1, v);
+        MutList.remove(0, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def remove!06(): Bool = region rc {
+    def remove06(): Bool = region rc {
         let v = MutList.range(rc, 7, 13);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def remove!07(): Bool = region rc {
+    def remove07(): Bool = region rc {
         let v = MutList.range(rc, 0, 3);
-        MutList.remove!(3, v);
-        MutList.remove!(7, v);
-        MutList.remove!(99, v);
+        MutList.remove(3, v);
+        MutList.remove(7, v);
+        MutList.remove(99, v);
         MutList.sameElements(v, MutList.range(rc, 0, 3))
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // pushAll!                                                                //
+    // pushAll                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def pushAll!01(): Bool = region rc {
+    def pushAll01(): Bool = region rc {
         let v = MutList.range(rc, 0, 4);
         let l = List.range(4, 8);
-        MutList.pushAll!(l, v);
+        MutList.pushAll(l, v);
         MutList.sameElements(v, MutList.range(rc, 0, 8))
     }
 
     @test
-    def pushAll!02(): Bool = region rc {
+    def pushAll02(): Bool = region rc {
         let v = MutList.empty(rc);
         let l = List.range(1, 4);
-        MutList.pushAll!(l, v);
+        MutList.pushAll(l, v);
         MutList.sameElements(v, MutList.range(rc, 1, 4))
     }
 
     @test
-    def pushAll!03(): Bool = region rc {
+    def pushAll03(): Bool = region rc {
         let v = MutList.range(rc, 9, 24);
         let l = (Nil: List[Int32]);
-        MutList.pushAll!(l, v);
+        MutList.pushAll(l, v);
         MutList.sameElements(v, MutList.range(rc, 9, 24))
     }
 
     @test
-    def pushAll!04(): Bool = region rc {
+    def pushAll04(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
         let l: List[Unit] = Nil;
-        MutList.pushAll!(l, v);
+        MutList.pushAll(l, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def pushAll!05(): Bool = region rc {
+    def pushAll05(): Bool = region rc {
         let v = MutList.range(rc, 1, 3);
         let l1 = List.range(3, 5);
         let l2 = List.range(5, 99);
-        MutList.pushAll!(l1, v);
-        MutList.pushAll!(l2, v);
+        MutList.pushAll(l1, v);
+        MutList.pushAll(l2, v);
         MutList.sameElements(v, MutList.range(rc, 1, 99))
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // retain!                                                                 //
+    // retain                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def retain!01(): Bool = region rc {
+    def retain01(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x `Int32.remainder` 2 == 0, l1);
+        MutList.retain(x -> x `Int32.remainder` 2 == 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def retain!02(): Bool = region rc {
+    def retain02(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x `Int32.remainder` 2 == 1, l1);
+        MutList.retain(x -> x `Int32.remainder` 2 == 1, l1);
         let l2 = MutList.empty(rc);
         let xs = 1 :: 3 :: 5 :: 7 :: 9 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def retain!03(): Bool = region rc {
+    def retain03(): Bool = region rc {
         let v = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x > 5, v);
+        MutList.retain(x -> x > 5, v);
         MutList.sameElements(v, MutList.range(rc, 6, 10))
     }
 
     @test
-    def retain!04(): Bool = region rc {
+    def retain04(): Bool = region rc {
         let v = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x > 10, v);
+        MutList.retain(x -> x > 10, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // replace!                                                                //
+    // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace!01(): Bool = region rc {
+    def replace01(): Bool = region rc {
         let l1 = MutList.empty(rc);
-        MutList.push!(1, l1);
-        MutList.push!(2, l1);
-        MutList.push!(2, l1);
-        MutList.push!(1, l1);
-        MutList.push!(1, l1);
-        MutList.replace!(src = 1, dst = 42, l1);
+        MutList.push(1, l1);
+        MutList.push(2, l1);
+        MutList.push(2, l1);
+        MutList.push(1, l1);
+        MutList.push(1, l1);
+        MutList.replace(src = 1, dst = 42, l1);
         let l2 = MutList.empty(rc);
         let xs = 42 :: 2 :: 2 :: 42 :: 42 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def replace!02(): Bool = region rc {
+    def replace02(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(src = 4, dst = 0, l1);
+        MutList.replace(src = 4, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 0 :: 5 :: 6 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def replace!03(): Bool = region rc {
+    def replace03(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(src = 5, dst = 0, l1);
+        MutList.replace(src = 5, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 4 :: 0 :: 6 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def replace!04(): Bool = region rc {
+    def replace04(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(src = 6, dst = 0, l1);
+        MutList.replace(src = 6, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 4 :: 5 :: 0 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def replace!05(): Bool = region rc {
+    def replace05(): Bool = region rc {
         let l1 = MutList.empty(rc);
         let xs1 = List.repeat(97, 'a');
-        List.forEach(x -> MutList.push!(x, l1), xs1);
-        MutList.replace!(src = 'a', dst = 'z', l1);
+        List.forEach(x -> MutList.push(x, l1), xs1);
+        MutList.replace(src = 'a', dst = 'z', l1);
         let l2 = MutList.empty(rc);
         let xs2 = List.repeat(97, 'z');
-        List.forEach(x -> MutList.push!(x, l2), xs2);
+        List.forEach(x -> MutList.push(x, l2), xs2);
         MutList.sameElements(l1, l2)
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // reverse!                                                                //
+    // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def reverse01!(): Bool = region rc {
+    def reverse01(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
-        MutList.reverse!(v);
+        MutList.reverse(v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def reverse02!(): Bool = region rc {
+    def reverse02(): Bool = region rc {
         let v = MutList.range(rc, 0, 1);
-        MutList.reverse!(v);
+        MutList.reverse(v);
         MutList.sameElements(v, MutList.range(rc, 0, 1))
     }
 
     @test
-    def reverse03!(): Bool = region rc {
+    def reverse03(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 5);
-        MutList.reverse!(l1);
+        MutList.reverse(l1);
         let l2 = MutList.empty(rc);
         let xs = 4 :: 3 :: 2 :: 1 :: 0 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def reverse04!(): Bool = region rc {
+    def reverse04(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 6);
-        MutList.reverse!(l1);
+        MutList.reverse(l1);
         let l2 = MutList.empty(rc);
         let xs = 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil;
-        List.forEach(x -> MutList.push!(x, l2), xs);
+        List.forEach(x -> MutList.push(x, l2), xs);
         MutList.sameElements(l1, l2)
     }
 
     @test
-    def reverse05!(): Bool = region rc {
+    def reverse05(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
-        MutList.reverse!(l);
+        List.forEach(x -> MutList.push(x, l), xs);
+        MutList.reverse(l);
         MutList.sameElements(l, MutList.range(rc, 2, 8))
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // shrink!                                                                 //
+    // shrink                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shrink!01(): Bool = region rc {
+    def shrink01(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(0, v);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.shrink!(v);
+        MutList.push(0, v);
+        MutList.push(1, v);
+        MutList.push(2, v);
+        MutList.shrink(v);
         MutList.length(v) == 3
     }
 
     @test
-    def shrink!02(): Bool = region rc {
+    def shrink02(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.shrink!(v);
+        MutList.shrink(v);
         MutList.length(v) == 0
     }
 
     @test
-    def shrink!03(): Bool = region rc {
+    def shrink03(): Bool = region rc {
         let v = MutList.range(rc, 0, 9);
-        MutList.push!(9, v);
-        MutList.shrink!(v);
+        MutList.push(9, v);
+        MutList.shrink(v);
         MutList.length(v) == 10
     }
 
     @test
-    def shrink!04(): Bool = region rc {
+    def shrink04(): Bool = region rc {
         let v = MutList.empty(rc);
-        MutList.push!(4, v);
-        MutList.append!(MutList.toList(MutList.range(rc, 0, 4)), v);
-        MutList.push!(5, v);
-        MutList.shrink!(v);
+        MutList.push(4, v);
+        MutList.append(MutList.toList(MutList.range(rc, 0, 4)), v);
+        MutList.push(5, v);
+        MutList.shrink(v);
         MutList.length(v) == 6
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // truncate!                                                               //
+    // truncate                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def truncate!01(): Bool = region rc {
+    def truncate01(): Bool = region rc {
         let v: MutList[Unit, _] = MutList.empty(rc);
-        MutList.truncate!(0, v);
+        MutList.truncate(0, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def truncate!02(): Bool = region rc {
+    def truncate02(): Bool = region rc {
         let v = MutList.range(rc, 0, 10);
-        MutList.truncate!(5, v);
+        MutList.truncate(5, v);
         MutList.sameElements(v, MutList.range(rc, 0, 5))
     }
 
     @test
-    def truncate!03(): Bool = region rc {
+    def truncate03(): Bool = region rc {
         let v = MutList.range(rc, 0, 99);
-        MutList.truncate!(-1, v);
+        MutList.truncate(-1, v);
         MutList.sameElements(v, MutList.empty(rc))
     }
 
     @test
-    def truncate!04(): Bool = region rc {
+    def truncate04(): Bool = region rc {
         let v = MutList.range(rc, 7, 8);
-        MutList.truncate!(2, v);
+        MutList.truncate(2, v);
         MutList.sameElements(v, MutList.range(rc, 7, 8))
     }
 
     @test
-    def truncate!05(): Bool = region rc {
+    def truncate05(): Bool = region rc {
         let v = MutList.range(rc, 99, 102);
-        MutList.truncate!(1, v);
+        MutList.truncate(1, v);
         MutList.sameElements(v, MutList.range(rc, 99, 100))
     }
 
@@ -1717,9 +1717,9 @@ mod TestMutList {
     @test
     def iterator03(): Bool = region rc {
         let l = List.toMutList(rc, 1 :: 2 :: 3 :: Nil);
-        discard MutList.pop!(l);
-        discard MutList.pop!(l);
-        discard MutList.pop!(l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case None => true
@@ -1789,10 +1789,10 @@ mod TestMutList {
     def forEachWithIndex01(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 100);
         let v2 = MutList.empty(rc);
-        MutList.forEachWithIndex((i, x) -> if (x `Int32.remainder` 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
+        MutList.forEachWithIndex((i, x) -> if (x `Int32.remainder` 2 == 0 and i < 10) MutList.push(x, v2) else (), v1);
         let l = MutList.empty(rc);
         let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sameElements(v2, l)
     }
 
@@ -1837,7 +1837,7 @@ mod TestMutList {
     @test
     def minimumBy04(): Bool = region rc {
         let v = MutList.range(rc, 0, 6);
-        MutList.push!(-2, v);
+        MutList.push(-2, v);
         MutList.minimumBy((x, y) -> x <=> y, v) == Some(-2)
     }
 
@@ -1871,7 +1871,7 @@ mod TestMutList {
     @test
     def maximumBy04(): Bool = region rc {
         let v = MutList.range(rc, 0, 6);
-        MutList.push!(11, v);
+        MutList.push(11, v);
         MutList.maximumBy((x, y) -> x <=> y, v) == Some(11)
     }
 
@@ -1902,8 +1902,8 @@ mod TestMutList {
     @test
     def toArray03(): Bool = region rc {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
         Array.length(MutList.toArray(rc, v)) == 1
     }
 
@@ -1919,16 +1919,16 @@ mod TestMutList {
     @test
     def toVector02(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!(0, l);
+        MutList.push(0, l);
         MutList.toVector(l) `Vector.equals` Vector.singleton(0)
     }
 
     @test
     def toVector03(): Bool = region rc {
         let l = MutList.empty(rc);
-        MutList.push!(1, l);
-        MutList.push!(2, l);
-        MutList.push!(3, l);
+        MutList.push(1, l);
+        MutList.push(2, l);
+        MutList.push(3, l);
         MutList.toVector(l) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
     }
 
@@ -1964,7 +1964,7 @@ mod TestMutList {
     def toChain01(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs: List[Int32] = Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.toChain(l) == Chain.empty()
     }
 
@@ -1972,7 +1972,7 @@ mod TestMutList {
     def toChain02(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.toChain(l) == Chain.singleton(1)
     }
 
@@ -1980,7 +1980,7 @@ mod TestMutList {
     def toChain03(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.toChain(l) == List.toChain(1 :: 2 :: Nil)
     }
 
@@ -1988,7 +1988,7 @@ mod TestMutList {
     def toChain04(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.toChain(l) == List.toChain(1 :: 2 :: 3 :: Nil)
     }
 
@@ -2010,7 +2010,7 @@ mod TestMutList {
         let xs = 1 :: Nil;
 
         let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
 
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
@@ -2023,7 +2023,7 @@ mod TestMutList {
         let xs = 1 :: 2 :: Nil;
 
         let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
 
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
@@ -2036,7 +2036,7 @@ mod TestMutList {
         let xs = 1 :: 2 :: 3 :: Nil;
 
         let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
 
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
@@ -2045,8 +2045,6 @@ mod TestMutList {
     }
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // The following tests for sort functions correspond to those in TestArray //
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -2058,80 +2056,91 @@ mod TestMutList {
 
     @test
     def sortWith01(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])));
-        a `sameElements` Array.toMutList(rc, Array#{} @ rc)
+        let a = Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]));
+        MutList.sortWith(cmp, a);
+        a `sameElements` Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def sortWith02(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{0} @ rc));
+        let a = Array.toMutList(rc, Array#{0} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0} @ rc)
     }
 
     @test
     def sortWith03(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{0, 1} @ rc));
+        let a = Array.toMutList(rc, Array#{0,1} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc)
     }
 
     @test
     def sortWith04(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{1,0} @ rc));
+        let a = Array.toMutList(rc, Array#{1,0} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc)
     }
-
     @test
     def sortWith05(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{1,1} @ rc));
+        let a = Array.toMutList(rc, Array#{1,1} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{1,1} @ rc)
     }
 
     @test
     def sortWith06(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc));
+        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortWith07(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc));
+        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortWith08(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc));
+        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
     }
 
     @test
     def sortWith09(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc));
+        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        MutList.sortWith(cmp, a);
         a `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc)
     }
 
     @test
     def sortWith10(): Bool = region rc {
-        let a = MutList.sortWith(rc, flip(cmp), Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc));
+        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        MutList.sortWith(flip(cmp), a);
         a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
     }
 
     @test
     def sortWith11(): Bool = region rc {
-        let a = MutList.sortWith(rc, flip(cmp), Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc));
+        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        MutList.sortWith(flip(cmp), a);
         a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
     }
 
     @test
     def sortWith12(): Bool = region rc {
-        let a = MutList.sortWith(rc, flip(cmp), Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc));
+        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        MutList.sortWith(flip(cmp), a);
         a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
     }
 
-
     @test
     def sortWith13(): Bool = region rc {
-        let a = MutList.sortWith(rc, flip(cmp), Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc));
+        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        MutList.sortWith(flip(cmp), a);
         a `sameElements` Array.toMutList(rc, Array#{4,3,2,2,1,0} @ rc)
     }
 
@@ -2139,204 +2148,57 @@ mod TestMutList {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(a: MutList[Int32, rc]): Bool \ rc = region rc1 {
-        MutList.sort(rc1, a) `sameElements` MutList.sortWith(rc1, cmp, a)
-    }
-
-    @test
-    def sort01(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
-    }
-
-    @test
-    def sort02(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{0} @ rc))
-    }
-
-    @test
-    def sort03(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{0,1} @ rc))
-    }
-
-    @test
-    def sort04(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{1,0} @ rc))
-    }
-
-    @test
-    def sort05(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{1,1} @ rc))
-    }
-
-    @test
-    def sort06(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
-    }
-
-    @test
-    def sort07(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
-    }
-
-    @test
-    def sort08(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc))
-    }
-
-    @test
-    def sort09(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sortWith!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sortWith01!(): Bool = region rc {
-        let a = Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]));
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]))
-    }
-
-    @test
-    def sortWith02!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{0} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0} @ rc)
-    }
-
-    @test
-    def sortWith03!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{0,1} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc)
-    }
-
-    @test
-    def sortWith04!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{1,0} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc)
-    }
-    @test
-    def sortWith05!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{1,1} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{1,1} @ rc)
-    }
-
-    @test
-    def sortWith06!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
-    }
-
-    @test
-    def sortWith07!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
-    }
-
-    @test
-    def sortWith08!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)
-    }
-
-    @test
-    def sortWith09!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
-        MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc)
-    }
-
-    @test
-    def sortWith10!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
-        MutList.sortWith!(flip(cmp), a);
-        a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
-    }
-
-    @test
-    def sortWith11!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
-        MutList.sortWith!(flip(cmp), a);
-        a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
-    }
-
-    @test
-    def sortWith12!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
-        MutList.sortWith!(flip(cmp), a);
-        a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)
-    }
-
-    @test
-    def sortWith13!(): Bool = region rc {
-        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
-        MutList.sortWith!(flip(cmp), a);
-        a `sameElements` Array.toMutList(rc, Array#{4,3,2,2,1,0} @ rc)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sort!                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    def testSort!VsSortWith!(a: MutList[Int32, r]): Bool \ r = region rc1 {
+    def testSortSortWith(a: MutList[Int32, r]): Bool \ r = region rc1 {
         let b = MutList.copy(rc1, a);
         let c = MutList.copy(rc1, a);
-        MutList.sort!(b);
-        MutList.sortWith!(cmp, c);
+        MutList.sort(b);
+        MutList.sortWith(cmp, c);
         b `sameElements` c
     }
 
     @test
-    def sort!01(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
+    def sort01(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @test
-    def sort!02(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{0} @ rc))
+    def sort02(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{0} @ rc))
     }
 
     @test
-    def sort!03(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{0,1} @ rc))
+    def sort03(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{0,1} @ rc))
     }
 
     @test
-    def sort!04(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{1,0} @ rc))
+    def sort04(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{1,0} @ rc))
     }
 
     @test
-    def sort!05(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{1,1} @ rc))
+    def sort05(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{1,1} @ rc))
     }
 
     @test
-    def sort!06(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+    def sort06(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @test
-    def sort!07(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
+    def sort07(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
     }
 
     @test
-    def sort!08(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc))
+    def sort08(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc))
     }
 
     @test
-    def sort!09(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc))
+    def sort09(): Bool = region rc {
+        testSortSortWith(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc))
     }
 
 
@@ -2344,131 +2206,94 @@ mod TestMutList {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: MutList[Int32, r]): Bool \ r = region rc1 {
-        (MutList.sortBy(rc1, identity, a) `sameElements` MutList.sort(rc1, a)) and
-        (MutList.sortBy(rc1, x -> 4 * x + 7, a) `sameElements` MutList.sort(rc1, a)) and
-        (MutList.sortBy(rc1, x -> -x, a) `sameElements` MutList.sortWith(rc1, flip(cmp),a))
-    }
-
     @test
     def sortBy01(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{} @ rc))
     }
 
     @test
     def sortBy02(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{0} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0} @ rc))
     }
 
     @test
     def sortBy03(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{0,1} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
     }
 
     @test
     def sortBy04(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{1,0} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,0} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,0} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
     }
 
     @test
     def sortBy05(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{1,1} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,1} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,1} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{1,1} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{1,1} @ rc))
     }
 
     @test
     def sortBy06(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @test
     def sortBy07(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @test
     def sortBy08(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @test
     def sortBy09(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc))
-    }
-
-    enum R {
-        case R({i = Int32, s = String})
-    }
-
-    instance Eq[R] {
-        pub def eq(a: R, b: R): Bool =
-            let R.R(x) = a;
-            let R.R(y) = b;
-            x#i == y#i and x#s == y#s
-    }
-
-    @test
-    def sortBy10(): Bool = region rc {
-        MutList.sortBy(rc, r -> let R.R(x) = r; x#i, Array.toMutList(rc, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ rc))
-        `sameElements` Array.toMutList(rc, Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})} @ rc)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sortBy!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    def testSortBy!VsSortBy(a: MutList[Int32, rc]): Bool \ rc = region rc1 {
-        let b = MutList.copy(rc1, a);
-        let c = MutList.copy(rc1, a);
-        MutList.sortBy!(identity, b);
-        MutList.sortBy!(x -> 4 * x + 7, c);
-        (b `sameElements` MutList.sortBy(rc1, x -> 4 * x + 7, a)) and
-        (c `sameElements` MutList.sortBy(rc1, identity, a))
-    }
-
-    @test
-    def sortBy!01(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
-    }
-
-    @test
-    def sortBy!02(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{0} @ rc))
-    }
-
-    @test
-    def sortBy!03(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{0,1} @ rc))
-    }
-
-    @test
-    def sortBy!04(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{1,0} @ rc))
-    }
-
-    @test
-    def sortBy!05(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{1,1} @ rc))
-    }
-
-    @test
-    def sortBy!06(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
-    }
-
-    @test
-    def sortBy!07(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
-    }
-
-    @test
-    def sortBy!08(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc))
-    }
-
-    @test
-    def sortBy!09(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc))
+        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        (a `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc))
+            and (b `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc))
     }
 
 
@@ -2485,7 +2310,7 @@ mod TestMutList {
     def sum02(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == 1
     }
 
@@ -2493,7 +2318,7 @@ mod TestMutList {
     def sum03(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == 6
     }
 
@@ -2501,7 +2326,7 @@ mod TestMutList {
     def sum04(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: -3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == 3
     }
 
@@ -2509,7 +2334,7 @@ mod TestMutList {
     def sum05(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = -1 :: -2 :: -3 :: -4 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == -10
     }
 
@@ -2517,7 +2342,7 @@ mod TestMutList {
     def sum06(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 10 :: -10 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == 0
     }
 
@@ -2525,7 +2350,7 @@ mod TestMutList {
     def sum07(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = List.range(1, 101);
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sum(l) == 5050
     }
 
@@ -2543,7 +2368,7 @@ mod TestMutList {
     def sumWith02(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 2
     }
 
@@ -2551,7 +2376,7 @@ mod TestMutList {
     def sumWith03(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 9
     }
 
@@ -2559,7 +2384,7 @@ mod TestMutList {
     def sumWith04(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: -3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 7
     }
 
@@ -2567,7 +2392,7 @@ mod TestMutList {
     def sumWith05(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = -1 :: -2 :: -3 :: -4 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == -6
     }
 
@@ -2575,7 +2400,7 @@ mod TestMutList {
     def sumWith06(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 10 :: -10 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 2
     }
 
@@ -2593,7 +2418,7 @@ mod TestMutList {
     def join02(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.join(",", l) == "1"
     }
 
@@ -2601,7 +2426,7 @@ mod TestMutList {
     def join03(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.join(",", l) == "1,2,3"
     }
 
@@ -2609,7 +2434,7 @@ mod TestMutList {
     def join04(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = "1" :: "2" :: "3" :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.join(",", l) == "1,2,3"
     }
 
@@ -2627,7 +2452,7 @@ mod TestMutList {
     def joinWith02(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2"
     }
 
@@ -2635,7 +2460,7 @@ mod TestMutList {
     def joinWith03(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2,3,4"
     }
 
@@ -2643,7 +2468,7 @@ mod TestMutList {
     def joinWith04(): Bool = region rc {
         let l = MutList.empty(rc);
         let xs = "1" :: "2" :: "3" :: Nil;
-        List.forEach(x -> MutList.push!(x, l), xs);
+        List.forEach(x -> MutList.push(x, l), xs);
         MutList.joinWith(x -> x + x, ",", l) == "11,22,33"
     }
 
@@ -2655,7 +2480,7 @@ mod TestMutList {
     def shuffle01(): Bool \ NonDet = region rc {
         let l: List[Int32] = Nil;
         let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort!(v);
+        MutList.sort(v);
 
         MutList.length(v) == 0 and v `MutList.sameElements` List.toMutList(rc, l)
     }
@@ -2664,7 +2489,7 @@ mod TestMutList {
     def shuffle02(): Bool \ NonDet = region rc {
         let l = 1 :: Nil;
         let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort!(v);
+        MutList.sort(v);
 
         MutList.length(v) == 1 and v `MutList.sameElements` List.toMutList(rc, l)
     }
@@ -2673,7 +2498,7 @@ mod TestMutList {
     def shuffle03(): Bool \ NonDet = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort!(v);
+        MutList.sort(v);
 
         MutList.length(v) == 3 and v `MutList.sameElements` List.toMutList(rc, l)
     }
@@ -2682,7 +2507,7 @@ mod TestMutList {
     def shuffle04(): Bool \ NonDet = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort!(v);
+        MutList.sort(v);
 
         MutList.length(v) == 10 and v `MutList.sameElements` List.toMutList(rc, l)
     }

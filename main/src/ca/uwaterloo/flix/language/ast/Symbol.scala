@@ -378,11 +378,6 @@ object Symbol {
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, scope, loc)
 
-    /**
-      * Returns the same symbol without a kind.
-      */
-    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, scope, loc)
-
     def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id

@@ -60,34 +60,34 @@ mod MutSet {
     ///
     /// Adds the element `x` to the mutable set `s`.
     ///
-    pub def add!(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def add(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
         Ref.put(Set.insert(x, Ref.get(ms)), ms)
 
     ///
     /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
-    pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
-        Foldable.forEach(x -> add!(x, s), m)
+    pub def addAll(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
+        Foldable.forEach(x -> add(x, s), m)
 
     ///
     /// Removes all elements from the mutable set `s`.
     ///
-    pub def clear!(s: MutSet[a, r]): Unit \ r =
+    pub def clear(s: MutSet[a, r]): Unit \ r =
         let MutSet(_, ms) = s;
         Ref.put(Set.empty(), ms)
 
     ///
     /// Removes the element `x` from the mutable set `s`.
     ///
-    pub def remove!(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def remove(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
         Ref.put(Set.remove(x, Ref.get(ms)), ms)
 
     ///
     /// Removes all elements in the collection `m` from the mutable set `s`.
     ///
-    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
+    pub def removeAll(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         Ref.put(Set.difference(Ref.get(ms), s2), ms)
@@ -95,7 +95,7 @@ mod MutSet {
     ///
     /// Removes all elements from the mutable set `s` that are not in collection `m`.
     ///
-    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
+    pub def retainAll(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         Ref.put(Set.intersection(s2, Ref.get(ms)), ms)
@@ -105,7 +105,7 @@ mod MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine!(f: a -> Bool, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def refine(f: a -> Bool, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
         Ref.put(Set.filter(f, Ref.get(ms)), ms)
 
@@ -114,14 +114,14 @@ mod MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
         Ref.put(Set.replace(src = src#src, dst = dst#dst, Ref.get(ms)), ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
-    pub def transform!(f: a -> a \ ef, s: MutSet[a, r]): Unit \ { ef, r } with Order[a] =
+    pub def transform(f: a -> a \ ef, s: MutSet[a, r]): Unit \ { ef, r } with Order[a] =
         let MutSet(_, ms) = s;
         Ref.put(Set.map(f, Ref.get(ms)), ms)
 

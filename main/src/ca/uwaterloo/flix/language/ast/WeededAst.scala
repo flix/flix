@@ -324,7 +324,9 @@ object WeededAst {
 
   }
 
-  sealed trait Type
+  sealed trait Type {
+    def loc: SourceLocation
+  }
 
   object Type {
 
@@ -413,8 +415,6 @@ object WeededAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
-
-  case class JavaClassMember(prefix: String, suffix: List[String], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
