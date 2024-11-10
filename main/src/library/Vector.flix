@@ -169,7 +169,7 @@ mod Vector {
     /// Version of `Array.updateSequence` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
-    def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
+    def arrayUpdateSeqV(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
         let end = Array.length(arr);
         let subLen = length(sub);
         def loop(ri, wi) = {
@@ -321,8 +321,8 @@ mod Vector {
     ///
     pub def append(v1: Vector[a], v2: Vector[a]): Vector[a] = region rc {
         let arr = Array.empty(rc, length(v1) + length(v2));
-        arrayUpdateSeqV!(0, v1, arr);
-        arrayUpdateSeqV!(length(v1), v2, arr);
+        arrayUpdateSeqV(0, v1, arr);
+        arrayUpdateSeqV(length(v1), v2, arr);
         Array.toVector(arr)
     }
 
@@ -526,7 +526,7 @@ mod Vector {
                 k(Applicative.point(arr))
             else {
                 let mx = get(i, v);
-                loop(i+1, karr -> k(putA!(mx, i, karr)))
+                loop(i+1, karr -> k(putA(mx, i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -544,7 +544,7 @@ mod Vector {
                 k(Applicative.point(arr))
             else {
                 let x = get(i, v);
-                loop(i+1, karr -> k(putA!(f(x), i, karr)))
+                loop(i+1, karr -> k(putA(f(x), i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -553,7 +553,7 @@ mod Vector {
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
     ///
-    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
+    def putA(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
         (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
@@ -570,7 +570,7 @@ mod Vector {
             else {
                 let x = get(i, v1);
                 let y = get(i, v2);
-                loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
+                loop(i+1, karr -> k(putA(f(x, y), i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -695,13 +695,13 @@ mod Vector {
         let arr = Array.empty(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
-                arrayUpdateSeqV!(0, v, arr);
+                arrayUpdateSeqV(0, v, arr);
                 Ref.put(length(v), pos)
             } else {
                 let ix = Ref.get(pos);
-                arrayUpdateSeqV!(ix, sep, arr);
+                arrayUpdateSeqV(ix, sep, arr);
                 let ix1 = ix + sepLength;
-                arrayUpdateSeqV!(ix1, v, arr);
+                arrayUpdateSeqV(ix1, v, arr);
                 Ref.put(ix1 + length(v), pos)
             }
         };
@@ -944,7 +944,7 @@ mod Vector {
         forEach(v -> {
             let i = Ref.get(pos);
             Ref.put(i + length(v), pos);
-            arrayUpdateSeqV!(i, v, arr)
+            arrayUpdateSeqV(i, v, arr)
         }, vs);
         Array.toVector(arr)
     }
