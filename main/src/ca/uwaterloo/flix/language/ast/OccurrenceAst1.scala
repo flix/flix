@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 object OccurrenceAst1 {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
@@ -37,7 +38,9 @@ object OccurrenceAst1 {
 
   case class Op(sym: Symbol.OpSym, fparams: List[FormalParam], spec: Spec, loc: SourceLocation)
 
-  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: List[StructField], loc: SourceLocation)
+  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+
+  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type
@@ -136,7 +139,7 @@ object OccurrenceAst1 {
     }
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
@@ -155,6 +158,8 @@ object OccurrenceAst1 {
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 

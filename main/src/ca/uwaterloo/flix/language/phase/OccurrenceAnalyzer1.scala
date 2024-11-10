@@ -83,9 +83,10 @@ object OccurrenceAnalyzer1 {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
     val defs = visitDefs(root.defs)
-    val structs = visitStructs(root.structs)
     val effects = visitEffects(root.effects)
-    OccurrenceAst1.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    val enums = visitEnums(root.enums)
+    val structs = visitStructs(root.structs)
+    OccurrenceAst1.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   /**
@@ -173,19 +174,39 @@ object OccurrenceAnalyzer1 {
       OccurrenceAst1.Spec(doc, ann, mod, functionType, retTpe, eff)
   }
 
+  private def visitEnums(enums0: Map[Symbol.EnumSym, MonoAst.Enum]): Map[Symbol.EnumSym, OccurrenceAst1.Enum] = {
+    enums0.map { case (sym, enum0) => sym -> visitEnum(enum0) }
+  }
+
+  private def visitEnum(enum0: MonoAst.Enum): OccurrenceAst1.Enum = enum0 match {
+    case MonoAst.Enum(doc, ann, mod, sym, tparams, cases, loc) =>
+      val tps = tparams.map(visitTypeParam)
+      val cs = cases.map { case (sym, caze) => sym -> visitEnumCase(caze) }
+      OccurrenceAst1.Enum(doc, ann, mod, sym, tps, cs, loc)
+  }
+
+  private def visitEnumCase(case0: MonoAst.Case): OccurrenceAst1.Case = case0 match {
+    case MonoAst.Case(sym, tpe, loc) => OccurrenceAst1.Case(sym, tpe, loc)
+  }
+
   private def visitStructs(structs0: Map[Symbol.StructSym, MonoAst.Struct]): Map[Symbol.StructSym, OccurrenceAst1.Struct] = {
     structs0.map { case (sym, struct) => sym -> visitStruct(struct) }
   }
 
   private def visitStruct(struct0: MonoAst.Struct): OccurrenceAst1.Struct = struct0 match {
     case MonoAst.Struct(doc, ann, mod, sym, tparams, fields, loc) =>
+      val tps = tparams.map(visitTypeParam)
       val fs = fields.map(visitStructField)
-      OccurrenceAst1.Struct(doc, ann, mod, sym, tparams, fs, loc)
+      OccurrenceAst1.Struct(doc, ann, mod, sym, tps, fs, loc)
   }
 
   private def visitStructField(field0: MonoAst.StructField): OccurrenceAst1.StructField = field0 match {
     case MonoAst.StructField(sym, tpe, loc) =>
       OccurrenceAst1.StructField(sym, tpe, loc)
+  }
+
+  private def visitTypeParam(tparam0: MonoAst.TypeParam): OccurrenceAst1.TypeParam = tparam0 match {
+    case MonoAst.TypeParam(name, sym, loc) => OccurrenceAst1.TypeParam(name, sym, loc)
   }
 
   /**
