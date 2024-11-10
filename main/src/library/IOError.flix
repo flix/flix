@@ -26,7 +26,7 @@ pub enum IoError(IoError.ErrorKind, String) with Eq
 
 mod IoError {
 
-    pub enum ErrorKind with Eq {
+    pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
         case PermissionDenied,
         case Interrupted,
