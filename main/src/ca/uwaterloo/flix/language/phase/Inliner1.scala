@@ -219,6 +219,7 @@ object Inliner1 {
         exp match {
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
             inScopeSet0.get(sym) match {
+              // TODO: Pattern match directly on Lambda and generate fresh variables
               case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) => // One-shot lambda
                 MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
