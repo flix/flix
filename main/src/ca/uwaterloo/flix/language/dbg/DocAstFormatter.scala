@@ -243,10 +243,11 @@ object DocAstFormatter {
         val colon = if (resType.isDefined) text(":") else Doc.empty
         val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
         val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
+        val equals = if (effect.isDefined) effectf +: text("=") else text("=")
         val bodyf = format(body)
         group(
           text("local def") +: aux(name) |:: tuple(args) |::
-            colon +: group(resTypef |:: effectf +: text("=") |:: breakWith(" ")) |:: curlyOpen(bodyf)
+            colon +: group(resTypef |:: equals |:: breakWith(" ")) |:: curlyOpen(bodyf)
         )
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
