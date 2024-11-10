@@ -198,7 +198,6 @@ object Inliner1 {
         }
 
       case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-        val e = visit(exp)
         val es = exps.map(visit)
         exp match {
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
@@ -207,13 +206,16 @@ object Inliner1 {
                 MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
               case _ =>
+                val e = visit(exp)
                 MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
             }
 
           case OccurrenceAst1.Expr.Lambda(fparam, exp, _, _) =>
             bindFormals(exp, List(fparam), es, subst0)
 
-          case _ => MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+          case _ =>
+            val e = visit(exp)
+            MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
         }
 
       case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
