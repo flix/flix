@@ -239,7 +239,6 @@ object DocAstFormatter {
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
       case LocalDef(name, parameters, resType, effect, body, _) =>
-        // val bindf = aux(body, paren = false)
         val args = parameters.map(aux(_, paren = false))
         val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
         val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
