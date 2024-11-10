@@ -16,13 +16,22 @@
 mod App {
 
     ///
-    /// Runs the given function `f` handling the `Clock`, `Console`, and `Logger` effects.
+    /// Runs the given function `f` handling all effects specified in the signature.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Logger}) + IO =
+    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, FileReadWithResult, FileWriteWithResult, Logger}) + IO =
         let r = f |>
             Clock.handle |>
             Console.handle |>
+            FileReadWithResult.handle |>
+            FileWriteWithResult.handle |>
             Logger.handle;
         r()
 
+    ///
+    /// Runs the given function `f` handling all effects specified in the signature where some handlers may return `Result`.
+    ///
+    pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, FileRead, FileWrite, Logger}) + IO =
+        let r = Clock.handle >> Console.handle >> Logger.handle;
+        let combined = (FileWrite.handle >> FileRead.handle >> (g -> g >> Result.flatten));
+        (f |> (r >> combined))()
 }
