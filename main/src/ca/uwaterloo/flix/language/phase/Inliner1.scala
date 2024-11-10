@@ -89,6 +89,20 @@ object Inliner1 {
 
   private type InScopeSet = Map[OutVar, Definition]
 
+  private sealed trait Context
+
+  private object Context {
+
+    case object Stop extends Context
+
+    case object Application extends Context
+
+    case object Match extends Context
+
+    case object Argument extends Context
+
+  }
+
   /**
     * Performs expression inlining on the given definition `def0`.
     * Converts definition from [[OccurrenceAst1]] to [[MonoAst]].
