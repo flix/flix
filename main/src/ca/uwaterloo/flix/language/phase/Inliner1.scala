@@ -219,7 +219,10 @@ object Inliner1 {
         exp match {
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
             inScopeSet0.get(sym) match {
-              case Some(Definition.LetBound(lambda, occur)) if occur == Occur.OnceInAbstraction && isPure(lambda.eff) =>
+              case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) if isPure(lambda.eff) =>
+                MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
+
+              case Some(Definition.LetBound(lambda, occur)) if isUsedOnceAndPure(occur, lambda.eff) => // One-shot lambda
                 MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
               case _ =>
@@ -228,6 +231,7 @@ object Inliner1 {
             }
 
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) if isPure(body.eff) =>
+            // Direct application, e.g., (x -> x)(1)
             bindFormals(body, List(fparam), es, subst0)
 
           case _ =>
