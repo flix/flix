@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The inliner optionally performs beta-reduction at call-sites.
@@ -518,7 +518,12 @@ object Inliner1 {
     case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
       subst0.get(sym) match {
         case Some(substExpr) => substExpr match {
-          case SubstRange.SuspendedExp(exp) => ???
+          case SubstRange.SuspendedExp(exp) =>
+            // We are inlining an abstraction that has captured `sym` from its environment.
+            // However, if that is the case the OccurrenceAnalyzer has marked it as OnceInAbstraction
+            // in which case the Inliner will NEVER produce a suspended exp for the binder.
+            // We could visit `exp` here but it is better to throw an error since this should be a bug.
+            throw InternalCompilerException("inlined unexpected suspended exp", exp.loc)
           case SubstRange.DoneExp(exp) => exp
         }
         case None => MonoAst.Expr.Var(varSubst.getOrElse(sym, sym), tpe, loc)
