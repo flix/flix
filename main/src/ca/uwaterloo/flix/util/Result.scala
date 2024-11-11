@@ -68,7 +68,7 @@ sealed trait Result[+T, +E] {
     */
   final def toValidation: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.success(t)
-    case Result.Err(e) => Validation.HardFailure(Chain(e))
+    case Result.Err(e) => Validation.Failure(Chain(e))
   }
 
   /**

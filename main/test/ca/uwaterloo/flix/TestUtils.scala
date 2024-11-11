@@ -56,7 +56,7 @@ trait TestUtils {
     */
   def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
     case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.success(root))
-    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.HardFailure(Chain.from(errors)))
+    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)))
   }
 
   /**
@@ -78,7 +78,7 @@ trait TestUtils {
   /**
     * Asserts that the validation does not contain a value of the parametric type `T`.
     */
-  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
+  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
     case Result.Ok(_) => ()
 
     case Result.Err(errors) =>
@@ -92,7 +92,7 @@ trait TestUtils {
   /**
     * Asserts that the validation is successful.
     */
-  def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toHardResult match {
+  def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
       fail(s"Expected success, but found errors:\n\n${errorString(errors.toSeq)}.")
@@ -102,7 +102,7 @@ trait TestUtils {
     * Private generic version of expectError.
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
+  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
     case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
 
     case Result.Err(errors) =>
