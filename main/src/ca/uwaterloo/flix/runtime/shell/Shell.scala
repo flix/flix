@@ -376,7 +376,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         }
       case (_, errors) =>
         printErrors(errors)
-        Validation.HardFailure(Chain.from(errors))
+        Validation.Failure(Chain.from(errors))
     }
   }
 

@@ -86,10 +86,10 @@ class TestValidation extends AnyFunSuite {
 
   test("mapN02") {
     val ex = new RuntimeException()
-    val result = mapN(HardFailure(Chain(ex)): Validation[String, Exception]) {
+    val result = mapN(Failure(Chain(ex)): Validation[String, Exception]) {
       case x => x.toUpperCase.reverse
     }
-    assertResult(HardFailure(Chain(ex)))(result)
+    assertResult(Failure(Chain(ex)))(result)
   }
 
   test("mapN03") {
@@ -120,9 +120,9 @@ class TestValidation extends AnyFunSuite {
   test("flatMapN03") {
     val ex = DummyUnrecoverable(1)
     val result = flatMapN(Validation.success[String, DummyUnrecoverable]("foo")) {
-      case _ => Validation.toHardFailure(ex)
+      case _ => Validation.toFailure(ex)
     }
-    assertResult(HardFailure(Chain(ex)))(result)
+    assertResult(Failure(Chain(ex)))(result)
   }
 
   test("flatMapN04") {
@@ -139,12 +139,12 @@ class TestValidation extends AnyFunSuite {
   test("flatMapN05") {
     val result = flatMapN(Validation.success[String, Int]("foo")) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case _ => flatMapN(HardFailure(Chain(4, 5, 6))) {
-          case _ => HardFailure(Chain(7, 8, 9))
+        case _ => flatMapN(Failure(Chain(4, 5, 6))) {
+          case _ => Failure(Chain(7, 8, 9))
         }
       }
     }
-    assertResult(HardFailure(Chain(4, 5, 6)))(result)
+    assertResult(Failure(Chain(4, 5, 6)))(result)
   }
 
   test("traverse01") {
@@ -156,16 +156,16 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse02") {
     val result = traverse(List(1, 2, 3)) {
-      case _ => HardFailure(Chain(42))
+      case _ => Failure(Chain(42))
     }
-    assertResult(HardFailure(Chain(42, 42, 42)))(result)
+    assertResult(Failure(Chain(42, 42, 42)))(result)
   }
 
   test("traverse03") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) Validation.success(x) else HardFailure(Chain(x))
+      case x => if (x % 2 == 1) Validation.success(x) else Failure(Chain(x))
     }
-    assertResult(HardFailure(Chain(2)))(result)
+    assertResult(Failure(Chain(2)))(result)
   }
 
   test("foldRight01") {
@@ -183,7 +183,7 @@ class TestValidation extends AnyFunSuite {
 
   test("toResult02") {
     val e = DummyUnrecoverable(1)
-    val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
+    val t = Validation.toFailure[String, DummyUnrecoverable](e)
     val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }

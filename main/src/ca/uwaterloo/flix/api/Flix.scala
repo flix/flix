@@ -519,7 +519,7 @@ class Flix {
     errors ++= weederErrors
 
     val result = weederValidation match {
-      case Validation.HardFailure(failures) =>
+      case Validation.Failure(failures) =>
         errors ++= failures.toList
         None
 
@@ -533,7 +533,7 @@ class Flix {
         errors ++= resolutionErrors
 
         resolverValidation match {
-          case Validation.HardFailure(failures) =>
+          case Validation.Failure(failures) =>
             errors ++= failures.toList
             None
 
@@ -660,7 +660,7 @@ class Flix {
     if (errors.isEmpty) {
       codeGen(result.get)
     } else {
-      Validation.HardFailure(Chain.from(errors))
+      Validation.Failure(Chain.from(errors))
     }
   }
 

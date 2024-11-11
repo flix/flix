@@ -283,11 +283,11 @@ object Resolver {
   /**
     * Create a list of CyclicTypeAliases errors, one for each type alias.
     */
-  private def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.HardFailure[T, ResolutionError] = {
+  private def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.Failure[T, ResolutionError] = {
     val errors = cycle.map {
       sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
     }
-    Validation.HardFailure(Chain.from(errors))
+    Validation.Failure(Chain.from(errors))
   }
 
   /**
@@ -391,11 +391,11 @@ object Resolver {
     /**
       * Create a list of CyclicTraitHierarchy errors, one for each trait.
       */
-    def mkCycleErrors[T](cycle: List[Symbol.TraitSym]): Validation.HardFailure[T, ResolutionError] = {
+    def mkCycleErrors[T](cycle: List[Symbol.TraitSym]): Validation.Failure[T, ResolutionError] = {
       val errors = cycle.map {
         sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc)
       }
-      Validation.HardFailure(Chain.from(errors))
+      Validation.Failure(Chain.from(errors))
     }
 
     val traitSyms = traits.values.map(_.sym)
@@ -704,7 +704,7 @@ object Resolver {
         if (errors.isEmpty) {
           Validation.success(m.values.toList)
         } else {
-          Validation.HardFailure(Chain.from(errors))
+          Validation.Failure(Chain.from(errors))
         }
     }
   }
@@ -721,7 +721,7 @@ object Resolver {
       val symVal = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
+        case None => Validation.toFailure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
         case Some(sym) => Validation.success(sym)
       }
       mapN(symVal, argVal, tpeVal) {
@@ -2184,7 +2184,7 @@ object Resolver {
             Validation.success(trt)
         }
       case None =>
-        Validation.toHardFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+        Validation.toFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
     }
   }
 
@@ -2204,7 +2204,7 @@ object Resolver {
             sctx.errors.add(error)
             Validation.success(trt)
         }
-      case None => Validation.toHardFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+      case None => Validation.toFailure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
     }
   }
 
@@ -2271,7 +2271,7 @@ object Resolver {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
         val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
-        Validation.toHardFailure(ResolutionError.UndefinedOp(qname, ident.loc))
+        Validation.toFailure(ResolutionError.UndefinedOp(qname, ident.loc))
       case Some(op) =>
         Validation.success(op)
     }
@@ -2347,7 +2347,7 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableTag(qname.ident.name, ns0, qname.loc))
+      case Nil => Validation.toFailure(ResolutionError.UndefinedRestrictableTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
       case caze :: Nil =>
         Validation.success(caze)
@@ -2366,7 +2366,7 @@ object Resolver {
     }
 
     matches match {
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
+      case Nil => Validation.toFailure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
       case enum0 :: _ => Validation.success(enum0)
     }
   }
@@ -2844,7 +2844,7 @@ object Resolver {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         checkTypeAliasIsAccessible(alias, ns0, qname.loc)
         Validation.success(alias)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.toFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2857,7 +2857,7 @@ object Resolver {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
         getAssocTypeIfAccessible(assoc, ns0, qname.loc)
         Validation.success(assoc)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.toFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2992,7 +2992,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc))
+      case None => Validation.toFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc))
       case Some(decl) => Validation.success(decl)
     }
   }
@@ -3604,7 +3604,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns, Map.empty, isUse = true, loc))
+      case Nil => Validation.toFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns, Map.empty, isUse = true, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>

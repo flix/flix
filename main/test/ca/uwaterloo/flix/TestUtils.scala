@@ -56,7 +56,7 @@ trait TestUtils {
     */
   def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
     case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.success(root))
-    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.HardFailure(Chain.from(errors)))
+    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)))
   }
 
   /**
