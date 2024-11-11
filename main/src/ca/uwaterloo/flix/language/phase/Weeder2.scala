@@ -3241,6 +3241,10 @@ object Weeder2 {
     }
   }
 
+  /**
+    * Returns the result of [[tryPick]] applied to `kind` and `t` if `tree` is `Some(t)`.
+    * Returns `None` otherwise.
+    */
   private def pickFlatten(kind: TreeKind, tree: Option[Tree]): Option[Tree] = tree match {
     case Some(t) => tryPick(kind, t)
     case None => None
