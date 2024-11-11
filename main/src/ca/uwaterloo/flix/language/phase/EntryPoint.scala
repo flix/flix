@@ -193,7 +193,8 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for IllegalEntryPointEffect
-      if (isBadEntryPointEffect(declaredEff)) {
+      // It is important to do here because we hide away the original main.
+      if (!Safety.isValidEntrypointEffect(declaredEff)) {
         val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
         sctx.errors.add(error)
       }
@@ -212,13 +213,6 @@ object EntryPoint {
         val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
         sctx.errors.add(error)
       }
-  }
-
-  /**
-    * Returns `true` iff `declaredEff` is not `Pure` or contains some non-primitive effect.
-    */
-  private def isBadEntryPointEffect(declaredEff: Type): Boolean = {
-    !Safety.isValidEntrypointEffect(declaredEff)
   }
 
   /**
