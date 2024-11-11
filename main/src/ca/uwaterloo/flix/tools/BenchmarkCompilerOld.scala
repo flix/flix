@@ -162,7 +162,7 @@ object BenchmarkCompilerOld {
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.unsafeGet
+        val compilationResult = flix.compile().unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }

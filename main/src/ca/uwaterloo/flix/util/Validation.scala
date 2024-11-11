@@ -39,14 +39,6 @@ sealed trait Validation[+T, +E] {
   def errors: Chain[E]
 
   /**
-    * Converts a soft failure to a hard failure.
-    */
-  def toHardFailure: Validation[T, E] = this match {
-    case Validation.Success(t) => Validation.Success(t)
-    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
-  }
-
-  /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
