@@ -177,14 +177,14 @@ class TestValidation extends AnyFunSuite {
 
   test("toSoftResult01") {
     val t = Validation.success[String, DummyError]("abc")
-    val result = t.toSoftResult
+    val result = t.toHardResult
     assertResult(Result.Ok(("abc", Chain.empty)))(result)
   }
 
   test("toSoftResult02") {
     val e = DummyUnrecoverable(1)
     val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toSoftResult
+    val result = t.toHardResult
     assertResult(Result.Err(Chain(e)))(result)
   }
 

@@ -55,16 +55,6 @@ sealed trait Validation[+T, +E] {
     case Validation.Success(t) => Result.Ok(t)
     case Validation.HardFailure(errors) => Result.Err(errors)
   }
-
-  /**
-    * Returns `this` as a [[Result]].
-    * If any success value exists it will be returned as a [[Result.Ok]] along with a possibly non-empty list of errors.
-    * This is meant for when a success value is useful in the presence of errors.
-    */
-  def toSoftResult: Result[(T, Chain[E]), Chain[E]] = this match {
-    case Validation.Success(t) => Result.Ok((t, Chain.empty))
-    case Validation.HardFailure(errors) => Result.Err(errors)
-  }
 }
 
 object Validation {
