@@ -1588,7 +1588,10 @@ object Weeder2 {
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
           fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
-            case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
+            case ((label, expr, loc), acc) =>
+              val SourceLocation(isReal, sp1, _) = loc
+              val extendLoc = SourceLocation(isReal, sp1, tree.loc.sp2)
+              Expr.RecordExtend(label, expr, acc, extendLoc)
           }
       }
     }
