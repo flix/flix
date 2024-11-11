@@ -834,8 +834,8 @@ object Weeder2 {
   }
 
   private object Exprs {
-    def pickExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
+    def pickExpr(tree: Tree, kind: TreeKind = TreeKind.Expr.Expr)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      val maybeExpression = tryPick(kind, tree)
       flatMapN(
         traverseOpt(maybeExpression)(visitExpr)
       ) {
@@ -848,7 +848,6 @@ object Weeder2 {
     }
 
     def visitExpr(exprTree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      assert(exprTree.kind == TreeKind.Expr.Expr)
       val tree = unfold(exprTree)
       tree.kind match {
         case TreeKind.Ident =>
@@ -1095,7 +1094,7 @@ object Weeder2 {
 
     private def visitArguments(tree: Tree)(implicit sctx: SharedContext): Validation[List[Expr], CompilationMessage] = {
       mapN(
-        traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
+        traverse(pickAll(TreeKind.Argument, tree))(pickExpr(_)),
         traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
       ) {
         (unnamed, named) =>
@@ -1112,7 +1111,7 @@ object Weeder2 {
       * as they are not allowed and it doesn't add unit arguments for empty arguments.
       */
     private def visitMethodArguments(tree: Tree)(implicit sctx: SharedContext): Validation[List[Expr], CompilationMessage] = {
-      traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
+      traverse(pickAll(TreeKind.Argument, tree))(pickExpr(_))
     }
 
     private def visitArgumentNamed(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
@@ -1347,8 +1346,7 @@ object Weeder2 {
 
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Scope)
-      val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
-      mapN(pickNameIdent(tree), block) {
+      mapN(pickNameIdent(tree), pickExpr(tree, TreeKind.Expr.Block)) {
         (ident, block) => Expr.Scope(ident, block, tree.loc)
       }
     }
@@ -1577,7 +1575,7 @@ object Weeder2 {
 
     private def visitTupleExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Tuple)
-      mapN(traverse(pickAll(TreeKind.Argument, tree))(pickExpr), traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)) {
+      mapN(traverse(pickAll(TreeKind.Argument, tree))(pickExpr(_)), traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)) {
         (unnamed, named) => Expr.Tuple((unnamed ++ named).sortBy(_.loc), tree.loc)
       }
     }
@@ -1928,7 +1926,7 @@ object Weeder2 {
     private def visitSelectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Select)
       val rules0 = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
-      val maybeDefault0 = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
+      val maybeDefault0 = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr(_))
       mapN(rules0, maybeDefault0) {
         (rules, maybeDefault) =>
           Result.sequence(rules) match {
@@ -2046,7 +2044,7 @@ object Weeder2 {
       val froms = flatMapN(pick(TreeKind.Expr.FixpointFromFragment, tree))(
         fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree))(Predicates.visitAtom)
       )
-      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree))(pickExpr)
+      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree))(pickExpr(_))
       mapN(expressions, selects, froms, where) {
         (expressions, selects, froms, where) =>
           val whereList = where.map(w => List(w)).getOrElse(List.empty)
@@ -2648,7 +2646,7 @@ object Weeder2 {
     }
 
     private def tryPickLatticeTermExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Option[Expr], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Exprs.pickExpr)
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Exprs.pickExpr(_))
     }
 
     private def tryPickLatticeTermType(tree: Tree)(implicit sctx: SharedContext): Validation[Option[Type], CompilationMessage] = {
@@ -3154,10 +3152,14 @@ object Weeder2 {
     * The parser guarantees that these tree kinds have at least a single child.
     */
   private def unfold(tree: Tree): Tree = {
-    assert(tree.kind match {
+    val isUnfoldable = tree.kind match {
       case TreeKind.Type.Type | TreeKind.Type.Effect | TreeKind.Expr.Expr | TreeKind.Predicate.Body => true
       case _ => false
-    })
+    }
+
+    if (!isUnfoldable) {
+      return tree
+    }
 
     // Find the first sub-tree that isn't a comment
     tree.children.find {
