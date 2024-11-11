@@ -3609,7 +3609,7 @@ object Resolver {
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
         Validation.success(Ast.UseOrImport.Use(getSym(d), alias, loc))
-      // Case 3: Impossible. Hard error.
+      // Case 3: Impossible. Crash.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
