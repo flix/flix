@@ -52,11 +52,17 @@ object HighlightProvider {
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
 
-    // TODO having to possibly do three searches instead of two is kinda bad. Look for a different solution to the thin cursor problem other than full search on (possibly) both sides
-    searchRightOfCursor(uri, pos)
-      .flatMap(x => highlightAny(x, uri, pos))
-      .orElse(searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri, pos)))
-      .getOrElse(mkNotFound(uri, pos))
+    // TODO both left and right searches are only necessary in some cases. Test if optimising to only do both when necessary actually improves performance in a measurable way
+    val rightSearch = searchRightOfCursor(uri, pos)
+    val leftSearch = searchLeftOfCursor(uri, pos)
+
+    val highlights = (leftSearch, rightSearch) match {
+      case (_, Some(x)) => highlightAny(x, uri)
+      case (Some(x), _) => highlightAny(x, uri)
+      case (None, None) => None
+    }
+
+    highlights.getOrElse(mkNotFound(uri, pos))
   }
 
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
@@ -86,12 +92,11 @@ object HighlightProvider {
     *
     * @param x    the object under the cursor.
     * @param uri  the URI of the file in question.
-    * @param pos  the [[Position]] of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  private def highlightAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root): Option[JObject] = {
+  private def highlightAny(x: AnyRef, uri: String)(implicit root: Root): Option[JObject] = {
     implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
     x match {
       // Assoc Types
