@@ -37,7 +37,7 @@ object ResolutionError {
     * @param path the super trait path from a trait to itself.
     * @param loc  the location where the error occurred.
     */
-  case class CyclicTraitHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class CyclicTraitHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
     override def summary: String = {
@@ -70,7 +70,7 @@ object ResolutionError {
     * @param path the type reference path from a type alias to itself.
     * @param loc  the location where the error occurred.
     */
-  case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
     def summary: String = {
@@ -103,7 +103,7 @@ object ResolutionError {
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate associated type definition: $sym."
 
     override def message(formatter: Formatter): String = {
@@ -219,7 +219,7 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
 
     def message(formatter: Formatter): String = {
@@ -467,7 +467,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc  the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
@@ -513,7 +513,7 @@ object ResolutionError {
     * @param qn  associated type.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined associated type: '$qn'."
 
     def message(formatter: Formatter): String = {
@@ -538,7 +538,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedTrait(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -696,7 +696,7 @@ object ResolutionError {
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -721,7 +721,7 @@ object ResolutionError {
     * @param qname the qualified name of the operation.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined operation '${qname.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -746,7 +746,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedRestrictableTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedRestrictableTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined restrictable tag: '$tag'."
 
     def message(formatter: Formatter): String = {
@@ -772,7 +772,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedRestrictableType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedRestrictableType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined restrictable type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
