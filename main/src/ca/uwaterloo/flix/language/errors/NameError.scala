@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for naming errors.
   */
-sealed trait NameError extends CompilationMessage with Recoverable {
+sealed trait NameError extends CompilationMessage {
   val kind = "Name Error"
 }
 
@@ -34,7 +34,7 @@ object NameError {
     * *
     * @param loc the location of the deprecated feature.
     */
-  case class Deprecated(loc: SourceLocation) extends NameError with Recoverable {
+  case class Deprecated(loc: SourceLocation) extends NameError {
     def summary: String = s"Deprecated feature."
 
     def message(formatter: Formatter): String = {
@@ -55,7 +55,7 @@ object NameError {
     * @param loc1 the location of the first name.
     * @param loc2 the location of the second name.
     */
-  case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError with Recoverable {
+  case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -89,7 +89,7 @@ object NameError {
     * @param loc1 the location of the first name.
     * @param loc2 the location of the second name.
     */
-  case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError with Recoverable {
+  case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -112,7 +112,7 @@ object NameError {
     * @param name the name of the type variable.
     * @param loc  the location of the suspicious type variable.
     */
-  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError with Recoverable {
+  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {

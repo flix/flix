@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.collection.mutable
@@ -59,7 +58,7 @@ object Validation {
   /**
     * Returns a [[Validation.Failure]] with the error `e`.
     */
-  def toFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.Failure(Chain(e))
+  def toFailure[T, E](e: E): Validation[T, E] = Validation.Failure(Chain(e))
 
   /**
     * Represents a successful validation with the empty list.
@@ -136,7 +135,7 @@ object Validation {
     val successValues = mutable.ArrayBuffer.empty[S]
     val failureStream = mutable.ArrayBuffer.empty[Chain[E]]
 
-    // Flag to signal fatal (non-recoverable) errors
+    // Flag to signal errors
     var isFatal = false
 
     // Apply f to each element and collect the results.

@@ -118,8 +118,8 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMapN03") {
-    val ex = DummyUnrecoverable(1)
-    val result = flatMapN(Validation.success[String, DummyUnrecoverable]("foo")) {
+    val ex = DummyError(1)
+    val result = flatMapN(Validation.success[String, DummyError]("foo")) {
       case _ => Validation.toFailure(ex)
     }
     assertResult(Failure(Chain(ex)))(result)
@@ -182,15 +182,12 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("toResult02") {
-    val e = DummyUnrecoverable(1)
-    val t = Validation.toFailure[String, DummyUnrecoverable](e)
+    val e = DummyError(1)
+    val t = Validation.toFailure[String, DummyError](e)
     val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }
 
-  trait DummyError
+  case class DummyError(n: Int)
 
-  case class DummyRecoverable(n: Int) extends DummyError with Recoverable
-
-  case class DummyUnrecoverable(n: Int) extends DummyError with Unrecoverable
 }
