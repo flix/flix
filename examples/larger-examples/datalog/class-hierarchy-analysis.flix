@@ -239,7 +239,7 @@ mod ClassHierarchyAnalysis {
             Assert.eq(expected, result)
 
         @Test
-        def testmissingMethodss01(): Bool =
+        def testMissingMethods01(): Bool =
             let result = ClassHierarchyAnalysis.missingMethods(facts());
             let expected = Vector#{
                 ("java.util.ArrayList", "isEmpty"),
@@ -296,22 +296,22 @@ mod ClassHierarchyAnalysis {
             Assert.eq(expected, result)
 
         @Test
-        def testIllegalMulitpleInheritance01(): Bool =
+        def testIllegalMultipleInheritance01(): Bool =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.memberOf(("au.content.MultipleInheritance", "au.content.Super1", "au.content.Super2"));
             Assert.eq(true, result)
 
         @Test
-        def testIllegalMulitpleInheritance02(): Bool =
+        def testIllegalMultipleInheritance02(): Bool =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.memberOf(("au.content.MultipleInheritance", "au.content.Super2", "au.content.Super1"));
             Assert.eq(true, result)
 
         @Test
-        def testIllegalMulitpleInheritance03(): Bool =
+        def testIllegalMultipleInheritance03(): Bool =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.util.ArrayList");
             Assert.eq(false, result)
 
         @Test
-        def testIllegalMulitpleInheritance04(): Bool =
+        def testIllegalMultipleInheritance04(): Bool =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.lang.Object");
             Assert.eq(false, result)
 

@@ -3568,7 +3568,7 @@ mod TestVector {
     def forEach01(): Bool = region rc {
         let v = (Vector#{}: Vector[Int32]);
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == ""
     }
@@ -3577,7 +3577,7 @@ mod TestVector {
     def forEach02(): Bool = region rc {
         let v = Vector#{0};
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "F"
     }
@@ -3586,7 +3586,7 @@ mod TestVector {
     def forEach03(): Bool = region rc {
         let v = Vector#{1};
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "T"
     }
@@ -3595,7 +3595,7 @@ mod TestVector {
     def forEach04(): Bool = region rc {
         let v = Vector#{0, 1};
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "FT"
     }
@@ -3608,7 +3608,7 @@ mod TestVector {
     def forEachWithIndex01(): Bool = region rc {
         let v = (Vector#{}: Vector[Float32]);
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == ""
     }
@@ -3617,7 +3617,7 @@ mod TestVector {
     def forEachWithIndex02(): Bool = region rc {
         let v = Vector#{0.0f32};
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "F"
     }
@@ -3626,7 +3626,7 @@ mod TestVector {
     def forEachWithIndex03(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32};
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FT"
     }
@@ -3635,7 +3635,7 @@ mod TestVector {
     def forEachWithIndex04(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32};
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTT"
     }
@@ -3644,7 +3644,7 @@ mod TestVector {
     def forEachWithIndex05(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32, 0.3f32};
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTTT"
     }

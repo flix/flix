@@ -140,7 +140,7 @@ mod Regex {
     /// at any position within the string `s`.
     ///
     pub def isSubmatch(rgx: Regex, s: String): Bool = region rc {
-        newMatcher(rc, rgx, s) |> find!
+        newMatcher(rc, rgx, s) |> find
     }
 
     ///
@@ -316,7 +316,7 @@ mod Regex {
     ///
     pub def indexOfFirstWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
         let m = newMatcher(rc, substr#substr, s);
-        match setBounds!(start = offset#offset, end = String.length(s), m) {
+        match setBounds(start = offset#offset, end = String.length(s), m) {
             case Ok()   => firstSubmatch(matcherStart, m) |> Result.toOption
             case Err(_) => None
         }
@@ -329,7 +329,7 @@ mod Regex {
     ///
     pub def indexOfLastWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
         let m = newMatcher(rc, substr#substr, s);
-        match setBounds!(start = offset#offset, end = String.length(s), m) {
+        match setBounds(start = offset#offset, end = String.length(s), m) {
             case Ok()   => lastSubmatch(matcherStart, m) |> Result.toOption
             case Err(_) => None
         }
@@ -342,7 +342,7 @@ mod Regex {
     ///
     pub def getFirstWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[String] = region rc {
         let m = newMatcher(rc, substr#substr, s);
-        match setBounds!(start = offset#offset, end = String.length(s), m) {
+        match setBounds(start = offset#offset, end = String.length(s), m) {
             case Ok()   => firstSubmatch(matcherContent, m) |> Result.toOption
             case Err(_) => None
         }
@@ -355,7 +355,7 @@ mod Regex {
     ///
     pub def getLastWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[String] = region rc {
         let m = newMatcher(rc, substr#substr, s);
-        match setBounds!(start = offset#offset, end = String.length(s), m) {
+        match setBounds(start = offset#offset, end = String.length(s), m) {
             case Ok()   => lastSubmatch(matcherContent, m) |> Result.toOption
             case Err(_) => None
         }
@@ -429,7 +429,7 @@ mod Regex {
     ///
     pub def isSubmatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => find!(m)
+            case Ok(m)  => find(m)
             case Err(_) => false
         }
     }
@@ -543,7 +543,7 @@ mod Regex {
 
     ///
     /// Matcher is imperative - it can be seen a a stepper through a stream
-    /// of matches. The matcher is updated with the function find! to move to
+    /// of matches. The matcher is updated with the function find to move to
     /// the next match.
     ///
     enum Matcher[_: Region](JMatcher)
@@ -561,7 +561,7 @@ mod Regex {
     ///
     def newMatcherWithBounds(rc: Region[r], rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Result[String, Matcher[r]] \ r =
         let m = newMatcher(rc, rgx, s);
-        match setBounds!(start, end, m) {
+        match setBounds(start, end, m) {
             case Ok()     => Ok(m)
             case Err(msg) => Err(msg)
         }
@@ -572,7 +572,7 @@ mod Regex {
     ///
     /// The internal state of the matcher is updated.
     ///
-    def find!(m: Matcher[r]): Bool \ r =
+    def find(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
         unchecked_cast ((m1.find(): _ \ IO) as _ \ r)
 
@@ -583,7 +583,7 @@ mod Regex {
     ///
     /// The internal state of the matcher is updated.
     ///
-    def findFrom!(pos: Int32, m: Matcher[r]): Bool \ r =
+    def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
             unchecked_cast ((m1.find(pos): _ \ IO) as _ \ r)
@@ -599,22 +599,22 @@ mod Regex {
     /// The internal state of the matcher is updated.
     ///
     /// Note - there are no primitive Java functions for right-to-left scanning provided
-    /// by Java's JDK so the performance of `findLast!` is disadvantaged compared to `find!`.
+    /// by Java's JDK so the performance of `findLast` is disadvantaged compared to `find`.
     ///
-    def findLast!(m: Matcher[r]): Bool \ r =
+    def findLast(m: Matcher[r]): Bool \ r =
         def loop(lastPos) = {
-            match find!(m) {
+            match find(m) {
                 case true  => {let pos1 = matcherStart(m); loop(pos1)}
                 case false => lastPos
             }
         };
-        match find!(m) {
+        match find(m) {
             case false  => false
             case true   => {
                 let pos = matcherStart(m);
                 match loop(pos) {
                     case Err(_)          => false
-                    case Ok(startOfLast) => findFrom!(startOfLast, m)
+                    case Ok(startOfLast) => findFrom(startOfLast, m)
                 }
             }
         }
@@ -622,7 +622,7 @@ mod Regex {
     ///
     /// Set the bounds of the matcher's region.
     ///
-    def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
+    def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
             unchecked_cast ((discard m1.₹region(start#start, end#end): _ \ IO) as _ \ r)
@@ -676,7 +676,7 @@ mod Regex {
     /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
     def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ r =
-        if (find!(m))
+        if (find(m))
             asks(m)
         else
             Err("No match")
@@ -688,7 +688,7 @@ mod Regex {
     /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
     def lastSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ r =
-        if (findLast!(m))
+        if (findLast(m))
             asks(m)
         else
             Err("No match")
@@ -703,7 +703,7 @@ mod Regex {
     ///
     def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { r, ef } =
         def loop(acc) = {
-            match find!(m) {
+            match find(m) {
                 case true  => match asks(m) {
                     case Ok(a)    => loop(f(acc, a))
                     case Err(msg) => Err(msg)
