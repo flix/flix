@@ -103,7 +103,7 @@ object Safety {
       // Note that exported defs have different rules
       if (defn.spec.ann.isExport) {
         Nil
-      } else if (hasUnitParameter(defn) && isAllowedEffect(defn)) {
+      } else if (hasUnitParameter(defn) && isValidEntrypointEffect(defn.spec.eff)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -126,7 +126,7 @@ object Safety {
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.loc))
+    val effect = if (isValidEntrypointEffect(defn.spec.eff)) Nil else List(SafetyError.IllegalExportEffect(defn.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -214,13 +214,13 @@ object Safety {
   }
 
   /**
-    * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level
+    * Returns `true` if the given `eff` is pure or has an effect that is allowed for a top-level
     * function.
     */
-  private def isAllowedEffect(defn: Def): Boolean = {
-    if (defn.spec.tparams.nonEmpty) return false
+  def isValidEntrypointEffect(eff: Type): Boolean = {
+    if (eff.typeVars.nonEmpty) return false
     // Now that we have the monomorphic effect, we can evaluate it.
-    eval(defn.spec.eff) match {
+    eval(eff) match {
       case Some(CofiniteEffSet.Set(s)) =>
         // Check that it is a set of only primitive effects.
         s.forall(isPrimitiveEff)
