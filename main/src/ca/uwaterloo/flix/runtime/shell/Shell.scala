@@ -291,7 +291,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
 
         // And try to compile!
-        compile(progress = false).toHardResult match {
+        compile(progress = false).toResult match {
           case Result.Ok(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -368,7 +368,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case (Some(root), Nil) =>
         this.root = Some(root)
         val result = flix.codeGen(root)
-        result.toHardResult match {
+        result.toResult match {
           case Result.Ok(_) => result
           case Result.Err(errors) =>
             printErrors(errors.toList)
@@ -395,7 +395,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toHardResult match {
+    compile(entryPoint = Some(main), progress = false).toResult match {
       case Result.Ok(result) =>
         result.getMain match {
           case Some(m) =>

@@ -752,7 +752,7 @@ object Resolver {
         val name = qname.ident.name
         Kinds.get(name) match {
           case None =>
-            lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
+            lookupRestrictableEnum(qname, env, ns0, root).toResult match {
               case Result.Ok(enum0) =>
                 Kind.CaseSet(enum0.sym)
               case Result.Err(_) =>
@@ -764,7 +764,7 @@ object Resolver {
           case Some(kind) => kind
         }
       } else {
-        lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
+        lookupRestrictableEnum(qname, env, ns0, root).toResult match {
           case Result.Ok(enum0) => Kind.CaseSet(enum0.sym)
           case Result.Err(_) =>
             // We don't know the kind, so default to Star.

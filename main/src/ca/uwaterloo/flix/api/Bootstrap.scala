@@ -504,7 +504,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile().toHardResult match {
+    flix.compile().toResult match {
       case Result.Ok(r: CompilationResult) =>
         Validation.success(r)
       case Result.Err(errors) =>
@@ -755,7 +755,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Build artifacts
     out.println("Building project...")
     val buildResult = buildPkg()
-    buildResult.toHardResult match {
+    buildResult.toResult match {
       case Result.Ok(_) => // Continue
       case Result.Err(e) => return Validation.HardFailure(e)
     }

@@ -175,29 +175,16 @@ class TestValidation extends AnyFunSuite {
     assertResult(Validation.success(7))(result)
   }
 
-  test("toSoftResult01") {
+  test("toResult01") {
     val t = Validation.success[String, DummyError]("abc")
-    val result = t.toHardResult
-    assertResult(Result.Ok(("abc", Chain.empty)))(result)
-  }
-
-  test("toSoftResult02") {
-    val e = DummyUnrecoverable(1)
-    val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toHardResult
-    assertResult(Result.Err(Chain(e)))(result)
-  }
-
-  test("toHardResult01") {
-    val t = Validation.success[String, DummyError]("abc")
-    val result = t.toHardResult
+    val result = t.toResult
     assertResult(Result.Ok("abc"))(result)
   }
 
-  test("toHardResult02") {
+  test("toResult02") {
     val e = DummyUnrecoverable(1)
     val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toHardResult
+    val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }
 

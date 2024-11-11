@@ -3048,7 +3048,7 @@ object Weeder2 {
 
     def tryPickKind(tree: Tree)(implicit sctx: SharedContext): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toHardResult.toOption)
+      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toResult.toOption)
     }
   }
 
