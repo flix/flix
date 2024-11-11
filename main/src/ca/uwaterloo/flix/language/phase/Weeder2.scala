@@ -1072,13 +1072,19 @@ object Weeder2 {
 
     private def visitApplyExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)) {
-        case (expr, args) =>
-          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
-          maybeIntrinsic match {
-            case Some(intrinsic) => visitIntrinsic(intrinsic, args)
-            case None => mapN(visitExpr(expr))(Expr.Apply(_, args, tree.loc))
-          }
+      val maybeExpr = tryPick(TreeKind.Expr.Expr, tree)
+      val maybeIntrinsic = pickFlatten(TreeKind.Expr.Intrinsic, maybeExpr)
+      val argsVal = pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      maybeIntrinsic match {
+        case Some(intrinsic) => flatMapN(argsVal)(visitIntrinsic(intrinsic, _))
+        case None => maybeExpr match {
+          case Some(expr) =>
+            val exprVal = visitExpr(expr)
+            mapN(exprVal, argsVal) {
+              case (e, as) => Expr.Apply(e, as, tree.loc)
+            }
+          case None => throw InternalCompilerException("unexpected malformed apply expression", tree.loc)
+        }
       }
     }
 
@@ -3233,6 +3239,11 @@ object Weeder2 {
       case Some(tree: Tree) => Some(tree)
       case _ => None
     }
+  }
+
+  private def pickFlatten(kind: TreeKind, tree: Option[Tree]): Option[Tree] = tree match {
+    case Some(t) => tryPick(kind, t)
+    case None => None
   }
 
   /**
