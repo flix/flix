@@ -534,7 +534,8 @@ object Desugar {
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, loc)
+      val b = DesugaredAst.Binding.Stm(e1, loc.asSynthetic)
+      bind(b, e2, loc)
 
     case WeededAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)
@@ -548,7 +549,8 @@ object Desugar {
       // Ascribe has an invariant that at least t or ef must be defined
       val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e1, e2, loc)
+      val b = DesugaredAst.Binding.LocalDef(ident, fps, e1, loc.asSynthetic)
+      bind(b, e2, loc)
 
     case WeededAst.Expr.Scope(ident, exp, loc) =>
       val e = visitExp(exp)
@@ -1275,7 +1277,8 @@ object Desugar {
     p match {
       case DesugaredAst.Pattern.Var(ident, _) =>
         // No pattern match
-        DesugaredAst.Expr.Let(ident, withAscription(e1, t), e2, loc0)
+        val b = DesugaredAst.Binding.Let(ident, withAscription(e1, t), loc0.asSynthetic)
+        bind(b, e2, loc0)
       case _ =>
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
@@ -1474,7 +1477,8 @@ object Desugar {
     }
 
     // Bind the tmp% variable to the minimal model and combine it with the body expression.
-    DesugaredAst.Expr.Let(localVar, modelExp, bodyExp, loc0.asReal)
+    val b = DesugaredAst.Binding.Let(localVar, modelExp, loc0.asSynthetic)
+    bind(b, bodyExp, loc0.asReal)
   }
 
   /**
@@ -1593,6 +1597,12 @@ object Desugar {
       case None => exp0
       case Some(t) => DesugaredAst.Expr.Ascribe(exp0, Some(t), None, l)
     }
+  }
+
+  /** Binds `b` before the expression `e`, avoiding chained blocks. */
+  private def bind(b: DesugaredAst.Binding, e: Expr, loc: SourceLocation): Expr = e match {
+    case DesugaredAst.Expr.Block(bs, exp, _) => DesugaredAst.Expr.Block(b :: bs, exp, loc)
+    case other => DesugaredAst.Expr.Block(List(b), other, loc)
   }
 
 }

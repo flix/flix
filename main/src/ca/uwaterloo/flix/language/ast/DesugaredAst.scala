@@ -103,13 +103,9 @@ object DesugaredAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Block(bs: List[Binding], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
@@ -212,6 +208,20 @@ object DesugaredAst {
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
     }
+
+  }
+
+  sealed trait Binding {
+    def loc: SourceLocation
+  }
+
+  object Binding {
+
+    case class Let(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Binding
+
+    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, loc: SourceLocation) extends Binding
+
+    case class Stm(exp: Expr, loc: SourceLocation) extends Binding
 
   }
 
