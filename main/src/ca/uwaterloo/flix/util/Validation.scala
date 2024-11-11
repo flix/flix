@@ -52,33 +52,6 @@ sealed trait Validation[+T, +E] {
 object Validation {
 
   /**
-    * Implicit class to hide dangerous extensions.
-    */
-  object Implicit {
-
-    /**
-      * Treats the Validation as a monad in order to enable `for`-notation.
-      * Care should be used when enabling this,
-      * as flatMap results in short-circuiting behavior which may not be desirable.
-      */
-    implicit class AsMonad[T, E](v: Validation[T, E]) {
-      /**
-        * Similar to `map` but does not wrap the result in a [[Validation.Success]].
-        *
-        * Preserves the errors.
-        */
-      final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = v match {
-        case Validation.Success(input) => f(input) match {
-          case Validation.Success(value) => Validation.Success(value)
-          case Validation.HardFailure(thatErrors) => Validation.HardFailure(v.errors ++ thatErrors)
-        }
-
-        case Validation.HardFailure(errors) => Validation.HardFailure(errors)
-      }
-    }
-  }
-
-  /**
     * Returns a [[Validation.Success]] containing `t`.
     */
   def success[T, E](t: T): Validation[T, E] = Success(t)
