@@ -695,8 +695,8 @@ mod Iterator {
         let sb = StringBuilder.empty(rc);
         match next(iter) {
             case Some(a) => {
-                StringBuilder.append!(f(a), sb);
-                forEach(x -> {StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb)}, iter)
+                StringBuilder.append(f(a), sb);
+                forEach(x -> {StringBuilder.append(sep, sb); StringBuilder.append(f(x), sb)}, iter)
             }
             case None    => ()
         };
