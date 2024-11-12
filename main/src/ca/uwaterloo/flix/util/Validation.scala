@@ -29,36 +29,21 @@ sealed trait Validation[+T, +E] {
     */
   final def unsafeGet: T = this match {
     case Validation.Success(value) => value
-    case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.toList.mkString(", ")}")
+    case Validation.Failure(errors) => throw new IllegalStateException(s"Validation is Failure(${errors.mkString(", ")}).")
   }
-
-  /**
-    * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
-    */
-  def errors: Chain[E]
 
   /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
     */
-  def toResult: Result[T, Chain[E]] = this match {
+  final def toResult: Result[T, Chain[E]] = this match {
     case Validation.Success(t) => Result.Ok(t)
     case Validation.Failure(errors) => Result.Err(errors)
   }
 }
 
 object Validation {
-
-  /**
-    * Returns a [[Validation.Success]] containing `t`.
-    */
-  def success[T, E](t: T): Validation[T, E] = Success(t)
-
-  /**
-    * Returns a [[Validation.Failure]] with the error `e`.
-    */
-  def toFailure[T, E](e: E): Validation[T, E] = Validation.Failure(Chain(e))
 
   /**
     * Represents a successful validation with the empty list.
@@ -82,6 +67,10 @@ object Validation {
     */
   case class Failure[T, E](errors: Chain[E]) extends Validation[T, E]
 
+  object Failure {
+    def apply[T, E](error: E): Validation[T, E] = Failure(Chain(error))
+  }
+
   /**
     * Sequences the given list of validations `xs`.
     */
@@ -98,13 +87,6 @@ object Validation {
       case (Failure(curErrors), Failure(accErrors)) =>
         Failure(curErrors ++ accErrors)
     }
-  }
-
-  /**
-    * Sequences the given list of validations `xs`, ignoring non-error results.
-    */
-  def sequenceX[T, E](xs: Iterable[Validation[T, E]]): Validation[Unit, E] = {
-    mapN(sequence(xs))(_ => ())
   }
 
   /**
@@ -355,7 +337,7 @@ object Validation {
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
-      case _ => Failure(t1.errors)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
@@ -428,13 +410,9 @@ object Validation {
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
     xs.foldRight(zero) {
-      case (a, acc) => flatMapN(acc) {
-        case v => f(a, v)
-      }
+      case (a, acc) => flatMapN(acc)(f(a, _))
     }
   }
-
-  // TODO: Everything below this line is deprecated.
 
   /**
     * Folds the given function `f` over all elements `xs`.
@@ -443,9 +421,7 @@ object Validation {
     */
   def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
-      case (acc, a) => flatMapN(acc) {
-        case value => f(value, a)
-      }
+      case (acc, a) => flatMapN(acc)(f(_, a))
     }
   }
 
