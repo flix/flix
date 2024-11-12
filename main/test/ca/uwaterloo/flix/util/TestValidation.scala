@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.errors.{Recoverable, Unrecoverable}
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
 import org.scalatest.funsuite.AnyFunSuite
@@ -86,10 +86,10 @@ class TestValidation extends AnyFunSuite {
 
   test("mapN02") {
     val ex = new RuntimeException()
-    val result = mapN(HardFailure(Chain(ex)): Validation[String, Exception]) {
+    val result = mapN(Failure(Chain(ex)): Validation[String, Exception]) {
       case x => x.toUpperCase.reverse
     }
-    assertResult(HardFailure(Chain(ex)))(result)
+    assertResult(Failure(Chain(ex)))(result)
   }
 
   test("mapN03") {
@@ -118,11 +118,11 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMapN03") {
-    val ex = DummyUnrecoverable(1)
-    val result = flatMapN(Validation.success[String, DummyUnrecoverable]("foo")) {
-      case _ => Validation.toHardFailure(ex)
+    val ex = DummyError(1)
+    val result = flatMapN(Validation.success[String, DummyError]("foo")) {
+      case _ => Validation.toFailure(ex)
     }
-    assertResult(HardFailure(Chain(ex)))(result)
+    assertResult(Failure(Chain(ex)))(result)
   }
 
   test("flatMapN04") {
@@ -139,12 +139,12 @@ class TestValidation extends AnyFunSuite {
   test("flatMapN05") {
     val result = flatMapN(Validation.success[String, Int]("foo")) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case _ => flatMapN(HardFailure(Chain(4, 5, 6))) {
-          case _ => HardFailure(Chain(7, 8, 9))
+        case _ => flatMapN(Failure(Chain(4, 5, 6))) {
+          case _ => Failure(Chain(7, 8, 9))
         }
       }
     }
-    assertResult(HardFailure(Chain(4, 5, 6)))(result)
+    assertResult(Failure(Chain(4, 5, 6)))(result)
   }
 
   test("traverse01") {
@@ -156,16 +156,16 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse02") {
     val result = traverse(List(1, 2, 3)) {
-      case _ => HardFailure(Chain(42))
+      case _ => Failure(Chain(42))
     }
-    assertResult(HardFailure(Chain(42, 42, 42)))(result)
+    assertResult(Failure(Chain(42, 42, 42)))(result)
   }
 
   test("traverse03") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) Validation.success(x) else HardFailure(Chain(x))
+      case x => if (x % 2 == 1) Validation.success(x) else Failure(Chain(x))
     }
-    assertResult(HardFailure(Chain(2)))(result)
+    assertResult(Failure(Chain(2)))(result)
   }
 
   test("foldRight01") {
@@ -175,35 +175,19 @@ class TestValidation extends AnyFunSuite {
     assertResult(Validation.success(7))(result)
   }
 
-  test("toSoftResult01") {
+  test("toResult01") {
     val t = Validation.success[String, DummyError]("abc")
-    val result = t.toSoftResult
-    assertResult(Result.Ok(("abc", Chain.empty)))(result)
-  }
-
-  test("toSoftResult02") {
-    val e = DummyUnrecoverable(1)
-    val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toSoftResult
-    assertResult(Result.Err(Chain(e)))(result)
-  }
-
-  test("toHardResult01") {
-    val t = Validation.success[String, DummyError]("abc")
-    val result = t.toHardResult
+    val result = t.toResult
     assertResult(Result.Ok("abc"))(result)
   }
 
-  test("toHardResult02") {
-    val e = DummyUnrecoverable(1)
-    val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toHardResult
+  test("toResult02") {
+    val e = DummyError(1)
+    val t = Validation.toFailure[String, DummyError](e)
+    val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }
 
-  trait DummyError
+  case class DummyError(n: Int)
 
-  case class DummyRecoverable(n: Int) extends DummyError with Recoverable
-
-  case class DummyUnrecoverable(n: Int) extends DummyError with Unrecoverable
 }

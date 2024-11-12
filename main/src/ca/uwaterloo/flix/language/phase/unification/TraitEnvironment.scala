@@ -58,7 +58,7 @@ object TraitEnvironment {
     * Returns true iff the given type constraint holds under the given trait environment.
     */
   def holds(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
-    byInst(tconstr, traitEnv, eqEnv).toHardResult match {
+    byInst(tconstr, traitEnv, eqEnv).toResult match {
       case Result.Ok(_) => true
       case Result.Err(_) => false
     }
@@ -73,7 +73,7 @@ object TraitEnvironment {
     def loop(tconstrs0: List[TraitConstraint], acc: List[TraitConstraint]): List[TraitConstraint] = tconstrs0 match {
       // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv).toHardResult match {
+      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv).toResult match {
         // Case 1: `head` is entailed by the other type constraints, skip it
         case Result.Ok(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
@@ -120,16 +120,16 @@ object TraitEnvironment {
         substOpt match {
           case Some(subst) => Validation.success(inst.tconstrs.map(subst.apply))
           // if there are leftover constraints, then we can't be sure that this is the right instance
-          case None => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
+          case None => Validation.toFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
         }
       }
 
-      val tconstrGroups = matchingInstances.map(tryInst).map(_.toHardResult).collect {
+      val tconstrGroups = matchingInstances.map(tryInst).map(_.toResult).collect {
         case Result.Ok(tconstrs) => tconstrs
       }
 
       tconstrGroups match {
-        case Nil => Validation.toHardFailure(UnificationError.NoMatchingInstance(tconstr))
+        case Nil => Validation.toFailure(UnificationError.NoMatchingInstance(tconstr))
         case tconstrs :: Nil =>
           // apply the base tconstr location to the new tconstrs
           Validation.success(tconstrs.map(_.copy(loc = tconstr.loc)))
