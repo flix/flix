@@ -1,11 +1,11 @@
 mod Test.Handler.Spawn {
 
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     eff Gen {
-        pub def gen(): Int32
+        def gen(): Int32
     }
 
     def runAsk(tx: Sender[Int32, rc]): Unit \ rc =

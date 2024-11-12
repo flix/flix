@@ -22,7 +22,7 @@ pub eff Logger {
     ///
     /// Logs the given message `m` at the given severity `s`.
     ///
-    pub def log(s: Severity, m: String): Unit
+    def log(s: Severity, m: String): Unit
 
 }
 

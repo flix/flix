@@ -1,7 +1,7 @@
 mod Test.Handler.OneShot.Unit {
 
     eff AskTell {
-        pub def askTell(x: Unit): Unit
+        def askTell(x: Unit): Unit
     }
 
     @Test
