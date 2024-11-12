@@ -1605,7 +1605,7 @@ object Weeder2 {
       mapN(pickExpr(tree)) {
         expr =>
           idents.foldLeft(expr) {
-            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
+            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), tree.loc)
           }
       }
     }
