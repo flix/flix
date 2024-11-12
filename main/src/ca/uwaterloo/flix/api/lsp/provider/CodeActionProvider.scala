@@ -44,10 +44,12 @@ object CodeActionProvider {
         Nil
 
     case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-      else
-        Nil
+      mkNewDef(qn.ident.name, uri) :: {
+        if (qn.namespace.isRoot)
+          mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        else
+          Nil
+      }
 
     case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
@@ -212,6 +214,35 @@ object CodeActionProvider {
            |enum $name {
            |
            |}
+           |""".stripMargin
+      )))
+    )),
+    command = None
+  )
+
+  /**
+   * Returns a code action that proposes to create a new enum.
+   *
+   * For example, if we have:
+   *
+   * {{{
+   *   let x = f()
+   * }}}
+   *
+   * where the `f` type is not defined this code action proposes to add:
+   * {{{
+   *   def f(): =
+   * }}}
+   */
+  private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Introduce new function $name",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(Position(1, 1), Position(1, 1)),
+        s"""
+           |def $name(): =
+           |
            |""".stripMargin
       )))
     )),
