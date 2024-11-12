@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.collection.Chain
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -290,7 +291,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
 
         // And try to compile!
-        compile(progress = false).toHardResult match {
+        compile(progress = false).toResult match {
           case Result.Ok(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -363,23 +364,30 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
-    val checkResult = flix.check().toHardFailure
-    checkResult.toHardResult match {
-      case Result.Ok(root) => this.root = Some(root)
-      case Result.Err(_) => // no-op
-    }
-
-    val result = Validation.flatMapN(checkResult)(flix.codeGen)
-    result.toHardResult match {
-      case Result.Ok(_) => // Compilation successful, no-op
-      case Result.Err(errors) =>
-        for (msg <- flix.mkMessages(errors)) {
-          terminal.writer().print(msg)
+    flix.check() match {
+      case (Some(root), Nil) =>
+        this.root = Some(root)
+        val result = flix.codeGen(root)
+        result.toResult match {
+          case Result.Ok(_) => result
+          case Result.Err(errors) =>
+            printErrors(errors.toList)
+            result
         }
-        terminal.writer().println()
+      case (_, errors) =>
+        printErrors(errors)
+        Validation.Failure(Chain.from(errors))
     }
+  }
 
-    result
+  /**
+    * Prints the list of errors using the `flix` instance to the implicit terminal.
+    */
+  private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
+    for (msg <- flix.mkMessages(errors)) {
+      terminal.writer().print(msg)
+    }
+    terminal.writer().println()
   }
 
   /**
@@ -387,7 +395,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toHardResult match {
+    compile(entryPoint = Some(main), progress = false).toResult match {
       case Result.Ok(result) =>
         result.getMain match {
           case Some(m) =>

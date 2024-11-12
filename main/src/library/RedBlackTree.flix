@@ -927,10 +927,10 @@ mod RedBlackTree {
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
-        use StringBuilder.append!;
+        use StringBuilder.append;
         let lastSep = String.length(sep);
         let sb = StringBuilder.empty(rc);
-        forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
+        forEach((k, v) -> { append(f(k, v), sb); append(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

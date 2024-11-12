@@ -94,7 +94,7 @@ object Parser2 {
       * Note that there is data-duplication, but not in the happy case.
       * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
       */
-    val errors: ArrayBuffer[CompilationMessage & Recoverable] = ArrayBuffer.empty
+    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
   }
 
   private sealed trait Mark
@@ -102,11 +102,11 @@ object Parser2 {
   /**
     * Marks point to positions in a list of tokens where an Open or Close event resides.
     * This is useful because it lets the parser open a group, without knowing exactly what [[TreeKind]] the group should have.
-    * For instance we need to look past doc-comments, annotations and modifiers to see what kind of declaration we a dealing with (def, enum, trait...).
+    * For instance, we need to look past doc-comments, annotations and modifiers to see what kind of declaration we are dealing with (def, enum, trait...).
     * The convention used throughout is to open a group with kind [[TreeKind.ErrorTree]] and then later close it with the correct kind.
     * This happens via the [[open]] and [[close]] functions.
     *
-    * Conversely we sometimes need to open a group before the currently open one.
+    * Conversely, we sometimes need to open a group before the currently open one.
     * The best example is binary expressions. In '1 + 2' we first see '1' and open a group for a Literal.
     * Then we see '+' which means we want to open a Expr.Binary group that also includes the '1'.
     * This is done with [[openBefore]] which takes a [[Mark.Closed]] and inserts an Open event before it.
@@ -118,7 +118,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage & Recoverable]) = flix.phaseNew("Parser2") {
+  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -137,7 +137,7 @@ object Parser2 {
     (result, errors.flatten.toList)
   }
 
-  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage & Recoverable]) = {
+  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage]) = {
     implicit val s: State = new State(tokens, src)
     // Call the top-most grammar rule to gather all events into state.
     root()
@@ -285,7 +285,7 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage & Recoverable, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
     token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
@@ -297,7 +297,7 @@ object Parser2 {
   /**
     * Wrap the next token in an error.
     */
-  private def advanceWithError(error: CompilationMessage & Recoverable, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+  private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
     val m = mark.getOrElse(open())
     nth(0) match {
       // Avoid double reporting lexer errors.

@@ -152,13 +152,17 @@ object BenchmarkCompilerOld {
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
-        val root = flix.check().toHardFailure.unsafeGet
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+        }
+        val root = optRoot.get
         val totalLines = root.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.unsafeGet
+        val compilationResult = flix.compile().unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }

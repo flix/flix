@@ -50,8 +50,8 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    flix.phase("Weeder2") {
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
+    flix.phaseNew("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
@@ -60,7 +60,7 @@ object Weeder2 {
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)).withSoftFailures(sctx.errors.asScala)
+      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)), sctx.errors.asScala.toList)
     }(DebugValidation())
   }
 
@@ -739,7 +739,7 @@ object Weeder2 {
       tryPick(TreeKind.ModifierList, tree) match {
         case None => Modifiers(List.empty)
         case Some(modTree) =>
-          var errors: List[CompilationMessage & Recoverable] = List.empty
+          var errors: List[CompilationMessage] = List.empty
           val tokens = pickAllTokens(modTree)
           // Check if pub is missing
           if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
@@ -1588,7 +1588,10 @@ object Weeder2 {
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
           fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
-            case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
+            case ((label, expr, loc), acc) =>
+              val SourceLocation(isReal, sp1, _) = loc
+              val extendLoc = SourceLocation(isReal, sp1, tree.loc.sp2)
+              Expr.RecordExtend(label, expr, acc, extendLoc)
           }
       }
     }
@@ -2497,9 +2500,9 @@ object Weeder2 {
       }
     }
 
-    def visitChars(str: String, loc: SourceLocation): (String, List[CompilationMessage & Recoverable]) = {
+    def visitChars(str: String, loc: SourceLocation): (String, List[CompilationMessage]) = {
       @tailrec
-      def visit(chars: List[Char], acc: List[Char], accErr: List[CompilationMessage & Recoverable]): (String, List[CompilationMessage & Recoverable]) = {
+      def visit(chars: List[Char], acc: List[Char], accErr: List[CompilationMessage]): (String, List[CompilationMessage]) = {
         chars match {
           // Case 1: End of the sequence
           case Nil => (acc.reverse.mkString, accErr)
@@ -2536,7 +2539,7 @@ object Weeder2 {
         }
       }
 
-      def visitHex(d1: Char, d2: Char, d3: Char, d4: Char): Result[Char, CompilationMessage & Recoverable] = {
+      def visitHex(d1: Char, d2: Char, d3: Char, d4: Char): Result[Char, CompilationMessage] = {
         try {
           Result.Ok(Integer.parseInt(s"$d1$d2$d3$d4", 16).toChar)
         } catch {
@@ -3048,7 +3051,7 @@ object Weeder2 {
 
     def tryPickKind(tree: Tree)(implicit sctx: SharedContext): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toHardResult.toOption)
+      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toResult.toOption)
     }
   }
 
@@ -3215,7 +3218,7 @@ object Weeder2 {
       case Some(t) => Validation.success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
-        Validation.HardFailure(Chain(error))
+        Validation.Failure(Chain(error))
     }
   }
 
@@ -3298,6 +3301,6 @@ object Weeder2 {
     *
     * @param errors the [[WeederError]]s or [[ParserError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[CompilationMessage & Recoverable])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[CompilationMessage])
 
 }

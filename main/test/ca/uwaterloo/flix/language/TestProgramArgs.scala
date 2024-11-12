@@ -33,7 +33,7 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
          |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    result.toHardResult match {
+    result.toResult match {
       case Result.Ok(result) => result.getMain match {
         case Some(main) => try {
           main.apply(Array(arg))
