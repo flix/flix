@@ -41,7 +41,9 @@ object TraitEnvironment {
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
       Validation.flatMapN(byInst(tconstr, traitEnv, eqEnv)) {
-        case tconstrs => Validation.sequenceX(tconstrs.map(entail(tconstrs0, _, traitEnv, eqEnv)))
+        case tconstrs =>
+          val tconstrErrors = Validation.sequence(tconstrs.map(entail(tconstrs0, _, traitEnv, eqEnv)))
+          Validation.mapN(tconstrErrors)(_ => ())
       }
     }
   }
