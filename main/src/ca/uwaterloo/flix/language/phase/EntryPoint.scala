@@ -61,7 +61,7 @@ object EntryPoint {
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
     val (root3, errs3) = WrapMain.run(root2)
     // WrapMain might change main, so FindEntryPoints must be after.
-    val root4 = FindEntryPoints.run(root3)
+    val root4 = findEntryPoints(root3)
     (root4, errs1 ++ errs2 ++ errs3)
   }
 
@@ -480,23 +480,15 @@ object EntryPoint {
 
   }
 
-  private object FindEntryPoints {
-
     /** Returns a new root where [[TypedAst.Root.reachable]] is contains all entry points. */
-    def run(root: TypedAst.Root): TypedAst.Root = {
-      root.copy(reachable = getEntrypoints(root))
-    }
-
-    /** Returns all entrypoint functions. */
-    private def getEntrypoints(root: TypedAst.Root): Set[Symbol.DefnSym] = {
+    def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
       val s = mutable.Set.empty[Symbol.DefnSym]
       for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
         s += sym
       }
-      s.toSet
+      val entryPoints = s.toSet
+      root.copy(reachable = entryPoints)
     }
-
-  }
 
 }
 
