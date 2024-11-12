@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
+import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
@@ -100,7 +100,7 @@ object EntryPoint {
     private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
       // Note that these categories are not disjoint, so
       // multiple checks might be needed for each function.
-      if (isMain(defn)(root)) checkAsMain(defn)
+      if (isMain(defn)(root)) checkMain(defn)
       val defn1 = if (isTest(defn)) visitTest(defn) else defn
       val defn2 = if (isExport(defn)) visitExport(defn1) else defn1
       defn2
@@ -121,13 +121,14 @@ object EntryPoint {
       *   - Has effect `eff` where `eff ⊆ primitive effects`.
       *
       */
-    private def checkAsMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
       // TODO what about being public?
-      val errs =
-        checkNonPolymorphic(defn) ++
-        checkUnitArg(defn) ++
-        checkToStringOrUnitResult(defn) ++
-        checkPrimitiveEffect(defn)
+      val errs = checkNonPolymorphic(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // These checks assume non-polymorphic types.
+          checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkPrimitiveEffect(defn)
+      }
       if (errs.isEmpty) {
         ()
       } else {
@@ -149,10 +150,12 @@ object EntryPoint {
       *   - Has effect `eff` where `eff ⊆ primitive effects`.
       */
     private def visitTest(defn: TypedAst.Def)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
-      val errs =
-        checkNonPolymorphic(defn).toList ++
-        checkUnitArg(defn) ++
-        checkPrimitiveEffect(defn)
+      val errs = checkNonPolymorphic(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // These checks assume non-polymorphic types.
+          checkUnitArg(defn) ++ checkPrimitiveEffect(defn)
+      }
       if (errs.isEmpty) {
         defn
       } else {
@@ -186,13 +189,15 @@ object EntryPoint {
       *   - Has types that are valid in Java (not Flix types like `List[Int32]`).
       */
     private def visitExport(defn: TypedAst.Def)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
-      val errs =
-        checkNonPolymorphic(defn) ++
-        checkPrimitiveEffect(defn) ++
+      val errs = (checkNonPolymorphic(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // These checks assume non-polymorphic types.
+          checkPrimitiveEffect(defn).toList ++ checkJavaTypes(defn)
+      }) ++
         checkNonRootNamespace(defn) ++
         checkPub(defn) ++
-        checkValidJavaName(defn) ++
-        checkJavaTypes(defn)
+        checkValidJavaName(defn)
       if (errs.isEmpty) {
         defn
       } else {
@@ -211,7 +216,6 @@ object EntryPoint {
       )
 
     private def checkNonPolymorphic(defn: TypedAst.Def): Option[EntryPointError] = {
-      // TODO something about wildcards?
       val monomorphic = defn.spec.tparams.isEmpty
       if (monomorphic) None
       else Some(EntryPointError.IllegalEntryPointPolymorphism(defn.sym.loc))
