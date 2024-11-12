@@ -428,9 +428,7 @@ object Validation {
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
     xs.foldRight(zero) {
-      case (a, acc) => flatMapN(acc) {
-        case v => f(a, v)
-      }
+      case (a, acc) => flatMapN(acc)(f(a, _))
     }
   }
 
