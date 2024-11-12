@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
+import ca.uwaterloo.flix.util.{Similarity, ClassMap}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -43,13 +43,16 @@ object CodeActionProvider {
       else
         Nil
 
+    case ResolutionError.UndefinedJvmClass(name, _, loc) if overlaps(range, loc) =>
+      mkImportJava(name, uri)
+
     case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri) :: {
-        if (qn.namespace.isRoot)
-          mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-        else
-          Nil
-      }
+    mkImportJava(qn.ident.name, uri) ++ mkNewDef(qn.ident.name, uri) ++ {
+      if (qn.namespace.isRoot)
+        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+      else
+        Nil
+    }
 
     case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
@@ -221,19 +224,49 @@ object CodeActionProvider {
   )
 
   /**
-    * Returns a code action that proposes to create a new function.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   let x = f()
-    * }}}
-    *
-    * where the name `f` is not defined this code action proposes to add:
-    * {{{
-    *   def f(): =
-    * }}}
-    */
+   * Returns a code action that proposes to import corresponding Java class.
+   *
+   * For example, if we have:
+   *
+   * {{{
+   *   def foo(): = new File("data.txt")
+   * }}}
+   *
+   * where the undefined class `File` is a valid Java class, this code action proposes to add:
+   * {{{
+   *   import java.io.File
+   * }}}
+   */
+private def mkImportJava(name: String, uri: String): List[CodeAction] = {
+  ClassMap.TheMap.get(name).map { path =>
+    CodeAction(
+      title = s"Import $name from Java",
+      kind = CodeActionKind.QuickFix,
+      edit = Some(WorkspaceEdit(
+        Map(uri -> List(TextEdit(
+          Range(Position(1, 1), Position(1, 1)),
+          s"import $path\n"
+        )))
+      )),
+      command = None
+    )
+  }
+}.toList
+
+  /**
+   * Returns a code action that proposes to create a new function.
+   *
+   * For example, if we have:
+   *
+   * {{{
+   *   let x = f()
+   * }}}
+   *
+   * where the name `f` is not defined this code action proposes to add:
+   * {{{
+   *   def f(): =
+   * }}}
+   */
   private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
     title = s"Introduce new function $name",
     kind = CodeActionKind.QuickFix,
@@ -278,6 +311,7 @@ object CodeActionProvider {
     )),
     command = None
   )
+
 
 
   /**
