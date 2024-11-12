@@ -51,11 +51,6 @@ sealed trait Validation[+T, +E] {
 object Validation {
 
   /**
-    * Returns a [[Validation.Success]] containing `t`.
-    */
-  def success[T, E](t: T): Validation[T, E] = Success(t)
-
-  /**
     * Returns a [[Validation.Failure]] with the error `e`.
     */
   def toFailure[T, E](e: E): Validation[T, E] = Validation.Failure(Chain(e))

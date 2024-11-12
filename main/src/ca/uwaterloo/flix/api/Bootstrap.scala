@@ -122,7 +122,7 @@ object Bootstrap {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
-    Validation.success(())
+    Validation.Success(())
   }
 
   /**
@@ -405,7 +405,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
 
-    Validation.success(())
+    Validation.Success(())
   }
 
   /**
@@ -432,7 +432,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val flixFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath), "fpkg")
     flixPackagePaths = flixFilesLib
 
-    Validation.success(())
+    Validation.Success(())
   }
 
   /**
@@ -487,7 +487,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     val (_, errors) = flix.check()
     if (errors.isEmpty) {
-      Validation.success(())
+      Validation.Success(())
     } else {
       Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
@@ -506,7 +506,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     flix.compile().toResult match {
       case Result.Ok(r: CompilationResult) =>
-        Validation.success(r)
+        Validation.Success(r)
       case Result.Err(errors) =>
         Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
     }
@@ -547,7 +547,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
     } match {
-      case Success(()) => Validation.success(())
+      case Success(()) => Validation.Success(())
       case Failure(e) => Validation.toFailure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
@@ -622,7 +622,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         }
       })
     } match {
-      case Success(()) => Validation.success(())
+      case Success(()) => Validation.Success(())
       case Failure(e) => Validation.toFailure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
@@ -666,7 +666,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
-      case Success(()) => Validation.success(())
+      case Success(()) => Validation.Success(())
       case Failure(e) => Validation.toFailure(BootstrapError.FileError(e.getMessage))
     }
   }
@@ -686,7 +686,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val (result, errors) = flix.check()
     if (errors.isEmpty) {
       result.foreach(HtmlDocumentor.run(_, packageModules)(flix))
-      Validation.success(())
+      Validation.Success(())
     } else {
       Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
@@ -711,7 +711,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flatMapN(build(flix)) {
       compilationResult =>
         Tester.run(Nil, compilationResult)(flix) match {
-          case Ok(_) => Validation.success(())
+          case Ok(_) => Validation.Success(())
           case Err(_) => Validation.toFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
@@ -776,7 +776,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |""".stripMargin
     ))
 
-    Validation.success(())
+    Validation.Success(())
   }
 
   /**
@@ -813,7 +813,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           |All dependencies are up to date
           |""".stripMargin
       ))
-      Validation.success(false)
+      Validation.Success(false)
     } else {
       out.println("")
       out.println(formatter.table(
@@ -822,7 +822,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         rows
       ))
       out.println("")
-      Validation.success(true)
+      Validation.Success(true)
     }
   }
 }
