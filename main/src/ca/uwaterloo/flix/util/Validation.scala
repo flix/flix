@@ -29,7 +29,7 @@ sealed trait Validation[+T, +E] {
     */
   final def unsafeGet: T = this match {
     case Validation.Success(value) => value
-    case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.toList.mkString(", ")}")
+    case Validation.Failure(errors) => throw new IllegalStateException(s"Validation is Failure(${errors.mkString(", ")}).")
   }
 
   /**
