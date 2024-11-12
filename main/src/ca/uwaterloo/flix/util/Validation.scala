@@ -33,11 +33,6 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
-    */
-  def errors: Chain[E]
-
-  /**
     * Returns `this` as a [[Result]].
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
@@ -348,7 +343,7 @@ object Validation {
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
-      case _ => Failure(t1.errors)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
