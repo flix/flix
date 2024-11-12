@@ -53,16 +53,12 @@ object HighlightProvider {
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
 
     // TODO both left and right searches are only necessary in some cases. Test if optimising to only do both when necessary actually improves performance in a measurable way
-    val rightSearch = searchRightOfCursor(uri, pos)
-    val leftSearch = searchLeftOfCursor(uri, pos)
+    val hoverRight = searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
+    val hoverLeft = searchRightOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
 
-    val highlights = (leftSearch, rightSearch) match {
-      case (_, Some(x)) => highlightAny(x, uri)
-      case (Some(x), _) => highlightAny(x, uri)
-      case (None, None) => None
-    }
-
-    highlights.getOrElse(mkNotFound(uri, pos))
+    hoverRight
+      .orElse(hoverLeft)
+      .getOrElse(mkNotFound(uri, pos))
   }
 
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
@@ -79,7 +75,39 @@ object HighlightProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
-    stackConsumer.getStack.headOption
+    stackConsumer
+      .getStack
+      .filter(isNotEmptyRecord)
+      .filter(ifDefThenInSym(uri, pos))
+      .filter(ifSigThenInSym(uri, pos))
+      .filter(ifOpThenInSym(uri, pos))
+      .filter(ifTraitThenInSym(uri, pos))
+      .headOption
+  }
+
+  private def isNotEmptyRecord(x: AnyRef): Boolean = x match {
+    case TypedAst.Expr.RecordEmpty(_, _) => false
+    case _ => true
+  }
+
+  private def ifDefThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Def(sym, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+    case _ => true
+  }
+
+  private def ifSigThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Sig(sym, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+    case _ => true
+  }
+
+  private def ifOpThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Op(sym, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+    case _ => true
+  }
+
+  private def ifTraitThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+    case _ => true
   }
 
   /**
