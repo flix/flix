@@ -224,34 +224,34 @@ object CodeActionProvider {
   )
 
   /**
-   * Returns a code action that proposes to import corresponding Java class.
-   *
-   * For example, if we have:
-   *
-   * {{{
-   *   def foo(): = new File("data.txt")
-   * }}}
-   *
-   * where the undefined class `File` is a valid Java class, this code action proposes to add:
-   * {{{
-   *   import java.io.File
-   * }}}
-   */
-private def mkImportJava(name: String, uri: String): List[CodeAction] = {
-  ClassMap.TheMap.get(name).map { path =>
-    CodeAction(
-      title = s"Import $name from Java",
-      kind = CodeActionKind.QuickFix,
-      edit = Some(WorkspaceEdit(
-        Map(uri -> List(TextEdit(
-          Range(Position(1, 1), Position(1, 1)),
-          s"import $path\n"
-        )))
-      )),
-      command = None
-    )
-  }
-}.toList
+    * Returns a code action that proposes to import corresponding Java class.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): = new File("data.txt")
+    * }}}
+    *
+    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * {{{
+    *   import java.io.File
+    * }}}
+    */
+  private def mkImportJava(name: String, uri: String): List[CodeAction] = {
+    ClassMap.TheMap.get(name).map { path =>
+      CodeAction(
+        title = s"Import $name from Java",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(
+          Map(uri -> List(TextEdit(
+            Range(Position(1, 1), Position(1, 1)),
+            s"import $path\n"
+          )))
+        )),
+        command = None
+      )
+    }
+  }.toList
 
   /**
    * Returns a code action that proposes to create a new function.
