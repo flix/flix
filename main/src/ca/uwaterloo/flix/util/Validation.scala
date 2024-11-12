@@ -46,16 +46,6 @@ sealed trait Validation[+T, +E] {
 object Validation {
 
   /**
-    * Returns a [[Validation.Success]] containing `t`.
-    */
-  def success[T, E](t: T): Validation[T, E] = Success(t)
-
-  /**
-    * Returns a [[Validation.Failure]] with the error `e`.
-    */
-  def toFailure[T, E](e: E): Validation[T, E] = Validation.Failure(Chain(e))
-
-  /**
     * Represents a successful validation with the empty list.
     */
   private val SuccessNil = Success(Nil)
@@ -76,6 +66,10 @@ object Validation {
     * Represents a failure with no value and `errors`.
     */
   case class Failure[T, E](errors: Chain[E]) extends Validation[T, E]
+
+  object Failure {
+    def apply[T, E](error: E): Validation[T, E] = Failure(Chain(error))
+  }
 
   /**
     * Sequences the given list of validations `xs`.
