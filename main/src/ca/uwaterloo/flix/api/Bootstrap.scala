@@ -49,7 +49,7 @@ object Bootstrap {
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
-      return Validation.toFailure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
+      return Validation.Failure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
     }
 
     //
@@ -376,26 +376,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val tomlPath = Bootstrap.getManifestFile(projectPath)
     val manifest = ManifestParser.parse(tomlPath) match {
       case Ok(m) => m
-      case Err(e) => return Validation.toFailure(BootstrapError.ManifestParseError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.ManifestParseError(e))
     }
     optManifest = Some(manifest)
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Ok(l) => l
-      case Err(e) => return Validation.toFailure(BootstrapError.FlixPackageError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
     }
     FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
       case Ok(l) => flixPackagePaths = l
-      case Err(e) => return Validation.toFailure(BootstrapError.FlixPackageError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
     }
     MavenPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => mavenPackagePaths = l
-      case Err(e) => return Validation.toFailure(BootstrapError.MavenPackageError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.MavenPackageError(e))
     }
     JarPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => jarPackagePaths = l
-      case Err(e) => return Validation.toFailure(BootstrapError.JarPackageError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.JarPackageError(e))
     }
     out.println("Dependency resolution completed.")
 
@@ -489,7 +489,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (errors.isEmpty) {
       Validation.Success(())
     } else {
-      Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -508,7 +508,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Result.Ok(r: CompilationResult) =>
         Validation.Success(r)
       case Result.Err(errors) =>
-        Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
     }
   }
 
@@ -525,7 +525,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.toFailure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
     // Construct a new zip file.
@@ -548,7 +548,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     } match {
       case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.toFailure(BootstrapError.GeneralError(List(e.getMessage)))
+      case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
 
@@ -569,13 +569,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.toFailure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
     // Get the lib folder and check if it is safe to read.
     val libFolder = Bootstrap.getLibraryDirectory(projectPath)
     if (Files.exists(libFolder) && (!Files.isDirectory(libFolder) || !Files.isReadable(libFolder))) {
-      return Validation.toFailure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
+      return Validation.Failure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
     }
 
     // First, we get all jar files inside the lib folder.
@@ -604,7 +604,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // Add jar dependencies.
       jarDependencies.foreach(dep => {
         if (!Bootstrap.isJarFile(dep))
-          return Validation.toFailure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
+          return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
 
         // Extract the content of the classes to the jar file.
         Using(new ZipInputStream(Files.newInputStream(dep))) {
@@ -623,7 +623,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       })
     } match {
       case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.toFailure(BootstrapError.GeneralError(List(e.getMessage)))
+      case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
 
@@ -634,7 +634,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.toFailure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
+      return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
@@ -645,7 +645,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return Validation.toFailure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a fpkg-file. Refusing to overwrite."))
+      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a fpkg-file. Refusing to overwrite."))
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -667,7 +667,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     } match {
       case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.toFailure(BootstrapError.FileError(e.getMessage))
+      case Failure(e) => Validation.Failure(BootstrapError.FileError(e.getMessage))
     }
   }
 
@@ -688,7 +688,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       result.foreach(HtmlDocumentor.run(_, packageModules)(flix))
       Validation.Success(())
     } else {
-      Validation.toFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -712,7 +712,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       compilationResult =>
         Tester.run(Nil, compilationResult)(flix) match {
           case Ok(_) => Validation.Success(())
-          case Err(_) => Validation.toFailure(BootstrapError.GeneralError(List("Tester Error")))
+          case Err(_) => Validation.Failure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
   }
@@ -726,19 +726,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Ensure that we have a manifest
     val manifest = optManifest match {
       case Some(m) => m
-      case None => return Validation.toFailure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
+      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
     }
 
     // Check if `github` option is present
     val githubRepo = manifest.repository match {
       case Some(r) => r
-      case None => return Validation.toFailure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
+      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
     }
 
     // Check if `--github-token` option is present
     val githubToken = flix.options.githubToken match {
       case Some(k) => k
-      case None => return Validation.toFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
     }
 
     if (!flix.options.assumeYes) {
@@ -748,7 +748,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       response.toLowerCase match {
         case "y" => // Continue
         case "yes" => // Continue
-        case _ => return Validation.toFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
+        case _ => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
       }
     }
 
@@ -766,7 +766,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
-      case Err(e) => return Validation.toFailure(BootstrapError.ReleaseError(e))
+      case Err(e) => return Validation.Failure(BootstrapError.ReleaseError(e))
     }
 
     out.println(formatter.green(
@@ -792,7 +792,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val rows = flixDeps.flatMap { dep =>
       val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
         case Ok(u) => u
-        case Err(e) => return Validation.toFailure(BootstrapError.FlixPackageError(e))
+        case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
       }
 
       if (updates.isEmpty)

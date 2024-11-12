@@ -120,7 +120,7 @@ class TestValidation extends AnyFunSuite {
   test("flatMapN03") {
     val ex = DummyError(1)
     val result = flatMapN(Validation.Success[String, DummyError]("foo")) {
-      case _ => Validation.toFailure(ex)
+      case _ => Validation.Failure(ex)
     }
     assertResult(Failure(Chain(ex)))(result)
   }
@@ -183,7 +183,7 @@ class TestValidation extends AnyFunSuite {
 
   test("toResult02") {
     val e = DummyError(1)
-    val t = Validation.toFailure[String, DummyError](e)
+    val t = Validation.Failure[String, DummyError](e)
     val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }

@@ -51,11 +51,6 @@ sealed trait Validation[+T, +E] {
 object Validation {
 
   /**
-    * Returns a [[Validation.Failure]] with the error `e`.
-    */
-  def toFailure[T, E](e: E): Validation[T, E] = Validation.Failure(Chain(e))
-
-  /**
     * Represents a successful validation with the empty list.
     */
   private val SuccessNil = Success(Nil)

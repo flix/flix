@@ -120,7 +120,7 @@ object TraitEnvironment {
         substOpt match {
           case Some(subst) => Validation.Success(inst.tconstrs.map(subst.apply))
           // if there are leftover constraints, then we can't be sure that this is the right instance
-          case None => Validation.toFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
+          case None => Validation.Failure(UnificationError.MismatchedTypes(inst.tpe, arg))
         }
       }
 
@@ -129,7 +129,7 @@ object TraitEnvironment {
       }
 
       tconstrGroups match {
-        case Nil => Validation.toFailure(UnificationError.NoMatchingInstance(tconstr))
+        case Nil => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
         case tconstrs :: Nil =>
           // apply the base tconstr location to the new tconstrs
           Validation.Success(tconstrs.map(_.copy(loc = tconstr.loc)))
