@@ -432,8 +432,6 @@ object Validation {
     }
   }
 
-  // TODO: Everything below this line is deprecated.
-
   /**
     * Folds the given function `f` over all elements `xs`.
     *
@@ -441,9 +439,7 @@ object Validation {
     */
   def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
-      case (acc, a) => flatMapN(acc) {
-        case value => f(value, a)
-      }
+      case (acc, a) => flatMapN(acc)(f(_, a))
     }
   }
 
