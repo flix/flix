@@ -25,24 +25,24 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestValidation extends AnyFunSuite {
 
   test("map01") {
-    val result = mapN(Validation.success("foo")) {
+    val result = mapN(Validation.Success("foo")) {
       case x => x.toUpperCase
     }
-    assertResult(Validation.success("FOO"))(result)
+    assertResult(Validation.Success("FOO"))(result)
   }
 
   test("map02") {
-    val one = mapN(Validation.success("foo")) {
+    val one = mapN(Validation.Success("foo")) {
       case x => x.toUpperCase
     }
     val result = mapN(one) {
       case y => y.reverse
     }
-    assertResult(Validation.success("OOF"))(result)
+    assertResult(Validation.Success("OOF"))(result)
   }
 
   test("map03") {
-    val one = mapN(Validation.success("foo")) {
+    val one = mapN(Validation.Success("foo")) {
       case x => x.toUpperCase
     }
     val two = mapN(one) {
@@ -51,21 +51,21 @@ class TestValidation extends AnyFunSuite {
     val result = mapN(two) {
       case z => z + z
     }
-    assertResult(Validation.success("OOFOOF"))(result)
+    assertResult(Validation.Success("OOFOOF"))(result)
   }
 
   test("map04") {
-    val one = mapN(Validation.success("abc")) {
+    val one = mapN(Validation.Success("abc")) {
       case x => x.length
     }
     val result = mapN(one) {
       case y => y < 5
     }
-    assertResult(Validation.success(true))(result)
+    assertResult(Validation.Success(true))(result)
   }
 
   test("map05") {
-    val one = mapN(Validation.success[String, Exception]("abc")) {
+    val one = mapN(Validation.Success[String, Exception]("abc")) {
       case x => x.charAt(1)
     }
     val two = mapN(one) {
@@ -74,14 +74,14 @@ class TestValidation extends AnyFunSuite {
     val result = mapN(two) {
       case z => z.toChar.toString
     }
-    assertResult(Validation.success("e"))(result)
+    assertResult(Validation.Success("e"))(result)
   }
 
   test("mapN01") {
-    val result = mapN(Validation.success("foo"), Validation.success("foo")) {
+    val result = mapN(Validation.Success("foo"), Validation.Success("foo")) {
       case (x, y) => x.toUpperCase.reverse + y.toUpperCase.reverse
     }
-    assertResult(Validation.success("OOFOOF"))(result)
+    assertResult(Validation.Success("OOFOOF"))(result)
   }
 
   test("mapN02") {
@@ -93,52 +93,52 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("mapN03") {
-    val result = mapN(Validation.success("foo"): Validation[String, Exception]) {
+    val result = mapN(Validation.Success("foo"): Validation[String, Exception]) {
       case x => x.toUpperCase.reverse + x.toUpperCase.reverse
     }
-    assertResult(Validation.success("OOFOOF"))(result)
+    assertResult(Validation.Success("OOFOOF"))(result)
   }
 
   test("flatMapN01") {
-    val result = flatMapN(Validation.success("foo")) {
-      case x => Validation.success(x.toUpperCase)
+    val result = flatMapN(Validation.Success("foo")) {
+      case x => Validation.Success(x.toUpperCase)
     }
-    assertResult(Validation.success("FOO"))(result)
+    assertResult(Validation.Success("FOO"))(result)
   }
 
   test("flatMapN02") {
-    val result = flatMapN(Validation.success("foo")) {
-      case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case y => flatMapN(Validation.success(y.reverse)) {
-          case z => Validation.success(z + z)
+    val result = flatMapN(Validation.Success("foo")) {
+      case x => flatMapN(Validation.Success(x.toUpperCase)) {
+        case y => flatMapN(Validation.Success(y.reverse)) {
+          case z => Validation.Success(z + z)
         }
       }
     }
-    assertResult(Validation.success("OOFOOF"))(result)
+    assertResult(Validation.Success("OOFOOF"))(result)
   }
 
   test("flatMapN03") {
     val ex = DummyError(1)
-    val result = flatMapN(Validation.success[String, DummyError]("foo")) {
-      case _ => Validation.toFailure(ex)
+    val result = flatMapN(Validation.Success[String, DummyError]("foo")) {
+      case _ => Validation.Failure(ex)
     }
     assertResult(Failure(Chain(ex)))(result)
   }
 
   test("flatMapN04") {
-    val result = flatMapN(Validation.success("foo")) {
-      case x => flatMapN(Validation.success(x.toUpperCase)) {
-        case y => flatMapN(Validation.success(y.reverse)) {
-          case z => Validation.success(z + z)
+    val result = flatMapN(Validation.Success("foo")) {
+      case x => flatMapN(Validation.Success(x.toUpperCase)) {
+        case y => flatMapN(Validation.Success(y.reverse)) {
+          case z => Validation.Success(z + z)
         }
       }
     }
-    assertResult(Validation.success("OOFOOF"))(result)
+    assertResult(Validation.Success("OOFOOF"))(result)
   }
 
   test("flatMapN05") {
-    val result = flatMapN(Validation.success[String, Int]("foo")) {
-      case x => flatMapN(Validation.success(x.toUpperCase)) {
+    val result = flatMapN(Validation.Success[String, Int]("foo")) {
+      case x => flatMapN(Validation.Success(x.toUpperCase)) {
         case _ => flatMapN(Failure(Chain(4, 5, 6))) {
           case _ => Failure(Chain(7, 8, 9))
         }
@@ -149,9 +149,9 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse01") {
     val result = traverse(List(1, 2, 3)) {
-      case x => Validation.success(x + 1)
+      case x => Validation.Success(x + 1)
     }
-    assertResult(Validation.success(List(2, 3, 4)))(result)
+    assertResult(Validation.Success(List(2, 3, 4)))(result)
   }
 
   test("traverse02") {
@@ -163,27 +163,27 @@ class TestValidation extends AnyFunSuite {
 
   test("traverse03") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) Validation.success(x) else Failure(Chain(x))
+      case x => if (x % 2 == 1) Validation.Success(x) else Failure(Chain(x))
     }
     assertResult(Failure(Chain(2)))(result)
   }
 
   test("foldRight01") {
-    val result = foldRight(List(1, 1, 1))(Validation.success(10)) {
-      case (x, acc) => Validation.success(acc - x)
+    val result = foldRight(List(1, 1, 1))(Validation.Success(10)) {
+      case (x, acc) => Validation.Success(acc - x)
     }
-    assertResult(Validation.success(7))(result)
+    assertResult(Validation.Success(7))(result)
   }
 
   test("toResult01") {
-    val t = Validation.success[String, DummyError]("abc")
+    val t = Validation.Success[String, DummyError]("abc")
     val result = t.toResult
     assertResult(Result.Ok("abc"))(result)
   }
 
   test("toResult02") {
     val e = DummyError(1)
-    val t = Validation.toFailure[String, DummyError](e)
+    val t = Validation.Failure[String, DummyError](e)
     val result = t.toResult
     assertResult(Result.Err(Chain(e)))(result)
   }

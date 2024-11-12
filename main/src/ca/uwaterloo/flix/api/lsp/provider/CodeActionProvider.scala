@@ -56,7 +56,7 @@ object CodeActionProvider {
         Nil
 
     case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
-      mkNewEnum(qn.ident.name, uri) :: {
+      mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
         else
@@ -217,6 +217,38 @@ object CodeActionProvider {
     )),
     command = None
   )
+
+  /**
+   * Returns a code action that proposes to create a new struct.
+   *
+   * For example, if we have:
+   *
+   * {{{
+   *   def foo(): Abc = ???
+   * }}}
+   *
+   * where the `Abc` type is not defined this code action proposes to add:
+   * {{{
+   *   struct Abc[r] { }
+   * }}}
+   */
+  private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Introduce new struct $name",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(Position(1, 1), Position(1, 1)),
+        s"""
+           |struct $name[r] {
+           |
+           |}
+           |""".stripMargin
+      )))
+    )),
+    command = None
+  )
+
+
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
