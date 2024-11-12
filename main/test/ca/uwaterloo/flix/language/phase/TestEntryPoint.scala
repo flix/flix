@@ -26,19 +26,19 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[String, _]): Unit \ IO = checked_ecast(())
+        |def main(_blah: Array[String, _]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
-        |def main(blah: Array[a, _]): Unit \ IO = checked_ecast(())
+        |def main(_blah: Array[a, Static]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.03") {
@@ -46,19 +46,19 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
       """
         |trait C[a]
         |
-        |def main(blah: Array[a, _]): Unit \ IO with C[a] = checked_ecast(())
+        |def main(_blah: Array[a, Static]): Unit \ IO with C[a] = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.04") {
     val input =
       """
-        |def main(arg1: Array[String, _], arg2: Array[String, _]): Unit = ???
+        |def main(_arg1: Array[String, _], _arg2: Array[String, _]): Unit = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("Test.IllegalRunnableEntryPointArgs.Main.05") {
@@ -134,7 +134,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(): a \ IO = checked_ecast(???)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalMainEntryPointResult](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("Test.IllegalMainEntryPointResult.Main.02") {

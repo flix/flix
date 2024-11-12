@@ -56,12 +56,42 @@ object EntryPoint {
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
-    val (root1, errs1) = CheckEntryPoints.run(root)
+    val (root1, errs1) = lookupEntryPoint(root)
+    val (root2, errs2) = CheckEntryPoints.run(root1)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
-    val (root2, errs2) = WrapMain.run(root1)
+    val (root3, errs3) = WrapMain.run(root2)
     // WrapMain might change main, so FindEntryPoints must be after.
-    val root3 = FindEntryPoints.run(root2)
-    (root3, errs1 ++ errs2)
+    val root4 = FindEntryPoints.run(root3)
+    (root4, errs1 ++ errs2 ++ errs3)
+  }
+
+  /**
+    * Converts [[TypedAst.Root.entryPoint]] to be explicit instead of implicit and checks that the
+    * given entry point (if any) exists.
+    *
+    * In the input, a None entrypoint means to use `main` if it exists.
+    * In the output, None means no entrypoint and Some is an entrypoint, guaranteed to be in defs.
+    */
+  private def lookupEntryPoint(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
+    root.entryPoint match {
+      // If no main is given, only use main if it is found
+      case None => root.defs.get(DefaultEntryPoint) match {
+        case None =>
+          // Actually no main.
+          (root, Nil)
+        case Some(entryPoint) =>
+          // Use the default main explicitly.
+          (root.copy(entryPoint = Some(entryPoint.sym)), Nil)
+      }
+      case Some(sym) => root.defs.get(sym) match {
+        case Some(_) =>
+          // The given entry point exists.
+          (root, Nil)
+        case None =>
+          // The given entry point does not exist.
+          (root.copy(entryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
+      }
+    }
   }
 
   /**
@@ -82,6 +112,20 @@ object EntryPoint {
 
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
     root.entryPoint.contains(defn.sym)
+
+  /** Check if a non-polymorphic type is `Unit`. */
+  @tailrec
+  private def isUnitType(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.Unit, _) => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+  }
 
   private object CheckEntryPoints {
 
@@ -233,20 +277,6 @@ object EntryPoint {
       }
     }
 
-    /** Check if a non-polymorphic type is `Unit`. */
-    @tailrec
-    private def isUnitType(tpe: Type): Boolean = tpe match {
-      case Type.Cst(TypeConstructor.Unit, _) => true
-      case Type.Cst(_, _) => false
-      case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
-      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-    }
-
     private def checkToStringOrUnitResult(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Option[EntryPointError] = {
       val resultType = defn.spec.retTpe
       if (isUnitType(resultType)) None
@@ -346,9 +376,9 @@ object EntryPoint {
       case Type.Cst(TypeConstructor.Int64, _) => true
       case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => true
       case Type.Cst(_, _) => false
+      case Type.Apply(_, _, _) => false
       case Type.Alias(_, _, tpe, _) => isJavaType(tpe)
       case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
       case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
       case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
@@ -377,33 +407,17 @@ object EntryPoint {
   private object WrapMain {
 
     def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
-      findOriginalEntryPoint(root) match {
-        case Result.Ok(Some(entryPoint0: TypedAst.Def)) =>
-          val entryPoint = mkEntryPoint(entryPoint0, root)
+      root.entryPoint.map(root.defs(_)) match {
+        case Some(main0: TypedAst.Def) if !isUnitType(main0.spec.retTpe) =>
+          val main = mkEntryPoint(main0, root)
           val root1 = root.copy(
-            defs = root.defs + (entryPoint.sym -> entryPoint),
-            entryPoint = Some(entryPoint.sym)
+            defs = root.defs + (main.sym -> main),
+            entryPoint = Some(main.sym)
           )
           (root1, Nil)
-        case Result.Ok(None) => (root, Nil)
-        case Result.Err(err: EntryPointError) => (root, List(err))
-      }
-    }
-
-    /**
-      * Returns the optional entry point function of `root` or an error if it was set but not found.
-      */
-    private def findOriginalEntryPoint(root: TypedAst.Root): Result[Option[TypedAst.Def], EntryPointError] = {
-      root.entryPoint match {
-        case None => root.defs.get(DefaultEntryPoint) match {
-          case None => Result.Ok(None)
-          case Some(entryPoint) => Result.Ok(Some(entryPoint))
-        }
-        case Some(sym) => root.defs.get(sym) match {
-          case None =>
-            Result.Err(EntryPointError.MainEntryPointNotFound(sym))
-          case Some(entryPoint) => Result.Ok(Some(entryPoint))
-        }
+        case Some(_) | None =>
+          // main doesn't need wrapper or no main exists.
+          (root, Nil)
       }
     }
 

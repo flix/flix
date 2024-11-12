@@ -898,7 +898,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
   }
 
   test("IllegalExportFunction.09") {
