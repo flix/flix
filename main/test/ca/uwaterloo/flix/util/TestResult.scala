@@ -22,12 +22,12 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestResult extends AnyFunSuite {
 
   test("get01") {
-    assertResult(42)(Ok(42).get)
+    assertResult(42)(Ok(42).unsafeGet)
   }
 
   test("get02") {
     intercept[IllegalStateException] {
-      Err(42).get
+      Err(42).unsafeGet
     }
   }
 

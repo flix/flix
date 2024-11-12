@@ -34,7 +34,7 @@ sealed trait Result[+T, +E] {
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
