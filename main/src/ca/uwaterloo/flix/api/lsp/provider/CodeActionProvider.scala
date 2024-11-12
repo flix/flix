@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
@@ -371,6 +371,16 @@ object CodeActionProvider {
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
   // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
-  private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
+  private def onSameLine(range: Range, loc: SourceLocation): Boolean = {
+    val range2 = sourceLocation2Range(loc)
+    range.overlapsWith(range2)
+  }
 
+  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
+    Position(sourcePosition.line, sourcePosition.col)
+  }
+
+  private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
+    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
+  }
 }
