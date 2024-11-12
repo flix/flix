@@ -42,7 +42,7 @@ sealed trait Validation[+T, +E] {
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
     */
-  def toResult: Result[T, Chain[E]] = this match {
+  final def toResult: Result[T, Chain[E]] = this match {
     case Validation.Success(t) => Result.Ok(t)
     case Validation.Failure(errors) => Result.Err(errors)
   }
