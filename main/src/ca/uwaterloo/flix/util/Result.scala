@@ -151,13 +151,6 @@ object Result {
   }
 
   /**
-    * Adds an implicit `toOk` method.
-    */
-  implicit class ToOk[+T](val t: T) {
-    def toOk[U >: T, E]: Result[U, E] = Ok(t)
-  }
-
-  /**
     * Adds an implicit `toErr` method.
     */
   implicit class ToErr[+E](val e: E) {

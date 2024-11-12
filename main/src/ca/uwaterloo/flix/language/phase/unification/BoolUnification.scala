@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
-import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{Ok, ToErr}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -71,7 +71,7 @@ object BoolUnification {
     //
     SveAlgorithm.unify(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => toTypeSubstitution(subst, env).toOk
+      case Some(subst) => Ok(toTypeSubstitution(subst, env))
     }
   }
 
