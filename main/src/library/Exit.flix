@@ -22,7 +22,7 @@ eff Exit {
     ///
     /// Immediately exits the JVM with the specified `exitCode`.
     ///
-    pub def exit(exitCode: Int32): Void
+    def exit(exitCode: Int32): Void
 
 }
 
