@@ -149,12 +149,4 @@ object Result {
       case Err(e) => Err(e)
     }
   }
-
-  /**
-    * Adds an implicit `toErr` method.
-    */
-  implicit class ToErr[+E](val e: E) {
-    def toErr[T, F >: E]: Result[T, F] = Err(e)
-  }
-
 }
