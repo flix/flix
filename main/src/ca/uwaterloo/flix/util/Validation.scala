@@ -82,6 +82,10 @@ object Validation {
     */
   case class Failure[T, E](errors: Chain[E]) extends Validation[T, E]
 
+  object Failure {
+    def apply[T, E](error: E): Validation[T, E] = Failure(Chain(error))
+  }
+
   /**
     * Sequences the given list of validations `xs`.
     */
