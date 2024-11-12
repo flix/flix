@@ -221,7 +221,7 @@ object CodeActionProvider {
   )
 
   /**
-   * Returns a code action that proposes to create a new enum.
+   * Returns a code action that proposes to create a new function.
    *
    * For example, if we have:
    *
@@ -229,7 +229,7 @@ object CodeActionProvider {
    *   let x = f()
    * }}}
    *
-   * where the `f` type is not defined this code action proposes to add:
+   * where the name `f` is not defined this code action proposes to add:
    * {{{
    *   def f(): =
    * }}}
