@@ -82,11 +82,17 @@ object HighlightProvider {
       .filter(ifSigThenInSym(uri, pos))
       .filter(ifOpThenInSym(uri, pos))
       .filter(ifTraitThenInSym(uri, pos))
+      .filter(ifEnumThenInSym(uri, pos))
       .headOption
   }
 
   private def isNotEmptyRecord(x: AnyRef): Boolean = x match {
     case TypedAst.Expr.RecordEmpty(_, _) => false
+    case _ => true
+  }
+
+  private def ifEnumThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Enum(_, _, _, sym, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
     case _ => true
   }
 
