@@ -51,8 +51,6 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
-
-    // TODO both left and right searches are only necessary in some cases. Test if optimising to only do both when necessary actually improves performance in a measurable way
     val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
     val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
 
