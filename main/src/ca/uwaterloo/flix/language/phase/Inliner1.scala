@@ -327,10 +327,10 @@ object Inliner1 {
         } else {
           val freshVarSym = Symbol.freshVarSym(sym)
           val varSubst1 = varSubst0 + (sym -> freshVarSym)
+          val e2 = visitExp(exp2, varSubst1, subst0, inScopeSet0, context0)
           val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
           val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
           val e1 = visitExp(exp1, varSubst2, subst0, inScopeSet0, context0)
-          val e2 = visitExp(exp2, varSubst2, subst0, inScopeSet0, context0)
           MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
         }
       case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
@@ -369,9 +369,10 @@ object Inliner1 {
         val e = visit(exp)
         val rs = rules.map {
           case OccurrenceAst1.MatchRule(pat, guard, exp) =>
-            val (p, varSubst) = visitPattern(pat)
-            val g = guard.map(visitExp(_, varSubst, subst0, inScopeSet0, context0))
-            val e = visitExp(exp, varSubst, subst0, inScopeSet0, context0)
+            val (p, varSubst1) = visitPattern(pat)
+            val varSubst2 = varSubst0 ++ varSubst1
+            val g = guard.map(visitExp(_, varSubst2, subst0, inScopeSet0, context0))
+            val e = visitExp(exp, varSubst2, subst0, inScopeSet0, context0)
             MonoAst.MatchRule(p, g, e)
         }
         MonoAst.Expr.Match(e, rs, tpe, eff, loc)
