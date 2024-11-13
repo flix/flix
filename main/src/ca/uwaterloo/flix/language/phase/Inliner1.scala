@@ -323,7 +323,7 @@ object Inliner1 {
 
       case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
         // TODO: Treat like let-binding above, except it is never trivial so some checks can be omitted
-        if (isDead(occur)) { // Probably never happens
+        if (isDeadAndPure(occur, exp1.eff)) { // Probably never happens
           visit(exp2)
         } else {
           val freshVarSym = Symbol.freshVarSym(sym)
