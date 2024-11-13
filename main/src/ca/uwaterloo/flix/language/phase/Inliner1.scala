@@ -228,10 +228,10 @@ object Inliner1 {
 
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
-            case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) => // One-shot lambda
-              MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
+            // case Some(Definition.LetBound(lambda: MonoAst.Expr.Lambda, Occur.OnceInAbstraction)) => // One-shot lambda
+            //  MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
-            case Some(Definition.LetBound(lambda, Occur.Once)) => // One-shot lambda
+            case Some(Definition.LetBound(lambda: MonoAst.Expr.Lambda, Occur.Once)) => // One-shot lambda
               MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
             case _ =>
@@ -241,14 +241,18 @@ object Inliner1 {
         }
 
         exp match {
-          /*
+
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
             varSubst0.get(sym) match {
               case Some(freshVarSym) => maybeInline(freshVarSym)
 
-              case None => maybeInline(sym)
+              case None =>
+                // If it is the inScopeSet then we have added it via a let-binding so the varSubst should contain sym.
+                // Thus, this is only possible if `sym` is a parameter of the top-level def.
+                val e = visit(exp)
+                MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
             }
-*/
+
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
             inlineLocalAbstraction(body, List(fparam), es)
