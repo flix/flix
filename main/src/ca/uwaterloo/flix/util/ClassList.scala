@@ -33,4 +33,17 @@ object ClassList {
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
 
+  /**
+    * The map from class name to class path, built from TheList
+    *
+    * Example:
+    *  - List -> java.util.List
+    *  - File -> java.io.File
+    */
+  val TheMap: Map[String, String] = ClassList.TheList.map { path =>
+    val className = path.split("/").last.stripSuffix(".java")
+    val formattedPath = path.stripSuffix(".java").replace("/", ".")
+    className -> formattedPath
+  }.toMap
+
 }

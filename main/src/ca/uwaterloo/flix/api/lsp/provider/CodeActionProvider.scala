@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{Similarity, ClassMap}
+import ca.uwaterloo.flix.util.{Similarity, ClassList}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -238,7 +238,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkImportJava(name: String, uri: String): List[CodeAction] = {
-    ClassMap.TheMap.get(name).map { path =>
+    ClassList.TheMap.get(name).map { path =>
       CodeAction(
         title = s"Import $name from Java",
         kind = CodeActionKind.QuickFix,
