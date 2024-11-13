@@ -53,7 +53,7 @@ object Weeder2 {
     *
     * This is here to avoid stack overflow during compiler phases.
     */
-  private val ExpressionNestingLimit = 100
+  private val ExpressionNestingLimit = 250
 
   import WeededAst.*
 
