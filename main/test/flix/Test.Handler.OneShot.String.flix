@@ -1,7 +1,7 @@
 mod Test.Handler.OneShot.String {
 
     eff Ask {
-        pub def ask(x: String): String
+        def ask(x: String): String
     }
 
     @Test

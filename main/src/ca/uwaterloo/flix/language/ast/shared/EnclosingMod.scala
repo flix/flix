@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jonathan Lindegaard Starup
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-///
-/// Indicates that a key was not found.
-/// Useful for instances of `Index` or `IndexMut`.
-///
-eff KeyNotFound {
+import ca.uwaterloo.flix.language.ast.SourcePosition
 
-    /// Stops execution with an error message.
-    def keyNotFound(msg: String): Void
-
-}
-
-mod KeyNotFound {
-
-    /// Turns the `KeyNotFound` effect into `Err(msg)`.
-    @Experimental
-    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - KeyNotFound) = {
-        x -> try Ok(f(x)) with KeyNotFound {
-            def keyNotFound(msg, _) = Err(msg)
-        }
-    }
-
-}
+/**
+  * Represents the source position of an enclosing module.
+  *
+  * If the program is the one below, and we are inside baz:
+  *
+  * {{{
+  * mod Foo {
+  *   |mod Bar {
+  *     def baz(): Unit = ...
+  *   }
+  * }
+  * }}}
+  *
+  * then the source position is indicated by the vertical bar.
+  */
+case class EnclosingMod(sp: SourcePosition)

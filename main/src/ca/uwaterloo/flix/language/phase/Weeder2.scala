@@ -627,7 +627,7 @@ object Weeder2 {
     private def visitOperationDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Op, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Op)
       val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val mod = pickModifiers(tree, allowed = Set.empty)
       mapN(
         pickDocumentation(tree),
         pickNameIdent(tree),
@@ -1608,7 +1608,9 @@ object Weeder2 {
       mapN(pickExpr(tree)) {
         expr =>
           idents.foldLeft(expr) {
-            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
+            case (acc, ident) =>
+              val loc = SourceLocation(ident.loc.isReal, tree.loc.sp1, ident.loc.sp2)
+              Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
     }
