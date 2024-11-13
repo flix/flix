@@ -369,9 +369,9 @@ object Inliner1 {
         val e = visit(exp)
         val rs = rules.map {
           case OccurrenceAst1.MatchRule(pat, guard, exp) => // TODO: Rename binder here
-            val p = visitPattern(pat)
-            val g = guard.map(visit)
-            val e = visit(exp)
+            val (p, varSubst) = visitPattern(pat)
+            val g = guard.map(visitExp(_, varSubst, subst0, inScopeSet0, context0))
+            val e = visitExp(exp, varSubst, subst0, inScopeSet0, context0)
             MonoAst.MatchRule(p, g, e)
         }
         MonoAst.Expr.Match(e, rs, tpe, eff, loc)
@@ -438,41 +438,44 @@ object Inliner1 {
     visit(exp00)
   }
 
-  // TODO: Generate fresh vars for var patterns.
-  private def visitPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
+  private def visitPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, VarSubst) = {
 
     // TODO: Figure out what to do with occurrence information in Pattern.Var
-    def visit(pattern0: OccurrenceAst1.Pattern): MonoAst.Pattern = pattern0 match {
+    def visit(pattern0: OccurrenceAst1.Pattern): (MonoAst.Pattern, VarSubst) = pattern0 match {
       case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
-        MonoAst.Pattern.Wild(tpe, loc)
+        (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
 
       case OccurrenceAst1.Pattern.Var(sym, tpe, _, loc) =>
-        MonoAst.Pattern.Var(sym, tpe, loc)
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (MonoAst.Pattern.Var(sym, tpe, loc), Map(sym -> freshVarSym))
 
       case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
-        MonoAst.Pattern.Cst(cst, tpe, loc)
+        (MonoAst.Pattern.Cst(cst, tpe, loc), Map.empty)
 
       case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) =>
-        val p = visit(pat)
-        MonoAst.Pattern.Tag(sym, p, tpe, loc)
+        val (p, varSubst) = visit(pat)
+        (MonoAst.Pattern.Tag(sym, p, tpe, loc), varSubst)
 
       case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
-        val ps = pats.map(visit)
-        MonoAst.Pattern.Tuple(ps, tpe, loc)
+        val (ps, varSubsts) = pats.map(visit).unzip
+        val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
+        (MonoAst.Pattern.Tuple(ps, tpe, loc), varSubst)
 
       case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) =>
-        val ps = pats.map(visitRecordLabelPattern)
-        val p = visit(pat)
-        MonoAst.Pattern.Record(ps, p, tpe, loc)
+        val (ps, varSubsts) = pats.map(visitRecordLabelPattern).unzip
+        val varSubst1 = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
+        val (p, varSubst2) = visit(pat)
+        val varSubst3 = varSubst1 ++ varSubst2
+        (MonoAst.Pattern.Record(ps, p, tpe, loc), varSubst3)
 
       case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
-        MonoAst.Pattern.RecordEmpty(tpe, loc)
+        (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
     }
 
-    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
       case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-        val p = visit(pat)
-        MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
+        val (p, subst) = visit(pat)
+        (MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
     }
 
     visit(pattern00)
