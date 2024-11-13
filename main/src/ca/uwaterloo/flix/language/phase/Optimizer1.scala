@@ -18,10 +18,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.{MonoAst, OccurrenceAst1}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
