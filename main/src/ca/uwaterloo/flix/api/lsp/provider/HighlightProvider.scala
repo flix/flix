@@ -79,10 +79,18 @@ object HighlightProvider {
     * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
     * immediate right of the cursor.
     *
+    * As an example, consider
+    * {{{
+    *   2 + y|
+    * }}}
+    * where `|` is the cursor. Then `searchLeftOfCursor` would return the
+    * most specific AST node `Var(y, ...)`
+    *
     * @param uri  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
-    * @return     the most precise AST node under the [[Position]] immediately left of the cursor, if there is one. Otherwise, returns `None`.
+    * @return     the most precise AST node under the [[Position]] immediately left
+    *             of the cursor, if there is one. Otherwise, returns `None`.
     */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
       case Position(line, character) if character >= 2 =>
@@ -98,10 +106,18 @@ object HighlightProvider {
     * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
     * immediate right of the cursor.
     *
+    * As an example, consider
+    * {{{
+    *   println(|"very important text")
+    * }}}
+    * where `|` is the cursor. Then `searchRightOfCursor` would return the most specific
+    * AST node `Cst(Str("very important text"))`.
+    *
     * @param uri  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediatately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
-    * @return     the most precise AST node under the [[Position]] immediately right of the cursor, if there is one. Otherwise, returns `None`.
+    * @return     the most precise AST node under the [[Position]] immediately right
+    *             of the cursor, if there is one. Otherwise, returns `None`.
     */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     search(uri, pos)
@@ -119,6 +135,13 @@ object HighlightProvider {
     * We return the most precise AST node under the right [[Position]] (after filtering), unless there is none,
     * then we return the most precise AST node under the left [[Position]] (after filtering). If we still
     * find nothing, we return `None`.
+    *
+    * As an example, consider
+    * {{{
+    *   2 + y|
+    * }}}
+    * where `|` is the cursor. Then `search` would first search to the right and find nothing.
+    * Then it would search to the left and find the most specific AST `Var(y)`.
     *
     * @param uri  the URI of the file the cursor is in.
     * @param pos  the [[Position]] immediately right of the thin cursor.
