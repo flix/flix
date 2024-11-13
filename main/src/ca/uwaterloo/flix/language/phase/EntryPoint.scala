@@ -39,10 +39,13 @@ import scala.jdk.CollectionConverters.*
   *   - It is a test (annotated with `@Test`).
   *   - It is an exported function (annotated with `@Export`).
   *
-  * This phase has three sub-phases:
+  * This phase has four sub-phases:
+  *   1. Resolve the entrypoint option such that there is no implicit default entry point.
   *   1. Check that all entry points have valid signatures, where rules differ from main, tests, and
-  *     exports.
-  *   1. Replace the existing main function by a new main function that prints the returned value.
+  *      exports. If an entrypoint does not have a valid signature, its related annotation is
+  *      removed to allow further compilation to continue with valid assumptions.
+  *   1. Replace the existing main function by a new main function that prints the returned value if
+  *      its return type is not Unit.
   *   1. Compute the set of all entry points and store it in Root.
   */
 object EntryPoint {
@@ -56,7 +59,7 @@ object EntryPoint {
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
-    val (root1, errs1) = lookupEntryPoint(root)
+    val (root1, errs1) = resolveMainEntryPoint(root)
     val (root2, errs2) = CheckEntryPoints.run(root1)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
     val (root3, errs3) = WrapMain.run(root2)
@@ -66,29 +69,28 @@ object EntryPoint {
   }
 
   /**
-    * Converts [[TypedAst.Root.entryPoint]] to be explicit instead of implicit and checks that the
-    * given entry point (if any) exists.
+    * Converts [[TypedAst.Root.entryPoint]] to be explicit instead of implicit and checks that a
+    * given entry point exists.
     *
     * In the input, a None entrypoint means to use `main` if it exists.
     * In the output, None means no entrypoint and Some is an entrypoint, guaranteed to be in defs.
     */
-  private def lookupEntryPoint(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
+  private def resolveMainEntryPoint(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
     root.entryPoint match {
-      // If no main is given, only use main if it is found
       case None => root.defs.get(DefaultEntryPoint) match {
         case None =>
-          // Actually no main.
+          // No main is given and "main" does not exist - no main.
           (root, Nil)
         case Some(entryPoint) =>
-          // Use the default main explicitly.
+          // No main is given but "main" exists - use "main".
           (root.copy(entryPoint = Some(entryPoint.sym)), Nil)
       }
       case Some(sym) => root.defs.get(sym) match {
         case Some(_) =>
-          // The given entry point exists.
+          // A main is given and it exists - use it.
           (root, Nil)
         case None =>
-          // The given entry point does not exist.
+          // A main is given and it does not exist - no main and give an error.
           (root.copy(entryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
       }
     }
