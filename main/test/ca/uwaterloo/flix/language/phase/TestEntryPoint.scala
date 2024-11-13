@@ -279,4 +279,13 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
     expectSuccess(result)
   }
+
+  test("Test.ValidEntryPoint.LibNix.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
 }
