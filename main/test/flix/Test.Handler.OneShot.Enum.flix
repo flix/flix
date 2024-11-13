@@ -1,7 +1,7 @@
 mod Test.Handler.OneShot.Enum {
 
     eff AskTell {
-        pub def askTell(x: Int32): Option[Int32]
+        def askTell(x: Int32): Option[Int32]
     }
 
     @Test

@@ -5,11 +5,11 @@ mod Test.Dec.Assoc.Type.Eff {
     ////////////////////////////////////////////////////////
 
     eff OutInt32 {
-        pub def toStream(x: Int32): Unit
+        def toStream(x: Int32): Unit
     }
 
     eff OutString {
-        pub def toStream(x: String): Unit
+        def toStream(x: String): Unit
     }
 
     trait Runner[a] {

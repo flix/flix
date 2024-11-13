@@ -21,32 +21,32 @@ pub eff Random {
     ///
     /// Returns a pseudorandom boolean.
     ///
-    pub def randomBool(): Bool
+    def randomBool(): Bool
 
     ///
     /// Returns a pseudorandom 32-bit floating-point number.
     ///
-    pub def randomFloat32(): Float32
+    def randomFloat32(): Float32
 
     ///
     /// Returns a pseudorandom 64-bit floating-point number.
     ///
-    pub def randomFloat64(): Float64
+    def randomFloat64(): Float64
 
     ///
     /// Returns a pseudorandom 32-bit integer.
     ///
-    pub def randomInt32(): Int32
+    def randomInt32(): Int32
 
     ///
     /// Returns a pseudorandom 64-bit integer.
     ///
-    pub def randomInt64(): Int64
+    def randomInt64(): Int64
 
     ///
     /// Returns a Gaussian distributed 64-bit floating point number.
     ///
-    pub def randomGaussian(): Float64
+    def randomGaussian(): Float64
 
 }
 

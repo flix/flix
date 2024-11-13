@@ -1,7 +1,7 @@
 mod Test.Handler.Gen.Enum {
 
     eff Gen {
-        pub def gen(): Option[Int32]
+        def gen(): Option[Int32]
     }
 
     def generator(): Unit \ Gen =

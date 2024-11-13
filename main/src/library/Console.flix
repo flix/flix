@@ -22,27 +22,27 @@ eff Console {
     ///
     /// Reads a single line from the console.
     ///
-    pub def readln(): String
+    def readln(): String
 
     ///
     /// Prints the given string `s` to the standard out.
     ///
-    pub def print(s: String): Unit
+    def print(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard err.
     ///
-    pub def eprint(s: String): Unit
+    def eprint(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard out followed by a new line.
     ///
-    pub def println(s: String): Unit
+    def println(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard err followed by a new line.
     ///
-    pub def eprintln(s: String): Unit
+    def eprintln(s: String): Unit
 
 }
 
