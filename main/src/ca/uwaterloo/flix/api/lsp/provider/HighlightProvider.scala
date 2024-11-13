@@ -34,7 +34,10 @@ object HighlightProvider {
     * Handles an LSP highlight request by constructing an LSP highlight response for
     * when the cursor is at `pos` in the file at `uri`.
     *
-    * Given cursor [[Position]] `pos`, if there is a [[Symbol]] or [[Name.Label]] under it, every occurrence of
+    * Note that we assume a thin cursor so `pos` is interpreted as the character position
+    * to the immediate right of the cursor
+    *
+    * If there is a [[Symbol]] or [[Name.Label]] under the cursor, every occurrence of
     * it in the file at `uri` is collected and a [[DocumentHighlight]] is created for each.
     * These are then put in a [[JObject]] representing an LSP highlight response. It takes the form
     *
@@ -43,6 +46,14 @@ object HighlightProvider {
     * If there is no [[Symbol]] or [[Name.Label]] at `pos`, a [[JObject]] representing an LSP failure response is returned. It takes the form
     *
     * `{'status': 'failure', 'message': "Nothing found in <uri> at <pos>`.
+    *
+    * Since a thin cursor exists between character positions, it's associated with both
+    * the [[Position]] to its immediate left and right. This means we need to consider what's under
+    * both. If there are two different [[Symbol]]/[[Name.Label]]s (any combination of the two)
+    * under the left and right [[Position]], we highlight occurrences of the one on the right.
+    *
+    * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
+    * immediate right of the thin cursor.
     *
     * @param uri  the URI of the file in question.
     * @param pos  the [[Position]] of the cursor.
@@ -65,6 +76,9 @@ object HighlightProvider {
     *
     * If there is no [[Position]] to the left of the cursor, returns `None`.
     *
+    * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
+    * immediate right of the cursor.
+    *
     * @param uri  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
@@ -81,6 +95,9 @@ object HighlightProvider {
     * Returns the most precise AST node under the [[Position]] immediately right of the cursor,
     * if there is one. Otherwise, returns `None`.
     *
+    * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
+    * immediate right of the cursor.
+    *
     * @param uri  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediatately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
@@ -91,15 +108,7 @@ object HighlightProvider {
   }
 
   /**
-    * Searches for the most precise AST node under the cursor.
-    *
-    * We assume a thin cursor, since this is most common. Since a thin cursor exists
-    * between character positions, it's associated with both the [[Position]] to its
-    * immediate left and right. If there are two different AST nodes under respectively
-    * the left and right [[Position]], we return the one on the right.
-    *
-    * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
-    * immediate right of the cursor.
+    * Searches for the most precise AST node at the [[Position]] `pos`.
     *
     * Certain AST nodes are filtered out. We filter out [[TypedAst.Def]], [[TypedAst.Sig]],
     * [[TypedAst.Op]] and [[TypedAst.Enum]] nodes if the cursor is in them but _not_ in their [[Symbol]].
