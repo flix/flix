@@ -1519,29 +1519,30 @@ object Resolver {
     * Curry the tag, wrapping it in a lambda expression if it is not nullary.
     */
   private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val synth_loc = SourceLocation(isReal = false, loc.sp1, loc.sp2)
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, synth_loc)
       ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
 
       // Construct a fresh symbol for the formal parameter.
-      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
+      val freshVar = freshVarSym("x", BoundBy.FormalParam, synth_loc)
 
       // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
+      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, synth_loc)
 
       // Construct a variable expression for the fresh symbol.
-      val varExp = ResolvedAst.Expr.Var(freshVar, loc)
+      val varExp = ResolvedAst.Expr.Var(freshVar, synth_loc)
 
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, synth_loc)
     }
   }
 
