@@ -102,11 +102,11 @@ mod Test.Exp.Effect {
     pub def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
 
     eff Fail {
-        pub def fail(x: String): Unit
+        def fail(x: String): Unit
     }
 
     eff Console {
-        pub def println(x: String): Unit
+        def println(x: String): Unit
     }
 
     pub enum Do[ef: Eff](Unit -> Unit \ ef)

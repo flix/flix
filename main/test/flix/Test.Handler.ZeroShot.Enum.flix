@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Enum {
 
     eff Exc {
-        pub def raise(): Option[Int32]
+        def raise(): Option[Int32]
     }
 
     @Test

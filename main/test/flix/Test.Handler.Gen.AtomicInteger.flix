@@ -9,7 +9,7 @@ mod Test.Handler.Gen.AtomicInteger {
         unsafe n.intValue()
 
     eff Gen {
-        pub def gen(): AtomicInteger
+        def gen(): AtomicInteger
     }
 
     def generator(): Unit \ Gen =

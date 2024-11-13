@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Recursive {
 
     eff Exc {
-        pub def raise(): Unit
+        def raise(): Unit
     }
 
     @Test

@@ -9,7 +9,7 @@ mod Test.Handler.Ask.AtomicInteger {
         unsafe n.intValue()
 
     eff Ask {
-        pub def ask(x: AtomicInteger): Unit
+        def ask(x: AtomicInteger): Unit
     }
 
     def generator(x: AtomicInteger): Unit \ Ask =
