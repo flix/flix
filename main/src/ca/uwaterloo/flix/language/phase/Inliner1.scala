@@ -241,13 +241,14 @@ object Inliner1 {
         }
 
         exp match {
+          /*
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
             varSubst0.get(sym) match {
               case Some(freshVarSym) => maybeInline(freshVarSym)
 
               case None => maybeInline(sym)
             }
-
+*/
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
             inlineLocalAbstraction(body, List(fparam), es)
