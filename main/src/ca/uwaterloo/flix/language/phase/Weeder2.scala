@@ -1608,7 +1608,9 @@ object Weeder2 {
       mapN(pickExpr(tree)) {
         expr =>
           idents.foldLeft(expr) {
-            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
+            case (acc, ident) =>
+              val loc = SourceLocation(ident.loc.isReal, tree.loc.sp1, ident.loc.sp2)
+              Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
     }
