@@ -24,7 +24,7 @@ pub eff Abort {
     ///
     /// The computation cannot be resumed.
     ///
-    pub def abort(m: String): Void
+    def abort(m: String): Void
 
 }
 

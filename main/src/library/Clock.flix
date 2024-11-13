@@ -22,7 +22,7 @@ eff Clock {
     ///
     /// Returns a measure of time since the epoch in the given time unit `u`.
     ///
-    pub def currentTime(u: TimeUnit): Int64
+    def currentTime(u: TimeUnit): Int64
 
 }
 

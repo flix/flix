@@ -1,7 +1,7 @@
 mod Test.Handler.OneShot.Float64 {
 
     eff AskTell {
-        pub def askTell(x: Float64): Float64
+        def askTell(x: Float64): Float64
     }
 
     @Test

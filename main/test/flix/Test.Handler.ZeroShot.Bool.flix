@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Bool {
 
     eff Exc {
-        pub def raise(): Bool
+        def raise(): Bool
     }
 
     @Test

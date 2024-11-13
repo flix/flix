@@ -22,7 +22,7 @@ eff Process {
     ///
     /// Immediately executes the command `cmd` passing the arguments `args`.
     ///
-    pub def exec(cmd: String, args: List[String]): Unit
+    def exec(cmd: String, args: List[String]): Unit
 
 }
 
