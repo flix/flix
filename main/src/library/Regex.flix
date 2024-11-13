@@ -625,7 +625,7 @@ mod Regex {
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((discard m1.₹region(start#start, end#end): _ \ IO) as _ \ r)
+            unchecked_cast ((discard m1.$region(start#start, end#end): _ \ IO) as _ \ r)
         })
 
 
