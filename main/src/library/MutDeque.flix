@@ -190,7 +190,7 @@ mod MutDeque {
         else { // Get the element `x` at the front, update index, optionally compress array, return `Some(x)`.
             let x = Array.get(d->front, d->values);
             d->front = (d->front + 1) `Int32.modulo` capacity(d);
-            compress!(d);
+            compress(d);
             Some(x)
         }
 
@@ -205,7 +205,7 @@ mod MutDeque {
             let b1 = (d->back - 1) `Int32.modulo` capacity(d);
             let x = Array.get(b1, d->values);
             d->back = b1;
-            compress!(d);
+            compress(d);
             Some(x)
         }
 
@@ -216,7 +216,7 @@ mod MutDeque {
         let f1 = (d->front - 1) `Int32.modulo` capacity(d);     // Update index such that it points to an empty index. This will never overlap with the back index.
         Array.put(x, f1, d->values);                            // Store `x` in the array.
         d->front = f1;                                          // Update the front index reference.
-        expand!(d)                                              // Optionally expand `d`.
+        expand(d)                                              // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
@@ -224,7 +224,7 @@ mod MutDeque {
     pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
         Array.put(x, d->back, d->values);                           // Store `x` in the array.
         d->back = (d->back + 1) `Int32.modulo` capacity(d);         // Update back index reference to point to next empty index.
-        expand!(d)                                                  // Optionally expand `d`.
+        expand(d)                                                  // Optionally expand `d`.
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -253,8 +253,8 @@ mod MutDeque {
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
-    def expand!(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) grow!(d) else ()
+    def expand(d: MutDeque[a, r]): Unit \ r =
+        if (shouldExpand(d)) grow(d) else ()
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -265,10 +265,10 @@ mod MutDeque {
     ///
     /// Doubles the capacity of `d`.
     ///
-    def grow!(d: MutDeque[a, r]): Unit \ r =
+    def grow(d: MutDeque[a, r]): Unit \ r =
         let c = capacity(d);
         let arr = Array.empty(d->r, Int32.leftShift(c, 1));     // Allocate empty array `arr` with double the capacity of `a`.
-        copyElements!(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+        copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
         d->values = arr;                                        // Update references.
         d->back = computeSize(c, d->front, d->back);
         d->front = 0
@@ -276,8 +276,8 @@ mod MutDeque {
     ///
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
-    def compress!(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) shrink!(d) else ()
+    def compress(d: MutDeque[a, r]): Unit \ r =
+        if (shouldCompress(d)) shrink(d) else ()
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
@@ -288,12 +288,12 @@ mod MutDeque {
     ///
     /// Shrinks MutDeque `d` to half its size but never below `minCapacity`.
     ///
-    def shrink!(d: MutDeque[a, r]): Unit \ r =
+    def shrink(d: MutDeque[a, r]): Unit \ r =
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                               // Prevent the backing array from shrinking below `minCapacity`.
             let arr = Array.empty(d->r, Int32.rightShift(c, 1));    // Allocate empty array `arr` with half the capacity of `a`.
-            copyElements!(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+            copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
             d->values = arr;                                        // Update references.
             d->back = computeSize(c, d->front, d->back);
             d->front = 0
@@ -305,7 +305,7 @@ mod MutDeque {
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements!(rc2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
+    def copyElements(rc2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
             Array.updateSequence(0,     Array.slice(rc2, start = f, end = b, a), a1)
@@ -335,8 +335,8 @@ mod MutDeque {
         if (aSize == bSize) {
             let a1 = Array.empty(rc3, aSize);
             let b1 = Array.empty(rc3, bSize);
-            copyElements!(rc3, d1->front, d1->back, d1->values, a1);
-            copyElements!(rc3, d2->front, d2->back, d2->values, b1);
+            copyElements(rc3, d1->front, d1->back, d1->values, a1);
+            copyElements(rc3, d2->front, d2->back, d2->values, b1);
             Array.sameElements(a1, b1)
         } else
             false
