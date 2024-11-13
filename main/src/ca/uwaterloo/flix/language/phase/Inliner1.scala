@@ -112,7 +112,7 @@ object Inliner1 {
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
-      val e = visitExp(exp, Map.empty, Map.empty, Context.Stop)(root, flix)
+      val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Stop)(root, flix)
       val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
       MonoAst.Def(sym, sp, e, loc)
   }
@@ -173,26 +173,31 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp00: OccurrenceAst1.Expr, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def visitExp(exp00: OccurrenceAst1.Expr, varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
 
     def visit(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
       case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
         MonoAst.Expr.Cst(cst, tpe, loc)
 
       case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
-        subst0.get(sym) match {
-          // Case 1:
-          // The variable `sym` is not in the substitution map and will not be inlined.
-          case None => MonoAst.Expr.Var(sym, tpe, loc)
-          // Case 2:
-          // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
-          case Some(e1) =>
-            e1 match {
-              // If `e1` is a `LiftedExp` then `e1` has already been visited
-              case SubstRange.DoneExp(exp) => exp
-              // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-              case SubstRange.SuspendedExp(exp) => visit(exp)
+        varSubst0.get(sym) match {
+          case Some(freshVarSym) => // Renamed local binder
+            subst0.get(freshVarSym) match {
+              // Case 1:
+              // The variable `sym` is not in the substitution map and will not be inlined.
+              case None => MonoAst.Expr.Var(freshVarSym, tpe, loc)
+              // Case 2:
+              // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
+              case Some(e1) =>
+                e1 match {
+                  // If `e1` is a `LiftedExp` then `e1` has already been visited
+                  case SubstRange.DoneExp(exp) => exp
+                  // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
+                  case SubstRange.SuspendedExp(exp) => visit(exp)
+                }
             }
+          case None => // Function parameter occurrence
+            MonoAst.Expr.Var(sym, tpe, loc)
         }
 
       case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) =>
@@ -265,19 +270,22 @@ object Inliner1 {
           } else {
             // Case 2:
             // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
-            val e1 = visitExp(exp1, subst0, inScopeSet0, Context.Stop)
+            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, Context.Stop)
             MonoAst.Expr.Stm(e1, visit(exp2), tpe, eff, loc)
           }
         } else {
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val varSubst1 = varSubst0 + (sym -> freshVarSym)
+
           // Case 3:
-          // If `exp1` occurs once and it is pure, then it is safe to inline.
+          // If `exp1` occurs once, and it is pure, then it is safe to inline.
           // There is a small decrease in code size and runtime.
           val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
           if (wantToPreInline) {
-            val subst1 = subst0 + (sym -> SubstRange.SuspendedExp(exp1))
-            visitExp(exp2, subst1, inScopeSet0, context0)
+            val subst1 = subst0 + (freshVarSym -> SubstRange.SuspendedExp(exp1))
+            visitExp(exp2, varSubst1, subst1, inScopeSet0, context0)
           } else {
-            val e1 = visitExp(exp1, subst0, inScopeSet0, Context.Stop)
+            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, Context.Stop)
             // Case 4:
             // If `e1` is trivial and pure, then it is safe to inline.
             // Code size and runtime are not impacted, because only trivial expressions are inlined
@@ -285,15 +293,15 @@ object Inliner1 {
             if (wantToPostInline) {
               // If `e1` is to be inlined:
               // Add map `sym` to `e1` and return `e2` without constructing the let expression.
-              val subst1 = subst0 + (sym -> SubstRange.DoneExp(e1))
-              visitExp(exp2, subst1, inScopeSet0, context0)
+              val subst1 = subst0 + (freshVarSym -> SubstRange.DoneExp(e1))
+              visitExp(exp2, varSubst1, subst1, inScopeSet0, context0)
             } else {
               // Case 5:
               // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
               // Code size and runtime are not impacted
-              val inScopeSet = inScopeSet0 + (sym -> Definition.LetBound(e1, occur))
-              val e2 = visitExp(exp2, subst0, inScopeSet, context0)
-              MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+              val inScopeSet1 = inScopeSet0 + (freshVarSym -> Definition.LetBound(e1, occur))
+              val e2 = visitExp(exp2, varSubst1, subst0, inScopeSet1, context0)
+              MonoAst.Expr.Let(freshVarSym, e1, e2, tpe, eff, loc)
             }
           }
         }
