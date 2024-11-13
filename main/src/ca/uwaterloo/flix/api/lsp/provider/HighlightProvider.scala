@@ -59,6 +59,17 @@ object HighlightProvider {
       .getOrElse(mkNotFound(uri, pos))
   }
 
+  /**
+    * Returns the most precise AST node under the position immediately left of the cursor,
+    * if there is one. Otherwise, returns `None`.
+    *
+    * If there is no [[Position]] to the left of the cursor, returns `None`.
+    *
+    * @param uri  the URI of the file in which the cursor is.
+    * @param pos  the [[Position]] immediately right of the cursor.
+    * @param root the [[Root]] AST node of the Flix project.
+    * @return     the most precise AST node under the [[Position]] immediately left of the cursor, if there is one. Otherwise, returns `None`.
+    */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
       case Position(line, character) if character >= 2 =>
         val leftOfCursor = Position(line, character - 1)
@@ -66,10 +77,45 @@ object HighlightProvider {
       case _ => None
     }
 
+  /**
+    * Returns the most precise AST node under the [[Position]] immediately right of the cursor,
+    * if there is one. Otherwise, returns `None`.
+    *
+    * @param uri  the URI of the file in which the cursor is.
+    * @param pos  the [[Position]] immediatately right of the cursor.
+    * @param root the [[Root]] AST node of the Flix project.
+    * @return     the most precise AST node under the [[Position]] immediately right of the cursor, if there is one. Otherwise, returns `None`.
+    */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     search(uri, pos)
   }
 
+  /**
+    * Searches for the most precise AST node under the cursor.
+    *
+    * We assume a thin cursor, since this is most common. Since a thin cursor exists
+    * between character positions, it's associated with both the [[Position]] to its
+    * immediate left and right. If there are two different AST nodes under respectively
+    * the left and right [[Position]], we return the one on the right.
+    *
+    * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
+    * immediate right of the cursor.
+    *
+    * Certain AST nodes are filtered out. We filter out [[TypedAst.Def]], [[TypedAst.Sig]],
+    * [[TypedAst.Op]] and [[TypedAst.Enum]] nodes if the cursor is in them but _not_ in their [[Symbol]].
+    * Additionally, we filter out [[TypedAst.Expr.RecordEmpty]] nodes, since they're uninteresting
+    * for highlighting and their [[SourceLocation]] overshadows [[TypedAst.Expr.RecordExtend]]
+    * and [[TypedAst.Expr.RecordRestrict]] nodes.
+    *
+    * We return the most precise AST node under the right [[Position]] (after filtering), unless there is none,
+    * then we return the most precise AST node under the left [[Position]] (after filtering). If we still
+    * find nothing, we return `None`.
+    *
+    * @param uri  the URI of the file the cursor is in.
+    * @param pos  the [[Position]] immediately right of the thin cursor.
+    * @param root the [[Root]] AST node of the Flix project.
+    * @return     the most precise AST under the cursor if there is one. Otherwise, returns `None`.
+    */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
