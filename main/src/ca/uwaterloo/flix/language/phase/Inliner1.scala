@@ -400,9 +400,11 @@ object Inliner1 {
       case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visit(exp)
         val rs = rules.map {
-          case OccurrenceAst1.CatchRule(sym, clazz, exp) => // TODO: Rename binder here
-            val e = visit(exp)
-            MonoAst.CatchRule(sym, clazz, e)
+          case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
+            val freshVarSym = Symbol.freshVarSym(sym)
+            val varSubst1 = varSubst0 + (sym -> freshVarSym)
+            val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
+            MonoAst.CatchRule(freshVarSym, clazz, e)
         }
         MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
