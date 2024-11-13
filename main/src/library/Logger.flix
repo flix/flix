@@ -70,6 +70,6 @@ mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def runWithHandler(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
 }
