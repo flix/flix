@@ -35,12 +35,12 @@ object Inliner1 {
   /**
     * Performs inlining on the given AST `root`.
     */
-  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
+  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): Validation[MonoAst.Root, CompilationMessage] = {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
-    MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    Validation.Success(MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   private type InVar = Symbol.VarSym
