@@ -18,7 +18,7 @@
 /// The effect used to interact with the HTTP protocol.
 ///
 eff Http {
-    pub def get(url: String, headers: Map[String, String]): Http.Response
+    def get(url: String, headers: Map[String, String]): Http.Response
 }
 
 mod Http {

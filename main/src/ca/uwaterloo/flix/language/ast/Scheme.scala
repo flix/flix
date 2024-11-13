@@ -170,7 +170,7 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
         // should never fail
-        val (t, _) = TypeReduction.simplify(subst(arg), RigidityEnv.empty, loc)(scope, eenv0, flix).get
+        val (t, _) = TypeReduction.simplify(subst(arg), RigidityEnv.empty, loc)(scope, eenv0, flix).unsafeGet
         TraitConstraint(head, t, loc)
     }
 

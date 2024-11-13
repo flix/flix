@@ -47,7 +47,7 @@ mod IDE {
     ///
     /// Solves the given IDE instances.
     ///
-    pub def run(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
+    pub def runSolver(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], UpperBound[l], JoinLattice[l], MeetLattice[l],
              Order[n], Order[d], Order[p], Order[f],  Order[l] =
@@ -422,7 +422,7 @@ def main(): Unit \ IO =
         case _ => Vector#{}
     };
 
-    let result = IDE.run({
+    let result = IDE.runSolver({
         zero            = "zero",
         main            = "main",
         cfg             = cfg,

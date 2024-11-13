@@ -77,7 +77,7 @@ mod BooleanFormulas {
                 open_variant Exp.Or(open_variant Exp.And(x1, open_variant Exp.Not(y1)), open_variant Exp.And(open_variant Exp.Not(x1), y1))
     }
 
-    pub def run(e: Exp[s rvsub <Exp.Var>]): Bool =
+    pub def simplifyAndEval(e: Exp[s rvsub <Exp.Var>]): Bool =
         let f = simplify >> eval;
         f(e)
 

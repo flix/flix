@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Int32 {
 
     eff Exc {
-        pub def raise(): Int32
+        def raise(): Int32
     }
 
     @Test

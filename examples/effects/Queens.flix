@@ -23,9 +23,9 @@ mod EffectExamples.Queens {
         ///
         /// Should return a value in the range `[0, size]`.
         ///
-        pub def pick(size: Int32): Int32
+        def pick(size: Int32): Int32
 
-        pub def fail(): Void
+        def fail(): Void
     }
 
     ///

@@ -446,7 +446,7 @@ object CompilerPerf {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
-        flix.compile().toHardFailure.unsafeGet.getTotalLines
+        flix.compile().unsafeGet.getTotalLines
       }
 
     val phases = flix.phaseTimers.map {
