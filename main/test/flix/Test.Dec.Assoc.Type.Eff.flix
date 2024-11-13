@@ -14,25 +14,25 @@ mod Test.Dec.Assoc.Type.Eff {
 
     trait Runner[a] {
         pub type E: Eff
-        pub def run(x: a): Unit \ Runner.E[a]
+        pub def exec(x: a): Unit \ Runner.E[a]
     }
 
     instance Runner[Int32] {
         pub type E = OutInt32
-        pub def run(x: Int32): Unit \ OutInt32 =
+        pub def exec(x: Int32): Unit \ OutInt32 =
             OutInt32.toStream(x)
     }
 
     instance Runner[String] {
         pub type E = OutString
-        pub def run(x: String): Unit \ OutString =
+        pub def exec(x: String): Unit \ OutString =
             OutString.toStream(x)
     }
 
     instance Runner[Vector[a]] with Runner[a] {
         pub type E = Runner.E[a]
-        pub def run(x: Vector[a]): Unit \ Runner.E[a] =
-            foreach (a <- x) Runner.run(a)
+        pub def exec(x: Vector[a]): Unit \ Runner.E[a] =
+            foreach (a <- x) Runner.exec(a)
     }
 
     ////////////////////////////////////////////////////////
@@ -40,11 +40,11 @@ mod Test.Dec.Assoc.Type.Eff {
     ////////////////////////////////////////////////////////
 
     pub def runOnce(x: a): Unit \ Runner.E[a] with Runner[a] =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwice(x: a): Unit \ Runner.E[a] with Runner[a] = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
 
@@ -55,11 +55,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // Int32
 
     pub def runOnceInt32_01(x: Int32): Unit \ OutInt32 =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceInt32_01(x: Int32): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceInt32_02(x: Int32): Unit \ OutInt32 =
@@ -73,11 +73,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // String
 
     pub def runOnceString01(x: String): Unit \ OutString =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceString01(x: String): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceString02(x: String): Unit \ OutString =
@@ -91,11 +91,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[Int32]
 
     pub def runOnceVectorInt32_01(x: Vector[Int32]): Unit \ OutInt32 =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceVectorInt32_01(x: Vector[Int32]): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceVectorInt32_02(x: Vector[Int32]): Unit \ OutInt32 =
@@ -109,11 +109,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[String]
 
     pub def runOnceVectorString01(x: Vector[String]): Unit \ OutString =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceVectorString01(x: Vector[String]): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceVectorString02(x: Vector[String]): Unit \ OutString =
@@ -127,11 +127,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[Vector[Int32]]
 
     pub def runOnceVectorVectorInt32_01(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceVectorVectorInt32_01(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceVectorVectorInt32_02(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
@@ -145,11 +145,11 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[Vector[String]]
 
     pub def runOnceVectorVectorString01(x: Vector[Vector[String]]): Unit \ OutString =
-        Runner.run(x)
+        Runner.exec(x)
 
     pub def runTwiceVectorVectorString01(x: Vector[Vector[String]]): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
+        Runner.exec(x);
+        Runner.exec(x)
     }
 
     pub def runOnceVectorVectorString02(x: Vector[Vector[String]]): Unit \ OutString =

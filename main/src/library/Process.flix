@@ -53,6 +53,6 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Process) + {Exec, IO} = handle(f)()
 
 }
