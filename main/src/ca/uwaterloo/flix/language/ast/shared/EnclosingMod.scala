@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.errors
+package ca.uwaterloo.flix.language.ast.shared
+
+import ca.uwaterloo.flix.language.ast.SourcePosition
 
 /**
-  * A marker trait for errors that are unrecoverable.
+  * Represents the source position of an enclosing module.
+  *
+  * If the program is the one below, and we are inside baz:
+  *
+  * {{{
+  * mod Foo {
+  *   |mod Bar {
+  *     def baz(): Unit = ...
+  *   }
+  * }
+  * }}}
+  *
+  * then the source position is indicated by the vertical bar.
   */
-trait Unrecoverable {
-  final def cannotBeBothRecoverableAndUnrecoverable(): Unit = ()
-}
+case class EnclosingMod(sp: SourcePosition)

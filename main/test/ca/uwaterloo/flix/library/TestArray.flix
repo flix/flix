@@ -4318,7 +4318,7 @@ mod TestArray {
     def forEach01(): Bool = region rc {
         let a = ((Array#{} @ rc): Array[Int32, _]);
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
     }
@@ -4327,7 +4327,7 @@ mod TestArray {
     def forEach02(): Bool = region rc {
         let a = Array#{0} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
     }
@@ -4336,7 +4336,7 @@ mod TestArray {
     def forEach03(): Bool = region rc {
         let a = Array#{1} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
     }
@@ -4345,7 +4345,7 @@ mod TestArray {
     def forEach04(): Bool = region rc {
         let a = Array#{0,1} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
@@ -4358,7 +4358,7 @@ mod TestArray {
     def forEachWithIndex01(): Bool = region rc {
         let a = ((Array#{} @ rc): Array[Float32, _]);
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
     }
@@ -4367,7 +4367,7 @@ mod TestArray {
     def forEachWithIndex02(): Bool = region rc {
         let a = Array#{0.0} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
     }
@@ -4376,7 +4376,7 @@ mod TestArray {
     def forEachWithIndex03(): Bool = region rc {
         let a = Array#{0.0, 0.1} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
@@ -4385,7 +4385,7 @@ mod TestArray {
     def forEachWithIndex04(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
     }
@@ -4394,7 +4394,7 @@ mod TestArray {
     def forEachWithIndex05(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2, 0.3} @ rc;
         let sb = StringBuilder.empty(rc);
-        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
     }

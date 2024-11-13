@@ -358,7 +358,12 @@ object EffUnification3 {
     }
   }
 
-  /** An exception used for partial functions that convert [[Type]] into [[Atom]]. */
+  /**
+    * An exception used for partial functions that convert [[Type]] into [[Atom]].
+    *
+    * This exception should not leak outside this phase - it should always be caught. It is used to
+    * avoid having [[Option]] types on recursive functions.
+    */
   private case object InvalidType extends RuntimeException
 
 }

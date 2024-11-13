@@ -60,14 +60,14 @@ mod MutList {
     ///
     pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        StringBuilder.appendString!("MutList#{", sb);
+        StringBuilder.appendString("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
+                StringBuilder.appendString("${x}", sb)
             else
-                StringBuilder.appendString!(", ${x}", sb)
+                StringBuilder.appendString(", ${x}", sb)
             }, l);
-        StringBuilder.appendString!("}", sb);
+        StringBuilder.appendString("}", sb);
         StringBuilder.toString(sb)
     }
 
@@ -777,10 +777,10 @@ mod MutList {
         let sb = StringBuilder.empty(rc1);
         let step = (i, x) ->
             if (i == 0)
-                StringBuilder.appendString!(f(x), sb)
+                StringBuilder.appendString(f(x), sb)
             else {
-                StringBuilder.appendString!(sep, sb);
-                StringBuilder.appendString!(f(x), sb)
+                StringBuilder.appendString(sep, sb);
+                StringBuilder.appendString(f(x), sb)
             };
         forEachWithIndex(step, v);
         StringBuilder.toString(sb)

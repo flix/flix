@@ -9,10 +9,8 @@ import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for safety errors.
-  *
-  * All [[SafetyError]]s are [[Recoverable]].
   */
-sealed trait SafetyError extends CompilationMessage with Recoverable {
+sealed trait SafetyError extends CompilationMessage {
   val kind: String = "Safety Error"
 }
 
@@ -23,7 +21,7 @@ object SafetyError {
    *
    * @param loc  the source location of the forbidden operation.
    */
-  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Operation not permitted"
 
     override def message(formatter: Formatter): String = {
@@ -42,7 +40,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast"
 
     override def message(formatter: Formatter): String = {
@@ -66,7 +64,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
@@ -90,7 +88,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
     override def message(formatter: Formatter): String = {
@@ -114,7 +112,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
@@ -138,7 +136,7 @@ object SafetyError {
     * @param to   the destination type (the variable).
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
     override def message(formatter: Formatter): String = {
@@ -160,7 +158,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class IllegalEntryPointSignature(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalEntryPointSignature(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal entry point signature"
 
     def message(formatter: Formatter): String = {
@@ -180,7 +178,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class IllegalExportNamespace(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalExportNamespace(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must be in a module (e.g. not in the root namespace)"
 
     def message(formatter: Formatter): String = {
@@ -201,7 +199,7 @@ object SafetyError {
     * @param eff the illegal effect.
     * @param loc the source location of the method.
     */
-  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal method effect"
 
     override def message(formatter: Formatter): String = {
@@ -219,7 +217,7 @@ object SafetyError {
     * @param eff the illegal effect.
     * @param loc the source location of the spawn.
     */
-  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal spawn effect"
 
     override def message(formatter: Formatter): String = {
@@ -236,7 +234,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class NonPublicExport(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NonPublicExport(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must be public"
 
     def message(formatter: Formatter): String = {
@@ -256,7 +254,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class IllegalExportName(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalExportName(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must have a Java valid name"
 
     def message(formatter: Formatter): String = {
@@ -276,7 +274,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class IllegalExportEffect(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalExportEffect(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must be pure or have the IO effect"
 
     def message(formatter: Formatter): String = {
@@ -296,7 +294,7 @@ object SafetyError {
     *
     * @param loc the location of the defn.
     */
-  case class IllegalExportPolymorphism(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalExportPolymorphism(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must not have type variables (i.e. not polymorphic)"
 
     def message(formatter: Formatter): String = {
@@ -317,7 +315,7 @@ object SafetyError {
     * @param t the type that is not allowed.
     * @param loc the location of the type.
     */
-  case class IllegalExportType(t: Type, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalExportType(t: Type, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
 
     def message(formatter: Formatter): String = {
@@ -337,7 +335,7 @@ object SafetyError {
     *
     * @param loc the location of the catch parameter.
     */
-  case class IllegalCatchType(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalCatchType(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exception type is not a subclass of Throwable."
 
     override def message(formatter: Formatter): String = {
@@ -354,7 +352,7 @@ object SafetyError {
    *
    * @param loc the location of the object
    */
-  case class IllegalThrowType(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalThrowType(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exception type is not a subclass of Throwable."
 
     override def message(formatter: Formatter): String = {
@@ -371,7 +369,7 @@ object SafetyError {
     *
     * @param loc the location of the inner try-catch.
     */
-  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Try-catch expressions cannot be nested."
 
     override def message(formatter: Formatter): String = {
@@ -393,7 +391,7 @@ object SafetyError {
     *
     * @param loc the position of the body atom containing the illegal wildcard.
     */
-  case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
     def message(formatter: Formatter): String = {
@@ -410,7 +408,7 @@ object SafetyError {
     *
     * @param loc the position of the body atom containing the illegal variable.
     */
-  case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -427,7 +425,7 @@ object SafetyError {
     *
     * @param loc the position of the body atom containing the illegal variable.
     */
-  case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -452,7 +450,7 @@ object SafetyError {
     *
     * @param loc the position of the body atom containing the unexpected pattern.
     */
-  case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Unexpected pattern in body atom."
 
     def message(formatter: Formatter): String = {
@@ -470,7 +468,7 @@ object SafetyError {
     * @param sym the variable symbol.
     * @param loc the source location of the atom where the illegal use occurs.
     */
-  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal relational use of the lattice variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -497,7 +495,7 @@ object SafetyError {
     * @param tpe the type that is not sendable.
     * @param loc the location where the error occurred.
     */
-  case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Cannot derive Sendable for $tpe"
 
     def message(formatter: Formatter): String = {
@@ -527,7 +525,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Impossible cast."
 
     override def message(formatter: Formatter): String = {
@@ -549,7 +547,7 @@ object SafetyError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError with Recoverable {
+  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
     override def summary: String = s"Missing default case."
 
     override def message(formatter: Formatter): String = {
@@ -579,7 +577,7 @@ object SafetyError {
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {
@@ -601,7 +599,7 @@ object SafetyError {
     * @param name            The name of the method with the invalid `this` parameter.
     * @param loc             The source location of the method.
     */
-  case class NewObjectIllegalThisType(clazz: java.lang.Class[?], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectIllegalThisType(clazz: java.lang.Class[?], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Invalid `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
@@ -628,7 +626,7 @@ object SafetyError {
     * @param method The unimplemented method.
     * @param loc    The source location of the object derivation.
     */
-  case class NewObjectMissingMethod(clazz: java.lang.Class[?], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectMissingMethod(clazz: java.lang.Class[?], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
     def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
@@ -657,7 +655,7 @@ object SafetyError {
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
     */
-  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
 
     def message(formatter: Formatter): String = {
@@ -676,7 +674,7 @@ object SafetyError {
     * @param name  The name of the method with the invalid `this` parameter.
     * @param loc   The source location of the method.
     */
-  case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Missing `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
@@ -702,7 +700,7 @@ object SafetyError {
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
     */
-  case class NewObjectNonPublicClass(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectNonPublicClass(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def summary: String = s"Class '${clazz.getName}' is not public"
 
     def message(formatter: Formatter): String = {
@@ -721,7 +719,7 @@ object SafetyError {
     * @param name  The name of the extra method.
     * @param loc   The source location of the method.
     */
-  case class NewObjectUnreachableMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError with Recoverable {
+  case class NewObjectUnreachableMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'"
 
     def message(formatter: Formatter): String = {

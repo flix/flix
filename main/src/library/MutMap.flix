@@ -54,14 +54,14 @@ mod MutMap {
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("MutMap#{", sb);
+        StringBuilder.appendString("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
+                StringBuilder.appendString("${k} => ${v}", sb)
             else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
+                StringBuilder.appendString(", ${k} => ${v}", sb)
             }, m);
-        StringBuilder.appendString!("}", sb);
+        StringBuilder.appendString("}", sb);
         StringBuilder.toString(sb)
     }
 

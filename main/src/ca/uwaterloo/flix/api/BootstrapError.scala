@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.tools.pkg
-import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -28,31 +27,31 @@ sealed trait BootstrapError {
 }
 
 object BootstrapError {
-  case class ManifestParseError(e: ManifestError) extends BootstrapError with Unrecoverable {
+  case class ManifestParseError(e: ManifestError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class FlixPackageError(e: PackageError) extends BootstrapError with Unrecoverable {
+  case class FlixPackageError(e: PackageError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class MavenPackageError(e: PackageError) extends BootstrapError with Unrecoverable {
+  case class MavenPackageError(e: PackageError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class JarPackageError(e: PackageError) extends BootstrapError with Unrecoverable {
+  case class JarPackageError(e: PackageError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class ReleaseError(e: pkg.ReleaseError) extends BootstrapError with Unrecoverable {
+  case class ReleaseError(e: pkg.ReleaseError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class FileError(e: String) extends BootstrapError with Unrecoverable {
+  case class FileError(e: String) extends BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class GeneralError(e: List[String]) extends BootstrapError with Unrecoverable {
+  case class GeneralError(e: List[String]) extends BootstrapError {
     override def message(f: Formatter): String = e.reduce[String] {
       case (acc, s) => acc + System.lineSeparator() + s
     }

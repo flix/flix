@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -67,7 +68,7 @@ object Inliner {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    Validation.success(LiftedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.Success(LiftedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**
@@ -190,7 +191,11 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      e1 match {
+        case LiftedAst.Expr.Cst(Constant.Bool(true), _, _) => e2
+        case LiftedAst.Expr.Cst(Constant.Bool(false), _, _) => e3
+        case _ => LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
