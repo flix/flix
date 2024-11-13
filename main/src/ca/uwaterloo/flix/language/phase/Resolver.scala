@@ -1744,9 +1744,9 @@ object Resolver {
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), e, outerLoc)
       // Case 2: multiple expressions. Make them a tuple
       case es =>
-        val last_loc = es.last.loc
-        val tuple_loc = SourceLocation(last_loc.isReal, innerLoc.sp2, last_loc.sp2)
-        val exp = ResolvedAst.Expr.Tuple(es, tuple_loc)
+        val lastLoc = es.last.loc
+        val tupleLoc = SourceLocation(lastLoc.isReal, innerLoc.sp2, lastLoc.sp2)
+        val exp = ResolvedAst.Expr.Tuple(es, tupleLoc)
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
     }
   }
