@@ -202,7 +202,8 @@ object Inliner1 {
 
       case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) => // TODO: Make parameter wild if dead
         val (fps, varSubst1) = freshFormalParameter(fparam)
-        val e = visitExp(exp, varSubst0 ++ varSubst1, subst0, inScopeSet0, context0)
+        val varSubst2 = varSubst0 ++ varSubst1
+        val e = visitExp(exp, varSubst2, subst0, inScopeSet0, context0)
         MonoAst.Expr.Lambda(fps, e, tpe, loc)
 
       case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
