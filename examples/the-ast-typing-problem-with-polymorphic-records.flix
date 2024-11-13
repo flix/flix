@@ -46,7 +46,7 @@ def typeCheck(e: Expr[()]): Expr[(tpe = Type)] = match e {
 }
 
 /// We can now type check a simple expression:
-def runTyper(): Type =
+def example(): Type =
     let e = Expr.Ite({exp1 = Expr.True,
                  exp2 = Expr.Cst({value = 123}),
                  exp3 = Expr.Cst({value = 456})});
