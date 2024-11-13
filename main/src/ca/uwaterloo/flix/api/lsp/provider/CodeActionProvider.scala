@@ -43,16 +43,15 @@ object CodeActionProvider {
       else
         Nil
 
-    case ResolutionError.UndefinedJvmClass(name, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
       mkImportJava(name, uri)
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
-    mkImportJava(qn.ident.name, uri) ++ mkNewDef(qn.ident.name, uri) ++ {
+    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
-        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        mkImportJava(qn.ident.name, uri) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
-    }
 
     case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
@@ -254,48 +253,19 @@ object CodeActionProvider {
   }
 
   /**
-   * Returns a code action that proposes to create a new function.
+   * Returns a code action that proposes to create a new struct.
    *
    * For example, if we have:
    *
    * {{{
-   *   let x = f()
+   *   def foo(): Abc = ???
    * }}}
    *
-   * where the name `f` is not defined this code action proposes to add:
+   * where the `Abc` type is not defined this code action proposes to add:
    * {{{
-   *   def f(): =
+   *   struct Abc[r] { }
    * }}}
    */
-  private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new function $name",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position(1, 1), Position(1, 1)),
-        s"""
-           |def $name(): =
-           |
-           |""".stripMargin
-      )))
-    )),
-    command = None
-  )
-
-  /**
-    * Returns a code action that proposes to create a new struct.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   def foo(): Abc = ???
-    * }}}
-    *
-    * where the `Abc` type is not defined this code action proposes to add:
-    * {{{
-    *   struct Abc[r] { }
-    * }}}
-    */
   private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
     title = s"Introduce new struct $name",
     kind = CodeActionKind.QuickFix,
