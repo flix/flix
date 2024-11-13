@@ -333,7 +333,7 @@ object Resolver {
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val env = appendAllUseEnv(defaultUses, usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS, defaultUses))
+          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
             case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
@@ -347,7 +347,7 @@ object Resolver {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
-      val ns = Name.mkUnlocatedNName(sym.ns)
+      val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
@@ -2256,7 +2256,7 @@ object Resolver {
       case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
-        val error = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        val error = ResolutionError.UndefinedName(qname, EnclosingMod(ns0.loc.sp1), filterToVarEnv(env), isUse = false, qname.loc)
         sctx.errors.add(error)
         ResolvedQName.Error(error)
     }
@@ -2432,7 +2432,7 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              val error = ResolutionError.UndefinedType(qname, ns0, loc)
+              val error = ResolutionError.UndefinedType(qname, EnclosingMod(ns0.loc.sp1), loc)
               sctx.errors.add(error)
               Validation.Success(UnkindedType.Error(loc))
           }
@@ -2449,7 +2449,7 @@ object Resolver {
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            val error = ResolutionError.UndefinedType(qname, ns0, loc)
+            val error = ResolutionError.UndefinedType(qname, EnclosingMod(ns0.loc.sp1), loc)
             sctx.errors.add(error)
             Validation.Success(UnkindedType.Error(loc))
         }

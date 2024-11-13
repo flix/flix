@@ -203,10 +203,9 @@ object Parser2 {
     }
 
     // Set source location of the root
-    val openToken = locationStack.last
     stack.last.loc = SourceLocation(
       isReal = true,
-      openToken.sp1,
+      SourcePosition(s.src, 1, 1),
       tokens.head.sp2
     )
 
