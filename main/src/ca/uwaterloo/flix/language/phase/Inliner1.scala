@@ -180,27 +180,27 @@ object Inliner1 {
         MonoAst.Expr.Cst(cst, tpe, loc)
 
       case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
+        // Check for renamed local binder
         varSubst0.get(sym) match {
-          case Some(freshVarSym) => // Renamed local binder
-            subst0.get(freshVarSym) match {
-              // Case 1:
-              // The variable `sym` is not in the substitution map and will not be inlined.
-              case None => MonoAst.Expr.Var(freshVarSym, tpe, loc)
-              // Case 2:
-              // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
-              case Some(e1) =>
-                e1 match {
-                  // If `e1` is a `LiftedExp` then `e1` has already been visited
-                  case SubstRange.DoneExp(exp) => exp
-                  // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-                  case SubstRange.SuspendedExp(exp) => visit(exp)
-                }
-            }
+          case Some(freshVarSym) => subst0.get(freshVarSym) match {
+            // Case 1:
+            // The variable `sym` is not in the substitution map and will not be inlined.
+            case None => MonoAst.Expr.Var(freshVarSym, tpe, loc)
+            // Case 2:
+            // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
+            case Some(e1) =>
+              e1 match {
+                // If `e1` is a `LiftedExp` then `e1` has already been visited
+                case SubstRange.DoneExp(exp) => exp
+                // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
+                case SubstRange.SuspendedExp(exp) => visit(exp)
+              }
+          }
           case None => // Function parameter occurrence
             MonoAst.Expr.Var(sym, tpe, loc)
         }
 
-      case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) =>
+      case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) => // TODO: Make parameter wild if dead
         val (fps, varSubst1) = freshFormalParameter(fparam)
         val e = visitExp(exp, varSubst0 ++ varSubst1, subst0, inScopeSet0, context0)
         MonoAst.Expr.Lambda(fps, e, tpe, loc)
@@ -223,7 +223,7 @@ object Inliner1 {
         // TODO: Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
         val es = exps.map(visit)
 
-        def maybeInline(sym1: phase.Inliner1.OutVar): MonoAst.Expr.ApplyClo = {
+        def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) => // One-shot lambda
               MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
@@ -368,11 +368,11 @@ object Inliner1 {
       case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
         val e = visit(exp)
         val rs = rules.map {
-          case OccurrenceAst1.MatchRule(pat, guard, exp) =>
+          case OccurrenceAst1.MatchRule(pat, guard, exp1) =>
             val (p, varSubst1) = visitPattern(pat)
             val varSubst2 = varSubst0 ++ varSubst1
             val g = guard.map(visitExp(_, varSubst2, subst0, inScopeSet0, context0))
-            val e = visitExp(exp, varSubst2, subst0, inScopeSet0, context0)
+            val e = visitExp(exp1, varSubst2, subst0, inScopeSet0, context0)
             MonoAst.MatchRule(p, g, e)
         }
         MonoAst.Expr.Match(e, rs, tpe, eff, loc)
@@ -460,7 +460,7 @@ object Inliner1 {
           (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
         } else {
           val freshVarSym = Symbol.freshVarSym(sym)
-          (MonoAst.Pattern.Var(sym, tpe, loc), Map(sym -> freshVarSym))
+          (MonoAst.Pattern.Var(freshVarSym, tpe, loc), Map(sym -> freshVarSym))
         }
 
       case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
@@ -477,10 +477,9 @@ object Inliner1 {
 
       case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) =>
         val (ps, varSubsts) = pats.map(visitRecordLabelPattern).unzip
-        val varSubst1 = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
-        val (p, varSubst2) = visit(pat)
-        val varSubst3 = varSubst1 ++ varSubst2
-        (MonoAst.Pattern.Record(ps, p, tpe, loc), varSubst3)
+        val (p, varSubst1) = visit(pat)
+        val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
+        (MonoAst.Pattern.Record(ps, p, tpe, loc), varSubst2)
 
       case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
         (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
