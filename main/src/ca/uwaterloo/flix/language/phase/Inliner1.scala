@@ -426,8 +426,9 @@ object Inliner1 {
       case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
         val methods = methods0.map {
           case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-            val fps = fparams.map(visitFormalParam) // TODO: Rename binder here
-            val e = visit(exp)
+            val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
+            val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
+            val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
         }
         MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
