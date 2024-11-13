@@ -343,8 +343,8 @@ object Lexer {
           TokenKind.Dot
         }
       case '$' if peek().isUpper => acceptBuiltIn()
-      case '₹' =>
-        // Don't include the rupee sign in the name
+      case '$' if peek().isLower =>
+        // Don't include the ^ sign in the name
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
         acceptName(isUpper = false)
       case '\"' => acceptString()
