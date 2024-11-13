@@ -70,7 +70,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(90684) ~ (Var(134604) & Var(90682)),
       Var(90688) ~ True
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     // verify(s, l) -- TOO SLOW
   }
 
@@ -82,7 +82,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(87081) ~ (Var(132325) & Var(132323)),
       Var(87084) ~ ((Var(132328) & Var(132329)) & Var(132326))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -110,7 +110,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(65575) ~ (Var(119122) & Var(119121)),
       Var(65577) ~ (Var(119119) & Var(119118))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -120,7 +120,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(56476) ~ (Var(113308) & Var(56474)),
       Var(56478) ~ Var(56476)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -139,7 +139,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(68983) ~ Cst(1794221043),
       Var(68987) ~ Var(121165)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -177,7 +177,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(86092) ~ Var(131678),
       Var(86094) ~ (Var(131672) & (Var(86084) & Var(86092)))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -209,7 +209,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(90244) ~ (Var(134344) & Var(90242)),
       Var(90246) ~ (Var(134306) & (Var(90240) & Var(90244)))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -231,7 +231,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(55066) ~ True,
       Var(55075) ~ Var(112453)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -267,7 +267,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(50299) ~ True,
       Var(50301) ~ Var(50299)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -300,7 +300,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(97857) ~ True,
       Var(97859) ~ (Var(97854) & Var(97857))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -356,7 +356,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(101131) ~ (Var(108498) & Var(101129)),
       Var(101134) ~ Var(108500)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -388,7 +388,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(74050) ~ Var(124208),
       Var(74053) ~ Var(124210)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     // verify(s, l) -- TOO SLOW
   }
 
@@ -439,7 +439,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(70132) ~ True,
       Var(70135) ~ Var(70132)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     // verify(s, l) -- TOO SLOW
   }
 
@@ -473,7 +473,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(69172) ~ Var(121267),
       Var(69174) ~ Var(121265)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -505,7 +505,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(66684) ~ True,
       Var(66689) ~ True
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -537,7 +537,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(58681) ~ True,
       Var(58683) ~ (Var(114664) & Var(58681))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -576,7 +576,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(65762) ~ True,
       Var(65765) ~ Cst(1794221043)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -593,7 +593,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(101431) ~ (Var(101433) & Var(101439)),
       (Cst(101436) & Cst(101435)) ~ (Var(101434) & Var(101432))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -604,7 +604,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(55257) ~ Var(112582),
       Var(55261) ~ Var(112585)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -617,7 +617,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(78923) ~ ((Var(127248) & Var(127247)) & Var(127249)),
       Var(78926) ~ (Var(127254) & Var(127252))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -643,7 +643,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(86465) ~ True,
       Var(86467) ~ (Var(131918) & Var(86462))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -676,7 +676,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(144678) ~ (Var(144681) & Var(144686)),
       Var(144686) ~ (Var(144683) & Var(144693))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -699,7 +699,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(90841) ~ (Var(134710) & Var(134708) & Var(90835) & Var(90837) & Var(90839)),
       Var(90844) ~ (Var(134718) & Var(134719))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     // verify(s, l) -- TOO SLOW
   }
 
@@ -720,7 +720,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(85268) ~ ((Var(131218) & Var(131216)) & Var(85266)),
       Var(85270) ~ (((Var(131209) & Var(131210)) & Var(131207)) & (Var(85263) & Var(85268)))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -760,7 +760,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(68025) ~ Var(120574),
       Var(68027) ~ (Var(120566) & Var(68022))
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 
@@ -787,7 +787,7 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
       Var(73550) ~ (Var(123923) & Var(73545)),
       Var(73552) ~ Var(73550)
     )
-    val s = solveAll(l).get
+    val s = solveAll(l).unsafeGet
     verify(s, l)
   }
 

@@ -23,10 +23,8 @@ import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for EntryPoint errors.
-  *
-  * All [[EntryPointError]]s are [[Recoverable]].
   */
-sealed trait EntryPointError extends CompilationMessage with Recoverable {
+sealed trait EntryPointError extends CompilationMessage {
   val kind: String = "Entry Point Error"
 }
 
@@ -38,7 +36,7 @@ object EntryPointError {
     * @param sym the entry point function.
     * @param loc the location where the error occurred.
     */
-  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
+  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
     override def summary: String = s"Entry point $sym not found."
 
     // NB: We do not print the source location,
@@ -65,7 +63,7 @@ object EntryPointError {
     * @param sym the entry point function.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
+  case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
     override def summary: String = s"Unexpected entry point argument(s)."
 
     override def message(formatter: Formatter): String = {
@@ -86,7 +84,7 @@ object EntryPointError {
     * @param eff the effect.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointEff(sym: Symbol.DefnSym, eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
+  case class IllegalEntryPointEff(sym: Symbol.DefnSym, eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     override def summary: String = s"Unexpected entry point effect: ${FormatType.formatType(eff)}."
 
     override def message(formatter: Formatter): String = {
@@ -107,7 +105,7 @@ object EntryPointError {
     * @param tpe the result type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
+  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     override def summary: String = s"Unexpected entry point result type: ${FormatType.formatType(tpe)}."
 
     override def message(formatter: Formatter): String = {

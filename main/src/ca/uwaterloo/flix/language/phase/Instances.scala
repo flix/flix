@@ -229,7 +229,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), TraitEnv(root.traitEnv), root.eqEnv).toHardResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), TraitEnv(root.traitEnv), root.eqEnv).toResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, trt.loc)

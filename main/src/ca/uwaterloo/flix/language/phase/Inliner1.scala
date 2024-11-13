@@ -40,7 +40,7 @@ object Inliner1 {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
-    Validation.success(MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.Success(MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   private type InVar = Symbol.VarSym
