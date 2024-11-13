@@ -368,7 +368,7 @@ object Inliner1 {
       case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
         val e = visit(exp)
         val rs = rules.map {
-          case OccurrenceAst1.MatchRule(pat, guard, exp) => // TODO: Rename binder here
+          case OccurrenceAst1.MatchRule(pat, guard, exp) =>
             val (p, varSubst) = visitPattern(pat)
             val g = guard.map(visitExp(_, varSubst, subst0, inScopeSet0, context0))
             val e = visitExp(exp, varSubst, subst0, inScopeSet0, context0)
