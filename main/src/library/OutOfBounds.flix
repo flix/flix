@@ -21,7 +21,7 @@
 eff OutOfBounds {
 
     /// Stops execution with an error message.
-    pub def outOfBounds(msg: String): Void
+    def outOfBounds(msg: String): Void
 
 }
 

@@ -3,11 +3,11 @@ mod Test.Handler.NewObject {
     import java.lang.Runnable
 
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     eff Gen {
-        pub def gen(): Int32
+        def gen(): Int32
     }
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {

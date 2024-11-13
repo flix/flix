@@ -23,7 +23,7 @@ mod Eff {
         ///
         /// Returns `true` with probability `p`.
         ///
-        pub def flip(p: Float64): Bool
+        def flip(p: Float64): Bool
 
     }
 

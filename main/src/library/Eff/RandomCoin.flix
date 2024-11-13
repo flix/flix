@@ -23,7 +23,7 @@ mod Eff {
         ///
         /// Returns `true` or `false` with equal chance.
         ///
-        pub def flip(): Bool
+        def flip(): Bool
 
     }
 

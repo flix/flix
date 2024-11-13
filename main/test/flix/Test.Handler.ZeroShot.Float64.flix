@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Float64 {
 
     eff Exc {
-        pub def raise(): Float64
+        def raise(): Float64
     }
 
     @Test

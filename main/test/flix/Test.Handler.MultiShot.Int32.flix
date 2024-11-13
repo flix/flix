@@ -1,7 +1,7 @@
 mod Test.Handler.MultiShot.Int32 {
 
     eff AskTell {
-        pub def askTell(x: Int32): Int32
+        def askTell(x: Int32): Int32
     }
 
     @Test
