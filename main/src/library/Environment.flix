@@ -37,7 +37,7 @@ mod Environment {
     pub def getEnv(): Map[String, String] = region rc {
         try {
             let _ = rc;
-            let iter = unchecked_cast ((System.getenv().entrySet().iterator(): _ \ IO) as _ \ rc);
+            let iter = unchecked_cast ((System.getenv().entrySet().iterator()) as _ \ rc);
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
