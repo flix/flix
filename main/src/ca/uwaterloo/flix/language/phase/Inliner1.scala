@@ -96,6 +96,8 @@ object Inliner1 {
 
   private object Context {
 
+    case object Start extends Context
+
     case object Stop extends Context
 
     case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
@@ -112,7 +114,7 @@ object Inliner1 {
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
-      val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Stop)(root, flix)
+      val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(root, flix)
       val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
       MonoAst.Def(sym, sp, e, loc)
   }
@@ -260,7 +262,7 @@ object Inliner1 {
         val def1 = root.defs.apply(sym)
         // If `def1` is a single non-self call or is trivial
         // then inline the body of `def1`
-        if (canInlineDef(def1.context)) {
+        if (canInlineDef(def1.context, context0)) {
           inlineDef(def1.exp, def1.fparams, es)
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -285,7 +287,7 @@ object Inliner1 {
           } else {
             // Case 2:
             // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
-            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, Context.Stop)
+            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, context0)
             MonoAst.Expr.Stm(e1, visit(exp2), tpe, eff, loc)
           }
         } else {
@@ -300,7 +302,7 @@ object Inliner1 {
             val subst1 = subst0 + (freshVarSym -> SubstRange.SuspendedExp(exp1))
             visitExp(exp2, varSubst1, subst1, inScopeSet0, context0)
           } else {
-            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, Context.Stop)
+            val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, context0)
             // Case 4:
             // If `e1` is trivial and pure, then it is safe to inline.
             // Code size and runtime are not impacted, because only trivial expressions are inlined
@@ -542,8 +544,8 @@ object Inliner1 {
   /**
     * Returns `true` if `def0` should be inlined.
     */
-  private def canInlineDef(ctx: DefContext): Boolean = {
-    val mayInline = ctx.occur != DontInline && !ctx.isSelfRecursive
+  private def canInlineDef(ctx: DefContext, context: Context): Boolean = {
+    val mayInline = ctx.occur != DontInline && !ctx.isSelfRecursive && context != Context.Stop
     val shouldInline = ctx.isDirectCall ||
       ctx.occur == Once ||
       ctx.occur == OnceInAbstraction // May duplicate work?
