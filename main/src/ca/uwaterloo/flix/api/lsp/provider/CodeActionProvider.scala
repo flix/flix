@@ -238,20 +238,20 @@ object CodeActionProvider {
     * }}}
     */
   private def mkImportJava(name: String, uri: String): List[CodeAction] = {
-    ClassList.TheMap.get(name).map { path =>
-      CodeAction(
-        title = s"Import $name from Java",
-        kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(
-          Map(uri -> List(TextEdit(
-            Range(Position(1, 1), Position(1, 1)),
-            s"import $path\n"
-          )))
-        )),
-        command = None
-      )
+    ClassList.TheMap.get(name).toList.flatten.map { path =>
+        CodeAction(
+          title = s"Import $name from Java",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(
+              Map(uri -> List(TextEdit(
+                Range(Position(1, 1), Position(1, 1)),
+                s"import $path\n"
+              )))
+          )),
+          command = None
+        )
     }
-  }.toList
+  }
 
   /**
    * Returns a code action that proposes to create a new function.

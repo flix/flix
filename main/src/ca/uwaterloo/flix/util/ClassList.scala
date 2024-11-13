@@ -15,35 +15,37 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 /**
   * A list of classes available on the Java Platform.
   */
 object ClassList {
 
   /**
-    * The class list for Java 21.
-    *
-    * Computed as follows:
-    *
-    * {{{
-    * $ git clone git@github.com:openjdk/jdk.git
-    * $ cd src/java.base/share/classes
-    * $ find . -name "*.java"|sort|grep -v "jdk/internal"|grep -v "module-info.java" | grep -v "package-info.java"
-    * }}}
-    */
+   * The class list for Java 21.
+   *
+   * Computed as follows:
+   *
+   * {{{
+   * $ git clone git@github.com:openjdk/jdk.git
+   * $ cd src/java.base/share/classes
+   * $ find . -name "*.java"|sort|grep -v "jdk/internal"|grep -v "module-info.java" | grep -v "package-info.java"
+   * }}}
+   */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
 
   /**
-    * The map from class name to class path, built from TheList
-    *
-    * Example:
-    *  - List -> java.util.List
-    *  - File -> java.io.File
-    */
-  val TheMap: Map[String, String] = ClassList.TheList.map { path =>
-    val className = path.split("/").last.stripSuffix(".java")
-    val formattedPath = path.stripSuffix(".java").replace("/", ".")
-    className -> formattedPath
-  }.toMap
-
+   * The map from class name to class path, built from TheList
+   *
+   * Example:
+   *  - List -> java.util.List
+   *  - File -> java.io.File
+   */
+  val TheMap: MultiMap[String, String] =
+    ClassList.TheList.foldLeft(MultiMap.empty[String, String]) { (map, path) =>
+      val className = path.stripSuffix(".java").split("/").last
+      val formattedPath = path.stripSuffix(".java").replace("/", ".")
+      map + (className, formattedPath)
+    }
 }
