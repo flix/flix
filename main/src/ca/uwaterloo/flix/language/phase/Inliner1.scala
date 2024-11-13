@@ -412,8 +412,9 @@ object Inliner1 {
         val e = visit(exp)
         val rs = rules.map {
           case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
-            val fps = fparams.map(visitFormalParam) // TODO: Rename binder here
-            val e = visit(exp)
+            val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
+            val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
+            val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.HandlerRule(op, fps, e)
         }
         MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
