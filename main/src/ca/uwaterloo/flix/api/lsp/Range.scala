@@ -61,27 +61,21 @@ case class Range(start: Position, end: Position) {
   /**
     * Returns the range that starts earlier.
     */
-  private def earlierStart(other: Range): Range =
-    if (start < other.start)
-      this
-    else
-      other
+  private def earlierStart(that: Range): Range =
+     if (start < that.start) this else that
 
   /**
     * Returns the range that ends later.
     */
-  private def laterEnd(other: Range): Range =
-    if (end > other.end)
-      this
-    else
-      other
+  private def laterEnd(that: Range): Range =
+    if (end > that.end) this else that
 
   /**
     * Checks if this range overlaps with the other range.
     */
-  def overlapsWith(other: Range): Boolean = {
-    val fst = earlierStart(other)
-    val lst = laterEnd(other)
+  def overlapsWith(that: Range): Boolean = {
+    val fst = earlierStart(that)
+    val lst = laterEnd(that)
     fst == lst || fst.end > lst.start
   }
 }

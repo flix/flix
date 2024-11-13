@@ -37,25 +37,25 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseEffect(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseTrait(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedType(qn, _, loc) if overlaps(range, loc) =>
       mkNewEnum(qn.ident.name, uri) :: {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
@@ -63,16 +63,16 @@ object CodeActionProvider {
           Nil
       }
 
-    case TypeError.MissingInstanceEq(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
 
-    case TypeError.MissingInstanceOrder(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceOrder(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingOrder(tpe, uri)
 
-    case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceToString(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
 
-    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if onSameLine(range, loc) =>
+    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if overlaps(range, loc) =>
       mkDeriveMissingSuperTrait(tpe, sup, uri)
 
     case _ => Nil
@@ -83,7 +83,7 @@ object CodeActionProvider {
     */
   private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
     root.enums.foldLeft(List.empty[CodeAction]) {
-      case (acc, (sym, enm)) if onSameLine(range, sym.loc) =>
+      case (acc, (sym, enm)) if overlaps(range, sym.loc) =>
         List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
       case (acc, _) => acc
     }
@@ -370,8 +370,7 @@ object CodeActionProvider {
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
-  // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
-  private def onSameLine(range: Range, loc: SourceLocation): Boolean = {
+  private def overlaps(range: Range, loc: SourceLocation): Boolean = {
     val range2 = sourceLocation2Range(loc)
     range.overlapsWith(range2)
   }
