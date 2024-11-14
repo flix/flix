@@ -664,12 +664,12 @@ object ResolutionError {
     * Undefined Name Error.
     *
     * @param qn    the unresolved name.
-    * @param em    the enclosing module.
+    * @param ap    the enclosing module.
     * @param env   the variables in the scope.
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, em: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -822,10 +822,10 @@ object ResolutionError {
     * Undefined Type Error.
     *
     * @param qn  the name.
-    * @param em  the enclosing module.
+    * @param ap  the enclosing module.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, em: AnchorPosition, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
