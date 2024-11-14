@@ -24,13 +24,14 @@ import ca.uwaterloo.flix.language.ast.{Name, SourcePosition}
   *
   * {{{
   * mod Foo {
-  *   |mod Bar {
-  *     def baz(): Unit = ...
+  *   mod Bar {
+  *   | def baz(): Unit = ...
   *   }
   * }
   * }}}
   *
-  * then the source position is indicated by the vertical bar.
+  * then the source position is indicated by the vertical bar. The location just below the "m" of
+  * `mod`.
   *
   * N.B.: Do not construct the case class directly but use [[EnclosingMod.mk]].
   */
