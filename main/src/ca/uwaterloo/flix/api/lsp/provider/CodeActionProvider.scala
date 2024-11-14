@@ -20,8 +20,9 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.EnclosingMod
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{Similarity, ClassList}
+import ca.uwaterloo.flix.util.{ClassList, Similarity}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -37,29 +38,28 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseEffect(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
-    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
-      mkImportJava(name, uri)
+//    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
+//      mkImportJava(name, uri)
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, em, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
-        mkImportJava(qn.ident.name, uri) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        mkImportJava(qn.ident.name, uri, em) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseTrait(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedType(qn, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
       mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
@@ -67,16 +67,16 @@ object CodeActionProvider {
           Nil
       }
 
-    case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
+    case TypeError.MissingInstanceEq(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
 
-    case TypeError.MissingInstanceOrder(tpe, _, loc) if overlaps(range, loc) =>
+    case TypeError.MissingInstanceOrder(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingOrder(tpe, uri)
 
-    case TypeError.MissingInstanceToString(tpe, _, loc) if overlaps(range, loc) =>
+    case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
 
-    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if overlaps(range, loc) =>
+    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if onSameLine(range, loc) =>
       mkDeriveMissingSuperTrait(tpe, sup, uri)
 
     case _ => Nil
@@ -87,7 +87,7 @@ object CodeActionProvider {
     */
   private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
     root.enums.foldLeft(List.empty[CodeAction]) {
-      case (acc, (sym, enm)) if overlaps(range, sym.loc) =>
+      case (acc, (sym, enm)) if onSameLine(range, sym.loc) =>
         List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
       case (acc, _) => acc
     }
@@ -236,20 +236,28 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String): List[CodeAction] = {
+  private def mkImportJava(name: String, uri: String, em: EnclosingMod): List[CodeAction] = {
+    val modPosition = sourceposition2Position(em.sp)
+    val startPosition = modPosition.copy(line = modPosition.line + 1)
+    val insertRange = Range(startPosition, startPosition)
+    val leadingSpaces = " " * (modPosition.character + 3)
     ClassList.TheMap.get(name).toList.flatten.map { path =>
         CodeAction(
           title = s"Import $name from Java",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
               Map(uri -> List(TextEdit(
-                Range(Position(1, 1), Position(1, 1)),
-                s"import $path\n"
+                insertRange,
+                s"${leadingSpaces}import $path\n"
               )))
           )),
           command = None
         )
     }
+  }
+
+  private def sourceposition2Position(sp: SourcePosition): Position = {
+    Position(sp.line, sp.col)
   }
 
   /**
@@ -436,16 +444,7 @@ object CodeActionProvider {
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
-  private def overlaps(range: Range, loc: SourceLocation): Boolean = {
-    val range2 = sourceLocation2Range(loc)
-    range.overlapsWith(range2)
-  }
+  // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
+  private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
 
-  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.line, sourcePosition.col)
-  }
-
-  private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
-    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
-  }
 }
