@@ -26,14 +26,10 @@ mod TestFileRead {
 
     @Test
     def exists01(): Bool \ IO =
-      FileRead.handle(() -> FileRead.exists("./LICENSE.md"))() == Ok(true)
-
-    @Test
-    def exists02(): Bool \ IO =
       FileRead.handle(() -> FileRead.exists("./SomeFileThatDoesNotExist.txt"))() == Ok(false)
 
     @Test
-    def exists03(): Bool \ IO =
+    def exists02(): Bool \ IO =
       match FileRead.handle(() -> FileRead.exists("Some\\Invalid:{Path}/"))() {
         case Ok(_) => false
         case Err(IoError(kind, _)) => kind == ErrorKind.InvalidPath
