@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, phase}
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.MonoAst.Expr
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
@@ -203,7 +204,7 @@ object Inliner1 {
         }
 
       case OccurrenceAst1.Expr.Lambda((fparam, occur), exp, tpe, loc) => // TODO: Make parameter wild if dead
-        val (fps, varSubst1) = freshFormalParameter(fparam)
+        val (fps, varSubst1) = freshFormalParam(fparam)
         val varSubst2 = varSubst0 ++ varSubst1
         val e = visitExp(exp, varSubst2, subst0, inScopeSet0, context0)
         MonoAst.Expr.Lambda(fps, e, tpe, loc)
@@ -229,10 +230,12 @@ object Inliner1 {
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
-              MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
+              val e = refreshBinders(lambda)(Map.empty, flix)
+              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
-              MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
+              val e = refreshBinders(lambda)(Map.empty, flix)
+              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
 
             case _ =>
               val e = visit(exp)
@@ -335,7 +338,7 @@ object Inliner1 {
           val freshVarSym = Symbol.freshVarSym(sym)
           val varSubst1 = varSubst0 + (sym -> freshVarSym)
           val e2 = visitExp(exp2, varSubst1, subst0, inScopeSet0, context0)
-          val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
+          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
           val e1 = visitExp(exp1, varSubst2, subst0, inScopeSet0, context0)
           MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
@@ -420,7 +423,7 @@ object Inliner1 {
         val e = visit(exp)
         val rs = rules.map {
           case OccurrenceAst1.HandlerRule(op, fparams, exp) =>
-            val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
+            val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
             val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
             val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.HandlerRule(op, fps, e)
@@ -434,7 +437,7 @@ object Inliner1 {
       case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
         val methods = methods0.map {
           case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-            val (fps, varSubsts) = fparams.map(freshFormalParameter).unzip
+            val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
             val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
             val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
@@ -538,11 +541,201 @@ object Inliner1 {
     bnd(symbols, args, Map.empty)
   }
 
-  private def freshFormalParameter(fp0: OccurrenceAst1.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
+  private def freshFormalParam(fp0: OccurrenceAst1.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
     case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst = Map(sym -> freshVarSym)
       (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
+  }
+
+  private def refreshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst = Map(sym -> freshVarSym)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
+  }
+
+  private def refreshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
+    val (fps, substs) = fparams0.map(refreshFormalParam).unzip
+    val subst = substs.reduceLeft(_ ++ _)
+    (fps, subst)
+  }
+
+  private def refreshBinders(expr0: OutExpr)(implicit subst0: VarSubst, flix: Flix): OutExpr = expr0 match {
+    case MonoAst.Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, tpe, loc)
+
+    case MonoAst.Expr.Var(sym, tpe, loc) =>
+      val freshVarSym = subst0.getOrElse(sym, sym)
+      Expr.Var(freshVarSym, tpe, loc)
+
+    case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+      val (fp, subst1) = refreshFormalParam(fparam)
+      val subst2 = subst0 ++ subst1
+      val e = refreshBinders(exp)(subst2, flix)
+      Expr.Lambda(fp, e, tpe, loc)
+
+    case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(refreshBinders)
+      Expr.ApplyAtomic(op, es, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      val es = exps.map(refreshBinders)
+      Expr.ApplyClo(e, es, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(refreshBinders)
+      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val freshVarSym = subst0.getOrElse(sym, sym)
+      val es = exps.map(refreshBinders)
+      Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
+
+    case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst1 = subst0 + (sym -> freshVarSym)
+      val e1 = refreshBinders(exp1)
+      val e2 = refreshBinders(exp2)(subst1, flix)
+      Expr.Let(freshVarSym, e1, e2, tpe, eff, loc)
+
+    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst1 = subst0 + (sym -> freshVarSym)
+      val e2 = refreshBinders(exp2)(subst1, flix)
+      val (fps, subst2) = refreshFormalParams(fparams)
+      val subst3 = subst1 ++ subst2
+      val e1 = refreshBinders(exp1)(subst3, flix)
+      Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
+
+    case MonoAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst1 = subst0 + (sym -> freshVarSym)
+      val e = refreshBinders(exp)(subst1, flix)
+      Expr.Scope(freshVarSym, regionVar, e, tpe, eff, loc)
+
+    case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = refreshBinders(exp1)
+      val e2 = refreshBinders(exp2)
+      val e3 = refreshBinders(exp3)
+      Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case MonoAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      val e1 = refreshBinders(exp1)
+      val e2 = refreshBinders(exp2)
+      Expr.Stm(e1, e2, tpe, eff, loc)
+
+    case MonoAst.Expr.Discard(exp, eff, loc) =>
+      val e = refreshBinders(exp)
+      Expr.Discard(e, eff, loc)
+
+    case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      val rs = rules.map {
+        case MonoAst.MatchRule(pat, guard, exp) =>
+          val (p, subst1) = refreshPattern(pat)
+          val subst2 = subst0 ++ subst1
+          val g = guard.map(refreshBinders(_)(subst2, flix))
+          val e = refreshBinders(exp)(subst2, flix)
+          MonoAst.MatchRule(p, g, e)
+      }
+      Expr.Match(e, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(refreshBinders)
+      Expr.VectorLit(es, tpe, eff, loc)
+
+    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = refreshBinders(exp1)
+      val e2 = refreshBinders(exp2)
+      Expr.VectorLoad(e1, e2, tpe, eff, loc)
+
+    case MonoAst.Expr.VectorLength(exp, loc) =>
+      val e = refreshBinders(exp)
+      Expr.VectorLength(e, loc)
+
+    case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      Expr.Ascribe(e, tpe, eff, loc)
+
+    case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+
+    case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      val rs = rules.map {
+        case MonoAst.CatchRule(sym, clazz, exp1) =>
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val subst1 = subst0 + (sym -> freshVarSym)
+          val e1 = refreshBinders(exp1)(subst1, flix)
+          MonoAst.CatchRule(freshVarSym, clazz, e1)
+      }
+      Expr.TryCatch(e, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+      val e = refreshBinders(exp)
+      val rs = rules.map {
+        case MonoAst.HandlerRule(op, fparams, exp1) =>
+          val (fps, subst1) = refreshFormalParams(fparams)
+          val subst2 = subst0 ++ subst1
+          val e1 = refreshBinders(exp1)(subst2, flix)
+          MonoAst.HandlerRule(op, fps, e1)
+      }
+      Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
+      val es = exps.map(refreshBinders)
+      Expr.Do(op, es, tpe, eff, loc)
+
+    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+      val ms = methods.map {
+        case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+          val (fps, subst1) = refreshFormalParams(fparams)
+          val subst2 = subst0 ++ subst1
+          val e = refreshBinders(exp)(subst2, flix)
+          MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
+      }
+      Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+  }
+
+  private def refreshPattern(pattern0: MonoAst.Pattern)(implicit flix: Flix): (MonoAst.Pattern, VarSubst) = {
+    def refreshRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern)(implicit flix: Flix): (MonoAst.Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
+      case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+        val (p, subst) = refreshPattern(pat)
+        (MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
+    }
+
+    pattern0 match {
+      case MonoAst.Pattern.Wild(tpe, loc) =>
+        (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
+
+      case MonoAst.Pattern.Var(sym, tpe, loc) =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (MonoAst.Pattern.Var(freshVarSym, tpe, loc), Map(sym -> freshVarSym))
+
+      case MonoAst.Pattern.Cst(cst, tpe, loc) =>
+        (MonoAst.Pattern.Cst(cst, tpe, loc), Map.empty)
+
+      case MonoAst.Pattern.Tag(sym, pat, tpe, loc) =>
+        val (p, subst) = refreshPattern(pat)
+        (MonoAst.Pattern.Tag(sym, p, tpe, loc), subst)
+
+      case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
+        val (ps, substs) = pats.map(refreshPattern).unzip
+        val subst = substs.reduceLeft(_ ++ _)
+        (MonoAst.Pattern.Tuple(ps, tpe, loc), subst)
+
+      case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
+        val (ps, substs) = pats.map(refreshRecordLabelPattern).unzip
+        val (p, subst) = refreshPattern(pat)
+        val subst1 = substs.foldLeft(subst)(_ ++ _)
+        (MonoAst.Pattern.Record(ps, p, tpe, loc), subst1)
+
+      case MonoAst.Pattern.RecordEmpty(tpe, loc) =>
+        (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
+    }
   }
 
   /**
