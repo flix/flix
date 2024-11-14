@@ -238,7 +238,7 @@ object CodeActionProvider {
     */
   private def mkImportJava(name: String, uri: String, em: EnclosingMod): List[CodeAction] = {
     val modPosition = sourcePosition2Position(em.sp)
-    val startPosition = modPosition.copy(line = modPosition.line + 1)
+    val startPosition = modPosition.copy(line = modPosition.line + 1, character = 1)
     val insertRange = Range(startPosition, startPosition)
     val leadingSpaces = " " * (modPosition.character + 3)
     ClassList.TheMap.get(name).toList.flatten.map { path =>
