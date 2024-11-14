@@ -291,7 +291,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
 
         // And try to compile!
-        compile(progress = false).toHardResult match {
+        compile(progress = false).toResult match {
           case Result.Ok(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -336,8 +336,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
-    f.errors.map(_.message(formatter)).foreach(out.println)
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = f match {
+    case Validation.Success(_) => ()
+    case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
   }
 
   /**
@@ -368,7 +369,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case (Some(root), Nil) =>
         this.root = Some(root)
         val result = flix.codeGen(root)
-        result.toHardResult match {
+        result.toResult match {
           case Result.Ok(_) => result
           case Result.Err(errors) =>
             printErrors(errors.toList)
@@ -376,7 +377,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         }
       case (_, errors) =>
         printErrors(errors)
-        Validation.HardFailure(Chain.from(errors))
+        Validation.Failure(Chain.from(errors))
     }
   }
 
@@ -395,7 +396,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toHardResult match {
+    compile(entryPoint = Some(main), progress = false).toResult match {
       case Result.Ok(result) =>
         result.getMain match {
           case Some(m) =>

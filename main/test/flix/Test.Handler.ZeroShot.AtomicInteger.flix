@@ -9,7 +9,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         unsafe n.intValue()
 
     eff Exc {
-        pub def raise(): AtomicInteger
+        def raise(): AtomicInteger
     }
 
     @Test

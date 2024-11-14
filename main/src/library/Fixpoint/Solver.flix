@@ -37,7 +37,7 @@ mod Fixpoint.Solver {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def run(d: Datalog[v]): Datalog[v] with Order[v] =
+    pub def runSolver(d: Datalog[v]): Datalog[v] with Order[v] =
         Fixpoint.Phase.Stratifier.stratify(d) |> runWithStratification(d)
 
     ///

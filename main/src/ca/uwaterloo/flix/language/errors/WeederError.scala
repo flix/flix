@@ -36,7 +36,7 @@ object WeederError {
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */
-  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
+  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
     def message(formatter: Formatter): String = {
@@ -66,7 +66,7 @@ object WeederError {
     * @param loc1 the location of the first parameter.
     * @param loc2 the location of the second parameter.
     */
-  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
+  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
     def message(formatter: Formatter): String = {
@@ -96,7 +96,7 @@ object WeederError {
     * @param loc1 the location of the first modifier.
     * @param loc2 the location of the second modifier.
     */
-  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
+  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
     def message(formatter: Formatter): String = {
@@ -121,7 +121,7 @@ object WeederError {
     * @param field2Loc  the location of the second field
     * @param loc        the location of the struct declaration
     */
-  case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError with Recoverable {
+  case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError {
     def summary: String = s"struct has duplicate fields"
 
     def message(formatter: Formatter): String = {
@@ -151,7 +151,7 @@ object WeederError {
     * @param loc1     the location of the first tag.
     * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
+  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
     def message(formatter: Formatter): String = {
@@ -179,7 +179,7 @@ object WeederError {
     *
     * @param loc the location of the for-loop with no fragments.
     */
-  case class EmptyForFragment(loc: SourceLocation) extends WeederError with Recoverable {
+  case class EmptyForFragment(loc: SourceLocation) extends WeederError {
     def summary: String = "A loop must iterate over some collection."
 
     def message(formatter: Formatter): String = {
@@ -207,7 +207,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError with Recoverable {
+  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
     def summary: String = "Empty interpolated expression."
 
     def message(formatter: Formatter): String = {
@@ -231,7 +231,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError with Recoverable {
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     override def summary: String = "A record pattern must specify at least one field."
 
     override def message(formatter: Formatter): String = {
@@ -251,7 +251,7 @@ object WeederError {
     *
     * @param loc the location of the illegal annotation.
     */
-  case class IllegalAnnotation(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalAnnotation(loc: SourceLocation) extends WeederError {
     override def summary: String = "Unexpected annotation on inner function."
 
     override def message(formatter: Formatter): String = {
@@ -271,7 +271,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
     def summary: String = "Unexpected effect type parameters."
 
     def message(formatter: Formatter): String = {
@@ -294,7 +294,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError {
     def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
 
     def message(formatter: Formatter): String = {
@@ -312,7 +312,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEnum(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalEnum(loc: SourceLocation) extends WeederError {
     def summary: String = "Unexpected enum format."
 
     def message(formatter: Formatter): String = {
@@ -348,7 +348,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
     override def summary: String = "Illegal equality constraint."
 
     override def message(formatter: Formatter): String = {
@@ -369,7 +369,7 @@ object WeederError {
     * @param char the invalid escape character.
     * @param loc  the location where the error occurred.
     */
-  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
@@ -392,7 +392,7 @@ object WeederError {
     *
     * @param loc the location where the illegal fixed atom occurs.
     */
-  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal fixed atom"
 
     def message(formatter: Formatter): String = {
@@ -409,7 +409,7 @@ object WeederError {
     *
     * @param loc the location of the for-loop in which the for-fragment appears.
     */
-  case class IllegalForFragment(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
     def summary: String = s"A foreach expression must start with a collection comprehension."
 
     def message(formatter: Formatter): String = {
@@ -438,7 +438,7 @@ object WeederError {
     *
     * @param loc the location of the for-loop in which the for-fragment appears.
     */
-  case class IllegalForAFragment(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalForAFragment(loc: SourceLocation) extends WeederError {
     def summary: String = s"A forA loop may only contain comprehensions of the form `x <- xs`."
 
     def message(formatter: Formatter): String = {
@@ -456,7 +456,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError {
     def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
 
     def message(formatter: Formatter): String = {
@@ -474,7 +474,7 @@ object WeederError {
     *
     * @param loc the location where the illegal modifier occurs.
     */
-  case class IllegalModifier(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal modifier."
 
     def message(formatter: Formatter): String = {
@@ -491,7 +491,7 @@ object WeederError {
     *
     * @param loc the location where the illegal pattern occurs.
     */
-  case class IllegalNullPattern(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal null pattern"
 
     def message(formatter: Formatter): String = {
@@ -509,7 +509,7 @@ object WeederError {
     * @param ident the name of the declaration.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = s"Declaration must be public: '${ident.name}'."
 
     def message(formatter: Formatter): String = {
@@ -528,7 +528,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     override def summary: String = "A record extension must be either a variable or wildcard."
 
     override def message(formatter: Formatter): String = {
@@ -548,7 +548,7 @@ object WeederError {
     *
     * @param loc the location where the illegal regex pattern occurs.
     */
-  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal regex pattern"
 
     def message(formatter: Formatter): String = {
@@ -573,7 +573,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
     def message(formatter: Formatter): String = {
@@ -599,7 +599,7 @@ object WeederError {
     * @param toName   the alias.
     * @param loc      the location where the error occurred.
     */
-  case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
 
     def message(formatter: Formatter): String = {
@@ -625,7 +625,7 @@ object WeederError {
     *
     * @param loc the location of the illegal qualified name.
     */
-  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError with Recoverable {
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
     override def summary: String = "Unexpected qualified name"
 
     override def message(formatter: Formatter): String = {
@@ -646,7 +646,7 @@ object WeederError {
     * @param chars the characters in the character literal.
     * @param loc   the location where the error occurred.
     */
-  case class MalformedChar(chars: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedChar(chars: String, loc: SourceLocation) extends WeederError {
     def summary: String = "Malformed, non-single-character literal."
 
     def message(formatter: Formatter): String = {
@@ -670,7 +670,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedFloat(loc: SourceLocation) extends WeederError {
     def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
@@ -692,7 +692,7 @@ object WeederError {
   /**
     * An error raised to indicate that a name is not a valid Flix identifier.
     */
-  case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed identifier: '$name'."
 
     def message(formatter: Formatter): String = {
@@ -710,7 +710,7 @@ object WeederError {
     *
     * @param loc the location where the illegal int occurs.
     */
-  case class MalformedInt(loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedInt(loc: SourceLocation) extends WeederError {
     def summary: String = "Malformed int."
 
     def message(formatter: Formatter): String = {
@@ -735,7 +735,7 @@ object WeederError {
     * @param pat the invalid regular expression
     * @param loc the location where the error occurred
     */
-  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed regular expression."
 
     def message(formatter: Formatter): String = {
@@ -760,7 +760,7 @@ object WeederError {
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed unicode escape sequence."
 
     def message(formatter: Formatter): String = {
@@ -784,7 +784,7 @@ object WeederError {
     * @param actual   the actual arity.
     * @param loc      the location where mismatch occurs.
     */
-  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
     def message(formatter: Formatter): String = {
@@ -801,7 +801,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError with Recoverable {
+  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message(formatter: Formatter): String = {
@@ -826,7 +826,7 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
@@ -843,7 +843,7 @@ object WeederError {
     *
     * @param loc the location of the type parameter.
     */
-  case class MissingTypeParamKind(loc: SourceLocation) extends WeederError with Recoverable {
+  case class MissingTypeParamKind(loc: SourceLocation) extends WeederError {
     def summary: String = "Type parameter must be annotated with its kind."
 
     def message(formatter: Formatter): String = {
@@ -863,7 +863,7 @@ object WeederError {
     * @param loc1 the location of the first use of the variable.
     * @param loc2 the location of the second use of the variable.
     */
-  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
+  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
     def message(formatter: Formatter): String = {
@@ -900,7 +900,7 @@ object WeederError {
     * @param n   the number of parameters of the associated type.
     * @param loc the location where the error occurred.
     */
-  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError with Recoverable {
+  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
     override def summary: String = "Non-unary associated type signature."
 
     def message(formatter: Formatter): String = {
@@ -919,7 +919,7 @@ object WeederError {
     * @param name the name of the undefined annotation.
     * @param loc  the location of the annotation.
     */
-  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Undefined annotation $name"
 
     def message(formatter: Formatter): String = {
@@ -936,7 +936,7 @@ object WeederError {
     *
     * @param loc the location where the illegal intrinsic occurs.
     */
-  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError with Recoverable {
+  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal intrinsic"
 
     def message(formatter: Formatter): String = {
@@ -954,7 +954,7 @@ object WeederError {
     * @param intrinsic name of the intrinsic.
     * @param loc       the location where the illegal intrinsic occurs.
     */
-  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError with Recoverable {
+  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Unapplied intrinsic '$intrinsic'."
 
     def message(formatter: Formatter): String = {
@@ -971,7 +971,7 @@ object WeederError {
     *
     * @param qname the name of the function being called
     */
-  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError with Recoverable {
+  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError {
 
     val loc: SourceLocation = qname.loc
 
@@ -992,7 +992,7 @@ object WeederError {
     *
     * @param loc the location where the illegal intrinsic occurs.
     */
-  case class UnqualifiedUse(loc: SourceLocation) extends WeederError with Recoverable {
+  case class UnqualifiedUse(loc: SourceLocation) extends WeederError {
     def summary: String = "Unqualified use."
 
     def message(formatter: Formatter): String = {
@@ -1015,7 +1015,7 @@ object WeederError {
     * @param star whether the choose is of the star kind.
     * @param loc  the location where the error occurs.
     */
-  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError with Recoverable {
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
     private val operationName: String = if (star) "choose*" else "choose"
 
     def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."

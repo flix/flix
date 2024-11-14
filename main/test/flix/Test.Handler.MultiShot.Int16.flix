@@ -1,7 +1,7 @@
 mod Test.Handler.MultiShot.Int16 {
 
     eff AskTell {
-        pub def askTell(x: Int16): Int16
+        def askTell(x: Int16): Int16
     }
 
     @Test

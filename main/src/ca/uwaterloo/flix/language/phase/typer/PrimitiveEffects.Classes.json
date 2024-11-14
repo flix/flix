@@ -1,9 +1,20 @@
 {
   "classes": {
-    "java.lang.Process": "Exec",
-    "java.lang.ProcessBuilder": "Exec",
-    "java.lang.ProcessHandle": "Exec",
-    "java.lang.reflect.Method": "Sys",
+    "java.lang.Process": "Exec, IO",
+    "java.lang.ProcessBuilder": "Exec, IO",
+    "java.lang.ProcessHandle": "Exec, IO",
+
+    "java.lang.reflect.Constructor": "Sys, IO",
+    "java.lang.reflect.Executable": "Sys, IO",
+    "java.lang.reflect.Field": "Sys, IO",
+    "java.lang.reflect.InvocationHandler": "Sys, IO",
+    "java.lang.reflect.Member": "Sys, IO",
+
+    "java.lang.invoke.CallSite": "Sys, IO",
+    "java.lang.invoke.MethodHandle": "Sys, IO",
+    "java.lang.invoke.MethodHandles": "Sys, IO",
+    "java.lang.invoke.VarHandle": "Sys, IO",
+
     "java.net.Authenticator": "Net, IO",
     "java.net.DatagramSocket": "Net, IO",
     "java.net.HttpURLConnection": "Net, IO",
@@ -20,6 +31,9 @@
     "java.net.URLConnection": "Net, IO",
     "java.net.URLStreamHandler": "Net, IO",
     "java.net.spi.InetAddressResolverProvider": "Net, IO",
-    "java.net.spi.URLStreamHandlerProvider": "Net, IO"
+    "java.net.spi.URLStreamHandlerProvider": "Net, IO",
+
+    "java.lang.Runtime": "Sys, IO",
+    "java.lang.System": "Sys, IO"
   }
 }
