@@ -237,7 +237,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkImportJava(name: String, uri: String, em: EnclosingMod): List[CodeAction] = {
-    val modPosition = sourceposition2Position(em.sp)
+    val modPosition = sourcePosition2Position(em.sp)
     val startPosition = modPosition.copy(line = modPosition.line + 1)
     val insertRange = Range(startPosition, startPosition)
     val leadingSpaces = " " * (modPosition.character + 3)
@@ -256,7 +256,7 @@ object CodeActionProvider {
     }
   }
 
-  private def sourceposition2Position(sp: SourcePosition): Position = {
+  private def sourcePosition2Position(sp: SourcePosition): Position = {
     Position(sp.line, sp.col)
   }
 
