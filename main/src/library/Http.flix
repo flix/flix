@@ -68,7 +68,7 @@ mod Http {
 
                 k(Http.Response.Response({
                     status = response.statusCode(),
-                    statusText = response.statusText(),
+                    statusText = "", // TODO: Get status text
                     headers = Map.empty(),  // TODO: Get headers
                     body = response.body()
                 }))
