@@ -33,17 +33,13 @@ object Optimizer1 {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
-    if (flix.options.xnooptimizer) {
-      root
-    } else {
-      var result = root
-      for (_ <- 1 to 3) {
-        val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
-        val afterInliner = Inliner1.run(afterOccurrenceAnalyzer)
-        result = afterInliner.unsafeGet
-      }
-      applyFreshVariables(result)
+    var result = root
+    for (_ <- 1 to 3) {
+      val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
+      val afterInliner = Inliner1.run(afterOccurrenceAnalyzer)
+      result = afterInliner.unsafeGet
     }
+    applyFreshVariables(result)
   }
 
   private def applyFreshVariables(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = {
