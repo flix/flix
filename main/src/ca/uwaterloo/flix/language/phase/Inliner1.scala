@@ -228,13 +228,6 @@ object Inliner1 {
 
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
-            case Some(Definition.LetBound(lambda: MonoAst.Expr.Lambda, Occur.OnceInAbstraction)) =>
-              if (isTrivialExp(lambda.exp)) {
-                MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
-              } else {
-                MonoAst.Expr.ApplyClo(visit(exp), es, tpe, eff, loc)
-              }
-
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
               MonoAst.Expr.ApplyClo(lambda, es, tpe, eff, loc)
 
