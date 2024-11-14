@@ -66,10 +66,13 @@ mod Http {
                 let client = HttpClient.newHttpClient();
                 let response = client.send(request, BodyHandlers.ofString());
 
+                let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
+                let responseHeaders = Map.map(l -> l.toString(), responseHeadersJlist);
+
                 k(Http.Response.Response({
                     status = response.statusCode(),
                     statusText = "", // TODO: Get status text
-                    headers = Map.empty(),  // TODO: Get headers
+                    headers = responseHeaders,
                     body = response.body().toString() // Body already is a string but has type Object
                 }))
             }
