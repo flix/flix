@@ -32,14 +32,11 @@ mod Http {
     ///
     /// A response from an HTTP request.
     ///
-    pub enum Response({status = Int32, statusText = String, headers = Map[String, List[String]], body = String})
+    pub enum Response({status = Int32, headers = Map[String, List[String]], body = String})
 
     mod Response {
         pub def status(r: Response): Int32 = match r {
             case Response(x) => x#status
-        }
-        pub def statusText(r: Response): String = match r {
-            case Response(x) => x#statusText
         }
         pub def headers(r: Response): Map[String, List[String]] = match r {
             case Response(x) => x#headers
@@ -76,7 +73,6 @@ mod Http {
 
                 k(Http.Response.Response({
                     status = response.statusCode(),
-                    statusText = "", // TODO: Get status text
                     headers = responseHeaders,
                     body = response.body().toString() // Body already is a string but has type Object
                 }))
