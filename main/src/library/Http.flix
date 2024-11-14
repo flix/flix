@@ -70,7 +70,7 @@ mod Http {
                     status = response.statusCode(),
                     statusText = "", // TODO: Get status text
                     headers = Map.empty(),  // TODO: Get headers
-                    body = response.body()
+                    body = response.body().toString() // Body already is a string but has type Object
                 }))
             }
         }
