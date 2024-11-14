@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.SourcePosition
+import ca.uwaterloo.flix.language.ast.{Name, SourcePosition}
 
 /**
   * Represents the source position of an enclosing module.
@@ -31,5 +31,16 @@ import ca.uwaterloo.flix.language.ast.SourcePosition
   * }}}
   *
   * then the source position is indicated by the vertical bar.
+  *
+  * N.B.: Do not construct the case class directly but use [[EnclosingMod.mk]].
   */
 case class EnclosingMod(sp: SourcePosition)
+
+object EnclosingMod {
+  def mk(name: Name.NName): EnclosingMod = {
+    if (name.isRoot) EnclosingMod(name.loc.sp1)
+    else EnclosingMod(name.loc.sp1.copy(line = name.loc.sp1.line + 1))
+  }
+}
+
+
