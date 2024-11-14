@@ -23,6 +23,11 @@ eff Http {
 
 mod Http {
 
+    import java.net.http.HttpClient
+    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
+    import java.net.http.HttpRequest
+    import java.net.URI
+
     ///
     /// A response from an HTTP request.
     ///
@@ -42,5 +47,32 @@ mod Http {
             case Response(x) => x#body
         }
     }
+
+    ///
+    /// Handles the `Http` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Http` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + IO = x ->
+        try {
+            f(x)
+        } with Http {
+            def get(url, headers, k) = {
+                let builder =
+                    HttpRequest.newBuilder(URI.create(url))
+                        |> builder -> Map.foldLeftWithKey((b, k, v) -> b.header(k, v), builder, headers);
+                let request = builder.build();
+
+                let client = HttpClient.newHttpClient();
+                let response = client.send(request, BodyHandlers.ofString());
+
+                k(Response({ // TODO: Undefined name 'Response'
+                    status = response.statusCode(),
+                    statusText = response.statusText(),
+                    headers = Map.empty(),  // TODO: Get headers
+                    body = response.body()
+                }))
+            }
+        }
 
 }
