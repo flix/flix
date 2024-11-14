@@ -332,7 +332,7 @@ object Inliner1 {
 
       case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
         // TODO: Treat like let-binding above, except it is never trivial so some checks can be omitted
-        if (isDeadAndPure(occur, exp1.eff)) { // Probably never happens
+        if (isDead(occur)) { // Probably never happens
           visit(exp2)
         } else {
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -343,6 +343,7 @@ object Inliner1 {
           val e1 = visitExp(exp1, varSubst2, subst0, inScopeSet0, context0)
           MonoAst.Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, loc)
         }
+
       case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = varSubst0 + (sym -> freshVarSym)
