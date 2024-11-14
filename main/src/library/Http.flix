@@ -66,7 +66,7 @@ mod Http {
                 let client = HttpClient.newHttpClient();
                 let response = client.send(request, BodyHandlers.ofString());
 
-                k(Response({ // TODO: Undefined name 'Response'
+                k(Http.Response.Response({
                     status = response.statusCode(),
                     statusText = response.statusText(),
                     headers = Map.empty(),  // TODO: Get headers
