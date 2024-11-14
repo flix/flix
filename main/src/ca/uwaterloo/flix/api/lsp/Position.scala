@@ -64,7 +64,12 @@ object Position {
   * @param line      Line position in a document (one-indexed).
   * @param character Character offset on a line in a document (one-indexed).
   */
-case class Position(line: Int, character: Int) {
+case class Position(line: Int, character: Int) extends Ordered[Position] {
   // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toJSON: JValue = ("line" -> (line - 1)) ~ ("character" -> (character - 1))
+
+  def compare(that: Position): Int = {
+    val lineComparison = this.line.compare(that.line)
+    if (lineComparison != 0) lineComparison else this.character.compare(that.character)
+  }
 }

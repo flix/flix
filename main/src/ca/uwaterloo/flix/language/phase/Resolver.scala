@@ -333,7 +333,7 @@ object Resolver {
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val env = appendAllUseEnv(defaultUses, usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS, defaultUses))
+          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
             case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
@@ -347,7 +347,7 @@ object Resolver {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
-      val ns = Name.mkUnlocatedNName(sym.ns)
+      val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
@@ -1519,29 +1519,30 @@ object Resolver {
     * Curry the tag, wrapping it in a lambda expression if it is not nullary.
     */
   private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val synthLoc = SourceLocation(isReal = false, loc.sp1, loc.sp2)
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, synthLoc)
       ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
 
       // Construct a fresh symbol for the formal parameter.
-      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
+      val freshVar = freshVarSym("x", BoundBy.FormalParam, synthLoc)
 
       // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
+      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, synthLoc)
 
       // Construct a variable expression for the fresh symbol.
-      val varExp = ResolvedAst.Expr.Var(freshVar, loc)
+      val varExp = ResolvedAst.Expr.Var(freshVar, synthLoc)
 
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, synthLoc)
     }
   }
 
@@ -1743,7 +1744,9 @@ object Resolver {
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), e, outerLoc)
       // Case 2: multiple expressions. Make them a tuple
       case es =>
-        val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
+        val lastLoc = es.last.loc
+        val tupleLoc = SourceLocation(lastLoc.isReal, innerLoc.sp2, lastLoc.sp2)
+        val exp = ResolvedAst.Expr.Tuple(es, tupleLoc)
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
     }
   }
@@ -2256,7 +2259,7 @@ object Resolver {
       case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
-        val error = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        val error = ResolutionError.UndefinedName(qname, EnclosingMod(ns0.loc.sp1), filterToVarEnv(env), isUse = false, qname.loc)
         sctx.errors.add(error)
         ResolvedQName.Error(error)
     }
@@ -2432,7 +2435,7 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              val error = ResolutionError.UndefinedType(qname, ns0, loc)
+              val error = ResolutionError.UndefinedType(qname, EnclosingMod(ns0.loc.sp1), loc)
               sctx.errors.add(error)
               Validation.Success(UnkindedType.Error(loc))
           }
@@ -2449,7 +2452,7 @@ object Resolver {
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            val error = ResolutionError.UndefinedType(qname, ns0, loc)
+            val error = ResolutionError.UndefinedType(qname, EnclosingMod(ns0.loc.sp1), loc)
             sctx.errors.add(error)
             Validation.Success(UnkindedType.Error(loc))
         }

@@ -51,6 +51,6 @@ mod Exit {
     ///
     /// Note: This function can still return normally if `exit` is never called by `f`.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Exit) + {Sys, IO}  = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Exit) + {Sys, IO}  = handle(f)()
 
 }
