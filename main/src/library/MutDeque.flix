@@ -216,7 +216,7 @@ mod MutDeque {
         let f1 = (d->front - 1) `Int32.modulo` capacity(d);     // Update index such that it points to an empty index. This will never overlap with the back index.
         Array.put(x, f1, d->values);                            // Store `x` in the array.
         d->front = f1;                                          // Update the front index reference.
-        expand(d)                                              // Optionally expand `d`.
+        expand(d)                                               // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
@@ -224,7 +224,7 @@ mod MutDeque {
     pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
         Array.put(x, d->back, d->values);                           // Store `x` in the array.
         d->back = (d->back + 1) `Int32.modulo` capacity(d);         // Update back index reference to point to next empty index.
-        expand(d)                                                  // Optionally expand `d`.
+        expand(d)                                                   // Optionally expand `d`.
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -268,7 +268,7 @@ mod MutDeque {
     def grow(d: MutDeque[a, r]): Unit \ r =
         let c = capacity(d);
         let arr = Array.empty(d->r, Int32.leftShift(c, 1));     // Allocate empty array `arr` with double the capacity of `a`.
-        copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+        copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
         d->values = arr;                                        // Update references.
         d->back = computeSize(c, d->front, d->back);
         d->front = 0
@@ -293,7 +293,7 @@ mod MutDeque {
         let c = capacity(d);
         if (c > mc) {                                               // Prevent the backing array from shrinking below `minCapacity`.
             let arr = Array.empty(d->r, Int32.rightShift(c, 1));    // Allocate empty array `arr` with half the capacity of `a`.
-            copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+            copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
             d->values = arr;                                        // Update references.
             d->back = computeSize(c, d->front, d->back);
             d->front = 0
