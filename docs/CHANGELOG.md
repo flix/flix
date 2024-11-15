@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.53.0:
+- Language: Added support for algebraic effects (thanks everyone!)
+
+
 Version 0.52.0:
 - Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
 
