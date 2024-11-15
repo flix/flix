@@ -84,22 +84,31 @@ object PrimitiveEffects {
   }
 
   /**
-    * Returns the primitive effects of the class `c`.
+    * Returns the primitive effects of the class `c` if they exist.
+    * Defaults to [[getPackageEffs]] if nothing was found.
     */
   private def getClassAndPackageEffs(c: Class[?], loc: SourceLocation): Type = {
     classEffs.get(c) match {
       case None =>
         // Case 1.1: No effects for the class. Try the package.
-        packageEffs.get(c.getPackage) match {
-          case None =>
-            // Case 1.1.1: No effects for the package. Use the IO effect by default.
-            Type.IO
-          case Some(effs) =>
-            // Case 1.1.2: We use the package effects.
-            toEffSet(effs, loc)
-        }
+        getPackageEffs(c.getPackage, loc)
       case Some(effs) =>
         // Case 1.2: We use the class effects.
+        toEffSet(effs, loc)
+    }
+  }
+
+  /**
+    * Returns the primitive effs of the package `p`.
+    * Defaults to [[Type.IO]] if nothing was found.
+    */
+  private def getPackageEffs(p: Package, loc: SourceLocation): Type = {
+    packageEffs.get(p) match {
+      case None =>
+        // Case 1.1.1: No effects for the package. Use the IO effect by default.
+        Type.IO
+      case Some(effs) =>
+        // Case 1.1.2: We use the package effects.
         toEffSet(effs, loc)
     }
   }
