@@ -24,7 +24,7 @@ object MagicMatchCompleter {
   /**
     * Returns a list of Completions for match, triggered by expr.match.
     *
-    * Example:
+    * Example-1:
     * Given an identifier `x` of an enum type `Color` with cases `Red`, `Green`, and `Blue`,
     * typing `x.match` will trigger the completion to expand to:
     *
@@ -32,6 +32,17 @@ object MagicMatchCompleter {
     *   case Red   => ???
     *   case Green => ???
     *   case Blue  => ???
+    * }
+    *
+    * Example-2:
+    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for Color` and `Circle`, `Square` for `Shape`,
+    * typing `x.match` will trigger the completion to expand to:
+    *
+    * match x {
+    *  case (Red, Circle)   => ???
+    *  case (Red, Square)   => ???
+    *  case (Green, Circle) => ???
+    *  case (Green, Square) => ???
     * }
     */
   def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
@@ -65,7 +76,7 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Formats the cases of an enum into a string.
+    * Formats the cases of an enum into the pattern match body
     */
   private def mkEnumMatchBody(cases: Map[Symbol.CaseSym, TypedAst.Case]): String = {
     val maxCaseLength = cases.values.map(getCaseLength).max
@@ -82,9 +93,9 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Convert the given type into a list of Member.
-    * If the given type is an enum, return a list of EnumCase.
-    * Otherwise, return a list of SingleCase, which contains only a string indicating the idx of the member.
+    * Converts the given type into a Member.
+    * If the type is an enum, the Member consists of EnumMemberItem instances.
+    * Otherwise, the Member is a single-element list containing an OtherMemberItem with a string indicating the index of the member.
     */
   private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): Member =
     getEnumSym(tpe) match {
@@ -93,8 +104,8 @@ object MagicMatchCompleter {
     }
 
   /**
-    * Returns the cartesian product of the given list of lists.
-    * The length of the returned list is the product of the lengths of the input lists.
+    * Returns the cartesian product of the given list of Members.
+    * The length of the returned list is the product of the lengths of each Member.
     *
     * Example:
     *  Given [ [Red, Green], [Circle, Square] ]
@@ -110,7 +121,7 @@ object MagicMatchCompleter {
   }
 
   /**
-    * Formats the cases of a tuple into a string.
+    * Formats the cases of a tuple into the pattern match body.
     */
   private def mkTupleMatchBody(memberCombinations: List[Member]): String = {
     val sb = new StringBuilder
@@ -154,11 +165,12 @@ object MagicMatchCompleter {
 
   /**
     * Pads the middle of a tuple case string to the specified maximum length,
-    * accounting for the extra padding required by invisible characters in the case string.
-    * For example, "${1:???}" will be displayed as "???", so the extra padding length is 4 plus the length of 1.
+    * accounting for the extra padding length required by invisible placeholders in the case string.
+    * For example, "${13:???}" will be displayed as "???", so the extra padding length is 4 plus the length of "13".
+    * We use the input oldZ and newZ to track all the placeholders in the case string.
     */
-  private def padLhs(lhs: String, maxLength: Int, z1: Int, z: Int): String = {
-    val extraPaddingLength = List.range(z1, z).map(4 + getIntLength(_)).sum
+  private def padLhs(lhs: String, maxLength: Int, oldZ: Int, newZ: Int): String = {
+    val extraPaddingLength = List.range(oldZ, newZ).map(4 + getIntLength(_)).sum
     lhs.padTo(maxLength + extraPaddingLength, ' ')
   }
 
