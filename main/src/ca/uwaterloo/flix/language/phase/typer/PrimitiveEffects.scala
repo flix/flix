@@ -101,6 +101,9 @@ object PrimitiveEffects {
     }
   }
 
+  /**
+    * Returns the set of effects represented by `effs`.
+    */
   private def toEffSet(effs: Set[Symbol.EffectSym], loc: SourceLocation): Type = {
     val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
     Type.mkUnion(tpes, loc)
