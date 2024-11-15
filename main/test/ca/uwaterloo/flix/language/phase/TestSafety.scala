@@ -886,7 +886,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id[t](x: t): t = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalExportFunction.08") {
@@ -898,7 +898,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalExportFunction.09") {
@@ -910,7 +910,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalMethodEffect.01") {

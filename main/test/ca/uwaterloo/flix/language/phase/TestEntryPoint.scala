@@ -29,7 +29,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(_blah: Array[String, _]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.02") {
@@ -38,7 +38,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(_blah: Array[a, Static]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.03") {
@@ -49,7 +49,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(_blah: Array[a, Static]): Unit \ IO with C[a] = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("Test.IllegalEntryPointArg.Main.04") {
@@ -58,7 +58,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(_arg1: Array[String, _], _arg2: Array[String, _]): Unit = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("Test.IllegalRunnableEntryPointArgs.Main.05") {
@@ -134,7 +134,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |def main(): a \ IO = checked_ecast(???)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.IllegalEntryPointPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("Test.IllegalMainEntryPointResult.Main.02") {

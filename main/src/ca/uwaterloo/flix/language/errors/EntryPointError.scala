@@ -31,70 +31,6 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * Error indicating the specified main entry point is missing.
-    *
-    * @param sym the entry point function.
-    */
-  case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
-    override def summary: String = s"Entry point $sym not found."
-
-    // NB: We do not print the symbol source location as it is always Unknown.
-    override def message(formatter: Formatter): String = {
-      s""">> The entry point $sym cannot be found.
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Change the specified entry point to an existing function.
-         |  (2)  Add an entry point function $sym.
-         |
-         |""".stripMargin
-    })
-
-    override def loc: SourceLocation = SourceLocation.Unknown
-  }
-
-  /**
-    * An error raised to indicate that an entry point function is type-polymorphic.
-    *
-    * @param loc the location of the function symbol.
-    */
-  case class IllegalEntryPointPolymorphism(loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"An entry point function cannot have type variables"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> An entry point function cannot have type variables.
-         |
-         |${code(loc, "entry point.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Error indicating one or more arguments to a runnable (test or main) entry point function.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
-    override def summary: String = s"Unexpected entry point argument(s)."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Arguments to the entry point function are not permitted.
-         |
-         |${code(loc, "unexpected entry point argument(s).")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * Error indicating an illegal effect of the entry point function.
     *
     * @param eff the effect.
@@ -112,6 +48,80 @@ object EntryPointError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an entry point function has type
+    * variables in its signature.
+    *
+    * @param loc the location of the function symbol.
+    */
+  case class IllegalEntryPointTypeVariables(loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"An entry point function cannot have type variables"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> An entry point function cannot have type variables.
+         |
+         |${code(loc, "illegal entry point")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an exported function has an invalid name.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportName(loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Exported functions must have a Java valid name"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Exported functions must have a Java valid name.
+         |
+         |${code(loc, "invalid Java name.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an exported function has an illegal namespace.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportNamespace(loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"An exported function must be in a module (not in the root namespace)"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> An exported function must be in a module (not in the root namespace).
+         |
+         |${code(loc, "exported function.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an exported function uses an illegal type.
+    *
+    * @param t the type that is not allowed.
+    * @param loc the location of the type.
+    */
+  case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Exported functions must use primitive Java types or Object, not '$t'.
+         |
+         |${code(loc, "unsupported type.")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**
@@ -150,21 +160,49 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that an exported function has an illegal namespace.
+    * Error indicating one or more arguments to a runnable (test or main) entry point function.
     *
-    * @param loc the location of the defn.
+    * @param loc the location where the error occurred.
     */
-  case class IllegalExportNamespace(loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"An exported function must be in a module (not in the root namespace)"
+  case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
+    override def summary: String = s"Unexpected entry point argument(s)."
 
-    def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> An exported function must be in a module (not in the root namespace).
+      s""">> Arguments to the entry point function are not permitted.
          |
-         |${code(loc, "exported function.")}
-         |
+         |${code(loc, "unexpected entry point argument(s).")}
          |""".stripMargin
     }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Error indicating the specified main entry point is missing.
+    *
+    * @param sym the entry point function.
+    */
+  case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
+    override def summary: String = s"Entry point $sym not found."
+
+    // NB: We do not print the symbol source location as it is always Unknown.
+    override def message(formatter: Formatter): String = {
+      s""">> The entry point $sym cannot be found.
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Change the specified entry point to an existing function.
+         |  (2)  Add an entry point function $sym.
+         |
+         |""".stripMargin
+    })
+
+    override def loc: SourceLocation = SourceLocation.Unknown
   }
 
   /**
@@ -180,43 +218,6 @@ object EntryPointError {
       s""">> Exported functions must be public.
          |
          |${code(loc, "exported function.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that an exported function has an invalid name.
-    *
-    * @param loc the location of the defn.
-    */
-  case class IllegalExportName(loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Exported functions must have a Java valid name"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Exported functions must have a Java valid name.
-         |
-         |${code(loc, "invalid Java name.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that an exported function uses an illegal type.
-    *
-    * @param t the type that is not allowed.
-    * @param loc the location of the type.
-    */
-  case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Exported functions must use primitive Java types or Object, not '$t'.
-         |
-         |${code(loc, "unsupported type.")}
          |
          |""".stripMargin
     }

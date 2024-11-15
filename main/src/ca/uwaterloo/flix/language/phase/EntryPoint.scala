@@ -274,7 +274,7 @@ object EntryPoint {
       // `tparams` lies sometimes when explicit tparams are given and _ are used.
       val monomorphic = defn.spec.tparams.isEmpty && typesOf(defn).forall(_.typeVars.isEmpty)
       if (monomorphic) None
-      else Some(EntryPointError.IllegalEntryPointPolymorphism(defn.sym.loc))
+      else Some(EntryPointError.IllegalEntryPointTypeVariables(defn.sym.loc))
     }
 
     /** Returns all the types in the signature of `defn`. */
