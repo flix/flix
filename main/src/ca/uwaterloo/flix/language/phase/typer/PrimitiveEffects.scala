@@ -83,6 +83,9 @@ object PrimitiveEffects {
       toEffSet(effs, loc)
   }
 
+  /**
+    * Returns the primitive effects of the class `c`.
+    */
   private def getClassAndPackageEffs(c: Class[?], loc: SourceLocation): Type = {
     classEffs.get(c) match {
       case None =>
