@@ -239,7 +239,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Create function '$name'",
+    title = s"Create def '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
