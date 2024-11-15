@@ -47,9 +47,9 @@ object CodeActionProvider {
 //    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
 //      mkImportJava(name, uri)
 
-    case ResolutionError.UndefinedName(qn, em, env, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, ap, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
-        mkImportJava(qn.ident.name, uri, em) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        mkImportJava(qn.ident.name, uri, ap) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
 
@@ -239,8 +239,7 @@ object CodeActionProvider {
   private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
     val startPosition = Position(line = ap.line, character = ap.col)
     val insertRange = Range(startPosition, startPosition)
-    val leadingSpaces = "    "
-    val trailingSpaces = " " * (ap.col - 1)
+    val leadingSpaces = " " * (ap.spaces + 4)
     ClassList.TheMap.get(name).toList.flatten.map { path =>
         CodeAction(
           title = s"Import $name from Java",
@@ -248,7 +247,7 @@ object CodeActionProvider {
           edit = Some(WorkspaceEdit(
               Map(uri -> List(TextEdit(
                 insertRange,
-                s"${leadingSpaces}import $path\n$trailingSpaces"
+                s"${leadingSpaces}import $path\n"
               )))
           )),
           command = None
