@@ -57,8 +57,8 @@ object MagicMatchCompleter {
         if (cases.nonEmpty) Some(mkEnumMatchBody(cases)) else None
       case Some(TypeConstructor.Tuple(_)) =>
         val memberList = tpe.typeArguments.zipWithIndex.map { case (tpe, idx) => type2member(tpe, idx) }
-        val cartesian = cartesianProduct(memberList)
-        Some(mkTupleMatchBody(cartesian))
+        val memberCombinations = cartesianProduct(memberList)
+        Some(mkTupleMatchBody(memberCombinations))
       case _ =>
         None
     }
@@ -86,10 +86,10 @@ object MagicMatchCompleter {
     * If the given type is an enum, return a list of EnumCase.
     * Otherwise, return a list of SingleCase, which contains only a string indicating the idx of the member.
     */
-  private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): List[Member] =
+  private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): Member =
     getEnumSym(tpe) match {
-      case Some(sym) => root.enums(sym).cases.toList.map{case (sym, cas) => EnumCase(sym, cas)}
-      case None => SingleCase(s"_member$idx") :: Nil
+      case Some(sym) => root.enums(sym).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
+      case None => OtherMemberItem(s"_member$idx") :: Nil
     }
 
   /**
@@ -100,8 +100,8 @@ object MagicMatchCompleter {
     *  Given [ [Red, Green], [Circle, Square] ]
     *  The cartesian product is [ [Red, Circle], [Red, Square], [Green, Circle], [Green, Square] ]
     */
-  private def cartesianProduct(casesPerType: List[List[Member]]): List[List[Member]] = {
-    casesPerType.foldLeft(List(List.empty[Member])) { (acc, list) =>
+  private def cartesianProduct(casesPerType: List[Member]): List[Member] = {
+    casesPerType.foldLeft(List(List.empty[MemberItem])) { (acc, list) =>
       for {
         x <- acc
         y <- list
@@ -112,26 +112,26 @@ object MagicMatchCompleter {
   /**
     * Formats the cases of a tuple into a string.
     */
-  private def mkTupleMatchBody(members: List[List[Member]]): String = {
+  private def mkTupleMatchBody(memberCombinations: List[Member]): String = {
     val sb = new StringBuilder
-    val maxCaseLength = members.map(getMemberLength).max
+    val maxCombinationLength = memberCombinations.map(getMemberLength).max
     var index = 1
 
-    members.foreach { cases =>
+    memberCombinations.foreach { cases =>
       sb.append("    case ")
       val oldIndex = index
-      val middle = cases.map {
-        case EnumCase(sym, cas) =>
+      val lhs = cases.map {
+        case EnumMemberItem(sym, cas) =>
           val (lhs, newZ) = createCase(sym, cas, index)
           index = newZ
           lhs
-        case SingleCase(s) =>
-          val singleCase = s"$${$index:$s}"
+        case OtherMemberItem(s) =>
+          val placeholder = s"$${$index:$s}"
           index += 1
-          singleCase
+          placeholder
       }.mkString(", ")
-      val paddedMiddle = padLhs(s"($middle)", maxCaseLength, oldIndex, index)
-      sb.append(s"$paddedMiddle => $${$index:???}\n")
+      val paddedLhs = padLhs(s"($lhs)", maxCombinationLength, oldIndex, index)
+      sb.append(s"$paddedLhs => $${$index:???}\n")
       index += 1
     }
     sb.toString()
@@ -145,10 +145,10 @@ object MagicMatchCompleter {
     *   String)
     * Thus an extra length of 2 is added to the length of the member string.
     */
-  private def getMemberLength(cases: List[Member]): Int = {
+  private def getMemberLength(cases: Member): Int = {
     cases.map {
-      case EnumCase(_, cas) => getCaseLength(cas) + 2
-      case SingleCase(s) => s.length + 2
+      case EnumMemberItem(_, cas) => getCaseLength(cas) + 2
+      case OtherMemberItem(s) => s.length + 2
     }.sum
   }
 
@@ -226,16 +226,23 @@ object MagicMatchCompleter {
   /**
     * Represents a member in a tuple.
     */
-  sealed trait Member
+  type Member = List[MemberItem]
+
+  /**
+    * Represents a member item inside a member.
+    * For an enum type, it is a case of the enum.
+    * For a non-enum type, it is a placeholder string.
+    */
+  sealed trait MemberItem
 
   /**
     * Represents a case of an enum type.
     */
-  private case class EnumCase(sym: Symbol.CaseSym, cas: TypedAst.Case) extends Member
+  private case class EnumMemberItem(sym: Symbol.CaseSym, cas: TypedAst.Case) extends MemberItem
 
   /**
     * Represents any non-enum type in a tuple
     * We will use a placeholder string "_member0" to represent the member.
     */
-  private case class SingleCase(caseName: String) extends Member
+  private case class OtherMemberItem(caseName: String) extends MemberItem
 }
