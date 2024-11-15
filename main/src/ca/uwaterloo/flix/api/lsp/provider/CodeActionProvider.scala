@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.EnclosingMod
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.{ClassList, Similarity}
 
@@ -236,11 +236,11 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, em: EnclosingMod): List[CodeAction] = {
-    val modPosition = sourcePosition2Position(em.sp)
-    val startPosition = modPosition.copy(line = modPosition.line + 1, character = 1)
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
+    val startPosition = Position(line = ap.line, character = ap.col)
     val insertRange = Range(startPosition, startPosition)
-    val leadingSpaces = " " * (modPosition.character + 3)
+    val leadingSpaces = "    "
+    val trailingSpaces = " " * (ap.col - 1)
     ClassList.TheMap.get(name).toList.flatten.map { path =>
         CodeAction(
           title = s"Import $name from Java",
@@ -248,16 +248,12 @@ object CodeActionProvider {
           edit = Some(WorkspaceEdit(
               Map(uri -> List(TextEdit(
                 insertRange,
-                s"${leadingSpaces}import $path\n"
+                s"${leadingSpaces}import $path\n$trailingSpaces"
               )))
           )),
           command = None
         )
     }
-  }
-
-  private def sourcePosition2Position(sp: SourcePosition): Position = {
-    Position(sp.line, sp.col)
   }
 
   /**
