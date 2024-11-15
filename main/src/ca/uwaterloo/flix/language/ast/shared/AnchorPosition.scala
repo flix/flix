@@ -31,11 +31,16 @@ object AnchorPosition {
 
     // We must consider two cases: whether the namespace is the root or is a proper module name.
     if (name.isRoot) {
-      // If namespace is the root then the anchor position points to the start of the file.
-      AnchorPosition(1, 1)
+      // If namespace is the root then the anchor position points to the start of the file and there are no spaces for indentation.
+      AnchorPosition(1, 1, 0)
     } else {
-      // Otherwise the anchor position points to *the line after* the namespace source location.
-      AnchorPosition(sp.line + 1, sp.col)
+      // Otherwise the anchor position points to the line after the module declaration with some amount of indentation. For example:
+      //
+      // mod Foo {
+      //     mod Bar {
+      // | <---- anchor point for "Bar" is here. Note col is 1, but spaces is 8.
+      //
+      AnchorPosition(sp.line + 1, 1, spaces = (sp.col - 1).toShort)
     }
   }
 }
@@ -52,4 +57,4 @@ object AnchorPosition {
   * @param line the line number. Must be one-indexed.
   * @param col  the column number. Must be one-indexed.
   */
-case class AnchorPosition(line: Int, col: Short)
+case class AnchorPosition(line: Int, col: Short, spaces: Short)
