@@ -48,10 +48,12 @@ object CodeActionProvider {
 //      mkImportJava(name, uri)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkImportJava(qn.ident.name, uri, ap) ++ mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-      else
-        Nil
+      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) :: {
+        if (qn.namespace.isRoot)
+          mkUseDef (qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        else
+          Nil
+      }
 
     case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
@@ -223,6 +225,35 @@ object CodeActionProvider {
   )
 
   /**
+    * Returns a code action that proposes to create a new function.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *  let x = f()
+    * }}}
+    *
+    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * {{{
+    *   def f(): =
+    * }}}
+    */
+  private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Introduce new function $name",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(Position(1, 1), Position(1, 1)),
+        s"""
+           |def $name(): =
+           |
+           |""".stripMargin
+      )))
+    )),
+    command = None
+  )
+
+  /**
     * Returns a code action that proposes to import corresponding Java class.
     *
     * For example, if we have:
@@ -284,8 +315,6 @@ object CodeActionProvider {
     )),
     command = None
   )
-
-
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
