@@ -102,15 +102,12 @@
     @test
     def testCheckedEffectCast26(): A[String] \ IO = checked_ecast(A.A("ABC"))
 
-    @test
-    def testCheckedEffectCast27(): (a -> a \ IO) = x -> checked_ecast(x)
+    def _testCheckedEffectCast27(): (a -> a \ IO) = x -> checked_ecast(x)
 
-    @test
-    def testCheckedEffectCast28(): (a -> a) \ IO = checked_ecast(x -> x)
+    def _testCheckedEffectCast28(): (a -> a) \ IO = checked_ecast(x -> x)
 
     pub eff E
 
-    @test
-    def testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
+    def _testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
 
 }

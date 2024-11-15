@@ -36,7 +36,7 @@ object ReducedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation]) {
 
-    def getMain: Option[Def] = entryPoint.flatMap(defs.get)
+    def getMain: Option[Def] = entryPoint.map(defs(_))
 
   }
 

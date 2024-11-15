@@ -18,264 +18,563 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
-import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
-  * Processes the entry point of the program.
+  * Processes all entry points of the program.
   *
-  * The entry point is replaced by a new function (`main%`) that calls the old entry point (`func`).
+  * A function is an entry point if:
+  *   - It is the main function (called `main` by default, but can configured to an arbitrary name).
+  *   - It is a test (annotated with `@Test`).
+  *   - It is an exported function (annotated with `@Export`).
   *
-  * The argument to the `func` must have type `Unit`.
-  *
-  * If the result type of `func` has type `Unit`,
-  * then the result is returned from `main%` as normal.
-  * If the result type of `func` is some other type with a `ToString` instance,
-  * then the result is printed in `main%`.
-  * If the result type of `func` is some other type without a `ToString` instance,
-  * then an error is raised.
-  *
-  * For example, given an entry point `func` with type `Unit -> Float64`,
-  * we produce:
-  * {{{
-  *  pub def main%(): Unit \ IO = {
-  *      println(func(args))
-  *  }
-  * }}}
+  * This phase has these sub-phases:
+  *   - Resolve the entrypoint option so that there is no implicit default entry point.
+  *   - Check that all entry points have valid signatures, where rules differ from main, tests, and
+  *     exports. If an entrypoint does not have a valid signature, its related annotation is
+  *     removed to allow further compilation to continue with valid assumptions.
+  *   - Replace the existing main function by a new main function that prints the returned value if
+  *     its return type is not Unit.
+  *   - Compute the set of all entry points and store it in Root.
   */
 object EntryPoint {
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * The scheme of the entry point function.
-    * `Unit -> Unit`
-    */
-  private val EntryPointScheme = Scheme(Nil, Nil, Nil, Type.mkIoArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
-
-  /**
-    * The default entry point in case none is specified. (`main`)
-    */
-  private val DefaultEntryPoint = Symbol.mkDefnSym("main")
-
-  /**
-    * Introduces a new function `main%` which calls the entry point (if any).
-    */
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
-    implicit val sctx: SharedContext = SharedContext.mk()
-    val newRoot = findOriginalEntryPoint(root) match {
-      // Case 1: We have an entry point. Wrap it.
-      case Some(entryPoint0) =>
-        val entryPoint = visitEntryPoint(entryPoint0, root, TraitEnv(root.traitEnv))
-        root.copy(
-          defs = root.defs + (entryPoint.sym -> entryPoint),
-          entryPoint = Some(entryPoint.sym),
-          reachable = getReachable(root) + entryPoint.sym
-        )
-      // Case 2: No entry point. Don't touch anything.
-      case None => root.copy(reachable = getReachable(root))
-    }
-    (newRoot, sctx.errors.asScala.toList)
+    val (root1, errs1) = resolveMain(root)
+    val (root2, errs2) = CheckEntryPoints.run(root1)
+    // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
+    val (root3, errs3) = WrapMain.run(root2)
+    // WrapMain might change main, so FindEntryPoints must be after.
+    val root4 = findEntryPoints(root3)
+    (root4, errs1 ++ errs2 ++ errs3)
   }
 
   /**
-    * Returns all reachable definitions.
+    * Converts [[TypedAst.Root.entryPoint]] to be explicit instead of implicit and checks that a
+    * given entry point exists.
+    *
+    * In the input, a None entrypoint means to use `main` if it exists.
+    * In the output, None means no entrypoint and Some is an entrypoint, guaranteed to be in defs.
     */
-  private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
-    val s = mutable.Set.empty[Symbol.DefnSym]
-    for ((sym, defn) <- root.defs) {
-      if (defn.spec.ann.isTest || defn.spec.ann.isExport) {
-        s += sym
-      }
-    }
-    s.toSet
-  }
+  private def resolveMain(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
+    val defaultMainName = Symbol.mkDefnSym("main")
 
-  /**
-    * Finds the entry point in the given `root`.
-    */
-  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit sctx: SharedContext): Option[TypedAst.Def] = {
     root.entryPoint match {
-      case None => root.defs.get(DefaultEntryPoint) match {
-        case None => None
-        case Some(entryPoint) => Some(entryPoint)
+      case None =>
+        root.defs.get(defaultMainName) match {
+        case None =>
+          // No main is given and default does not exist - no main.
+          (root, Nil)
+        case Some(entryPoint) =>
+          // No main is given but default exists - use default.
+          (root.copy(entryPoint = Some(entryPoint.sym)), Nil)
       }
       case Some(sym) => root.defs.get(sym) match {
+        case Some(_) =>
+          // A main is given and it exists - use it.
+          (root, Nil)
         case None =>
-          val error = EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root))
-          sctx.errors.add(error)
-          None
-        case Some(entryPoint) => Some(entryPoint)
+          // A main is given and it does not exist - no main and give an error.
+          (root.copy(entryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
       }
     }
   }
 
   /**
-    * Retrieves an arbitrary source location from the root.
+    * A function is an entry point if:
+    *   - It is the main function (called `main` by default, but can configured
+    *     to an arbitrary name).
+    *   - It is a test (annotated with `@Test`).
+    *   - It is an exported function (annotated with `@Export`).
     */
-  private def getArbitrarySourceLocation(root: TypedAst.Root): SourceLocation = {
-    root.sources.headOption match {
-      // Case 1: Some arbitrary source. Use its location.
-      case Some((_, loc)) => loc
-      // Case 2: No inputs. Give up and use unknown.
-      case None => SourceLocation.Unknown
-    }
-  }
+  private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
+    isMain(defn) || isTest(defn) || isExport(defn)
 
+  /** Returns `true` if `defn` is a test. */
+  private def isTest(defn: TypedAst.Def): Boolean =
+    defn.spec.ann.isTest
+
+  /** Returns `true` if `defn` is an exported function. */
+  private def isExport(defn: TypedAst.Def): Boolean =
+    defn.spec.ann.isExport
+
+  /** Returns `true` if `defn` is the main function. */
+  private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
+    root.entryPoint.contains(defn.sym)
 
   /**
-    * Checks that the given def is a valid entry point,
-    * and returns a new entry point that calls it.
+    * Returns `true` if `tpe` is equivalent to Unit (via type aliases).
     *
-    * The new entry point should be added to the AST.
+    * N.B.: `tpe` must not have type variables or associated types.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
-    checkEntryPointArgs(defn, traitEnv)
-    checkEntryPointResult(defn, root, traitEnv)
-    mkEntryPoint(defn, root)
+  @tailrec
+  private def isUnitType(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.Unit, _) => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
   }
 
-  /**
-    * Checks the entry point function arguments.
-    * Returns a flag indicating whether the args should be passed to this function or ignored.
-    */
-  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _, loc) =>
+  private object CheckEntryPoints {
 
-      // First check that there's exactly one argument.
-      declaredScheme.base.arrowArgTypes match {
-
-        // Case 1: One arg. Ok :)
-        case arg :: Nil =>
-          // Case 1.1: Check that `arg` is the Unit parameter, i.e, `defn: Unit -> XYZ`
-          if (!isUnitParameter(traitEnv, arg)) {
-            val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
-            sctx.errors.add(error)
-          }
-
-        // Case 2: Multiple args. Error.
-        case _ :: _ :: _ =>
-          val error = EntryPointError.IllegalEntryPointArgs(sym, sym.loc)
-          sctx.errors.add(error)
-
-        // Case 3: Empty arguments. Impossible since this is desugared to Unit.
-        // Resilience: OK because this is a desugaring that is always performed by the Weeder.
-        case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
-      }
-  }
-
-  /**
-    * Returns `true` iff `arg` is the Unit type.
-    */
-  private def isUnitParameter(traitEnv: TraitEnv, arg: Type)(implicit flix: Flix) = {
-    val unitScheme = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
-    Scheme.equal(unitScheme, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
-  }
-
-  /**
-    * Checks the entry point function result type.
-    * Returns a flag indicating whether the result should be printed, cast, or unchanged.
-    */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _), _, _) =>
-      val resultTpe = declaredScheme.base.arrowResultType
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
-      val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
-
-      // Check for IllegalEntryPointEffect
-      if (isBadEntryPointEffect(declaredEff)) {
-        val error = EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc)
-        sctx.errors.add(error)
-      }
-
-      // Case 1: XYZ -> Unit.
-      val isUnitResult = Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty) // TODO ASSOC-TYPES better eqEnv
-
-      // Case 2: XYZ -> a with ToString[a]
-      val toStringTrait = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-      val hasToStringConstraint = TraitEnvironment.holds(TraitConstraint(TraitConstraint.Head(toStringTrait, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)
-
-      // Case 3: Bad result type. Error.
-      val isBadResultType = !isUnitResult && !hasToStringConstraint
-
-      if (isBadResultType) {
-        val error = EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc)
-        sctx.errors.add(error)
-      }
-  }
-
-  /**
-    * Returns `true` iff `declaredEff` is not `Pure` and contains some non-primitive effect.
-    */
-  private def isBadEntryPointEffect(declaredEff: Type) = {
-    declaredEff.effects.exists(sym => !Symbol.isPrimitiveEff(sym))
-  }
-
-  /**
-    * Builds the new entry point function that calls the old entry point function.
-    */
-  private def mkEntryPoint(oldEntryPoint: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
-
-    val argSym = Symbol.freshVarSym("_unit", Ast.BoundBy.FormalParam, SourceLocation.Unknown)
-
-    val spec = TypedAst.Spec(
-      doc = Doc(Nil, SourceLocation.Unknown),
-      ann = Annotations.Empty,
-      mod = Modifiers.Empty,
-      tparams = Nil,
-      fparams = List(TypedAst.FormalParam(TypedAst.Binder(argSym, Type.Unit), Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
-      declaredScheme = EntryPointScheme,
-      retTpe = Type.Unit,
-      eff = Type.IO,
-      tconstrs = Nil,
-      econstrs = Nil,
-    )
-
-    // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
-    // This is a valid assumption with the limitations we set on the entry point.
-    val itpe = oldEntryPoint.spec.declaredScheme.base
-    val symUse = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
-    val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
-    // func()
-    val call = TypedAst.Expr.ApplyDef(symUse, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
-
-    // one of:
-    // printUnlessUnit(func(args))
-    val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
-    val printTpe = Type.mkArrowWithEffect(itpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
-    val print = TypedAst.Expr.ApplyDef(DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
-
-    val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
-
-    TypedAst.Def(sym, spec, print, SourceLocation.Unknown)
-  }
-
-
-  /**
-    * Companion object for [[SharedContext]]
-    */
-  private object SharedContext {
     /**
-      * Returns a fresh shared context.
+      * CheckEntryPoints checks that all entry points (main/test/export) have valid signatures.
+      *
+      * Because of resilience, invalid entry points are not discarded. Its entry point marker is
+      * removed (removed as the main function in root or have its annotation removed).
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
+      implicit val sctx: SharedContext = SharedContext.mk()
+      implicit val r: TypedAst.Root = root
+
+      ParOps.parMapValues(root.defs)(visitDef(_))
+
+      // Remove the entrypoint if it is not valid.
+      val root1 = if (sctx.invalidMain.get()) root.copy(entryPoint = None) else root
+      val errs = sctx.errors.asScala.toList
+      (root1, errs)
+    }
+
+    /**
+      * Checks `defn` with relevant checks for its entry point kind (main/test/export).
+      *
+      * Because of resilience, invalid entry points are not discarded. Its entry point marker is
+      * removed (removed as the main function in root or have its annotation removed).
+      *
+      * A function can be main, a test, and exported at the same time.
+      */
+    private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+      // checkMain is different than the other two because the entry point designation exists on
+      // root and invalid main functions are communicated via SharedContext.
+      if (isMain(defn)) checkMain(defn)
+      val defn1 = if (isTest(defn)) visitTest(defn) else defn
+      val defn2 = if (isExport(defn)) visitExport(defn1) else defn1
+      defn2
+    }
+
+    /**
+      * Rules for main - it has:
+      *   - No type variables.
+      *   - One parameter of type Unit.
+      *   - An effect that is a subset of the primitive effects.
+      *   - Return type Unit or return type `t` where `ToString[t]` exists
+      *     (This is split into two cases to allow compilation without the standard library).
+      */
+    private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+      val errs = checkNoTypeVariables(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // Only run these on functions without type variables.
+          checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkPrimitiveEffect(defn)
+      }
+      if (errs.nonEmpty) {
+        // Invalidate main and add errors.
+        sctx.invalidMain.set(true)
+        errs.foreach(sctx.errors.add)
+      }
+    }
+
+    /**
+      * Rules for tests - a test has:
+      *   - No type variables.
+      *   - One parameter of type Unit.
+      *   - An effect that is a subset of the primitive effects.
+      */
+    private def visitTest(defn: TypedAst.Def)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+      val errs = checkNoTypeVariables(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // Only run these on functions without type variables.
+          checkUnitArg(defn) ++ checkPrimitiveEffect(defn)
+      }
+      if (errs.isEmpty) {
+        defn
+      } else {
+        errs.foreach(sctx.errors.add)
+        removeTestAnnotation(defn)
+      }
+    }
+
+    /** Returns `defn` without a test annotation. */
+    private def removeTestAnnotation(defn: TypedAst.Def): TypedAst.Def =
+      defn.copy(
+        spec = defn.spec.copy(
+          ann = defn.spec.ann.copy(
+            annotations = defn.spec.ann.annotations.filterNot(_.isInstanceOf[Annotation.Test])
+          )
+        )
+      )
+
+    /**
+      * Rules for exported functions - an exported function has:
+      *   - No type variables.
+      *   - An effect that is a subset of the primitive effects.
+      *   - Is not in the root namespace.
+      *   - Is `pub`.
+      *   - Has a name that is valid in Java.
+      *   - Has types that are valid in Java (not Flix types like `List[Int32]`).
+      */
+    private def visitExport(defn: TypedAst.Def)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+      val errs = (checkNoTypeVariables(defn) match {
+        case Some(err) => List(err)
+        case None =>
+          // Only run these on functions without type variables.
+          checkPrimitiveEffect(defn).toList ++ checkJavaTypes(defn)
+      }) ++
+        checkNonRootNamespace(defn) ++
+        checkPub(defn) ++
+        checkValidJavaName(defn)
+      if (errs.isEmpty) {
+        defn
+      } else {
+        errs.foreach(sctx.errors.add)
+        removeExportAnnotation(defn)
+      }
+    }
+
+    /** Returns `defn` without a test annotation. */
+    private def removeExportAnnotation(defn: TypedAst.Def): TypedAst.Def =
+      defn.copy(
+        spec = defn.spec.copy(
+          ann = defn.spec.ann.copy(
+            annotations = defn.spec.ann.annotations.filterNot(_.isInstanceOf[Annotation.Export])
+          )
+        )
+      )
+
+    /**
+      * Returns an error if `defn` has type variables.
+      *
+      * If a function has no type variables in surface syntax we know that:
+      *   - Traits and trait constraints do not occur since their syntax is limited to `Trait[var]`.
+      *   - Associated types do not occur since their syntax is limited to `Trait.Assoc[var]`.
+      *   - Equality constraints do not occur since their syntax is limited to
+      *     `Trait.Assoc[var] ~ type`
+      */
+    private def checkNoTypeVariables(defn: TypedAst.Def): Option[EntryPointError] = {
+      // `tparams` lies sometimes when explicit tparams are given and _ are used.
+      val monomorphic = defn.spec.tparams.isEmpty && typesOf(defn).forall(_.typeVars.isEmpty)
+      if (monomorphic) None
+      else Some(EntryPointError.IllegalEntryPointTypeVariables(defn.sym.loc))
+    }
+
+    /** Returns all the types in the signature of `defn`. */
+    private def typesOf(defn: TypedAst.Def): List[Type] = {
+      defn.spec.fparams.map(_.tpe) ++
+        List(defn.spec.retTpe) ++
+        List(defn.spec.eff) ++
+        defn.spec.tconstrs.map(_.arg) ++
+        defn.spec.econstrs.flatMap(ec => List(ec.tpe1, ec.tpe2))
+    }
+
+    /**
+      * Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise.
+      *
+      * N.B.: `defn` must not have type variables or associated types.
+      */
+    private def checkUnitArg(defn: TypedAst.Def): Option[EntryPointError] = {
+      defn.spec.fparams match {
+        // One parameter of type Unit - valid.
+        case List(arg) if isUnitType(arg.tpe) => None
+        // One parameter of a non-Unit type or more than two parameters - invalid.
+        case _ :: _ =>
+          Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
+        // Zero parameters.
+        case Nil => throw InternalCompilerException(s"Unexpected main with zero parameters ('${defn.sym}'", defn.sym.loc)
+      }
+    }
+
+    /**
+      * Returns `None` if `defn` has return type Unit or has a return type with `ToString` defined.
+      * Returns an error otherwise.
+      *
+      * N.B.: `defn` must not have type variables or associated types.
+      *
+      * In order to support compilation without the standard library, Unit is checked first even
+      * though it has `ToString` defined.
+      */
+    private def checkToStringOrUnitResult(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Option[EntryPointError] = {
+      val resultType = defn.spec.retTpe
+      if (isUnitType(resultType)) None
+      else {
+        val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
+        val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
+        val constraint = TraitConstraint(TraitConstraint.Head(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
+        val hasToString = TraitEnvironment.holds(constraint, TraitEnv(root.traitEnv), ListMap.empty)
+        if (hasToString) None
+        else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
+      }
+    }
+
+    /**
+      * Returns `None` if `defn` has an effect that is a subset of the set of primitive effects
+      * (e.g. `IO + Console`). Returns an error otherwise.
+      *
+      * N.B.: `defn` must not have type variables or associated types.
+      */
+    private def checkPrimitiveEffect(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
+      val eff = defn.spec.eff
+      if (isPrimitiveEffect(eff)) None
+      else Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+    }
+
+    /**
+      * Returns `true` if `eff` is a subset of the primitive effects.
+      *
+      * Returns `false` for all effects with either type variables or Error.
+      */
+    private def isPrimitiveEffect(eff: Type): Boolean = {
+      if (eff.typeVars.nonEmpty) return false
+      // Now that we have the monomorphic effect, we can evaluate it.
+      eval(eff) match {
+        case Some(s) =>
+          // Check that it is a set is a subset of the primitive effects.
+          // s ⊆ prim <=> s - prim = {}
+          val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
+          CofiniteEffSet.difference(s, primEffs).isEmpty
+        case None =>
+          // The effect has an Error, return false to make sure it is removed as
+          // an entry point.
+          false
+      }
+    }
+
+    /**
+      * Returns `eff` evaluated to its co-finite set or None if `eff` contains Error.
+      *
+      * N.B.: `eff` must be a well-formed effect formula without type variables and associated types.
+      */
+    private def eval(eff: Type): Option[CofiniteEffSet] = eff match {
+      case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Pure => Some(CofiniteEffSet.empty)
+        case TypeConstructor.Univ => Some(CofiniteEffSet.universe)
+        case TypeConstructor.Effect(sym) => Some(CofiniteEffSet.mkSet(sym))
+        case TypeConstructor.Error(_, _) => None
+        case _ => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      }
+      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
+        eval(x).map(CofiniteEffSet.complement)
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
+      case Type.Alias(_, _, tpe, _) => eval(tpe)
+      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+    }
+
+    /** Returns an error if `defn` is in the root namespace. */
+    private def checkNonRootNamespace(defn: TypedAst.Def): Option[EntryPointError] = {
+      val inRoot = defn.sym.namespace.isEmpty
+      if (inRoot) Some(EntryPointError.IllegalExportNamespace(defn.sym.loc))
+      else None
+    }
+
+    /** Returns an error if `defn` is not a public function. */
+    private def checkPub(defn: TypedAst.Def): Option[EntryPointError] = {
+      val isPub = defn.spec.mod.isPublic
+      if (isPub) None
+      else Some(EntryPointError.NonPublicExport(defn.sym.loc))
+    }
+
+    /** Returns `None` if `defn` has a name that is valid in Java. Returns an error otherwise. */
+    private def checkValidJavaName(defn: TypedAst.Def): Option[EntryPointError] = {
+      val validName = defn.sym.name.matches("[a-z][a-zA-Z0-9]*")
+      if (validName) None
+      else Some(EntryPointError.IllegalExportName(defn.sym.loc))
+    }
+
+    /**
+      * Returns an error for each type in `defn` that is not valid in Java.
+      *
+      * N.B.: `defn` must not have type variables or associated types.
+      */
+    private def checkJavaTypes(defn: TypedAst.Def): List[EntryPointError] = {
+      val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
+      types.flatMap(tpe => {
+        if (isExportableType(tpe)) None
+        else Some(EntryPointError.IllegalExportType(tpe, tpe.loc))
+      })
+    }
+
+    /**
+      * Returns `true` if `tpe` is a valid Java type that can be exported.
+      *
+      *   - `isExportableType(Int32) = true`
+      *   - `isExportableType(Bool) = true`
+      *   - `isExportableType(String) = true`
+      *   - `isExportableType(List[String]) = false`
+      *   - `isExportableType(java.lang.Object) = true`
+      *
+      * N.B.: `tpe` must not have type variables or associated types.
+      */
+    @tailrec
+    private def isExportableType(tpe: Type): Boolean = {
+      // TODO: Currently, because of eager erasure, we only allow primitive types and Object.
+      tpe match {
+        case Type.Cst(TypeConstructor.Bool, _) => true
+        case Type.Cst(TypeConstructor.Char, _) => true
+        case Type.Cst(TypeConstructor.Float32, _) => true
+        case Type.Cst(TypeConstructor.Float64, _) => true
+        case Type.Cst(TypeConstructor.Int8, _) => true
+        case Type.Cst(TypeConstructor.Int16, _) => true
+        case Type.Cst(TypeConstructor.Int32, _) => true
+        case Type.Cst(TypeConstructor.Int64, _) => true
+        case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => true
+        case Type.Cst(_, _) => false
+        case Type.Apply(_, _, _) => false
+        case Type.Alias(_, _, tpe, _) => isExportableType(tpe)
+        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+      }
+    }
+
+    private object SharedContext {
+      /** Returns a fresh shared context. */
+      def mk(): SharedContext = new SharedContext(
+        new ConcurrentLinkedQueue(),
+        new AtomicBoolean(false)
+      )
+    }
+
+    /**
+      * A global shared context. Must be thread-safe.
+      *
+      * @param errors the [[EntryPointError]]s in the AST, if any.
+      * @param invalidMain marks the main entrypoint as invalid.
+      */
+    private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError], invalidMain: AtomicBoolean)
+
   }
 
-  /**
-    * A global shared context. Must be thread-safe.
-    *
-    * @param errors the [[EntryPointError]]s in the AST, if any.
-    */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError])
+  private object WrapMain {
+
+    /**
+      * WrapMain takes the main function (if it exists) and creates a new main function that prints
+      * the value of the existing main function (unless it returns unit).
+      *
+      * From previous phases we know that the main function:
+      *   - Exists if root.entryPoint is Some.
+      *   - Returns Unit or has a return type with ToString defined
+      *   - Has a valid signature (without type variables, etc.)
+      */
+    def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
+      root.entryPoint.map(root.defs(_)) match {
+        case Some(main0: TypedAst.Def) if !isUnitType(main0.spec.retTpe) =>
+          val main = mkEntryPoint(main0, root)
+          val root1 = root.copy(
+            defs = root.defs + (main.sym -> main),
+            entryPoint = Some(main.sym)
+          )
+          (root1, Nil)
+        case Some(_) | None =>
+          // Main doesn't need a wrapper or no main exists.
+          (root, Nil)
+      }
+    }
+
+    /**
+      * Returns a new function that calls the main function and prints its value
+      * (`mainFunc` in the example below).
+      *
+      * {{{
+      *   def mainFunc(): tpe \ ef = exp
+      *
+      *   //
+      *   def main$(): Unit \ ef + IO = println(main())
+      * }}}
+      */
+    private def mkEntryPoint(oldEntryPoint: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+      val argSym = Symbol.freshVarSym("_unit", Ast.BoundBy.FormalParam, SourceLocation.Unknown)
+
+      // The new type is `Unit -> Unit \ IO + eff` where `eff` is the effect of the old main.
+      val argType = Type.Unit
+      val retType = Type.Unit
+      val eff = Type.mkUnion(Type.IO, oldEntryPoint.spec.eff, SourceLocation.Unknown)
+
+      val tpe = Type.mkArrowWithEffect(argType, eff, retType, SourceLocation.Unknown)
+      val spec = TypedAst.Spec(
+        doc = Doc(Nil, SourceLocation.Unknown),
+        ann = Annotations.Empty,
+        mod = Modifiers.Empty,
+        tparams = Nil,
+        fparams = List(TypedAst.FormalParam(
+          TypedAst.Binder(argSym, argType),
+          Modifiers.Empty,
+          argType,
+          Ast.TypeSource.Ascribed,
+          SourceLocation.Unknown)
+        ),
+        declaredScheme = Scheme(Nil, Nil, Nil, tpe),
+        retTpe = retType,
+        eff = eff,
+        tconstrs = Nil,
+        econstrs = Nil,
+      )
+
+      val mainArrowType = oldEntryPoint.spec.declaredScheme.base
+      val mainSym = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
+      val mainArgType = Type.Unit
+      val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
+      val mainReturnType = mainArrowType.arrowResultType
+      val mainEffect = mainArrowType.arrowEffectType
+      // `mainFunc()`
+      val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
+
+      // `println(mainFunc())`
+      val printSym = DefSymUse(root.defs(new Symbol.DefnSym(None, Nil, "println", SourceLocation.Unknown)).sym, SourceLocation.Unknown)
+      val printArg = mainCall
+      val printArgType = mainCall.tpe
+      val printReturnType = Type.Unit
+      val printEffect = Type.IO
+      val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
+      val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
+      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
+
+      val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
+
+      TypedAst.Def(sym, spec, printCall, SourceLocation.Unknown)
+    }
+
+  }
+
+    /** Returns a new root where [[TypedAst.Root.reachable]] contains all entry points (main/test/export). */
+    def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
+      val s = mutable.Set.empty[Symbol.DefnSym]
+      for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
+        s += sym
+      }
+      val entryPoints = s.toSet
+      root.copy(reachable = entryPoints)
+    }
 
 }
 
