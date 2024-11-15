@@ -39,8 +39,8 @@ object ClassList {
    * The map from class name to class path, built from TheList
    *
    * Example:
-   *  - List -> java.util.List
-   *  - File -> java.io.File
+   *  - List -> { java.util.List }
+   *  - File -> { java.io.File }
    */
   val TheMap: MultiMap[String, String] =
     ClassList.TheList.foldLeft(MultiMap.empty[String, String]) { (map, path) =>
