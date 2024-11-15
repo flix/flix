@@ -49,9 +49,9 @@ mod Http {
     ///
     /// Handles the `Http` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Http` effect using the `IO` effect.
+    /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + {Net, IO} = x ->
         try {
             f(x)
         } with Http {
