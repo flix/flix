@@ -63,11 +63,11 @@ object EntryPointError {
     * @param loc the location of the function symbol.
     */
   case class IllegalEntryPointPolymorphism(loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Entry point functions must not have type variables (i.e. not polymorphic)"
+    def summary: String = s"An entry point function cannot have type variables"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Entry point functions must not have type variables (i.e. not polymorphic).
+      s""">> An entry point function cannot have type variables.
          |
          |${code(loc, "entry point.")}
          |
@@ -121,13 +121,13 @@ object EntryPointError {
     * @param loc the location where the error occurred.
     */
   case class IllegalMainEntryPointResult(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
-    override def summary: String = s"Unexpected main entry point result type: ${FormatType.formatType(tpe)}."
+    override def summary: String = s"Unexpected result type for main: ${FormatType.formatType(tpe)}."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The result type: '${red(FormatType.formatType(tpe))}' is not a valid main entry point result type.
+      s""">> The type: '${red(FormatType.formatType(tpe))}' is not a valid result type for the main function.
          |
-         |${code(loc, "unexpected main entry point result type.")}
+         |${code(loc, "Unexpected result type for main.")}
          |""".stripMargin
     }
 
@@ -155,11 +155,11 @@ object EntryPointError {
     * @param loc the location of the defn.
     */
   case class IllegalExportNamespace(loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Exported functions must be in a module (e.g. not in the root namespace)"
+    def summary: String = s"An exported function must be in a module (not in the root namespace)"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must be in a module (e.g. not in the root namespace).
+      s""">> An exported function must be in a module (not in the root namespace).
          |
          |${code(loc, "exported function.")}
          |

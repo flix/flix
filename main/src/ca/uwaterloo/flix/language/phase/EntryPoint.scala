@@ -39,14 +39,14 @@ import scala.jdk.CollectionConverters.*
   *   - It is a test (annotated with `@Test`).
   *   - It is an exported function (annotated with `@Export`).
   *
-  * This phase has four sub-phases:
-  *   1. Resolve the entrypoint option such that there is no implicit default entry point.
-  *   1. Check that all entry points have valid signatures, where rules differ from main, tests, and
-  *      exports. If an entrypoint does not have a valid signature, its related annotation is
-  *      removed to allow further compilation to continue with valid assumptions.
-  *   1. Replace the existing main function by a new main function that prints the returned value if
-  *      its return type is not Unit.
-  *   1. Compute the set of all entry points and store it in Root.
+  * This phase has these sub-phases:
+  *   - Resolve the entrypoint option so that there is no implicit default entry point.
+  *   - Check that all entry points have valid signatures, where rules differ from main, tests, and
+  *     exports. If an entrypoint does not have a valid signature, its related annotation is
+  *     removed to allow further compilation to continue with valid assumptions.
+  *   - Replace the existing main function by a new main function that prints the returned value if
+  *     its return type is not Unit.
+  *   - Compute the set of all entry points and store it in Root.
   */
 object EntryPoint {
 
@@ -139,7 +139,7 @@ object EntryPoint {
     /**
       * CheckEntryPoints checks that all entry points (main/test/export) have valid signatures.
       *
-      * Because of resilience, invalid entry points are not discarded, its entry point marker is
+      * Because of resilience, invalid entry points are not discarded. Its entry point marker is
       * removed (removed as the main function in root or have its annotation removed).
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
@@ -157,7 +157,7 @@ object EntryPoint {
     /**
       * Checks `defn` with relevant checks for its entry point kind (main/test/export).
       *
-      * Because of resilience, invalid entry points are not discarded, its entry point marker is
+      * Because of resilience, invalid entry points are not discarded. Its entry point marker is
       * removed (removed as the main function in root or have its annotation removed).
       *
       * A function can be main, a test, and exported at the same time.
@@ -165,7 +165,7 @@ object EntryPoint {
     private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
       // checkMain is different than the other two because the entry point designation exists on
       // root and invalid main functions are communicated via SharedContext.
-      if (isMain(defn)(root)) checkMain(defn)
+      if (isMain(defn)) checkMain(defn)
       val defn1 = if (isTest(defn)) visitTest(defn) else defn
       val defn2 = if (isExport(defn)) visitExport(defn1) else defn1
       defn2
@@ -180,7 +180,6 @@ object EntryPoint {
       *     (This is split into two cases to allow compilation without the standard library).
       */
     private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
-      // TODO what about being public?
       val errs = checkNoTypeVariables(defn) match {
         case Some(err) => List(err)
         case None =>
@@ -341,20 +340,20 @@ object EntryPoint {
     /**
       * Returns `true` if `eff` is a subset of the primitive effects.
       *
-      * Returns `false` for all effects with type variables or Error.
+      * Returns `false` for all effects with either type variables or Error.
       */
     private def isPrimitiveEffect(eff: Type): Boolean = {
       if (eff.typeVars.nonEmpty) return false
       // Now that we have the monomorphic effect, we can evaluate it.
       eval(eff) match {
-        case Some(CofiniteEffSet.Set(s)) =>
-          // Check that it is a set of only primitive effects.
-          s.forall(Symbol.isPrimitiveEff)
-        case Some(CofiniteEffSet.Compl(_)) =>
-          // A set like `not IO` can never be allowed
-          false
+        case Some(s) =>
+          // Check that it is a set is a subset of the primitive effects.
+          // s ⊆ prim <=> s - prim = {}
+          val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
+          CofiniteEffSet.difference(s, primEffs).isEmpty
         case None =>
-          // The effect has an Error, throw error to make sure it is removed as an entry point.
+          // The effect has an Error, return false to make sure it is removed as
+          // an entry point.
           false
       }
     }
@@ -418,24 +417,24 @@ object EntryPoint {
     private def checkJavaTypes(defn: TypedAst.Def): List[EntryPointError] = {
       val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
       types.flatMap(tpe => {
-        if (isJavaType(tpe)) None
+        if (isExportableType(tpe)) None
         else Some(EntryPointError.IllegalExportType(tpe, tpe.loc))
       })
     }
 
     /**
-      * Returns `true` if `tpe` is a valid Java type.
+      * Returns `true` if `tpe` is a valid Java type that can be exported.
       *
-      *   - `isJavaType(Int32) = true`
-      *   - `isJavaType(Bool) = true`
-      *   - `isJavaType(String) = true`
-      *   - `isJavaType(List[String]) = false`
-      *   - `isJavaType(java.lang.Object) = true`
+      *   - `isExportableType(Int32) = true`
+      *   - `isExportableType(Bool) = true`
+      *   - `isExportableType(String) = true`
+      *   - `isExportableType(List[String]) = false`
+      *   - `isExportableType(java.lang.Object) = true`
       *
       * N.B.: `tpe` must not have type variables or associated types.
       */
     @tailrec
-    private def isJavaType(tpe: Type): Boolean = {
+    private def isExportableType(tpe: Type): Boolean = {
       // TODO: Currently, because of eager erasure, we only allow primitive types and Object.
       tpe match {
         case Type.Cst(TypeConstructor.Bool, _) => true
@@ -449,7 +448,7 @@ object EntryPoint {
         case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => true
         case Type.Cst(_, _) => false
         case Type.Apply(_, _, _) => false
-        case Type.Alias(_, _, tpe, _) => isJavaType(tpe)
+        case Type.Alias(_, _, tpe, _) => isExportableType(tpe)
         case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
         case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
         case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
