@@ -34,6 +34,9 @@ object PrimitiveEffects {
   /** The path to the method effects. */
   private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
 
+  /** The path to the package effects. */
+  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Packages.json"
+
   /**
     * A pre-computed map from classes to effects.
     *
@@ -50,6 +53,11 @@ object PrimitiveEffects {
     * A pre-computed map from methods to effects.
     */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
+
+  /**
+    * A pre-computed map from packages to effects.
+    */
+  private val packageEffs: Map[Package, Set[Symbol.EffectSym]] = loadPackageEffs()
 
   /**
     * Returns the primitive effects of calling the given constructor `c`.
@@ -181,6 +189,35 @@ object PrimitiveEffects {
           val clazz = Class.forName(className)
           val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
           clazz.getMethods.filter(_.getName == methodName).map(m => (m, effSet))
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
+      }
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
+    }
+
+    m.toMap
+  }
+
+  /**
+    * Parses a JSON file of the form:
+    *
+    * {{{
+    * {
+    *   "packages": {
+    *     "java.lang.net": "Net, IO"
+    *   }
+    * }
+    * }}}
+    */
+  private def loadPackageEffs(): Map[Package, Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(PackageEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "packages" match {
+      case JObject(l) => l.map {
+        case (packageName, JString(s)) =>
+          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val effSet = s.split(',').map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          (clazz, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
