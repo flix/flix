@@ -14,10 +14,35 @@
  * limitations under the License.
  */
 
-mod TestFileReadWithResult {
+mod TestFileReadWithResultWithResult {
 
     use IoError.IoError
     use IoError.ErrorKind
+    use Monad.{>>=}
+
+    import java.io.IOException
+    import java.nio.file.Path
+
+    ///
+    /// Helper - make a filepath within the temp directory.
+    /// Use `java.nio.file.Path` functions for platform independence.
+    ///
+    def makeTempPath(fileName: String): Result[IoError, String] = region rc {
+        let tempdir = match Environment.getTemporaryDirectory() {
+            case Some(dir)  => Ok(dir)
+            case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
+        };
+        try {
+            Result.flatMap(root ->  {
+                let arr = List.toArray(rc, fileName :: Nil);
+                let path = unsafe Path.of(root, arr).normalize().toString();
+                Ok(path)
+            }, tempdir)
+        } catch {
+            case ex: IOException =>
+                unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -25,8 +50,18 @@ mod TestFileReadWithResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Bool \ IO =
-      FileReadWithResult.handle(() -> FileReadWithResult.exists("./SomeFileThatDoesNotExist.txt"))() == Ok(false)
+    def exists01(): Bool \ IO = {
+        (
+            makeTempPath("some-file") >>= path ->
+            FileWrite.handle(() -> FileWrite.write({ str = "content" }, path))() >>= _ ->
+            FileReadWithResult.handle(() -> FileReadWithResult.exists(path))()
+        ) == Ok(true)
+    }
+
+    @Test
+    def exists02(): Bool \ IO = {
+        FileReadWithResult.handle(() -> FileReadWithResult.exists("SomeFileThatDoesNotExist"))() == Ok(false)
+    }
 
     @Test
     def exists03(): Bool \ IO = {
