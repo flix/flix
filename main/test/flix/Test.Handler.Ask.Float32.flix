@@ -1,7 +1,7 @@
 mod Test.Handler.Ask.Float32 {
 
     eff Ask {
-        pub def ask(x: Float32): Unit
+        def ask(x: Float32): Unit
     }
 
     def generator(x: Float32): Unit \ Ask =

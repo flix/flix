@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.collection.mutable
@@ -26,24 +25,11 @@ sealed trait Validation[+T, +E] {
   /**
     * Returns the value inside `this` [[Validation.Success]] object.
     *
-    * Throws an exception if `this` is a [[Validation.HardFailure]] object.
+    * Throws an exception if `this` is a [[Validation.Failure]] object.
     */
   final def unsafeGet: T = this match {
     case Validation.Success(value) => value
-    case Validation.HardFailure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.toList.mkString(", ")}")
-  }
-
-  /**
-    * Returns the errors in this [[Validation.Success]] or [[Validation.HardFailure]] object.
-    */
-  def errors: Chain[E]
-
-  /**
-    * Converts a soft failure to a hard failure.
-    */
-  def toHardFailure: Validation[T, E] = this match {
-    case Validation.Success(t) => Validation.Success(t)
-    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
+    case Validation.Failure(errors) => throw new IllegalStateException(s"Validation is Failure(${errors.mkString(", ")}).")
   }
 
   /**
@@ -51,60 +37,13 @@ sealed trait Validation[+T, +E] {
     * Returns [[Result.Ok]] if and only if there are no errors.
     * Returns [[Result.Err]] otherwise.
     */
-  def toHardResult: Result[T, Chain[E]] = this match {
+  final def toResult: Result[T, Chain[E]] = this match {
     case Validation.Success(t) => Result.Ok(t)
-    case Validation.HardFailure(errors) => Result.Err(errors)
-  }
-
-  /**
-    * Returns `this` as a [[Result]].
-    * If any success value exists it will be returned as a [[Result.Ok]] along with a possibly non-empty list of errors.
-    * This is meant for when a success value is useful in the presence of errors.
-    */
-  def toSoftResult: Result[(T, Chain[E]), Chain[E]] = this match {
-    case Validation.Success(t) => Result.Ok((t, Chain.empty))
-    case Validation.HardFailure(errors) => Result.Err(errors)
+    case Validation.Failure(errors) => Result.Err(errors)
   }
 }
 
 object Validation {
-
-  /**
-    * Implicit class to hide dangerous extensions.
-    */
-  object Implicit {
-
-    /**
-      * Treats the Validation as a monad in order to enable `for`-notation.
-      * Care should be used when enabling this,
-      * as flatMap results in short-circuiting behavior which may not be desirable.
-      */
-    implicit class AsMonad[T, E](v: Validation[T, E]) {
-      /**
-        * Similar to `map` but does not wrap the result in a [[Validation.Success]].
-        *
-        * Preserves the errors.
-        */
-      final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = v match {
-        case Validation.Success(input) => f(input) match {
-          case Validation.Success(value) => Validation.Success(value)
-          case Validation.HardFailure(thatErrors) => Validation.HardFailure(v.errors ++ thatErrors)
-        }
-
-        case Validation.HardFailure(errors) => Validation.HardFailure(errors)
-      }
-    }
-  }
-
-  /**
-    * Returns a [[Validation.Success]] containing `t`.
-    */
-  def success[T, E](t: T): Validation[T, E] = Success(t)
-
-  /**
-    * Returns a [[Validation.HardFailure]] with the error `e`.
-    */
-  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.HardFailure(Chain(e))
 
   /**
     * Represents a successful validation with the empty list.
@@ -126,7 +65,11 @@ object Validation {
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class HardFailure[T, E](errors: Chain[E]) extends Validation[T, E]
+  case class Failure[T, E](errors: Chain[E]) extends Validation[T, E]
+
+  object Failure {
+    def apply[T, E](error: E): Validation[T, E] = Failure(Chain(error))
+  }
 
   /**
     * Sequences the given list of validations `xs`.
@@ -136,21 +79,14 @@ object Validation {
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
         Success(curValue :: accValue)
-      case (Success(_), HardFailure(accErrors)) =>
-        HardFailure(accErrors)
+      case (Success(_), Failure(accErrors)) =>
+        Failure(accErrors)
 
-      case (HardFailure(curErrors), Success(_)) =>
-        HardFailure(curErrors)
-      case (HardFailure(curErrors), HardFailure(accErrors)) =>
-        HardFailure(curErrors ++ accErrors)
+      case (Failure(curErrors), Success(_)) =>
+        Failure(curErrors)
+      case (Failure(curErrors), Failure(accErrors)) =>
+        Failure(curErrors ++ accErrors)
     }
-  }
-
-  /**
-    * Sequences the given list of validations `xs`, ignoring non-error results.
-    */
-  def sequenceX[T, E](xs: Iterable[Validation[T, E]]): Validation[Unit, E] = {
-    mapN(sequence(xs))(_ => ())
   }
 
   /**
@@ -165,7 +101,7 @@ object Validation {
     case None => Validation.SuccessNone
     case Some(x) => f(x) match {
       case Success(t) => Success(Some(t))
-      case HardFailure(errs) => HardFailure(errs)
+      case Failure(errs) => Failure(errs)
     }
   }
 
@@ -181,14 +117,14 @@ object Validation {
     val successValues = mutable.ArrayBuffer.empty[S]
     val failureStream = mutable.ArrayBuffer.empty[Chain[E]]
 
-    // Flag to signal fatal (non-recoverable) errors
+    // Flag to signal errors
     var isFatal = false
 
     // Apply f to each element and collect the results.
     for (x <- xs) {
       f(x) match {
         case Success(v) => successValues += v
-        case HardFailure(e) =>
+        case Failure(e) =>
           failureStream += e
           isFatal = true
       }
@@ -197,7 +133,7 @@ object Validation {
     // Check whether we were successful or not.
     val emp: Chain[E] = Chain.empty
     if (isFatal) {
-      HardFailure(failureStream.foldLeft(emp)(_ ++ _))
+      Failure(failureStream.foldLeft(emp)(_ ++ _))
     } else {
       Success(successValues.toList)
     }
@@ -211,10 +147,10 @@ object Validation {
   private def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
     case Success(Success(t)) =>
       Success(t)
-    case Success(HardFailure(e)) =>
-      HardFailure(e)
-    case HardFailure(errors) =>
-      HardFailure(errors)
+    case Success(Failure(e)) =>
+      Failure(e)
+    case Failure(errors) =>
+      Failure(errors)
   }
 
   /**
@@ -226,13 +162,13 @@ object Validation {
     (f, t1) match {
       case (Success(g), Success(v)) =>
         Success(g(v))
-      case (Success(_), HardFailure(e2)) =>
-        HardFailure(e2)
+      case (Success(_), Failure(e2)) =>
+        Failure(e2)
 
-      case (HardFailure(e1), Success(_)) =>
-        HardFailure(e1)
-      case (HardFailure(e1), HardFailure(e2)) =>
-        HardFailure(e1 ++ e2)
+      case (Failure(e1), Success(_)) =>
+        Failure(e1)
+      case (Failure(e1), Failure(e2)) =>
+        Failure(e1 ++ e2)
     }
 
   /**
@@ -307,7 +243,7 @@ object Validation {
                     (f: T1 => U): Validation[U, E] =
     t1 match {
       case Success(v1) => Success(f(v1))
-      case HardFailure(errors) => HardFailure(errors)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
@@ -401,7 +337,7 @@ object Validation {
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
-      case _ => HardFailure(t1.errors)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
@@ -474,13 +410,9 @@ object Validation {
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
     xs.foldRight(zero) {
-      case (a, acc) => flatMapN(acc) {
-        case v => f(a, v)
-      }
+      case (a, acc) => flatMapN(acc)(f(a, _))
     }
   }
-
-  // TODO: Everything below this line is deprecated.
 
   /**
     * Folds the given function `f` over all elements `xs`.
@@ -489,9 +421,7 @@ object Validation {
     */
   def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
-      case (acc, a) => flatMapN(acc) {
-        case value => f(value, a)
-      }
+      case (acc, a) => flatMapN(acc)(f(_, a))
     }
   }
 

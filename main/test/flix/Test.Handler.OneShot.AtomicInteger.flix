@@ -9,7 +9,7 @@ mod Test.Handler.OneShot.AtomicInteger {
         unsafe n.intValue()
 
     eff Ask {
-        pub def ask(x: AtomicInteger): AtomicInteger
+        def ask(x: AtomicInteger): AtomicInteger
     }
 
     @Test

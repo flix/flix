@@ -3,15 +3,15 @@ mod Test.Handler.NewObject {
     import java.lang.Runnable
 
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     eff Gen {
-        pub def gen(): Int32
+        def gen(): Int32
     }
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
+        def $run(_this: Runnable): Unit \ { rc } =
             try {
               Ask.ask(42)
             } with Ask {
@@ -20,7 +20,7 @@ mod Test.Handler.NewObject {
     }
 
     def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
+        def $run(_this: Runnable): Unit \ { rc } =
             try {
               Ref.put(Gen.gen(), r)
             } with Gen {
@@ -29,7 +29,7 @@ mod Test.Handler.NewObject {
     }
 
     def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
+        def $run(_this: Runnable): Unit \ { rc } =
             try {
                 Ask.ask(
                     try {
@@ -47,7 +47,7 @@ mod Test.Handler.NewObject {
     def testRunnable01(): Bool \ IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            newAskRunnable(r).run();
+            newAskRunnable(r).$run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
@@ -56,7 +56,7 @@ mod Test.Handler.NewObject {
     def testRunnable02(): Bool \ IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            newGenRunnable(r).run();
+            newGenRunnable(r).$run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
@@ -65,7 +65,7 @@ mod Test.Handler.NewObject {
     def testRunnable03(): Bool \ IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            newGenAskRunnable(r).run();
+            newGenAskRunnable(r).$run();
             let result = Ref.get(r);
             Assert.eq(84, result)
         }

@@ -23,7 +23,7 @@ mod Eff {
         ///
         /// Returns `true` or `false` with equal chance.
         ///
-        pub def flip(): Bool
+        def flip(): Bool
 
     }
 
@@ -49,7 +49,7 @@ mod Eff {
         ///
         /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = handle(f)()
+        pub def runWithIO(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = handle(f)()
 
     }
 

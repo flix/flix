@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for derivation errors.
   */
-sealed trait DerivationError extends CompilationMessage with Recoverable {
+sealed trait DerivationError extends CompilationMessage {
   val kind: String = "Derivation Error"
 }
 
@@ -36,7 +36,7 @@ object DerivationError {
     * @param legalSyms the list of class symbols of legal derivations.
     * @param loc       the location where the error occurred.
     */
-  case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -60,7 +60,7 @@ object DerivationError {
     * @param classSym the class symbol of what is being derived.
     * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError {
     def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
@@ -80,7 +80,7 @@ object DerivationError {
     * @param sym the enum symbol
     * @param loc the source location where the error occurred.
     */
-  case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError {
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {

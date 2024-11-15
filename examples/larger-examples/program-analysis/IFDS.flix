@@ -22,7 +22,7 @@ mod IFDS {
     ///
     /// Solves the given IFDS instances.
     ///
-    pub def run(ifds: IFDS[p, n, d]): Vector[(n, d)]
+    pub def runSolver(ifds: IFDS[p, n, d]): Vector[(n, d)]
         with Order[n], Order[d], Order[p] =
 
         // Extract main.
@@ -189,7 +189,7 @@ def main(): Unit \ IO =
         case _ => Vector#{}
     };
 
-    let result = IFDS.run({
+    let result = IFDS.runSolver({
         zero            = "zero",
         main            = "main",
         cfg             = cfg,

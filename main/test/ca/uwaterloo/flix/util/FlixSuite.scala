@@ -88,7 +88,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
-      flix.compile().toHardResult match {
+      flix.compile().toResult match {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
