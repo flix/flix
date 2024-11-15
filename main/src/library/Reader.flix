@@ -27,5 +27,5 @@ trait Reader[t] {
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
-    pub def read(b: Array[Int8, r], r: t): Result[IOError, Int32] \ {r, IO}
+    pub def read(b: Array[Int8, r], r: t): Result[IoError, Int32] \ {r, IO}
 }
