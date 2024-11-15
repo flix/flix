@@ -23,27 +23,6 @@ mod TestFileReadWithResultWithResult {
     import java.io.IOException
     import java.nio.file.Path
 
-    ///
-    /// Helper - make a filepath within the temp directory.
-    /// Use `java.nio.file.Path` functions for platform independence.
-    ///
-    def makeTempPath(fileName: String): Result[IoError, String] = region rc {
-        let tempdir = match Environment.getTemporaryDirectory() {
-            case Some(dir)  => Ok(dir)
-            case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
-        };
-        try {
-            Result.flatMap(root ->  {
-                let arr = List.toArray(rc, fileName :: Nil);
-                let path = unsafe Path.of(root, arr).normalize().toString();
-                Ok(path)
-            }, tempdir)
-        } catch {
-            case ex: IOException =>
-                unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -68,6 +47,28 @@ mod TestFileReadWithResultWithResult {
         match FileReadWithResult.handle(() -> FileReadWithResult.exists("Some\\Invalid:{\u0000Path}/"))() {
             case Ok(_) => false
             case Err(IoError(kind, _)) => kind == ErrorKind.InvalidPath
+        }
+    }
+
+
+    ///
+    /// Helper - make a filepath within the temp directory.
+    /// Use `java.nio.file.Path` functions for platform independence.
+    ///
+    def makeTempPath(fileName: String): Result[IoError, String] = region rc {
+        let tempdir = match Environment.getTemporaryDirectory() {
+            case Some(dir)  => Ok(dir)
+            case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
+        };
+        try {
+            Result.flatMap(root ->  {
+                let arr = List.toArray(rc, fileName :: Nil);
+                let path = unsafe Path.of(root, arr).normalize().toString();
+                Ok(path)
+            }, tempdir)
+        } catch {
+            case ex: IOException =>
+                unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
     }
 
