@@ -44,8 +44,8 @@ object CodeActionProvider {
       else
         Nil
 
-//    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
-//      mkImportJava(name, uri)
+    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(name, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
       mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
@@ -181,7 +181,7 @@ object CodeActionProvider {
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
         CodeAction(
-          title = s"use $sym",
+          title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
@@ -209,7 +209,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewEnum(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new enum $name",
+    title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -239,7 +239,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new function $name",
+    title = s"Create function '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -273,7 +273,7 @@ object CodeActionProvider {
     val leadingSpaces = " " * ap.spaces
     ClassList.TheMap.get(name).toList.flatten.map { path =>
         CodeAction(
-          title = s"Import $name from Java",
+          title = s"import '$path'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
               Map(uri -> List(TextEdit(
@@ -301,7 +301,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new struct $name",
+    title = s"Create struct '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -338,7 +338,7 @@ object CodeActionProvider {
     */
   private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
     CodeAction(
-      title = s"Did you mean: `$correctName`?",
+      title = s"Did you mean: '$correctName'?",
       kind = CodeActionKind.QuickFix,
       edit = Some(WorkspaceEdit(
         Map(uri -> List(TextEdit(
@@ -382,7 +382,7 @@ object CodeActionProvider {
     case Some(TypeConstructor.Enum(sym, _)) =>
       root.enums.get(sym).map { e =>
         CodeAction(
-          title = s"Derive $trt",
+          title = s"Derive '$trt'",
           kind = CodeActionKind.QuickFix,
           edit = Some(addDerivation(e, trt, uri)),
           command = None
@@ -416,7 +416,7 @@ object CodeActionProvider {
       None
     else Some(
       CodeAction(
-        title = s"Derive $trt",
+        title = s"Derive '$trt'",
         kind = CodeActionKind.Refactor,
         edit = Some(addDerivation(e, trt, uri)),
         command = None

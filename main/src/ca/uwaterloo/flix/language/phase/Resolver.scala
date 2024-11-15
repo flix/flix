@@ -1249,7 +1249,7 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+            val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
             sctx.errors.add(error)
             Validation.Success(ResolvedAst.Expr.Error(error))
         }
@@ -1279,7 +1279,7 @@ object Resolver {
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>
           val env = env0 ++ mkVarEnv(sym)
-          val clazzVal = lookupJvmClass2(className, env0, sym.loc).toValidation
+          val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
             case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1330,7 +1330,7 @@ object Resolver {
             case Some(List(Resolution.JavaClass(clazz))) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
-              val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+              val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
               sctx.errors.add(error)
               Validation.Success(ResolvedAst.Expr.Error(error))
           }
@@ -2512,7 +2512,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc).toValidation) {
+        mapN(lookupJvmClass(fqn, ns0, loc).toValidation) {
           case clazz => flixifyType(clazz, loc)
         }
 
@@ -3319,20 +3319,20 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = try {
+  private def lookupJvmClass(className: String, ns0: Name.NName, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = try {
     // Don't initialize the class; we don't want to execute static initializers.
     val initialize = false
     Result.Ok(Class.forName(className, initialize, flix.jarLoader))
   } catch {
-    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
-    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
+    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
   }
 
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className, loc) match {
+  private def lookupJvmClass2(className: String, ns0: Name.NName, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+    lookupJvmClass(className, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
         case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
@@ -3617,7 +3617,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }
