@@ -52,7 +52,7 @@ mod TestFileRead {
     @Test
     def exists01(): Bool \ IO = {
         (
-            makeTempPath("some-file") >>= path ->
+            makeTempPath("flix-tmpfile-68976") >>= path ->
             FileWrite.handle(() -> FileWrite.write({ str = "content" }, path))() >>= _ ->
             FileRead.handle(() -> FileRead.exists(path))()
         ) == Ok(true)
