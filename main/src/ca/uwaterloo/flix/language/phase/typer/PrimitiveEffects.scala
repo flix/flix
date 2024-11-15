@@ -67,8 +67,16 @@ object PrimitiveEffects {
       // Case 1: No effects for the constructor. Try the class map.
       classEffs.get(c.getDeclaringClass) match {
         case None =>
-          // Case 1.1: We use the IO effect by default.
-          Type.IO
+          // Case 1.1: No effects for the class. Try the package.
+          packageEffs.get(c.getDeclaringClass.getPackage) match {
+            case None =>
+              // Case 1.1.1: No effects for the package. Use the IO effect by default.
+              Type.IO
+            case Some(effs) =>
+              // Case 1.1.2: We use the package effects.
+              val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+              Type.mkUnion(tpes, loc)
+          }
         case Some(effs) =>
           // Case 1.2: We use the class effects.
           val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
