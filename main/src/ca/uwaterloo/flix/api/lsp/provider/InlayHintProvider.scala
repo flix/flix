@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.{InlayHint, Range}
 
 object InlayHintProvider {
 
-  def processInlayHints(uri: String, range: Range): List[InlayHint] = {
+  def getInlayHints(uri: String, range: Range): List[InlayHint] = {
     // We currently do not support any inlay hints.
     Nil
   }
