@@ -40,7 +40,7 @@ object AnchorPosition {
       //     mod Bar {
       // | <---- anchor point for "Bar" is here. Note col is 1, but spaces is 8.
       //
-      AnchorPosition(sp.line + 1, 1, spaces = (sp.col - 1).toShort)
+      AnchorPosition(sp.line + 1, 1, spaces = (sp.col + 4 - 1).toShort)
     }
   }
 }

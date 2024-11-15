@@ -20,8 +20,9 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
+import ca.uwaterloo.flix.util.{ClassList, Similarity}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -43,8 +44,11 @@ object CodeActionProvider {
       else
         Nil
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri) :: {
+//    case ResolutionError.UndefinedJvmClass(name, _, loc) if onSameLine(range, loc) =>
+//      mkImportJava(name, uri)
+
+    case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
+      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
         if (qn.namespace.isRoot)
           mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
         else
@@ -250,6 +254,39 @@ object CodeActionProvider {
   )
 
   /**
+    * Returns a code action that proposes to import corresponding Java class.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): = new File("data.txt")
+    * }}}
+    *
+    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * {{{
+    *   import java.io.File
+    * }}}
+    */
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
+    val startPosition = Position(line = ap.line, character = ap.col)
+    val insertRange = Range(startPosition, startPosition)
+    val leadingSpaces = " " * ap.spaces
+    ClassList.TheMap.get(name).toList.flatten.map { path =>
+        CodeAction(
+          title = s"Import $name from Java",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(
+              Map(uri -> List(TextEdit(
+                insertRange,
+                s"${leadingSpaces}import $path\n"
+              )))
+          )),
+          command = None
+        )
+    }
+  }
+
+  /**
     * Returns a code action that proposes to create a new struct.
     *
     * For example, if we have:
@@ -278,7 +315,6 @@ object CodeActionProvider {
     )),
     command = None
   )
-
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
