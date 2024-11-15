@@ -23,6 +23,7 @@ dependencies {
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:33.3.1-jre')
     implementation 'org.apache.commons:commons-lang3:3.17.0'
+    implementation("com.lihaoyi:sourcecode_2.13:0.4.2")
 
     implementation('io.get-coursier:coursier_2.13:2.1.14')
 
