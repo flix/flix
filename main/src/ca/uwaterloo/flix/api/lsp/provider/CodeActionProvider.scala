@@ -270,7 +270,7 @@ object CodeActionProvider {
   private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
     val startPosition = Position(line = ap.line, character = ap.col)
     val insertRange = Range(startPosition, startPosition)
-    val leadingSpaces = " " * (ap.spaces + 4)
+    val leadingSpaces = " " * ap.spaces
     ClassList.TheMap.get(name).toList.flatten.map { path =>
         CodeAction(
           title = s"Import $name from Java",
