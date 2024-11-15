@@ -48,9 +48,9 @@ object CodeActionProvider {
 //      mkImportJava(name, uri)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) :: {
+      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
         if (qn.namespace.isRoot)
-          mkUseDef (qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+          mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
         else
           Nil
       }
@@ -230,10 +230,10 @@ object CodeActionProvider {
     * For example, if we have:
     *
     * {{{
-    *  let x = f()
+    *   let x = f()
     * }}}
     *
-    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * where the name `f` is not defined this code action proposes to add:
     * {{{
     *   def f(): =
     * }}}
