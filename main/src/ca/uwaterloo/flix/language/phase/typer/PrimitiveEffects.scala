@@ -65,23 +65,7 @@ object PrimitiveEffects {
   def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
     case None =>
       // Case 1: No effects for the constructor. Try the class map.
-      classEffs.get(c.getDeclaringClass) match {
-        case None =>
-          // Case 1.1: No effects for the class. Try the package.
-          packageEffs.get(c.getDeclaringClass.getPackage) match {
-            case None =>
-              // Case 1.1.1: No effects for the package. Use the IO effect by default.
-              Type.IO
-            case Some(effs) =>
-              // Case 1.1.2: We use the package effects.
-              val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-              Type.mkUnion(tpes, loc)
-          }
-        case Some(effs) =>
-          // Case 1.2: We use the class effects.
-          val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-          Type.mkUnion(tpes, loc)
-      }
+      getClassAndPackageEffs(c.getDeclaringClass)
     case Some(effs) =>
       // Case 2: We found the effects for the constructor.
       val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
@@ -94,27 +78,31 @@ object PrimitiveEffects {
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None =>
       // Case 1: No effects for the method. Try the class map.
-      classEffs.get(m.getDeclaringClass) match {
-        case None =>
-          // Case 1.1: No effects for the class. Try the package.
-          packageEffs.get(m.getDeclaringClass.getPackage) match {
-            case None =>
-              // Case 1.1.1: No effects for the package. Use the IO effect by default.
-              Type.IO
-            case Some(effs) =>
-              // Case 1.1.2: We use the package effects.
-              val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-              Type.mkUnion(tpes, loc)
-          }
-        case Some(effs) =>
-          // Case 1.2: We use the class effects.
-          val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-          Type.mkUnion(tpes, loc)
-      }
+      getClassAndPackageEffs(m.getDeclaringClass, loc)
     case Some(effs) =>
       // Case 2: We found the effects for the method.
       val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
       Type.mkUnion(tpes, loc)
+  }
+
+  private def getClassAndPackageEffs(c: Class[?], loc: SourceLocation): Type = {
+    classEffs.get(c.getDeclaringClass) match {
+      case None =>
+        // Case 1.1: No effects for the class. Try the package.
+        packageEffs.get(c.getDeclaringClass.getPackage) match {
+          case None =>
+            // Case 1.1.1: No effects for the package. Use the IO effect by default.
+            Type.IO
+          case Some(effs) =>
+            // Case 1.1.2: We use the package effects.
+            val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+            Type.mkUnion(tpes, loc)
+        }
+      case Some(effs) =>
+        // Case 1.2: We use the class effects.
+        val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+        Type.mkUnion(tpes, loc)
+    }
   }
 
   /**
