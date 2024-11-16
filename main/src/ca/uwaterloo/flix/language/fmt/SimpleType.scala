@@ -571,14 +571,15 @@ object SimpleType {
           }
 
         case TypeConstructor.Difference =>
-          // collapse into a chain of intersections
-          t.typeArguments.map(visit).map(splitDifference) match {
+          // collapse into a chain of differences
+          // take care not to change A - (B - C) into A - B - C
+          t.typeArguments.map(visit) match {
             // Case 1: No args. ? - ?
             case Nil => Difference(Hole :: Hole :: Nil)
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 - tpe2 - ?
-            case args :: Nil => Difference(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 - tpe2 - tpe3 - tpe4
-            case args1 :: args2 :: Nil => Difference(args1 ++ args2)
+            case arg :: Nil => Difference(splitDifference(arg) :+ Hole)
+            // Case 3: Multiple args. Concatenate the left differences: tpe1 - tpe2 - tpe3 - tpe4
+            case arg1 :: arg2 :: Nil => Difference(splitDifference(arg1) :+ arg2)
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
