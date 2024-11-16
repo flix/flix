@@ -32,6 +32,9 @@ object ClassList {
     * $ cd src/java.base/share/classes
     * $ find . -name "*.java"|sort|grep -v "jdk/internal"|grep -v "module-info.java" | grep -v "package-info.java"
     * }}}
+    *
+    * Repeat the above for directories `src/java.desktop/share/classes` and `src/java.net.http/share/classes`.
+    *
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
 
