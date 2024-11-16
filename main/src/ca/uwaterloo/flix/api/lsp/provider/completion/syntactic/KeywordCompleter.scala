@@ -132,7 +132,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("unsafe"      , Priority.Low),
       Completion.KeywordCompletion("use"         , Priority.High),
       // W
-      Completion.KeywordCompletion("with", Priority.Default),
+      Completion.KeywordCompletion("with"        , Priority.Default),
       Completion.KeywordCompletion("without"     , Priority.Default),
       // Y
       Completion.KeywordCompletion("yield"       , Priority.Default)
