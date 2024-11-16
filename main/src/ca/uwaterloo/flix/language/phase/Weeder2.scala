@@ -417,21 +417,23 @@ object Weeder2 {
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
+          val tpes = maybeType
             .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
+            .getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          Case(ident, tpe, loc)
+          Case(ident, tpes, loc)
       }
     }
 
-    private def flattenEnumCaseType(tpe: Type): Type = {
+    /** Extracts the types from a tuple type. */
+    private def flattenEnumCaseType(tpe: Type): List[Type] = {
+      // TODO NARY-ENUMS just parse differently
       tpe match {
-        // Single type in case -> flatten to ambiguous.
-        case Type.Tuple(t :: Nil, _) => t
-        // Multiple types in case -> do nothing
-        case tpe => tpe
+        // A tuple. Extract the types
+        case Type.Tuple(ts, _) => ts
+        // A single type.
+        case t => throw InternalCompilerException("unexpected non-tuple shape in enum", SourceLocation.Unknown)
       }
     }
 
@@ -494,10 +496,10 @@ object Weeder2 {
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
+          val tpes = maybeType
             .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
-          RestrictableCase(ident, tpe, tree.loc)
+            .getOrElse(Nil)
+          RestrictableCase(ident, tpes, tree.loc)
       }
     }
 
@@ -1415,12 +1417,12 @@ object Weeder2 {
     private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableChoosePattern, CompilationMessage] = {
       expect(tree, TreeKind.Expr.MatchRuleFragment)
       flatMapN(Patterns.pickPattern(tree)) {
-        case Pattern.Tag(qname, pat, loc) =>
-          val inner = pat match {
-            case Pattern.Wild(loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Var(ident, loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Constant.Unit, loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Tuple(elms, _) =>
+        case Pattern.Tag(qname, pats, loc) =>
+          val inner = pats match {
+            case Pattern.Wild(loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Var(ident, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
+            case Pattern.Cst(Constant.Unit, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Tuple(elms, _) :: Nil =>
               traverse(elms) {
                 case Pattern.Wild(loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case Pattern.Var(ident, loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
@@ -1431,9 +1433,9 @@ object Weeder2 {
                   Validation.Success(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic))
               }
             case other =>
-              val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
+              val error = UnsupportedRestrictedChoicePattern(isStar, loc)
               sctx.errors.add(error)
-              Validation.Success(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)))
+              Validation.Success(List(WeededAst.RestrictableChoosePattern.Error(loc.asSynthetic)))
           }
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
         case other =>
@@ -2283,11 +2285,13 @@ object Weeder2 {
       mapN(pickQName(tree), traverseOpt(maybePat)(visitTuplePat(_, seen))) {
         (qname, maybePat) =>
           maybePat match {
-            case None =>
-              // Synthetically add unit pattern to tag
-              val lit = Pattern.Cst(Constant.Unit, tree.loc.asSynthetic)
-              Pattern.Tag(qname, lit, tree.loc)
-            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
+            // TODO NARY-ENUMS parse properly instead of indirection
+            // Case: Empty - No arguments.
+            case None => Pattern.Tag(qname, Nil, tree.loc)
+            // Case: Tuple - Unpack it.
+            case Some(Pattern.Tuple(elms, _)) => Pattern.Tag(qname, elms, tree.loc)
+            // Case: Non-tuple - Singleton.
+            case Some(subPat) => Pattern.Tag(qname, List(subPat), tree.loc)
           }
       }
     }
@@ -2382,8 +2386,7 @@ object Weeder2 {
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case pat1 :: pat2 :: Nil =>
           val qname = Name.mkQName("List.Cons", tree.loc)
-          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
-          Pattern.Tag(qname, pat, tree.loc)
+          Pattern.Tag(qname, List(pat1, pat2), tree.loc)
         case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
       }
     }

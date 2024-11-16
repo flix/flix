@@ -444,20 +444,21 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
+      case KindedAst.Expr.ApplyTag(symUse, exps, tvar, evar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-        // The tag type is a function from the type of variant to the type of the enum.
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        // The tag type is a function from the types of terms to the type of the enum.
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(tagType, Type.mkPureUncurriedArrow(tpes, tvar, loc), loc)
+        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitRestrictableTag(e)
+      case e: Expr.ApplyRestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
@@ -985,15 +986,15 @@ object ConstraintGen {
 
       case KindedAst.Pattern.Cst(cst, _) => Type.constantType(cst)
 
-      case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
+      case KindedAst.Pattern.Tag(symUse, pats, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
-        val tpe = visitPattern(pat)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        val tpes = pats.map(visitPattern)
+        c.unifyType(tagType, Type.mkPureUncurriedArrow(tpes, tvar, loc), loc)
         tvar
 
 

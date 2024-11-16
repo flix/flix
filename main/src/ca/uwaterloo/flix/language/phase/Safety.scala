@@ -237,11 +237,11 @@ object Safety {
         visit(exp) ++
           rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
 
-      case Expr.Tag(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.ApplyTag(_, exps, _, _, _) =>
+        exps.flatMap(visit)
 
-      case Expr.RestrictableTag(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+        exps.flatMap(visit)
 
       case Expr.Tuple(elms, _, _, _) =>
         elms.flatMap(visit)
@@ -836,12 +836,11 @@ object Safety {
     *
     * @param loc the location of the atom containing the term.
     */
-  @tailrec
   private def visitPat(term: Pattern, loc: SourceLocation): List[SafetyError] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
-    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pats, _, _) => visitPats(pats, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Record(pats, pat, _, _) => visitRecordPattern(pats, pat, loc)
     case Pattern.RecordEmpty(_, _) => Nil

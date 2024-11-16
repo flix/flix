@@ -591,10 +591,10 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.Case(sym, tpe0, loc) =>
-      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.Case(sym, tpe, loc)
+    case NamedAst.Declaration.Case(sym, tpes0, loc) =>
+      val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      mapN(tpesVal) {
+        tpes => ResolvedAst.Declaration.Case(sym, tpes, loc)
       }
   }
 
@@ -613,10 +613,10 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
-      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.RestrictableCase(sym, tpe, loc)
+    case NamedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
+      val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      mapN(tpesVal) {
+        tpes => ResolvedAst.Declaration.RestrictableCase(sym, tpes, loc)
       }
   }
 
@@ -1516,64 +1516,23 @@ object Resolver {
   }
 
   /**
-    * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+    * Returns a curried lambda and application of `caze`.
+    *
+    *   - `Cons ===> x -> y -> Cons(x, y)`
     */
   private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val synthLoc = SourceLocation(isReal = false, loc.sp1, loc.sp2)
-    // Check if the tag value has Unit type.
-    if (isUnitType(caze.tpe)) {
-      // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Constant.Unit, synthLoc)
-      ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), e, loc)
-    } else {
-      // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
-      // If the tag is `Some` we construct the lambda: x -> Some(x).
-
-      // Construct a fresh symbol for the formal parameter.
-      val freshVar = freshVarSym("x", BoundBy.FormalParam, synthLoc)
-
-      // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, synthLoc)
-
-      // Construct a variable expression for the fresh symbol.
-      val varExp = ResolvedAst.Expr.Var(freshVar, synthLoc)
-
-      // Construct the tag expression on the fresh symbol expression.
-      val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
-
-      // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, synthLoc)
-    }
+    val base = es => ResolvedAst.Expr.ApplyTag(CaseSymUse(caze.sym, loc), es, loc.asSynthetic)
+    visitApplyFull(base, caze.tpes.length, Nil, loc.asSynthetic)
   }
 
   /**
-    * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+    * Returns a curried lambda and application of `caze`.
+    *
+    *   - `Add ===> x -> y -> Add(x, y)`
     */
   private def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, isOpen: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    // Check if the tag value has Unit type.
-    if (isUnitType(caze.tpe)) {
-      // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
-      ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
-    } else {
-      // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
-      // If the tag is `Some` we construct the lambda: x -> Some(x).
-
-      // Construct a fresh symbol for the formal parameter.
-      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
-
-      // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
-
-      // Construct a variable expression for the fresh symbol.
-      val varExp = ResolvedAst.Expr.Var(freshVar, loc)
-
-      // Construct the tag expression on the fresh symbol expression.
-      val tagExp = ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
-
-      // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
-    }
+    val base = es => ResolvedAst.Expr.ApplyRestrictableTag(RestrictableCaseSymUse(caze.sym, loc), es, isOpen, loc.asSynthetic)
+    visitApplyFull(base, caze.tpes.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1734,36 +1693,36 @@ object Resolver {
   }
 
   /**
-    * Resolves the tag application.
+    * Resolve the tag application.
+    *
+    * Example with `Cons(a, List[a])`
+    *   - `   Cons     ===> x -> y -> Cons(x, y)`
+    *   - `  Cons(a)   ===> x -> Cons(a, x)`
+    *   - ` Cons(a,b)  ===> Cons(a, b)`
+    *   - `Cons(a,b,c) ===> Cons(a, b)(c)`
     */
-  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    val esVal = traverse(exps)(resolveExp(_, env0))
-    mapN(esVal) {
-      // Case 1: one expression. No tuple.
-      case e :: Nil =>
-        ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), e, outerLoc)
-      // Case 2: multiple expressions. Make them a tuple
-      case es =>
-        val lastLoc = es.last.loc
-        val tupleLoc = SourceLocation(lastLoc.isReal, innerLoc.sp2, lastLoc.sp2)
-        val exp = ResolvedAst.Expr.Tuple(es, tupleLoc)
-        ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es =>
+        val base = args => ResolvedAst.Expr.ApplyTag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
+        visitApplyFull(base, caze.tpes.length, es, outerLoc)
     }
   }
 
   /**
-    * Resolves the tag application.
+    * Resolve the tag application.
+    *
+    * Example with `Add(Exp, Exp)`
+    *   - `   Add     ===> x -> y -> Add(x, y)`
+    *   - `  Add(a)   ===> x -> Add(a, x)`
+    *   - ` Add(a,b)  ===> Add(a, b)`
+    *   - `Add(a,b,c) ===> Add(a, b)(c)`
     */
-  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    val esVal = traverse(exps)(resolveExp(_, env0))
-    mapN(esVal) {
-      // Case 1: one expression. No tuple.
-      case e :: Nil =>
-        ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), e, isOpen, outerLoc)
-      // Case 2: multiple expressions. Make them a tuple
-      case es =>
-        val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
-        ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), exp, isOpen, outerLoc)
+  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es =>
+        val base = args => ResolvedAst.Expr.ApplyRestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
+        visitApplyFull(base, caze.tpes.length, es, outerLoc)
     }
   }
 
@@ -1855,11 +1814,11 @@ object Resolver {
       case NamedAst.Pattern.Cst(cst, loc) =>
         ResolvedAst.Pattern.Cst(cst, loc)
 
-      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+      case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
-            val p = visit(pat)
-            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
+            val ps = pats.map(visit)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), ps, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)
             ResolvedAst.Pattern.Error(loc)
@@ -1903,11 +1862,11 @@ object Resolver {
       case NamedAst.Pattern.Cst(cst, loc) =>
         ResolvedAst.Pattern.Cst(cst, loc)
 
-      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+      case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
-            val p = visit(pat)
-            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), p, loc)
+            val ps = pats.map(visit)
+            ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), ps, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)
             ResolvedAst.Pattern.Error(loc)
@@ -3680,12 +3639,11 @@ object Resolver {
   /**
     * Creates an environment from the given pattern.
     */
-  @tailrec
   private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
     case ResolvedAst.Pattern.Wild(loc) => ListMap.empty
     case ResolvedAst.Pattern.Var(sym, loc) => mkVarEnv(sym)
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
-    case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
+    case ResolvedAst.Pattern.Tag(sym, pats, loc) => mkPatternsEnv(pats)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
     case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty

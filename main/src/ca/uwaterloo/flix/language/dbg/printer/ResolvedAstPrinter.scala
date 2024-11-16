@@ -62,8 +62,8 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, _, exp) => (printVarSym(sym), DocAst.Type.Unknown, print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Tag(sym, exp, _) => DocAst.Expr.Tag(sym.sym, List(print(exp)))
-    case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ApplyTag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
+    case Expr.ApplyRestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordEmpty(_) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
@@ -127,7 +127,7 @@ object ResolvedAstPrinter {
     case Pattern.Wild(_) => DocAst.Expr.Wild
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(sym, pat, _) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, pats, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.RecordEmpty(_) => DocAst.Expr.RecordEmpty

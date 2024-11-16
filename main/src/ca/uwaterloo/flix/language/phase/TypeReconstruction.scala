@@ -243,15 +243,13 @@ object TypeReconstruction {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.Tag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.ApplyTag(sym, exps, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyTag(sym, es, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.RestrictableTag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.ApplyRestrictableTag(sym, exps, _, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyRestrictableTag(sym, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))
@@ -682,7 +680,7 @@ object TypeReconstruction {
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
+    case KindedAst.Pattern.Tag(sym, pats, tvar, loc) => TypedAst.Pattern.Tag(sym, pats.map(visitPattern), subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)

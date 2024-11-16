@@ -99,8 +99,8 @@ object Indexer {
     * Returns a reverse index for the given enum case `caze0`.
     */
   private def visitCase(caze0: Case): Index = caze0 match {
-    case Case(_, tpe, _, _) =>
-      Index.occurrenceOf(caze0) ++ visitType(tpe)
+    case Case(_, tpes, _, _) =>
+      Index.occurrenceOf(caze0) ++ traverse(tpes)(visitType)
   }
 
   /**
@@ -302,14 +302,14 @@ object Indexer {
         case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
-    case Expr.Tag(CaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.ApplyTag(CaseSymUse(sym, loc), exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
+      visitExps(exps) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RestrictableTag(RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.ApplyRestrictableTag(RestrictableCaseSymUse(sym, loc), exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
       // TODO RESTR-VARS use of sym
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
@@ -509,9 +509,9 @@ object Indexer {
     case Pattern.Var(Binder(sym, _), tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(CaseSymUse(sym, loc), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, loc), pats, _, _) =>
       val parent = Entity.Pattern(pat0)
-      Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitPat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)

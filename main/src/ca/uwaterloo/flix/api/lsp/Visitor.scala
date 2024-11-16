@@ -214,12 +214,11 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, tpe, _, loc) = cse
+    val Case(_, tpes, _, loc) = cse
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
-
-    visitType(tpe)
+    tpes.foreach(visitType)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -494,11 +493,11 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.Tag(symUse, exp, _, _, _) =>
+      case Expr.ApplyTag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
-        visitExpr(exp)
+        exps.foreach(visitExpr)
 
-      case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
+      case Expr.ApplyRestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
@@ -904,9 +903,9 @@ object Visitor {
     	case Wild(_, _) => ()
     	case Var(varSym, _, _) => visitBinder(varSym)
     	case Cst(_, _, _) => ()
-    	case Tag(sym, pat, _, _) =>
+    	case Tag(sym, pats, _, _) =>
     	  visitCaseSymUse(sym)
-        visitPattern(pat)
+        pats.foreach(visitPattern)
     	case Tuple(pats, _, _) =>
     	  pats.foreach(visitPattern)
     	case Record(pats, pat, _, _) =>
