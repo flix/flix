@@ -20,8 +20,9 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
+import ca.uwaterloo.flix.util.{ClassList, Similarity}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -43,8 +44,11 @@ object CodeActionProvider {
       else
         Nil
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri) :: {
+    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(name, uri, ap)
+
+    case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
+      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
         if (qn.namespace.isRoot)
           mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
         else
@@ -177,7 +181,7 @@ object CodeActionProvider {
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
         CodeAction(
-          title = s"use $sym",
+          title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
@@ -205,7 +209,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewEnum(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new enum $name",
+    title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -235,7 +239,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new function $name",
+    title = s"Create def '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -248,6 +252,39 @@ object CodeActionProvider {
     )),
     command = None
   )
+
+  /**
+    * Returns a code action that proposes to import corresponding Java class.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): = new File("data.txt")
+    * }}}
+    *
+    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * {{{
+    *   import java.io.File
+    * }}}
+    */
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
+    val startPosition = Position(line = ap.line, character = ap.col)
+    val insertRange = Range(startPosition, startPosition)
+    val leadingSpaces = " " * ap.spaces
+    ClassList.TheMap.get(name).toList.flatten.map { path =>
+        CodeAction(
+          title = s"import '$path'",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(
+              Map(uri -> List(TextEdit(
+                insertRange,
+                s"${leadingSpaces}import $path\n"
+              )))
+          )),
+          command = None
+        )
+    }
+  }
 
   /**
     * Returns a code action that proposes to create a new struct.
@@ -264,7 +301,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new struct $name",
+    title = s"Create struct '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -278,7 +315,6 @@ object CodeActionProvider {
     )),
     command = None
   )
-
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
@@ -302,7 +338,7 @@ object CodeActionProvider {
     */
   private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
     CodeAction(
-      title = s"Did you mean: `$correctName`?",
+      title = s"Did you mean: '$correctName'?",
       kind = CodeActionKind.QuickFix,
       edit = Some(WorkspaceEdit(
         Map(uri -> List(TextEdit(
@@ -346,7 +382,7 @@ object CodeActionProvider {
     case Some(TypeConstructor.Enum(sym, _)) =>
       root.enums.get(sym).map { e =>
         CodeAction(
-          title = s"Derive $trt",
+          title = s"Derive '$trt'",
           kind = CodeActionKind.QuickFix,
           edit = Some(addDerivation(e, trt, uri)),
           command = None
@@ -380,7 +416,7 @@ object CodeActionProvider {
       None
     else Some(
       CodeAction(
-        title = s"Derive $trt",
+        title = s"Derive '$trt'",
         kind = CodeActionKind.Refactor,
         edit = Some(addDerivation(e, trt, uri)),
         command = None
