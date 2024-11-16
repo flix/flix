@@ -216,7 +216,7 @@ object Lexer {
 
   /**
     * Peeks the character that state is currently sitting on without advancing.
-    * Note: Peek does not to bound checks. This is done under the assumption that the lexer
+    * Note: Peek does not perform bound checks. This is done under the assumption that the lexer
     * is only ever advanced using `advance`.
     * Since `advance` cannot move past EOF peek will always be in bounds.
     */
@@ -962,6 +962,13 @@ object Lexer {
           case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
           case _ =>
             retreat()
+            if (peek() == ';') {
+              // Special case: the retreat functions does not rewind the `end` field
+              // in the state. However, if we encounter a ';' here the number ended
+              // before what the `end.column` state was set to so we manually update
+              // the `end` column.
+              s.end.column -= 1
+            }
             if (isDecimal) {
               error.getOrElse(TokenKind.LiteralFloat64)
             } else {
