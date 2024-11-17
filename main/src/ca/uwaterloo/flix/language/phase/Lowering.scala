@@ -209,10 +209,10 @@ object Lowering {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val cases = cases0.map {
-        case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
-          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+        case (_, TypedAst.Case(caseSym, tpes0, caseSc0, loc)) =>
+          val tpes = tpes0.map(visitType)
           val caseSc = visitScheme(caseSc0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, loc))
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
@@ -240,11 +240,11 @@ object Lowering {
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
       val cases = cases0.map {
-        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
-          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+        case (_, TypedAst.RestrictableCase(caseSym0, tpes0, caseSc0, loc)) =>
+          val tpes = tpes0.map(visitType)
           val caseSc = visitScheme(caseSc0)
           val caseSym = visitRestrictableCaseSym(caseSym0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
       LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, loc)
@@ -466,17 +466,17 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.Tag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expr.ApplyTag(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), es, t, eff, loc)
 
-    case TypedAst.Expr.RestrictableTag(sym0, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyRestrictableTag(sym0, exps, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
-      val e = visitExp(exp)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
 
     case TypedAst.Expr.Tuple(elms, tpe, eff, loc) =>
       val es = elms.map(visitExp)
@@ -837,10 +837,10 @@ object Lowering {
     case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       LoweredAst.Pattern.Cst(cst, tpe, loc)
 
-    case TypedAst.Pattern.Tag(sym, pat, tpe, loc) =>
-      val p = visitPat(pat)
+    case TypedAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val ps = pats.map(visitPat)
       val t = visitType(tpe)
-      LoweredAst.Pattern.Tag(sym, p, t, loc)
+      LoweredAst.Pattern.Tag(sym, ps, t, loc)
 
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
@@ -957,13 +957,8 @@ object Lowering {
             case TypedAst.RestrictableChoosePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
             case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable", loc)
           }
-          val pat1 = termPatterns match {
-            case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
-            case singular :: Nil => singular
-            case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuple(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
-          }
           val tagSym = visitRestrictableCaseSymUse(sym)
-          val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
+          val p = LoweredAst.Pattern.Tag(tagSym, termPatterns, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
         case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
       }

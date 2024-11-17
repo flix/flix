@@ -181,13 +181,14 @@ object MagicMatchCompleter {
     *  Normal: case Color.Red(_elem)          => ???   where the length of "Color.Red(_elem)" is 16
     */
   private def getCaseLength(cas: TypedAst.Case): Int = {
-    cas.tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) => cas.sym.toString.length
-      case Some(TypeConstructor.Tuple(arity)) =>
+    cas.tpes match {
+      case Nil | List(Type.Cst(TypeConstructor.Unit, _)) => cas.sym.toString.length
+      case List(_) =>
+        cas.sym.toString.length + "(_elem)".length
+      case other =>
+        val arity = other.length
         val numberLength = List.range(1, arity + 1).map(getIntLength).sum
         cas.sym.toString.length + "(_elem,".length * arity + numberLength
-      case _ =>
-        cas.sym.toString.length + "(_elem)".length
     }
   }
 
@@ -195,14 +196,15 @@ object MagicMatchCompleter {
     * Creates a case string and its corresponding right-hand side string.
     */
   private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, Int) = {
-    cas.tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) =>
+    cas.tpes match {
+      case List(Type.Cst(TypeConstructor.Unit, _)) =>
         (s"$sym", z)
-      case Some(TypeConstructor.Tuple(arity)) =>
+      case List(_) =>
+        (s"$sym($${${z}:_elem})", z + 1)
+      case other =>
+        val arity = other.length
         val elements = List.range(0, arity).map(i => s"$${${i + z}:_elem$i}").mkString(", ")
         (s"$sym($elements)",  z + arity)
-      case _ =>
-        (s"$sym($${${z}:_elem})", z + 1)
     }
   }
 

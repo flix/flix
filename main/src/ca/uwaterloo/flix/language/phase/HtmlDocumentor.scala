@@ -1222,17 +1222,13 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      SimpleType.fromWellKindedType(c.tpe) match {
-        case SimpleType.Unit => // Nothing
-        case SimpleType.Tuple(elms) =>
+      c.tpes.map(SimpleType.fromWellKindedType) match {
+        case List(SimpleType.Unit) | Nil => // Nothing
+        case elms =>
           sb.append("(")
           docList(elms) { t =>
             sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
-          sb.append(")")
-        case _ =>
-          sb.append("(")
-          docType(c.tpe)
           sb.append(")")
       }
 

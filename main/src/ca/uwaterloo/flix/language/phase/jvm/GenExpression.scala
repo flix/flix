@@ -566,14 +566,16 @@ object GenExpression {
         }
         ins(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.Untag(_) =>
+      case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
-        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
+        val MonoType.Enum(_, targs) = exp.tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val tagType: BackendObjType.Tag = ??? // BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
 
         compileExpr(exp)
         val ins = {
           import BytecodeInstructions.*
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(0))
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
         }
         ins(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))

@@ -171,8 +171,8 @@ object PatMatch {
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
 
-      case Expr.Tag(_, exp, _, _, _) => visitExp(exp)
-      case Expr.RestrictableTag(_, exp, _, _, _) => visitExp(exp)
+      case Expr.ApplyTag(_, exps, _, _, _) => exps.flatMap(visitExp)
+      case Expr.ApplyRestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
       case Expr.RecordEmpty(_, _) => Nil
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
@@ -406,19 +406,17 @@ object PatMatch {
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exp, _, _) =>
+      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exps, _, _) =>
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
-              exp match {
-                // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
-                // => Tuple. If there are arguments, we add them to the matrix
-                case TypedAst.Pattern.Tuple(elms, _, _) =>
-                  (elms ::: pat.tail) :: acc
-                case TypedAst.Pattern.Cst(Constant.Unit, _, _) =>
+              exps match {
+                // The expression varies depending on how many arguments it has.
+                // If there are arguments, we add them to the matrix
+                case List(TypedAst.Pattern.Cst(Constant.Unit, _, _)) =>
                   pat.tail :: acc
-                case _ =>
-                  (exp :: pat.tail) :: acc
+                case elms =>
+                  (elms ::: pat.tail) :: acc
               }
             } else {
               acc
@@ -544,7 +542,7 @@ object PatMatch {
       // other enums
       case TyCon.Enum(sym, _) => {
         root.enums(sym.enumSym).cases.map {
-          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(countTypeArgs(caze.tpe))(TyCon.Wild))
+          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(???)(TyCon.Wild))
         }
       }.toList ::: xs
 
@@ -716,11 +714,10 @@ object PatMatch {
     case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Tag(CaseSymUse(sym, _), pat, _, _) =>
-      val args = pat match {
-        case Pattern.Cst(Constant.Unit, _, _) => List.empty[TyCon]
-        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
-        case a => List(patToCtor(a))
+    case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) =>
+      val args = pats match {
+        case List(Pattern.Cst(Constant.Unit, _, _)) => List.empty[TyCon]
+        case elms => elms.map(patToCtor)
       }
       TyCon.Enum(sym, args)
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))

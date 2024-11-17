@@ -160,11 +160,15 @@ object PredDeps {
       }
       dg1 + dg2
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.ApplyTag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledPrecedenceGraph.empty) {

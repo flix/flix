@@ -391,7 +391,7 @@ object JvmOps {
     *   - `instantiateEnum(E, List(Char)) = List(List(Char, Object), List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  private def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): List[List[BackendType]] = {
+  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): List[List[BackendType]] = {
     assert(enm.tparams.length == targs.length)
     val map = enm.tparams.map(_.sym).zip(targs).toMap
     enm.cases.map {

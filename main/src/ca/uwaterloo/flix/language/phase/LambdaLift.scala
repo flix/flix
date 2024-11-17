@@ -66,7 +66,7 @@ object LambdaLift {
   }
 
   private def visitEnumCase(caze: SimplifiedAst.Case): LiftedAst.Case = caze match {
-    case SimplifiedAst.Case(sym, tpe, loc) => LiftedAst.Case(sym, tpe, loc)
+    case SimplifiedAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct0: SimplifiedAst.Struct): LiftedAst.Struct = struct0 match {

@@ -173,14 +173,14 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Tag(sym, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
+    case Expr.ApplyTag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
+    case Expr.ApplyRestrictableTag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Tuple(elms, tpe, eff, loc) =>

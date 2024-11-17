@@ -119,7 +119,7 @@ object Eraser {
         case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Untag(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
