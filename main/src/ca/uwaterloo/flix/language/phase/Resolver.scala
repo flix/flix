@@ -526,7 +526,7 @@ object Resolver {
 
               mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
                 case (tpe, eff, tconstrs, econstrs) =>
-                  // add the inherited type constraint to the the list
+                  // add the inherited type constraint to the list
                   ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs)
               }
           }
