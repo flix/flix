@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
-  * A common super-type for EntryPoint errors.
+  * A common super-type for errors produced by [[ca.uwaterloo.flix.language.phase.EntryPoints]].
   */
 sealed trait EntryPointError extends CompilationMessage {
   val kind: String = "Entry Point Error"
