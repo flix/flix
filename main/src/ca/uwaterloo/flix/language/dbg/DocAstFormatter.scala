@@ -37,6 +37,8 @@ object DocAstFormatter {
           })
         }) |:: text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
+          case Case(sym, Nil) =>
+            text("case") +: text(sym.name)
           case Case(sym, tpes) =>
             text("case") +: text(sym.name) |:: formatType(Type.Tuple(tpes), paren = false)
         }))

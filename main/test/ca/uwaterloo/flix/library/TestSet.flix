@@ -1375,27 +1375,27 @@ mod TestSet {
 
     @test
     def unfold01(): Bool =
-        Set.unfold(s -> if (true) None else Some(s + 48, s + 1), 0) == Set#{}
+        Set.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0) == Set#{}
 
     @test
     def unfold02(): Bool =
-        Set.unfold(s -> if (s > 0) None else Some(s + 48, s + 1), 0) == Set#{48}
+        Set.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0) == Set#{48}
 
     @test
     def unfold03(): Bool =
-        Set.unfold(s -> if (s > 1) None else Some(s + 48, s + 1), 0) == Set#{48, 49}
+        Set.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0) == Set#{48, 49}
 
     @test
     def unfold04(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 0) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 
     @test
     def unfold05(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 5) == Set#{53, 54, 55, 56, 57}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5) == Set#{53, 54, 55, 56, 57}
 
     @test
     def unfold06(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 2), 0) == Set#{48, 50, 52, 54, 56}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0) == Set#{48, 50, 52, 54, 56}
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithIter                                                          //
