@@ -30,7 +30,7 @@ object ClassList {
     * {{{
     * $ git clone git@github.com:openjdk/jdk.git
     * $ cd src/java.base/share/classes
-    * $ find . -name "*.java"|sort|grep -v "jdk/internal"|grep -v "module-info.java" | grep -v "package-info.java"
+    * $ find . -name "*.java" | sort --ignore-case | grep -v "jdk/internal" | grep -v "module-info.java" | grep -v "package-info.java" | grep -v "com/sun/beans" | grep -v "com/sun/imageio" | grep -v "com/sun/java" | grep -v "com/sun/media" | grep -v "sun/awt" | grep -v "sun/font" | grep -v "sun/java2d" | grep -v "sun/print" | grep -v "sun/swing"
     * }}}
     *
     * Repeat the above for directories `src/java.desktop/share/classes` and `src/java.net.http/share/classes`.
