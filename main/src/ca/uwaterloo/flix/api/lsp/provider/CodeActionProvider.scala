@@ -61,8 +61,8 @@ object CodeActionProvider {
       else
         Nil
 
-    case ResolutionError.UndefinedType(qn, _, loc) if overlaps(range, loc) =>
-      mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: {
+    case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
+      mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
         else
