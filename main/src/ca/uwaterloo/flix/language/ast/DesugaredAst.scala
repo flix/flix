@@ -336,6 +336,8 @@ object DesugaredAst {
 
     case class Intersection(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
 
+    case class Difference(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
+
     case class Pure(loc: SourceLocation) extends Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends Type

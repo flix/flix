@@ -48,12 +48,12 @@ import scala.jdk.CollectionConverters.*
   *     its return type is not Unit.
   *   - Compute the set of all entry points and store it in Root.
   */
-object EntryPoint {
+object EntryPoints {
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
     val (root2, errs2) = CheckEntryPoints.run(root1)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
