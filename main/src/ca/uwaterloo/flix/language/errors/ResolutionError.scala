@@ -539,7 +539,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -558,6 +558,10 @@ object ResolutionError {
 
   }
 
+  object UndefinedTrait {
+    def apply(qn: Name.QName, ns: Name.NName, loc: SourceLocation): UndefinedTrait = UndefinedTrait(qn, AnchorPosition.mkImportOrUseAnchor(ns), ns, loc)
+  }
+
   /**
     * Undefined Effect Error.
     *
@@ -565,7 +569,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -582,6 +586,10 @@ object ResolutionError {
       s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
 
+  }
+
+  object UndefinedEffect {
+    def apply(qn: Name.QName, ns: Name.NName, loc: SourceLocation): UndefinedEffect = UndefinedEffect(qn, AnchorPosition.mkImportOrUseAnchor(ns), ns, loc)
   }
 
   /**

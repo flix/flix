@@ -38,7 +38,7 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, _,  _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseEffect(qn.ident, uri)
       else
@@ -58,7 +58,7 @@ object CodeActionProvider {
           Nil
       }
 
-    case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _,  _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseTrait(qn.ident, uri)
       else
