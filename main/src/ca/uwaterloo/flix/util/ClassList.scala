@@ -35,6 +35,8 @@ object ClassList {
     *
     * Repeat the above for directories `src/java.desktop/share/classes` and `src/java.net.http/share/classes`.
     *
+    * Finally, remove the `./` prefix, e.g., `./com/sun/...` should be `com/sun/...`.
+    *
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
 
