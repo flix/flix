@@ -132,7 +132,8 @@ object Purity {
     * Returns the set of effects described by the formula `f`.
     *
     * Assumes that `f` only contains well-formed [[TypeConstructor.Union]],
-    * [[TypeConstructor.Intersection]], and [[TypeConstructor.Complement]] of
+    * [[TypeConstructor.Intersection]], [[TypeConstructor.Difference]], and
+    * [[TypeConstructor.Complement]] of
     * [[TypeConstructor.Pure]], [[TypeConstructor.Univ]], and
     * [[TypeConstructor.Effect]].
     *
@@ -159,6 +160,10 @@ object Purity {
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
       t1.intersect(t2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      t1.diff(t2)
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)

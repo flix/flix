@@ -207,9 +207,9 @@ object SimpleType {
   case class SymmetricDiff(tpes: List[SimpleType]) extends SimpleType
 
   /**
-    * Difference of two types.
+    * A chain of types connected by `-`.
     */
-  case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
+  case class Difference(tpes: List[SimpleType]) extends SimpleType
 
   /////////////
   // Predicates
@@ -570,6 +570,20 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.Difference =>
+          // collapse into a chain of differences
+          // take care not to change A - (B - C) into A - B - C
+          t.typeArguments.map(visit) match {
+            // Case 1: No args. ? - ?
+            case Nil => Difference(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 - tpe2 - ?
+            case arg :: Nil => Difference(splitDifference(arg) :+ Hole)
+            // Case 3: Multiple args. Concatenate the left differences: tpe1 - tpe2 - tpe3 - tpe4
+            case arg1 :: arg2 :: Nil => Difference(splitDifference(arg1) :+ arg2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.SymmetricDiff =>
           val args = t.typeArguments.map(visit)
           SymmetricDiff(args)
@@ -725,10 +739,28 @@ object SimpleType {
 
   /**
     * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
-    * and leaves non-intersection types as singletons.
+    * and leaves other types as singletons.
     */
   private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
     case Intersection(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 - t2` into `t1 :: t2 :: Nil`,
+    * and leaves other types as singletons.
+    */
+  private def splitDifference(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Difference(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 ⊕ t2` into `t1 :: t2 :: Nil`,
+    * and leaves other types as singletons.
+    */
+  private def splitSymmetricDiff(tpe: SimpleType): List[SimpleType] = tpe match {
+    case SymmetricDiff(tpes) => tpes
     case t => List(t)
   }
 

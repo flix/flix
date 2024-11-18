@@ -1136,6 +1136,11 @@ object Namer {
       val t2 = visitType(tpe2)
       NamedAst.Type.Intersection(t1, t2, loc)
 
+    case DesugaredAst.Type.Difference(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Difference(t1, t2, loc)
+
     case DesugaredAst.Type.Pure(loc) =>
       NamedAst.Type.Pure(loc)
 
@@ -1263,6 +1268,7 @@ object Namer {
     case DesugaredAst.Type.Complement(tpe, _) => freeTypeVars(tpe)
     case DesugaredAst.Type.Union(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.Intersection(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
+    case DesugaredAst.Type.Difference(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.Pure(_) => Nil
     case DesugaredAst.Type.CaseSet(_, _) => Nil
     case DesugaredAst.Type.CaseComplement(tpe, _) => freeTypeVars(tpe)
