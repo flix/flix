@@ -522,13 +522,14 @@ object Resolver {
               val env = env1 ++ mkFormalParamEnv(fparams)
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
               val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
-              val tconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
+              val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
-                case (tpe, eff, tconstrs, econstrs) =>
+              mapN(tpeVal, effVal, optTconstrsVal, econstrsVal) {
+                case (tpe, eff, optTconstrs, econstrs) =>
                   // add the inherited type constraint to the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, (tconstr :: tconstrs).collect { case Some(t) => t }, econstrs)
+                  val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
               }
           }
       }
