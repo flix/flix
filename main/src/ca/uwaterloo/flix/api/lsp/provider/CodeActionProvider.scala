@@ -18,10 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
+import ca.uwaterloo.flix.util.{ClassList, Similarity}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -37,25 +38,30 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseEffect(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-      else
-        Nil
+    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(name, uri, ap)
 
-    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
+      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
+        if (qn.namespace.isRoot)
+          mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
+        else
+          Nil
+      }
+
+    case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseTrait(qn.ident, uri)
       else
         Nil
 
-    case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedType(qn, _, loc) if overlaps(range, loc) =>
       mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: {
         if (qn.namespace.isRoot)
           mkUseType(qn.ident, uri)
@@ -63,16 +69,16 @@ object CodeActionProvider {
           Nil
       }
 
-    case TypeError.MissingInstanceEq(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
 
-    case TypeError.MissingInstanceOrder(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceOrder(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingOrder(tpe, uri)
 
-    case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceToString(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
 
-    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if onSameLine(range, loc) =>
+    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if overlaps(range, loc) =>
       mkDeriveMissingSuperTrait(tpe, sup, uri)
 
     case _ => Nil
@@ -83,7 +89,7 @@ object CodeActionProvider {
     */
   private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
     root.enums.foldLeft(List.empty[CodeAction]) {
-      case (acc, (sym, enm)) if onSameLine(range, sym.loc) =>
+      case (acc, (sym, enm)) if overlaps(range, sym.loc) =>
         List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
       case (acc, _) => acc
     }
@@ -175,7 +181,7 @@ object CodeActionProvider {
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
         CodeAction(
-          title = s"use $sym",
+          title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
@@ -203,7 +209,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkNewEnum(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new enum $name",
+    title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -219,21 +225,83 @@ object CodeActionProvider {
   )
 
   /**
-   * Returns a code action that proposes to create a new struct.
-   *
-   * For example, if we have:
-   *
-   * {{{
-   *   def foo(): Abc = ???
-   * }}}
-   *
-   * where the `Abc` type is not defined this code action proposes to add:
-   * {{{
-   *   struct Abc[r] { }
-   * }}}
-   */
+    * Returns a code action that proposes to create a new function.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   let x = f()
+    * }}}
+    *
+    * where the name `f` is not defined this code action proposes to add:
+    * {{{
+    *   def f(): =
+    * }}}
+    */
+  private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Create def '$name'",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(Position(1, 1), Position(1, 1)),
+        s"""
+           |def $name(): =
+           |
+           |""".stripMargin
+      )))
+    )),
+    command = None
+  )
+
+  /**
+    * Returns a code action that proposes to import corresponding Java class.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): = new File("data.txt")
+    * }}}
+    *
+    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * {{{
+    *   import java.io.File
+    * }}}
+    */
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
+    val startPosition = Position(line = ap.line, character = ap.col)
+    val insertRange = Range(startPosition, startPosition)
+    val leadingSpaces = " " * ap.spaces
+    ClassList.TheMap.get(name).toList.flatten.map { path =>
+        CodeAction(
+          title = s"import '$path'",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(
+              Map(uri -> List(TextEdit(
+                insertRange,
+                s"${leadingSpaces}import $path\n"
+              )))
+          )),
+          command = None
+        )
+    }
+  }
+
+  /**
+    * Returns a code action that proposes to create a new struct.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): Abc = ???
+    * }}}
+    *
+    * where the `Abc` type is not defined this code action proposes to add:
+    * {{{
+    *   struct Abc[r] { }
+    * }}}
+    */
   private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Introduce new struct $name",
+    title = s"Create struct '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
@@ -247,8 +315,6 @@ object CodeActionProvider {
     )),
     command = None
   )
-
-
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
@@ -272,7 +338,7 @@ object CodeActionProvider {
     */
   private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
     CodeAction(
-      title = s"Did you mean: `$correctName`?",
+      title = s"Did you mean: '$correctName'?",
       kind = CodeActionKind.QuickFix,
       edit = Some(WorkspaceEdit(
         Map(uri -> List(TextEdit(
@@ -316,7 +382,7 @@ object CodeActionProvider {
     case Some(TypeConstructor.Enum(sym, _)) =>
       root.enums.get(sym).map { e =>
         CodeAction(
-          title = s"Derive $trt",
+          title = s"Derive '$trt'",
           kind = CodeActionKind.QuickFix,
           edit = Some(addDerivation(e, trt, uri)),
           command = None
@@ -350,7 +416,7 @@ object CodeActionProvider {
       None
     else Some(
       CodeAction(
-        title = s"Derive $trt",
+        title = s"Derive '$trt'",
         kind = CodeActionKind.Refactor,
         edit = Some(addDerivation(e, trt, uri)),
         command = None
@@ -402,7 +468,16 @@ object CodeActionProvider {
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
-  // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
-  private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
+  private def overlaps(range: Range, loc: SourceLocation): Boolean = {
+    val range2 = sourceLocation2Range(loc)
+    range.overlapsWith(range2)
+  }
 
+  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
+    Position(sourcePosition.line, sourcePosition.col)
+  }
+
+  private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
+    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
+  }
 }

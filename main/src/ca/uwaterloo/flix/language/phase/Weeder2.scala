@@ -2899,7 +2899,7 @@ object Weeder2 {
             })
             // REGULAR TYPE OPERATORS
             case "+" => Validation.Success(Type.Union(t1, t2, tree.loc))
-            case "-" => Validation.Success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "-" => Validation.Success(Type.Difference(t1, t2, tree.loc))
             case "&" => Validation.Success(Type.Intersection(t1, t2, tree.loc))
             case "and" => Validation.Success(Type.And(t1, t2, tree.loc))
             case "or" => Validation.Success(Type.Or(t1, t2, tree.loc))

@@ -346,6 +346,11 @@ object Desugar {
       val t2 = visitType(tpe2)
       DesugaredAst.Type.Intersection(t1, t2, loc)
 
+    case WeededAst.Type.Difference(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Difference(t1, t2, loc)
+
     case WeededAst.Type.Pure(loc) =>
       DesugaredAst.Type.Pure(loc)
 

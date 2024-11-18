@@ -9,7 +9,7 @@ mod Test.Exp.Jvm.Complex {
     import com.sun.net.httpserver.HttpHandler;
     import com.sun.net.httpserver.HttpServer;
 
-    pub def run(): Unit \ {Net, IO} =
+    pub def start(): Unit \ {Net, IO} =
         let server = HttpServer.create(new InetSocketAddress(3000), 0);
         server.createContext("/", handler());
         ()

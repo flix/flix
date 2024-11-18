@@ -38,8 +38,7 @@ object Safety {
     val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
-    val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ visitSendable(root)
 
     //
     // Check if any errors were found.
@@ -79,54 +78,10 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
-    val exportErrs = if (def0.spec.ann.isExport) visitExportDef(def0) else Nil
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    val expErrs = visitExp(def0.exp, renv)(inTryCatch = false, flix)
-    exportErrs ++ expErrs
-  }
-
-  /**
-    * Checks that every every reachable function entry point has a valid
-    * signature and that exported functions are valid.
-    *
-    * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
-    */
-  private def visitEntryPoint(sym: Symbol.DefnSym)(implicit root: Root): List[SafetyError] = {
-    if (!root.reachable.contains(sym)) {
-      // The function is not an entry point. No restrictions.
-      Nil
-    } else {
-      val defn = root.defs(sym)
-      // Note that exported defs have different rules
-      if (defn.spec.ann.isExport) {
-        Nil
-      } else if (hasUnitParameter(defn) && isAllowedEffect(defn)) {
-        Nil
-      } else {
-        SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
-      }
-    }
-  }
-
-  /**
-    * Checks that the function is able to be exported.
-    *
-    * The function should be public, use a Java-valid name, be non-polymoprhic,
-    * use exportable types, and use non-algebraic effects
-    */
-  private def visitExportDef(defn: Def): List[SafetyError] = {
-    val nonRoot = if (isInRootNamespace(defn)) List(SafetyError.IllegalExportNamespace(defn.sym.loc)) else Nil
-    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
-    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
-    val types = if (isPolymorphic(defn)) {
-      List(SafetyError.IllegalExportPolymorphism(defn.loc))
-    } else {
-      checkExportableTypes(defn)
-    }
-    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.loc))
-    nonRoot ++ pub ++ name ++ types ++ effect
+    visitExp(def0.exp, renv)(inTryCatch = false, flix)
   }
 
   /**
@@ -140,39 +95,6 @@ object Safety {
       case _ =>
         // Case 2: Multiple parameters.
         false
-    }
-  }
-
-  /**
-    * Returns `true` if the given `defn` is in the root namespace.
-    */
-  private def isInRootNamespace(defn: Def): Boolean = {
-    defn.sym.namespace.isEmpty
-  }
-
-  /**
-    * Returns `true` if the given `defn` has the public modifier.
-    */
-  private def isPub(defn: Def): Boolean = {
-    defn.spec.mod.isPublic
-  }
-
-  /**
-    * Returns `true` if the given `defn` has a polymorphic type.
-    */
-  private def isPolymorphic(defn: Def): Boolean = {
-    defn.spec.tparams.nonEmpty
-  }
-
-  /**
-    * Returns `Nil` if the given `defn` has exportable types according to
-    * [[isExportableType]], otherwise a list of the found errors is returned.
-    */
-  private def checkExportableTypes(defn: Def): List[SafetyError] = {
-    val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
-    types.flatMap { t =>
-      if (isExportableType(t)) Nil
-      else List(SafetyError.IllegalExportType(t, t.loc))
     }
   }
 

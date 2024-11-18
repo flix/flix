@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -587,10 +588,11 @@ object ResolutionError {
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
+    * @param ap   the anchor position.
     * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined Java class: '$name'."
 
     def message(formatter: Formatter): String = {
@@ -663,12 +665,12 @@ object ResolutionError {
     * Undefined Name Error.
     *
     * @param qn    the unresolved name.
-    * @param ns    the current namespace.
+    * @param ap    the anchor position.
     * @param env   the variables in the scope.
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -821,10 +823,10 @@ object ResolutionError {
     * Undefined Type Error.
     *
     * @param qn  the name.
-    * @param ns  the current namespace.
+    * @param ap  the enclosing module.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {

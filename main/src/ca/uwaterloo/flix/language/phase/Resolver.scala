@@ -333,7 +333,7 @@ object Resolver {
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val env = appendAllUseEnv(defaultUses, usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS, defaultUses))
+          val declsVal = traverse(decls0)(visitDecl(_, env, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
             case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
@@ -347,7 +347,7 @@ object Resolver {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
-      val ns = Name.mkUnlocatedNName(sym.ns)
+      val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
@@ -1249,7 +1249,7 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+            val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
             sctx.errors.add(error)
             Validation.Success(ResolvedAst.Expr.Error(error))
         }
@@ -1279,7 +1279,7 @@ object Resolver {
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>
           val env = env0 ++ mkVarEnv(sym)
-          val clazzVal = lookupJvmClass2(className, env0, sym.loc).toValidation
+          val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
             case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1330,7 +1330,7 @@ object Resolver {
             case Some(List(Resolution.JavaClass(clazz))) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
-              val error = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+              val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
               sctx.errors.add(error)
               Validation.Success(ResolvedAst.Expr.Error(error))
           }
@@ -1519,29 +1519,30 @@ object Resolver {
     * Curry the tag, wrapping it in a lambda expression if it is not nullary.
     */
   private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val synthLoc = SourceLocation(isReal = false, loc.sp1, loc.sp2)
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, synthLoc)
       ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
 
       // Construct a fresh symbol for the formal parameter.
-      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
+      val freshVar = freshVarSym("x", BoundBy.FormalParam, synthLoc)
 
       // Construct the formal parameter for the fresh symbol.
-      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, loc)
+      val freshParam = ResolvedAst.FormalParam(freshVar, Modifiers.Empty, None, synthLoc)
 
       // Construct a variable expression for the fresh symbol.
-      val varExp = ResolvedAst.Expr.Var(freshVar, loc)
+      val varExp = ResolvedAst.Expr.Var(freshVar, synthLoc)
 
       // Construct the tag expression on the fresh symbol expression.
       val tagExp = ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), varExp, loc)
 
       // Assemble the lambda expression (we know this must be pure).
-      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, loc)
+      mkPureLambda(freshParam, tagExp, allowSubeffecting = false, synthLoc)
     }
   }
 
@@ -1743,7 +1744,9 @@ object Resolver {
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), e, outerLoc)
       // Case 2: multiple expressions. Make them a tuple
       case es =>
-        val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
+        val lastLoc = es.last.loc
+        val tupleLoc = SourceLocation(lastLoc.isReal, innerLoc.sp2, lastLoc.sp2)
+        val exp = ResolvedAst.Expr.Tuple(es, tupleLoc)
         ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
     }
   }
@@ -2256,7 +2259,7 @@ object Resolver {
       case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
-        val error = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        val error = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), filterToVarEnv(env), isUse = false, qname.loc)
         sctx.errors.add(error)
         ResolvedQName.Error(error)
     }
@@ -2432,7 +2435,7 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              val error = ResolutionError.UndefinedType(qname, ns0, loc)
+              val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
               sctx.errors.add(error)
               Validation.Success(UnkindedType.Error(loc))
           }
@@ -2449,7 +2452,7 @@ object Resolver {
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            val error = ResolutionError.UndefinedType(qname, ns0, loc)
+            val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
             sctx.errors.add(error)
             Validation.Success(UnkindedType.Error(loc))
         }
@@ -2509,7 +2512,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc).toValidation) {
+        mapN(lookupJvmClass(fqn, ns0, loc).toValidation) {
           case clazz => flixifyType(clazz, loc)
         }
 
@@ -2562,6 +2565,11 @@ object Resolver {
       case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
           case (t1, t2) => mkIntersection(t1, t2, loc)
+        }
+
+      case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => mkDifference(t1, t2, loc)
         }
 
       case NamedAst.Type.Pure(loc) =>
@@ -3316,20 +3324,20 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = try {
+  private def lookupJvmClass(className: String, ns0: Name.NName, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = try {
     // Don't initialize the class; we don't want to execute static initializers.
     val initialize = false
     Result.Ok(Class.forName(className, initialize, flix.jarLoader))
   } catch {
-    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
-    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
+    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
   }
 
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className, loc) match {
+  private def lookupJvmClass2(className: String, ns0: Name.NName, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+    lookupJvmClass(className, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
         case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
@@ -3426,6 +3434,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Difference => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3614,7 +3623,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }

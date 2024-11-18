@@ -67,6 +67,6 @@ mod Clock {
     ///
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Clock) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Clock) + IO = handle(f)()
 
 }
