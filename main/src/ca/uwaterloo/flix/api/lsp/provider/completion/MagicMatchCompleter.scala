@@ -197,7 +197,7 @@ object MagicMatchCompleter {
     */
   private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, Int) = {
     cas.tpes match {
-      case List(Type.Cst(TypeConstructor.Unit, _)) =>
+      case Nil =>
         (s"$sym", z)
       case List(_) =>
         (s"$sym($${${z}:_elem})", z + 1)
