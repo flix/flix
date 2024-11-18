@@ -413,13 +413,11 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitType),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpes = maybeType
-            .map(flattenEnumCaseType)
-            .getOrElse(Nil)
+          val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
           Case(ident, tpes, loc)
@@ -492,13 +490,11 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitType),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpes = maybeType
-            .map(flattenEnumCaseType)
-            .getOrElse(Nil)
+          val tpes = maybeType.getOrElse(Nil)
           RestrictableCase(ident, tpes, tree.loc)
       }
     }
@@ -2715,6 +2711,24 @@ object Weeder2 {
         case TreeKind.Type.Variable => Validation.Success(visitVariableType(inner))
         case TreeKind.ErrorTree(_) => Validation.Success(Type.Error(tree.loc))
         case kind => throw InternalCompilerException(s"Parser passed unknown type '$kind'", tree.loc)
+      }
+    }
+
+    def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
+      expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
+      // Visit first child and match its kind to know what to to
+      val inner = unfold(tree)
+      inner.kind match {
+        case TreeKind.Type.Tuple =>
+          expect(inner, TreeKind.Type.Tuple)
+          mapN(traverse(pickAll(TreeKind.Type.Type, inner))(visitType)) {
+            case Nil => List(Type.Unit(inner.loc))
+            case types => types
+          }
+        case _ => visitType(tree) match {
+          case Success(t) => Success(List(t))
+          case Failure(errors) => Failure(errors)
+        }
       }
     }
 
