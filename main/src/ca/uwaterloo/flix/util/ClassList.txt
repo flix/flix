@@ -34,6 +34,7 @@ com/sun/crypto/provider/DESKey.java
 com/sun/crypto/provider/DESKeyFactory.java
 com/sun/crypto/provider/DESKeyGenerator.java
 com/sun/crypto/provider/DESParameters.java
+com/sun/crypto/provider/DHKEM.java
 com/sun/crypto/provider/DHKeyAgreement.java
 com/sun/crypto/provider/DHKeyFactory.java
 com/sun/crypto/provider/DHKeyPairGenerator.java
@@ -557,7 +558,6 @@ java/beans/Visibility.java
 java/beans/WeakIdentityMap.java
 java/beans/XMLDecoder.java
 java/beans/XMLEncoder.java
-java/io/Bits.java
 java/io/BufferedInputStream.java
 java/io/BufferedOutputStream.java
 java/io/BufferedReader.java
@@ -576,7 +576,6 @@ java/io/DataOutput.java
 java/io/DataOutputStream.java
 java/io/DeleteOnExitHook.java
 java/io/EOFException.java
-java/io/ExpiringCache.java
 java/io/Externalizable.java
 java/io/File.java
 java/io/FileCleanable.java
@@ -688,7 +687,6 @@ java/lang/ClassValue.java
 java/lang/Cloneable.java
 java/lang/CloneNotSupportedException.java
 java/lang/Comparable.java
-java/lang/Compiler.java
 java/lang/ConditionalSpecialCasing.java
 java/lang/constant/AsTypeMethodHandleDesc.java
 java/lang/constant/ClassDesc.java
@@ -703,6 +701,10 @@ java/lang/constant/DynamicConstantDesc.java
 java/lang/constant/MethodHandleDesc.java
 java/lang/constant/MethodTypeDesc.java
 java/lang/constant/MethodTypeDescImpl.java
+java/lang/constant/ModuleDesc.java
+java/lang/constant/ModuleDescImpl.java
+java/lang/constant/PackageDesc.java
+java/lang/constant/PackageDescImpl.java
 java/lang/constant/PrimitiveClassDescImpl.java
 java/lang/constant/ReferenceClassDescImpl.java
 java/lang/Deprecated.java
@@ -714,6 +716,7 @@ java/lang/Exception.java
 java/lang/ExceptionInInitializerError.java
 java/lang/FdLibm.java
 java/lang/Float.java
+java/lang/foreign/AddressLayout.java
 java/lang/foreign/Arena.java
 java/lang/foreign/FunctionDescriptor.java
 java/lang/foreign/GroupLayout.java
@@ -722,12 +725,11 @@ java/lang/foreign/MemoryLayout.java
 java/lang/foreign/MemorySegment.java
 java/lang/foreign/PaddingLayout.java
 java/lang/foreign/SegmentAllocator.java
-java/lang/foreign/SegmentScope.java
 java/lang/foreign/SequenceLayout.java
+java/lang/foreign/snippet-files/Snippets.java
 java/lang/foreign/StructLayout.java
 java/lang/foreign/SymbolLookup.java
 java/lang/foreign/UnionLayout.java
-java/lang/foreign/VaList.java
 java/lang/foreign/ValueLayout.java
 java/lang/FunctionalInterface.java
 java/lang/IllegalAccessError.java
@@ -783,7 +785,6 @@ java/lang/invoke/MethodType.java
 java/lang/invoke/MethodTypeForm.java
 java/lang/invoke/MutableCallSite.java
 java/lang/invoke/NativeMethodHandle.java
-java/lang/invoke/ProxyClassesDumper.java
 java/lang/invoke/SerializedLambda.java
 java/lang/invoke/SimpleMethodHandle.java
 java/lang/invoke/StringConcatException.java
@@ -889,11 +890,22 @@ java/lang/reflect/WildcardType.java
 java/lang/ReflectiveOperationException.java
 java/lang/Runnable.java
 java/lang/Runtime.java
+java/lang/runtime/Carriers.java
 java/lang/runtime/ObjectMethods.java
+java/lang/runtime/ReferencedKeyMap.java
+java/lang/runtime/ReferenceKey.java
+java/lang/runtime/SoftReferenceKey.java
+java/lang/runtime/StringTemplateImpl.java
+java/lang/runtime/StringTemplateImplFactory.java
+java/lang/runtime/StrongReferenceKey.java
 java/lang/runtime/SwitchBootstraps.java
+java/lang/runtime/TemplateRuntime.java
+java/lang/runtime/TemplateSupport.java
+java/lang/runtime/WeakReferenceKey.java
 java/lang/RuntimeException.java
 java/lang/RuntimePermission.java
 java/lang/SafeVarargs.java
+java/lang/ScopedValue.java
 java/lang/SecurityException.java
 java/lang/SecurityManager.java
 java/lang/Short.java
@@ -911,6 +923,7 @@ java/lang/StringCoding.java
 java/lang/StringConcatHelper.java
 java/lang/StringIndexOutOfBoundsException.java
 java/lang/StringLatin1.java
+java/lang/StringTemplate.java
 java/lang/StringUTF16.java
 java/lang/SuppressWarnings.java
 java/lang/System.java
@@ -1551,6 +1564,8 @@ java/util/concurrent/ScheduledExecutorService.java
 java/util/concurrent/ScheduledFuture.java
 java/util/concurrent/ScheduledThreadPoolExecutor.java
 java/util/concurrent/Semaphore.java
+java/util/concurrent/StructuredTaskScope.java
+java/util/concurrent/StructureViolationException.java
 java/util/concurrent/SubmissionPublisher.java
 java/util/concurrent/SynchronousQueue.java
 java/util/concurrent/ThreadFactory.java
@@ -1563,8 +1578,10 @@ java/util/concurrent/TransferQueue.java
 java/util/ConcurrentModificationException.java
 java/util/Currency.java
 java/util/Date.java
+java/util/DecimalDigits.java
 java/util/Deque.java
 java/util/Dictionary.java
+java/util/Digits.java
 java/util/DoubleSummaryStatistics.java
 java/util/DualPivotQuicksort.java
 java/util/DuplicateFormatFlagsException.java
@@ -1576,9 +1593,12 @@ java/util/EventListener.java
 java/util/EventListenerProxy.java
 java/util/EventObject.java
 java/util/FormatFlagsConversionMismatchException.java
+java/util/FormatItem.java
+java/util/FormatProcessor.java
 java/util/Formattable.java
 java/util/FormattableFlags.java
 java/util/Formatter.java
+java/util/FormatterBuilder.java
 java/util/FormatterClosedException.java
 java/util/function/BiConsumer.java
 java/util/function/BiFunction.java
@@ -1627,6 +1647,7 @@ java/util/GregorianCalendar.java
 java/util/HashMap.java
 java/util/HashSet.java
 java/util/Hashtable.java
+java/util/HexDigits.java
 java/util/HexFormat.java
 java/util/IdentityHashMap.java
 java/util/IllegalFormatArgumentIndexException.java
@@ -1673,6 +1694,7 @@ java/util/NoSuchElementException.java
 java/util/Objects.java
 java/util/Observable.java
 java/util/Observer.java
+java/util/OctalDigits.java
 java/util/Optional.java
 java/util/OptionalDouble.java
 java/util/OptionalInt.java
@@ -1697,7 +1719,14 @@ java/util/regex/PatternSyntaxException.java
 java/util/regex/PrintPattern.java
 java/util/RegularEnumSet.java
 java/util/ResourceBundle.java
+java/util/ReverseOrderDequeView.java
+java/util/ReverseOrderListView.java
+java/util/ReverseOrderSortedMapView.java
+java/util/ReverseOrderSortedSetView.java
 java/util/Scanner.java
+java/util/SequencedCollection.java
+java/util/SequencedMap.java
+java/util/SequencedSet.java
 java/util/ServiceConfigurationError.java
 java/util/ServiceLoader.java
 java/util/Set.java
@@ -1832,6 +1861,7 @@ javax/crypto/CryptoAllPermission.java
 javax/crypto/CryptoPermission.java
 javax/crypto/CryptoPermissions.java
 javax/crypto/CryptoPolicyParser.java
+javax/crypto/DecapsulateException.java
 javax/crypto/EncryptedPrivateKeyInfo.java
 javax/crypto/ExemptionMechanism.java
 javax/crypto/ExemptionMechanismException.java
@@ -1842,6 +1872,8 @@ javax/crypto/interfaces/DHPrivateKey.java
 javax/crypto/interfaces/DHPublicKey.java
 javax/crypto/interfaces/PBEKey.java
 javax/crypto/JceSecurityManager.java
+javax/crypto/KEM.java
+javax/crypto/KEMSpi.java
 javax/crypto/KeyAgreement.java
 javax/crypto/KeyAgreementSpi.java
 javax/crypto/KeyGenerator.java
@@ -2923,7 +2955,6 @@ sun/net/www/protocol/http/AuthCacheImpl.java
 sun/net/www/protocol/http/AuthCacheValue.java
 sun/net/www/protocol/http/AuthenticationHeader.java
 sun/net/www/protocol/http/AuthenticationInfo.java
-sun/net/www/protocol/http/AuthenticatorKeys.java
 sun/net/www/protocol/http/AuthScheme.java
 sun/net/www/protocol/http/BasicAuthentication.java
 sun/net/www/protocol/http/DigestAuthentication.java
@@ -3009,6 +3040,7 @@ sun/nio/cs/CESU_8.java
 sun/nio/cs/CharsetMapping.java
 sun/nio/cs/DelegatableDecoder.java
 sun/nio/cs/DoubleByte.java
+sun/nio/cs/GB18030.java
 sun/nio/cs/HistoricallyNamedCharset.java
 sun/nio/cs/HKSCS.java
 sun/nio/cs/ISO_8859_1.java
@@ -3206,6 +3238,7 @@ sun/security/provider/EntropySource.java
 sun/security/provider/FileInputStreamPool.java
 sun/security/provider/HashDrbg.java
 sun/security/provider/HmacDrbg.java
+sun/security/provider/HSS.java
 sun/security/provider/JavaKeyStore.java
 sun/security/provider/KeyProtector.java
 sun/security/provider/MD2.java
@@ -3223,7 +3256,6 @@ sun/security/provider/SHA2.java
 sun/security/provider/SHA3.java
 sun/security/provider/SHA5.java
 sun/security/provider/SHAKE256.java
-sun/security/provider/SubjectCodeSource.java
 sun/security/provider/Sun.java
 sun/security/provider/SunEntries.java
 sun/security/provider/VerificationProvider.java
@@ -3437,6 +3469,7 @@ sun/security/util/FilePermCompat.java
 sun/security/util/GCMParameters.java
 sun/security/util/HexDumpEncoder.java
 sun/security/util/HostnameChecker.java
+sun/security/util/InternalPrivateKey.java
 sun/security/util/IOUtils.java
 sun/security/util/JarConstraintsParameters.java
 sun/security/util/KeyStoreDelegator.java
@@ -3460,11 +3493,12 @@ sun/security/util/MessageDigestSpi2.java
 sun/security/util/NamedCurve.java
 sun/security/util/ObjectIdentifier.java
 sun/security/util/Password.java
+sun/security/util/PBEUtil.java
 sun/security/util/Pem.java
 sun/security/util/PendingException.java
-sun/security/util/PermissionFactory.java
 sun/security/util/PolicyUtil.java
 sun/security/util/PropertyExpander.java
+sun/security/util/RawKeySpec.java
 sun/security/util/RegisteredDomain.java
 sun/security/util/Resources.java
 sun/security/util/ResourcesMgr.java
@@ -3478,6 +3512,7 @@ sun/security/util/Resources_pt_BR.java
 sun/security/util/Resources_sv.java
 sun/security/util/Resources_zh_CN.java
 sun/security/util/Resources_zh_TW.java
+sun/security/util/SafeDHParameterSpec.java
 sun/security/util/SecurityConstants.java
 sun/security/util/SecurityProperties.java
 sun/security/util/SecurityProviderConstants.java
@@ -3500,7 +3535,6 @@ sun/security/x509/AuthorityInfoAccessExtension.java
 sun/security/x509/AuthorityKeyIdentifierExtension.java
 sun/security/x509/AVA.java
 sun/security/x509/BasicConstraintsExtension.java
-sun/security/x509/CertException.java
 sun/security/x509/CertificateAlgorithmId.java
 sun/security/x509/CertificateExtensions.java
 sun/security/x509/CertificateIssuerExtension.java
@@ -3513,7 +3547,6 @@ sun/security/x509/CertificateSubjectName.java
 sun/security/x509/CertificateValidity.java
 sun/security/x509/CertificateVersion.java
 sun/security/x509/CertificateX509Key.java
-sun/security/x509/CertParseError.java
 sun/security/x509/CRLDistributionPointsExtension.java
 sun/security/x509/CRLExtensions.java
 sun/security/x509/CRLNumberExtension.java
