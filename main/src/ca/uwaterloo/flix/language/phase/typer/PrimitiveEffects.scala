@@ -25,6 +25,9 @@ import java.lang.reflect.{Constructor, Method}
 
 object PrimitiveEffects {
 
+  /** The path to the package effects. */
+  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Packages.json"
+
   /** The path to the class effects. */
   private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Classes.json"
 
@@ -33,9 +36,6 @@ object PrimitiveEffects {
 
   /** The path to the method effects. */
   private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
-
-  /** The path to the package effects. */
-  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Packages.json"
 
   /**
     * A pre-computed map from classes to effects.
