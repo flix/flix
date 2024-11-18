@@ -1516,7 +1516,8 @@ object Resolver {
   }
 
   /**
-    * Returns a curried lambda and application of `caze`.
+    * Returns a curried lambda and application of `caze`. If the case needs a single unit argument,
+    * it is just applied.
     *
     *   - `Cons ===> x -> y -> Cons(x, y)`
     */
@@ -1526,7 +1527,8 @@ object Resolver {
   }
 
   /**
-    * Returns a curried lambda and application of `caze`.
+    * Returns a curried lambda and application of `caze`. If the case needs a single unit argument,
+    * it is just applied.
     *
     *   - `Add ===> x -> y -> Add(x, y)`
     */

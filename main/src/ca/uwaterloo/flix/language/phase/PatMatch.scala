@@ -410,14 +410,7 @@ object PatMatch {
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
-              exps match {
-                // The expression varies depending on how many arguments it has.
-                // If there are arguments, we add them to the matrix
-                case List(TypedAst.Pattern.Cst(Constant.Unit, _, _)) =>
-                  pat.tail :: acc
-                case elms =>
-                  (elms ::: pat.tail) :: acc
-              }
+              (exps ::: pat.tail) :: acc
             } else {
               acc
             }
@@ -539,7 +532,7 @@ object PatMatch {
       case a: TyCon.Record => a :: xs
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
-      // other enums
+      // other cases
       case TyCon.Enum(sym, _) => {
         root.enums(sym.enumSym).cases.map {
           case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
@@ -620,7 +613,8 @@ object PatMatch {
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
-    case TyCon.Enum(sym, args) => if (args.isEmpty) sym.name else sym.name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Enum(sym, List(TyCon.Unit)) => sym.name
+    case TyCon.Enum(sym, args) => sym.name + prettyPrintCtor(TyCon.Tuple(args))
     case TyCon.Record(labels, tail) =>
       val labelStr = labels.map {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
@@ -672,12 +666,7 @@ object PatMatch {
     case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) =>
-      val args = pats match {
-        case List(Pattern.Cst(Constant.Unit, _, _)) => List.empty[TyCon]
-        case elms => elms.map(patToCtor)
-      }
-      TyCon.Enum(sym, args)
+    case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {

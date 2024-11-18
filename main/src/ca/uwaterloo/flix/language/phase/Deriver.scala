@@ -256,9 +256,9 @@ object Deriver {
     * instance Order[E[a]] with Order[a] {
     *   pub def compare(x: E[a], y: E[a]): Comparison = {
     *     let indexOf = e -> match e {
-    *       case C0(_) -> 0
+    *       case C0 -> 0
     *       case C1(_) -> 1
-    *       case C2(_) -> 2
+    *       case C2(_, _) -> 2
     *     };
     *     match (x, y) {
     *       case (C0, C0) => Comparison.EqualTo
@@ -392,11 +392,11 @@ object Deriver {
 
   /**
     * Creates an indexing match rule, mapping the given case to the given index, e.g.
-    * `case C2(_) => 2`
+    * `case C2(_, _) => 2`
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpes, _, _) =>
-      val pats = tpes.map { _ => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc) }
+      val pats = tpes.map(_ => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc))
       val pat = KindedAst.Pattern.Tag(CaseSymUse(sym, loc), pats, Type.freshVar(Kind.Star, loc), loc)
       val exp = KindedAst.Expr.Cst(Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
@@ -457,7 +457,7 @@ object Deriver {
       // compare(x0, y0) `thenCompare` lazy compare(x1, y1)
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expr.ApplyTag(CaseSymUse(equalToSym, loc), List(KindedAst.Expr.Cst(Constant.Unit, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Eff, loc), loc)
+        case Nil => KindedAst.Expr.ApplyTag(CaseSymUse(equalToSym, loc), Nil, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Eff, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }

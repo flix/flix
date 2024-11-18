@@ -674,7 +674,7 @@ mod String {
             let a1 = f(a);
             match a1 {
                 case None         => StringBuilder.toString(sb)
-                case Some((s, st1)) => {
+                case Some(((s, st1))) => {
                     StringBuilder.appendString(s, sb);
                     loop(st1)
                 }

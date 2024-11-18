@@ -1002,8 +1002,8 @@ object Namer {
     }
 
     pat0 match {
-      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
-        NamedAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarPlace), loc)
+      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pats, loc) =>
+        NamedAst.RestrictableChoosePattern.Tag(qname, pats.map(visitVarPlace), loc)
       case DesugaredAst.RestrictableChoosePattern.Error(loc) =>
         NamedAst.RestrictableChoosePattern.Error(loc)
     }

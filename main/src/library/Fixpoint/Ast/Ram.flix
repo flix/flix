@@ -190,8 +190,8 @@ mod Fixpoint.Ast.Ram {
             }
             case RamSym.Delta(s1, _, _) => match b {
                 case RamSym.Delta(s2, _, _) => s1 <=> s2
-                case RamSym.New(_) => Comparison.GreaterThan
-                case RamSym.Full(_) => Comparison.LessThan
+                case RamSym.New(_, _, _) => Comparison.GreaterThan
+                case RamSym.Full(_, _, _) => Comparison.LessThan
             }
             case RamSym.New(s1, _, _) => match b {
                 case RamSym.New(s2, _, _) => s1 <=> s2

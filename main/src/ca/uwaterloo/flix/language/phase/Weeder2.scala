@@ -2282,17 +2282,21 @@ object Weeder2 {
     private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitTuplePat(_, seen))) {
+      mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
         (qname, maybePat) =>
           maybePat match {
-            // TODO NARY-ENUMS parse properly instead of indirection
-            // Case: Empty - No arguments.
             case None => Pattern.Tag(qname, Nil, tree.loc)
-            // Case: Tuple - Unpack it.
-            case Some(Pattern.Tuple(elms, _)) => Pattern.Tag(qname, elms, tree.loc)
-            // Case: Non-tuple - Singleton.
-            case Some(subPat) => Pattern.Tag(qname, List(subPat), tree.loc)
+            case Some(elms) => Pattern.Tag(qname, elms, tree.loc)
           }
+      }
+    }
+
+    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[Pattern], CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Tuple)
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
+      mapN(traverse(patterns)(visitPattern(_, seen))) {
+        case Nil => List(Pattern.Cst(Constant.Unit, tree.loc))
+        case xs => xs
       }
     }
 
@@ -2740,6 +2744,7 @@ object Weeder2 {
     private def visitTupleType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Tuple)
       mapN(traverse(pickAll(TreeKind.Type.Type, tree))(visitType)) {
+        case Nil => ???
         case tpe :: Nil => tpe // flatten singleton tuple types
         case types => Type.Tuple(types, tree.loc)
       }

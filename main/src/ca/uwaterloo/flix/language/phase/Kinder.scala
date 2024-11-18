@@ -170,7 +170,8 @@ object Kinder {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, taenv, root))
       val quants = tparams.map(_.sym)
-      val sc = Scheme(quants, Nil, Nil, Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic))
+      val schemeBase = if (ts.nonEmpty) Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic) else resTpe
+      val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.Case(sym, ts, sc, loc)
   }
 
@@ -190,7 +191,8 @@ object Kinder {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, taenv, root))
       val quants = (index :: tparams).map(_.sym)
-      val sc = Scheme(quants, Nil, Nil, Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic))
+      val schemeBase = if (ts.nonEmpty) Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic) else resTpe
+      val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.RestrictableCase(sym, ts, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
 
@@ -879,10 +881,10 @@ object Kinder {
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
   private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit scope: Scope, flix: Flix): KindedAst.RestrictableChoosePattern = pat00 match {
-    case ResolvedAst.RestrictableChoosePattern.Tag(sym, pat0, loc) =>
-      val pat = pat0.map(visitRestrictableChoosePatternVarOrWild)
+    case ResolvedAst.RestrictableChoosePattern.Tag(sym, pats0, loc) =>
+      val pats = pats0.map(visitRestrictableChoosePatternVarOrWild)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.RestrictableChoosePattern.Tag(sym, pat, tvar, loc)
+      KindedAst.RestrictableChoosePattern.Tag(sym, pats, tvar, loc)
 
     case ResolvedAst.RestrictableChoosePattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

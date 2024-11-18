@@ -340,7 +340,7 @@ mod RedBlackTree {
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
-            case None           => Some(k1, v1)
+            case None           => Some((k1, v1))
         }, None, t)
 
     ///
@@ -353,7 +353,7 @@ mod RedBlackTree {
     pub def reduceRight(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
-            case None           => Some(k1, v1)
+            case None           => Some((k1, v1))
         }, None, t)
 
     ///
@@ -881,9 +881,9 @@ mod RedBlackTree {
                         r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
                     ) yield match (l, r) {                // that we distribute over the two spanned threads.
                         case (None, None)                 => Some((k, v))
-                        case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
+                        case (None, Some((kr, vr)))         => Some(cmp(k, v, kr, vr))
                         case (Some((kl, vl)), None)         => Some(cmp(kl, vl, k, v))
-                        case (Some((kl, vl)), Some(kr, vr)) =>
+                        case (Some((kl, vl)), Some((kr, vr))) =>
                             let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
                             Some(cmp(km, vm, kr, vr))
                     }
@@ -901,7 +901,7 @@ mod RedBlackTree {
             };
             match seqLimitBy(cmp, b) {
                 case None         => Some(res)
-                case Some(kr, vr) =>
+                case Some((kr, vr)) =>
                     let (ks, vs) = res;
                     Some(cmp(ks, vs, kr, vr))
             }
