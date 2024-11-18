@@ -68,8 +68,8 @@ object Eraser {
   }
 
   private def visitEnumTag(caze: Case): Case = caze match {
-    case Case(sym, tpe, loc) =>
-      Case(sym, polymorphicErasure(tpe), loc)
+    case Case(sym, tpes, loc) =>
+      Case(sym, tpes.map(polymorphicErasure), loc)
   }
 
   private def visitStruct(struct: Struct): Struct = struct match {

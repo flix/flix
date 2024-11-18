@@ -267,7 +267,7 @@ mod RedBlackTree {
     pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
-                case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
+                case None => if (f(k, v)) Some((k, v)) else loop(b, kr -> match kr {
                     case None => sk(None)
                     case _    => kr
                 })
@@ -283,7 +283,7 @@ mod RedBlackTree {
     pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
-                case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
+                case None => if (f(k, v)) Some((k, v)) else loop(a, kl -> match kl {
                     case None => sk(None)
                     case _    => kl
                 })
@@ -597,7 +597,7 @@ mod RedBlackTree {
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
     pub def minimumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, Leaf, k, v, _) => Some(k, v)
+        case Node(_, Leaf, k, v, _) => Some((k, v))
         case Node(_, a, _, _, _)    => minimumKey(a)
         case _                      => None
     }
@@ -606,7 +606,7 @@ mod RedBlackTree {
     /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
     pub def maximumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, _, k, v, Leaf) => Some(k, v)
+        case Node(_, _, k, v, Leaf) => Some((k, v))
         case Node(_, _, _, _, b)    => maximumKey(b)
         case _                      => None
     }
@@ -880,10 +880,10 @@ mod RedBlackTree {
                         l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
                         r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
                     ) yield match (l, r) {                // that we distribute over the two spanned threads.
-                        case (None, None)                 => Some(k, v)
+                        case (None, None)                 => Some((k, v))
                         case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
-                        case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
-                        case (Some(kl, vl), Some(kr, vr)) =>
+                        case (Some((kl, vl)), None)         => Some(cmp(kl, vl, k, v))
+                        case (Some((kl, vl)), Some(kr, vr)) =>
                             let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
                             Some(cmp(km, vm, kr, vr))
                     }
@@ -897,7 +897,7 @@ mod RedBlackTree {
         case Node(_, a, k, v, b) =>
             let res = match seqLimitBy(cmp, a) {
                 case None         => (k, v)
-                case Some(kl, vl) => cmp(kl, vl, k, v)
+                case Some((kl, vl)) => cmp(kl, vl, k, v)
             };
             match seqLimitBy(cmp, b) {
                 case None         => Some(res)

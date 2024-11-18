@@ -54,7 +54,7 @@ mod Fixpoint.Solver {
             Fixpoint.Phase.IndexSelection.queryStmt |>
             Fixpoint.Phase.VarsToIndices.lowerStmt;
         let model = match d {
-            case Datalog(_) => region rc {
+            case Datalog(_, _) => region rc {
                 compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel
             }
             case Model(_) => d
@@ -721,7 +721,7 @@ mod Fixpoint.Solver {
             Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.forEach((tuple, _) -> MutList.push(f(Vector.toList(tuple)), pFacts), rel)
-                case Denotation.Latticenal(_) =>
+                case Denotation.Latticenal(_, _, _, _) =>
                     Map.forEach((tuple, lat) -> {
                         let it = Iterator.range(rc, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {

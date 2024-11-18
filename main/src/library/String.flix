@@ -421,7 +421,7 @@ mod String {
         let step = ix ->
             match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                 case None => None
-                case Some(ix2) => Some(ix2, ix2 + sublen)
+                case Some(ix2) => Some((ix2, ix2 + sublen))
             };
         List.unfold(step, 0)
 
@@ -632,7 +632,7 @@ mod String {
             let a1 = f(a);
             match a1 {
                 case None         => StringBuilder.toString(sb)
-                case Some(c, st1) => {
+                case Some((c, st1)) => {
                     StringBuilder.append(c, sb);
                     loop(st1)
                 }
@@ -674,7 +674,7 @@ mod String {
             let a1 = f(a);
             match a1 {
                 case None         => StringBuilder.toString(sb)
-                case Some(s, st1) => {
+                case Some((s, st1)) => {
                     StringBuilder.appendString(s, sb);
                     loop(st1)
                 }
@@ -1141,7 +1141,7 @@ mod String {
     ///
     pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
+        List.unfold(i -> if (i >= len) None else Some(((charAt(i, a), charAt(i, b)), i + 1)), 0)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where
@@ -1168,11 +1168,11 @@ mod String {
                 match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                     case None => {
                         let s1 = sliceRight(start = ix, s);
-                        Some(s1, maxlen + 1)
+                        Some((s1, maxlen + 1))
                     }
                     case Some(ix2) => {
                         let s1 = slice(start = ix, end = ix2, s);
-                        Some(s1, ix2 + sublen)
+                        Some((s1, ix2 + sublen))
                     }
                 }
             };
@@ -1224,8 +1224,8 @@ mod String {
         let len = length(s);
         let step = pos -> match pos {
             case i if i >= len        => None
-            case i if i + size >= len => Some(sliceRight(start = i, s), len)
-            case i                    => Some(slice(start = i, end = i + size, s), i + size)
+            case i if i + size >= len => Some((sliceRight(start = i, s), len))
+            case i                    => Some((slice(start = i, end = i + size, s), i + size))
         };
         List.unfold(step, 0)
 

@@ -433,7 +433,7 @@ object Weeder2 {
         // A tuple. Extract the types
         case Type.Tuple(ts, _) => ts
         // A single type.
-        case t => throw InternalCompilerException("unexpected non-tuple shape in enum", SourceLocation.Unknown)
+        case t => List(t)
       }
     }
 

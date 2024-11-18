@@ -570,7 +570,7 @@ object GenExpression {
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val tagType: BackendObjType.Tag = ??? // BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
+        val tagType = BackendObjType.Tag(cases(sym))
 
         compileExpr(exp)
         val ins = {

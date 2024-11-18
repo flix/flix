@@ -190,7 +190,7 @@ mod DelayMap {
         let DMap(t) = m;
         match RedBlackTree.minimumKey(t) {
             case None       => None
-            case Some(k, v) => Some(k, force v)
+            case Some((k, v)) => Some(k, force v)
         }
 
     ///
@@ -211,7 +211,7 @@ mod DelayMap {
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some(k, force v)
                     }
                 else
                     min()
@@ -244,7 +244,7 @@ mod DelayMap {
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some(k, force v)
                     }
                 else
                     min()
@@ -261,7 +261,7 @@ mod DelayMap {
         let DMap(t) = m;
         match RedBlackTree.maximumKey(t) {
             case None       => None
-            case Some(k, v) => Some(k, force v)
+            case Some((k, v)) => Some(k, force v)
         }
 
     ///
@@ -282,7 +282,7 @@ mod DelayMap {
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some(k, force v)
                     }
                 else
                     max()
@@ -316,7 +316,7 @@ mod DelayMap {
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some(k, force v)
                     }
                 else
                     max()
