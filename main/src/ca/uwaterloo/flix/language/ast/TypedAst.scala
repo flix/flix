@@ -25,7 +25,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -38,8 +38,8 @@ object TypedAst {
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Option[Set[Symbol.DefnSym]],
                   sources: Map[Source, SourceLocation],
                   traitEnv: Map[Symbol.TraitSym, TraitContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],

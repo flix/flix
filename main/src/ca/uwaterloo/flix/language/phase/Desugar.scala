@@ -37,7 +37,7 @@ object Desugar {
 
     val units = ParOps.parMapValues(stale)(visitUnit)
     val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.entryPoint, root.names)
+    DesugaredAst.Root(allUnits, root.mainEntryPoint, root.names)
   }
 
   /**

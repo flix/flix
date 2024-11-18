@@ -67,7 +67,7 @@ object OccurrenceAnalyzer {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    OccurrenceAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    OccurrenceAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {

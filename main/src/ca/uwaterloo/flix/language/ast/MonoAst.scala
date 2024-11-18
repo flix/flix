@@ -27,8 +27,8 @@ object MonoAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)

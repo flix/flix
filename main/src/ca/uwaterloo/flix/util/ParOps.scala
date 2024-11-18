@@ -155,10 +155,10 @@ object ParOps {
     // Use global thread pool.
     val threadPool = flix.threadPool
 
-    // A mutable variable that holds the currently reachable Ts.
+    // A mutable variable that holds the currently entryPoints Ts.
     var reach = init
 
-    // A mutable variable that holds the reachable Ts discovered in the last iteration.
+    // A mutable variable that holds the entryPoints Ts discovered in the last iteration.
     var delta = init
 
     // Iterate until the fixpoint is reached.
@@ -184,7 +184,7 @@ object ParOps {
       reach = reach ++ delta
     }
 
-    // Return the set of reachable Ts.
+    // Return the set of entryPoints Ts.
     reach
   }
 
@@ -192,10 +192,10 @@ object ParOps {
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
     */
   private def seqReach[T](init: Set[T], next: T => Set[T]): Set[T] = {
-    // A mutable variable that holds the currently reachable Ts.
+    // A mutable variable that holds the currently entryPoints Ts.
     var reach = init
 
-    // A mutable variable that holds the reachable Ts discovered in the last iteration.
+    // A mutable variable that holds the entryPoints Ts discovered in the last iteration.
     var delta = init
 
     // Iterate until the fixpoint is reached.
@@ -207,7 +207,7 @@ object ParOps {
       reach = reach ++ delta
     }
 
-    // Return the set of reachable Ts.
+    // Return the set of entryPoints Ts.
     reach
   }
 }

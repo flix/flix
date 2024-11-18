@@ -26,7 +26,7 @@ object NamedAst {
                   instances: Map[Name.NName, Map[String, List[Declaration.Instance]]],
                   uses: Map[Name.NName, List[UseOrImport]],
                   units: Map[Source, CompilationUnit],
-                  entryPoint: Option[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 

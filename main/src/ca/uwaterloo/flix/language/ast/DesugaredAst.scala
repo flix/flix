@@ -24,7 +24,7 @@ object DesugaredAst {
 
   val empty: Root = Root(Map.empty, None, MultiMap.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 

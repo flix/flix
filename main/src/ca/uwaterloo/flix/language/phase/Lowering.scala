@@ -165,7 +165,9 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
+    // EntryPoints should have set this to Some.
+    val entryPoints = root.entryPoints.get
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, entryPoints, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
