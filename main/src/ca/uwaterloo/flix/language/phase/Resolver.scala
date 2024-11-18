@@ -2194,20 +2194,25 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
     } match {
       case Some(trt) =>
         getTraitAccessibility(trt, ns0) match {
-          case TraitAccessibility.Accessible | TraitAccessibility.Sealed => Validation.Success(trt)
+          case TraitAccessibility.Accessible | TraitAccessibility.Sealed =>
+            Some(trt)
+
           case TraitAccessibility.Inaccessible =>
             val error = ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Validation.Success(trt)
+            Some(trt)
         }
-      case None => Validation.Failure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+      case None =>
+        val error = ResolutionError.UndefinedTrait(qname, ns0, qname.loc)
+        sctx.errors.add(error)
+        None
     }
   }
 
