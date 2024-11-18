@@ -460,6 +460,13 @@ object Type {
   val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
 
   /**
+    * Represents the Difference type constructor.
+    *
+    * NB: This type has kind: Eff -> (Eff -> Eff).
+    */
+  val Difference: Type = Type.Cst(TypeConstructor.Difference, SourceLocation.Unknown)
+
+  /**
     * Represents the True Boolean algebra value.
     */
   val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
@@ -1055,7 +1062,14 @@ object Type {
   /**
     * Returns the type `tpe1 - tpe2`.
     */
-  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
+  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
+    case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
+    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.mkComplement(tpe2, loc)
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Pure
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => Type.Pure
+    case _ => Type.Apply(Type.Apply(Type.Difference, tpe1, loc), tpe2, loc)
+  }
 
   /**
     * Returns the type `And(tpe1, tpe2)`.

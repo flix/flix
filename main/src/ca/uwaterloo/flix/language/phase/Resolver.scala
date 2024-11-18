@@ -2567,6 +2567,11 @@ object Resolver {
           case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
+      case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => mkDifference(t1, t2, loc)
+        }
+
       case NamedAst.Type.Pure(loc) =>
         Validation.Success(UnkindedType.Cst(TypeConstructor.Pure, loc))
 
@@ -3429,6 +3434,7 @@ object Resolver {
         case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Difference => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
