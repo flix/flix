@@ -126,6 +126,35 @@ object PrimitiveEffects {
     *
     * {{{
     * {
+    *   "packages": {
+    *     "java.lang.net": "Net, IO"
+    *   }
+    * }
+    * }}}
+    */
+  private def loadPackageEffs(): Map[Package, Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(PackageEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "packages" match {
+      case JObject(l) => l.map {
+        case (packageName, JString(s)) =>
+          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val effSet = s.split(',').map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          (clazz, effSet)
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
+      }
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
+    }
+
+    m.toMap
+  }
+
+  /**
+    * Parses a JSON file of the form:
+    *
+    * {{{
+    * {
     *   "classes": {
     *     "java.lang.ProcessBuilder": "Exec, FsRead",
     *     "java.lang.reflect.Method": "Sys"
@@ -216,34 +245,4 @@ object PrimitiveEffects {
 
     m.toMap
   }
-
-  /**
-    * Parses a JSON file of the form:
-    *
-    * {{{
-    * {
-    *   "packages": {
-    *     "java.lang.net": "Net, IO"
-    *   }
-    * }
-    * }}}
-    */
-  private def loadPackageEffs(): Map[Package, Set[Symbol.EffectSym]] = {
-    val data = LocalResource.get(PackageEffsPath)
-    val json = parse(data)
-
-    val m = json \\ "packages" match {
-      case JObject(l) => l.map {
-        case (packageName, JString(s)) =>
-          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
-          val effSet = s.split(',').map(_.trim).map(Symbol.parsePrimitiveEff).toSet
-          (clazz, effSet)
-        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
-      }
-      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
-    }
-
-    m.toMap
-  }
-
 }
