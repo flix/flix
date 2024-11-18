@@ -1416,33 +1416,22 @@ object Weeder2 {
 
     private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableChoosePattern, CompilationMessage] = {
       expect(tree, TreeKind.Expr.MatchRuleFragment)
-      flatMapN(Patterns.pickPattern(tree)) {
+      mapN(Patterns.pickPattern(tree)) {
         case Pattern.Tag(qname, pats, loc) =>
-          val inner = pats match {
-            case Pattern.Wild(loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Var(ident, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Constant.Unit, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Nil => Validation.Success(Nil)
-            case Pattern.Tuple(elms, _) :: Nil =>
-              traverse(elms) {
-                case Pattern.Wild(loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case Pattern.Var(ident, loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
-                case Pattern.Cst(Constant.Unit, loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case other =>
-                  val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-                  sctx.errors.add(error)
-                  Validation.Success(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic))
-              }
+          val inner = pats.map {
+            case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
+            case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc)
+            case Pattern.Cst(Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case other =>
               val error = UnsupportedRestrictedChoicePattern(isStar, loc)
               sctx.errors.add(error)
-              Validation.Success(List(WeededAst.RestrictableChoosePattern.Error(loc.asSynthetic)))
+              WeededAst.RestrictableChoosePattern.Error(loc.asSynthetic)
           }
-          mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
+          RestrictableChoosePattern.Tag(qname, inner, loc)
         case other =>
           val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
           sctx.errors.add(error)
-          Validation.Success(RestrictableChoosePattern.Error(other.loc))
+          RestrictableChoosePattern.Error(other.loc)
       }
     }
 
