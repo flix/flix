@@ -182,7 +182,7 @@ object MagicMatchCompleter {
     */
   private def getCaseLength(cas: TypedAst.Case): Int = {
     cas.tpes match {
-      case Nil | List(Type.Cst(TypeConstructor.Unit, _)) => cas.sym.toString.length
+      case Nil => cas.sym.toString.length
       case List(_) =>
         cas.sym.toString.length + "(_elem)".length
       case other =>
