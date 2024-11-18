@@ -218,8 +218,6 @@ object Verifier {
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.Tag(sym) =>
-          val List(_) = ts
-          // Tag(Nil), ()) : List[t]
           // Checking this requires instantiating the enum case
           tpe match {
             case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()

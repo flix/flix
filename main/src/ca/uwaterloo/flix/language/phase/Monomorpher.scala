@@ -665,10 +665,10 @@ object Monomorpher {
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, envs) = pats.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), envs.reduce(_ ++ _))
+      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
+      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
@@ -677,7 +677,7 @@ object Monomorpher {
       }.unzip
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
-      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
     case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
@@ -812,6 +812,12 @@ object Monomorpher {
 
   }
 
+  private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
+      case (acc, m) => acc ++ m
+    }
+  }
+
   /**
     * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
     *
@@ -824,7 +830,7 @@ object Monomorpher {
 
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
-    (params, envs.reduce(_ ++ _))
+    (params, combineEnvs(envs))
   }
 
   /**

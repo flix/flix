@@ -554,15 +554,17 @@ object GenExpression {
         ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Tag(sym) =>
-        val List(exp) = exps
-
-        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
+        val MonoType.Enum(_, targs) = tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val tagType = BackendObjType.Tag(cases(sym))
 
         val ins = {
           import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(0))
+            composeN(exps.zipWithIndex.map {
+              case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
+            })
         }
         ins(new BytecodeInstructions.F(mv))
 
