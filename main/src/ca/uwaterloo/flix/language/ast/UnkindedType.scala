@@ -512,6 +512,11 @@ object UnkindedType {
   def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
   /**
+    * Returns the type `Difference(tpe1, tpe2)`.
+    */
+  def mkDifference(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
+
+  /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
