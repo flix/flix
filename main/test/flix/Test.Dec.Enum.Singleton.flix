@@ -113,7 +113,7 @@ mod Test.Dec.Enum.Singleton {
     def testOpaqueType17(): Pair[Int32, Int32] = Pair.Pair(21, 42)
 
     @test
-    def testOpaqueType18(): Bool = match Pair.Pair((21, 42)) {
+    def testOpaqueType18(): Bool = match Pair.Pair(21, 42) {
         case Pair.Pair(x, y) => (x, y) == (21, 42)
     }
 
@@ -121,7 +121,7 @@ mod Test.Dec.Enum.Singleton {
     def testOpaqueType19(): Pair[Bool, Int32] = Pair.Pair(true, 42)
 
     @test
-    def testOpaqueType20(): Bool = match Pair.Pair((true, 42)) {
+    def testOpaqueType20(): Bool = match Pair.Pair(true, 42) {
         case Pair.Pair(x, y) => (x, y) == (true, 42)
     }
 

@@ -2322,27 +2322,27 @@ def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
 
 @test
 def unfold01(): Bool =
-    List.unfold(s -> if (true) None else Some(s + 48, s + 1), 0) == Nil
+    List.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0) == Nil
 
 @test
 def unfold02(): Bool =
-    List.unfold(s -> if (s > 0) None else Some(s + 48, s + 1), 0) == 48 :: Nil
+    List.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0) == 48 :: Nil
 
 @test
 def unfold03(): Bool =
-    List.unfold(s -> if (s > 1) None else Some(s + 48, s + 1), 0) == 48 :: 49 :: Nil
+    List.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: Nil
 
 @test
 def unfold04(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 0) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
 
 @test
 def unfold05(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 5) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
 
 @test
 def unfold06(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 2), 0) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //

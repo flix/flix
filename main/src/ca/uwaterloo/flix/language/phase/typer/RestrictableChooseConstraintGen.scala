@@ -354,8 +354,8 @@ object RestrictableChooseConstraintGen {
         // The tag type is a function from the type of variant to the type of the enum.
         //
         val tpes = pat.map(visitVarOrWild)
-        val tpe = Type.mkTuplish(tpes, loc)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         resTpe
 

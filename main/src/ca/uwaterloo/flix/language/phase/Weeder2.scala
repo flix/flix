@@ -1422,6 +1422,7 @@ object Weeder2 {
             case Pattern.Wild(loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
             case Pattern.Var(ident, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
             case Pattern.Cst(Constant.Unit, loc) :: Nil => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Nil => Validation.Success(Nil)
             case Pattern.Tuple(elms, _) :: Nil =>
               traverse(elms) {
                 case Pattern.Wild(loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))

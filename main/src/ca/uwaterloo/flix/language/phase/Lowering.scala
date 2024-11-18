@@ -1023,7 +1023,7 @@ object Lowering {
     val factListExp = mkVector(factExps, Types.Constraint, loc)
     val ruleListExp = mkVector(ruleExps, Types.Constraint, loc)
 
-    val innerExp = mkTuple(List(factListExp, ruleListExp), loc)
+    val innerExp = List(factListExp, ruleListExp)
     mkTag(Enums.Datalog, "Datalog", innerExp, Types.Datalog, loc)
   }
 
@@ -1034,7 +1034,7 @@ object Lowering {
     case TypedAst.Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
       val bodyExp = mkVector(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
-      val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
+      val innerExp = List(headExp, bodyExp)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
 
@@ -1046,7 +1046,7 @@ object Lowering {
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkVector(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
+      val innerExp = List(predSymExp, denotationExp, termsExp)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
   }
 
@@ -1060,7 +1060,7 @@ object Lowering {
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
       val termsExp = mkVector(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
+      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, termsExp)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case TypedAst.Predicate.Body.Functional(outBnds, exp0, loc) =>
@@ -1161,7 +1161,7 @@ object Lowering {
     * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
-    val innerExp = mkVarSym(sym)
+    val innerExp = List(mkVarSym(sym))
     mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, sym.loc)
   }
 
@@ -1169,22 +1169,21 @@ object Lowering {
     * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
-    mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, exp.loc)
+    mkTag(Enums.HeadTerm, "Lit", List(exp), Types.HeadTerm, exp.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): LoweredAst.Expr = {
-    val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-    mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
+    mkTag(Enums.BodyTerm, "Wild", Nil, Types.BodyTerm, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Var` from the given variable symbol `sym`.
     */
   private def mkBodyTermVar(sym: Symbol.VarSym): LoweredAst.Expr = {
-    val innerExp = mkVarSym(sym)
+    val innerExp = List(mkVarSym(sym))
     mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, sym.loc)
   }
 
@@ -1192,7 +1191,7 @@ object Lowering {
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
-    mkTag(Enums.BodyTerm, "Lit", exp, Types.BodyTerm, exp.loc)
+    mkTag(Enums.BodyTerm, "Lit", List(exp), Types.BodyTerm, exp.loc)
   }
 
   /**
@@ -1201,8 +1200,7 @@ object Lowering {
     */
   private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = d match {
     case Denotation.Relational =>
-      val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-      mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
+      mkTag(Enums.Denotation, "Relational", Nil, Types.Denotation, loc)
 
     case Denotation.Latticenal =>
       tpeOpt match {
@@ -1230,12 +1228,10 @@ object Lowering {
     */
   private def mkPolarity(p: Polarity, loc: SourceLocation): LoweredAst.Expr = p match {
     case Polarity.Positive =>
-      val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-      mkTag(Enums.Polarity, "Positive", innerExp, Types.Polarity, loc)
+      mkTag(Enums.Polarity, "Positive", Nil, Types.Polarity, loc)
 
     case Polarity.Negative =>
-      val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-      mkTag(Enums.Polarity, "Negative", innerExp, Types.Polarity, loc)
+      mkTag(Enums.Polarity, "Negative", Nil, Types.Polarity, loc)
   }
 
   /**
@@ -1243,12 +1239,10 @@ object Lowering {
     */
   private def mkFixity(f: Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
     case Fixity.Loose =>
-      val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-      mkTag(Enums.Fixity, "Loose", innerExp, Types.Fixity, loc)
+      mkTag(Enums.Fixity, "Loose", Nil, Types.Fixity, loc)
 
     case Fixity.Fixed =>
-      val innerExp = LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)
-      mkTag(Enums.Fixity, "Fixed", innerExp, Types.Fixity, loc)
+      mkTag(Enums.Fixity, "Fixed", Nil, Types.Fixity, loc)
   }
 
   /**
@@ -1258,7 +1252,7 @@ object Lowering {
     case Name.Pred(sym, loc) =>
       val nameExp = LoweredAst.Expr.Cst(Constant.Str(sym), Type.Str, loc)
       val idExp = LoweredAst.Expr.Cst(Constant.Int64(0), Type.Int64, loc)
-      val inner = mkTuple(List(nameExp, idExp), loc)
+      val inner = List(nameExp, idExp)
       mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
 
@@ -1267,7 +1261,7 @@ object Lowering {
     */
   private def mkVarSym(sym: Symbol.VarSym): LoweredAst.Expr = {
     val nameExp = LoweredAst.Expr.Cst(Constant.Str(sym.text), Type.Str, sym.loc)
-    mkTag(Enums.VarSym, "VarSym", nameExp, Types.VarSym, sym.loc)
+    mkTag(Enums.VarSym, "VarSym", List(nameExp), Types.VarSym, sym.loc)
   }
 
   /**
@@ -1298,7 +1292,7 @@ object Lowering {
       val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
-      return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
+      return mkTag(Enums.BodyPredicate, s"Guard0", List(lambdaExp), Types.BodyPredicate, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1323,7 +1317,7 @@ object Lowering {
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps, loc)
+    val innerExp = liftedExp :: varExps
     mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 
@@ -1371,7 +1365,7 @@ object Lowering {
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
     val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
-    val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
+    val innerExp = List(boundVarVector, liftedExp, freeVarVector)
     mkTag(Enums.BodyPredicate, s"Functional", innerExp, Types.BodyPredicate, loc)
   }
 
@@ -1394,7 +1388,7 @@ object Lowering {
       val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
-      return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
+      return mkTag(Enums.HeadTerm, s"App0", List(lambdaExp), Types.HeadTerm, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1419,7 +1413,7 @@ object Lowering {
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps, loc)
+    val innerExp = liftedExp :: varExps
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 
@@ -1625,23 +1619,22 @@ object Lowering {
     * Returns a `Nil` expression with type list of `elmType`.
     */
   private def mkNil(elmType: Type, loc: SourceLocation): LoweredAst.Expr = {
-    mkTag(Enums.FList, "Nil", LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc), Types.mkList(elmType, loc), loc)
+    mkTag(Enums.FList, "Nil", Nil, Types.mkList(elmType, loc), loc)
   }
 
   /**
     * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
     */
   private def mkCons(hd: LoweredAst.Expr, tail: LoweredAst.Expr, loc: SourceLocation): LoweredAst.Expr = {
-    val tuple = mkTuple(hd :: tail :: Nil, loc)
-    mkTag(Enums.FList, "Cons", tuple, tail.tpe, loc)
+    mkTag(Enums.FList, "Cons", List(hd, tail), tail.tpe, loc)
   }
 
   /**
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
-  private def mkTag(sym: Symbol.EnumSym, tag: String, exp: LoweredAst.Expr, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
+  private def mkTag(sym: Symbol.EnumSym, tag: String, exps: List[LoweredAst.Expr], tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
     val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
-    LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), List(exp), tpe, Type.Pure, loc)
+    LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, tpe, Type.Pure, loc)
   }
 
   /**
