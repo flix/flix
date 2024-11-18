@@ -25,6 +25,9 @@ import java.lang.reflect.{Constructor, Method}
 
 object PrimitiveEffects {
 
+  /** The path to the package effects. */
+  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Packages.json"
+
   /** The path to the class effects. */
   private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Classes.json"
 
@@ -33,6 +36,11 @@ object PrimitiveEffects {
 
   /** The path to the method effects. */
   private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
+
+  /**
+    * A pre-computed map from packages to effects.
+    */
+  private val packageEffs: Map[Package, Set[Symbol.EffectSym]] = loadPackageEffs()
 
   /**
     * A pre-computed map from classes to effects.
@@ -57,19 +65,10 @@ object PrimitiveEffects {
   def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
     case None =>
       // Case 1: No effects for the constructor. Try the class map.
-      classEffs.get(c.getDeclaringClass) match {
-        case None =>
-          // Case 1.1: We use the IO effect by default.
-          Type.IO
-        case Some(effs) =>
-          // Case 1.2: We use the class effects.
-          val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-          Type.mkUnion(tpes, loc)
-      }
+      getClassAndPackageEffs(c.getDeclaringClass, loc)
     case Some(effs) =>
       // Case 2: We found the effects for the constructor.
-      val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-      Type.mkUnion(tpes, loc)
+      toEffSet(effs, loc)
   }
 
   /**
@@ -78,19 +77,77 @@ object PrimitiveEffects {
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None =>
       // Case 1: No effects for the method. Try the class map.
-      classEffs.get(m.getDeclaringClass) match {
-        case None =>
-          // Case 1.1: We use the IO effect by default.
-          Type.IO
-        case Some(effs) =>
-          // Case 1.2: We use the class effects.
-          val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-          Type.mkUnion(tpes, loc)
-      }
+      getClassAndPackageEffs(m.getDeclaringClass, loc)
     case Some(effs) =>
       // Case 2: We found the effects for the method.
-      val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-      Type.mkUnion(tpes, loc)
+      toEffSet(effs, loc)
+  }
+
+  /**
+    * Returns the primitive effects of the class `c` if they exist.
+    * Defaults to [[getPackageEffs]] if nothing was found.
+    */
+  private def getClassAndPackageEffs(c: Class[?], loc: SourceLocation): Type = {
+    classEffs.get(c) match {
+      case None =>
+        // Case 1.1: No effects for the class. Try the package.
+        getPackageEffs(c.getPackage, loc)
+      case Some(effs) =>
+        // Case 1.2: We use the class effects.
+        toEffSet(effs, loc)
+    }
+  }
+
+  /**
+    * Returns the primitive effs of the package `p`.
+    * Defaults to [[Type.IO]] if nothing was found.
+    */
+  private def getPackageEffs(p: Package, loc: SourceLocation): Type = {
+    packageEffs.get(p) match {
+      case None =>
+        // Case 1.1.1: No effects for the package. Use the IO effect by default.
+        Type.IO
+      case Some(effs) =>
+        // Case 1.1.2: We use the package effects.
+        toEffSet(effs, loc)
+    }
+  }
+
+  /**
+    * Returns the set of effects represented by `effs`.
+    */
+  private def toEffSet(effs: Set[Symbol.EffectSym], loc: SourceLocation): Type = {
+    val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+    Type.mkUnion(tpes, loc)
+  }
+
+  /**
+    * Parses a JSON file of the form:
+    *
+    * {{{
+    * {
+    *   "packages": {
+    *     "java.lang.net": "Net, IO"
+    *   }
+    * }
+    * }}}
+    */
+  private def loadPackageEffs(): Map[Package, Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(PackageEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "packages" match {
+      case JObject(l) => l.map {
+        case (packageName, JString(s)) =>
+          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val effSet = s.split(',').map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          (clazz, effSet)
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
+      }
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
+    }
+
+    m.toMap
   }
 
   /**
@@ -188,5 +245,4 @@ object PrimitiveEffects {
 
     m.toMap
   }
-
 }
