@@ -80,12 +80,8 @@ object EnumTagCompleter {
   }
 
   /** Returns the arity of the given enumTag type `tpe` */
-  private def getArityForEnumTag(caze: TypedAst.Case): Int = {
-    caze.tpes match {
-      case List(Type.Cst(TypeConstructor.Unit, _)) => 0
-      case other => other.length
-    }
-  }
+  private def getArityForEnumTag(caze: TypedAst.Case): Int =
+    caze.tpes.length
 
   /**
     * Checks if the provided tag matches the case.
