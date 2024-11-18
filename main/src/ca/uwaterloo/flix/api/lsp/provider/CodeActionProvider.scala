@@ -44,6 +44,9 @@ object CodeActionProvider {
       else
         Nil
 
+    case ResolutionError.UndefinedStruct(qn,  loc) if overlaps(range, loc) =>
+        mkNewStruct(qn.ident.name, uri) :: Nil
+
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(name, uri, ap)
 
@@ -218,6 +221,7 @@ object CodeActionProvider {
            |enum $name {
            |
            |}
+           |
            |""".stripMargin
       )))
     )),
@@ -310,6 +314,7 @@ object CodeActionProvider {
            |struct $name[r] {
            |
            |}
+           |
            |""".stripMargin
       )))
     )),
