@@ -38,6 +38,11 @@ object PrimitiveEffects {
   private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
 
   /**
+    * A pre-computed map from packages to effects.
+    */
+  private val packageEffs: Map[Package, Set[Symbol.EffectSym]] = loadPackageEffs()
+
+  /**
     * A pre-computed map from classes to effects.
     *
     * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
@@ -53,11 +58,6 @@ object PrimitiveEffects {
     * A pre-computed map from methods to effects.
     */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
-
-  /**
-    * A pre-computed map from packages to effects.
-    */
-  private val packageEffs: Map[Package, Set[Symbol.EffectSym]] = loadPackageEffs()
 
   /**
     * Returns the primitive effects of calling the given constructor `c`.
