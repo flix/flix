@@ -53,6 +53,9 @@ object CodeActionProvider {
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
+    case ResolutionError.UndefinedTag(qn, _, loc) if overlaps(range, loc) =>
+      Nil
+
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
