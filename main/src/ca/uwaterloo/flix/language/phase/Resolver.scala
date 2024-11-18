@@ -542,10 +542,10 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val derives = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
-          mapN(derivesVal, casesVal) {
-            case (derives, cases) =>
+          mapN(casesVal) {
+            case cases =>
               ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
           }
       }
@@ -578,10 +578,10 @@ object Resolver {
       flatMapN(indexVal, tparamsVal) {
         case (index, tparams) =>
           val env = env0 ++ mkTypeParamEnv(index :: tparams)
-          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val derives = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
-          mapN(derivesVal, casesVal) {
-            case (derives, cases) =>
+          mapN(casesVal) {
+            case cases =>
               ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
           }
       }
@@ -2136,7 +2136,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
     val qnames = derives0.traits
     val derives = qnames.flatMap(resolveDerivation(_, env, ns0, root))
     // Check for [[DuplicateDerivation]].
@@ -2152,7 +2152,7 @@ object Resolver {
       }
     }
     errors.foreach(sctx.errors.add)
-    Validation.Success(Ast.Derivations(derives, derives0.loc))
+    Ast.Derivations(derives, derives0.loc)
   }
 
   /**
