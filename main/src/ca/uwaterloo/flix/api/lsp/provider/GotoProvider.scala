@@ -35,22 +35,18 @@ object GotoProvider {
 
     consumer.getStack.filter(isReal).headOption match {
       case None => mkNotFound(uri, pos)
-      case Some(x) => x match {
-        case SymUse.DefSymUse(sym, loc) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromDefSym(sym, loc).toJSON)
-        case SymUse.SigSymUse(sym, loc) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromSigSym(sym, loc).toJSON)
-        case SymUse.OpSymUse(sym, loc) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
-        case SymUse.CaseSymUse(sym, loc) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc).toJSON)
-        case SymUse.StructFieldSymUse(sym, loc) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructFieldSym(sym, loc).toJSON)
-        case _ => mkNotFound(uri, pos)
-      }
+      case Some(x) => goto(x, mkNotFound(uri, pos))
     }
   }
 
+  private def goto(x: AnyRef, default: JObject)(implicit root: Root): JObject = x match {
+    case SymUse.DefSymUse(sym, loc) => mkGoto(LocationLink.fromDefSym(sym, loc))
+    case SymUse.SigSymUse(sym, loc) => mkGoto(LocationLink.fromSigSym(sym, loc))
+    case SymUse.OpSymUse(sym, loc) => mkGoto(LocationLink.fromOpSym(sym, loc))
+    case SymUse.CaseSymUse(sym, loc) => mkGoto(LocationLink.fromCaseSym(sym, loc))
+    case SymUse.StructFieldSymUse(sym, loc) => mkGoto(LocationLink.fromStructFieldSym(sym, loc))
+    case _ => default
+  }
 
   private def isReal(x: AnyRef): Boolean = x match {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
@@ -103,6 +99,16 @@ object GotoProvider {
     case _: Symbol => true
     case tpe: Type => tpe.loc.isReal
     case _ => false
+  }
+
+  /**
+    * Returns a succesful Goto reply containing the given [[LocationLink]] `link`
+    *
+    * @param  link [[LocationLink]] that the reply should contain.
+    * @return succesful Goto reply containing `link`.
+    */
+  private def mkGoto(link: LocationLink): JObject = {
+    ("status" -> ResponseStatus.Success) ~ ("result" -> link.toJSON)
   }
 
   /**
