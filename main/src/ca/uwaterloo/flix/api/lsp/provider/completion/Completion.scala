@@ -147,11 +147,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.ImportCompletion(name) =>
+    case Completion.ImportCompletion(className, path, ap) =>
       CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(Priority.Highest, name),
-        textEdit         = TextEdit(context.range, name),
+        label            = className,
+        sortText         = Priority.toSortText(Priority.Highest, className),
+        textEdit         = TextEdit(context.range, className),
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Class
@@ -520,9 +520,10 @@ object Completion {
   /**
     * Represents a package, class, or interface completion.
     *
-    * @param name the name to be completed.
+    * @param className the name to be completed.
+    * @param path the path of the class that we will import
     */
-  case class ImportCompletion(name: String) extends Completion
+  case class ImportCompletion(className: String, path: String) extends Completion
 
   /**
     * Represents a Snippet completion

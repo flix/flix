@@ -16,27 +16,25 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.ClassList
 
 object ImportCompleter {
 
-  def getCompletions(err: ResolutionError.UndefinedJvmClass)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
-    val path = err.name.split('.').toList
+  def getCompletions(err: ResolutionError.UndefinedJvmClass): Iterable[ImportCompletion] = {
+//    val path = err.name.split('.').toList
     // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-    javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+//    javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+    javaClassCompletionsFromPrefix(err.name)
   }
 
   /**
     * Gets completions from a java path prefix
     */
-  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
-    root.availableClasses.byPackage(prefix).map(clazz => {
-      val label = prefix match {
-        case Nil => clazz
-        case v => v.mkString("", ".", s".$clazz")
-      }
-      Completion.ImportCompletion(label)
-    })
+  private def javaClassCompletionsFromPrefix(prefix: String): Iterable[ImportCompletion] = {
+    ClassList.TheMap.m.keys.filter(_.startsWith(prefix)).flatMap { className =>
+      val paths = ClassList.TheMap.get(className).get
+      paths.map(ImportCompletion(className, _))
+    }
   }
 }
