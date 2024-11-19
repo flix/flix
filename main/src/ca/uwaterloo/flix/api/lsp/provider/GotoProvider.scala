@@ -45,6 +45,9 @@ object GotoProvider {
     case SymUse.OpSymUse(sym, loc) => mkGoto(LocationLink.fromOpSym(sym, loc))
     case SymUse.CaseSymUse(sym, loc) => mkGoto(LocationLink.fromCaseSym(sym, loc))
     case SymUse.StructFieldSymUse(sym, loc) => mkGoto(LocationLink.fromStructFieldSym(sym, loc))
+    // Effects
+    case SymUse.EffectSymUse(sym, loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
     case _ => default
   }
 
