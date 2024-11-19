@@ -41,8 +41,8 @@ object CodeActionProvider {
     case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
         mkUseEffect(qn.ident, uri, ap)
 
-    case ResolutionError.UndefinedStruct(qn,  loc) if overlaps(range, loc) =>
-        mkNewStruct(qn.ident.name, uri) :: Nil
+//    case ResolutionError.UndefinedStruct(qn,  loc) if overlaps(range, loc) =>
+//        mkNewStruct(qn.ident.name, uri) :: Nil
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(name, uri, ap)
@@ -54,14 +54,7 @@ object CodeActionProvider {
       mkUseTrait(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkNewEnum(qn.ident.name, uri, ap) :: mkNewStruct(qn.ident.name, uri, ap) :: mkUseType(qn.ident, uri, ap)
-    case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
-        if (qn.namespace.isRoot)
-          mkUseType(qn.ident, uri)
-        else
-          Nil
-      }
+      mkNewEnum(qn.ident.name, uri, ap) :: mkNewStruct(qn.ident.name, uri, ap) :: mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
