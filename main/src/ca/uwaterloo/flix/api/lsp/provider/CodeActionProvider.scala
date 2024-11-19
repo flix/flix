@@ -53,8 +53,8 @@ object CodeActionProvider {
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
-    case ResolutionError.UndefinedTag(qn, _, loc) if overlaps(range, loc) =>
-      Nil
+    case ResolutionError.UndefinedTag(name, _, loc) if overlaps(range, loc) =>
+      replaceFullTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
@@ -125,6 +125,21 @@ object CodeActionProvider {
       case (sym, _) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
+  }
+
+  /**
+    * Returns a code action that proposes to qualify the tag with the enum name.
+    */
+  private def replaceFullTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    candidateEnums.keys.map{ enumName =>
+      CodeAction(
+        title = s"Replace with $enumName.$tagName",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
+        command = None
+      )
+    }.toList
   }
 
   /**
