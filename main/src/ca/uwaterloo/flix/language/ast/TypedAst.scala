@@ -43,7 +43,6 @@ object TypedAst {
                   sources: Map[Source, SourceLocation],
                   traitEnv: Map[Symbol.TraitSym, TraitContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
-//                  names: MultiMap[List[String], String],
                   availableClasses: AvailableClasses,
                   precedenceGraph: LabelledPrecedenceGraph)
 
