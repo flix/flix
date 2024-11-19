@@ -572,31 +572,30 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that an object derivation includes a method that doesn't exist in the superclass being implemented.
+    * An error raised to indicate that an object derivation includes a method that doesn't exist
+    * in the superclass being implemented.
     *
     * @param clazz The type of superclass
-    * @param name  The name of the extra method.
+    * @param name  The name of the undefined method.
     * @param loc   The source location of the method.
     */
-  case class NewObjectUnreachableMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'"
+  case class NewObjectUndefinedMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}' with the written signature"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
+      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}' with the written signature
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
     }
   }
 
-  /**
-    * Format a Java type suitable for method implementation.
-    */
+  /** Format a Java type suitable for method implementation. */
   private def formatJavaType(t: java.lang.Class[?]): String = {
     if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString
     else
-      s"##${t.getName}"
+      t.getName
   }
 }

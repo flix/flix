@@ -378,7 +378,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.NewObjectUnreachableMethod](result)
+    expectError[SafetyError.NewObjectUndefinedMethod](result)
   }
 
   test("TestNonDefaultConstructor.01") {
