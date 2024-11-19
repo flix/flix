@@ -41,6 +41,7 @@ jobs:
       matrix:
         repo:
           - "JonathanStarup/Flix-ANSI-Terminal"
+          - "JonathanStarup/ListSet"
           - "flix/museum"
           - "jaschdoc/flix-parsers"
           - "mlutze/flix-json"
