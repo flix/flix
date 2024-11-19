@@ -39,22 +39,22 @@ object CodeActionProvider {
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
     case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
-        mkUseEffect(qn.ident, uri, ap)
+      mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
-        mkNewStruct(qn.ident.name, uri, ap) :: Nil
+      mkNewStruct(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(name, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri, ap) :: mkImportJava(qn.ident.name, uri, ap) ++ mkUseDef(qn.ident, uri, ap) ++ mkFixMisspelling(qn, loc, env, uri)
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkNewEnum(qn.ident.name, uri, ap) :: mkNewStruct(qn.ident.name, uri, ap) :: mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -214,7 +214,7 @@ object CodeActionProvider {
     *   enum Abc { }
     * }}}
     */
-  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): CodeAction = CodeAction(
+  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
@@ -227,7 +227,7 @@ object CodeActionProvider {
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a code action that proposes to create a new function.
@@ -243,7 +243,7 @@ object CodeActionProvider {
     *   def f(): =
     * }}}
     */
-  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): CodeAction = CodeAction(
+  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create def '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
@@ -254,7 +254,7 @@ object CodeActionProvider {
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a code action that proposes to import corresponding Java class.
@@ -298,7 +298,7 @@ object CodeActionProvider {
     *   struct Abc[r] { }
     * }}}
     */
-  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): CodeAction = CodeAction(
+  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create struct '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
@@ -311,7 +311,7 @@ object CodeActionProvider {
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
