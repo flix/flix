@@ -18,6 +18,15 @@ pub enum Proxy[_] {
 }
 
 ///
+/// The uninterpretable `Env` effect.
+///
+/// The `Env` effect represents ..
+///
+/// The `Env` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Env
+
+///
 /// The uninterpretable `Exec` effect.
 ///
 /// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
