@@ -145,19 +145,7 @@ object Inliner {
 
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
-      op match {
-        case AtomicOp.Untag(_, idx) =>
-          val List(e) = es
-          e match {
-            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) =>
-              ???
-
-            case _ =>
-              LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-          }
-
-        case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-      }
+      LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case OccurrenceAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
