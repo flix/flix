@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
@@ -55,6 +56,10 @@ object GotoProvider {
   }
 
   private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
+    // Assoc Types
+    case SymUse.AssocTypeSymUse(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
+    case AssocTypeConstructor(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
+    case Type.AssocType(AssocTypeConstructor(sym, _), _, _, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
     // Defs
     case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
     // Effects
@@ -128,6 +133,9 @@ object GotoProvider {
 
     case TraitConstraint(_, _, loc) => loc.isReal
     case TraitConstraint.Head(_, loc) => loc.isReal
+
+    case AssocTypeConstructor(_, loc) => loc.isReal
+    case EqualityConstraint(_, _, _, loc) => loc.isReal
 
     case _: Symbol => true
     case tpe: Type => tpe.loc.isReal
