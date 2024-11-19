@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -28,71 +29,80 @@ object GotoProvider {
    * Processes a goto request.
    */
   def processGoto(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-    index.query(uri, pos) match {
+    val consumer = StackConsumer();
+
+    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
+
+    consumer.getStack.filter(isReal).headOption match {
       case None => mkNotFound(uri, pos)
-
-      case Some(entity) => entity match {
-        case Entity.DefUse(sym, loc, _) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
-
-        case Entity.SigUse(sym, loc, _) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
-
-        case Entity.VarUse(sym, loc, _) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
-
-        case Entity.CaseUse(sym, loc, _) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
-
-        case Entity.StructFieldUse(sym, loc, _) =>
-          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructFieldSym(sym, loc)(root).toJSON)
-
-        case Entity.Exp(_) => mkNotFound(uri, pos)
-
-        case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(CaseSymUse(sym, loc), _, _, _) =>
-            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
-
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.Type(t) => t match {
-          case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
-
-          case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
-            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructSym(sym, loc)(root).toJSON)
-
-          case Type.Cst(TypeConstructor.Effect(sym), loc) =>
-            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
-
-          case Type.Var(sym, loc) =>
-            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
-
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.OpUse(sym, loc, _) =>
+      case Some(x) => x match {
+        case SymUse.DefSymUse(sym, loc) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromDefSym(sym, loc).toJSON)
+        case SymUse.SigSymUse(sym, loc) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromSigSym(sym, loc).toJSON)
+        case SymUse.OpSymUse(sym, loc) =>
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
-
-        case Entity.Case(_) => mkNotFound(uri, pos)
-        case Entity.StructField(_) => mkNotFound(uri, pos)
-        case Entity.Trait(_) => mkNotFound(uri, pos)
-        case Entity.Def(_) => mkNotFound(uri, pos)
-        case Entity.Effect(_) => mkNotFound(uri, pos)
-        case Entity.Enum(_) => mkNotFound(uri, pos)
-        case Entity.Struct(_) => mkNotFound(uri, pos)
-        case Entity.TypeAlias(_) => mkNotFound(uri, pos)
-        case Entity.AssocType(_) => mkNotFound(uri, pos)
-        case Entity.Label(_) => mkNotFound(uri, pos)
-        case Entity.FormalParam(_) => mkNotFound(uri, pos)
-        case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
-        case Entity.Op(_) => mkNotFound(uri, pos)
-        case Entity.Pred(_, _) => mkNotFound(uri, pos)
-        case Entity.Sig(_) => mkNotFound(uri, pos)
-        case Entity.TypeVar(_) => mkNotFound(uri, pos)
+        case SymUse.CaseSymUse(sym, loc) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc).toJSON)
+        case SymUse.StructFieldSymUse(sym, loc) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructFieldSym(sym, loc).toJSON)
+        case _ => mkNotFound(uri, pos)
       }
     }
+  }
+
+
+  private def isReal(x: AnyRef): Boolean = x match {
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Sig(_, _, _, loc) => loc.isReal
+    case TypedAst.Def(_, _, _, loc) => loc.isReal
+    case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Struct(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Op(_, _, loc) => loc.isReal
+    case exp: TypedAst.Expr => exp.loc.isReal
+    case pat: TypedAst.Pattern => pat.loc.isReal
+    case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Tag(_, _, _, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Error(_, loc) => loc.isReal
+    case p: TypedAst.Predicate => p.loc.isReal
+    case TypedAst.Binder(sym, _) => sym.loc.isReal
+    case TypedAst.Case(_, _, _, loc) => loc.isReal
+    case TypedAst.StructField(_, _, loc) => loc.isReal
+    case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
+    case TypedAst.Constraint(_, _, _, loc) => loc.isReal
+    case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
+    case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
+    case TypedAst.PredicateParam(_, _, loc) => loc.isReal
+    case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.CatchRule(_, _, _) => true
+    case TypedAst.HandlerRule(_, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.TypeParam(_, _, loc) => loc.isReal
+    case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
+
+    case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
+    case SymUse.CaseSymUse(_, loc) => loc.isReal
+    case SymUse.DefSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.LocalDefSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
+    case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
+    case SymUse.SigSymUse(_, loc) => loc.isReal
+    case SymUse.StructFieldSymUse(_, loc) => loc.isReal
+    case SymUse.TraitSymUse(_, loc) => loc.isReal
+
+    case _: Symbol => true
+    case tpe: Type => tpe.loc.isReal
+    case _ => false
   }
 
   /**
