@@ -61,7 +61,8 @@ object GotoProvider {
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
     case SymUse.CaseSymUse(sym, loc) => Some(mkGoto(LocationLink.fromCaseSym(sym, loc)))
-
+    // Struct
+    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(mkGoto(LocationLink.fromStructSym(sym, loc)))
     case SymUse.StructFieldSymUse(sym, loc) => Some(mkGoto(LocationLink.fromStructFieldSym(sym, loc)))
     // Effects
     case SymUse.EffectSymUse(sym, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
