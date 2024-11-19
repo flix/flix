@@ -48,12 +48,7 @@ object CodeActionProvider {
       mkImportJava(name, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri, ap) :: mkImportJava(qn.ident.name, uri, ap) ++ mkUseDef(qn.ident, uri, ap) ++ {
-        if (qn.namespace.isRoot)
-          mkFixMisspelling(qn, loc, env, uri)
-        else
-          Nil
-      }
+      mkNewDef(qn.ident.name, uri, ap) :: mkImportJava(qn.ident.name, uri, ap) ++ mkUseDef(qn.ident, uri, ap) ++ mkFixMisspelling(qn, loc, env, uri)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -153,6 +148,27 @@ object CodeActionProvider {
   }
 
   /**
+    * Returns a TextEdit that is inserted and indented according to the given `ap`.
+    * This function will:
+    *   - add leadingSpaces before the given text.
+    *   - add leadingSpaces after each newline.
+    *   - add a newline at the end.
+    *
+    * Example:
+    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    *   The result will be:
+    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    */
+  private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
+    val insertPosition = Position(ap.line, ap.col)
+    val leadingSpaces = " " * ap.spaces
+    TextEdit(
+      Range(insertPosition, insertPosition),
+      leadingSpaces + text.replace("\n", s"\n$leadingSpaces") + "\n"
+    )
+  }
+
+  /**
     * Internal helper function for all `mkUseX`.
     * Returns a list of code action that proposes to `use` a symbol.
     *
@@ -176,24 +192,20 @@ object CodeActionProvider {
     * @param uri   URI of the document the change should be made in.
     */
   // Names have to be included separately because symbols aren't guaranteed to have a name
-  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String, ap: AnchorPosition): List[CodeAction] = {
-    val insertPosition = Position(ap.line, ap.col)
-    val leadingSpaces = " " * ap.spaces
+  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String, ap: AnchorPosition): List[CodeAction] =
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
         CodeAction(
           title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
-            Map(uri -> List(TextEdit(
-              Range(insertPosition, insertPosition),
-              s"${leadingSpaces}use $sym;\n"
+            Map(uri -> List(mkTextEdit(ap,
+              s"use $sym;"
             )))
           )),
           command = None
         )
     }.toList.sortBy(_.title)
-  }
 
   /**
     * Returns a code action that proposes to create a new enum.
@@ -209,26 +221,19 @@ object CodeActionProvider {
     *   enum Abc { }
     * }}}
     */
-  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): CodeAction = {
-    val insertPosition = Position(ap.line, ap.col)
-    val leadingSpaces = " " * ap.spaces
-    CodeAction(
+  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): CodeAction = CodeAction(
     title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(insertPosition, insertPosition),
+      Map(uri -> List(mkTextEdit(ap,
         s"""
-           |${leadingSpaces}enum $name {
-           |$leadingSpaces
-           |$leadingSpaces}
-           |
-           |""".stripMargin
+          |enum $name {
+          |
+          |}""".stripMargin
       )))
     )),
     command = None
-    )
-  }
+  )
 
   /**
     * Returns a code action that proposes to create a new function.
@@ -244,24 +249,18 @@ object CodeActionProvider {
     *   def f(): =
     * }}}
     */
-  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): CodeAction = {
-    val insertPosition = Position(ap.line, ap.col)
-    val leadingSpaces = " " * ap.spaces
-    CodeAction(
-      title = s"Create def '$name'",
-      kind = CodeActionKind.QuickFix,
-      edit = Some(WorkspaceEdit(
-        Map(uri -> List(TextEdit(
-          Range(insertPosition, insertPosition),
-          s"""
-             |${leadingSpaces}def $name(): =
-             |$leadingSpaces
-             |""".stripMargin
-        )))
-      )),
-      command = None
-    )
-  }
+  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): CodeAction = CodeAction(
+    title = s"Create def '$name'",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(mkTextEdit(ap,
+        s"""
+          |def $name(): =
+          |""".stripMargin
+      )))
+    )),
+    command = None
+  )
 
   /**
     * Returns a code action that proposes to import corresponding Java class.
@@ -277,23 +276,19 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
-    val insertPosition = Position(ap.line, ap.col)
-    val leadingSpaces = " " * ap.spaces
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] =
     ClassList.TheMap.get(name).toList.flatten.map { path =>
-        CodeAction(
-          title = s"import '$path'",
-          kind = CodeActionKind.QuickFix,
-          edit = Some(WorkspaceEdit(
-              Map(uri -> List(TextEdit(
-                Range(insertPosition, insertPosition),
-                s"${leadingSpaces}import $path\n"
-              )))
-          )),
-          command = None
-        )
+      CodeAction(
+        title = s"import '$path'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(
+          Map(uri -> List(mkTextEdit(ap,
+            s"import $path"
+          )))
+        )),
+        command = None
+      )
     }
-  }
 
   /**
     * Returns a code action that proposes to create a new struct.
@@ -309,26 +304,19 @@ object CodeActionProvider {
     *   struct Abc[r] { }
     * }}}
     */
-  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): CodeAction = {
-    val insertPosition = Position(ap.line, ap.col)
-    val leadingSpaces = " " * ap.spaces
-    CodeAction(
-      title = s"Create struct '$name'",
-      kind = CodeActionKind.QuickFix,
-      edit = Some(WorkspaceEdit(
-        Map(uri -> List(TextEdit(
-          Range(insertPosition, insertPosition),
-          s"""
-             |${leadingSpaces}struct $name[r] {
-             |$leadingSpaces
-             |$leadingSpaces}
-             |
-             |""".stripMargin
-        )))
-      )),
-      command = None
-    )
-  }
+  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): CodeAction = CodeAction(
+    title = s"Create struct '$name'",
+    kind = CodeActionKind.QuickFix,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(mkTextEdit(ap,
+        s"""
+           |struct $name[r] {
+           |
+           |}""".stripMargin
+      )))
+    )),
+    command = None
+  )
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.

@@ -558,10 +558,6 @@ object ResolutionError {
 
   }
 
-  object UndefinedTrait {
-    def apply(qn: Name.QName, ns: Name.NName, loc: SourceLocation): UndefinedTrait = UndefinedTrait(qn, AnchorPosition.mkImportOrUseAnchor(ns), ns, loc)
-  }
-
   /**
     * Undefined Effect Error.
     *
@@ -586,10 +582,6 @@ object ResolutionError {
       s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
 
-  }
-
-  object UndefinedEffect {
-    def apply(qn: Name.QName, ns: Name.NName, loc: SourceLocation): UndefinedEffect = UndefinedEffect(qn, AnchorPosition.mkImportOrUseAnchor(ns), ns, loc)
   }
 
   /**
