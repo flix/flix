@@ -266,12 +266,13 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] =
-    ClassList.TheMap.get(name).toList.flatten.map { path =>
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] =
+    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
+      val completePath = path.mkString(".") + "." + name
       CodeAction(
         title = s"import '$path'",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $path"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $completePath"))))),
         command = None
       )
     }
