@@ -953,7 +953,7 @@ object ResolutionError {
     * @param name the name of the undefined struct.
     * @param loc  the location where the error occurred.
     */
-  case class UndefinedStruct(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Undefined struct"
 
     def message(formatter: Formatter): String = {

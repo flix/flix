@@ -41,8 +41,8 @@ object CodeActionProvider {
     case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
         mkUseEffect(qn.ident, uri, ap)
 
-//    case ResolutionError.UndefinedStruct(qn,  loc) if overlaps(range, loc) =>
-//        mkNewStruct(qn.ident.name, uri) :: Nil
+    case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
+        mkNewStruct(qn.ident.name, uri, ap) :: Nil
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(name, uri, ap)
