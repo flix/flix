@@ -71,6 +71,8 @@ object GotoProvider {
     case SymUse.TraitSymUse(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
     case TraitConstraint.Head(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
     case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
+    // Type Vars
+    case Type.Var(sym, loc) => Some(mkGoto(LocationLink.fromTypeVarSym(sym, loc)))
     // Vars
     case TypedAst.Expr.Var(sym, _, loc) => Some(mkGoto(LocationLink.fromVarSym(sym, loc)))
     case _ => None
