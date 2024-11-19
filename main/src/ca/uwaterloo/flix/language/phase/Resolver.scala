@@ -455,12 +455,13 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(tparams)
           val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
           val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-          val tconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
-          flatMapN(traitVal, tpeVal, tconstrsVal) {
-            case (trt, tpe, tconstrs) =>
+          val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
+          flatMapN(traitVal, tpeVal, optTconstrsVal) {
+            case (trt, tpe, optTconstrs) =>
               val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, env, taenv, ns0, root, loc)
               val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env)(ns0, taenv, sctx, root, flix))
+              val tconstrs = optTconstrs.collect { case Some(t) => t }
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
                   val traitUse = TraitSymUse(trt.sym, trt0.loc)
@@ -521,13 +522,14 @@ object Resolver {
               val env = env1 ++ mkFormalParamEnv(fparams)
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
               val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
-              val tconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
+              val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
-                case (tpe, eff, tconstrs, econstrs) =>
-                  // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs)
+              mapN(tpeVal, effVal, optTconstrsVal, econstrsVal) {
+                case (tpe, eff, optTconstrs, econstrs) =>
+                  // add the inherited type constraint to the list
+                  val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
               }
           }
       }
@@ -542,10 +544,10 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val derives = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
-          mapN(derivesVal, casesVal) {
-            case (derives, cases) =>
+          mapN(casesVal) {
+            case cases =>
               ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
           }
       }
@@ -558,12 +560,11 @@ object Resolver {
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, _, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
-        case tparams =>
+        tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
           val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(s0.sym, idx, field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
-            case fields =>
-              ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+            fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
       }
   }
@@ -578,11 +579,10 @@ object Resolver {
       flatMapN(indexVal, tparamsVal) {
         case (index, tparams) =>
           val env = env0 ++ mkTypeParamEnv(index :: tparams)
-          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val derives = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
-          mapN(derivesVal, casesVal) {
-            case (derives, cases) =>
-              ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
+          mapN(casesVal) {
+            cases => ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
           }
       }
   }
@@ -1312,15 +1312,15 @@ object Resolver {
       }
 
     case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-          val expVal = resolveExp(exp, env0)
-          val handlerVal = visitHandler(eff, rules, env0)
-          mapN(expVal, handlerVal) {
-            case (e, Result.Ok((effUse, rs))) =>
-              ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-            case (_, Result.Err(error)) =>
-              sctx.errors.add(error)
-              ResolvedAst.Expr.Error(error)
-          }
+      val expVal = resolveExp(exp, env0)
+      val handlerVal = visitHandler(eff, rules, env0)
+      mapN(expVal, handlerVal) {
+        case (e, Result.Ok((effUse, rs))) =>
+          ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
+        case (_, Result.Err(error)) =>
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>
       val esVal = traverse(exps)(resolveExp(_, env0))
@@ -2086,15 +2086,18 @@ object Resolver {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
+  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Option[ResolvedAst.TraitConstraint], ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
-      val traitVal = lookupTrait(trt0, env, ns0, root)
+      val optTrait = lookupTrait(trt0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
 
-      mapN(traitVal, tpeVal) {
-        case (trt, tpe) =>
-          val head = TraitConstraint.Head(trt.sym, trt0.loc)
-          ResolvedAst.TraitConstraint(head, tpe, loc)
+      mapN(tpeVal) {
+        tpe =>
+          optTrait.map {
+            trt =>
+              val head = TraitConstraint.Head(trt.sym, trt0.loc)
+              ResolvedAst.TraitConstraint(head, tpe, loc)
+          }
       }
   }
 
@@ -2133,34 +2136,30 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
     val qnames = derives0.traits
-    val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
-    flatMapN(derivesVal) {
-      derives =>
-        // Check for [[DuplicateDerivation]].
-        val seen = mutable.Map.empty[Symbol.TraitSym, SourceLocation]
-        val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
-        for (Ast.Derivation(traitSym, loc1) <- derives) {
-          seen.get(traitSym) match {
-            case None =>
-              seen.put(traitSym, loc1)
-            case Some(loc2) =>
-              errors += DuplicateDerivation(traitSym, loc1, loc2)
-              errors += DuplicateDerivation(traitSym, loc2, loc1)
-          }
-        }
-        errors.foreach(sctx.errors.add)
-        Validation.Success(Ast.Derivations(derives, derives0.loc))
+    val derives = qnames.flatMap(resolveDerivation(_, env, ns0, root))
+    // Check for [[DuplicateDerivation]].
+    val seen = mutable.Map.empty[Symbol.TraitSym, SourceLocation]
+    val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
+    for (Ast.Derivation(traitSym, loc1) <- derives) {
+      seen.get(traitSym) match {
+        case None =>
+          seen.put(traitSym, loc1)
+        case Some(loc2) =>
+          errors += DuplicateDerivation(traitSym, loc1, loc2)
+          errors += DuplicateDerivation(traitSym, loc2, loc1)
+      }
     }
+    errors.foreach(sctx.errors.add)
+    Ast.Derivations(derives, derives0.loc)
   }
 
   /**
     * Performs name resolution on the given of derivation `derive0`.
     */
-  private def resolveDerivation(derive0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[Ast.Derivation, ResolutionError] = {
-    val trtVal = lookupTrait(derive0, env, ns0, root)
-    mapN(trtVal) {
+  private def resolveDerivation(derive0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Ast.Derivation] = {
+    lookupTrait(derive0, env, ns0, root).map {
       trt => Ast.Derivation(trt.sym, derive0.loc)
     }
   }
@@ -2187,27 +2186,32 @@ object Resolver {
             Validation.Success(trt)
         }
       case None =>
-        Validation.Failure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+        Validation.Failure(ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
     }
   }
 
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
     } match {
       case Some(trt) =>
         getTraitAccessibility(trt, ns0) match {
-          case TraitAccessibility.Accessible | TraitAccessibility.Sealed => Validation.Success(trt)
+          case TraitAccessibility.Accessible | TraitAccessibility.Sealed =>
+            Some(trt)
+
           case TraitAccessibility.Inaccessible =>
             val error = ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Validation.Success(trt)
+            Some(trt)
         }
-      case None => Validation.Failure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+      case None =>
+        val error = ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc)
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -2307,7 +2311,7 @@ object Resolver {
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, AnchorPosition.mkImportOrUseAnchor(ns0), qname.loc))
       // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
       case st :: _ => Result.Ok(st)
     }
@@ -2877,7 +2881,7 @@ object Resolver {
     }
 
     effOpt match {
-      case None => Result.Err(ResolutionError.UndefinedEffect(qname, ns0, qname.loc))
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
       case Some(decl) => Result.Ok(decl)
     }
   }
