@@ -1223,7 +1223,7 @@ object HtmlDocumentor {
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
       c.tpes.map(SimpleType.fromWellKindedType) match {
-        case List(SimpleType.Unit) | Nil => // Nothing
+        case Nil => // Nothing
         case elms =>
           sb.append("(")
           docList(elms) { t =>
