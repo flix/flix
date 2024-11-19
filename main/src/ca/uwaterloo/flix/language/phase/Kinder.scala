@@ -1541,6 +1541,7 @@ object Kinder {
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
     case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Difference, _), arg, _) => Type.mkDifference(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), arg, _) => Type.mkSymmetricDiff(arg, t2, loc)
     case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 

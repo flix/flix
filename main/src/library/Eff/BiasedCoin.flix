@@ -23,7 +23,7 @@ mod Eff {
         ///
         /// Returns `true` with probability `p`.
         ///
-        pub def flip(p: Float64): Bool
+        def flip(p: Float64): Bool
 
     }
 
@@ -49,7 +49,7 @@ mod Eff {
         ///
         /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
         ///
-        pub def run(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = handle(f)()
+        pub def runWithIO(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = handle(f)()
 
     }
 

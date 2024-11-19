@@ -115,6 +115,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
+      case TokenKind.KeywordRun => "'run'"
       case TokenKind.KeywordRvadd => "'rvadd'"
       case TokenKind.KeywordRvand => "'rvand'"
       case TokenKind.KeywordRvnot => "'rvnot'"
@@ -776,6 +777,8 @@ object TokenKind {
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
+
+  case object KeywordRun extends TokenKind
 
   case object KeywordRvadd extends TokenKind
 

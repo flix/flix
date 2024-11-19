@@ -1,7 +1,7 @@
 mod Test.Dec.AssocEff {
 
     eff Time {
-        pub def getTime(): String
+        def getTime(): String
     }
 
     ////////////////
@@ -91,7 +91,7 @@ mod Test.Dec.AssocEff {
     }
 
     eff Console {
-        pub def println(s: String): Unit
+        def println(s: String): Unit
     }
 
     pub def serveDessert(): Unit \ {Console} = region rc {

@@ -3,9 +3,10 @@ mod RewindExample {
     import java.util.Random
 
     eff Rewind {
-        pub def save(label: String): Unit
+        def save(label: String): Unit
+
         /// If you rewind to a non-saved label, it is like throwing an exception.
-        pub def rewind(label: String): Unit
+        def rewind(label: String): Unit
     }
 
     pub def main(): Int32 \ IO = region rc {

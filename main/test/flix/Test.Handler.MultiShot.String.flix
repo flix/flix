@@ -1,7 +1,7 @@
 mod Test.Handler.MultiShot.String {
 
     eff AskTell {
-        pub def askTell(x: String): String
+        def askTell(x: String): String
     }
 
     @Test

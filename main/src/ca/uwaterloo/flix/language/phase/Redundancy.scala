@@ -1081,10 +1081,10 @@ object Redundancy {
       !sctx.defSyms.containsKey(decl.sym)
 
   /**
-    * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
+    * Returns `true` if the given symbol `sym` is the entry point.
     */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    sym.toString == "main" || root.entryPoint.contains(sym)
+    root.entryPoint.contains(sym)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.

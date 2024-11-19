@@ -1,8 +1,13 @@
 {
   "methods": {
-    "java.lang.Runtime::exec": "Exec",
-    "java.lang.System::exit": "Sys",
-    "java.net.CookieHandler::getDefault": "Net, IO",
-    "java.net.CookieHandler::setDefault": "Net, IO"
+    "java.lang.Runtime::availableProcessors": "Env, IO",
+    "java.lang.Runtime::freeMemory": "Env, IO",
+    "java.lang.Runtime::totalMemory": "Env, IO",
+    "java.lang.Runtime::maxMemory": "Env, IO",
+    "java.lang.Runtime::version": "Env",
+    "java.lang.System::console": "IO",
+    "java.lang.System::currentTimeMillis": "IO",
+    "java.lang.System::getenv": "Env, IO",
+    "java.lang.System::nanoTime": "IO"
   }
 }

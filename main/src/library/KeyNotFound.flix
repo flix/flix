@@ -21,7 +21,7 @@
 eff KeyNotFound {
 
     /// Stops execution with an error message.
-    pub def keyNotFound(msg: String): Void
+    def keyNotFound(msg: String): Void
 
 }
 

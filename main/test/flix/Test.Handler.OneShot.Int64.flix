@@ -1,7 +1,7 @@
 mod Test.Handler.OneShot.Int64 {
 
     eff AskTell {
-        pub def askTell(x: Int64): Int64
+        def askTell(x: Int64): Int64
     }
 
     @Test

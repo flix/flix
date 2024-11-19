@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
 import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalSpawnEffect, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -348,7 +348,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO =
         |  new Runnable {
-        |    def run(_this: Int32): Unit = ()
+        |    def $run(_this: Int32): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -768,7 +768,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(x: Int32): Int32 = x
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
   test("IllegalEntryPointSignature.02") {
@@ -778,7 +778,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(x: Int32, _y: Int32, _a: Float64): Int32 = x
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
   test("IllegalEntryPointSignature.03") {
@@ -788,7 +788,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(_x: Int32, _y: Int32, a: Float64): Float64 = a
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
   test("IllegalEntryPointSignature.04") {
@@ -798,7 +798,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(_x: Int32, _y: Int32, _a: Float64): Float64 = 1.0f64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
   test("IllegalEntryPointSignature.05") {
@@ -813,7 +813,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
   test("IllegalExportFunction.01") {
@@ -822,7 +822,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export def id(x: Int32): Int32 = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.NonPublicExport](result)
+    expectError[EntryPointError.NonPublicExport](result)
   }
 
   test("IllegalExportFunction.02") {
@@ -831,7 +831,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@Export pub def id(x: Int32): Int32 = x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportNamespace](result)
+    expectError[EntryPointError.IllegalExportNamespace](result)
   }
 
   test("IllegalExportFunction.03") {
@@ -840,7 +840,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportName](result)
+    expectError[EntryPointError.IllegalExportName](result)
   }
 
   test("IllegalExportFunction.04") {
@@ -851,7 +851,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportEffect](result)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
   test("IllegalExportFunction.05") {
@@ -864,7 +864,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportType](result)
+    expectError[EntryPointError.IllegalExportType](result)
   }
 
   test("IllegalExportFunction.06") {
@@ -877,7 +877,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportType](result)
+    expectError[EntryPointError.IllegalExportType](result)
   }
 
   test("IllegalExportFunction.07") {
@@ -886,7 +886,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id[t](x: t): t = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalExportFunction.08") {
@@ -898,7 +898,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalExportFunction.09") {
@@ -910,7 +910,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalExportPolymorphism](result)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalMethodEffect.01") {
@@ -919,11 +919,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |import java.lang.Runnable
         |
         |eff Ask {
-        |    pub def ask(): String
+        |    def ask(): String
         |}
         |
         |def newRunnable(): Runnable \ IO = new Runnable {
-        |    def run(_this: Runnable): Unit \ Ask =
+        |    def $run(_this: Runnable): Unit \ Ask =
         |        Ask.ask(); ()
         |}
       """.stripMargin

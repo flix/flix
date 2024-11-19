@@ -1,8 +1,8 @@
 mod StateExample {
 
     eff State {
-        pub def get(): Int32
-        pub def put(value: Int32): Unit
+        def get(): Int32
+        def put(value: Int32): Unit
     }
 
     pub def main(): Unit \ IO = region rc {

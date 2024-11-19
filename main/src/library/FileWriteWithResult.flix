@@ -24,57 +24,57 @@ pub eff FileWriteWithResult {
     ///
     /// Creates file `f` if it does not exist. Overwrites it if it exists.
     ///
-    pub def write(data: {str = String}, f: String): Result[IoError, Unit]
+    def write(data: {str = String}, f: String): Result[IoError, Unit]
 
     ///
     /// Writes `lines` to the given file `f`.
     ///
     /// Creates `f` if it does not exist. Overwrites it if it exists.
     ///
-    pub def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+    def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
 
     ///
     /// Writes `data` to the given file `f`.
     ///
     /// Creates file `f` if it does not exist. Overwrites it if it exists.
     ///
-    pub def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+    def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
 
     ///
     /// Appends `str` to the given file `f`.
     ///
     /// Creates the file `f` if it does not exist.
     ///
-    pub def append(data: {str = String}, f: String): Result[IoError, Unit]
+    def append(data: {str = String}, f: String): Result[IoError, Unit]
 
     ///
     /// Appends `lines` to the given file `f`.
     ///
     /// Creates the file `f` if it does not exist.
     ///
-    pub def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+    def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
 
     ///
     /// Appends `data` to the given file `f`.
     ///
     /// Creates the file `f` if it does not exist.
     ///
-    pub def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+    def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
 
     ///
     /// Truncates the given file `f`.
     ///
-    pub def truncate(f: String): Result[IoError, Unit]
+    def truncate(f: String): Result[IoError, Unit]
 
     ///
     /// Creates the directory `d`.
     ///
-    pub def mkDir(d: String): Result[IoError, Unit]
+    def mkDir(d: String): Result[IoError, Unit]
 
     ///
     /// Creates the directory `d` and all its parent directories.
     ///
-    pub def mkDirs(d: String): Result[IoError, Unit]
+    def mkDirs(d: String): Result[IoError, Unit]
 
 }
 

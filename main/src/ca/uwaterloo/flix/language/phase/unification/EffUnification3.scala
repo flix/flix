@@ -181,6 +181,9 @@ object EffUnification3 {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
+      SetFormula.mkDifference(toSetFormula(tpe1), toSetFormula(tpe2))
+
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)

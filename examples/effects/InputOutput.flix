@@ -3,8 +3,8 @@ mod InputOutputExample {
     import java.lang.System
 
     eff InputOutput {
-        pub def read(): String
-        pub def write(s: String): Unit
+        def read(): String
+        def write(s: String): Unit
     }
 
     pub def main(): Result[String, Unit] \ IO = {

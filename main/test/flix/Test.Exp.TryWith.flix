@@ -1,18 +1,18 @@
 mod Test.Exp.TryWith {
     eff Print {
-        pub def doIt(): Unit
+        def doIt(): Unit
     }
 
     eff Print2 {
-        pub def doIt2(): Unit
+        def doIt2(): Unit
     }
 
     eff Greet {
-        pub def greet(name: String): Unit
+        def greet(name: String): Unit
     }
 
     eff Greet2 {
-        pub def greet2(name: String): Unit
+        def greet2(name: String): Unit
     }
 
     @Test

@@ -21,7 +21,7 @@ mod EffectExamples.Range {
 
     // Effect declaration
     eff Emission {
-        pub def emit(e: Int32): Unit
+        def emit(e: Int32): Unit
     }
 
     ///

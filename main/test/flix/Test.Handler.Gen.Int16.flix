@@ -1,7 +1,7 @@
 mod Test.Handler.Gen.Int16 {
 
     eff Gen {
-        pub def gen(): Int16
+        def gen(): Int16
     }
 
     def generator(): Unit \ Gen =

@@ -25,77 +25,77 @@ pub eff FileRead {
     ///
     /// Returns `true` if the given file `f` exists.
     ///
-    pub def exists(f: String): Bool
+    def exists(f: String): Bool
 
     ///
     /// Returns `true` is the given file `f` is a directory.
     ///
-    pub def isDirectory(f: String): Bool
+    def isDirectory(f: String): Bool
 
     ///
     /// Returns `true` if the given file `f` is a regular file.
     ///
-    pub def isRegularFile(f: String): Bool
+    def isRegularFile(f: String): Bool
 
     ///
     /// Returns `true` if the given file `f` is readable.
     ///
-    pub def isReadable(f: String): Bool
+    def isReadable(f: String): Bool
 
     ///
     /// Returns `true` if the given file `f` is a symbolic link.
     ///
-    pub def isSymbolicLink(f: String): Bool
+    def isSymbolicLink(f: String): Bool
 
     ///
     /// Returns `true` if the given file `f` is writable.
     ///
-    pub def isWritable(f: String): Bool
+    def isWritable(f: String): Bool
 
     ///
     /// Returns `true` if the given file `f` is executable.
     ///
-    pub def isExecutable(f: String): Bool
+    def isExecutable(f: String): Bool
 
     ///
     /// Returns the last access time of the given file `f` in milliseconds since the epoch.
     ///
-    pub def accessTime(f: String): Int64
+    def accessTime(f: String): Int64
 
     ///
     /// Returns the creation time of the given file `f` in milliseconds since the epoch.
     ///
-    pub def creationTime(f: String): Int64
+    def creationTime(f: String): Int64
 
     ///
     /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
     ///
-    pub def modificationTime(f: String): Int64
+    def modificationTime(f: String): Int64
 
     ///
     /// Returns the size of the given file `f` in bytes.
     ///
-    pub def size(f: String): Int64
+    def size(f: String): Int64
 
     ///
     /// Returns a string of all lines in the given file `f`.
     ///
-    pub def read(f: String): String
+    def read(f: String): String
 
     ///
     /// Returns a list of all lines in the given file `f`.
     ///
-    pub def readLines(f: String): List[String]
+    def readLines(f: String): List[String]
 
     ///
     /// Returns a vector of all the bytes in the given file `f`.
     ///
-    pub def readBytes(f: String): Vector[Int8]
+    def readBytes(f: String): Vector[Int8]
 
     ///
     /// Returns a list with the names of all files and directories in the given directory `d`.
     ///
-    pub def list(f: String): List[String]
+    def list(f: String): List[String]
 
 }
 

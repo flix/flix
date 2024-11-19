@@ -553,7 +553,7 @@ class Flix {
             val (afterRegions, regionErrors) = Regions.run(afterTyper)
             errors ++= regionErrors
 
-            val (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
             errors ++= entryPointErrors
 
             val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
@@ -642,7 +642,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    Validation.success(result)
+    Validation.Success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)

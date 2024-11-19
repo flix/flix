@@ -34,7 +34,7 @@ sealed trait Result[+T, +E] {
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
@@ -67,7 +67,7 @@ sealed trait Result[+T, +E] {
     * Returns `this` result as a [[Validation]].
     */
   final def toValidation: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.success(t)
+    case Result.Ok(t) => Validation.Success(t)
     case Result.Err(e) => Validation.Failure(Chain(e))
   }
 
@@ -149,19 +149,4 @@ object Result {
       case Err(e) => Err(e)
     }
   }
-
-  /**
-    * Adds an implicit `toOk` method.
-    */
-  implicit class ToOk[+T](val t: T) {
-    def toOk[U >: T, E]: Result[U, E] = Ok(t)
-  }
-
-  /**
-    * Adds an implicit `toErr` method.
-    */
-  implicit class ToErr[+E](val e: E) {
-    def toErr[T, F >: E]: Result[T, F] = Err(e)
-  }
-
 }

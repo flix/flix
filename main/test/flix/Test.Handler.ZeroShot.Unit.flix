@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot.Unit {
 
     eff Exc {
-        pub def raise(): Unit
+        def raise(): Unit
     }
 
     @Test

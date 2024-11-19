@@ -286,7 +286,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
 
     case Request.Hover(id, uri, pos) =>
       ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
@@ -313,10 +313,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
 
-    case Request.InlayHint(id, _, _) =>
-      // InlayHints disabled due to poor ergonomics.
-      // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+    case Request.InlayHint(id, uri, range) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
