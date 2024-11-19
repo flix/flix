@@ -191,11 +191,7 @@ object CodeActionProvider {
         CodeAction(
           title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
-          edit = Some(WorkspaceEdit(
-            Map(uri -> List(mkTextEdit(ap,
-              s"use $sym;"
-            )))
-          )),
+          edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $sym;"))))),
           command = None
         )
     }.toList.sortBy(_.title)
@@ -275,11 +271,7 @@ object CodeActionProvider {
       CodeAction(
         title = s"import '$path'",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(
-          Map(uri -> List(mkTextEdit(ap,
-            s"import $path"
-          )))
-        )),
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $path"))))),
         command = None
       )
     }
