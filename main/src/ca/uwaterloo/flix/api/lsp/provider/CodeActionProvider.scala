@@ -229,7 +229,8 @@ object CodeActionProvider {
         s"""
           |enum $name {
           |
-          |}""".stripMargin
+          |}
+          |""".stripMargin
       )))
     )),
     command = None
@@ -312,7 +313,8 @@ object CodeActionProvider {
         s"""
            |struct $name[r] {
            |
-           |}""".stripMargin
+           |}
+           |""".stripMargin
       )))
     )),
     command = None
