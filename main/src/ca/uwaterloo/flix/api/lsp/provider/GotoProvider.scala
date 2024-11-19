@@ -28,32 +28,47 @@ object GotoProvider {
   /**
    * Processes a goto request.
    */
-  def processGoto(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-    val consumer = StackConsumer();
+  def processGoto(uri: String, pos: Position)(implicit root: Root): JObject = {
+    val gotoRight = searchRight(uri, pos).flatMap(goto)
+    val gotoLeft = searchLeft(uri, pos).flatMap(goto)
 
-    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
+    gotoRight
+      .orElse(gotoLeft)
+      .getOrElse(mkNotFound(uri, pos))
+  }
 
-    consumer.getStack.filter(isReal).headOption match {
-      case None => mkNotFound(uri, pos)
-      case Some(x) => goto(x, mkNotFound(uri, pos))
+  private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+
+  private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    if (pos.character >= 2) {
+      val left = Position(pos.line, pos.character - 1)
+      search(uri, left)
+    } else {
+      None
     }
   }
 
-  private def goto(x: AnyRef, default: JObject)(implicit root: Root): JObject = x match {
-    case SymUse.DefSymUse(sym, loc) => mkGoto(LocationLink.fromDefSym(sym, loc))
-    case SymUse.SigSymUse(sym, loc) => mkGoto(LocationLink.fromSigSym(sym, loc))
-    case SymUse.OpSymUse(sym, loc) => mkGoto(LocationLink.fromOpSym(sym, loc))
-    // Enums
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => mkGoto(LocationLink.fromEnumSym(sym, loc))
-    case SymUse.CaseSymUse(sym, loc) => mkGoto(LocationLink.fromCaseSym(sym, loc))
+  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    val consumer = StackConsumer();
+    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
+    consumer.getStack.filter(isReal).headOption
+  }
 
-    case SymUse.StructFieldSymUse(sym, loc) => mkGoto(LocationLink.fromStructFieldSym(sym, loc))
+  private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
+    case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
+    case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
+    case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
+    // Enums
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
+    case SymUse.CaseSymUse(sym, loc) => Some(mkGoto(LocationLink.fromCaseSym(sym, loc)))
+
+    case SymUse.StructFieldSymUse(sym, loc) => Some(mkGoto(LocationLink.fromStructFieldSym(sym, loc)))
     // Effects
-    case SymUse.EffectSymUse(sym, loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
+    case SymUse.EffectSymUse(sym, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
     // Vars
-    case TypedAst.Expr.Var(sym, _, loc) => mkGoto(LocationLink.fromVarSym(sym, loc))
-    case _ => default
+    case TypedAst.Expr.Var(sym, _, loc) => Some(mkGoto(LocationLink.fromVarSym(sym, loc)))
+    case _ => None
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
