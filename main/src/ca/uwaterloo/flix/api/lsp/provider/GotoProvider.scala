@@ -43,7 +43,10 @@ object GotoProvider {
     case SymUse.DefSymUse(sym, loc) => mkGoto(LocationLink.fromDefSym(sym, loc))
     case SymUse.SigSymUse(sym, loc) => mkGoto(LocationLink.fromSigSym(sym, loc))
     case SymUse.OpSymUse(sym, loc) => mkGoto(LocationLink.fromOpSym(sym, loc))
+    // Enums
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => mkGoto(LocationLink.fromEnumSym(sym, loc))
     case SymUse.CaseSymUse(sym, loc) => mkGoto(LocationLink.fromCaseSym(sym, loc))
+
     case SymUse.StructFieldSymUse(sym, loc) => mkGoto(LocationLink.fromStructFieldSym(sym, loc))
     // Effects
     case SymUse.EffectSymUse(sym, loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
