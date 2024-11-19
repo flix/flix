@@ -1522,7 +1522,7 @@ object Resolver {
     *   - `Cons ===> x -> y -> Cons(x, y)`
     */
   private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyTag(CaseSymUse(caze.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, caze.tpes.length, Nil, loc.asSynthetic)
   }
 
@@ -1533,7 +1533,7 @@ object Resolver {
     *   - `Add ===> x -> y -> Add(x, y)`
     */
   private def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, isOpen: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyRestrictableTag(RestrictableCaseSymUse(caze.sym, loc), es, isOpen, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, loc), es, isOpen, loc.asSynthetic)
     visitApplyFull(base, caze.tpes.length, Nil, loc.asSynthetic)
   }
 
@@ -1706,7 +1706,7 @@ object Resolver {
   private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyTag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, caze.tpes.length, es, outerLoc)
     }
   }
@@ -1723,7 +1723,7 @@ object Resolver {
   private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyRestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
+        val base = args => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
         visitApplyFull(base, caze.tpes.length, es, outerLoc)
     }
   }

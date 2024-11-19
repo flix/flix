@@ -160,12 +160,12 @@ object PredDeps {
       }
       dg1 + dg2
 
-    case Expr.ApplyTag(_, exps, _, _, _) =>
+    case Expr.Tag(_, exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }
 
-    case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }

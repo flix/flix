@@ -215,8 +215,8 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.ApplyTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyRestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RecordEmpty(_, _) => 0
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)

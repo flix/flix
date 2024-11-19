@@ -190,9 +190,9 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitApplyRestrictableTag(exp: KindedAst.Expr.ApplyRestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
-      case KindedAst.Expr.ApplyRestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
+      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
 
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym

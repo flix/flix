@@ -50,8 +50,8 @@ object TypedAstPrinter {
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
     case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ApplyTag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
-    case Expr.ApplyRestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Tag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
+    case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
     case Expr.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))

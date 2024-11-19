@@ -62,8 +62,8 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, _, exp) => (printVarSym(sym), DocAst.Type.Unknown, print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ApplyTag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
-    case Expr.ApplyRestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Tag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
+    case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordEmpty(_) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))

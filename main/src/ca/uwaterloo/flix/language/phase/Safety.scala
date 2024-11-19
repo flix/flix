@@ -237,10 +237,10 @@ object Safety {
         visit(exp) ++
           rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
 
-      case Expr.ApplyTag(_, exps, _, _, _) =>
+      case Expr.Tag(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+      case Expr.RestrictableTag(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
       case Expr.Tuple(elms, _, _, _) =>

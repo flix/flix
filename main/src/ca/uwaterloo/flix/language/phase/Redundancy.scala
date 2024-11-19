@@ -557,13 +557,13 @@ object Redundancy {
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
 
-    case Expr.ApplyTag(CaseSymUse(sym, _), exps, _, _, _) =>
+    case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       us
 
-    case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>

@@ -302,11 +302,11 @@ object Indexer {
         case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyTag(CaseSymUse(sym, loc), exps, _, _, _) =>
+    case Expr.Tag(CaseSymUse(sym, loc), exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExps(exps) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyRestrictableTag(RestrictableCaseSymUse(sym, loc), exps, _, _, _) =>
+    case Expr.RestrictableTag(RestrictableCaseSymUse(sym, loc), exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
       // TODO RESTR-VARS use of sym
       visitExps(exps) ++ Index.occurrenceOf(exp0)

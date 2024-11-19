@@ -171,8 +171,8 @@ object PatMatch {
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
 
-      case Expr.ApplyTag(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.ApplyRestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
+      case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
+      case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
       case Expr.RecordEmpty(_, _) => Nil
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)

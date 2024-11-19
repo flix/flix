@@ -493,11 +493,11 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ApplyTag(symUse, exps, _, _, _) =>
+      case Expr.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyRestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
+      case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)

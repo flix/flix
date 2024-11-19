@@ -466,12 +466,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.ApplyTag(sym, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyRestrictableTag(sym0, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.RestrictableTag(sym0, exps, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
       val es = exps.map(visitExp)

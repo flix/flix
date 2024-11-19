@@ -62,8 +62,8 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.ApplyTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplyRestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expr.RecordEmpty(_, _) => Set.empty
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
@@ -215,12 +215,12 @@ object TypedAstOps {
       }
       e ++ rs
 
-    case Expr.ApplyTag(_, exps, _, _, _) =>
+    case Expr.Tag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ApplyRestrictableTag(_, exps, _, _, _) =>
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }

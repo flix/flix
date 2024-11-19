@@ -128,10 +128,10 @@ object Regions {
       }
       expErrors ++ rulesErrors ++ checkType(tpe, loc)
 
-    case Expr.ApplyTag(_, exps, tpe, _, loc) =>
+    case Expr.Tag(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.ApplyRestrictableTag(_, exps, tpe, _, loc) =>
+    case Expr.RestrictableTag(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Tuple(elms, tpe, _, loc) =>
