@@ -55,7 +55,11 @@ object GotoProvider {
   }
 
   private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
+    // Defs
     case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
+    // Effects
+    case SymUse.EffectSymUse(sym, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
     case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
@@ -67,9 +71,6 @@ object GotoProvider {
     case SymUse.TraitSymUse(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
     case TraitConstraint.Head(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
     case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
-    // Effects
-    case SymUse.EffectSymUse(sym, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
     // Vars
     case TypedAst.Expr.Var(sym, _, loc) => Some(mkGoto(LocationLink.fromVarSym(sym, loc)))
     case _ => None
