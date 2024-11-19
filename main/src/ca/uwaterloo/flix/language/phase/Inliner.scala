@@ -148,10 +148,9 @@ object Inliner {
       op match {
         case AtomicOp.Untag(_, idx) =>
           val List(e) = es
-          // Inline expressions of the form Untag(Tag(e0, ... e_i, ..., e_n)) if all e_i are pure
           e match {
-            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) if innerExps.map(_.purity).forall(Purity.isPure) =>
-              innerExps(idx)
+            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) =>
+              ???
 
             case _ =>
               LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)

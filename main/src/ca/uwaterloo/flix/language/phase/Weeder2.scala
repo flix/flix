@@ -2277,6 +2277,7 @@ object Weeder2 {
       }
     }
 
+    /** Extracts a non-empty tuple pattern as a list, expanding `()` to be `List(Unit)`. */
     private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[Pattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
@@ -2714,6 +2715,14 @@ object Weeder2 {
       }
     }
 
+    /**
+      * This is a customized version of [[visitType]] to avoid parsing `case Case((a, b))` as
+      * `case Case(a, b)`.
+      *
+      *   - `Tuple() --> Nil`
+      *   - `Tuple(t) --> List(visitType(t))`
+      *   - `t --> List(visitType(t))`
+      */
     def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
       // Visit first child and match its kind to know what to to
@@ -2748,7 +2757,6 @@ object Weeder2 {
     private def visitTupleType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Tuple)
       mapN(traverse(pickAll(TreeKind.Type.Type, tree))(visitType)) {
-        case Nil => ???
         case tpe :: Nil => tpe // flatten singleton tuple types
         case types => Type.Tuple(types, tree.loc)
       }
