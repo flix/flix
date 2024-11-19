@@ -51,6 +51,8 @@ object GotoProvider {
     // Effects
     case SymUse.EffectSymUse(sym, loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
     case Type.Cst(TypeConstructor.Effect(sym), loc) => mkGoto(LocationLink.fromEffectSym(sym, loc))
+    // Vars
+    case TypedAst.Expr.Var(sym, _, loc) => mkGoto(LocationLink.fromVarSym(sym, loc))
     case _ => default
   }
 
