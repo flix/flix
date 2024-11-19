@@ -247,26 +247,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a record pattern has shape the illegal shape `Enum()`.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class EmptyTagPattern(loc: SourceLocation) extends WeederError {
-    override def summary: String = "A tag pattern must specify at least one term, or omit parenthesis (e.g. `None`)."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected tag pattern.
-         |
-         |${code(loc, "A tag pattern must specify at least one term or omit parenthesis .")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate that an inner function is annotated with an illegal annotation.
     *
     * @param loc the location of the illegal annotation.
