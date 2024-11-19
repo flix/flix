@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Sym
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{ClassList, Similarity}
+import ca.uwaterloo.flix.util.Similarity
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -267,18 +267,19 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val startPosition = Position(line = ap.line, character = ap.col)
     val insertRange = Range(startPosition, startPosition)
     val leadingSpaces = " " * ap.spaces
-    ClassList.TheMap.get(name).toList.flatten.map { path =>
+    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
+        val completePath = path.mkString(".") + "." + name
         CodeAction(
-          title = s"import '$path'",
+          title = s"import '$completePath'",
           kind = CodeActionKind.QuickFix,
           edit = Some(WorkspaceEdit(
               Map(uri -> List(TextEdit(
                 insertRange,
-                s"${leadingSpaces}import $path\n"
+                s"${leadingSpaces}import $completePath\n"
               )))
           )),
           command = None

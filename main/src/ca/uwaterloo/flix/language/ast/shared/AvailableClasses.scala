@@ -15,10 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.util.collection.MultiMap
-
-import scala.annotation.tailrec
 
 /**
  * @param byPackage a map from a package name to a set of classes (and interfaces) in that package.
@@ -27,14 +24,21 @@ import scala.annotation.tailrec
 case class AvailableClasses(byPackage: MultiMap[List[String], String], byClass: MultiMap[String, List[String]])
 
 object AvailableClasses {
-  def apply(root: Root): AvailableClasses = {
-    val byPackage = root.names
-      val byClass = root.names.m.foldLeft(MultiMap.empty[String, List[String]]) {
-        case (acc, (packageName, classNames)) =>
-          classNames.foldLeft(acc) { (innerAcc, className) =>
-            innerAcc + (className, packageName)
-          }
-      }
-      AvailableClasses(byPackage, byClass)
+  /**
+    * Returns the empty available classes.
+    */
+  def empty: AvailableClasses = AvailableClasses(MultiMap.empty, MultiMap.empty)
+
+  /**
+    * Returns the available classes given the multimap from package names to class names.
+    */
+  def apply(byPackage: MultiMap[List[String], String]): AvailableClasses = {
+    val byClass = byPackage.m.foldLeft(MultiMap.empty[String, List[String]]) {
+      case (acc, (packageName, classNames)) =>
+        classNames.foldLeft(acc) { (innerAcc, className) =>
+          innerAcc + (className, packageName)
+        }
+    }
+    AvailableClasses(byPackage, byClass)
   }
 }
