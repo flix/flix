@@ -455,7 +455,7 @@ object Deriver {
       // compare(x0, y0) `thenCompare` lazy compare(x1, y1)
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expr.Tag(CaseSymUse(equalToSym, loc), Nil, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Eff, loc), loc)
+        case Nil => KindedAst.Expr.Tag(CaseSymUse(equalToSym, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
