@@ -56,7 +56,7 @@ object Optimizer1 {
       MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
     }
 
-    private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix): MonoAst.Def = def0 match {
+    private def visitDef(def0: OccurrenceAst1.Def): MonoAst.Def = def0 match {
       case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
         val e = visitExp(exp)
         val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
@@ -113,8 +113,7 @@ object Optimizer1 {
       case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
     }
 
-    private def visitExp(exp0: OccurrenceAst1.Expr)(implicit flix: Flix): MonoAst.Expr = exp0 match {
-
+    private def visitExp(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
       case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
         MonoAst.Expr.Cst(cst, tpe, loc)
 
@@ -128,17 +127,7 @@ object Optimizer1 {
 
       case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps.map(visitExp)
-        op match {
-          case AtomicOp.Untag(_) =>
-            val List(e) = es
-            // Inline expressions of the form Untag(Tag(e)) => e
-            e match {
-              case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-              case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-            }
-
-          case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-        }
+        MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
       case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
         val es = exps.map(visitExp)
