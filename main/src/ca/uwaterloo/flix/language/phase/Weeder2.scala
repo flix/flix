@@ -426,7 +426,6 @@ object Weeder2 {
 
     /** Extracts the types from a tuple type. */
     private def flattenEnumCaseType(tpe: Type): List[Type] = {
-      // TODO NARY-ENUMS just parse differently
       tpe match {
         // A tuple. Extract the types
         case Type.Tuple(ts, _) => ts

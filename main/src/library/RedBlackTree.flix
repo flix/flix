@@ -880,9 +880,9 @@ mod RedBlackTree {
                         l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
                         r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
                     ) yield match (l, r) {                // that we distribute over the two spanned threads.
-                        case (None, None)                 => Some((k, v))
-                        case (None, Some((kr, vr)))         => Some(cmp(k, v, kr, vr))
-                        case (Some((kl, vl)), None)         => Some(cmp(kl, vl, k, v))
+                        case (None, None)                     => Some((k, v))
+                        case (None, Some((kr, vr)))           => Some(cmp(k, v, kr, vr))
+                        case (Some((kl, vl)), None)           => Some(cmp(kl, vl, k, v))
                         case (Some((kl, vl)), Some((kr, vr))) =>
                             let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
                             Some(cmp(km, vm, kr, vr))
@@ -896,11 +896,11 @@ mod RedBlackTree {
     def seqLimitBy(cmp: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
         case Node(_, a, k, v, b) =>
             let res = match seqLimitBy(cmp, a) {
-                case None         => (k, v)
+                case None           => (k, v)
                 case Some((kl, vl)) => cmp(kl, vl, k, v)
             };
             match seqLimitBy(cmp, b) {
-                case None         => Some(res)
+                case None           => Some(res)
                 case Some((kr, vr)) =>
                     let (ks, vs) = res;
                     Some(cmp(ks, vs, kr, vr))

@@ -812,6 +812,11 @@ object Monomorpher {
 
   }
 
+  /**
+    * Returns the combined map of `envs`.
+    *
+    * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
+    */
   private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
     envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
       case (acc, m) => acc ++ m
