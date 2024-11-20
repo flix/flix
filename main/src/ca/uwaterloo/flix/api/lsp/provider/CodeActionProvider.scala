@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Sym
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{ClassList, Similarity}
+import ca.uwaterloo.flix.util.Similarity
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -38,36 +38,26 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, _, loc) if overlaps(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseEffect(qn.ident, uri)
-      else
-        Nil
+    case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
+      mkUseEffect(qn.ident, uri, ap)
+
+    case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
+      mkNewStruct(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(name, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkNewDef(qn.ident.name, uri) :: mkImportJava(qn.ident.name, uri, ap) ++ {
-        if (qn.namespace.isRoot)
-          mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
-        else
-          Nil
-      }
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedTrait(qn, _, loc) if overlaps(range, loc) =>
-      if (qn.namespace.isRoot)
-        mkUseTrait(qn.ident, uri)
-      else
-        Nil
+    case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
+      mkUseTrait(qn.ident, uri, ap)
 
-    case ResolutionError.UndefinedType(qn, _, loc) if overlaps(range, loc) =>
-      mkNewEnum(qn.ident.name, uri) :: mkNewStruct(qn.ident.name, uri) :: {
-        if (qn.namespace.isRoot)
-          mkUseType(qn.ident, uri)
-        else
-          Nil
-      }
+    case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
+      mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
+
+    case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -110,37 +100,93 @@ object CodeActionProvider {
     *   use List.map;
     * }}}
     */
-  private def mkUseDef(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+  private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.defs.map {
       case (sym, _) => sym
     }
-    mkUseSym(ident, syms.map(_.name), syms, uri)
+    mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
 
   /**
     * Returns a code action that proposes to `use` a trait.
     */
-  private def mkUseTrait(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+  private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.traits.map {
       case (sym, _) => sym
     }
-    mkUseSym(ident, syms.map(_.name), syms, uri)
+    mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
 
   /**
     * Returns a code action that proposes to `use` an effect.
     */
-  private def mkUseEffect(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+  private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.effects.map {
       case (sym, _) => sym
     }
-    mkUseSym(ident, syms.map(_.name), syms, uri)
+    mkUseSym(ident, syms.map(_.name), syms, uri, ap)
+  }
+
+  /**
+    * Returns a code action that proposes to use the tag of an enum.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   match color {
+    *      case Red => ???
+    *   }
+    * }}}
+    *
+    * where the user actually want to refer to Color.Red, this code action proposes to add:
+    * {{{
+    *   use Color.Red
+    * }}}
+    */
+  private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    candidateEnums.keys.map{ enumName =>
+      CodeAction(
+        title = s"use '$enumName.$tagName'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $enumName.$tagName"))))),
+        command = None
+      )
+    }.toList
+  }
+
+  /**
+    * Returns a code action that proposes to qualify the tag with the enum name.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   match color {
+    *      case Red => ???
+    *   }
+    * }}}
+    *
+    * where the user actually want to refer to Color.Red, this code action proposes to replace the tag with:
+    * {{{
+    *   case Color.Red => ???
+    * }}}
+    */
+  private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    candidateEnums.keys.map{ enumName =>
+      CodeAction(
+        title = s"Prefix with '$enumName.'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
+        command = None
+      )
+    }.toList
   }
 
   /**
     * Returns a code action that proposes to `use` a type.
     */
-  private def mkUseType(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+  private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val names = root.enums.map { case (sym, _) => sym.name } ++
       root.restrictableEnums.map { case (sym, _) => sym.name } ++
       root.traits.map { case (sym, _) => sym.name } ++
@@ -150,7 +196,28 @@ object CodeActionProvider {
       case (sym, _) => sym
     }
 
-    mkUseSym(ident, names, syms, uri)
+    mkUseSym(ident, names, syms, uri, ap)
+  }
+
+  /**
+    * Returns a TextEdit that is inserted and indented according to the given `ap`.
+    * This function will:
+    *   - add leadingSpaces before the given text.
+    *   - add leadingSpaces after each newline.
+    *   - add a newline at the end.
+    *
+    * Example:
+    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    *   The result will be:
+    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    */
+  private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
+    val insertPosition = Position(ap.line, ap.col)
+    val leadingSpaces = " " * ap.spaces
+    TextEdit(
+      Range(insertPosition, insertPosition),
+      leadingSpaces + text.replace("\n", s"\n$leadingSpaces") + "\n"
+    )
   }
 
   /**
@@ -177,22 +244,16 @@ object CodeActionProvider {
     * @param uri   URI of the document the change should be made in.
     */
   // Names have to be included separately because symbols aren't guaranteed to have a name
-  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String): List[CodeAction] = {
+  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String, ap: AnchorPosition): List[CodeAction] =
     syms.zip(names).collect {
       case (sym, name) if name == ident.name =>
         CodeAction(
           title = s"use '$sym'",
           kind = CodeActionKind.QuickFix,
-          edit = Some(WorkspaceEdit(
-            Map(uri -> List(TextEdit(
-              Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the use.
-              s"use $sym;\n"
-            )))
-          )),
+          edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $sym;"))))),
           command = None
         )
     }.toList.sortBy(_.title)
-  }
 
   /**
     * Returns a code action that proposes to create a new enum.
@@ -208,21 +269,20 @@ object CodeActionProvider {
     *   enum Abc { }
     * }}}
     */
-  private def mkNewEnum(name: String, uri: String): CodeAction = CodeAction(
+  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create enum '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position(1, 1), Position(1, 1)), // TODO: We should figure out where to best place the new enum.
+      Map(uri -> List(mkTextEdit(ap,
         s"""
-           |enum $name {
-           |
-           |}
-           |""".stripMargin
+          |enum $name {
+          |
+          |}
+          |""".stripMargin
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a code action that proposes to create a new function.
@@ -238,20 +298,18 @@ object CodeActionProvider {
     *   def f(): =
     * }}}
     */
-  private def mkNewDef(name: String, uri: String): CodeAction = CodeAction(
+  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create def '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position(1, 1), Position(1, 1)),
+      Map(uri -> List(mkTextEdit(ap,
         s"""
-           |def $name(): =
-           |
-           |""".stripMargin
+          |def $name(): =
+          |""".stripMargin
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a code action that proposes to import corresponding Java class.
@@ -267,24 +325,16 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = {
-    val startPosition = Position(line = ap.line, character = ap.col)
-    val insertRange = Range(startPosition, startPosition)
-    val leadingSpaces = " " * ap.spaces
-    ClassList.TheMap.get(name).toList.flatten.map { path =>
-        CodeAction(
-          title = s"import '$path'",
-          kind = CodeActionKind.QuickFix,
-          edit = Some(WorkspaceEdit(
-              Map(uri -> List(TextEdit(
-                insertRange,
-                s"${leadingSpaces}import $path\n"
-              )))
-          )),
-          command = None
-        )
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] =
+    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
+      val completePath = path.mkString(".") + "." + name
+      CodeAction(
+        title = s"import '$completePath'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $completePath"))))),
+        command = None
+      )
     }
-  }
 
   /**
     * Returns a code action that proposes to create a new struct.
@@ -300,12 +350,11 @@ object CodeActionProvider {
     *   struct Abc[r] { }
     * }}}
     */
-  private def mkNewStruct(name: String, uri: String): CodeAction = CodeAction(
+  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): List[CodeAction] = CodeAction(
     title = s"Create struct '$name'",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position(1, 1), Position(1, 1)),
+      Map(uri -> List(mkTextEdit(ap,
         s"""
            |struct $name[r] {
            |
@@ -314,7 +363,7 @@ object CodeActionProvider {
       )))
     )),
     command = None
-  )
+  ) :: Nil
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.

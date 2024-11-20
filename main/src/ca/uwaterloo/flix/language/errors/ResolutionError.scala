@@ -539,7 +539,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -565,7 +565,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -800,7 +800,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTag(tag: String, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined tag: '$tag'."
 
     def message(formatter: Formatter): String = {
@@ -953,7 +953,7 @@ object ResolutionError {
     * @param name the name of the undefined struct.
     * @param loc  the location where the error occurred.
     */
-  case class UndefinedStruct(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Undefined struct"
 
     def message(formatter: Formatter): String = {
