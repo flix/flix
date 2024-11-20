@@ -1086,7 +1086,7 @@ object Redundancy {
     * Returns `true` if the given symbol `sym` is the entry point.
     */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    root.entryPoint.contains(sym)
+    root.mainEntryPoint.contains(sym)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.

@@ -120,7 +120,7 @@ object Resolver {
                   table.typeAliases,
                   uses.toMap,
                   taOrder,
-                  root.entryPoint,
+                  root.mainEntryPoint,
                   root.sources,
                   root.availableClasses
                 )

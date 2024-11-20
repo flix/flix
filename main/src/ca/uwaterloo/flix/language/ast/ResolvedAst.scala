@@ -37,7 +37,7 @@ object ResolvedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, Declaration.TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   taOrder: List[Symbol.TypeAliasSym],
-                  entryPoint: Option[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   availableClasses: AvailableClasses)
 

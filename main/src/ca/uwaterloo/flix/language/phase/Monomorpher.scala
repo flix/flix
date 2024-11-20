@@ -341,7 +341,7 @@ object Monomorpher {
       case (sym, defn) =>
         // We use an empty substitution because the defs are non-parametric.
         // its important that non-parametric functions keep their symbol to not
-        // invalidate the set of reachable functions.
+        // invalidate the set of entryPoints functions.
         mkFreshDefn(sym, defn, empty)
     }
 
@@ -387,8 +387,8 @@ object Monomorpher {
       enums,
       structs,
       effects,
-      root.entryPoint,
-      root.reachable,
+      root.mainEntryPoint,
+      root.entryPoints,
       root.sources
     )
   }
