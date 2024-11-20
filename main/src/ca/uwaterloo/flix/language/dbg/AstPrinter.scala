@@ -79,7 +79,8 @@ object AstPrinter {
   }
 
   implicit object DebugMonoAst extends Debug[MonoAst.Root] {
-    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = ()
+    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, MonoAstPrinter.print(root))
   }
 
   implicit object DebugReducedAst extends Debug[ReducedAst.Root] {

@@ -48,12 +48,12 @@ import scala.jdk.CollectionConverters.*
   *     its return type is not Unit.
   *   - Compute the set of all entry points and store it in Root.
   */
-object EntryPoint {
+object EntryPoints {
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
     val (root2, errs2) = CheckEntryPoints.run(root1)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
@@ -64,7 +64,7 @@ object EntryPoint {
   }
 
   /**
-    * Converts [[TypedAst.Root.entryPoint]] to be explicit instead of implicit and checks that a
+    * Converts [[TypedAst.Root.mainEntryPoint]] to be explicit instead of implicit and checks that a
     * given entry point exists.
     *
     * In the input, a None entrypoint means to use `main` if it exists.
@@ -73,7 +73,7 @@ object EntryPoint {
   private def resolveMain(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
     val defaultMainName = Symbol.mkDefnSym("main")
 
-    root.entryPoint match {
+    root.mainEntryPoint match {
       case None =>
         root.defs.get(defaultMainName) match {
         case None =>
@@ -81,7 +81,7 @@ object EntryPoint {
           (root, Nil)
         case Some(entryPoint) =>
           // No main is given but default exists - use default.
-          (root.copy(entryPoint = Some(entryPoint.sym)), Nil)
+          (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
       }
       case Some(sym) => root.defs.get(sym) match {
         case Some(_) =>
@@ -89,7 +89,7 @@ object EntryPoint {
           (root, Nil)
         case None =>
           // A main is given and it does not exist - no main and give an error.
-          (root.copy(entryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
+          (root.copy(mainEntryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
       }
     }
   }
@@ -114,7 +114,7 @@ object EntryPoint {
 
   /** Returns `true` if `defn` is the main function. */
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    root.entryPoint.contains(defn.sym)
+    root.mainEntryPoint.contains(defn.sym)
 
   /**
     * Returns `true` if `tpe` is equivalent to Unit (via type aliases).
@@ -149,7 +149,7 @@ object EntryPoint {
       ParOps.parMapValues(root.defs)(visitDef(_))
 
       // Remove the entrypoint if it is not valid.
-      val root1 = if (sctx.invalidMain.get()) root.copy(entryPoint = None) else root
+      val root1 = if (sctx.invalidMain.get()) root.copy(mainEntryPoint = None) else root
       val errs = sctx.errors.asScala.toList
       (root1, errs)
     }
@@ -482,17 +482,17 @@ object EntryPoint {
       * the value of the existing main function (unless it returns unit).
       *
       * From previous phases we know that the main function:
-      *   - Exists if root.entryPoint is Some.
+      *   - Exists if root.mainEntryPoint is Some.
       *   - Returns Unit or has a return type with ToString defined
       *   - Has a valid signature (without type variables, etc.)
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
-      root.entryPoint.map(root.defs(_)) match {
+      root.mainEntryPoint.map(root.defs(_)) match {
         case Some(main0: TypedAst.Def) if !isUnitType(main0.spec.retTpe) =>
           val main = mkEntryPoint(main0, root)
           val root1 = root.copy(
             defs = root.defs + (main.sym -> main),
-            entryPoint = Some(main.sym)
+            mainEntryPoint = Some(main.sym)
           )
           (root1, Nil)
         case Some(_) | None =>
@@ -566,14 +566,14 @@ object EntryPoint {
 
   }
 
-    /** Returns a new root where [[TypedAst.Root.reachable]] contains all entry points (main/test/export). */
+    /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
     def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
       val s = mutable.Set.empty[Symbol.DefnSym]
       for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
         s += sym
       }
       val entryPoints = s.toSet
-      root.copy(reachable = entryPoints)
+      root.copy(entryPoints = Some(entryPoints))
     }
 
 }

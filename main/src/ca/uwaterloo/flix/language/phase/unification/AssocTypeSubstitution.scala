@@ -66,6 +66,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
             case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _) => Type.mkDifference(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _) => Type.mkSymmetricDiff(x, y, loc)
 
             // Simplify set expressions

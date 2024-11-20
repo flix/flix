@@ -184,9 +184,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given case `case0`.
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(sym, tpe, _, _) =>
+    case TypedAst.Case(sym, tpes, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, sym.loc)
-      Iterator(t) ++ visitType(tpe)
+      tpes.foldLeft(Iterator(t)) {
+        case (acc, tpe) => acc ++ visitType(tpe)
+      }
   }
 
   /**
@@ -425,13 +427,17 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.Tag(CaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.Tag(CaseSymUse(_, loc), exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t) ++ visitExp(exp)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
-    case Expr.RestrictableTag(RestrictableCaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(RestrictableCaseSymUse(_, loc), exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t) ++ visitExp(exp)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
@@ -642,9 +648,11 @@ object SemanticTokensProvider {
 
     case Pattern.Cst(_, _, _) => Iterator.empty
 
-    case Pattern.Tag(CaseSymUse(_, loc), pat, _, _) =>
+    case Pattern.Tag(CaseSymUse(_, loc), pats, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t) ++ visitPat(pat)
+      pats.foldLeft(Iterator(t)) {
+        case (acc, pat) => acc ++ visitPat(pat)
+      }
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
@@ -766,6 +774,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
+    case TypeConstructor.Difference => false
     case TypeConstructor.SymmetricDiff => false
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -79,7 +79,7 @@ class Flix {
   /**
     * The set of known Java classes and interfaces.
     */
-  private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
+  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -506,7 +506,7 @@ class Flix {
     // The global collection of errors
     val errors = mutable.ListBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
     errors ++= readerErrors
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
@@ -553,7 +553,7 @@ class Flix {
             val (afterRegions, regionErrors) = Regions.run(afterTyper)
             errors ++= regionErrors
 
-            val (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
             errors ++= entryPointErrors
 
             val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
@@ -777,7 +777,7 @@ class Flix {
     * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
     */
   private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
-    knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
+    availableClasses = availableClasses ++ getPackageContent(getClassesAndInterfacesOfJar(p))
   }
 
   /**

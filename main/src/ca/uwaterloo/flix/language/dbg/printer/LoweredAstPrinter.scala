@@ -28,8 +28,8 @@ object LoweredAstPrinter {
     val enums = root.enums.values.map {
       case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _) =>
         val cases = cases0.values.map {
-          case LoweredAst.Case(sym, tpe, _, _) =>
-            DocAst.Case(sym, TypePrinter.print(tpe))
+          case LoweredAst.Case(sym, tpes, _, _) =>
+            DocAst.Case(sym, tpes.map(TypePrinter.print))
         }.toList
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
@@ -122,7 +122,7 @@ object LoweredAstPrinter {
     case Pattern.Wild(tpe, loc) => DocAst.Expr.Wild
     case Pattern.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
     case Pattern.Cst(cst, tpe, loc) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(sym, pat, tpe, loc) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, pats, tpe, loc) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
     case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty

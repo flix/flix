@@ -42,7 +42,7 @@ object EnumTagCompleter {
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (_, cas) => EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe))
+          case (_, cas) => EnumTagCompletion(enumSym, cas)
         }
     }
   }
@@ -70,27 +70,12 @@ object EnumTagCompleter {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe)))
+              Some(EnumTagCompletion(enumSym, cas))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
             }
         }
-    }
-  }
-
-  /**
-    *
-    * Returns the arity of the given enumTag type `tpe`
-    *
-    * @param tpe the type.
-    * @return    the arity.
-    */
-  private def getArityForEnumTag(tpe: Type): Int = {
-    tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) => 0
-      case Some(TypeConstructor.Tuple(arity)) => arity
-      case _ => 1
     }
   }
 

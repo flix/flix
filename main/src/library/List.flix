@@ -1247,7 +1247,7 @@ mod List {
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
         def loop(sst, k) = match f(sst) {
             case None         => k(Nil)
-            case Some(a, st1) => loop(st1, ks -> k(a :: ks))
+            case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
         };
         loop(st, identity)
 

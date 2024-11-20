@@ -376,7 +376,7 @@ object JvmOps {
   def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Tag] =
     types.foldLeft(Set.empty[BackendObjType.Tag]) {
       case (acc, MonoType.Enum(sym, targs)) =>
-        val tags = instantiateEnum(root.enums(sym), targs)
+        val tags = instantiateEnum(root.enums(sym), targs).values
         tags.foldLeft(acc) {
           case (acc, tagElms) => acc + BackendObjType.Tag(tagElms)
         }
@@ -388,15 +388,15 @@ object JvmOps {
     * that both `targs` and the enums in `root` use erased types.
     *
     * Example:
-    *   - `instantiateEnum(E, List(Char)) = List(List(Char, Object), List(Int32))`
+    *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  private def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): List[List[BackendType]] = {
+  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): Map[Symbol.CaseSym, List[BackendType]] = {
     assert(enm.tparams.length == targs.length)
     val map = enm.tparams.map(_.sym).zip(targs).toMap
     enm.cases.map {
-      case (_, caze) => List(caze.tpe).map(instantiateType(map, _))
-    }.toList
+      case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
+    }
   }
 
   /**

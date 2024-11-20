@@ -44,7 +44,7 @@ object Simplifier {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
@@ -65,7 +65,7 @@ object Simplifier {
   }
 
   private def visitEnumCase(caze: MonoAst.Case): SimplifiedAst.Case = caze match {
-    case MonoAst.Case(sym, tpe, loc) => SimplifiedAst.Case(sym, visitPolyType(tpe), loc)
+    case MonoAst.Case(sym, tpes, loc) => SimplifiedAst.Case(sym, tpes.map(visitPolyType), loc)
   }
 
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
@@ -374,6 +374,7 @@ object Simplifier {
           case TypeConstructor.Complement => MonoType.Unit
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit
+          case TypeConstructor.Difference => MonoType.Unit
           case TypeConstructor.SymmetricDiff => MonoType.Unit
           case TypeConstructor.Effect(_) => MonoType.Unit
           case TypeConstructor.CaseSet(_, _) => MonoType.Unit
@@ -535,6 +536,7 @@ object Simplifier {
           case TypeConstructor.Complement => Type.mkUnit(loc)
           case TypeConstructor.Union => Type.mkUnit(loc)
           case TypeConstructor.Intersection => Type.mkUnit(loc)
+          case TypeConstructor.Difference => Type.mkUnit(loc)
           case TypeConstructor.SymmetricDiff => Type.mkUnit(loc)
           case TypeConstructor.Effect(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)
@@ -603,10 +605,11 @@ object Simplifier {
     case MonoAst.Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
-    case MonoAst.Pattern.Tag(CaseSymUse(sym, _), p, tpe, loc) =>
-      val e = pat2exp(p)
+    case MonoAst.Pattern.Tag(CaseSymUse(sym, _), ps, tpe, loc) =>
+      val es = ps.map(pat2exp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tag(sym), List(e), t, e.purity, loc)
+      val purity = Purity.combineAll(es.map(_.purity))
+      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tag(sym), es, t, purity, loc)
     case MonoAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(pat2exp)
       val t = visitType(tpe)
@@ -809,17 +812,41 @@ object Simplifier {
         * matches the tag extracted from the variable `v` and then we generate
         * an if-then-else expression where the consequent expression is determined
         * by recursion on the remaining patterns and variables together with the
-        * nested pattern of the tag added in front and a new fresh variable holding
-        * the value of the tag.
+        * nested pattern of the tag added in front and new fresh variables holding
+        * the values of the tag.
+        *
+        * Simple Example:
+        * {{{
+        * match x {
+        *   ...
+        *   case Foo(y, z) => exp
+        *   ...
+        * }
+        * }}}
+        *
+        * becomes
+        *
+        * {{{
+        *   if (x is Foo) {
+        *     let y = untag 0 x;
+        *     let z = untag 1 x;
+        *     exp
+        *   } else {
+        *     ...
+        *   }
+        * }}}
         */
-      case (MonoAst.Pattern.Tag(CaseSymUse(sym, _), pat, tpe, loc) :: ps, v :: vs) =>
+      case (MonoAst.Pattern.Tag(CaseSymUse(sym, _), pats, tpe, loc) :: ps, v :: vs) =>
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), MonoType.Bool, Purity.Pure, loc)
-        val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
-        val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
-        val purity1 = inner.purity
-        val untagExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), visitType(pat.tpe), purity1, loc)
-        val consequent = SimplifiedAst.Expr.Let(freshVar, untagExp, inner, succ.tpe, purity1, loc)
+        val freshVars = pats.map(_ => Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc))
+        val zero = patternMatchList(pats ::: ps, freshVars ::: vs, guard, succ, fail)
+        val consequent = pats.zip(freshVars).zipWithIndex.foldRight(zero) {
+          case (((pat, name), idx), exp) =>
+            val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
+            val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
+            SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
+        }
         val purity2 = Purity.combine3(cond.purity, consequent.purity, fail.purity)
         SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 

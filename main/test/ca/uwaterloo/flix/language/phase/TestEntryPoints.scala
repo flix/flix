@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestEntryPoint extends AnyFunSuite with TestUtils {
+class TestEntryPoints extends AnyFunSuite with TestUtils {
 
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =

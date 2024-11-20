@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -60,7 +60,7 @@ object Weeder2 {
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names)), sctx.errors.asScala.toList)
+      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses)), sctx.errors.asScala.toList)
     }(DebugValidation())
   }
 
@@ -413,25 +413,24 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitType),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
-            .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
+          val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          Case(ident, tpe, loc)
+          Case(ident, tpes, loc)
       }
     }
 
-    private def flattenEnumCaseType(tpe: Type): Type = {
+    /** Extracts the types from a tuple type. */
+    private def flattenEnumCaseType(tpe: Type): List[Type] = {
       tpe match {
-        // Single type in case -> flatten to ambiguous.
-        case Type.Tuple(t :: Nil, _) => t
-        // Multiple types in case -> do nothing
-        case tpe => tpe
+        // A tuple. Extract the types
+        case Type.Tuple(ts, _) => ts
+        // A single type.
+        case t => List(t)
       }
     }
 
@@ -490,14 +489,12 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitType),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
-            .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
-          RestrictableCase(ident, tpe, tree.loc)
+          val tpes = maybeType.getOrElse(Nil)
+          RestrictableCase(ident, tpes, tree.loc)
       }
     }
 
@@ -1414,32 +1411,22 @@ object Weeder2 {
 
     private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableChoosePattern, CompilationMessage] = {
       expect(tree, TreeKind.Expr.MatchRuleFragment)
-      flatMapN(Patterns.pickPattern(tree)) {
-        case Pattern.Tag(qname, pat, loc) =>
-          val inner = pat match {
-            case Pattern.Wild(loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Var(ident, loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Constant.Unit, loc) => Validation.Success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Tuple(elms, _) =>
-              traverse(elms) {
-                case Pattern.Wild(loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case Pattern.Var(ident, loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
-                case Pattern.Cst(Constant.Unit, loc) => Validation.Success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case other =>
-                  val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-                  sctx.errors.add(error)
-                  Validation.Success(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic))
-              }
+      mapN(Patterns.pickPattern(tree)) {
+        case Pattern.Tag(qname, pats, loc) =>
+          val inner = pats.map {
+            case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
+            case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc)
+            case Pattern.Cst(Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case other =>
-              val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
+              val error = UnsupportedRestrictedChoicePattern(isStar, loc)
               sctx.errors.add(error)
-              Validation.Success(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)))
+              WeededAst.RestrictableChoosePattern.Error(loc.asSynthetic)
           }
-          mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
+          RestrictableChoosePattern.Tag(qname, inner, loc)
         case other =>
           val error = UnsupportedRestrictedChoicePattern(isStar, other.loc)
           sctx.errors.add(error)
-          Validation.Success(RestrictableChoosePattern.Error(other.loc))
+          RestrictableChoosePattern.Error(other.loc)
       }
     }
 
@@ -2280,15 +2267,22 @@ object Weeder2 {
     private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitTuplePat(_, seen))) {
+      mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
         (qname, maybePat) =>
           maybePat match {
-            case None =>
-              // Synthetically add unit pattern to tag
-              val lit = Pattern.Cst(Constant.Unit, tree.loc.asSynthetic)
-              Pattern.Tag(qname, lit, tree.loc)
-            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
+            case None => Pattern.Tag(qname, Nil, tree.loc)
+            case Some(elms) => Pattern.Tag(qname, elms, tree.loc)
           }
+      }
+    }
+
+    /** Extracts a non-empty tuple pattern as a list, expanding `()` to be `List(Unit)`. */
+    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[Pattern], CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Tuple)
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
+      mapN(traverse(patterns)(visitPattern(_, seen))) {
+        case Nil => List(Pattern.Cst(Constant.Unit, tree.loc))
+        case xs => xs
       }
     }
 
@@ -2382,8 +2376,7 @@ object Weeder2 {
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case pat1 :: pat2 :: Nil =>
           val qname = Name.mkQName("List.Cons", tree.loc)
-          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
-          Pattern.Tag(qname, pat, tree.loc)
+          Pattern.Tag(qname, List(pat1, pat2), tree.loc)
         case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
       }
     }
@@ -2721,6 +2714,32 @@ object Weeder2 {
       }
     }
 
+    /**
+      * This is a customized version of [[visitType]] to avoid parsing `case Case((a, b))` as
+      * `case Case(a, b)`.
+      *
+      *   - `Tuple() --> Nil`
+      *   - `Tuple(t) --> List(visitType(t))`
+      *   - `t --> List(visitType(t))`
+      */
+    def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
+      expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
+      // Visit first child and match its kind to know what to to
+      val inner = unfold(tree)
+      inner.kind match {
+        case TreeKind.Type.Tuple =>
+          expect(inner, TreeKind.Type.Tuple)
+          mapN(traverse(pickAll(TreeKind.Type.Type, inner))(visitType)) {
+            case Nil => List(Type.Unit(inner.loc))
+            case types => types
+          }
+        case _ => visitType(tree) match {
+          case Success(t) => Success(List(t))
+          case Failure(errors) => Failure(errors)
+        }
+      }
+    }
+
     private def visitNameType(tree: Tree)(implicit sctx: SharedContext): Type.Ambiguous = {
       val qname = visitQName(tree)
       Type.Ambiguous(qname, tree.loc)
@@ -2869,7 +2888,7 @@ object Weeder2 {
             })
             // REGULAR TYPE OPERATORS
             case "+" => Validation.Success(Type.Union(t1, t2, tree.loc))
-            case "-" => Validation.Success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "-" => Validation.Success(Type.Difference(t1, t2, tree.loc))
             case "&" => Validation.Success(Type.Intersection(t1, t2, tree.loc))
             case "and" => Validation.Success(Type.And(t1, t2, tree.loc))
             case "or" => Validation.Success(Type.Or(t1, t2, tree.loc))
