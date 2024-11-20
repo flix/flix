@@ -15,66 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, InlayHint, InlayHintKind, Position, Range}
-import ca.uwaterloo.flix.language.ast.Ast.TypeSource
-import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.api.lsp.{InlayHint, Range}
 
 object InlayHintProvider {
 
-  /**
-    * Returns the inlay hints in the given `uri` in the given `range`.
-    */
-  def processInlayHints(uri: String, range: Range)(implicit index: Index, flix: Flix): List[InlayHint] = {
-    index.queryByRange(uri, range) match {
-      case Nil => Nil
-      case entities => entities.flatMap {
-        case Entity.FormalParam(fparam) => getFormalParamHint(fparam)
-        case _ => None
-      }
-    }
+  def getInlayHints(uri: String, range: Range): List[InlayHint] = {
+    // We currently do not support any inlay hints.
+    Nil
   }
-
-  /**
-    * Returns an inlay hint for the given formal param `fparam`.
-    */
-  private def getFormalParamHint(fparam: TypedAst.FormalParam)(implicit flix: Flix): Option[InlayHint] = fparam match {
-    case FormalParam(sym, _, tpe, src, loc) => src match {
-      case TypeSource.Ascribed =>
-        // We do not show any inlay hint if the type is already there.
-        None
-
-      case TypeSource.Inferred =>
-        val pos = Position.fromEnd(fparam.loc)
-        val label = ": " + FormatType.formatType(tpe)
-
-        // Hide long inlay hints.
-        if (isTypeVar(tpe))
-          None
-        else
-          Some(InlayHint(pos, abbreviate(label, 14), Some(InlayHintKind.Type), Nil, ""))
-    }
-  }
-
-  /**
-    * Returns `true` if the given type `tpe` is a type variable.
-    */
-  private def isTypeVar(tpe: Type): Boolean = tpe match {
-    case Type.Var(_, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `s` if it less than or equal to `l` chars.
-    *
-    * Otherwise returns a prefix of `s` with …
-    */
-  private def abbreviate(s: String, l: Int): String =
-    if (s.length <= l)
-      s
-    else
-      s.substring(0, l - 1) + "…"
 
 }

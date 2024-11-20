@@ -374,6 +374,7 @@ object Simplifier {
           case TypeConstructor.Complement => MonoType.Unit
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit
+          case TypeConstructor.Difference => MonoType.Unit
           case TypeConstructor.SymmetricDiff => MonoType.Unit
           case TypeConstructor.Effect(_) => MonoType.Unit
           case TypeConstructor.CaseSet(_, _) => MonoType.Unit
@@ -535,6 +536,7 @@ object Simplifier {
           case TypeConstructor.Complement => Type.mkUnit(loc)
           case TypeConstructor.Union => Type.mkUnit(loc)
           case TypeConstructor.Intersection => Type.mkUnit(loc)
+          case TypeConstructor.Difference => Type.mkUnit(loc)
           case TypeConstructor.SymmetricDiff => Type.mkUnit(loc)
           case TypeConstructor.Effect(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)

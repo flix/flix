@@ -70,8 +70,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"Java '${clazz.getName}' constructor not found")}
          |""".stripMargin

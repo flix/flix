@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
 
-  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+  val empty: Root = Root(Map.empty, None, AvailableClasses.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses)
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -335,6 +335,8 @@ object DesugaredAst {
     case class Union(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
 
     case class Intersection(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
+
+    case class Difference(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
 
     case class Pure(loc: SourceLocation) extends Type
 

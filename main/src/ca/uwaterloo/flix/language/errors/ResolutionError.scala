@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.EnclosingMod
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -539,7 +539,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -565,7 +565,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -588,10 +588,11 @@ object ResolutionError {
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
+    * @param ap   the anchor position.
     * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined Java class: '$name'."
 
     def message(formatter: Formatter): String = {
@@ -664,12 +665,12 @@ object ResolutionError {
     * Undefined Name Error.
     *
     * @param qn    the unresolved name.
-    * @param em    the enclosing module.
+    * @param ap    the anchor position.
     * @param env   the variables in the scope.
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, em: EnclosingMod, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -822,10 +823,10 @@ object ResolutionError {
     * Undefined Type Error.
     *
     * @param qn  the name.
-    * @param em  the enclosing module.
+    * @param ap  the enclosing module.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, em: EnclosingMod, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -952,7 +953,7 @@ object ResolutionError {
     * @param name the name of the undefined struct.
     * @param loc  the location where the error occurred.
     */
-  case class UndefinedStruct(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Undefined struct"
 
     def message(formatter: Formatter): String = {

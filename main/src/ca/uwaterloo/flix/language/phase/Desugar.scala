@@ -37,7 +37,7 @@ object Desugar {
 
     val units = ParOps.parMapValues(stale)(visitUnit)
     val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.entryPoint, root.names)
+    DesugaredAst.Root(allUnits, root.entryPoint, root.availableClasses)
   }
 
   /**
@@ -345,6 +345,11 @@ object Desugar {
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       DesugaredAst.Type.Intersection(t1, t2, loc)
+
+    case WeededAst.Type.Difference(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Difference(t1, t2, loc)
 
     case WeededAst.Type.Pure(loc) =>
       DesugaredAst.Type.Pure(loc)

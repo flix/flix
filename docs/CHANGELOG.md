@@ -1,5 +1,12 @@
 # Changelog
 
+Version 0.53.0:
+- Language: Added support for algebraic effects (thanks everyone!)
+- Library: Added algebraic effects: Console, FileRead, FileWrite, Http, ... (thanks Holger and Magnus!)
+- Compiler: Reworked and extended the HoverProvider (thanks Alexander!)
+- Compiler: Reworked and extended the HighlightProvider (thanks Alexander!)
+- Compiler: Added magic match completions (thanks Chenhao!)
+
 Version 0.52.0:
 - Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
 

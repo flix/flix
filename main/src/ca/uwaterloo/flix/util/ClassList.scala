@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 /**
   * A list of classes available on the Java Platform.
   */
@@ -27,10 +29,15 @@ object ClassList {
     *
     * {{{
     * $ git clone git@github.com:openjdk/jdk.git
+    * $ git checkout jdk-21+0
     * $ cd src/java.base/share/classes
-    * $ find . -name "*.java"|sort|grep -v "jdk/internal"|grep -v "module-info.java" | grep -v "package-info.java"
+    * $ find . -name "*.java" | sort --ignore-case | grep -v "jdk/internal" | grep -v "module-info.java" | grep -v "package-info.java" | grep -v "com/sun/beans" | grep -v "com/sun/imageio" | grep -v "com/sun/java" | grep -v "com/sun/media" | grep -v "sun/awt" | grep -v "sun/font" | grep -v "sun/java2d" | grep -v "sun/print" | grep -v "sun/swing"
     * }}}
+    *
+    * Repeat the above for directories `src/java.desktop/share/classes` and `src/java.net.http/share/classes`.
+    *
+    * Finally, remove the `./` prefix, e.g., `./com/sun/...` should be `com/sun/...`.
+    *
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
-
 }

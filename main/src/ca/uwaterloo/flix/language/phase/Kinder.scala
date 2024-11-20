@@ -79,7 +79,7 @@ object Kinder {
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
+    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.availableClasses)
 
     (newRoot, sctx.errors.asScala.toList)
   }
@@ -1541,6 +1541,7 @@ object Kinder {
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
     case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Difference, _), arg, _) => Type.mkDifference(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), arg, _) => Type.mkSymmetricDiff(arg, t2, loc)
     case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 

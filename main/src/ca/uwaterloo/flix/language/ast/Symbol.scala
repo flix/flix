@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.language.ast.shared.{Scope, Source}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException}
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -30,7 +30,7 @@ sealed trait Symbol
 object Symbol {
 
   /**
-    * The set of primitive effects defined in the Prelude.
+    * The primitive effects defined in the Prelude.
     */
   val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
@@ -40,6 +40,13 @@ object Symbol {
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+
+  /**
+    * The set of all primitive effects defined in the Prelude.
+    */
+  val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
+    Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
+  ))
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
