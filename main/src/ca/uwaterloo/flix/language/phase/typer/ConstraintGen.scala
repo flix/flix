@@ -85,7 +85,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, loc2) =>
         val defn = root.defs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
@@ -98,23 +98,21 @@ object ConstraintGen {
         c.addClassConstraints(constrs1, loc2)
         econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(declaredEff :: effs, loc2)
         (resTpe, resEff)
 
-      case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
+      case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = Type.freshVar(Kind.Eff, loc1.asSynthetic)
         val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
-        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(defEff :: effs, loc2)
         (resTpe, resEff)
 
-      case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+      case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, loc2) =>
         val sig = root.traits(sym.trt).sigs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc1))
@@ -127,9 +125,8 @@ object ConstraintGen {
         econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(declaredEff :: effs, loc2)
         (resTpe, resEff)
 
       case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>

@@ -220,7 +220,6 @@ object Deriver {
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -344,7 +343,6 @@ object Deriver {
           ),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Eff, loc),
           loc
         )
       )
@@ -430,7 +428,6 @@ object Deriver {
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -448,7 +445,6 @@ object Deriver {
           ),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Eff, loc),
           loc
         )
       }
@@ -579,7 +575,6 @@ object Deriver {
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -720,13 +715,11 @@ object Deriver {
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Star, loc),
-                Type.freshVar(Kind.Eff, loc),
                 loc
               ),
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }

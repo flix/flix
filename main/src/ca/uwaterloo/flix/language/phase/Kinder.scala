@@ -373,22 +373,19 @@ object Kinder {
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, loc2)
 
     case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val arrowTvar = Type.freshVar(Kind.Star, loc.asSynthetic) // use loc of symuse
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
+      KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, loc)
 
     case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, allowSubeffecting, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
