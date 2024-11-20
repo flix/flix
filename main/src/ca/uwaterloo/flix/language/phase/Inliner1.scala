@@ -37,7 +37,7 @@ object Inliner1 {
     * Performs inlining on the given AST `root`.
     */
   def run(root: OccurrenceAst1.Root)(implicit flix: Flix): MonoAst.Root = {
-    val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(flix, root))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
