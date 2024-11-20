@@ -613,8 +613,7 @@ object PatMatch {
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
-    case TyCon.Enum(sym, Nil) => sym.name
-    case TyCon.Enum(sym, args) => sym.name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Enum(sym, args) => if (args.isEmpty) sym.name else sym.name + prettyPrintCtor(TyCon.Tuple(args))
     case TyCon.Record(labels, tail) =>
       val labelStr = labels.map {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
