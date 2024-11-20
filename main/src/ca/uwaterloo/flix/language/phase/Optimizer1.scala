@@ -158,7 +158,7 @@ object Optimizer1 {
         }
 
       case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-        if (isDead(occur)) { // Probably never happens
+        if (isDead(occur)) {
           visitExp(exp2)
         } else {
           val fps = fparams.map(visitFormalParam)
