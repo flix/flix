@@ -54,7 +54,7 @@ object CodeActionProvider {
       mkUseTrait(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
-      mkUseTag(name, uri, ap) ++ replaceFullTag(name, uri, loc)
+      mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
@@ -147,7 +147,7 @@ object CodeActionProvider {
     val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
-        title = s"use $enumName.$tagName",
+        title = s"use '$enumName.$tagName'",
         kind = CodeActionKind.QuickFix,
         edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $enumName.$tagName"))))),
         command = None
@@ -171,11 +171,11 @@ object CodeActionProvider {
     *   case Color.Red => ???
     * }}}
     */
-  private def replaceFullTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
+  private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
     val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
-        title = s"Replace with $enumName.$tagName",
+        title = s"Prefix with '$enumName.'",
         kind = CodeActionKind.QuickFix,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
         command = None
