@@ -669,10 +669,10 @@ mod TestValidation {
     def hash02(): Bool = hash((Success(()): Validation[Unit, Unit])) != hash((Failure(necOf2((), ())): Validation[Unit, Unit]))
 
     @test
-    def hash03(): Bool = hash((Success(1, 2): Validation[Unit, (Int32, Int32)])) == hash((Success(1, 2): Validation[Unit, (Int32, Int32)]))
+    def hash03(): Bool = hash((Success((1, 2)): Validation[Unit, (Int32, Int32)])) == hash((Success((1, 2)): Validation[Unit, (Int32, Int32)]))
 
     @test
-    def hash04(): Bool = hash((Success(1, 2, 3): Validation[Unit, (Int32, Int32, Int32)])) != hash((Success(1, 3, 2): Validation[Unit, (Int32, Int32, Int32)]))
+    def hash04(): Bool = hash((Success((1, 2, 3)): Validation[Unit, (Int32, Int32, Int32)])) != hash((Success((1, 3, 2)): Validation[Unit, (Int32, Int32, Int32)]))
 
     @test
     def hash05(): Bool = hash((Success(singleton(1)): Validation[Int32, Nec[Int32]])) != hash((Failure(singleton(1)): Validation[Int32, Nec[Int32]]))

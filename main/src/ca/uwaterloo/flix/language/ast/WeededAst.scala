@@ -263,7 +263,7 @@ object WeededAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -291,7 +291,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
+    case class Tag(qname: Name.QName, pats: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
@@ -400,11 +400,11 @@ object WeededAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(mod: Modifiers, name: Name.Label, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
 

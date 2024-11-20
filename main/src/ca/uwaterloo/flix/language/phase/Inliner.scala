@@ -94,7 +94,7 @@ object Inliner {
   }
 
   private def visitEnumCase(caze: OccurrenceAst.Case): LiftedAst.Case = caze match {
-    case OccurrenceAst.Case(sym, tpe, loc) => LiftedAst.Case(sym, tpe, loc)
+    case OccurrenceAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct: OccurrenceAst.Struct): LiftedAst.Struct = struct match {
@@ -145,17 +145,7 @@ object Inliner {
 
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
-      op match {
-        case AtomicOp.Untag(_) =>
-          val List(e) = es
-          // Inline expressions of the form Untag(Tag(e)) => e
-          e match {
-            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-            case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-          }
-
-        case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-      }
+      LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case OccurrenceAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)

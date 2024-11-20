@@ -29,7 +29,7 @@ object DocAst {
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type])
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
@@ -157,8 +157,8 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr): Expr =
-      Keyword("untag", d)
+    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+      Keyword("untag_"+idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))

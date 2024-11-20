@@ -88,7 +88,7 @@ object EffectBinder {
   }
 
   private def visitEnumCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
-    case LiftedAst.Case(sym, tpe, loc) => ReducedAst.Case(sym, tpe, loc)
+    case LiftedAst.Case(sym, tpes, loc) => ReducedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct: LiftedAst.Struct): ReducedAst.Struct = struct match {

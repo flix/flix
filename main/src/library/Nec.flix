@@ -673,7 +673,7 @@ mod Nec {
     ///
     pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =
         def loop(c1, k, i) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => k(NecOne(i, x))
+            case ViewLeft.OneLeft(x)      => k(NecOne((i, x)))
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((i, x), ks)), i + 1)
         };
         loop(c, k -> k, 0)

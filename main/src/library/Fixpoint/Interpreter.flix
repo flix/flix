@@ -62,7 +62,7 @@ mod Fixpoint.Interpreter {
         case RelOp.Search(_, _, body)           => allocEnv(rc, depth + 1, body)
         case RelOp.Query(_, _, _, body)         => allocEnv(rc, depth + 1, body)
         case RelOp.Functional(_, _, _, body)    => allocEnv(rc, depth + 1, body)
-        case RelOp.Project(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.empty(rc, depth))
+        case RelOp.Project(_, _)                => (Array.repeat(rc, depth, Vector.empty()), Array.empty(rc, depth))
         case RelOp.If(_, then)                  => allocEnv(rc, depth, then)
     }
 

@@ -92,7 +92,7 @@ object LiftedAst {
   }
 
   /** [[Type]] is used here because [[Enum]] declarations are not monomorphized. */
-  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation)
 
   /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
