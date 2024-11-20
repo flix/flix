@@ -444,7 +444,7 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case KindedAst.Expr.Tag(symUse, exps, tvar, evar, loc) =>
+      case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -454,9 +454,8 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
         c.unifyType(tagType, constructorBase, loc)
-        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)

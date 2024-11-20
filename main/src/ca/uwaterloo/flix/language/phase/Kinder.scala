@@ -465,8 +465,7 @@ object Kinder {
     case ResolvedAst.Expr.Tag(sym, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.Tag(sym, exps, tvar, evar, loc)
+      KindedAst.Expr.Tag(sym, exps, tvar, loc)
 
     case ResolvedAst.Expr.RestrictableTag(sym, exps0, isOpen, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
