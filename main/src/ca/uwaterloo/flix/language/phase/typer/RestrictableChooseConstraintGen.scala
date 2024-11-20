@@ -245,7 +245,7 @@ object RestrictableChooseConstraintGen {
         //
         // Γ ⊢ e: τ
         val (tpes, effs) = exps.map(visitExp).unzip
-        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, enumType, loc) else enumType
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, enumType, loc)
         c.unifyType(tagType, constructorBase, loc)
         targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
@@ -354,7 +354,7 @@ object RestrictableChooseConstraintGen {
         // The tag type is a function from the type of variant to the type of the enum.
         //
         val tpes = pat.map(visitVarOrWild)
-        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
         c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         resTpe

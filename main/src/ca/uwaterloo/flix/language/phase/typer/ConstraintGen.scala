@@ -452,7 +452,7 @@ object ConstraintGen {
 
         // The tag type is a function from the types of terms to the type of the enum.
         val (tpes, effs) = exps.map(visitExp).unzip
-        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
         c.unifyType(tagType, constructorBase, loc)
         c.unifyType(Type.mkUnion(effs, loc), evar, loc)
         val resTpe = tvar
