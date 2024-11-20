@@ -154,11 +154,11 @@ object Safety {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap(rule => visitExp(rule.exp))
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+      case Expr.Tag(_, exps, _, _, _) =>
+        exps.flatMap(visitExp)
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+      case Expr.RestrictableTag(_, exps, _, _, _) =>
+        exps.flatMap(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.flatMap(visitExp)
@@ -617,7 +617,7 @@ object Safety {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
-    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pats, _, _) => pats.flatMap(visitPat(_, loc))
     case Pattern.Tuple(elms, _, _) => elms.flatMap(visitPat(_, loc))
     case Pattern.Record(pats, pat, _, _) => pats.map(_.pat).flatMap(visitPat(_, loc)) ++ visitPat(pat, loc)
     case Pattern.RecordEmpty(_, _) => Nil

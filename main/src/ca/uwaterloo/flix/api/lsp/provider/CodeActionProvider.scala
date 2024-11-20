@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Sym
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{ClassList, Similarity}
+import ca.uwaterloo.flix.util.Similarity
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -52,6 +52,9 @@ object CodeActionProvider {
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
+
+    case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
+      mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
@@ -122,6 +125,62 @@ object CodeActionProvider {
       case (sym, _) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
+  }
+
+  /**
+    * Returns a code action that proposes to use the tag of an enum.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   match color {
+    *      case Red => ???
+    *   }
+    * }}}
+    *
+    * where the user actually want to refer to Color.Red, this code action proposes to add:
+    * {{{
+    *   use Color.Red
+    * }}}
+    */
+  private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    candidateEnums.keys.map{ enumName =>
+      CodeAction(
+        title = s"use '$enumName.$tagName'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $enumName.$tagName"))))),
+        command = None
+      )
+    }.toList
+  }
+
+  /**
+    * Returns a code action that proposes to qualify the tag with the enum name.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   match color {
+    *      case Red => ???
+    *   }
+    * }}}
+    *
+    * where the user actually want to refer to Color.Red, this code action proposes to replace the tag with:
+    * {{{
+    *   case Color.Red => ???
+    * }}}
+    */
+  private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    candidateEnums.keys.map{ enumName =>
+      CodeAction(
+        title = s"Prefix with '$enumName.'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
+        command = None
+      )
+    }.toList
   }
 
   /**
@@ -266,12 +325,13 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition): List[CodeAction] =
-    ClassList.TheMap.get(name).toList.flatten.map { path =>
+  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] =
+    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
+      val completePath = path.mkString(".") + "." + name
       CodeAction(
-        title = s"import '$path'",
+        title = s"import '$completePath'",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $path"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $completePath"))))),
         command = None
       )
     }

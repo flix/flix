@@ -58,7 +58,7 @@ object EffectBinder {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private sealed trait Binder
@@ -88,7 +88,7 @@ object EffectBinder {
   }
 
   private def visitEnumCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
-    case LiftedAst.Case(sym, tpe, loc) => ReducedAst.Case(sym, tpe, loc)
+    case LiftedAst.Case(sym, tpes, loc) => ReducedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct: LiftedAst.Struct): ReducedAst.Struct = struct match {

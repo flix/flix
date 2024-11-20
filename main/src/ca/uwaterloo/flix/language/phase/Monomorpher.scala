@@ -341,7 +341,7 @@ object Monomorpher {
       case (sym, defn) =>
         // We use an empty substitution because the defs are non-parametric.
         // its important that non-parametric functions keep their symbol to not
-        // invalidate the set of reachable functions.
+        // invalidate the set of entryPoints functions.
         mkFreshDefn(sym, defn, empty)
     }
 
@@ -387,8 +387,8 @@ object Monomorpher {
       enums,
       structs,
       effects,
-      root.entryPoint,
-      root.reachable,
+      root.mainEntryPoint,
+      root.entryPoints,
       root.sources
     )
   }
@@ -414,8 +414,8 @@ object Monomorpher {
   /** Visit an enum case, simplifying its polymorphic type. */
   def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
-      case LoweredAst.Case(sym, tpe, _, loc) =>
-        MonoAst.Case(sym, simplify(tpe, root.eqEnv, isGround = false), loc)
+      case LoweredAst.Case(sym, tpes, _, loc) =>
+        MonoAst.Case(sym, tpes.map(simplify(_, root.eqEnv, isGround = false)), loc)
     }
   }
 
@@ -663,12 +663,12 @@ object Monomorpher {
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Tag(sym, pat, tpe, loc) =>
-      val (p, env1) = visitPat(pat, subst)
-      (MonoAst.Pattern.Tag(sym, p, subst(tpe), loc), env1)
+    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, envs) = pats.map(visitPat(_, subst)).unzip
+      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
+      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
@@ -677,7 +677,7 @@ object Monomorpher {
       }.unzip
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
-      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
     case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
@@ -813,6 +813,17 @@ object Monomorpher {
   }
 
   /**
+    * Returns the combined map of `envs`.
+    *
+    * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
+    */
+  private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
+      case (acc, m) => acc ++ m
+    }
+  }
+
+  /**
     * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
@@ -824,7 +835,7 @@ object Monomorpher {
 
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
-    (params, envs.reduce(_ ++ _))
+    (params, combineEnvs(envs))
   }
 
   /**

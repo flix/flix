@@ -26,10 +26,11 @@ import ca.uwaterloo.flix.util.ParOps
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *
-  * (a) The main function is always reachable.
-  * (b) A function marked with @test is reachable.
-  * (c) Appears in a function which itself is reachable.
+  *   - (a) is an entry point (main / tests / exports).
+  *   - (c) appears in a function which itself is reachable.
+  *   - (d) is an instance of a trait whose signature(s) appear in a reachable function.
+  *     [[Monomorpher]] will erase unused instances so this phase must check all instances
+  *     for the [[Monomorpher]] to work.
   *
   */
 object TreeShaker2 {
@@ -38,8 +39,8 @@ object TreeShaker2 {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
-    // Compute the symbols that are always reachable.
-    val initReach = root.reachable
+    // Entry points are always reachable.
+    val initReach = root.entryPoints
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
