@@ -117,19 +117,19 @@ object TypeReconstruction {
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, loc) =>
       val es = exps.map(visitExp)
       val iv = subst(itvar)
-      val eff = Type.mkUnion(iv.arrowEffectType :: es.map(_.eff), loc)
+      val eff = Type.mkUnion(Type.eraseTopAliases(iv).arrowEffectType :: es.map(_.eff), loc)
       TypedAst.Expr.ApplyDef(symUse, es, iv, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, loc) =>
       val es = exps.map(visitExp)
       val iv = subst(itvar)
-      val eff = Type.mkUnion(iv.arrowEffectType :: es.map(_.eff), loc)
+      val eff = Type.mkUnion(Type.eraseTopAliases(iv).arrowEffectType :: es.map(_.eff), loc)
       TypedAst.Expr.ApplySig(symUse, es, itvar, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, loc) =>
       val es = exps.map(visitExp)
       val atvar = subst(arrowTvar)
-      val eff = Type.mkUnion(atvar.arrowEffectType :: es.map(_.eff), loc)
+      val eff = Type.mkUnion(Type.eraseTopAliases(atvar).arrowEffectType :: es.map(_.eff), loc)
       TypedAst.Expr.ApplyLocalDef(symUse, es, atvar, subst(tvar), eff, loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
