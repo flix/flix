@@ -25,15 +25,13 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
-import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -42,15 +40,6 @@ import scala.jdk.CollectionConverters.*
   * The Resolver phase performs name resolution on the program.
   */
 object Resolver {
-
-  /**
-    * Java classes for primitives and Object
-    */
-  private val Int = classOf[Int]
-  private val Long = classOf[Long]
-  private val Double = classOf[Double]
-  private val Boolean = classOf[Boolean]
-  private val Object = classOf[AnyRef]
 
   /**
     * The set of cases that are used by default in the namespace.
@@ -153,8 +142,8 @@ object Resolver {
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.Op(sym, spec, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
-    case ResolvedAst.Declaration.Sig(sym, spec, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
+    case ResolvedAst.Declaration.Op(sym, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
+    case ResolvedAst.Declaration.Sig(sym, _, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
@@ -176,7 +165,7 @@ object Resolver {
     * Semi-resolves the type aliases in the unit.
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
-    case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
+    case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
@@ -199,7 +188,7 @@ object Resolver {
     * Semi-resolves the type aliases in the namespace.
     */
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, loc) =>
+    case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, _) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
@@ -269,9 +258,9 @@ object Resolver {
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
     case _: UnkindedType.CaseSet => Nil
-    case UnkindedType.CaseComplement(tpe, loc) => getAliasUses(tpe)
-    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
-    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+    case UnkindedType.CaseComplement(tpe, _) => getAliasUses(tpe)
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.Struct => Nil
     case _: UnkindedType.RestrictableEnum => Nil
@@ -358,29 +347,29 @@ object Resolver {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
       }
-    case trt@NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc) =>
+    case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _, _) =>
       resolveTrait(trt, env0, ns0)
-    case inst@NamedAst.Declaration.Instance(doc, ann, mod, trt, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _) =>
       resolveInstance(inst, env0, ns0)
-    case defn@NamedAst.Declaration.Def(sym, spec, exp, _) =>
+    case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       resolveDef(defn, None, env0)(ns0, taenv, sctx, root, flix)
-    case enum0@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
+    case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       resolveEnum(enum0, env0, taenv, ns0, root)
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _, _) =>
       resolveStruct(struct, env0, taenv, ns0, root)
-    case enum0@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
+    case enum0@NamedAst.Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, _) =>
       resolveRestrictableEnum(enum0, env0, taenv, ns0, root)
-    case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) =>
+    case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       Validation.Success(taenv(sym))
-    case eff@NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
+    case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _) =>
       resolveEffect(eff, env0, taenv, ns0, root)
-    case op@NamedAst.Declaration.Op(sym, spec, _) => throw InternalCompilerException("unexpected op", sym.loc)
-    case NamedAst.Declaration.Sig(sym, spec, exp, _) => throw InternalCompilerException("unexpected sig", sym.loc)
-    case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.StructField(_, sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
-    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
+    case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
+    case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
+    case NamedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.StructField(_, sym, _, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
+    case NamedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
   }
 
   /**
@@ -562,7 +551,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(s0.sym, idx, field, env, taenv, ns0, root) }
+          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(idx, field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
             fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
@@ -601,7 +590,7 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
@@ -1050,10 +1039,10 @@ object Resolver {
             case NamedAst.RestrictableChoosePattern.Error(loc) => Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(loc))
           }
           val env = pat0 match {
-            case NamedAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
+            case NamedAst.RestrictableChoosePattern.Tag(_, pat, _) =>
               pat.foldLeft(env0) {
-                case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
-                case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
+                case (acc, NamedAst.RestrictableChoosePattern.Var(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
+                case (acc, NamedAst.RestrictableChoosePattern.Wild(_)) => acc
                 case (acc, NamedAst.RestrictableChoosePattern.Error(_)) => acc
               }
             case NamedAst.RestrictableChoosePattern.Error(_) => env0
@@ -2218,7 +2207,7 @@ object Resolver {
       case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
-        val error = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), filterToVarEnv(env), isUse = false, qname.loc)
+        val error = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), filterToVarEnv(env), qname.loc)
         sctx.errors.add(error)
         ResolvedQName.Error(error)
     }
@@ -2331,14 +2320,6 @@ object Resolver {
       case Nil => Validation.Failure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
       case enum0 :: _ => Validation.Success(enum0)
     }
-  }
-
-  /**
-    * Returns `true` iff the given type `tpe0` is the Unit type.
-    */
-  private def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
-    case NamedAst.Type.Unit(loc) => true
-    case _ => false
   }
 
   /**
@@ -2811,7 +2792,7 @@ object Resolver {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         checkTypeAliasIsAccessible(alias, ns0, qname.loc)
         Validation.Success(alias)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, qname.loc)))
   }
 
   /**
@@ -2824,7 +2805,7 @@ object Resolver {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
         getAssocTypeIfAccessible(assoc, ns0, qname.loc)
         Validation.Success(assoc)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, qname.loc)))
   }
 
   /**
@@ -2934,22 +2915,22 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
-        case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
+        case Declaration.Namespace(sym, _, _, _) => sym.ns
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
       }
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, _, sigs, laws, loc) => sym.namespace :+ sym.name
-        case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
+        case Declaration.Namespace(sym, _, _, _) => sym.ns
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
       }
     }
   }
@@ -2959,7 +2940,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc))
+      case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, qname.loc))
       case Some(decl) => Validation.Success(decl)
     }
   }
@@ -3306,210 +3287,6 @@ object Resolver {
   }
 
   /**
-    * Returns the JVM type corresponding to the given Flix type `tpe`.
-    *
-    * A non-primitive Flix type is mapped to java.lang.Object.
-    *
-    * An array type is mapped to the corresponding array type.
-    */
-  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    val erased = UnkindedType.eraseAliases(tpe)
-    val baseType = erased.baseType
-    baseType match {
-      // Case 1: Constant: Match on the type.
-      case UnkindedType.Cst(tc, _) => tc match {
-        case TypeConstructor.Void =>
-          // Flix `Void` is _not_ Java's `void`.
-          Result.Err(ResolutionError.IllegalType(tpe, loc))
-
-        case TypeConstructor.Unit => Result.Ok(Class.forName("java.lang.Object"))
-
-        case TypeConstructor.Bool => Result.Ok(classOf[Boolean])
-
-        case TypeConstructor.Char => Result.Ok(classOf[Char])
-
-        case TypeConstructor.Float32 => Result.Ok(classOf[Float])
-
-        case TypeConstructor.Float64 => Result.Ok(classOf[Double])
-
-        case TypeConstructor.BigDecimal => Result.Ok(Class.forName("java.math.BigDecimal"))
-
-        case TypeConstructor.Int8 => Result.Ok(classOf[Byte])
-
-        case TypeConstructor.Int16 => Result.Ok(classOf[Short])
-
-        case TypeConstructor.Int32 => Result.Ok(classOf[Int])
-
-        case TypeConstructor.Int64 => Result.Ok(classOf[Long])
-
-        case TypeConstructor.BigInt => Result.Ok(Class.forName("java.math.BigInteger"))
-
-        case TypeConstructor.Str => Result.Ok(Class.forName("java.lang.String"))
-
-        case TypeConstructor.Regex => Result.Ok(Class.forName("java.util.regex.Pattern"))
-
-        case TypeConstructor.Sender => Result.Ok(Class.forName("java.lang.Object"))
-
-        case TypeConstructor.Receiver => Result.Ok(Class.forName("java.lang.Object"))
-
-        case TypeConstructor.Tuple(_) => Result.Ok(Class.forName("java.lang.Object"))
-
-        case TypeConstructor.Array =>
-          erased.typeArguments match {
-            case elmTyp :: region :: Nil =>
-              getJVMType(elmTyp, loc) map {
-                case elmClass => getJVMArrayType(elmClass)
-              }
-            case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
-          }
-
-        case TypeConstructor.Vector =>
-          erased.typeArguments match {
-            case elmTyp :: region :: Nil =>
-              getJVMType(elmTyp, loc) map {
-                case elmClass => getJVMArrayType(elmClass)
-              }
-            case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
-          }
-
-        case TypeConstructor.Native(clazz) => Result.Ok(clazz)
-
-        case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
-
-        case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
-
-
-        case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.And => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Or => Result.Err(ResolutionError.IllegalType(tpe, loc))
-
-        case TypeConstructor.Union => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Effect(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Univ => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Lattice => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Lazy => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Difference => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.SymmetricDiff => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Relation => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.SchemaRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.SchemaRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Pure => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseComplement(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseSet(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-
-        case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
-        case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
-        case t: TypeConstructor.Struct => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
-        case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
-        case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.ArrowWithoutEffect(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.ArrayWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-        case TypeConstructor.RegionWithoutRegion => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
-
-      }
-
-      // Case 2: Arrow. Convert to Java function interface
-      case UnkindedType.Arrow(_, _, _) =>
-        val targsVal = Result.traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
-        val returnsUnit = erased.typeArguments.lastOption match {
-          case Some(ty) => isBaseTypeUnit(ty)
-          case None => false
-        }
-        targsVal flatMap {
-          case Object :: Object :: Nil =>
-            if (returnsUnit)
-              Result.Ok(Class.forName("java.util.function.Consumer"))
-            else
-              Result.Ok(Class.forName("java.util.function.Function"))
-          case Object :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.Predicate"))
-          case Int :: Object :: Nil =>
-            if (returnsUnit)
-              Result.Ok(Class.forName("java.util.function.IntConsumer"))
-            else
-              Result.Ok(Class.forName("java.util.function.IntFunction"))
-          case Int :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.IntPredicate"))
-          case Int :: Int :: Nil => Result.Ok(Class.forName("java.util.function.IntUnaryOperator"))
-          case Long :: Object :: Nil =>
-            if (returnsUnit)
-              Result.Ok(Class.forName("java.util.function.LongConsumer"))
-            else
-              Result.Ok(Class.forName("java.util.function.LongFunction"))
-          case Long :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.LongPredicate"))
-          case Long :: Long :: Nil => Result.Ok(Class.forName("java.util.function.LongUnaryOperator"))
-          case Double :: Object :: Nil =>
-            if (returnsUnit)
-              Result.Ok(Class.forName("java.util.function.DoubleConsumer"))
-            else
-              Result.Ok(Class.forName("java.util.function.DoubleFunction"))
-          case Double :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.DoublePredicate"))
-          case Double :: Double :: Nil => Result.Ok(Class.forName("java.util.function.DoubleUnaryOperator"))
-          case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        }
-
-      // Case 3: Enum / Struct. Return an object type.
-      case _: UnkindedType.Enum => Result.Ok(Class.forName("java.lang.Object"))
-      // TODO STRUCTS Should this be a specific class instead?
-      case _: UnkindedType.Struct => Result.Ok(Class.forName("java.lang.Object"))
-      case _: UnkindedType.RestrictableEnum => Result.Ok(Class.forName("java.lang.Object"))
-
-      // Case 4: Ascription. Ignore it and recurse.
-      case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
-
-      // Case 5: It's a broken type. Lets hope it is an object.
-      case UnkindedType.Error(_) => Result.Ok(Class.forName("java.lang.Object"))
-
-      // Case 5: Illegal type. Error.
-      case _: UnkindedType.Var => Result.Err(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseSet => Result.Err(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseComplement => Result.Err(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseUnion => Result.Err(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseIntersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.AssocType => Result.Err(ResolutionError.IllegalType(tpe, loc))
-
-      // Case 6: Unexpected type. Crash.
-      case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
-      case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
-      case t: UnkindedType.UnappliedAssocType => throw InternalCompilerException(s"unexpected type: $t", loc)
-      case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
-    }
-  }
-
-  /**
-    * Returns the class object for an array with elements of the given `elmClass` type.
-    */
-  private def getJVMArrayType(elmClass: Class[?]): Class[?] = {
-    // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-    java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-  }
-
-  private def isBaseTypeUnit(tpe: UnkindedType): Boolean = {
-    val erased = UnkindedType.eraseAliases(tpe)
-    val baseType = erased.baseType
-    baseType match {
-      // Case 1: Constant: Match on the type.
-      case UnkindedType.Cst(tc, _) => tc match {
-        case TypeConstructor.Unit => true
-        case _ => false
-      }
-      case _ => false
-    }
-  }
-
-  /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   private def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
@@ -3523,28 +3300,28 @@ object Resolver {
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => sym
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym
-    case NamedAst.Declaration.Sig(sym, spec, exp, _) => sym
-    case NamedAst.Declaration.Def(sym, spec, exp, _) => sym
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
-    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym
+    case NamedAst.Declaration.Namespace(sym, _, _, _) => sym
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym
+    case NamedAst.Declaration.Sig(sym, _, _, _) => sym
+    case NamedAst.Declaration.Def(sym, _, _, _) => sym
+    case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym
-    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
-    case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
-    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
-    case NamedAst.Declaration.Op(sym, spec, _) => sym
-    case NamedAst.Declaration.Case(sym, tpe, _) => sym
-    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
+    case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym
+    case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym
+    case NamedAst.Declaration.Op(sym, _, _) => sym
+    case NamedAst.Declaration.Case(sym, _, _) => sym
+    case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
+    case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 
   /**
     * Resolves the symbol where the symbol is known to point to a valid declaration.
     */
-  private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): List[NamedAst.Declaration] = sym match {
+  private def infallableLookupSym(sym: Symbol, root: NamedAst.Root): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3572,7 +3349,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns, Map.empty, isUse = true, loc))
+      case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
@@ -3592,12 +3369,12 @@ object Resolver {
     * Adds the given use or import to the use environment.
     */
   private def appendUseEnv(env: ListMap[String, Resolution], useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = useOrImport match {
-    case Ast.UseOrImport.Use(sym, alias, loc) =>
+    case Ast.UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
         case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
       }
-    case Ast.UseOrImport.Import(clazz, alias, loc) => env + (alias.name -> Resolution.JavaClass(clazz))
+    case Ast.UseOrImport.Import(clazz, alias, _) => env + (alias.name -> Resolution.JavaClass(clazz))
   }
 
   /**
@@ -3638,7 +3415,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs) =>
+    case ResolvedAst.Spec(_, _, _, tparams, fparams, _, _, _, _) =>
       mkTypeParamEnv(tparams) ++ mkFormalParamEnv(fparams)
   }
 
@@ -3646,11 +3423,11 @@ object Resolver {
     * Creates an environment from the given pattern.
     */
   private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
-    case ResolvedAst.Pattern.Wild(loc) => ListMap.empty
-    case ResolvedAst.Pattern.Var(sym, loc) => mkVarEnv(sym)
-    case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
-    case ResolvedAst.Pattern.Tag(sym, pats, loc) => mkPatternsEnv(pats)
-    case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
+    case ResolvedAst.Pattern.Wild(_) => ListMap.empty
+    case ResolvedAst.Pattern.Var(sym, _) => mkVarEnv(sym)
+    case ResolvedAst.Pattern.Cst(_, _) => ListMap.empty
+    case ResolvedAst.Pattern.Tag(_, pats, _) => mkPatternsEnv(pats)
+    case ResolvedAst.Pattern.Tuple(elms, _) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
     case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
     case ResolvedAst.Pattern.Error(_) => ListMap.empty
@@ -3833,7 +3610,7 @@ object Resolver {
 
     def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.trt.sym -> inst))
 
-    def ++(that: SymbolTable): SymbolTable = {
+    private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
         traits = this.traits ++ that.traits,
         instances = this.instances ++ that.instances,
