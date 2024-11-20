@@ -122,12 +122,15 @@ object CompletionProvider {
   }
 
   private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
+    println(errors)
     errorsAt(ctx.uri, ctx.pos, errors).flatMap({
 
       //
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedName => ImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedType => ImportCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
       case err: ResolutionError.UndefinedName => VarCompleter.getCompletions(err)
 

@@ -16,8 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.mkTextEdit
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
@@ -147,14 +149,15 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.ImportCompletion(className, path, ap) =>
+    case Completion.ImportCompletion(className, path, ap, documentation) =>
       CompletionItem(
         label            = className,
         sortText         = Priority.toSortText(Priority.Highest, className),
         textEdit         = TextEdit(context.range, className),
-        documentation    = None,
+        documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.PlainText,
-        kind             = CompletionItemKind.Class
+        kind             = CompletionItemKind.Class,
+        additionalTextEdits = List(mkTextEdit(ap, s"import $path"))
       )
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
@@ -522,8 +525,10 @@ object Completion {
     *
     * @param className the name to be completed.
     * @param path the path of the class that we will import
+    * @param ap the anchor position of the completion.
+    * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class ImportCompletion(className: String, path: String) extends Completion
+  case class ImportCompletion(className: String, path: String, ap:AnchorPosition, documentation: String) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -678,5 +683,14 @@ object Completion {
     * @param loc      the source location of the hole.
     */
   case class HoleCompletion(sym: Symbol.VarSym, decl: TypedAst.Def, priority: String, loc: SourceLocation) extends Completion
+
+  private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
+    val insertPosition = Position(ap.line, ap.col)
+    val leadingSpaces = " " * ap.spaces
+    TextEdit(
+      Range(insertPosition, insertPosition),
+      leadingSpaces + text.replace("\n", s"\n$leadingSpaces") + "\n"
+    )
+  }
 
 }

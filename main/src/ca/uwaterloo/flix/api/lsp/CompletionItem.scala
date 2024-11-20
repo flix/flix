@@ -64,5 +64,6 @@ case class CompletionItem(
       ("documentation" -> documentation) ~
       ("kind" -> kind.toInt) ~
       ("insertTextFormat" -> insertTextFormat.toInt) ~
+      ("additionalTextEdits" -> additionalTextEdits.map(_.toJSON)) ~
       ("commitCharacters" -> commitCharacters)
 }

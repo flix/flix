@@ -16,25 +16,49 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportCompletion
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.ClassList
 
 object ImportCompleter {
 
-  def getCompletions(err: ResolutionError.UndefinedJvmClass): Iterable[ImportCompletion] = {
-//    val path = err.name.split('.').toList
-    // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-//    javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-    javaClassCompletionsFromPrefix(err.name)
-  }
+  /**
+    * Returns a list of import completions to auto complete the class name and import the java class.
+    *
+    * Example:
+    *  If we have an undefined name which is the prefix of an existing java class
+    *
+    *  {{{
+    *    let s = Mat // undefined name error
+    *  }}}
+    *
+    *  We propose to complete the name to `Math` and import the class `java.lang.Math`
+    *
+    *  {{{
+    *    import java.lang.Math
+    *    ...
+    *    let s = Math
+    *  }}}
+    */
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: Root): Iterable[ImportCompletion] =
+    javaClassCompletionsFromPrefix(err.qn.ident.name, err.ap)
+
+  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: Root): Iterable[ImportCompletion] =
+    javaClassCompletionsFromPrefix(err.qn.ident.name, err.ap)
+
+  def getCompletions(err: ResolutionError.UndefinedJvmClass)(implicit root: Root): Iterable[ImportCompletion] =
+    javaClassCompletionsFromPrefix(err.name, err.ap)
 
   /**
-    * Gets completions from a java path prefix
+    * Gets completions from a java class prefix.
     */
-  private def javaClassCompletionsFromPrefix(prefix: String): Iterable[ImportCompletion] = {
-    ClassList.TheMap.m.keys.filter(_.startsWith(prefix)).flatMap { className =>
-      val paths = ClassList.TheMap.get(className).get
-      paths.map(ImportCompletion(className, _))
+  private def javaClassCompletionsFromPrefix(prefix: String, ap: AnchorPosition)(implicit root: Root): Iterable[ImportCompletion] = {
+    val availableClasses = root.availableClasses.byClass.m
+    availableClasses.keys.filter(_.startsWith(prefix)).flatMap { className =>
+      availableClasses(className).map{path =>
+        val completePath = path.mkString(".") + "." + className
+        ImportCompletion(className, completePath, ap, completePath)
+      }
     }
   }
 }
