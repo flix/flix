@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.mkTextEdit
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
@@ -149,15 +148,25 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.ImportCompletion(className, path, ap, documentation) =>
+    case Completion.ImportCompletion(name) =>
       CompletionItem(
-        label            = className,
-        sortText         = Priority.toSortText(Priority.Highest, className),
-        textEdit         = TextEdit(context.range, className),
-        documentation    = Some(documentation),
+        label            = name,
+        sortText         = Priority.toSortText(Priority.Highest, name),
+        textEdit         = TextEdit(context.range, name),
+        documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
-        kind             = CompletionItemKind.Class,
-        additionalTextEdits = List(mkTextEdit(ap, s"import $path"))
+        kind             = CompletionItemKind.Class
+      )
+
+    case Completion.AutoImportCompletion(name, path, ap, documentation) =>
+      CompletionItem(
+        label               = name,
+        sortText            = Priority.toSortText(Priority.Highest, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = documentation,
+        insertTextFormat    = InsertTextFormat.PlainText,
+        kind                = CompletionItemKind.Class,
+        additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
@@ -523,12 +532,19 @@ object Completion {
   /**
     * Represents a package, class, or interface completion.
     *
-    * @param className the name to be completed.
-    * @param path the path of the class that we will import
-    * @param ap the anchor position of the completion.
+    * @param name the name to be completed.
+    */
+  case class ImportCompletion(name: String) extends Completion
+
+  /**
+    * Represents an auto-import completion.
+    *
+    * @param name          the name of the completion.
+    * @param path          the path of the completion.
+    * @param ap            the anchor position.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class ImportCompletion(className: String, path: String, ap:AnchorPosition, documentation: String) extends Completion
+  case class AutoImportCompletion(name: String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -692,5 +708,4 @@ object Completion {
       leadingSpaces + text.replace("\n", s"\n$leadingSpaces") + "\n"
     )
   }
-
 }
