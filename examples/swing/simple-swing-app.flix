@@ -1,5 +1,3 @@
-import java.lang.Runnable
-
 import javax.swing.JLabel
 import javax.swing.JFrame
 
