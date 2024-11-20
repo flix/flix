@@ -25,18 +25,12 @@ import ca.uwaterloo.flix.util.ParOps
 /**
   * The Tree Shaking phase removes all unused function definitions.
   *
-  * A function is considered entryPoints if it:
-  *
-  * (a) The main function is always entryPoints.
-  *
-  * (b) A function marked with @test is entryPoints.
-  *
-  * (c) Appears in a function which itself is entryPoints.
-  *
-  * (d) Is an instance of a trait whose signature(s) appear in a entryPoints function.
-  * Monomorph will erase unused instances so this phase must check all instances
-  * for the monomorph to work.
-  *
+  * A function is considered reachable if it:
+  *   - (a) is an entry point (main / tests / exports).
+  *   - (c) appears in a function which itself is reachable.
+  *   - (d) is an instance of a trait whose signature(s) appear in a reachable function.
+  *     [[Monomorpher]] will erase unused instances so this phase must check all instances
+  *     for the [[Monomorpher]] to work.
   */
 object TreeShaker1 {
 
@@ -44,13 +38,13 @@ object TreeShaker1 {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
-    // Compute the symbols that are always entryPoints.
+    // Entry points are always reachable.
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
-    // Compute the symbols that are transitively entryPoints.
+    // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
 
-    // Filter the entryPoints definitions.
+    // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
@@ -60,16 +54,12 @@ object TreeShaker1 {
   }
 
   /**
-    * Returns the symbols entryPoints from the given symbol `sym`.
+    * Returns the symbols reachable from the given symbol `sym`.
     *
     * This includes three types of symbols:
-    *
-    * (a) The function or signature symbols in the implementation / body expression of a entryPoints function symbol
-    *
-    * (b) The trait symbol of a entryPoints sig symbol.
-    *
-    * (c) Every expression in a trait instance of a entryPoints trait symbol is entryPoints.
-    *
+    *   - (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
+    *   - (b) The trait symbol of a reachable sig symbol.
+    *   - (c) Every expression in a trait instance of a reachable trait symbol is reachable.
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
     case ReachableSym.DefnSym(defnSym) =>
@@ -87,7 +77,7 @@ object TreeShaker1 {
   }
 
   /**
-    * Returns the function and signature symbols entryPoints from the given expression `e0`.
+    * Returns the function and signature symbols reachable from the given expression `e0`.
     */
   private def visitExp(e0: Expr): Set[ReachableSym] = e0 match {
     case Expr.Cst(_, _, _) =>
@@ -167,13 +157,13 @@ object TreeShaker1 {
   }
 
   /**
-    * Returns the function symbols entryPoints from `exps`.
+    * Returns the function symbols reachable from `exps`.
     */
   private def visitExps(exps: List[Expr]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
 
 
   /**
-    * A common super-type for entryPoints symbols (defs, traits, sigs)
+    * A common super-type for reachable symbols (defs, traits, sigs)
     */
   sealed trait ReachableSym
 
