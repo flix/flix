@@ -415,7 +415,7 @@ object Inliner1 {
           case OccurrenceAst1.CatchRule(sym, clazz, exp1) =>
             val freshVarSym = Symbol.freshVarSym(sym)
             val varSubst1 = varSubst0 + (sym -> freshVarSym)
-            val e1 = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
+            val e1 = visitExp(exp1, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.CatchRule(freshVarSym, clazz, e1)
         }
         MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
@@ -426,7 +426,7 @@ object Inliner1 {
           case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
             val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
             val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
-            val e1 = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
+            val e1 = visitExp(exp1, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.HandlerRule(op, fps, e1)
         }
         MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
