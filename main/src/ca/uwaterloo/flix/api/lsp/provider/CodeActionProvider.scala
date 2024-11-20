@@ -44,11 +44,11 @@ object CodeActionProvider {
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(_, ap, _, loc) if overlaps(range, loc) =>
-      mkImportJava(loc.text, uri, ap)
+    case ResolutionError.UndefinedJvmClass(qn, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(qn, Nil, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(loc.text, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, qn.namespace.idents, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -57,7 +57,7 @@ object CodeActionProvider {
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(loc.text, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, qn.namespace.idents, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -325,8 +325,8 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: Option[String], uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val className = name.getOrElse(return Nil).split('.').head
+  private def mkImportJava(name: String, namespace: List[Name.Ident], uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val className = namespace.headOption.map(_.name).getOrElse(name)
     root.availableClasses.byClass.get(className).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + className
       CodeAction(
