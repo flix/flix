@@ -44,11 +44,11 @@ object CodeActionProvider {
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(qn, ap, _, loc) if overlaps(range, loc) =>
-      mkImportJava(qn, Nil, uri, ap)
+    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(Name.mkQName(name), uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, qn.namespace.idents, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -57,7 +57,7 @@ object CodeActionProvider {
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, qn.namespace.idents, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -312,21 +312,25 @@ object CodeActionProvider {
   ) :: Nil
 
   /**
-    * Returns a code action that proposes to import corresponding Java class.
+    * Returns a code action that proposes to import the corresponding Java class.
+    * First, we try to import the class with the name matching the head of the `qn.namespace.idents`.
+    * If there is no namespace, we try to import the class with the name matching `qn.ident`.
     *
-    * For example, if we have:
+    * Example:
+    * if we have
     *
     * {{{
-    *   def foo(): = new File("data.txt")
+    *  let a = Math.sin(1)
     * }}}
     *
-    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * where qn.ident is "sin" and qn.namespace.idents is ["Math"],  this code action proposes to add:
+    *
     * {{{
-    *   import java.io.File
+    *  import java.lang.Math
     * }}}
     */
-  private def mkImportJava(name: String, namespace: List[Name.Ident], uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val className = namespace.headOption.map(_.name).getOrElse(name)
+  private def mkImportJava(qn: Name.QName, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val className = qn.namespace.idents.headOption.map(_.name).getOrElse(qn.ident.name)
     root.availableClasses.byClass.get(className).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + className
       CodeAction(
