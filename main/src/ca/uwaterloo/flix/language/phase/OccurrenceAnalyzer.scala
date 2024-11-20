@@ -178,8 +178,8 @@ object OccurrenceAnalyzer {
       val (e, o1) = visitExp(sym0, exp)
       val (es, o2) = visitExps(sym0, exps)
       val o3 = combineAllSeq(o1, o2)
-      exp match {
-        case Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
+      e match {
+        case OccurrenceAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
           (OccurrenceAst.Expr.ApplyClo(e, es, tpe, purity, loc), o5.increaseSizeByOne())
