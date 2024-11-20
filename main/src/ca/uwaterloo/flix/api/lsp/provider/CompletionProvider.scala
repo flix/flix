@@ -212,7 +212,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
-      case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
+      case ResolutionError.UndefinedTag(_, _,  _, _) => (1, SyntacticContext.Pat.OtherPat)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
