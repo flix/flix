@@ -110,7 +110,7 @@ object TypeReconstruction2 {
     case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val lambdaBodyEff = Type.eraseTopAliases(e1.tpe).arrowEffectType
+      val lambdaBodyEff = Type.eraseAliases(e1.tpe).arrowEffectType
       val eff = Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc)
       TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), eff, loc)
 
