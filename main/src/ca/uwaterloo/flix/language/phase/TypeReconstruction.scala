@@ -124,7 +124,7 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       val iv = subst(itvar)
       val eff = Type.mkUnion(Type.eraseTopAliases(iv).arrowEffectType :: es.map(_.eff), loc)
-      TypedAst.Expr.ApplySig(symUse, es, itvar, subst(tvar), eff, loc)
+      TypedAst.Expr.ApplySig(symUse, es, iv, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, loc) =>
       val es = exps.map(visitExp)
