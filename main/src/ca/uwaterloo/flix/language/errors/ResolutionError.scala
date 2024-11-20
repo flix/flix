@@ -800,7 +800,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTag(tag: String, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined tag: '$tag'."
 
     def message(formatter: Formatter): String = {
