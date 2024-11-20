@@ -750,10 +750,9 @@ object ResolutionError {
     * @param qn    the unresolved name.
     * @param ap    the anchor position.
     * @param env   the variables in the scope.
-    * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -778,10 +777,9 @@ object ResolutionError {
     * @param qn    the unresolved name.
     * @param ns    the current namespace.
     * @param env   the variables in the scope.
-    * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -975,6 +973,27 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "Flix cannot find the type variable. Maybe there is a typo?"
     })
+  }
+
+  /**
+    * Undefined Use Error (unrecoverable).
+    *
+    * @param qn    the unresolved name.
+    * @param ns    the current namespace.
+    * @param env   the variables in the scope.
+    * @param loc   the location where the error occurred.
+    */
+  case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined name: '${qn.toString}' in use."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined name '${red(qn.toString)} in use'.
+         |
+         |${code(loc, "name not found")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**
