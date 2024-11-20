@@ -170,7 +170,7 @@ object Kinder {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, taenv, root))
       val quants = tparams.map(_.sym)
-      val schemeBase = if (ts.nonEmpty) Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic) else resTpe
+      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.Case(sym, ts, sc, loc)
   }
@@ -191,7 +191,7 @@ object Kinder {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, taenv, root))
       val quants = (index :: tparams).map(_.sym)
-      val schemeBase = if (ts.nonEmpty) Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic) else resTpe
+      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.RestrictableCase(sym, ts, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
