@@ -36,7 +36,7 @@ object KindedAst {
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
-                  entryPoint: Option[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   availableClasses: AvailableClasses)
 

@@ -26,8 +26,8 @@ object OccurrenceAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, OccurrenceAst.Effect],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)

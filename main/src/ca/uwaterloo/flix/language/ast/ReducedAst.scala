@@ -32,11 +32,11 @@ object ReducedAst {
                   effects: Map[Symbol.EffectSym, Effect],
                   types: Set[MonoType],
                   anonClasses: List[AnonClass],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation]) {
 
-    def getMain: Option[Def] = entryPoint.map(defs(_))
+    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
 
   }
 

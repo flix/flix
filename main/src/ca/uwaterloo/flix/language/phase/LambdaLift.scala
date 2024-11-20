@@ -48,7 +48,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
