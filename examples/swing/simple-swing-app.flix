@@ -4,7 +4,7 @@ import javax.swing.JLabel
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 
-def createAndShowGUI(): Unit \ IO = {
+def main(): Unit \ IO = {
     let frame = new JFrame("Hello App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -14,8 +14,3 @@ def createAndShowGUI(): Unit \ IO = {
     frame.pack();
     frame.setVisible(true)
 }
-
-def main(): Unit \ IO =
-    SwingUtilities.invokeLater(new Runnable {
-        def $run(_: Runnable): Unit \ IO = createAndShowGUI()
-    })
