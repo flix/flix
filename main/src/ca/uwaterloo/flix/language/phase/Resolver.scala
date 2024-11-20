@@ -122,7 +122,7 @@ object Resolver {
                   taOrder,
                   root.entryPoint,
                   root.sources,
-                  root.names
+                  root.availableClasses
                 )
             }
         }
@@ -2145,7 +2145,7 @@ object Resolver {
             Validation.Success(trt)
         }
       case None =>
-        Validation.Failure(ResolutionError.UndefinedTrait(qname, ns0, qname.loc))
+        Validation.Failure(ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
     }
   }
 
@@ -2168,7 +2168,7 @@ object Resolver {
             Some(trt)
         }
       case None =>
-        val error = ResolutionError.UndefinedTrait(qname, ns0, qname.loc)
+        val error = ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc)
         sctx.errors.add(error)
         None
     }
@@ -2270,7 +2270,7 @@ object Resolver {
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, AnchorPosition.mkImportOrUseAnchor(ns0), qname.loc))
       // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
       case st :: _ => Result.Ok(st)
     }
@@ -2840,7 +2840,7 @@ object Resolver {
     }
 
     effOpt match {
-      case None => Result.Err(ResolutionError.UndefinedEffect(qname, ns0, qname.loc))
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
       case Some(decl) => Result.Ok(decl)
     }
   }
