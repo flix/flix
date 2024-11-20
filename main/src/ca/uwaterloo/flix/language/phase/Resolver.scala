@@ -122,7 +122,7 @@ object Resolver {
                   taOrder,
                   root.entryPoint,
                   root.sources,
-                  root.names
+                  root.availableClasses
                 )
             }
         }

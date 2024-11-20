@@ -25,7 +25,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, AvailableClasses.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
@@ -39,7 +39,7 @@ object ResolvedAst {
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  names: MultiMap[List[String], String])
+                  availableClasses: AvailableClasses)
 
   // TODO use Law for laws
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
