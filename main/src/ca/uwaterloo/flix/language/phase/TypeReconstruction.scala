@@ -109,10 +109,12 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp(_))
-      TypedAst.Expr.ApplyClo(e, es, subst(tvar), subst(evar), loc)
+    case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val lambdaBodyEff = e1.tpe.arrowEffectType
+      val eff = Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc)
+      TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)

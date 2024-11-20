@@ -444,9 +444,9 @@ object Verifier {
           checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
-    case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
-      val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
+    case Expr.ApplyClo(exp1, exp2, _, tpe, _, loc) =>
+      val lamType1 = visitExpr(exp1)
+      val lamType2 = MonoType.Arrow(List(visitExpr(exp2)), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 

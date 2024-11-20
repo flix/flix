@@ -67,9 +67,9 @@ object VarOffsets {
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps, i0)
 
-    case Expr.ApplyClo(exp, args, _, _, _, _) =>
-      val i = visitExp(exp, i0)
-      visitExps(args, i)
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
+      val i = visitExp(exp1, i0)
+      visitExp(exp2, i)
 
     case Expr.ApplyDef(_, args, _, _, _, _) =>
       visitExps(args, i0)

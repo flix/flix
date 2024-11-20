@@ -100,11 +100,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Lambda(List(p), e, t, loc)
 
-    case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
+    case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyClo(e, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.ApplyClo(e1, e2, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
