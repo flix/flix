@@ -984,11 +984,11 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined name: '${qn.toString}' in use."
+    def summary: String = s"Undefined '${qn.toString}' use."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined name '${red(qn.toString)} in use'.
+      s""">> Undefined '${red(qn.toString)}' use.
          |
          |${code(loc, "name not found")}
          |
