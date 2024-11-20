@@ -44,11 +44,11 @@ object CodeActionProvider {
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
-      mkImportJava(name, uri, ap)
+    case ResolutionError.UndefinedJvmClass(_, ap, _, loc) if overlaps(range, loc) =>
+      mkImportJava(loc.text, uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(loc.text, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -57,7 +57,7 @@ object CodeActionProvider {
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(loc.text, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -325,9 +325,10 @@ object CodeActionProvider {
     *   import java.io.File
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] =
-    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
-      val completePath = path.mkString(".") + "." + name
+  private def mkImportJava(name: Option[String], uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val className = name.getOrElse(return Nil).split('.').head
+    root.availableClasses.byClass.get(className).toList.flatten.map { path =>
+      val completePath = path.mkString(".") + "." + className
       CodeAction(
         title = s"import '$completePath'",
         kind = CodeActionKind.QuickFix,
@@ -335,6 +336,7 @@ object CodeActionProvider {
         command = None
       )
     }
+  }
 
   /**
     * Returns a code action that proposes to create a new struct.
