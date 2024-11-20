@@ -46,7 +46,7 @@ object ResolutionError {
       "Cyclic inheritance: " + pathString
     }
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s"""${code(loc, "cyclic inheritance.")}
          |
@@ -79,7 +79,7 @@ object ResolutionError {
       "Cyclic type aliases: " + pathString
     }
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s"""${code(loc, "Cyclic type aliases.")}
          |
@@ -107,7 +107,7 @@ object ResolutionError {
   case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate associated type definition: $sym."
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
@@ -130,7 +130,7 @@ object ResolutionError {
   case class DuplicateDerivation(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Duplicate derivation '${red(sym.name)}'.
          |
@@ -158,7 +158,7 @@ object ResolutionError {
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
     override def summary: String = " Illegal associated type application."
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Illegal associated type application.
          |
@@ -180,7 +180,7 @@ object ResolutionError {
   case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal non-Java type. Expected class or interface type."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
@@ -200,7 +200,7 @@ object ResolutionError {
   case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
          |
@@ -223,7 +223,7 @@ object ResolutionError {
   case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Illegal type: '${red(tpe.toString)}'.
          |
@@ -241,7 +241,7 @@ object ResolutionError {
   case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Illegal wildcard type: '$ident'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Illegal wildcard type: '$ident'.
          |
@@ -264,7 +264,7 @@ object ResolutionError {
   case class InaccessibleTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -290,7 +290,7 @@ object ResolutionError {
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -316,7 +316,7 @@ object ResolutionError {
   case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Inaccessible alias ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -342,7 +342,7 @@ object ResolutionError {
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -368,7 +368,7 @@ object ResolutionError {
   case class InaccessibleStruct(sym: Symbol.StructSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Struct '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -394,7 +394,7 @@ object ResolutionError {
   case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -420,7 +420,7 @@ object ResolutionError {
   case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -445,7 +445,7 @@ object ResolutionError {
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Inaccessible type alias ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
@@ -471,7 +471,7 @@ object ResolutionError {
   case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Missing associated type definition: $name."
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Missing associated type definition: $name.
          |
@@ -492,7 +492,7 @@ object ResolutionError {
   case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Sealed."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Class '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
@@ -517,7 +517,7 @@ object ResolutionError {
   case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined associated type: '$qn'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined associated type'${red(qn.toString)}'.
          |
@@ -542,7 +542,7 @@ object ResolutionError {
   case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined class '${red(qn.toString)}'.
          |
@@ -568,7 +568,7 @@ object ResolutionError {
   case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined effect '${red(qn.toString)}'.
          |
@@ -595,7 +595,7 @@ object ResolutionError {
   case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined Java class: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined Java class '${red(name)}'.
          |
@@ -627,7 +627,7 @@ object ResolutionError {
   case class UndefinedJvmStaticField(clazz: Class[?], field: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined static field."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
          |
@@ -647,7 +647,7 @@ object ResolutionError {
   case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined kind: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined kind '${red(qn.toString)}'.
          |
@@ -673,7 +673,7 @@ object ResolutionError {
   case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
@@ -701,7 +701,7 @@ object ResolutionError {
   case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
@@ -726,7 +726,7 @@ object ResolutionError {
   case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined operation '${qname.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined operation '${red(qname.toString)}'.
          |
@@ -751,7 +751,7 @@ object ResolutionError {
   case class UndefinedRestrictableTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined restrictable tag: '$tag'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined restrictable tag '${red(tag)}'.
          |
@@ -777,7 +777,7 @@ object ResolutionError {
   case class UndefinedRestrictableType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined restrictable type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined restrictable type '${red(qn.toString)}'.
          |
@@ -803,7 +803,7 @@ object ResolutionError {
   case class UndefinedTag(tag: String, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined tag: '$tag'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined tag '${red(tag)}'.
          |
@@ -829,7 +829,7 @@ object ResolutionError {
   case class UndefinedType(qn: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined type '${red(qn.toString)}'.
          |
@@ -854,7 +854,7 @@ object ResolutionError {
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type variable '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined type variable '${red(name)}'.
          |
@@ -877,7 +877,7 @@ object ResolutionError {
   case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Under-applied associated type: ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Under-applied associated type '${red(sym.name)}'.
          |
@@ -901,7 +901,7 @@ object ResolutionError {
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Under-applied type alias '${red(sym.name)}'.
          |
@@ -930,7 +930,7 @@ object ResolutionError {
     /**
       * Returns the formatted error message.
       */
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Mismatched arity.
          |
@@ -956,7 +956,7 @@ object ResolutionError {
   case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Undefined struct"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined struct '${red(name.toString)}'.
          |
@@ -975,7 +975,7 @@ object ResolutionError {
   case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Undefined struct field '$field'$structMessage"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
@@ -999,7 +999,7 @@ object ResolutionError {
   case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Unexpected field '$field' in new struct expression"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Unexpected field '${red(field.toString)}' in new struct expression.
          |
@@ -1020,7 +1020,7 @@ object ResolutionError {
   case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Missing struct field '$field' in new struct expression"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
          |
@@ -1039,7 +1039,7 @@ object ResolutionError {
   case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Struct fields must be initialized in their declaration order"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Struct fields must be initialized in their declaration order.
          |
@@ -1060,7 +1060,7 @@ object ResolutionError {
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Modification of immutable field `${field.name}`."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
          |
@@ -1080,7 +1080,7 @@ object ResolutionError {
   case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Missing handler definition: ${sym.name}"
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
          |
