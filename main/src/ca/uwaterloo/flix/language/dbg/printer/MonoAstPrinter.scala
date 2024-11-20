@@ -88,7 +88,7 @@ object MonoAstPrinter {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(sym, _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(sym, pat, _, _) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
     case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
@@ -123,7 +123,7 @@ object MonoAstPrinter {
     * Returns the [[DocAst.Case]] representation of `caze`.
     */
   private def printCase(caze: MonoAst.Case): DocAst.Case = caze match {
-    case MonoAst.Case(sym, tpe, _) => DocAst.Case(sym, TypePrinter.print(tpe))
+    case MonoAst.Case(sym, tpes, _) => DocAst.Case(sym, tpes.map(TypePrinter.print))
   }
 
   /**
