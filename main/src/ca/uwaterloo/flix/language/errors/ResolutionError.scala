@@ -30,8 +30,6 @@ sealed trait ResolutionError extends CompilationMessage {
 
 object ResolutionError {
 
-  // TODO: Support formatting of ill-kinded types.
-
   /**
     * An error raise to indicate a cycle in the trait hierarchy.
     *
@@ -151,6 +149,27 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a `new` struct expression provides an extra unknown field.
+    *
+    * @param sym   the symbol of the struct.
+    * @param field the name of the extra field.
+    * @param loc   the location where the error occurred.
+    */
+  case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Unexpected field '$field' in new struct expression"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Unexpected field '${red(field.toString)}' in new struct expression.
+         |
+         |>> The struct '${cyan(sym.toString)}' does not declare a '${red(field.toString)}' field.
+         |
+         |${code(loc, "unexpected field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that an associated type application is not allowed.
     *
     * @param loc the location where the error occurred.
@@ -169,6 +188,28 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "An associated type may only be applied to a variable."
     })
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order.
+    *
+    * @param providedFields the order in which fields were initialized.
+    * @param expectedFields the order in which fields were declared.
+    * @param loc            the location where the error occurred
+    */
+  case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Struct fields must be initialized in their declaration order"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Struct fields must be initialized in their declaration order.
+         |
+         |Expected: ${expectedFields.mkString(", ")}
+         |Actual  : ${providedFields.mkString(", ")}
+         |
+         |${code(loc, "incorrect order")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -215,24 +256,6 @@ object ResolutionError {
   }
 
   /**
-    * Illegal Type Error.
-    *
-    * @param tpe the illegal type.
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Illegal type."
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Illegal type: '${red(tpe.toString)}'.
-         |
-         |${code(loc, "illegal type.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that a wildcard type is used in an illegal position.
     *
     * @param ident the name of the wildcard type.
@@ -252,6 +275,26 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "Wildcard types (types starting with an underscore) are not allowed in this position."
     })
+  }
+
+  /**
+    * An error raised to indicate a `put` struct expression attempts to modify an immutable field.
+    *
+    * @param field the immutable field.
+    * @param loc   the location where the error occurred.
+    */
+  case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Modification of immutable field `${field.name}`."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
+         |
+         |${code(loc, "immutable field")}
+         |
+         |Mark the field as 'mut' in the declaration of the struct.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -383,7 +426,6 @@ object ResolutionError {
     })
   }
 
-
   /**
     * Inaccessible Restrictable Enum Error.
     *
@@ -461,6 +503,36 @@ object ResolutionError {
 
   }
 
+  /**
+    * An error indicating the number of effect operation arguments does not match the expected number.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments.
+    * @param actual   the actual number of arguments.
+    * @param loc      the location where the error occurred.
+    */
+  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Mismatched arity.
+         |
+         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
+         |but ${Grammar.n_are(actual)} provided here.
+         |
+         |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 
   /**
     * An error raised to indicate a missing associated type definition.
@@ -480,6 +552,45 @@ object ResolutionError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a handler is missing a definition.
+    *
+    * @param sym the symbol of the missing definition.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing handler definition: ${sym.name}"
+
+    override def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
+         |
+         |${code(loc, "missing handler definition")}
+         |
+         |Add a handler definition for ${sym.name}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression is missing a field.
+    *
+    * @param sym   the symbol of the struct.
+    * @param field the name of the missing fields.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing struct field '$field' in new struct expression"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
+         |
+         |${code(loc, "missing field")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -530,32 +641,6 @@ object ResolutionError {
       import formatter.*
       s"${underline("Tip:")} Possible typo or non-existent associated type?"
     })
-  }
-
-  /**
-    * Undefined Class Error.
-    *
-    * @param qn  the unresolved class.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class: '${qn.toString}'."
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined class '${red(qn.toString)}'.
-         |
-         |${code(loc, "class not found")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent class?"
-    })
-
   }
 
   /**
@@ -616,7 +701,6 @@ object ResolutionError {
     }
   }
 
-
   /**
     * An error raised to indicate that a static field name was not found.
     *
@@ -635,7 +719,6 @@ object ResolutionError {
          |""".stripMargin
     }
   }
-
 
   /**
     * Undefined Kind Error.
@@ -820,6 +903,32 @@ object ResolutionError {
   }
 
   /**
+    * Undefined Class Error.
+    *
+    * @param qn  the unresolved class.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined class: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined class '${red(qn.toString)}'.
+         |
+         |${code(loc, "class not found")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Possible typo or non-existent class?"
+    })
+
+  }
+
+  /**
     * Undefined Type Error.
     *
     * @param qn  the name.
@@ -917,37 +1026,6 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation arguments does not match the expected number.
-    *
-    * @param op       the effect operation symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
-    * @param loc      the location where the error occurred.
-    */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
-
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Mismatched arity.
-         |
-         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
-         |but ${Grammar.n_are(actual)} provided here.
-         |
-         |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an undefined struct in a `new S { ... } @ r` expression.
     *
     * @param name the name of the undefined struct.
@@ -986,108 +1064,6 @@ object ResolutionError {
     private def structMessage: String = struct match {
       case Some(sym) => s" on struct '$sym'."
       case None => ""
-    }
-  }
-
-  /**
-    * An error raised to indicate a `new` struct expression provides an extra unknown field.
-    *
-    * @param sym   the symbol of the struct.
-    * @param field the name of the extra field.
-    * @param loc   the location where the error occurred.
-    */
-  case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Unexpected field '$field' in new struct expression"
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Unexpected field '${red(field.toString)}' in new struct expression.
-         |
-         |>> The struct '${cyan(sym.toString)}' does not declare a '${red(field.toString)}' field.
-         |
-         |${code(loc, "unexpected field")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a `new` struct expression is missing a field.
-    *
-    * @param sym   the symbol of the struct.
-    * @param field the name of the missing fields.
-    * @param loc   the location where the error occurred.
-    */
-  case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Missing struct field '$field' in new struct expression"
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
-         |
-         |${code(loc, "missing field")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order.
-    *
-    * @param providedFields the order in which fields were initialized.
-    * @param expectedFields the order in which fields were declared.
-    * @param loc            the location where the error occurred
-    */
-  case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Struct fields must be initialized in their declaration order"
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Struct fields must be initialized in their declaration order.
-         |
-         |Expected: ${expectedFields.mkString(", ")}
-         |Actual  : ${providedFields.mkString(", ")}
-         |
-         |${code(loc, "incorrect order")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a `put` struct expression attempts to modify an immutable field.
-    *
-    * @param field the immutable field.
-    * @param loc   the location where the error occurred.
-    */
-  case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Modification of immutable field `${field.name}`."
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
-         |
-         |${code(loc, "immutable field")}
-         |
-         |Mark the field as 'mut' in the declaration of the struct.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a handler is missing a definition.
-    *
-    * @param sym   the symbol of the missing definition.
-    * @param loc   the location where the error occurred.
-    */
-  case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Missing handler definition: ${sym.name}"
-
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
-         |
-         |${code(loc, "missing handler definition")}
-         |
-         |Add a handler definition for ${sym.name}
-         |""".stripMargin
     }
   }
 
