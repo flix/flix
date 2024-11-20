@@ -186,10 +186,10 @@ object TypeReconstruction {
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)
 
-    case KindedAst.Expr.Scope(sym, regionVar, exp, evar, loc) =>
+    case KindedAst.Expr.Scope(sym, regionVar, exp, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
-      val eff = subst(evar)
+      val eff = e.eff
       val bnd = TypedAst.Binder(sym, eff)
       TypedAst.Expr.Scope(bnd, regionVar, e, tpe, eff, loc)
 
