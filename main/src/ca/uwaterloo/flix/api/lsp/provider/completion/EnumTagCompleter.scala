@@ -42,7 +42,7 @@ object EnumTagCompleter {
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (_, cas) => EnumTagCompletion(enumSym, cas, cas.tpes.length)
+          case (_, cas) => EnumTagCompletion(enumSym, cas)
         }
     }
   }
@@ -70,7 +70,7 @@ object EnumTagCompleter {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, cas, cas.tpes.length))
+              Some(EnumTagCompletion(enumSym, cas))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
