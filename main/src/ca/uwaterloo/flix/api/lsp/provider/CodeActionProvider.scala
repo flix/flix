@@ -288,7 +288,7 @@ object CodeActionProvider {
     root.availableClasses.byClass.get(name).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + name
       CodeAction(
-        title = s"import '$path'",
+        title = s"import '$completePath'",
         kind = CodeActionKind.QuickFix,
         edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"import $completePath"))))),
         command = None
