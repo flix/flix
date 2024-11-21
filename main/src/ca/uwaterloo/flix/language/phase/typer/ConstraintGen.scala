@@ -516,7 +516,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+      case Expr.ArrayLit(exps, exp, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -525,9 +525,8 @@ object ConstraintGen {
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc)
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
