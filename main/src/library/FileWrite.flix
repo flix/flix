@@ -79,6 +79,13 @@ pub eff FileWrite {
     ///
     def mkDirs(d: String): Unit
 
+    ///
+    /// Creates the directory `d` inside the system's temporary directory.
+    ///
+    /// Returns the path to the directory.
+    ///
+    def mkTempDir(d: String): String
+
 }
 
 mod FileWrite {
@@ -229,6 +236,24 @@ mod FileWrite {
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+            }
+
+            def mkTempDir(d, k) = region rc {
+                try {
+                    let tempdir = match Environment.getTemporaryDirectory() {
+                        case Some(dir)  => Ok(dir)
+                        case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
+                    };
+                    Result.flatMap(root ->  {
+                        let arr = List.toArray(rc, d :: Nil);
+                        let path = Paths.get(root, arr).normalize();
+                        Files.createDirectory(path, (...{}: Vector[FileAttribute]));
+                        k(path.toString())
+                    }, tempdir)
+                } catch {
+                    case ex: IOException =>
+                        unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
         }
