@@ -119,7 +119,8 @@ object JvmName {
     replace("#", Flix.Delimiter + "hashtag").
     replace(":", Flix.Delimiter + "colon").
     replace("?", Flix.Delimiter + "question").
-    replace("@", Flix.Delimiter + "at")
+    replace("@", Flix.Delimiter + "at").
+    replace(".", Flix.Delimiter + "dot")
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

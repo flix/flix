@@ -22,14 +22,12 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
-import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.*
+import org.objectweb.asm.Opcodes.*
 
 /**
   * Generate expression
@@ -543,12 +541,20 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val taggedType = BackendObjType.Tagged
-
+        val MonoType.Enum(_, targs) = exp.tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val terms = cases(sym)
         compileExpr(exp)
-        val ins = {
-          import BytecodeInstructions.*
-          CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+        val ins = terms match {
+          case Nil =>
+            import BytecodeInstructions.*
+            // nullary tags reuse the same object
+            GETSTATIC(BackendObjType.NullTag(sym).SingletonField) ~
+            ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+          case _ =>
+            import BytecodeInstructions.*
+            val taggedType = BackendObjType.Tagged
+            CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
             BackendObjType.Tagged.mkTagName(sym) ~ BackendObjType.Tagged.eqTagName()
         }
         ins(new BytecodeInstructions.F(mv))
@@ -556,11 +562,16 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val MonoType.Enum(_, targs) = tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val tagType = BackendObjType.Tag(cases(sym))
-
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
+        val terms = cases(sym)
+        val ins = terms match {
+          case Nil =>
+            import BytecodeInstructions.*
+            val tagType = BackendObjType.NullTag(sym)
+            GETSTATIC(tagType.SingletonField)
+          case _ =>
+            import BytecodeInstructions.*
+            val tagType = BackendObjType.Tag(terms)
+            NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
             composeN(exps.zipWithIndex.map {
               case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
@@ -572,6 +583,7 @@ object GenExpression {
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        // BackendObjType.NullTag cannot happen here since terms must be non-empty.
         val tagType = BackendObjType.Tag(cases(sym))
 
         compileExpr(exp)
@@ -1019,7 +1031,7 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           NEW(lazyType.jvmName) ~
-            DUP() ~  cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
+          DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
         }
         ins(new BytecodeInstructions.F(mv))
 
