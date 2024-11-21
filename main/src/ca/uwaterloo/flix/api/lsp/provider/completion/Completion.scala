@@ -186,6 +186,14 @@ sealed trait Completion {
         kind     = CompletionItemKind.Variable
       )
 
+    case Completion.LocalScopeCompletion(name) =>
+      CompletionItem(
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
+        kind     = CompletionItemKind.Variable
+      )
+
     case Completion.DefCompletion(decl) =>
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
@@ -552,6 +560,13 @@ object Completion {
     *            about the symbol.
     */
   case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
+
+  /**
+    * Represents a LocalScope completion
+    *
+    * @param name the name of the variable to complete.
+    */
+  case class LocalScopeCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
