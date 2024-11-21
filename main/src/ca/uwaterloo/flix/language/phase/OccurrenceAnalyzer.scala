@@ -146,6 +146,7 @@ object OccurrenceAnalyzer {
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
+        case Occur.Dangerous => true
       }
     }
     val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn.sym, Dead), oi.size, isSelfRecursive)
@@ -170,6 +171,7 @@ object OccurrenceAnalyzer {
       val (es, o) = visitExps(sym0, exps)
       val o1 = op match {
         case AtomicOp.Is(sym) if sym.name == "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne()
+        case AtomicOp.Cast => o.copy(defs = o.defs + (sym0 -> Dangerous)).increaseSizeByOne()
         case _ => o.increaseSizeByOne()
       }
       (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, purity, loc), o1)
@@ -322,6 +324,8 @@ object OccurrenceAnalyzer {
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (Dangerous, _) => Dangerous
+    case (_, Dangerous) => Dangerous
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -334,6 +338,8 @@ object OccurrenceAnalyzer {
     * ManyBranches can be IfThenElse, Branches, and SelectChannel
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (Dangerous, _) => Dangerous
+    case (_, Dangerous) => Dangerous
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
