@@ -366,7 +366,8 @@ object Kinder {
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.ApplyClo(exp1, exp2, tvar, loc)
+      val arrowEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ApplyClo(exp1, exp2, tvar, arrowEff, loc)
 
     case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
@@ -499,7 +500,8 @@ object Kinder {
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.ArrayLit(exps, exp, tvar, loc)
+      val reg = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayLit(exps, exp, tvar, reg, loc)
 
     case ResolvedAst.Expr.ArrayNew(exp10, exp20, exp30, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)

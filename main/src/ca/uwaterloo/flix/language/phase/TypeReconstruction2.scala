@@ -107,11 +107,10 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, loc) =>
+    case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, arrowEff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val lambdaBodyEff = Type.eraseAliases(e1.tpe).arrowEffectType
-      val eff = Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc)
+      val eff = Type.mkUnion(subst(arrowEff) :: e1.eff :: e2.eff :: Nil, loc)
       TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
@@ -278,12 +277,11 @@ object TypeReconstruction2 {
       val eff = r.eff
       TypedAst.Expr.RecordRestrict(field, r, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.ArrayLit(exps, exp, tvar, loc) =>
+    case KindedAst.Expr.ArrayLit(exps, exp, tvar, reg, loc) =>
       val es = exps.map(visitExp(_))
       val e = visitExp(exp)
       val tpe = subst(tvar)
-      val Type.Apply(Type.Cst(TypeConstructor.RegionToStar, _), regionVar, _) = e.tpe
-      val eff = Type.mkUnion(Type.mkUnion(es.map(_.eff), loc), e.eff, regionVar, loc)
+      val eff = Type.mkUnion(Type.mkUnion(es.map(_.eff), loc), e.eff, subst(reg), loc)
       TypedAst.Expr.ArrayLit(es, e, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>

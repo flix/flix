@@ -73,15 +73,16 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.ApplyClo(exp1, exp2, tvar, loc) =>
+      case Expr.ApplyClo(exp1, exp2, tvar, arrowEff, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star, loc)
         val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
+        c.unifyType(arrowEff, lambdaBodyEff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(tpe1, Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), loc)
         c.unifyType(tvar, lambdaBodyType, loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc)
+        val resEff = Type.mkUnion(arrowEff :: eff1 :: eff2 :: Nil, loc)
         (resTpe, resEff)
 
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
@@ -515,8 +516,9 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.ArrayLit(exps, exp, tvar, loc) =>
+      case Expr.ArrayLit(exps, exp, tvar, reg, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
+        c.unifyType(regionVar, reg, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
