@@ -525,9 +525,9 @@ object ConstraintGen {
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar :: eff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
@@ -539,9 +539,9 @@ object ConstraintGen {
         c.expectType(expected = regionType, actual = tpe1, loc)
         c.expectType(expected = Type.Int32, actual = tpe3, exp3.loc)
         c.unifyType(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
       case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
@@ -550,9 +550,9 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff1, eff2, loc)
         (resTpe, resEff)
 
       case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
@@ -565,19 +565,18 @@ object ConstraintGen {
         c.expectType(expected = arrayType, actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
         c.expectType(expected = elmVar, actual = tpe3, exp3.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, eff3, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = Type.Unit
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
-      case Expr.ArrayLength(exp, evar, loc) =>
+      case Expr.ArrayLength(exp, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
-        c.unifyType(evar, eff, loc)
         val resTpe = Type.Int32
-        val resEff = evar
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
@@ -597,9 +596,9 @@ object ConstraintGen {
           }
         }
         c.unifyType(Type.mkRegion(regionVar, loc), regionTpe, region.loc)
-        c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar :: regionEff :: fieldEffs, loc)
         (resTpe, resEff)
 
       case Expr.StructGet(exp, field, tvar, evar, loc) =>
@@ -610,9 +609,9 @@ object ConstraintGen {
         c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
         val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
-        c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
+        c.unifyType(evar, accessEffect, exp.loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(accessEffect, eff, loc)
         (resTpe, resEff)
 
       case Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
@@ -623,29 +622,27 @@ object ConstraintGen {
         val (_, fieldTpe) = instantiatedFieldTpes(field.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
-        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.VectorLit(exps, tvar, evar, loc) =>
+      case Expr.VectorLit(exps, tvar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyAllTypes(tpes, loc)
         val tpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkVector(tpe, loc), loc)
-        c.unifyType(evar, Type.mkUnion(effs, loc), loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
+      case Expr.VectorLoad(exp1, exp2, tvar, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, loc), loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
       case Expr.VectorLength(exp, loc) =>
@@ -673,25 +670,18 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
-        // A cast expression is sound; the type system ensures the declared type is correct.
+        val (tpe, eff) = visitExp(exp)
         cast match {
           case CheckedCastType.TypeCast =>
-            // We replace the type with a fresh variable to allow any type.
-            // The validity of this cast is checked in the Safety phase.
-            val (_, eff) = visitExp(exp)
-            c.unifyType(evar, eff, loc)
-            val resTpe = tvar
-            val resEff = evar
-            (resTpe, resEff)
-
+            // Let tvar be unconstrained - the validity of this cast is checked in Safety.
+            c.unifyType(evar, Type.mkPure(loc), loc)
           case CheckedCastType.EffectCast =>
-            // We union the effect with a fresh variable to allow unifying with a "larger" effect.
-            val (tpe, eff) = visitExp(exp)
+            // Let evar be unconstrained - this allows a larger effect than inferred.
             c.unifyType(tvar, tpe, loc)
-            val resTpe = tvar
-            val resEff = Type.mkUnion(eff, evar, loc)
-            (resTpe, resEff)
         }
+        val resTpe = tvar
+        val resEff = Type.mkUnion(evar, eff, loc)
+        (resTpe, resEff)
 
       case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
         // An unchecked cast expression is unsound; the type system assumes the declared type and effect are correct.
@@ -732,11 +722,10 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+      case KindedAst.Expr.Throw(exp, tvar, loc) =>
         val (_, eff) = visitExp(exp)
-        c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
         val resultTpe = tvar
-        val resultEff = evar
+        val resultEff = Type.mkUnion(eff, Type.IO, loc)
         (resultTpe, resultEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
@@ -795,9 +784,9 @@ object ConstraintGen {
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, baseEff, loc)
         val resTpe = clazzTpe
-        val resEff = evar
+        val resEff = Type.mkUnion(baseEff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
@@ -809,9 +798,9 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
+        c.unifyType(evar, baseEff, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(baseEff :: eff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
@@ -822,21 +811,20 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, baseEff, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(baseEff :: effs, loc)
         (resTpe, resEff)
 
-      case Expr.GetField(exp, fieldName, jvar, tvar, evar, loc) =>
+      case Expr.GetField(exp, fieldName, jvar, tvar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ ι ~ JvmFieldMethod(τ, m)
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(exp.loc, tpe, fieldName), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
-        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(Type.IO, eff, loc)
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, _) =>
@@ -889,9 +877,9 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = receiverTpe, actual = tpe, exp.loc)
         c.unifyType(tvar, elmTpe, loc)
-        c.unifyType(evar, Type.mkUnion(eff, regionVar, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff, loc)
         (resTpe, resEff)
 
       case Expr.PutChannel(exp1, exp2, evar, loc) =>
@@ -902,9 +890,9 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = senderTpe, actual = tpe1, exp1.loc)
         c.expectType(expected = elmTpe, actual = tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = Type.mkUnit(loc)
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, eff1, eff2, loc)
         (resTpe, resEff)
 
       case Expr.SelectChannel(rules, default, tvar, evar, loc) =>
@@ -912,9 +900,9 @@ object ConstraintGen {
         val (ruleTypes, ruleEffs) = rules.map(visitSelectRule(_, regionVar)).unzip
         val (defaultType, eff2) = visitDefaultRule(default, loc)
         c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
-        c.unifyType(evar, Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc), loc)
+        c.unifyType(evar, regionVar, loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>

@@ -527,8 +527,7 @@ object Kinder {
 
     case ResolvedAst.Expr.ArrayLength(exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ArrayLength(exp, evar, loc)
+      KindedAst.Expr.ArrayLength(exp, loc)
 
     case ResolvedAst.Expr.StructNew(sym, fields0, region0, loc) =>
       val fields = fields0.map {
@@ -557,15 +556,13 @@ object Kinder {
     case ResolvedAst.Expr.VectorLit(exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.VectorLit(exps, tvar, evar, loc)
+      KindedAst.Expr.VectorLit(exps, tvar, loc)
 
     case ResolvedAst.Expr.VectorLoad(exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.VectorLoad(exp1, exp2, tvar, evar, loc)
+      KindedAst.Expr.VectorLoad(exp1, exp2, tvar, loc)
 
     case ResolvedAst.Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp, kenv0, taenv, henv0, root)
@@ -611,8 +608,7 @@ object Kinder {
     case ResolvedAst.Expr.Throw(exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc)
-      val evar = Type.freshVar(Kind.Eff, loc)
-      KindedAst.Expr.Throw(exp, tvar, evar, loc)
+      KindedAst.Expr.Throw(exp, tvar, loc)
 
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
       // create a fresh type variable for the handling block (same as resume result)
@@ -657,8 +653,7 @@ object Kinder {
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.GetField(exp, fieldName, jvar, tvar, evar, loc)
+      KindedAst.Expr.GetField(exp, fieldName, jvar, tvar, loc)
 
     case ResolvedAst.Expr.PutField(field, clazz, exp10, exp20, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)

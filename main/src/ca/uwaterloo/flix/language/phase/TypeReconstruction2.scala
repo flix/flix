@@ -280,7 +280,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp(_))
       val e = visitExp(exp)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar) :: e.eff :: es.map(_.eff), loc)
       TypedAst.Expr.ArrayLit(es, e, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
@@ -288,59 +288,59 @@ object TypeReconstruction2 {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, e3.eff, loc)
       TypedAst.Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, loc)
       TypedAst.Expr.ArrayLoad(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, e3.eff, loc)
       TypedAst.Expr.ArrayStore(e1, e2, e3, eff, loc)
 
-    case KindedAst.Expr.ArrayLength(exp, evar, loc) =>
+    case KindedAst.Expr.ArrayLength(exp, loc) =>
       val e = visitExp(exp)
-      val eff = subst(evar)
+      val eff = e.eff
       TypedAst.Expr.ArrayLength(e, eff, loc)
 
     case KindedAst.Expr.StructNew(sym, fields0, region0, tvar, evar, loc) =>
       val region = visitExp(region0)
       val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar) :: region.eff :: fields.map(_._2.eff), loc)
       TypedAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
     case KindedAst.Expr.StructGet(exp0, field, tvar, evar, loc) =>
       val e = visitExp(exp0)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar), e.eff, loc)
       TypedAst.Expr.StructGet(e, field, tpe, eff, loc)
 
     case KindedAst.Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, loc)
       TypedAst.Expr.StructPut(e1, field, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
+    case KindedAst.Expr.VectorLit(exps, tvar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.VectorLit(es, tpe, eff, loc)
 
-    case KindedAst.Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
+    case KindedAst.Expr.VectorLoad(exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.VectorLength(exp, loc) =>
@@ -357,16 +357,10 @@ object TypeReconstruction2 {
       TypedAst.Expr.InstanceOf(e1, clazz, loc)
 
     case KindedAst.Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
-      cast match {
-        case CheckedCastType.TypeCast =>
-          val e = visitExp(exp)
-          val tpe = subst(tvar)
-          TypedAst.Expr.CheckedCast(cast, e, tpe, e.eff, loc)
-        case CheckedCastType.EffectCast =>
-          val e = visitExp(exp)
-          val eff = Type.mkUnion(e.eff, subst(evar), loc)
-          TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
-      }
+      val e = visitExp(exp)
+      val tpe = subst(tvar)
+      val eff = Type.mkUnion(subst(evar), e.eff, loc)
+      TypedAst.Expr.CheckedCast(cast, e, tpe, eff, loc)
 
     case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Constant.Null, _), _, _, tvar, loc) =>
       val t = subst(tvar)
@@ -414,10 +408,10 @@ object TypeReconstruction2 {
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+    case KindedAst.Expr.Throw(exp, tvar, loc) =>
       val e = visitExp(exp)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.Throw(e, tpe, eff, loc)
 
     case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
@@ -443,7 +437,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar) :: es.map(_.eff), loc)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
@@ -456,7 +450,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar) :: e.eff :: es.map(_.eff), loc)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
@@ -468,7 +462,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(subst(evar) :: es.map(_.eff), loc)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
@@ -476,11 +470,11 @@ object TypeReconstruction2 {
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.GetField(exp, _, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.GetField(exp, _, jvar, tvar, loc) =>
       val e = visitExp(exp)
       val fieldType = subst(tvar)
       val jvarType = subst(jvar)
-      val eff = subst(evar)
+      val eff = Type.mkUnion(Type.IO, e.eff, loc)
       jvarType match {
         case Type.Cst(TypeConstructor.JvmField(field), loc) =>
           TypedAst.Expr.GetField(field, e, fieldType, eff, loc)
@@ -519,13 +513,15 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.GetChannel(e, subst(tvar), subst(evar), loc)
+      val eff = Type.mkUnion(subst(evar), e.eff, loc)
+      TypedAst.Expr.GetChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.PutChannel(exp1, exp2, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
-      TypedAst.Expr.PutChannel(e1, e2, tpe, subst(evar), loc)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, loc)
+      TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
@@ -535,8 +531,11 @@ object TypeReconstruction2 {
           val bnd = TypedAst.Binder(sym, c.tpe)
           TypedAst.SelectChannelRule(bnd, c, b)
       }
+      val ruleEffs = rs.map(rule => Type.mkUnion(rule.chan.eff, rule.exp.eff, rule.exp.loc))
       val d = default.map(visitExp(_))
-      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)
+      val dEff = d.map(_.eff).getOrElse(Type.Pure)
+      val eff = Type.mkUnion(subst(evar) :: dEff :: ruleEffs, loc)
+      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), eff, loc)
 
     case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

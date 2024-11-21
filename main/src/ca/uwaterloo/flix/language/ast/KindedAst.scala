@@ -140,7 +140,7 @@ object KindedAst {
 
     case class ArrayStore(base: Expr, index: Expr, elm: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(base: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
     case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -148,9 +148,9 @@ object KindedAst {
 
     case class StructPut(exp1: Expr, sym: StructFieldSymUse, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class VectorLit(exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class VectorLit(exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class VectorLoad(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class VectorLoad(exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -168,7 +168,7 @@ object KindedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class Throw(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class Throw(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, eff: EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -180,7 +180,7 @@ object KindedAst {
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
