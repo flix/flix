@@ -278,11 +278,11 @@ object TypeReconstruction {
       val eff = r.eff
       TypedAst.Expr.RecordRestrict(field, r, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.ArrayLit(exps, exp, tvar, reg, loc) =>
+    case KindedAst.Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))
       val e = visitExp(exp)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(Type.mkUnion(es.map(_.eff), loc), e.eff, subst(reg), loc)
+      val eff = subst(evar)
       TypedAst.Expr.ArrayLit(es, e, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>

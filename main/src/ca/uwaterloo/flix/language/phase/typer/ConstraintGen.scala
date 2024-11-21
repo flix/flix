@@ -516,9 +516,8 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.ArrayLit(exps, exp, tvar, reg, loc) =>
+      case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        c.unifyType(regionVar, reg, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
