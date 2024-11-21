@@ -39,7 +39,7 @@ object Inliner1 {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
-    MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    MonoAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private type InVar = Symbol.VarSym
@@ -210,7 +210,7 @@ object Inliner1 {
       case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps.map(visit)
         op match {
-          case AtomicOp.Untag(_) =>
+          case AtomicOp.Untag(_, _) =>
             val List(e) = es
             // Inline expressions of the form Untag(Tag(e)) => e
             e match {
@@ -475,9 +475,10 @@ object Inliner1 {
       case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
         (MonoAst.Pattern.Cst(cst, tpe, loc), Map.empty)
 
-      case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) =>
-        val (p, varSubst) = visit(pat)
-        (MonoAst.Pattern.Tag(sym, p, tpe, loc), varSubst)
+      case OccurrenceAst1.Pattern.Tag(sym, pats, tpe, loc) =>
+        val (ps, varSubsts) = pats.map(visit).unzip
+        val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
+        (MonoAst.Pattern.Tag(sym, ps, tpe, loc), varSubst)
 
       case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
         val (ps, varSubsts) = pats.map(visit).unzip
@@ -717,9 +718,10 @@ object Inliner1 {
       case MonoAst.Pattern.Cst(cst, tpe, loc) =>
         (MonoAst.Pattern.Cst(cst, tpe, loc), Map.empty)
 
-      case MonoAst.Pattern.Tag(sym, pat, tpe, loc) =>
-        val (p, subst) = refreshPattern(pat)
-        (MonoAst.Pattern.Tag(sym, p, tpe, loc), subst)
+      case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
+        val (ps, substs) = pats.map(refreshPattern).unzip
+        val subst = substs.reduceLeft(_ ++ _)
+        (MonoAst.Pattern.Tag(sym, ps, tpe, loc), subst)
 
       case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
         val (ps, substs) = pats.map(refreshPattern).unzip

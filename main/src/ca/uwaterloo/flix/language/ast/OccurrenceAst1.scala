@@ -25,8 +25,8 @@ object OccurrenceAst1 {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: Spec, exp: Expr, context: DefContext, loc: SourceLocation)
@@ -126,7 +126,7 @@ object OccurrenceAst1 {
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tag(sym: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -139,7 +139,7 @@ object OccurrenceAst1 {
     }
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 

@@ -53,7 +53,7 @@ object Optimizer1 {
       val effects = ParOps.parMapValues(root.effects)(visitEffect)
       val enums = ParOps.parMapValues(root.enums)(visitEnum)
       val structs = ParOps.parMapValues(root.structs)(visitStruct)
-      MonoAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+      MonoAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
     }
 
     private def visitDef(def0: OccurrenceAst1.Def): MonoAst.Def = def0 match {
@@ -277,9 +277,9 @@ object Optimizer1 {
         case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
           MonoAst.Pattern.Cst(cst, tpe, loc)
 
-        case OccurrenceAst1.Pattern.Tag(sym, pat, tpe, loc) =>
-          val p = visit(pat)
-          MonoAst.Pattern.Tag(sym, p, tpe, loc)
+        case OccurrenceAst1.Pattern.Tag(sym, pats, tpe, loc) =>
+          val ps = pats.map(visit)
+          MonoAst.Pattern.Tag(sym, ps, tpe, loc)
 
         case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
           val ps = pats.map(visit)

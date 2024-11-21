@@ -86,7 +86,7 @@ object OccurrenceAnalyzer1 {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
-    OccurrenceAst1.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    OccurrenceAst1.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   /**
@@ -178,7 +178,7 @@ object OccurrenceAnalyzer1 {
   }
 
   private def visitEnumCase(case0: MonoAst.Case): OccurrenceAst1.Case = case0 match {
-    case MonoAst.Case(sym, tpe, loc) => OccurrenceAst1.Case(sym, tpe, loc)
+    case MonoAst.Case(sym, tpes, loc) => OccurrenceAst1.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct0: MonoAst.Struct): OccurrenceAst1.Struct = struct0 match {
@@ -437,9 +437,10 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Pattern.Cst(cst, tpe, loc) =>
         (OccurrenceAst1.Pattern.Cst(cst, tpe, loc), Set.empty)
 
-      case MonoAst.Pattern.Tag(sym, pat, tpe, loc) =>
-        val (p, syms) = visit(pat)
-        (OccurrenceAst1.Pattern.Tag(sym, p, tpe, loc), syms)
+      case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
+        val (ps, listOfSyms) = pats.map(visit).unzip
+        val syms = Set.from(listOfSyms.flatten)
+        (OccurrenceAst1.Pattern.Tag(sym, ps, tpe, loc), syms)
 
       case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
         val (ps, listOfSyms) = pats.map(visit).unzip
