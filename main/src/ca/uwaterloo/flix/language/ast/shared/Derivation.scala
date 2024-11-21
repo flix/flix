@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Matthew Lutze
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Source}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
-case object ReadAst {
-  case class Root(sources: Map[Source, Unit], availableClasses: AvailableClasses)
-}
+/**
+  * Represents a derivation on an enum (e.g. `enum E with Eq`).
+  */
+case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)

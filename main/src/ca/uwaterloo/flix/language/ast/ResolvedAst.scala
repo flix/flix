@@ -25,7 +25,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, AvailableClasses.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
@@ -37,9 +37,9 @@ object ResolvedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, Declaration.TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   taOrder: List[Symbol.TypeAliasSym],
-                  entryPoint: Option[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  names: MultiMap[List[String], String])
+                  availableClasses: AvailableClasses)
 
   // TODO use Law for laws
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
@@ -65,9 +65,9 @@ object ResolvedAst {
 
     case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class Case(sym: Symbol.CaseSym, tpes: List[UnkindedType], loc: SourceLocation) extends Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[UnkindedType], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -100,7 +100,7 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -135,9 +135,9 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class Tag(sym: CaseSymUse, exp: Expr, loc: SourceLocation) extends Expr
+    case class Tag(sym: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -255,7 +255,7 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(sym: CaseSymUse, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -281,7 +281,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
+    case class Tag(sym: RestrictableCaseSymUse, pats: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 

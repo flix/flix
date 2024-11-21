@@ -31,7 +31,7 @@ object ImportCompleter {
     * Gets completions from a java path prefix
     */
   private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
-    root.names(prefix).map(clazz => {
+    root.availableClasses.byPackage(prefix).map(clazz => {
       val label = prefix match {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")

@@ -31,7 +31,7 @@ mod Test.Exp.ChooseStar.Simple {
         let star = choose* Expr.Cst(2i8) {
             case Expr.Cst(_) => Expr.Var("tmp")
             case Expr.Not(_) => Expr.Var("tmp")
-            case Expr.Xor(_) => Expr.Var("tmp")
+            case Expr.Xor(_, _) => Expr.Var("tmp")
         };
         choose star {
             case Expr.Var(_) => true

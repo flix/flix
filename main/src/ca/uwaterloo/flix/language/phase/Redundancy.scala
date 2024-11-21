@@ -133,7 +133,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
+        case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
@@ -337,9 +337,9 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
@@ -557,14 +557,14 @@ object Redundancy {
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
 
-    case Expr.Tag(CaseSymUse(sym, _), exp, _, _, _) =>
-      val us = visitExp(exp, env0, rc)
+    case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
+      val us = visitExps(exps, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       us
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -1022,7 +1022,9 @@ object Redundancy {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(Binder(sym, _), _, _) => Set(sym)
     case Pattern.Cst(_, _, _) => Set.empty
-    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
+    }
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
@@ -1084,7 +1086,7 @@ object Redundancy {
     * Returns `true` if the given symbol `sym` is the entry point.
     */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    root.entryPoint.contains(sym)
+    root.mainEntryPoint.contains(sym)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.

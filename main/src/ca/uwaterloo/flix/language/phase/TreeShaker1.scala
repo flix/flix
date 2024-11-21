@@ -26,17 +26,11 @@ import ca.uwaterloo.flix.util.ParOps
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *
-  * (a) The main function is always reachable.
-  *
-  * (b) A function marked with @test is reachable.
-  *
-  * (c) Appears in a function which itself is reachable.
-  *
-  * (d) Is an instance of a trait whose signature(s) appear in a reachable function.
-  * Monomorph will erase unused instances so this phase must check all instances
-  * for the monomorph to work.
-  *
+  *   - (a) is an entry point (main / tests / exports).
+  *   - (c) appears in a function which itself is reachable.
+  *   - (d) is an instance of a trait whose signature(s) appear in a reachable function.
+  *     [[Monomorpher]] will erase unused instances so this phase must check all instances
+  *     for the [[Monomorpher]] to work.
   */
 object TreeShaker1 {
 
@@ -44,8 +38,8 @@ object TreeShaker1 {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
-    // Compute the symbols that are always reachable.
-    val initReach = initReachable(root)
+    // Entry points are always reachable.
+    val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
@@ -60,23 +54,12 @@ object TreeShaker1 {
   }
 
   /**
-    * Returns the symbols that are always reachable.
-    */
-  private def initReachable(root: Root): Set[ReachableSym] = {
-    root.reachable.map(ReachableSym.DefnSym.apply)
-  }
-
-  /**
     * Returns the symbols reachable from the given symbol `sym`.
     *
     * This includes three types of symbols:
-    *
-    * (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
-    *
-    * (b) The trait symbol of a reachable sig symbol.
-    *
-    * (c) Every expression in a trait instance of a reachable trait symbol is reachable.
-    *
+    *   - (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
+    *   - (b) The trait symbol of a reachable sig symbol.
+    *   - (c) Every expression in a trait instance of a reachable trait symbol is reachable.
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
     case ReachableSym.DefnSym(defnSym) =>
@@ -106,8 +89,8 @@ object TreeShaker1 {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)

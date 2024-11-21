@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
 
-  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+  val empty: Root = Root(Map.empty, None, AvailableClasses.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses)
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -227,7 +227,7 @@ object DesugaredAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -362,11 +362,11 @@ object DesugaredAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(mod: Modifiers, name: Name.Label, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
 

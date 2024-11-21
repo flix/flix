@@ -40,18 +40,4 @@ object ClassList {
     *
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
-
-  /**
-    * The map from class name to class path, built from TheList
-    *
-    * Example:
-    *  - List -> { java.util.List }
-    *  - File -> { java.io.File }
-    */
-  val TheMap: MultiMap[String, String] =
-    ClassList.TheList.foldLeft(MultiMap.empty[String, String]) { (map, path) =>
-      val className = path.stripSuffix(".java").split("/").last
-      val formattedPath = path.stripSuffix(".java").replace("/", ".")
-      map + (className, formattedPath)
-    }
 }

@@ -51,7 +51,7 @@ object SimplifiedAstPrinter {
     case Lambda(fparams, exp, _, _) => DocAst.Expr.Lambda(fparams.map(printFormalParam), print(exp))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expr.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case ApplyClo(exp, args, _, _, _) => DocAst.Expr.ApplyClo(print(exp), args.map(print), None)
+    case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)), None)
     case ApplyDef(sym, exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(printVarSym(sym), exps.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))

@@ -93,11 +93,8 @@ object PredDeps {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc + visitExp(exp)
-      }
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.ApplyDef(_, exps, _, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
@@ -160,11 +157,15 @@ object PredDeps {
       }
       dg1 + dg2
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledPrecedenceGraph.empty) {

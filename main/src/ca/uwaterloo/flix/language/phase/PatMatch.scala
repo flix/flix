@@ -141,7 +141,7 @@ object PatMatch {
       case Expr.Use(_, _, exp, _) => visitExp(exp)
       case Expr.Cst(_, _, _) => Nil
       case Expr.Lambda(_, body, _, _) => visitExp(body)
-      case Expr.ApplyClo(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
+      case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.ApplySig(_, exps, _, _, _, _) => exps.flatMap(visitExp)
@@ -171,8 +171,8 @@ object PatMatch {
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
 
-      case Expr.Tag(_, exp, _, _, _) => visitExp(exp)
-      case Expr.RestrictableTag(_, exp, _, _, _) => visitExp(exp)
+      case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
+      case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
       case Expr.RecordEmpty(_, _) => Nil
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
@@ -406,20 +406,11 @@ object PatMatch {
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exp, _, _) =>
+      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exps, _, _) =>
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
-              exp match {
-                // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
-                // => Tuple. If there are arguments, we add them to the matrix
-                case TypedAst.Pattern.Tuple(elms, _, _) =>
-                  (elms ::: pat.tail) :: acc
-                case TypedAst.Pattern.Cst(Constant.Unit, _, _) =>
-                  pat.tail :: acc
-                case _ =>
-                  (exp :: pat.tail) :: acc
-              }
+              (exps ::: pat.tail) :: acc
             } else {
               acc
             }
@@ -541,10 +532,10 @@ object PatMatch {
       case a: TyCon.Record => a :: xs
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
-      // other enums
+      // other cases
       case TyCon.Enum(sym, _) => {
         root.enums(sym.enumSym).cases.map {
-          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(countTypeArgs(caze.tpe))(TyCon.Wild))
+          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
         }
       }.toList ::: xs
 
@@ -595,48 +586,6 @@ object PatMatch {
       case _ => labels.length + 1
     }
     case TyCon.RecordEmpty => 0
-  }
-
-  /**
-    * @param tpe the type to count
-    * @return the number of arguments a type constructor expects
-    */
-  // TODO: Maybe we can use the kind instead?
-  private def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
-    case None => 0
-    case Some(TypeConstructor.Unit) => 0
-    case Some(TypeConstructor.Bool) => 0
-    case Some(TypeConstructor.Char) => 0
-    case Some(TypeConstructor.Float32) => 0
-    case Some(TypeConstructor.Float64) => 0
-    case Some(TypeConstructor.BigDecimal) => 0
-    case Some(TypeConstructor.Int8) => 0
-    case Some(TypeConstructor.Int16) => 0
-    case Some(TypeConstructor.Int32) => 0
-    case Some(TypeConstructor.Int64) => 0
-    case Some(TypeConstructor.BigInt) => 0
-    case Some(TypeConstructor.Str) => 0
-    case Some(TypeConstructor.Regex) => 0
-    case Some(TypeConstructor.Relation) => 0
-    case Some(TypeConstructor.Lattice) => 0
-    case Some(TypeConstructor.RecordRowEmpty) => 0
-    case Some(TypeConstructor.SchemaRowEmpty) => 0
-    case Some(TypeConstructor.Record) => 0
-    case Some(TypeConstructor.Schema) => 0
-    case Some(TypeConstructor.Arrow(length)) => length
-    case Some(TypeConstructor.Array) => 1
-    case Some(TypeConstructor.Vector) => 1
-    case Some(TypeConstructor.Lazy) => 1
-    case Some(TypeConstructor.Enum(_, _)) => 0
-    case Some(TypeConstructor.Struct(_, _)) => 0
-    case Some(TypeConstructor.Native(_)) => 0
-    case Some(TypeConstructor.Tuple(l)) => l
-    case Some(TypeConstructor.RecordRowExtend(_)) => 2
-    case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case Some(TypeConstructor.Error(_, _)) => 0
-    case _ =>
-      // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
-      throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
   }
 
   /**
@@ -716,13 +665,7 @@ object PatMatch {
     case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Tag(CaseSymUse(sym, _), pat, _, _) =>
-      val args = pat match {
-        case Pattern.Cst(Constant.Unit, _, _) => List.empty[TyCon]
-        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
-        case a => List(patToCtor(a))
-      }
-      TyCon.Enum(sym, args)
+    case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
