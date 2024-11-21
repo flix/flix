@@ -42,7 +42,7 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
+    case BackendObjType.NullaryTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
@@ -331,7 +331,7 @@ object BackendObjType {
 
   sealed trait TagType extends BackendObjType with Generatable
 
-  case class NullTag(sym: Symbol.CaseSym) extends TagType {
+  case class NullaryTag(sym: Symbol.CaseSym) extends TagType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 

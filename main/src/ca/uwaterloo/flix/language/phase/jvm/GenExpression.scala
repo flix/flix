@@ -549,7 +549,7 @@ object GenExpression {
           case Nil =>
             import BytecodeInstructions.*
             // nullary tags have their own distinct class
-            INSTANCEOF(BackendObjType.NullTag(sym).jvmName)
+            INSTANCEOF(BackendObjType.NullaryTag(sym).jvmName)
           case _ =>
             import BytecodeInstructions.*
             val taggedType = BackendObjType.Tagged
@@ -565,7 +565,7 @@ object GenExpression {
         val ins = terms match {
           case Nil =>
             import BytecodeInstructions.*
-            val tagType = BackendObjType.NullTag(sym)
+            val tagType = BackendObjType.NullaryTag(sym)
             GETSTATIC(tagType.SingletonField)
           case _ =>
             import BytecodeInstructions.*
@@ -582,7 +582,7 @@ object GenExpression {
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        // BackendObjType.NullTag cannot happen here since terms must be non-empty.
+        // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
         val tagType = BackendObjType.Tag(cases(sym))
 
         compileExpr(exp)

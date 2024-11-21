@@ -378,7 +378,7 @@ object JvmOps {
       case (acc, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
         tags.foldLeft(acc) {
-          case (acc, (sym, Nil)) => acc + BackendObjType.NullTag(sym)
+          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym)
           case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
         }
       case (acc, _) => acc
