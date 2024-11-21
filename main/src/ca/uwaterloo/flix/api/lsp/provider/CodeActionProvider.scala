@@ -47,7 +47,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
-    case ResolutionError.UndefinedName(qn, ap, env, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
       mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
