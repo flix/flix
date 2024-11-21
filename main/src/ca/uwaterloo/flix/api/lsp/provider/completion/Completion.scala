@@ -158,15 +158,15 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(name, path, ap, documentation) =>
+    case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
       CompletionItem(
-        label               = name,
+        label               = label,
         sortText            = Priority.toSortText(Priority.Highest, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
-        additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
+        additionalTextEdits = if (shouldImport) List(Completion.mkTextEdit(ap, s"import $path")) else Nil
       )
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
@@ -543,8 +543,9 @@ object Completion {
     * @param path          the path of the completion.
     * @param ap            the anchor position.
     * @param documentation a human-readable string that represents a doc-comment.
+    * @param shouldImport  a boolean indicating whether the completion should be imported.
     */
-  case class AutoImportCompletion(name: String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String], shouldImport: Boolean) extends Completion
 
   /**
     * Represents a Snippet completion
