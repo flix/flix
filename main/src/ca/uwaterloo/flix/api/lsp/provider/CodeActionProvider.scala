@@ -330,6 +330,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkImportJava(qn: Name.QName, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    // If `qn.namespace.idents.headOption` returns None, we use the `qn.ident.name`. Otherwise, we use the head of the namespace
+    // In the example above, headOption would return Some("Math"), so we will use "Math"
     val className = qn.namespace.idents.headOption.map(_.name).getOrElse(qn.ident.name)
     root.availableClasses.byClass.get(className).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + className
