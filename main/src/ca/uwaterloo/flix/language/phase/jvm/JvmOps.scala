@@ -373,12 +373,13 @@ object JvmOps {
   /**
     * Returns the set of erased tag types in `types` without searching recursively.
     */
-  def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Tag] =
-    types.foldLeft(Set.empty[BackendObjType.Tag]) {
+  def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+    types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.Enum(sym, targs)) =>
-        val tags = instantiateEnum(root.enums(sym), targs).values
+        val tags = instantiateEnum(root.enums(sym), targs)
         tags.foldLeft(acc) {
-          case (acc, tagElms) => acc + BackendObjType.Tag(tagElms)
+          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym)
+          case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
         }
       case (acc, _) => acc
     }
