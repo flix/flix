@@ -548,9 +548,8 @@ object GenExpression {
         val ins = terms match {
           case Nil =>
             import BytecodeInstructions.*
-            // nullary tags reuse the same object
-            GETSTATIC(BackendObjType.NullTag(sym).SingletonField) ~
-            ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+            // nullary tags have their own distinct class
+            INSTANCEOF(BackendObjType.NullTag(sym).jvmName)
           case _ =>
             import BytecodeInstructions.*
             val taggedType = BackendObjType.Tagged
