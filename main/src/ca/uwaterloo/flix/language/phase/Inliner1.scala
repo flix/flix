@@ -720,12 +720,12 @@ object Inliner1 {
 
       case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
         val (ps, substs) = pats.map(refreshPattern).unzip
-        val subst = substs.reduceLeft(_ ++ _)
+        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
         (MonoAst.Pattern.Tag(sym, ps, tpe, loc), subst)
 
       case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
         val (ps, substs) = pats.map(refreshPattern).unzip
-        val subst = substs.reduceLeft(_ ++ _)
+        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
         (MonoAst.Pattern.Tuple(ps, tpe, loc), subst)
 
       case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
