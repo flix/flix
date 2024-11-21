@@ -554,26 +554,30 @@ object GenExpression {
         ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Tag(sym) =>
-        val List(exp) = exps
-
-        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
+        val MonoType.Enum(_, targs) = tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val tagType = BackendObjType.Tag(cases(sym))
 
         val ins = {
           import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(0))
+            composeN(exps.zipWithIndex.map {
+              case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
+            })
         }
         ins(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.Untag(_) =>
+      case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
-        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
+        val MonoType.Enum(_, targs) = exp.tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val tagType = BackendObjType.Tag(cases(sym))
 
         compileExpr(exp)
         val ins = {
           import BytecodeInstructions.*
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(0))
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
         }
         ins(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))

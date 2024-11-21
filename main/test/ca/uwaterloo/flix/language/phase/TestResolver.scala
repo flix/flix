@@ -499,6 +499,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   test("UndefinedName.03") {
     val input =
+      """
+        |import java.util.Objects
+        |import java.lang.Object
+        |
+        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedUse.01") {
+    val input =
       s"""
          |mod A {
          |    trait C[a] {
@@ -512,19 +524,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
-  }
-
-  test("UndefinedName.04") {
-    val input =
-      """
-        |import java.util.Objects
-        |import java.lang.Object
-        |
-        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedUse](result)
   }
 
   test("UndefinedEffect.01") {

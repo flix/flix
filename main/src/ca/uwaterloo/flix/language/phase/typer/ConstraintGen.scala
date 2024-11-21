@@ -444,20 +444,21 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
+      case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-        // The tag type is a function from the type of variant to the type of the enum.
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        // The tag type is a function from the types of terms to the type of the enum.
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
+        c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitRestrictableTag(e)
+      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
@@ -515,7 +516,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+      case Expr.ArrayLit(exps, exp, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -524,9 +525,8 @@ object ConstraintGen {
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
         val resTpe = tvar
-        val resEff = evar
+        val resEff = Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc)
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
@@ -985,17 +985,17 @@ object ConstraintGen {
 
       case KindedAst.Pattern.Cst(cst, _) => Type.constantType(cst)
 
-      case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
+      case KindedAst.Pattern.Tag(symUse, pats, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
-        val tpe = visitPattern(pat)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        val tpes = pats.map(visitPattern)
+        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        c.unifyType(tagType, constructorBase, loc)
         tvar
-
 
       case KindedAst.Pattern.Tuple(elms, loc) =>
         val tpes = elms.map(visitPattern)

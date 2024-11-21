@@ -7,9 +7,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for safety errors.
-  */
+/** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
   val kind: String = "Safety Error"
 }
@@ -53,8 +51,6 @@ object SafetyError {
          |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -77,8 +73,6 @@ object SafetyError {
          |To  : ${formatJavaType(to)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -101,8 +95,6 @@ object SafetyError {
          |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -125,8 +117,6 @@ object SafetyError {
          |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -149,8 +139,6 @@ object SafetyError {
          |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -338,9 +326,6 @@ object SafetyError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
@@ -349,9 +334,9 @@ object SafetyError {
   }
 
   /**
-    * Unable to derive Sendable error
+    * Unable to derive Sendable error.
     *
-    * @param tpe the type that is not sendable.
+    * @param tpe the type that is not Sendable.
     * @param loc the location where the error occurred.
     */
   case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError {
@@ -397,8 +382,6 @@ object SafetyError {
          |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -446,8 +429,6 @@ object SafetyError {
          |${code(loc, s"attempted to handle the ${sym.name} effect here.")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -572,31 +553,30 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that an object derivation includes a method that doesn't exist in the superclass being implemented.
+    * An error raised to indicate that an object derivation includes a method that doesn't exist
+    * in the superclass being implemented.
     *
     * @param clazz The type of superclass
-    * @param name  The name of the extra method.
+    * @param name  The name of the undefined method.
     * @param loc   The source location of the method.
     */
-  case class NewObjectUnreachableMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'"
+  case class NewObjectUndefinedMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}' with the written signature"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
+      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}' with the written signature
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
     }
   }
 
-  /**
-    * Format a Java type suitable for method implementation.
-    */
-  private def formatJavaType(t: java.lang.Class[?]): String = {
-    if (t.isPrimitive || t.isArray)
-      Type.getFlixType(t).toString
+  /** Returns the string representation of `tpe`. */
+  private def formatJavaType(tpe: java.lang.Class[?]): String = {
+    if (tpe.isPrimitive || tpe.isArray)
+      Type.getFlixType(tpe).toString
     else
-      s"##${t.getName}"
+      tpe.getName
   }
 }

@@ -36,7 +36,7 @@ object KindedAst {
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
-                  entryPoint: Option[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   availableClasses: AvailableClasses)
 
@@ -118,9 +118,9 @@ object KindedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Tag(sym: CaseSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Tag(sym: CaseSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -132,7 +132,7 @@ object KindedAst {
 
     case class RecordRestrict(label: Name.Label, rest: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -238,7 +238,7 @@ object KindedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: CaseSymUse, pat: Pattern, tvar: Type.Var, loc: SourceLocation) extends Pattern
+    case class Tag(sym: CaseSymUse, pats: List[Pattern], tvar: Type.Var, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -297,11 +297,11 @@ object KindedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class StructField(mod: Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

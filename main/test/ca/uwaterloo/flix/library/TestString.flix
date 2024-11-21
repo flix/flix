@@ -1584,35 +1584,35 @@ def foldRight209(): Bool =
 
 @test
 def unfold01(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 0) == "aaaaa"
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 0) == "aaaaa"
 
 @test
 def unfold02(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 1) == "aaaa"
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 1) == "aaaa"
 
 @test
 def unfold03(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 2) == "aaa"
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 2) == "aaa"
 
 @test
 def unfold04(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 3) == "aa"
+    String.unfold(x -> if (x < 5) Some((('a', x+1))) else None, 3) == "aa"
 
 @test
 def unfold05(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 4) == "a"
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 4) == "a"
 
 @test
 def unfold06(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 5) == ""
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 5) == ""
 
 @test
 def unfold07(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 6) == ""
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 6) == ""
 
 @test
 def unfold08(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, -1) == "aaaaaa"
+    String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, -1) == "aaaaaa"
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //
@@ -1767,35 +1767,35 @@ def unfoldWithIter06(): Bool = region rc {
 
 @test
 def unfoldString01(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 0) == "ab.ab.ab.ab.ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 0) == "ab.ab.ab.ab.ab."
 
 @test
 def unfoldString02(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 1) == "ab.ab.ab.ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 1) == "ab.ab.ab.ab."
 
 @test
 def unfoldString03(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 2) == "ab.ab.ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 2) == "ab.ab.ab."
 
 @test
 def unfoldString04(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 3) == "ab.ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 3) == "ab.ab."
 
 @test
 def unfoldString05(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 4) == "ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 4) == "ab."
 
 @test
 def unfoldString06(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("", x+1) else None, 5) == ""
+    String.unfoldString(x -> if (x < 5) Some(("", x+1)) else None, 5) == ""
 
 @test
 def unfoldString07(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 6) == ""
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 6) == ""
 
 @test
 def unfoldString08(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, -1) == "ab.ab.ab.ab.ab.ab."
+    String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, -1) == "ab.ab.ab.ab.ab.ab."
 
 
 /////////////////////////////////////////////////////////////////////////////
