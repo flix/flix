@@ -177,15 +177,6 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(sym, tpe) =>
-      CompletionItem(
-        label    = sym.text,
-        sortText = Priority.toSortText(Priority.Low, sym.text),
-        textEdit = TextEdit(context.range, sym.text),
-        detail   = Some(FormatType.formatType(tpe)(flix)),
-        kind     = CompletionItemKind.Variable
-      )
-
     case Completion.LocalScopeCompletion(name) =>
       CompletionItem(
         label    = name,
@@ -551,15 +542,6 @@ object Completion {
    * @param documentation a human-readable string that represents a doc-comment.
    */
   case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
-
-  /**
-    * Represents a Var completion
-    *
-    * @param sym the Var symbol.
-    * @param tpe the type for FormatType to provide a human-readable string with additional information
-    *            about the symbol.
-    */
-  case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
 
   /**
     * Represents a LocalScope completion
