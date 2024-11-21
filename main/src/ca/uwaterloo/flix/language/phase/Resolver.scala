@@ -77,9 +77,9 @@ object Resolver {
     // Get the default uses.
     // Skip over anything we can't find
     // in order to support LibMin/LibNix
-    val defaultUses: ListMap[String, Resolution] = ListMap(MapOps.mapValues(DefaultCases) {
+    val defaultUses: LocalScope = LocalScope(ListMap(MapOps.mapValues(DefaultCases) {
       case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration.apply)
-    })
+    }))
 
     val usesVal = root.uses.map {
       case (ns, uses0) =>
@@ -151,7 +151,7 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the root.
     */
-  private def semiResolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+  private def semiResolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, defaultUses, root)) {
         case aliases => aliases.foldLeft(acc) {
@@ -164,7 +164,7 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the unit.
     */
-  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
+  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
@@ -187,7 +187,7 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the namespace.
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, _) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
@@ -213,7 +213,7 @@ object Resolver {
     *
     * Type aliases within the type are given temporary placeholders.
     */
-  private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
+  private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: LocalScope, ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns, root)
       flatMapN(tparamsVal) {
@@ -233,7 +233,7 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  private def resolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+  private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
     flatMapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
         flatMapN(findResolutionOrder(semiResolved.values)) {
@@ -316,7 +316,7 @@ object Resolver {
   /**
     * Performs name resolution on the compilation unit.
     */
-  private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: ListMap[String, Resolution])(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
+  private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
@@ -332,7 +332,7 @@ object Resolver {
   /**
     * Performs name resolution on the declaration.
     */
-  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], ns0: Name.NName, defaultUses: ListMap[String, Resolution])(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
+  private def visitDecl(decl: NamedAst.Declaration, env0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
@@ -398,7 +398,7 @@ object Resolver {
   /**
     * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
     */
-  private def resolveConstraint(c0: NamedAst.Constraint, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+  private def resolveConstraint(c0: NamedAst.Constraint, env0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
     case NamedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = resolveConstraintParams(cparams0, env0)
       val env = env0 ++ mkConstraintParamEnv(cparams)
@@ -412,7 +412,7 @@ object Resolver {
   /**
     * Resolves all the traits in the given root.
     */
-  private def resolveTrait(c0: NamedAst.Declaration.Trait, env0: ListMap[String, Resolution], ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Trait, ResolutionError] = c0 match {
+  private def resolveTrait(c0: NamedAst.Declaration.Trait, env0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Trait, ResolutionError] = c0 match {
     case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, laws0, loc) =>
       val tparamVal = resolveTypeParam(tparam0, env0, ns0, root)
       flatMapN(tparamVal) {
@@ -435,7 +435,7 @@ object Resolver {
   /**
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
-  private def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
+  private def resolveInstance(i0: NamedAst.Declaration.Instance, env0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann, mod, trt0, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
@@ -463,7 +463,7 @@ object Resolver {
   /**
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
-  private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
+  private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val tconstr = ResolvedAst.TraitConstraint(TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
@@ -481,7 +481,7 @@ object Resolver {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
+  private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], env0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -499,7 +499,7 @@ object Resolver {
   /**
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
-  private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+  private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], env0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -527,7 +527,7 @@ object Resolver {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  private def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
+  private def resolveEnum(e0: NamedAst.Declaration.Enum, env0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives0, cases0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -545,7 +545,7 @@ object Resolver {
   /**
     * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
     */
-  private def resolveStruct(s0: NamedAst.Declaration.Struct, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
+  private def resolveStruct(s0: NamedAst.Declaration.Struct, env0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, _, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -561,7 +561,7 @@ object Resolver {
   /**
     * Performs name resolution on the given restrictable enum `e0` in the given namespace `ns0`.
     */
-  private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
+  private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives0, cases0, loc) =>
       val indexVal = resolveTypeParam(index0, env0, ns0, root)
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
@@ -579,7 +579,7 @@ object Resolver {
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
+  private def resolveCase(caze0: NamedAst.Declaration.Case, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
     case NamedAst.Declaration.Case(sym, tpes0, loc) =>
       val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
       mapN(tpesVal) {
@@ -590,7 +590,7 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(idx: Int, field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
@@ -601,7 +601,7 @@ object Resolver {
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
+  private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
     case NamedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
       mapN(tpesVal) {
@@ -612,7 +612,7 @@ object Resolver {
   /**
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
-  private def resolveEffect(eff0: NamedAst.Declaration.Effect, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
+  private def resolveEffect(eff0: NamedAst.Declaration.Effect, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new env
       val opsVal = traverse(ops0)(resolveOp(_, env, taenv, ns0, root))
@@ -624,7 +624,7 @@ object Resolver {
   /**
     * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
     */
-  private def resolveOp(op0: NamedAst.Declaration.Op, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Op, ResolutionError] = op0 match {
+  private def resolveOp(op0: NamedAst.Declaration.Op, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Op, ResolutionError] = op0 match {
     case NamedAst.Declaration.Op(sym, spec0, loc) =>
       val specVal = resolveSpec(spec0, None, env, taenv, ns0, root)
       mapN(specVal) {
@@ -635,7 +635,7 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, tpe0, loc) =>
       val tparamVal = resolveTypeParam(tparam0, env, ns0, root)
       val kind = resolveKind(kind0, env, ns0, root)
@@ -649,7 +649,7 @@ object Resolver {
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
     flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, trt, env, taenv, ns0, root))) {
       case xs =>
         // Computes a map from associated type symbols to their definitions.
@@ -701,7 +701,7 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // For now we don't add any tvars from the args. We should have gotten those directly from the instance
@@ -735,7 +735,7 @@ object Resolver {
       }
   }
 
-  private def resolveKind(kind0: NamedAst.Kind, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Kind = kind0 match {
+  private def resolveKind(kind0: NamedAst.Kind, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Kind = kind0 match {
     case NamedAst.Kind.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
@@ -771,7 +771,7 @@ object Resolver {
   /**
     * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
     */
-  private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp0 match {
+  private def resolveExp(exp0: NamedAst.Expr, env0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp0 match {
     case NamedAst.Expr.Ambiguous(qname, loc) =>
       // Special Case: We must check if we have a static field access, e.g. Math.PI
       if (qname.namespace.idents.length == 1) {
@@ -1523,7 +1523,7 @@ object Resolver {
   /**
     * Resolve the application expression, performing currying over the subexpressions.
     */
-  private def visitApplyClo(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
+  private def visitApplyClo(exp: NamedAst.Expr.Apply, env0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
     case NamedAst.Expr.Apply(exp0, exps0, loc) =>
       val expVal = resolveExp(exp0, env0)
       val expsVal = traverse(exps0)(resolveExp(_, env0))
@@ -1588,7 +1588,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
@@ -1615,7 +1615,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
@@ -1642,7 +1642,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
@@ -1669,7 +1669,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.Do(OpSymUse(op.sym, innerLoc), args, outerLoc)
@@ -1686,7 +1686,7 @@ object Resolver {
     *   - ` Cons(a,b)  ===> Cons(a, b)`
     *   - `Cons(a,b,c) ===> Cons(a, b)(c)`
     */
-  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
@@ -1703,7 +1703,7 @@ object Resolver {
     *   - ` Add(a,b)  ===> Add(a, b)`
     *   - `Add(a,b,c) ===> Add(a, b)(c)`
     */
-  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
@@ -1714,7 +1714,7 @@ object Resolver {
   /**
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
-  private def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
+  private def visitJvmMethod(method: NamedAst.JvmMethod, env0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
     case NamedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
       flatMapN(fparamsVal) {
@@ -1733,7 +1733,7 @@ object Resolver {
     * Performs name resolution on the handler that handles `eff` with rules `rules0`.
     */
   // TODO: the nested Result/Validation is ugly here, but should be fixed by the Validation removal refactoring
-  private def visitHandler(eff: Name.QName, rules0: List[NamedAst.HandlerRule], env0: ListMap[String, Resolution])(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffectSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
+  private def visitHandler(eff: Name.QName, rules0: List[NamedAst.HandlerRule], env0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffectSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
     lookupEffect(eff, env0, ns, root) match {
       case Result.Ok(decl) =>
         checkEffectIsAccessible(decl, ns, eff.loc)
@@ -1775,7 +1775,7 @@ object Resolver {
     * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
     * Constraint patterns do not introduce new variables.
     */
-  private def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
+  private def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
 
     def visit(p0: NamedAst.Pattern): ResolvedAst.Pattern = p0 match {
       case NamedAst.Pattern.Wild(loc) =>
@@ -1835,7 +1835,7 @@ object Resolver {
   /**
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
-  private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
+  private def resolvePattern(pat0: NamedAst.Pattern, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedAst.Pattern = {
 
     def visit(p0: NamedAst.Pattern): ResolvedAst.Pattern = p0 match {
       case NamedAst.Pattern.Wild(loc) =>
@@ -1883,7 +1883,7 @@ object Resolver {
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
     */
-  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, env: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
     case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
       val tsVal = traverse(terms)(t => resolveExp(t, env))
       mapN(tsVal) {
@@ -1894,7 +1894,7 @@ object Resolver {
   /**
     * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
     */
-  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, env: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
     case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(resolvePatternInConstraint(_, env, ns0, root))
       Validation.Success(ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
@@ -1920,7 +1920,7 @@ object Resolver {
   /**
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
     */
-  private def resolveFormalParam(fparam0: NamedAst.FormalParam, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
+  private def resolveFormalParam(fparam0: NamedAst.FormalParam, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
     val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
     mapN(tVal) {
       t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
@@ -1930,7 +1930,7 @@ object Resolver {
   /**
     * Performs name resolution on the given predicate parameter `pparam0` in the given namespace `ns0`.
     */
-  private def resolvePredicateParam(pparam0: NamedAst.PredicateParam, env: ListMap[String, Resolution])(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
+  private def resolvePredicateParam(pparam0: NamedAst.PredicateParam, env: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
     case NamedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       Validation.Success(ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
@@ -1944,7 +1944,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
     */
-  private def resolveTypeParam(tparam0: NamedAst.TypeParam, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
+  private def resolveTypeParam(tparam0: NamedAst.TypeParam, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
     case tparam: NamedAst.TypeParam.Kinded => resolveKindedTypeParam(tparam, env, ns0, root)
     case tparam: NamedAst.TypeParam.Unkinded => Validation.Success(resolveUnkindedTypeParam(tparam))
     case tparam: NamedAst.TypeParam.Implicit => throw InternalCompilerException("unexpected implicit tparam", tparam.loc)
@@ -1953,7 +1953,7 @@ object Resolver {
   /**
     * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
     */
-  private def resolveKindedTypeParam(tparam0: NamedAst.TypeParam.Kinded, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
+  private def resolveKindedTypeParam(tparam0: NamedAst.TypeParam.Kinded, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
     case NamedAst.TypeParam.Kinded(name, tpe, kind0, loc) =>
       val kind = resolveKind(kind0, env, ns0, root)
       Validation.Success(ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc))
@@ -1969,7 +1969,7 @@ object Resolver {
   /**
     * Performs name resolution on the given implicit type parameter `tparam0` in the given namespace `ns0`.
     */
-  private def resolveImplicitTypeParam(tparam0: NamedAst.TypeParam, env0: ListMap[String, Resolution]): Option[ResolvedAst.TypeParam] = tparam0 match {
+  private def resolveImplicitTypeParam(tparam0: NamedAst.TypeParam, env0: LocalScope): Option[ResolvedAst.TypeParam] = tparam0 match {
     case NamedAst.TypeParam.Implicit(name, tpe, loc) =>
       // Check if the tparam is in the environment
       env0(name.name) collectFirst {
@@ -1987,7 +1987,7 @@ object Resolver {
   /**
     * Performs name resolution on the given constraint parameter.
     */
-  private def resolveConstraintParam(cparam0: NamedAst.ConstraintParam, env0: ListMap[String, Resolution]): Option[ResolvedAst.ConstraintParam] = cparam0 match {
+  private def resolveConstraintParam(cparam0: NamedAst.ConstraintParam, env0: LocalScope): Option[ResolvedAst.ConstraintParam] = cparam0 match {
     case NamedAst.ConstraintParam(sym, loc) =>
       // Check if the cparam is in the environment
       env0(sym.text) collectFirst {
@@ -2003,7 +2003,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  private def resolveTypeParams(tparams0: List[NamedAst.TypeParam], env0: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[List[ResolvedAst.TypeParam], ResolutionError] = {
+  private def resolveTypeParams(tparams0: List[NamedAst.TypeParam], env0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[List[ResolvedAst.TypeParam], ResolutionError] = {
     // Isolate the implicit type params: these are allowed to have redundancies.
     val (impTparams0, expTparams0) = tparams0.partition {
       case _: NamedAst.TypeParam.Implicit => true
@@ -2023,14 +2023,14 @@ object Resolver {
   /**
     * Performs name resolution on the given constraint parameters `cparams0`.
     */
-  private def resolveConstraintParams(cparams0: List[NamedAst.ConstraintParam], env0: ListMap[String, Resolution]): List[ResolvedAst.ConstraintParam] = {
+  private def resolveConstraintParams(cparams0: List[NamedAst.ConstraintParam], env0: LocalScope): List[ResolvedAst.ConstraintParam] = {
     cparams0.flatMap(resolveConstraintParam(_, env0))
   }
 
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Option[ResolvedAst.TraitConstraint], ResolutionError] = tconstr0 match {
+  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Option[ResolvedAst.TraitConstraint], ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
       val optTrait = lookupTrait(trt0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -2048,7 +2048,7 @@ object Resolver {
   /**
     * Performs name resolution on the given equality constraint `econstr0`.
     */
-  private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
+  private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
       val assocVal = lookupAssocType(qname, env, ns0, root)
 
@@ -2065,7 +2065,7 @@ object Resolver {
   /**
     * Performs name resolution on the given supertrait constraint `tconstr0`.
     */
-  private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
+  private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
       val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -2080,7 +2080,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
     val qnames = derives0.traits
     val derives = qnames.flatMap(resolveDerivation(_, env, ns0, root))
     // Check for [[DuplicateDerivation]].
@@ -2102,7 +2102,7 @@ object Resolver {
   /**
     * Performs name resolution on the given of derivation `derive0`.
     */
-  private def resolveDerivation(derive0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Ast.Derivation] = {
+  private def resolveDerivation(derive0: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Ast.Derivation] = {
     lookupTrait(derive0, env, ns0, root).map {
       trt => Ast.Derivation(trt.sym, derive0.loc)
     }
@@ -2111,7 +2111,7 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  private def lookupTraitForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTraitForImplementation(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2137,7 +2137,7 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
+  private def lookupTrait(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2162,7 +2162,7 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedQName = {
+  private def lookupQName(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedQName = {
     // first look in the local env
     val resolutions = tryLookupName(qname, env, ns0, root)
 
@@ -2231,7 +2231,7 @@ object Resolver {
   /**
     * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
+  private def lookupTag(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
     // look up the name
     val matches = tryLookupName(qname, env, ns0, root).collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
@@ -2249,7 +2249,7 @@ object Resolver {
   /**
     * Finds the struct that matches the given name `qname` in the namespace `ns0`.
     */
-  private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
+  private def lookupStruct(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     val matches = tryLookupName(qname, env, ns0, root).collect {
       case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
     }
@@ -2265,7 +2265,7 @@ object Resolver {
   /**
     * Finds the struct field that matches the given name `name` in the namespace `ns0`.
     */
-  private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
+  private def lookupStructField(name: Name.Label, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
     val matches = tryLookupName(Name.mkQName(ns0.parts, "€" + name.name, name.loc), env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
     }
@@ -2290,7 +2290,7 @@ object Resolver {
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
+  private def lookupRestrictableTag(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
     // look up the name
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
@@ -2311,7 +2311,7 @@ object Resolver {
   /**
     * Looks up the restrictable enum name.
     */
-  private def lookupRestrictableEnum(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+  private def lookupRestrictableEnum(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableEnum) => c
     }
@@ -2327,7 +2327,7 @@ object Resolver {
     *
     * Type aliases are given temporary placeholders.
     */
-  private def semiResolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
+  private def semiResolveType(tpe0: NamedAst.Type, wildness: Wildness, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
         lookupTypeVar(ident, wildness, env) match {
@@ -2698,7 +2698,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
     */
-  private def resolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
+  private def resolveType(tpe0: NamedAst.Type, wildness: Wildness, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     val tVal = semiResolveType(tpe0, wildness, env, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
@@ -2756,7 +2756,7 @@ object Resolver {
   /**
     * Looks up the ambiguous type.
     */
-  private def lookupType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
+  private def lookupType(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
     tryLookupName(qname, env, ns0, root).collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         // Case 1: found a type alias
@@ -2785,7 +2785,7 @@ object Resolver {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+  private def lookupTypeAlias(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
@@ -2798,7 +2798,7 @@ object Resolver {
   /**
     * Optionally returns the associated type signature with the given `name` in the given namespace `ns0`.
     */
-  private def lookupAssocType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+  private def lookupAssocType(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
     val symOpt = tryLookupName(qname, env, ns0, root)
 
     symOpt.collectFirst {
@@ -2811,7 +2811,7 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Effect, UndefinedEffect] = {
+  private def lookupEffect(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Effect, UndefinedEffect] = {
     val effOpt = tryLookupName(qname, env, ns0, root).collectFirst {
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff
     }
@@ -2825,7 +2825,7 @@ object Resolver {
   /**
     * Looks up the type variable with the given name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError] = {
+  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
@@ -2848,7 +2848,7 @@ object Resolver {
   /**
     * Returns the list of symbols this name points to, ordered from most closely declared to furthest.
     */
-  private def tryLookupName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
+  private def tryLookupName(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name.
 
@@ -2888,7 +2888,7 @@ object Resolver {
   /**
     * Looks up the qualified name in the given root.
     */
-  private def tryLookupQualifiedName(qname0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
+  private def tryLookupQualifiedName(qname0: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
     // First resolve the root of the qualified name
     val head = qname0.namespace.parts.head
     tryLookupModule(head, env, ns0, root) match {
@@ -2903,7 +2903,7 @@ object Resolver {
   /**
     * Looks up the given module in the root.
     */
-  private def tryLookupModule(name: String, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
+  private def tryLookupModule(name: String, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
     // First see if there's a module with this name imported into our environment
     env(name).collectFirst {
       case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
@@ -2938,7 +2938,7 @@ object Resolver {
   /**
     * Looks up the qualified name in the given root.
     */
-  private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
+  private def lookupQualifiedName(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
       case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, qname.loc))
       case Some(decl) => Validation.Success(decl)
@@ -3276,7 +3276,7 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: String, ns0: Name.NName, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+  private def lookupJvmClass2(className: String, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
     lookupJvmClass(className, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
@@ -3347,7 +3347,7 @@ object Resolver {
     * Resolves the given Use.
     */
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
@@ -3368,7 +3368,7 @@ object Resolver {
   /**
     * Adds the given use or import to the use environment.
     */
-  private def appendUseEnv(env: ListMap[String, Resolution], useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = useOrImport match {
+  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): LocalScope = useOrImport match {
     case Ast.UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
@@ -3380,15 +3380,15 @@ object Resolver {
   /**
     * Adds the given uses and imports to the use environment.
     */
-  private def appendAllUseEnv(env: ListMap[String, Resolution], usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = {
+  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): LocalScope = {
     usesAndImports.foldLeft(env)(appendUseEnv(_, _, root))
   }
 
   /**
     * Creates a use environment from the given type parameters.
     */
-  private def mkTypeParamEnv(tparams: List[ResolvedAst.TypeParam]): ListMap[String, Resolution] = {
-    tparams.foldLeft(ListMap.empty[String, Resolution]) {
+  private def mkTypeParamEnv(tparams: List[ResolvedAst.TypeParam]): LocalScope = {
+    tparams.foldLeft(LocalScope.empty) {
       case (acc, tparam) => acc + (tparam.name.name -> Resolution.TypeVar(tparam.sym))
     }
   }
@@ -3396,8 +3396,8 @@ object Resolver {
   /**
     * Creates a use environment from the given formal parameters.
     */
-  private def mkFormalParamEnv(fparams: List[ResolvedAst.FormalParam]): ListMap[String, Resolution] = {
-    fparams.foldLeft(ListMap.empty[String, Resolution]) {
+  private def mkFormalParamEnv(fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+    fparams.foldLeft(LocalScope.empty) {
       case (acc, fparam) => acc + (fparam.sym.text -> Resolution.Var(fparam.sym))
     }
   }
@@ -3405,8 +3405,8 @@ object Resolver {
   /**
     * Creates an environment from the given constraint parameters.
     */
-  private def mkConstraintParamEnv(cparams: List[ResolvedAst.ConstraintParam]): ListMap[String, Resolution] = {
-    cparams.foldLeft(ListMap.empty[String, Resolution]) {
+  private def mkConstraintParamEnv(cparams: List[ResolvedAst.ConstraintParam]): LocalScope = {
+    cparams.foldLeft(LocalScope.empty) {
       case (acc, cparam) => acc + (cparam.sym.text -> Resolution.Var(cparam.sym))
     }
   }
@@ -3414,7 +3414,7 @@ object Resolver {
   /**
     * Creates an environment from the given spec.
     */
-  private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
+  private def mkSpecEnv(spec: ResolvedAst.Spec): LocalScope = spec match {
     case ResolvedAst.Spec(_, _, _, tparams, fparams, _, _, _, _) =>
       mkTypeParamEnv(tparams) ++ mkFormalParamEnv(fparams)
   }
@@ -3422,29 +3422,29 @@ object Resolver {
   /**
     * Creates an environment from the given pattern.
     */
-  private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
-    case ResolvedAst.Pattern.Wild(_) => ListMap.empty
+  private def mkPatternEnv(pat0: ResolvedAst.Pattern): LocalScope = pat0 match {
+    case ResolvedAst.Pattern.Wild(_) => LocalScope.empty
     case ResolvedAst.Pattern.Var(sym, _) => mkVarEnv(sym)
-    case ResolvedAst.Pattern.Cst(_, _) => ListMap.empty
+    case ResolvedAst.Pattern.Cst(_, _) => LocalScope.empty
     case ResolvedAst.Pattern.Tag(_, pats, _) => mkPatternsEnv(pats)
     case ResolvedAst.Pattern.Tuple(elms, _) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
-    case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
-    case ResolvedAst.Pattern.Error(_) => ListMap.empty
+    case ResolvedAst.Pattern.RecordEmpty(_) => LocalScope.empty
+    case ResolvedAst.Pattern.Error(_) => LocalScope.empty
   }
 
   /**
     * Creates an environment from the given record pattern.
     */
-  private def mkRecordPatternEnv(pats: List[Record.RecordLabelPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
+  private def mkRecordPatternEnv(pats: List[Record.RecordLabelPattern], pat: ResolvedAst.Pattern): LocalScope = {
     mkPatternsEnv(pats.map(_.pat)) ++ mkPatternEnv(pat)
   }
 
   /**
     * Creates an environment from the given patterns.
     */
-  private def mkPatternsEnv(pats: List[ResolvedAst.Pattern]): ListMap[String, Resolution] = {
-    pats.foldLeft(ListMap.empty[String, Resolution]) {
+  private def mkPatternsEnv(pats: List[ResolvedAst.Pattern]): LocalScope = {
+    pats.foldLeft(LocalScope.empty) {
       case (acc, pat) => acc ++ mkPatternEnv(pat)
     }
   }
@@ -3452,29 +3452,29 @@ object Resolver {
   /**
     * Creates an environment from the given local def symbol and formal parameters.
     */
-  private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): ListMap[String, Resolution] = {
-    ListMap.singleton(sym.text, Resolution.LocalDef(sym, fparams))
+  private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+    LocalScope.singleton(sym.text, Resolution.LocalDef(sym, fparams))
   }
 
   /**
     * Creates an environment from the given variable symbol.
     */
-  private def mkVarEnv(sym: Symbol.VarSym): ListMap[String, Resolution] = ListMap.singleton(sym.text, Resolution.Var(sym))
+  private def mkVarEnv(sym: Symbol.VarSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Var(sym))
 
   /**
     * Creates an environment from the given type variable symbol.
     */
-  private def mkTypeVarEnv(sym: Symbol.UnkindedTypeVarSym): ListMap[String, Resolution] = {
+  private def mkTypeVarEnv(sym: Symbol.UnkindedTypeVarSym): LocalScope = {
     sym.text match {
       case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
-      case VarText.SourceText(s) => ListMap.singleton(s, Resolution.TypeVar(sym))
+      case VarText.SourceText(s) => LocalScope.singleton(s, Resolution.TypeVar(sym))
     }
   }
 
   /**
     * Builds a variable environment from the given resolution environment.
     */
-  private def filterToVarEnv(env: ListMap[String, Resolution]): Map[String, Symbol.VarSym] = {
+  private def filterToVarEnv(env: LocalScope): Map[String, Symbol.VarSym] = {
     env.m.flatMap {
       case (name, res) => res.collectFirst {
         case Resolution.Var(sym) => (name, sym)
