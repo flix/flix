@@ -2792,7 +2792,7 @@ object Resolver {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         checkTypeAliasIsAccessible(alias, ns0, qname.loc)
         Validation.Success(alias)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, LocalScope.empty, qname.loc)))
+    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, env, qname.loc)))
   }
 
   /**
@@ -2805,7 +2805,7 @@ object Resolver {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
         getAssocTypeIfAccessible(assoc, ns0, qname.loc)
         Validation.Success(assoc)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, LocalScope.empty, qname.loc)))
+    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, env, qname.loc)))
   }
 
   /**
@@ -2940,7 +2940,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, LocalScope.empty, qname.loc))
+      case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, env, qname.loc))
       case Some(decl) => Validation.Success(decl)
     }
   }
