@@ -252,8 +252,10 @@ mod FileWrite {
                         k(path.toString())
                     }, tempdir)
                 } catch {
-                    case ex: IOException =>
-                        unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
         }
