@@ -239,7 +239,7 @@ object OccurrenceAnalyzer1 {
         val (e, o1) = visit(exp)
         val (es, o2) = visitExps(exps)
         val o3 = combineInfo(o1, o2)
-        val o4 = combineApplyCloInfo(o3, exp)
+        val o4 = combineApplyCloInfo(o3, e)
         (OccurrenceAst1.Expr.ApplyClo(e, es, tpe, eff, loc), increment(o4))
 
       case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
@@ -352,8 +352,8 @@ object OccurrenceAnalyzer1 {
       (es, o2)
     }
 
-    def combineApplyCloInfo(occurInfo0: OccurInfo, exp0: MonoAst.Expr): OccurInfo = exp0 match {
-      case MonoAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
+    def combineApplyCloInfo(occurInfo0: OccurInfo, exp0: OccurrenceAst1.Expr): OccurInfo = exp0 match {
+      case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
         occurInfo0 :+ sym -> Once
       case _ => occurInfo0
     }
