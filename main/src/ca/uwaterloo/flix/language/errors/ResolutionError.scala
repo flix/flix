@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -752,7 +752,7 @@ object ResolutionError {
     * @param env   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -779,7 +779,7 @@ object ResolutionError {
     * @param env   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
