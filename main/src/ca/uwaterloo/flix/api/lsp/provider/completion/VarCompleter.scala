@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher, Lukas Rønn
+ * Copyright 2024 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.shared.Resolution
 
+/**
+  * Provides completions for local scope variables.
+  * Everything that is resolved to Resolution.Var in the LocalScope is considered a local scope variable, including arguments.
+  */
 object VarCompleter {
-  /**
-    * Returns a List of Completion for var.
-    */
-  def getCompletions(context: CompletionContext)(implicit index: Index): Iterable[VarCompletion] = {
-    // Find all local variables in the current uri with a given range.
-    index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
-      case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe)
-      case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.bnd.sym, fparam.tpe)
-    }.filter(comp => matchesVar(comp.sym, context.word))
+  def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] = {
+    val matchingVars = err.env.m.collect {
+      case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
+        case Resolution.Var(_) => true
+        case _ => false
+      } => k
+    }
+    matchingVars.map(Completion.VarCompletion(_))
   }
-
-  /**
-    * Checks that the varSym matches the word that the users is typing.
-    *
-    * @param sym  the varSym.
-    * @param word the current word.
-    * @return     true, if the var matches word, false otherwise.
-    */
-  private def matchesVar(sym: Symbol.VarSym, word: String): Boolean = sym.toString.startsWith(word)
 }

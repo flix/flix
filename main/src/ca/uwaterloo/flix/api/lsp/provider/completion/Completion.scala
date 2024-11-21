@@ -177,12 +177,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(sym, tpe) =>
+    case Completion.VarCompletion(name) =>
       CompletionItem(
-        label    = sym.text,
-        sortText = Priority.toSortText(Priority.Low, sym.text),
-        textEdit = TextEdit(context.range, sym.text),
-        detail   = Some(FormatType.formatType(tpe)(flix)),
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Variable
       )
 
@@ -547,11 +546,9 @@ object Completion {
   /**
     * Represents a Var completion
     *
-    * @param sym the Var symbol.
-    * @param tpe the type for FormatType to provide a human-readable string with additional information
-    *            about the symbol.
+    * @param name the name of the variable to complete.
     */
-  case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
+  case class VarCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
