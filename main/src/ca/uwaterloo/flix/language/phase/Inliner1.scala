@@ -112,10 +112,16 @@ object Inliner1 {
     * Converts definition from [[OccurrenceAst1]] to [[MonoAst]].
     */
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
-    case OccurrenceAst1.Def(sym, fparams, spec, exp, _, loc) =>
-      val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(root, flix)
-      val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
-      MonoAst.Def(sym, sp, e, loc)
+    case OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc) =>
+      if (ctx.occur != Dangerous) {
+        val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(root, flix)
+        val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
+        MonoAst.Def(sym, sp, e, loc)
+      } else {
+        val e = toMonoAstExpr(exp)
+        val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
+        MonoAst.Def(sym, sp, e, loc)
+      }
   }
 
   private def visitSpec(spec0: OccurrenceAst1.Spec, fparams0: List[OccurrenceAst1.FormalParam]): MonoAst.Spec = spec0 match {
@@ -808,5 +814,173 @@ object Inliner1 {
     case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => true
     case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => true
     case _ => false
+  }
+
+  def toMonoAstExpr(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
+    case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
+      MonoAst.Expr.Cst(cst, tpe, loc)
+
+    case OccurrenceAst1.Expr.Var(sym, tpe, loc) =>
+      MonoAst.Expr.Var(sym, tpe, loc)
+
+    case OccurrenceAst1.Expr.Lambda((fparam, _), exp, tpe, loc) =>
+      val fps = visitFormalParam(fparam)
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.Lambda(fps, e, tpe, loc)
+
+    case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
+      val e1 = toMonoAstExpr(exp1)
+      val e2 = toMonoAstExpr(exp2)
+      MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+      if (isDead(occur)) {
+        toMonoAstExpr(exp2)
+      } else {
+        val fps = fparams.map(visitFormalParam)
+        val e1 = toMonoAstExpr(exp1)
+        val e2 = toMonoAstExpr(exp2)
+        MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
+      }
+
+    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = toMonoAstExpr(exp1)
+      val e2 = toMonoAstExpr(exp2)
+      val e3 = toMonoAstExpr(exp3)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      val e1 = toMonoAstExpr(exp1)
+      val e2 = toMonoAstExpr(exp2)
+      MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Discard(exp, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.Discard(e, eff, loc)
+
+    case OccurrenceAst1.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      val rs = rules.map {
+        case OccurrenceAst1.MatchRule(pat, guard, exp1) =>
+          val p = toMonoAstPattern(pat)
+          val g = guard.map(toMonoAstExpr)
+          val e1 = toMonoAstExpr(exp1)
+          MonoAst.MatchRule(p, g, e1)
+      }
+      MonoAst.Expr.Match(e, rs, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = toMonoAstExpr(exp1)
+      val e2 = toMonoAstExpr(exp2)
+      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.VectorLength(exp, loc) =>
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.VectorLength(e, loc)
+
+    case OccurrenceAst1.Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.Ascribe(e, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      val rs = rules.map {
+        case OccurrenceAst1.CatchRule(sym, clazz, exp1) =>
+          val e1 = toMonoAstExpr(exp1)
+          MonoAst.CatchRule(sym, clazz, e1)
+      }
+      MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+      val e = toMonoAstExpr(exp)
+      val rs = rules.map {
+        case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
+          val fps = fparams.map(visitFormalParam)
+          val e1 = toMonoAstExpr(exp1)
+          MonoAst.HandlerRule(op, fps, e1)
+      }
+      MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
+      val es = exps.map(toMonoAstExpr)
+      MonoAst.Expr.Do(op, es, tpe, eff, loc)
+
+    case OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = toMonoAstExpr(exp)
+          MonoAst.JvmMethod(ident, fps, e, retTpe, eff, loc)
+      }
+      MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+
+  }
+
+
+  private def toMonoAstPattern(pattern00: OccurrenceAst1.Pattern): MonoAst.Pattern = {
+
+    def visit(pattern0: OccurrenceAst1.Pattern): MonoAst.Pattern = pattern0 match {
+      case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
+        MonoAst.Pattern.Wild(tpe, loc)
+
+      case OccurrenceAst1.Pattern.Var(sym, tpe, occur, loc) =>
+        MonoAst.Pattern.Var(sym, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Cst(cst, tpe, loc) =>
+        MonoAst.Pattern.Cst(cst, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Tag(sym, pats, tpe, loc) =>
+        val ps = pats.map(visit)
+        MonoAst.Pattern.Tag(sym, ps, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Tuple(pats, tpe, loc) =>
+        val ps = pats.map(visit)
+        MonoAst.Pattern.Tuple(ps, tpe, loc)
+
+      case OccurrenceAst1.Pattern.Record(pats, pat, tpe, loc) =>
+        val ps = pats.map(visitRecordLabelPattern)
+        val p = visit(pat)
+        MonoAst.Pattern.Record(ps, p, tpe, loc)
+
+      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
+        MonoAst.Pattern.RecordEmpty(tpe, loc)
+    }
+
+    def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+      case OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+        val p = visit(pat)
+        MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
+    }
+
+    visit(pattern00)
   }
 }

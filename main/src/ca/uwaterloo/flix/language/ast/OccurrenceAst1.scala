@@ -197,6 +197,12 @@ object OccurrenceAst1 {
       * Represents a variable that we explicitly do not want to inline.
       */
     case object DontInline extends Occur
+
+    /**
+      * Represents a function that should not be inlined and excluded from any rewriting internally.
+      * This is because casts are dangerous.
+      */
+    case object Dangerous extends Occur
   }
 
   /**

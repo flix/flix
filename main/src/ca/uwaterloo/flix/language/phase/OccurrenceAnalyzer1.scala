@@ -142,6 +142,7 @@ object OccurrenceAnalyzer1 {
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
+        case Occur.Dangerous => true
       }
     }
 
@@ -318,7 +319,8 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
         val (e, o) = visit(exp)
-        (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o))
+        val o1 = o :+ sym0 -> Dangerous
+        (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
@@ -521,6 +523,8 @@ object OccurrenceAnalyzer1 {
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
   private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (Dangerous, _) => Dangerous
+    case (_, Dangerous) => Dangerous
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -535,6 +539,8 @@ object OccurrenceAnalyzer1 {
     * - [[OccurrenceAst1.Expr.Match]]
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (Dangerous, _) => Dangerous
+    case (_, Dangerous) => Dangerous
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
