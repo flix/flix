@@ -1530,7 +1530,7 @@ object Resolver {
       mapN(expVal, expsVal) {
         case (e, es) =>
           es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, List(a), loc.asSynthetic)
+            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
           }
       }
   }
@@ -1563,7 +1563,7 @@ object Resolver {
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, List(cloArg), loc)
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
     }
 
     closureApplication
@@ -2086,7 +2086,7 @@ object Resolver {
     // Check for [[DuplicateDerivation]].
     val seen = mutable.Map.empty[Symbol.TraitSym, SourceLocation]
     val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
-    for (Ast.Derivation(traitSym, loc1) <- derives) {
+    for (Derivation(traitSym, loc1) <- derives) {
       seen.get(traitSym) match {
         case None =>
           seen.put(traitSym, loc1)
@@ -2102,9 +2102,9 @@ object Resolver {
   /**
     * Performs name resolution on the given of derivation `derive0`.
     */
-  private def resolveDerivation(derive0: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Ast.Derivation] = {
+  private def resolveDerivation(derive0: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Derivation] = {
     lookupTrait(derive0, env, ns0, root).map {
-      trt => Ast.Derivation(trt.sym, derive0.loc)
+      trt => Derivation(trt.sym, derive0.loc)
     }
   }
 

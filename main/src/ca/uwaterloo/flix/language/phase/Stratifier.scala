@@ -122,10 +122,10 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      Expr.ApplyClo(e, es, tpe, eff, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)

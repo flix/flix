@@ -73,12 +73,12 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
+      case Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star, loc)
         val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
-        val (tpe, eff) = visitExp(exp)
-        val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
+        c.expectType(tpe1, Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), loc)
         c.unifyType(tvar, lambdaBodyType, loc)
         c.unifyType(evar, lambdaBodyEff, loc)
         val resTpe = tvar
@@ -839,15 +839,15 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.PutField(field, clazz, exp1, exp2, _) =>
+      case Expr.PutField(field, clazz, exp1, exp2, loc) =>
         val fieldType = Type.getFlixType(field.getType)
         val classType = Type.getFlixType(clazz)
-        val (tpe1, _) = visitExp(exp1)
-        val (tpe2, _) = visitExp(exp2)
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
         c.expectType(expected = fieldType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.IO
+        val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, _) =>
@@ -856,11 +856,11 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.PutStaticField(field, exp, _) =>
-        val (valueTyp, _) = visitExp(exp)
+      case Expr.PutStaticField(field, exp, loc) =>
+        val (valueTyp, eff) = visitExp(exp)
         c.expectType(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
-        val resEff = Type.IO
+        val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
       case Expr.NewObject(_, clazz, methods, _) =>

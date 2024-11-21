@@ -109,11 +109,11 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp(_))
-      val eff = Type.mkUnion(subst(evar) :: e.eff :: es.map(_.eff), loc)
-      TypedAst.Expr.ApplyClo(e, es, subst(tvar), eff, loc)
+    case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, loc)
+      TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), eff, loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -491,7 +491,7 @@ object TypeReconstruction {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
@@ -502,7 +502,7 @@ object TypeReconstruction {
     case KindedAst.Expr.PutStaticField(field, exp, loc) =>
       val e = visitExp(exp)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>

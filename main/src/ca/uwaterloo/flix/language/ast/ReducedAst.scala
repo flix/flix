@@ -79,7 +79,7 @@ object ReducedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

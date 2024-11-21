@@ -87,11 +87,11 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
-        val e = visitExpr(exp)
-        val es = exps.map(visitExpr)
-        Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+        val e1 = visitExpr(exp1)
+        val e2 = visitExpr(exp2)
+        Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1

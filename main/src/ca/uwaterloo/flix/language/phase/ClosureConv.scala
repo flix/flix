@@ -61,10 +61,10 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      Expr.ApplyClo(e, es, tpe, purity, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
@@ -196,8 +196,8 @@ object ClosureConv {
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
-    case Expr.ApplyClo(exp, args, _, _, _) =>
-      freeVars(exp) ++ freeVarsExps(args)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.ApplyDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
@@ -309,10 +309,10 @@ object ClosureConv {
         val e = visitExp(exp)
         Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
-      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
@@ -526,10 +526,10 @@ object ClosureConv {
         val es = exps.map(visit)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-        val e = visit(exp)
-        val es = exps.map(visit)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visit)

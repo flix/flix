@@ -66,30 +66,30 @@ object Deriver {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
       derives.traits.flatMap {
-        case Ast.Derivation(traitSym, loc) if cases.isEmpty =>
+        case Derivation(traitSym, loc) if cases.isEmpty =>
           val error = DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc)
           sctx.errors.add(error)
           None
 
-        case Ast.Derivation(sym, loc) if sym == EqSym =>
+        case Derivation(sym, loc) if sym == EqSym =>
           Some(mkEqInstance(enum0, loc, root))
 
-        case Ast.Derivation(sym, loc) if sym == OrderSym =>
+        case Derivation(sym, loc) if sym == OrderSym =>
           Some(mkOrderInstance(enum0, loc, root))
 
-        case Ast.Derivation(sym, loc) if sym == ToStringSym =>
+        case Derivation(sym, loc) if sym == ToStringSym =>
           Some(mkToStringInstance(enum0, loc, root))
 
-        case Ast.Derivation(sym, loc) if sym == HashSym =>
+        case Derivation(sym, loc) if sym == HashSym =>
           Some(mkHashInstance(enum0, loc, root))
 
-        case Ast.Derivation(sym, loc) if sym == SendableSym =>
+        case Derivation(sym, loc) if sym == SendableSym =>
           Some(mkSendableInstance(enum0, loc, root))
 
-        case Ast.Derivation(sym, loc) if sym == CoerceSym =>
+        case Derivation(sym, loc) if sym == CoerceSym =>
           mkCoerceInstance(enum0, loc, root)
 
-        case Ast.Derivation(sym, loc) =>
+        case Derivation(sym, loc) =>
           val error = DerivationError.IllegalDerivation(sym, DerivableSyms, loc)
           sctx.errors.add(error)
           None
@@ -330,14 +330,14 @@ object Deriver {
           List(
             KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaVarSym, loc),
-              List(mkVarExpr(param1, loc)),
+              mkVarExpr(param1, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaVarSym, loc),
-              List(mkVarExpr(param2, loc)),
+              mkVarExpr(param2, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc),

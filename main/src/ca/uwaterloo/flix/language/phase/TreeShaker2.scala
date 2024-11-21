@@ -75,8 +75,8 @@ object TreeShaker2 {
     case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)

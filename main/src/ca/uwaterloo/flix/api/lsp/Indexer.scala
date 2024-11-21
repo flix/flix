@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Derivation, EqualityConstraint, TraitConstraint}
 
 object Indexer {
 
@@ -89,7 +89,7 @@ object Indexer {
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),
         traverse(derives.traits) {
-          case Ast.Derivation(trt, loc) => Index.useOf(trt, loc)
+          case Derivation(trt, loc) => Index.useOf(trt, loc)
         },
         traverse(cases.values)(visitCase),
       )
@@ -231,8 +231,8 @@ object Indexer {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)

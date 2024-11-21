@@ -89,8 +89,8 @@ object TreeShaker1 {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)

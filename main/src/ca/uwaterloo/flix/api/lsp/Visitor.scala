@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, Derivation, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
@@ -431,9 +431,9 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp, exps, _, _, _) =>
-        visitExpr(exp)
-        exps.foreach(visitExpr)
+      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
         visitDefSymUse(symUse)
