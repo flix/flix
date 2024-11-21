@@ -22,11 +22,14 @@ import ca.uwaterloo.flix.language.ast.shared.Resolution
   * Provides completions for local scope variables.
   * Everything that is resolved to Resolution.Var in the LocalScope is considered a local scope variable, including arguments.
   */
-object LocalScopeCompleter {
+object VarCompleter {
   def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] = {
     val matchingVars = err.env.m.collect {
-      case (k, v) if v.exists(_.isInstanceOf[Resolution.Var]) && k.startsWith(err.qn.ident.name) => k
+      case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
+        case Resolution.Var(_) => true
+        case _ => false
+      } => k
     }
-    matchingVars.map(Completion.LocalScopeCompletion(_))
+    matchingVars.map(Completion.VarCompletion(_))
   }
 }

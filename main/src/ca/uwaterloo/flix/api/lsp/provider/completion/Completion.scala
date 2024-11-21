@@ -177,7 +177,7 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.LocalScopeCompletion(name) =>
+    case Completion.VarCompletion(name) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
@@ -544,11 +544,11 @@ object Completion {
   case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
 
   /**
-    * Represents a LocalScope completion
+    * Represents a Var completion
     *
     * @param name the name of the variable to complete.
     */
-  case class LocalScopeCompletion(name: String) extends Completion
+  case class VarCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
