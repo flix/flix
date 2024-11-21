@@ -374,6 +374,8 @@ object OccurrenceAnalyzer1 {
         case None => occurInfo0
       }
 
+      case AtomicOp.Cast => occurInfo0 :+ sym0 -> Dangerous
+
       case _ => occurInfo0
     }
 
