@@ -517,7 +517,7 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
       val eff = Type.mkUnion(subst(evar), e1.eff, e2.eff, loc)
-      TypedAst.Expr.PutChannel(e1, e2, tpe, subst(evar), loc)
+      TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
