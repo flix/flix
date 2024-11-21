@@ -499,8 +499,7 @@ object Kinder {
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ArrayLit(exps, exp, tvar, evar, loc)
+      KindedAst.Expr.ArrayLit(exps, exp, tvar, loc)
 
     case ResolvedAst.Expr.ArrayNew(exp10, exp20, exp30, loc) =>
       val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
