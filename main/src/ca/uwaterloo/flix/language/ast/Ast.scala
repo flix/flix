@@ -16,17 +16,13 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Derivation
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Represents a derivation on an enum (e.g. `enum E with Eq`).
-    */
-  case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a list of derivations with a source location.
