@@ -492,7 +492,7 @@ object TypeReconstruction2 {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
@@ -503,7 +503,7 @@ object TypeReconstruction2 {
     case KindedAst.Expr.PutStaticField(field, exp, loc) =>
       val e = visitExp(exp)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
