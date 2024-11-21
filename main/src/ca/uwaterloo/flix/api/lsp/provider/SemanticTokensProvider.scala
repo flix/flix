@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Derivation, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -172,7 +172,7 @@ object SemanticTokensProvider {
         Iterator(t),
         visitTypeParams(tparams),
         Iterator(derives.traits *).map {
-          case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
+          case Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
         },
         cases.foldLeft(Iterator.empty[SemanticToken]) {
           case (acc, (_, caze)) => acc ++ visitCase(caze)
