@@ -20,7 +20,8 @@ pub enum Proxy[_] {
 ///
 /// The uninterpretable `Env` effect.
 ///
-/// The `Env` effect represents ..
+/// The `Env` effect represents actions that read from the environment (e.g. information
+/// about the shell, operating system, or hardware)
 ///
 /// The `Env` effect is uninterpretable which means that it cannot be handled.
 ///
