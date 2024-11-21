@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
 import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction2 {
 
@@ -437,7 +438,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
-      val eff = Type.mkUnion(subst(evar) :: es.map(_.eff), loc)
+      val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
@@ -450,7 +451,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
-      val eff = Type.mkUnion(subst(evar) :: e.eff :: es.map(_.eff), loc)
+      val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
@@ -462,7 +463,7 @@ object TypeReconstruction2 {
       val es = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
-      val eff = Type.mkUnion(subst(evar) :: es.map(_.eff), loc)
+      val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)

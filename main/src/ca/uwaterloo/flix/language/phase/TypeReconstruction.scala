@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
 import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Executable
 
@@ -430,7 +431,7 @@ object TypeReconstruction {
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
-      val eff = Type.mkUnion(subst(evar) :: es0.map(_.eff), loc)
+      val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           val es = getArgumentsWithVarArgs(constructor, es0, loc)
@@ -444,7 +445,7 @@ object TypeReconstruction {
       val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
-      val eff = Type.mkUnion(subst(evar) :: e.eff :: es0.map(_.eff), loc)
+      val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
@@ -457,7 +458,7 @@ object TypeReconstruction {
       val es0 = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
-      val eff = Type.mkUnion(subst(evar) :: es0.map(_.eff), loc)
+      val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)

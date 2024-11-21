@@ -784,9 +784,9 @@ object ConstraintGen {
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(evar, baseEff, loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = clazzTpe
-        val resEff = Type.mkUnion(baseEff :: effs, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
@@ -798,9 +798,9 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, baseEff, loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(baseEff :: eff :: effs, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
@@ -811,9 +811,9 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, baseEff, loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(baseEff :: effs, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.GetField(exp, fieldName, jvar, tvar, loc) =>
