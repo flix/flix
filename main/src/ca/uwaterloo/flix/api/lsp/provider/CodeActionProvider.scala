@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 
@@ -45,10 +45,10 @@ object CodeActionProvider {
       mkNewStruct(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
-      mkImportJava(name, uri, ap)
+      mkImportJava(Name.mkQName(name), uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -57,7 +57,7 @@ object CodeActionProvider {
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn.ident.name, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -312,22 +312,29 @@ object CodeActionProvider {
   ) :: Nil
 
   /**
-    * Returns a code action that proposes to import corresponding Java class.
+    * Returns a code action that proposes to import the corresponding Java class.
+    * First, we try to import the class with the name matching the head of the `qn.namespace.idents`.
+    * If there is no namespace, we try to import the class with the name matching `qn.ident`.
     *
-    * For example, if we have:
+    * Example:
+    * if we have
     *
     * {{{
-    *   def foo(): = new File("data.txt")
+    *  let a = Math.sin(1)
     * }}}
     *
-    * where the undefined class `File` is a valid Java class, this code action proposes to add:
+    * where qn.ident is "sin" and qn.namespace.idents is ["Math"],  this code action proposes to add:
+    *
     * {{{
-    *   import java.io.File
+    *  import java.lang.Math
     * }}}
     */
-  private def mkImportJava(name: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] =
-    root.availableClasses.byClass.get(name).toList.flatten.map { path =>
-      val completePath = path.mkString(".") + "." + name
+  private def mkImportJava(qn: Name.QName, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    // If `qn.namespace.idents.headOption` returns None, we use the `qn.ident.name`. Otherwise, we use the head of the namespace.
+    // In the example above, headOption would return Some("Math"), so we will use "Math".
+    val className = qn.namespace.idents.headOption.map(_.name).getOrElse(qn.ident.name)
+    root.availableClasses.byClass.get(className).toList.flatten.map { path =>
+      val completePath = path.mkString(".") + "." + className
       CodeAction(
         title = s"import '$completePath'",
         kind = CodeActionKind.QuickFix,
@@ -335,6 +342,7 @@ object CodeActionProvider {
         command = None
       )
     }
+  }
 
   /**
     * Returns a code action that proposes to create a new struct.
@@ -370,10 +378,10 @@ object CodeActionProvider {
     *
     * Uses Levenshtein Distance to find close spellings.
     */
-  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: Map[String, Symbol.VarSym], uri: String): List[CodeAction] = {
+  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: LocalScope,  uri: String): List[CodeAction] = {
     val minLength = 3
     val maxDistance = 3
-    val possibleNames: List[String] = env.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
+    val possibleNames: List[String] = env.m.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
       .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
     if (qn.ident.name.length > minLength)
       possibleNames.map(n => mkCorrectSpelling(n, loc, uri))

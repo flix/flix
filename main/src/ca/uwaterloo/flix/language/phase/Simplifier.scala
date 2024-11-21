@@ -151,7 +151,7 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
 
-        case AtomicOp.HoleError(_) =>
+        case AtomicOp.HoleError(_) | AtomicOp.Throw =>
           // Simplify purity to impure, must be done after Monomorph
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
