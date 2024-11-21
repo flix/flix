@@ -231,8 +231,8 @@ object Indexer {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)

@@ -1530,7 +1530,7 @@ object Resolver {
       mapN(expVal, expsVal) {
         case (e, es) =>
           es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, List(a), loc.asSynthetic)
+            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
           }
       }
   }
@@ -1563,7 +1563,7 @@ object Resolver {
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, List(cloArg), loc)
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
     }
 
     closureApplication

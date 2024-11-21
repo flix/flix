@@ -337,9 +337,9 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>

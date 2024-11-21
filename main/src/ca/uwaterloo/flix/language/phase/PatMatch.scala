@@ -141,7 +141,7 @@ object PatMatch {
       case Expr.Use(_, _, exp, _) => visitExp(exp)
       case Expr.Cst(_, _, _) => Nil
       case Expr.Lambda(_, body, _, _) => visitExp(body)
-      case Expr.ApplyClo(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
+      case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.ApplySig(_, exps, _, _, _, _) => exps.flatMap(visitExp)
