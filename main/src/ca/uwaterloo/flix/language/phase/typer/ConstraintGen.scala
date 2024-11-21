@@ -526,8 +526,9 @@ object ConstraintGen {
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
