@@ -61,7 +61,7 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
-      (NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.availableClasses), sctx.errors.asScala.toList)
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses), sctx.errors.asScala.toList)
     }
 
   /**
@@ -356,10 +356,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
-    case DesugaredAst.Case(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.Case(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
-      NamedAst.Declaration.Case(caseSym, t, loc)
+      NamedAst.Declaration.Case(caseSym, ts, loc)
   }
 
   /**
@@ -377,10 +377,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableCase = case0 match {
-    case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.RestrictableCase(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
+      NamedAst.Declaration.RestrictableCase(caseSym, ts, loc)
   }
 
   /**
@@ -962,8 +962,8 @@ object Namer {
 
     case DesugaredAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
-    case DesugaredAst.Pattern.Tag(qname, pat, loc) =>
-      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
+    case DesugaredAst.Pattern.Tag(qname, pats, loc) =>
+      NamedAst.Pattern.Tag(qname, pats.map(visitPattern), loc)
 
     case DesugaredAst.Pattern.Tuple(elms, loc) =>
       NamedAst.Pattern.Tuple(elms.map(visitPattern), loc)
@@ -1002,8 +1002,8 @@ object Namer {
     }
 
     pat0 match {
-      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
-        NamedAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarPlace), loc)
+      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pats, loc) =>
+        NamedAst.RestrictableChoosePattern.Tag(qname, pats.map(visitVarPlace), loc)
       case DesugaredAst.RestrictableChoosePattern.Error(loc) =>
         NamedAst.RestrictableChoosePattern.Error(loc)
     }
@@ -1226,7 +1226,7 @@ object Namer {
     case DesugaredAst.Pattern.Cst(Constant.Str(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Regex(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
-    case DesugaredAst.Pattern.Tag(_, p, _) => freeVars(p)
+    case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
     case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.RecordEmpty(_) => Nil

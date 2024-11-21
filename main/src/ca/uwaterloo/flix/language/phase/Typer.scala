@@ -51,7 +51,7 @@ object Typer {
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = collectModules(root)
 
-    val result = TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph)
+    val result = TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, None, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph)
 
     (result, sctx.errors.asScala.toList)
 
@@ -306,8 +306,8 @@ object Typer {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, _, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val cases = cases0 map {
-        case (name, KindedAst.Case(caseSym, tagType, sc, caseLoc)) =>
-          name -> TypedAst.Case(caseSym, tagType, sc, caseLoc)
+        case (name, KindedAst.Case(caseSym, tagTypes, sc, caseLoc)) =>
+          name -> TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
       }
 
       enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, loc)
@@ -361,8 +361,8 @@ object Typer {
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = tparams0.map(visitTypeParam(_, root))
       val cases = cases0 map {
-        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)) =>
-          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
+        case (name, KindedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc)) =>
+          name -> TypedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc)
       }
 
       enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, loc)

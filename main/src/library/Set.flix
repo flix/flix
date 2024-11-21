@@ -587,7 +587,7 @@ mod Set {
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Set[a] \ ef with Order[a] =
         def loop(sst, s) = match f(sst) {
             case None         => s
-            case Some(a, st1) => loop(st1, insert(a, s))
+            case Some((a, st1)) => loop(st1, insert(a, s))
         };
         loop(st, empty())
 

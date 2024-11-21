@@ -242,15 +242,14 @@ object TypeReconstruction2 {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.Tag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.Tag(sym, exps, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val eff = Type.mkUnion(es.map(_.eff), loc)
+      TypedAst.Expr.Tag(sym, es, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.RestrictableTag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.RestrictableTag(sym, exps, _, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.RestrictableTag(sym, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))
@@ -277,11 +276,12 @@ object TypeReconstruction2 {
       val eff = r.eff
       TypedAst.Expr.RecordRestrict(field, r, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+    case KindedAst.Expr.ArrayLit(exps, exp, tvar, loc) =>
       val es = exps.map(visitExp(_))
       val e = visitExp(exp)
       val tpe = subst(tvar)
-      val eff = subst(evar)
+      val Type.Apply(Type.Cst(TypeConstructor.RegionToStar, _), regionVar, _) = e.tpe
+      val eff = Type.mkUnion(Type.mkUnion(es.map(_.eff), loc), e.eff, regionVar, loc)
       TypedAst.Expr.ArrayLit(es, e, tpe, eff, loc)
 
     case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
@@ -668,7 +668,8 @@ object TypeReconstruction2 {
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
+    case KindedAst.Pattern.Tag(sym, pats, tvar, loc) =>
+      TypedAst.Pattern.Tag(sym, pats.map(visitPattern), subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)
