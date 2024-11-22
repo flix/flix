@@ -334,9 +334,9 @@ mod TestMutQueue {
     def testIterator01(): Bool = region rc {
         let mq = MutQueue.empty(rc);
         let it = MutQueue.iterator(rc, mq);
-        let sum = ref 0 @ rc;
-        Iterator.forEach(x -> Ref.put(deref sum + x, sum), it);
-        deref sum == 0
+        let sum = Ref.fresh(rc, 0);
+        Iterator.forEach(x -> Ref.put(Ref.get(sum) + x, sum), it);
+        Ref.get(sum) == 0
     }
 
     @Test
@@ -352,9 +352,9 @@ mod TestMutQueue {
         let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, "a" :: "c" :: "g" :: "t" :: Nil);
         let it = MutQueue.iterator(rc, mq);
-        let str = ref "" @ rc;
-        Iterator.forEach(x -> Ref.put(String.concat(x, deref str), str), it);
-        deref str == "acgt"
+        let str = Ref.fresh(rc, "");
+        Iterator.forEach(x -> Ref.put(String.concat(x, Ref.get(str)), str), it);
+        Ref.get(str) == "acgt"
     }
 
     /////////////////////////////////////////////////////////////////////////////

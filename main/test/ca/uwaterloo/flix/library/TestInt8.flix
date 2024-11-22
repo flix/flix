@@ -1106,20 +1106,17 @@ mod TestInt8 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(0i8);
-        equals(i, checked_cast(Int8.valueOf(0i8)))
+        unsafe i.equals(Int8.valueOf(0i8))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(1i8);
-        equals(i, checked_cast(Int8.valueOf(1i8)))
+        unsafe i.equals(Int8.valueOf(1i8))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
         let i = Int8.valueOf(-1i8);
-        equals(i, checked_cast(Int8.valueOf(-1i8)))
+        unsafe i.equals(Int8.valueOf(-1i8))
 
 }

@@ -717,24 +717,24 @@ mod TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // toUndirectedWeighted                                                   //
+    // toUndirectedLabeled                                                   //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toUndirectedWeighted01(): Bool = {
-        let g = graphWithDist01() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled01(): Bool = {
+        let g = graphWithDist01() |> Graph.toUndirectedLabeled;
         g == Set#{}
     }
 
     @test
-    def toUndirectedWeighted02(): Bool = {
-        let g = graphWithDist02() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled02(): Bool = {
+        let g = graphWithDist02() |> Graph.toUndirectedLabeled;
         g == Set#{(1, 4, 2), (2, 4, 1)}
     }
 
     @test
-    def toUndirectedWeighted03(): Bool = {
-        let g = graphWithDist03() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled03(): Bool = {
+        let g = graphWithDist03() |> Graph.toUndirectedLabeled;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (3, 7, 4), (4, 7, 3)
@@ -742,8 +742,8 @@ mod TestGraph {
     }
 
     @test
-    def toUndirectedWeighted04(): Bool = {
-        let g = graphWithDist04() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled04(): Bool = {
+        let g = graphWithDist04() |> Graph.toUndirectedLabeled;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (2, 5, 3), (3, 5, 2),
@@ -752,8 +752,8 @@ mod TestGraph {
     }
 
     @test
-    def toUndirectedWeighted05(): Bool = {
-        let g = graphWithDist05() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled05(): Bool = {
+        let g = graphWithDist05() |> Graph.toUndirectedLabeled;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (1, 5, 4), (4, 5, 1),
@@ -763,8 +763,8 @@ mod TestGraph {
     }
 
     @test
-    def toUndirectedWeighted06(): Bool = {
-        let g = graphWithDist06() |> Graph.toUndirectedWeighted;
+    def toUndirectedLabeled06(): Bool = {
+        let g = graphWithDist06() |> Graph.toUndirectedLabeled;
         g == Set#{
             (1, 2, 2), (2, 2, 1),
             (1, 5, 4), (4, 5, 1),
@@ -777,9 +777,9 @@ mod TestGraph {
     }
 
     @test
-    def toUndirectedWeighted07(): Bool = {
+    def toUndirectedLabeled07(): Bool = {
         let g0 = Set#{(7, 9, 13), (13, 8, 7)};
-        let g = g0 |> Graph.toUndirectedWeighted;
+        let g = g0 |> Graph.toUndirectedLabeled;
         g == Set#{
             (7, 9, 13), (13, 9, 7),
             (7, 8, 13), (13, 8, 7)
@@ -968,12 +968,12 @@ mod TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // toGraphvizWeighted                                                     //
+    // toGraphvizLabeled                                                     //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toGraphvizWeighted01(): Bool = {
-        Graph.toGraphvizWeighted(graphWithDist01()) == String.unlines(
+    def toGraphvizLabeled01(): Bool = {
+        Graph.toGraphvizLabeled(graphWithDist01()) == String.unlines(
             "digraph {" ::
             "}" ::
             Nil
@@ -981,11 +981,11 @@ mod TestGraph {
     }
 
     @test
-    def toGraphvizWeighted02(): Bool = {
+    def toGraphvizLabeled02(): Bool = {
         let g = Set#{
             ("node \"A\"", -42, "node \"B\"")
         };
-        Graph.toGraphvizWeighted(g) == String.unlines(
+        Graph.toGraphvizLabeled(g) == String.unlines(
             "digraph {" ::
             "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\" [label = -42]" ::
             "}" ::
@@ -994,8 +994,8 @@ mod TestGraph {
     }
 
     @test
-    def toGraphvizWeighted03(): Bool = {
-        let gv = Graph.toGraphvizWeighted(graphWithDist03());
+    def toGraphvizLabeled03(): Bool = {
+        let gv = Graph.toGraphvizLabeled(graphWithDist03());
         let test1 = gv == String.unlines(
             "digraph {" ::
             "  \"1\" -> \"2\" [label = 4]" ::

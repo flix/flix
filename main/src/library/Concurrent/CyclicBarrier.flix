@@ -15,18 +15,19 @@
  */
 
 mod Concurrent {
+    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
   ///
   /// A wrapper around a Java CyclicBarrier
   ///
   @Internal
-  pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
+  pub enum CyclicBarrier(JCyclicBarrier)
 }
 
 mod Concurrent.CyclicBarrier {
     // TODO NS-REFACTOR can remove these
     use Concurrent.CyclicBarrier
     use Concurrent.CyclicBarrier.CyclicBarrier
-    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier};
+    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
 
   ///
   /// Create a new CyclicBarrier which will wait for `parties` threads
@@ -40,7 +41,6 @@ mod Concurrent.CyclicBarrier {
   ///
   @Internal
   pub def awaitBarrier(barrier: CyclicBarrier): Int32 \ IO =
-    import java.util.concurrent.CyclicBarrier.await(): Int32 \ IO;
     let CyclicBarrier(b) = barrier;
-    await(b)
+    b.await()
 }

@@ -66,32 +66,27 @@ mod Fixpoint.Ast.Datalog {
     instance ToString[Datalog[v]] {
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog.Datalog(facts, rules) => region rc {
-                let sb = StringBuilder.empty(rc);
-                let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
-                foreach (f <- facts) appendConstraint(f);
-                foreach (ru <- rules) appendConstraint(ru);
-                StringBuilder.toString(sb)
+                Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
+                    |> Iterator.join(String.lineSeparator())
             }
             case Datalog.Model(db) => region rc {
                 use Fixpoint.Ast.Ram.toDenotation;
-                let sb = StringBuilder.empty(rc);
-                Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
-                    case Denotation.Relational => Map.forEach((tuple, _) -> {
-                        let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                        StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
-                    }, rel)
-                    case Denotation.Latticenal(_) => Map.forEach((tuple, lat) -> {
-                        let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                        StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
-                    }, rel)
-                }, db);
-                StringBuilder.toString(sb)
+                Map.iterator(rc, db)
+                    |> Iterator.flatMap(match (ramSym, rel) -> {
+                        Map.iterator(rc, rel) |> Iterator.map(match (tuple, lat) -> {
+                            let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                            match toDenotation(ramSym) {
+                                case Denotation.Relational => "${ramSym}(${tupleString})."
+                                case Denotation.Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; %{lat})."
+                            }
+                        })
+                    })
+                    |> Iterator.join(String.lineSeparator())
+                    + String.lineSeparator()
             }
-            case Datalog.Join(d1, d2) => region rc {
-                let sb = StringBuilder.empty(rc);
-                StringBuilder.appendLine!(ToString.toString(d1), sb);
-                StringBuilder.appendLine!(ToString.toString(d2), sb);
-                StringBuilder.toString(sb)
+            case Datalog.Join(d1, d2) => {
+                let lineSep = String.lineSeparator();
+                "${d1}${lineSep}${d2}${lineSep}"
             }
         }
     }
@@ -161,7 +156,7 @@ mod Fixpoint.Ast.Datalog {
         pub def toString(head: HeadPredicate[v]): String =
             match head {
                 case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
-                case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_), terms) =>
+                case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_, _, _, _), terms) =>
                     let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
                     match Vector.head(latticeTerms) {
                         case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
@@ -215,7 +210,7 @@ mod Fixpoint.Ast.Datalog {
             match body {
                 case BodyPredicate.BodyAtom(predSym, Denotation.Relational, p, f, terms) =>
                     "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
-                case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_), p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_, _, _, _), p, f, terms) =>
                     let n = Vector.length(terms)-1;
                     let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
                     match Vector.head(latticeTerms) {

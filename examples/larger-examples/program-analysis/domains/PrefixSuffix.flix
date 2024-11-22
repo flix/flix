@@ -1,6 +1,6 @@
-/**
- * An implementation of Prefix-Suffix domain.
- */
+///
+/// An implementation of Prefix-Suffix domain.
+///
 mod Domain.PrefixSuffix {
 
     ///

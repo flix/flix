@@ -1,7 +1,7 @@
-mod Test.Exp.ReifyType {
+mod Test.Exp.TypeMatch {
 
     //////////////////////////////////////
-    // Emulating reifyType              //
+    // Emulating type reflection        //
     //////////////////////////////////////
 
     @Test
@@ -313,7 +313,7 @@ mod Test.Exp.ReifyType {
     }
 
     //////////////////////////////////////
-    // Emulating reifyEff               //
+    // Emulating effect reflection      //
     //////////////////////////////////////
 
     @Test
@@ -558,27 +558,6 @@ mod Test.Exp.ReifyType {
 
     @Test
     def sameTypes05(): Bool = not sameTypes(123 :: Nil, Nil)
-
-    def hasListSomewhere(x: a): Bool = typematch x {
-        case _: List[_] => true
-        case _: _[List] => true
-        case _: _[List[_]] => true
-        case _: _[List, _] => true
-        case _: _[List[_], _] => true
-        case _: _ => false
-    }
-
-    @Test
-    def hasListSomewhere01(): Bool = hasListSomewhere(Nil)
-
-    @Test
-    def hasListSomewhere02(): Bool = hasListSomewhere(Some(Nil))
-
-    @Test
-    def hasListSomewhere03(): Bool = not hasListSomewhere(123)
-
-    @Test
-    def hasListSomewhere04(): Bool = not hasListSomewhere(None)
 
     def isPredicateNotFromInt32(f: a): Bool = typematch f {
         case _: Int32 -> _ => false

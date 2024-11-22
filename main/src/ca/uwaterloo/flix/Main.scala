@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
 import java.net.BindException
@@ -94,21 +94,19 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xbddthreshold = cmdOpts.xbddthreshold,
-      xnoboolcache = cmdOpts.xnoboolcache,
-      xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnoboolunif = cmdOpts.xnoboolunif,
-      xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
-      xdeprecated = cmdOpts.xdeprecated,
+      xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
+      xzhegalkin = cmdOpts.xzhegalkin,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfPar = cmdOpts.XPerfPar,
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -136,7 +134,7 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd).toHardResult match {
+          Bootstrap.init(cwd).toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -150,7 +148,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -164,7 +162,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -175,7 +173,7 @@ object Main {
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -186,7 +184,7 @@ object Main {
         case Command.BuildFatJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildFatJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -197,7 +195,7 @@ object Main {
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildPkg()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -211,7 +209,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -229,21 +227,7 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          }.toHardResult match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
-              System.exit(1)
-          }
-
-        case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.benchmark(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -257,7 +241,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -270,7 +254,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken).toHardResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken).toResult match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -297,7 +281,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -311,7 +295,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.outdated(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(false) =>
               // Up to date
               System.exit(0)
@@ -358,22 +342,20 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xdeprecated: Boolean = false,
-                     xbddthreshold: Option[Int] = None,
+                     xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnoboolcache: Boolean = false,
-                     xnoboolspecialcases: Boolean = false,
-                     xnoboolunif: Boolean = false,
-                     xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
+                     xsubeffecting: Set[Subeffecting] = Set.empty,
+                     xzhegalkin: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     XPerfPar: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -400,8 +382,6 @@ object Main {
     case object Doc extends Command
 
     case object Run extends Command
-
-    case object Benchmark extends Command
 
     case object Test extends Command
 
@@ -432,12 +412,11 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
-    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
-      case "nothing" => SubEffectLevel.Nothing
-      case "lambdas" => SubEffectLevel.Lambdas
-      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
-      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
+      case "mod-defs" => Subeffecting.ModDefs
+      case "ins-defs" => Subeffecting.InsDefs
+      case "lambdas" => Subeffecting.Lambdas
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -462,8 +441,6 @@ object Main {
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
-      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
-
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
@@ -484,6 +461,9 @@ object Main {
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
           .text("benchmark only frontend"),
+        opt[Unit]("par")
+          .action((_, c) => c.copy(XPerfPar = true))
+          .text("benchmark only parallel evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
@@ -558,9 +538,9 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xdeprecated
-      opt[Unit]("Xdeprecated").action((_, c) => c.copy(xdeprecated = true)).
-        text("[experimental] enables deprecated features.")
+      // Xno-deprecated
+      opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
+        text("[experimental] disables deprecated features.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
@@ -569,26 +549,6 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
-
-      // Xbdd-threshold
-      opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
-        text("[experimental] sets the threshold for when to use BDDs.")
-
-      // Xno-bool-cache
-      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
-        text("[experimental] disables Boolean caches.")
-
-      // Xno-bool-specialcases
-      opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
-        text("[experimental] disables hardcoded Boolean unification special cases.")
-
-      // Xno-bool-unif
-      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
-        text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-qmc
-      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
-        text("[experimental] disables Quine McCluskey when using BDDs.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
@@ -607,8 +567,16 @@ object Main {
         text("[experimental] verifies consistency of effects after typechecking")
 
       // Xsubeffecting
-      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xzhegalkin
+      opt[Unit]("Xzhegalkin").action((_, c) => c.copy(xzhegalkin = true)).
+        text("[experimental] enables Zhegalkin polynomials")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

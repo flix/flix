@@ -842,20 +842,17 @@ def charValue03(): Bool =
 
 @test
 def valueOf01(): Bool =
-    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
     let c = Char.valueOf('0');
-    equals(c, checked_cast(Char.valueOf('0')))
+    unsafe c.equals(Char.valueOf('0'))
 
 @test
 def valueOf02(): Bool =
-    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
     let c = Char.valueOf('A');
-    equals(c, checked_cast(Char.valueOf('A')))
+    unsafe c.equals(Char.valueOf('A'))
 
 @test
 def valueOf03(): Bool =
-    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
     let c = Char.valueOf('+');
-    equals(c, checked_cast(Char.valueOf('+')))
+    unsafe c.equals(Char.valueOf('+'))
 
 }

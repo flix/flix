@@ -1,35 +1,43 @@
-mod Test.Exp.Jvm.InvokeMethod2.Overload.Subtypes {
+mod Test.Exp.Jvm.InvokeMethod.Overload.Subtypes {
+
+    import java.lang.CharSequence
+    import java.lang.Object
+    import java.lang.StringBuffer
+    import java.lang.StringBuilder
+    import java.nio.CharBuffer
 
    @test
-   def testInvokeMethod2_01(): Bool \ IO =
+   def testInvokeMethod_02(): Bool \ IO =
+      let cs = CharBuffer.allocate(5);
+      cs.append('h');
+      cs.append('e');
+      cs.append('l');
+      cs.append('l');
+      cs.append('o');
+      let obj = "hello world";
+      obj.contains(cs)
+
+   @test
+   def testInvokeMethod_03(): Bool \ IO =
+      let sb = new StringBuilder("world");
       let obj = "Hello world";
-      obj¤contains("o w")
-
-   // TODO: use CharBuffer with static call once available
+      obj.contains(sb) and obj.contains(sb.toString())
 
    @test
-   def testInvokeMethod2_02(): Bool \ IO =
-      import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
-      let sb: ##java.lang.StringBuilder = newSB("world");
+   def testInvokeMethod_04(): Bool \ IO =
+      let sb = new StringBuffer("llo ");
       let obj = "Hello world";
-      obj¤contains(sb) and obj¤contains(sb¤toString())
+      obj.contains(sb) and obj.contains(sb.toString())
 
    @test
-   def testInvokeMethod2_03(): Bool \ IO =
-      import java_new java.lang.StringBuffer(String): ##java.lang.StringBuffer \ IO as newSB;
-      let sb: ##java.lang.StringBuffer = newSB("llo ");
-      let obj = "Hello world";
-      obj¤contains(sb) and obj¤contains(sb¤toString())
-
-   @test
-   def testInvokeMethod2_04(): Bool \ IO =
+   def testInvokeMethod_05(): Bool \ IO =
       let txt = "HeLlO WorlD";
-      let obj: ##java.lang.Object = (checked_cast("HeLlO WorlD") : ##java.lang.Object);
-      txt¤equals(obj)
+      let obj : Object = (checked_cast("HeLlO WorlD") : Object);
+      txt.equals(obj)
 
    @test
-   def testInvokeMethod2_05(): Bool \ IO =
+   def testInvokeMethod_06(): Bool \ IO =
       let txt = "HeLlO WorlD";
-      let obj: ##java.lang.CharSequence = (checked_cast("HeLlO WorlD") : ##java.lang.CharSequence);
-      txt¤equals(obj)
+      let obj : CharSequence = (checked_cast("HeLlO WorlD") : CharSequence);
+      txt.equals(obj)
 }

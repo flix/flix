@@ -67,6 +67,11 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
+  case class StructField(e: TypedAst.StructField) extends Entity {
+    def loc: SourceLocation = e.loc
+    def precision: Precision = Precision.High
+  }
+
   case class Trait(e: TypedAst.Trait) extends Entity {
     def loc: SourceLocation = e.sym.loc
     def precision: Precision = Precision.High
@@ -83,6 +88,11 @@ object Entity {
   }
 
   case class Enum(e: TypedAst.Enum) extends Entity {
+    def loc: SourceLocation = e.sym.loc
+    def precision: Precision = Precision.High
+  }
+
+  case class Struct(e: TypedAst.Struct) extends Entity {
     def loc: SourceLocation = e.sym.loc
     def precision: Precision = Precision.High
   }
@@ -170,4 +180,7 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
+  case class StructFieldUse(sym: Symbol.StructFieldSym, loc: SourceLocation, parent: Entity) extends Entity {
+    def precision: Precision = Precision.High
+  }
 }

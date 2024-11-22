@@ -22,7 +22,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
     val actual = TestCompilationMessage.messageWithLoc(NoFormatter)
 
-    assert(expected == actual)
+    assert(actual.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
   }
 
 
@@ -35,7 +35,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
     override def summary: String = "This is the summary."
 
     override def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> $summary
          |
          |${code(loc, "The code is highlighted here")}

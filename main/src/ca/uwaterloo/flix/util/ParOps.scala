@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 object ParOps {
@@ -96,16 +96,6 @@ object ParOps {
   def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
     val results = parMap(xs)(f)
     Validation.sequence(results)
-  }
-
-  /**
-    * Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
-  def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
-    val parVals = parTraverse(m) {
-      case (k, v) => Validation.mapN(f(v))((k, _))
-    }
-    Validation.mapN(parVals)(_.toMap)
   }
 
   /**

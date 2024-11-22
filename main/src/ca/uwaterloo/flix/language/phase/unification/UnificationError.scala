@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.errors.Unrecoverable
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 
 /**
   * A common super-type for unification errors.
@@ -31,7 +31,7 @@ object UnificationError {
     * @param tpe1 the first type.
     * @param tpe2 the second type.
     */
-  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError with Unrecoverable
+  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
     * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
@@ -118,7 +118,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
+  case class NoMatchingInstance(tconstr: TraitConstraint) extends UnificationError
 
   /**
     * A unification error resulting from an equality constraint that is not supported by the context.

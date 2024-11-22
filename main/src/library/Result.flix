@@ -49,6 +49,8 @@ instance Monad[Result[e]] {
 
 mod Result {
 
+    import java.lang.Exception
+
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
@@ -191,7 +193,7 @@ mod Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, constant(z))
+        case Ok(v)  => f(v, _ -> checked_ecast(z))
         case Err(_) => z
     }
 
@@ -435,9 +437,7 @@ mod Result {
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(getMessage(checked_cast(e)))
+            case e: Exception => Err(unsafe e.getMessage())
         }
 
 }

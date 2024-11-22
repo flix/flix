@@ -17,8 +17,10 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
+import ca.uwaterloo.flix.language.fmt.FormatType.Mode
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 object FormatType {
   /**
@@ -29,10 +31,9 @@ object FormatType {
     * Performs alpha renaming if the rigidity environment is present.
     */
   def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
-    val minimized = TypeMinimization.minimizeType(tpe)
     val renamed = renv match {
-      case None => minimized
-      case Some(env) => alphaRename(minimized, env)
+      case None => tpe
+      case Some(env) => alphaRename(tpe, env)
     }
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }
@@ -47,12 +48,12 @@ object FormatType {
     val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
 
     // Compute the flexible variables (i.e. the free variables that are not rigid).
-    val flexibleVars = renv.getFlexibleVarsOf(freeVars)
+    val flexibleVars = renv.getFlexibleVarsOf(freeVars)(Scope.Top) // TODO LEVELS ideally we should have a proper scope here
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 
@@ -69,13 +70,6 @@ object FormatType {
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
-  }
-
-  /**
-    * Transforms the given kinded type variable symbol into a string.
-    */
-  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
-    formatTypeVarSymWithOptions(sym, flix.getFormatOptions)
   }
 
   /**
@@ -152,10 +146,12 @@ object FormatType {
       case SimpleType.Or(_) => false
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
-      case SimpleType.Difference(_, _) => false
+      case SimpleType.SymmetricDiff(_) => false
+      case SimpleType.Difference(_) => false
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
+      case SimpleType.ArrowWithoutEffect(_, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -176,8 +172,8 @@ object FormatType {
       case SimpleType.Str => true
       case SimpleType.Regex => true
       case SimpleType.Array => true
+      case SimpleType.ArrayWithoutRegion => true
       case SimpleType.Vector => true
-      case SimpleType.Ref => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
       case SimpleType.Lazy => true
@@ -186,6 +182,7 @@ object FormatType {
       case SimpleType.Pure => true
       case SimpleType.Univ => true
       case SimpleType.Region => true
+      case SimpleType.RegionWithoutRegion => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -205,7 +202,13 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
-      case SimpleType.MethodReturnType(_) => true
+      case SimpleType.JvmToType(_) => true
+      case SimpleType.JvmToEff(_) => true
+      case SimpleType.FieldType(_) => true
+      case SimpleType.JvmConstructor(_, _) => true
+      case SimpleType.JvmField(_, _) => true
+      case SimpleType.JvmMethod(_, _, _) => true
+      case SimpleType.JvmStaticMethod(_, _, _) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -243,8 +246,8 @@ object FormatType {
       case SimpleType.Str => "String"
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
+      case SimpleType.ArrayWithoutRegion => "ArrayWithoutRegion"
       case SimpleType.Vector => "Vector"
-      case SimpleType.Ref => "Ref"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
@@ -256,6 +259,7 @@ object FormatType {
       }
       case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
+      case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"{ $labelString }"
@@ -303,7 +307,12 @@ object FormatType {
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")
-      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
+      case SimpleType.SymmetricDiff(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" ⊕ ")
+      case SimpleType.Difference(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" - ")
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -322,6 +331,10 @@ object FormatType {
         val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
+      case SimpleType.ArrowWithoutEffect(arg, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val retString = delimit(ret, Mode.Type)
+        s"$argString --> $retString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>
@@ -338,7 +351,7 @@ object FormatType {
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
-          case Kind.JvmConstructorOrMethod => "j" + id.toString
+          case Kind.Jvm => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
@@ -360,9 +373,34 @@ object FormatType {
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
 
-      case SimpleType.MethodReturnType(tpe) =>
+      case SimpleType.JvmToType(tpe) =>
         val arg = visit(tpe, Mode.Type)
-        "MethodReturnType(" + arg + ")"
+        "JvmToType(" + arg + ")"
+
+      case SimpleType.JvmToEff(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "JvmToEff(" + arg + ")"
+
+      case SimpleType.JvmConstructor(name, tpes0) =>
+        val tpes = tpes0.map(visit(_, Mode.Type))
+        "Constructor(" + name + ", " + tpes.mkString(", ") + ")"
+
+      case SimpleType.JvmField(t0, name) =>
+        val t = visit(t0, Mode.Type)
+        "JvmField(" + t + ", " + name + ")"
+
+      case SimpleType.JvmMethod(t0, name, ts0) =>
+        val t = visit(t0, Mode.Type)
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
+
+      case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
+
+      case SimpleType.FieldType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "FieldType(" + arg + ")"
 
       case SimpleType.Error => "Error"
 

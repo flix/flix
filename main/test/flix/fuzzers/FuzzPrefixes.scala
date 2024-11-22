@@ -17,6 +17,7 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -26,7 +27,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   /**
     * The number of prefixes to compile for each program.
     */
-  private val N: Int = 25
+  private val N: Int = 100
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/simple-card-game.flix")
@@ -66,7 +67,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$e", prefix)
+      flix.addSourceCode(s"$name-prefix-$e", prefix)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

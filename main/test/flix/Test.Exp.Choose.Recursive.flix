@@ -32,7 +32,7 @@ mod Test.Exp.Choose.Recursive {
     pub def testChoose04(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst(true) else open_variant Expr.Var(123);
         choose cstOrVar {
-            case Expr.Xor(_) => false
+            case Expr.Xor(_, _) => false
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
         }
@@ -45,7 +45,7 @@ mod Test.Exp.Choose.Recursive {
         };
         let g = x -> choose x {
             case Expr.Cst(_) => false
-            case Expr.Xor(_) => true
+            case Expr.Xor(_, _) => true
         };
         let h = if (true) f else g;
         h(Expr.Cst(true))
@@ -59,7 +59,7 @@ mod Test.Exp.Choose.Recursive {
         };
         let g = x -> choose x {
             case Expr.Cst(_) => false
-            case Expr.Xor(_) => true
+            case Expr.Xor(_, _) => true
             case Expr.Not(_) => false
         };
         let h = if (true) f else g;

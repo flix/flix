@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 
 object GenClosureAbstractClasses {
 

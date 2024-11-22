@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.unification.SetFormula._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.phase.unification.SetFormula.*
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -29,7 +30,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
@@ -103,26 +104,6 @@ object CaseSetUnification {
   }
 
   /**
-    * A heuristic used to determine the order in which to eliminate variable.
-    *
-    * Semantically the order of variables is immaterial. Changing the order may
-    * yield different unifiers, but they are all equivalent. However, changing
-    * the can lead to significant speed-ups / slow-downs.
-    *
-    * We make the following observation:
-    *
-    * We want to have synthetic variables (i.e. fresh variables introduced during
-    * type inference) expressed in terms of real variables (i.e. variables that
-    * actually occur in the source code). We can ensure this by eliminating the
-    * synthetic variables first.
-    */
-  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
-    val realVars = l.filter(_.sym.isReal)
-    val synthVars = l.filterNot(_.sym.isReal)
-    synthVars ::: realVars
-  }
-
-  /**
     * Performs successive variable elimination on the given set expression `f`.
     */
   private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit univ: Set[Int], flix: Flix): CaseSetSubstitution = fvs match {
@@ -184,8 +165,8 @@ object CaseSetUnification {
 
   /**
     * A DNF formula is either:
-    * - a union of intersections of literals.
-    * - the universal set
+    *   - a union of intersections of literals.
+    *   - the universal set
     */
   private sealed trait Dnf
 
@@ -195,12 +176,12 @@ object CaseSetUnification {
     /**
       * The bottom value is an empty union.
       */
-    val Empty = Union(Set())
+    val Empty: Union = Union(Set())
 
     /**
       * The top value is an empty intersection.
       */
-    val All = Union(Set(Set()))
+    val All: Union = Union(Set(Set()))
   }
 
   /**
@@ -235,12 +216,11 @@ object CaseSetUnification {
   private def nnf(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Positive(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Union).getOrElse(Nnf.Empty)
+      lits.reduceLeftOption(Nnf.Union.apply).getOrElse(Nnf.Empty)
     case Var(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**
@@ -249,7 +229,7 @@ object CaseSetUnification {
   private def nnfNot(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Negative(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Intersection).getOrElse(Nnf.All)
+      lits.reduceLeftOption(Nnf.Intersection.apply).getOrElse(Nnf.All)
     case Var(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case Not(tpe) => nnf(tpe)
     case Or(tpe1, tpe2) => Nnf.Intersection(
@@ -260,7 +240,6 @@ object CaseSetUnification {
       nnf(mkNot(tpe1)),
       nnf(mkNot(tpe2))
     )
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**

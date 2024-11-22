@@ -17,19 +17,20 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.LiftedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *
-  * (a) The main function is always reachable.
-  * (b) A function marked with @benchmark or @test is reachable.
-  * (c) Appears in a function which itself is reachable.
+  *   - (a) is an entry point (main / tests / exports).
+  *   - (c) appears in a function which itself is reachable.
+  *   - (d) is an instance of a trait whose signature(s) appear in a reachable function.
+  *     [[Monomorpher]] will erase unused instances so this phase must check all instances
+  *     for the [[Monomorpher]] to work.
   *
   */
 object TreeShaker2 {
@@ -38,8 +39,8 @@ object TreeShaker2 {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
-    // Compute the symbols that are always reachable.
-    val initReach = root.reachable
+    // Entry points are always reachable.
+    val initReach = root.entryPoints
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
@@ -74,8 +75,8 @@ object TreeShaker2 {
     case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
@@ -90,9 +91,6 @@ object TreeShaker2 {
       Set.empty
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>

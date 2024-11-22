@@ -80,8 +80,8 @@ instance MonadZero[List] {
 instance MonadZip[List] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
-    pub override def zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
-    pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
+    redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
+    redef unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
 }
 
 instance Foldable[List] {
@@ -92,20 +92,20 @@ instance Foldable[List] {
 
 instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
-    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
 }
 
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] \ ef, t: List[a]): m[List[b]] \ ef with Applicative[m] = List.traverse(f, t)
-    pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+    redef sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
 instance Filterable[List] {
     pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
+    redef filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
 
 instance Witherable[List]
@@ -145,11 +145,10 @@ mod List {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        foreach (x <- l)
-            StringBuilder.appendString!("${x} :: ", sb);
-        StringBuilder.appendString!("Nil", sb);
-        StringBuilder.toString(sb)
+        List.iterator(rc, l)
+            |> Iterator.map(ToString.toString)
+            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+            |> Iterator.join(" :: ")
     }
 
     ///
@@ -192,7 +191,7 @@ mod List {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {
@@ -200,6 +199,11 @@ mod List {
             case _ :: xs => loop(xs, acc + 1)
         };
         loop(l, 0)
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: List[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -280,7 +284,7 @@ mod List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -339,7 +343,7 @@ mod List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -347,14 +351,11 @@ mod List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => {
-                let y = f(x);
-                loop(xs, ys -> k(y :: ys))
-            }
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x) :: acc)
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Return the singleton list with element `x`.
@@ -664,7 +665,7 @@ mod List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -704,7 +705,7 @@ mod List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -965,7 +966,7 @@ mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, eidentity)
+        loop(xs, ys, x -> checked_ecast(x))
 
 
 
@@ -1043,7 +1044,7 @@ mod List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), eidentity)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), x -> checked_ecast(x))
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -1211,7 +1212,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region rc {
-        toArray(rc, l) !> Array.sort! |> Array.toList
+        toArray(rc, l) !> Array.sort |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1222,7 +1223,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
-        toArray(rc, l) !> Array.sortBy!(f) |> Array.toList
+        toArray(rc, l) !> Array.sortBy(f) |> Array.toList
     }
 
     ///
@@ -1233,7 +1234,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
-        toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList
+        toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
     }
 
     ///
@@ -1246,7 +1247,7 @@ mod List {
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
         def loop(sst, k) = match f(sst) {
             case None         => k(Nil)
-            case Some(a, st1) => loop(st1, ks -> k(a :: ks))
+            case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
         };
         loop(st, identity)
 
@@ -1334,9 +1335,9 @@ mod List {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
-        let ls = ref xs @ rc;
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => None
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }
@@ -1411,8 +1412,8 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: List[a]): List[a] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toList
+    pub def shuffle(l: List[a]): List[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toList
     }
 
     ///

@@ -784,20 +784,17 @@ mod TestFloat64 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(0.0f64);
-        equals(d, checked_cast(Float64.valueOf(0.0f64)))
+        unsafe d.equals(Float64.valueOf(0.0f64))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(1.0f64);
-        equals(d, checked_cast(Float64.valueOf(1.0f64)))
+        unsafe d.equals(Float64.valueOf(1.0f64))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
         let d = Float64.valueOf(-1.0f64);
-        equals(d, checked_cast(Float64.valueOf(-1.0f64)))
+        unsafe d.equals(Float64.valueOf(-1.0f64))
 
 }

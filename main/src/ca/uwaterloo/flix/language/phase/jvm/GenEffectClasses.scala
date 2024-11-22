@@ -6,44 +6,45 @@ import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 
-/// An effect class like this:
-/// ```
-/// eff SomeEffect {
-///     pub def flip(): Bool
-///     pub def add(x: Int32, y: Int32): Int32
-/// }
-/// ```
-/// Is conceptually understood as (the input types of `cont` are actually boxed in `Value`):
-/// ```
-/// eff SomeEffect {
-///     pub def flip(unit: Unit, cont: Bool -> Result): Value
-///     pub def add(x: Int32, y: Int32, cont: Int32 -> Result): Value
-/// }
-/// ```
-/// and is generated like so:
-/// ```
-/// public final class Eff$SomeEffect implements Handler {
-///     public Fn2$Obj$Obj$Obj flip;
-///     public Fn3$Int32$Int32&Obj$Obj add;
-///
-///     public static EffectCall flip(Object var0, Handler h, Resumption r) {
-///         Fn2$Obj$Obj$Obj f = ((Eff$SomeEffect) h).flip;
-///         f.arg0 = var0;
-///         f.arg1 = new ResumptionWrapper(r);
-///         return f.invoke();
-///     }
-///
-///     public static EffectCall add(Int var0, Int var1, Handler h, Resumption r) {
-///         Fn2$Obj$Obj$Obj f = ((Eff$SomeEffect) h).flip;
-///         f.arg0 = var0;
-///         f.arg1 = var1;
-///         f.arg2 = new ResumptionWrapper(r);
-///         return f.invoke();
-///     }
-/// }
-/// ```
+/** An effect class like this:
+  * {{{
+  * eff SomeEffect {
+  *     pub def flip(): Bool
+  *     pub def add(x: Int32, y: Int32): Int32
+  * }
+  * }}}
+  * Is conceptually understood as (the input types of `cont` are actually boxed in `Value`):
+  * {{{
+  * eff SomeEffect {
+  *     pub def flip(unit: Unit, cont: Bool -> Result): Value
+  *     pub def add(x: Int32, y: Int32, cont: Int32 -> Result): Value
+  * }
+  * }}}
+  * and is generated like so:
+  * {{{
+  * public final class Eff$SomeEffect implements Handler {
+  *     public Fn2$Obj$Obj$Obj flip;
+  *     public Fn3$Int32$Int32&Obj$Obj add;
+  *
+  *     public static EffectCall flip(Object var0, Handler h, Resumption r) {
+  *         Fn2$Obj$Obj$Obj f = ((Eff$SomeEffect) h).flip;
+  *         f.arg0 = var0;
+  *         f.arg1 = new ResumptionWrapper(r);
+  *         return f.invoke();
+  *     }
+  *
+  *     public static EffectCall add(Int var0, Int var1, Handler h, Resumption r) {
+  *         Fn2$Obj$Obj$Obj f = ((Eff$SomeEffect) h).flip;
+  *         f.arg0 = var0;
+  *         f.arg1 = var1;
+  *         f.arg2 = new ResumptionWrapper(r);
+  *         return f.invoke();
+  *     }
+  * }
+  * }}}
+  */
 object GenEffectClasses {
 
   def gen(effects: Iterable[Effect])(implicit flix: Flix): Map[JvmName, JvmClass] = {

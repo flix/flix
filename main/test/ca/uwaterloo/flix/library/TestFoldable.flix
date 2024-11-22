@@ -23,34 +23,34 @@ mod TestFoldable {
 
     enum Logger[i, a](Chain[i], a)
 
-    def tell(x: i): Logger[i, Unit] = Logger.Logger((Chain.singleton(x), ()))
+    def tell(x: i): Logger[i, Unit] = Logger.Logger(Chain.singleton(x), ())
 
     def runLogger(ma: Logger[i, a]): (List[i], a) =
-        let Logger.Logger((w, a)) = ma;
+        let Logger.Logger(w, a) = ma;
         (Chain.toList(w), a)
 
 
     instance Functor[Logger[i]] {
         pub def map(f: a -> b \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger.Logger((w, a)) = ma;
-            Logger.Logger((w, f(a)))
+            let Logger.Logger(w, a) = ma;
+            Logger.Logger(w, f(a))
     }
 
     instance Applicative[Logger[i]] {
         pub def point(x: a): Logger[i, a] = Logger.Logger(Chain.empty(), x)
 
         pub def ap(mf: Logger[i, a -> b \ ef], ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger.Logger((w1, f)) = mf;
-            let Logger.Logger((w2, a)) = ma;
-            Logger.Logger((Chain.append(w1, w2), f(a)))
+            let Logger.Logger(w1, f) = mf;
+            let Logger.Logger(w2, a) = ma;
+            Logger.Logger(Chain.append(w1, w2), f(a))
         }
 
 
     instance Monad[Logger[i]] {
         pub def flatMap(f: a -> Logger[i, b] \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger.Logger((w1, a)) = ma;
-            let Logger.Logger((w2, b)) = f(a);
-            Logger.Logger((Chain.append(w1, w2), b))
+            let Logger.Logger(w1, a) = ma;
+            let Logger.Logger(w2, b) = f(a);
+            Logger.Logger(Chain.append(w1, w2), b)
     }
 
 
@@ -205,6 +205,22 @@ mod TestFoldable {
     @test
     def length03(): Bool =
         Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        Foldable.size((Nil: List[String])) == 0
+
+    @test
+    def size02(): Bool =
+        Foldable.size("a" :: "b" :: Nil) == 2
+
+    @test
+    def size03(): Bool =
+        Foldable.size(Some(5) :: None :: Some(18) :: None :: Nil) == 4
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //

@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Source
+
 trait Locatable extends Sourceable {
 
   /**
@@ -25,6 +27,6 @@ trait Locatable extends Sourceable {
   /**
     * Returns the source of `this`.
     */
-  override def src: Ast.Source = loc.source
+  override def src: Source = loc.source
 
 }

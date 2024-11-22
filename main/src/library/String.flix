@@ -16,12 +16,17 @@
 
 mod String {
 
+    import java.lang.System
+    import java.util.regex.Pattern
+    import java.util.regex.PatternSyntaxException
+    import java.lang.IndexOutOfBoundsException
+
     use Regex.Flag
 
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = unsafe s¤charAt(i)
+    pub def charAt(i: Int32, s: String): Char = unsafe s.charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -35,9 +40,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 =
-        import java.lang.String.codePointAt(Int32): Int32 \ {};
-        codePointAt(s, i)
+    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s.codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -52,15 +55,13 @@ mod String {
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String): String \ {};
-        (s1 `concat` s2)
+        unsafe s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty(): Bool \ {};
-        isEmpty(s)
+        unsafe s.isEmpty()
 
     ///
     /// Returns `true` if the string `s` is non-empty.
@@ -68,48 +69,45 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the length of the string `s`.
+    /// Returns the number of characters the string `s`.
     ///
     pub def length(s: String): Int32 =
-        import java.lang.String.length(): Int32 \ {};
-        length(s)
+        unsafe s.length()
+
+    ///
+    /// Returns the number of characters the string `s`.
+    ///
+    pub def size(s: String): Int32 = length(s)
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =
-        import java.lang.String.startsWith(String): Bool \ {};
-        (s `startsWith` prefix#prefix)
+        unsafe s.startsWith(prefix#prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix = String}, s: String): Bool =
-        import java.lang.String.endsWith(String): Bool \ {};
-        (s `endsWith` suffix#suffix)
+        unsafe s.endsWith(suffix#suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        import java.lang.String.split(String): Array[String, rc] \ rc;
-        let _ = rc; // This avoids a redundancy error.
-        Array.toList(split(s, regex#regex))
-    }
+    pub def split(regex: {regex = String}, s: String): List[String] =
+        unsafe Array.toList(unsafe s.split(regex#regex))
 
     ///
     /// Returns the lower case version of the string `s`.
     ///
     pub def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase(): String \ {};
-        toLowerCase(s)
+        unsafe s.toLowerCase()
 
     ///
     /// Returns the upper case version of the string `s`.
     ///
     pub def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase(): String \ {};
-        toUpperCase(s)
+        unsafe s.toUpperCase()
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -122,15 +120,12 @@ mod String {
     /// Returns a new empty string if there is no characters in `s`.
     ///
     pub def trim(s: String): String =
-        import java.lang.String.trim(): String \ {};
-        trim(s)
+        unsafe s.trim()
 
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String \ {};
-        lineSeparator()
+    pub def lineSeparator(): String = unsafe System.lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
@@ -160,8 +155,7 @@ mod String {
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
-            compile(regex)
+            unsafe Pattern.compile(regex)
         })
 
 
@@ -176,8 +170,7 @@ mod String {
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
-            compile(regex, Regex.sumFlags(flags))
+            unsafe Pattern.compile(regex, Regex.sumFlags(flags))
         })
 
 
@@ -199,7 +192,7 @@ mod String {
                 StringBuilder.toString(sb)
             else {
                 let c = f(i);
-                StringBuilder.append!(c, sb);
+                StringBuilder.append(c, sb);
                 loop(i + 1)
             }
         };
@@ -211,7 +204,7 @@ mod String {
     ///
     pub def flatten(xs: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
+        List.forEach(x -> StringBuilder.appendString(x, sb), xs);
         StringBuilder.toString(sb)
     }
 
@@ -222,7 +215,7 @@ mod String {
     pub def intercalate(sep: String, xs: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
         let arr = List.toArray(rc, xs);
-        StringBuilder.intercalate!(sep, arr, sb);
+        StringBuilder.intercalate(sep, arr, sb);
         StringBuilder.toString(sb)
     }
 
@@ -234,8 +227,8 @@ mod String {
         case Nil     => ""
         case x :: rs => region rc {
             let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString!(x, sb);
-            let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
+            StringBuilder.appendString(x, sb);
+            let appendStep = s -> { StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb) };
             List.forEach(appendStep, rs);
             StringBuilder.toString(sb)
         }
@@ -308,11 +301,10 @@ mod String {
     /// Note - use `isSubmatch` to search for a substring.
     ///
     pub def isMatch(regex: {regex = String}, s: String): Bool =
-        import java.lang.String.matches(String): Bool \ {};
         try {
-            matches(s, regex#regex)
+            unsafe s.matches(regex#regex)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -324,19 +316,14 @@ mod String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ rc;
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ rc;
-        import java.util.regex.Matcher.find(Int32): Bool \ rc;
-        let _ = rc; // This avoids a redundancy error.
+    def isSubmatchHelper(pattern: String, s: String): Bool =
         try {
-            let p1 = compile(pattern);
-            let m1 = matcher(p1, checked_cast(s));
-            find(m1, 0)
+            let p1 = unsafe Pattern.compile(pattern);
+            let m1 = unsafe p1.matcher(s);
+            unsafe m1.find(0)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
-    }
 
     ///
     /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).
@@ -344,10 +331,9 @@ mod String {
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
-        import java.lang.String.substring(Int32, Int32): String \ {};
-        substring(s, start#start, end#end)
+        unsafe s.substring(start#start, end#end)
     } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => ""
+        case _: IndexOutOfBoundsException => ""
     }
 
     ///
@@ -435,7 +421,7 @@ mod String {
         let step = ix ->
             match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                 case None => None
-                case Some(ix2) => Some(ix2, ix2 + sublen)
+                case Some(ix2) => Some((ix2, ix2 + sublen))
             };
         List.unfold(step, 0)
 
@@ -646,8 +632,8 @@ mod String {
             let a1 = f(a);
             match a1 {
                 case None         => StringBuilder.toString(sb)
-                case Some(c, st1) => {
-                    StringBuilder.append!(c, sb);
+                case Some((c, st1)) => {
+                    StringBuilder.append(c, sb);
                     loop(st1)
                 }
             }
@@ -669,7 +655,7 @@ mod String {
             match f() {
                 case None    => StringBuilder.toString(sb)
                 case Some(c) => {
-                    StringBuilder.append!(c, sb);
+                    StringBuilder.append(c, sb);
                     loop()
                 }
             }
@@ -688,8 +674,8 @@ mod String {
             let a1 = f(a);
             match a1 {
                 case None         => StringBuilder.toString(sb)
-                case Some(s, st1) => {
-                    StringBuilder.appendString!(s, sb);
+                case Some(((s, st1))) => {
+                    StringBuilder.appendString(s, sb);
                     loop(st1)
                 }
             }
@@ -711,7 +697,7 @@ mod String {
             match f() {
                 case None    => StringBuilder.toString(sb)
                 case Some(s) => {
-                    StringBuilder.appendString!(s, sb);
+                    StringBuilder.appendString(s, sb);
                     loop()
                 }
             }
@@ -771,11 +757,10 @@ mod String {
     /// Returns the empty string if `n < 0`.
     ///
     pub def repeat(n: Int32, s: String): String =
-        import java.lang.String.repeat(Int32): String \ {};
         if (n < 0)
             ""
         else
-            repeat(s, n)
+            unsafe s.repeat(n)
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -814,9 +799,9 @@ mod String {
         let postfix = repeat(ceil, Char.toString(c));
 
         let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!(prefix, sb);
-        StringBuilder.appendString!(s, sb);
-        StringBuilder.appendString!(postfix, sb);
+        StringBuilder.appendString(prefix, sb);
+        StringBuilder.appendString(s, sb);
+        StringBuilder.appendString(postfix, sb);
         StringBuilder.toString(sb)
     }
 
@@ -824,29 +809,25 @@ mod String {
     /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
-        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(src#src), checked_cast(dst#dst))
+        unsafe s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
     pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
-        import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, src#src, dst#dst)
+        unsafe s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
-        import java.lang.String.replaceAll(String, String): String \ {};
-        replaceAll(s, regex#regex, to#to)
+        unsafe s.replaceAll(regex#regex, to#to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
-        import java.lang.String.replaceFirst(String, String): String \ {};
-        replaceFirst(s, regex#regex, to#to)
+        unsafe s.replaceFirst(regex#regex, to#to)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -896,8 +877,8 @@ mod String {
         let sb = StringBuilder.empty(rc);
         let prefix = repeat(n, " ");
         let step = x -> {
-            StringBuilder.appendString!(prefix, sb);
-            StringBuilder.appendLine!(x, sb)
+            StringBuilder.appendString(prefix, sb);
+            StringBuilder.appendLine(x, sb)
         };
         List.forEach(step, lines(s));
         StringBuilder.toString(sb)
@@ -935,7 +916,7 @@ mod String {
         };
         let step = s1 -> {
             let line = loop(s1, 0);
-            StringBuilder.appendLine!(line, sb)
+            StringBuilder.appendLine(line, sb)
         };
         List.forEach(step, lines(s));
         StringBuilder.toString(sb)
@@ -959,7 +940,7 @@ mod String {
     ///
     pub def unlines(a: List[String]): String = region rc {
         let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
+        List.forEach(x -> StringBuilder.appendLine(x, sb), a);
         StringBuilder.toString(sb)
     }
 
@@ -980,8 +961,8 @@ mod String {
         case Nil     => ""
         case x :: xs => region rc {
             let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString!(x, sb);
-            let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
+            StringBuilder.appendString(x, sb);
+            let f = s -> { StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb) };
             List.forEach(f, xs);
             StringBuilder.toString(sb)
         }
@@ -1000,11 +981,10 @@ mod String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let i = indexOf(s, substr#substr);
+            let i = unsafe s.indexOf(substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1016,11 +996,10 @@ mod String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let i = lastIndexOf(s, substr#substr);
+            let i = unsafe s.lastIndexOf(substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1162,7 +1141,7 @@ mod String {
     ///
     pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
+        List.unfold(i -> if (i >= len) None else Some(((charAt(i, a), charAt(i, b)), i + 1)), 0)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where
@@ -1189,11 +1168,11 @@ mod String {
                 match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                     case None => {
                         let s1 = sliceRight(start = ix, s);
-                        Some(s1, maxlen + 1)
+                        Some((s1, maxlen + 1))
                     }
                     case Some(ix2) => {
                         let s1 = slice(start = ix, end = ix2, s);
-                        Some(s1, ix2 + sublen)
+                        Some((s1, ix2 + sublen))
                     }
                 }
             };
@@ -1205,11 +1184,10 @@ mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = indexOf(s, substr#substr, offset#offset);
+            let ix = unsafe s.indexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1219,11 +1197,10 @@ mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = lastIndexOf(s, substr#substr, offset#offset);
+            let ix = unsafe s.lastIndexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1247,8 +1224,8 @@ mod String {
         let len = length(s);
         let step = pos -> match pos {
             case i if i >= len        => None
-            case i if i + size >= len => Some(sliceRight(start = i, s), len)
-            case i                    => Some(slice(start = i, end = i + size, s), i + size)
+            case i if i + size >= len => Some((sliceRight(start = i, s), len))
+            case i                    => Some((slice(start = i, end = i + size, s), i + size))
         };
         List.unfold(step, 0)
 

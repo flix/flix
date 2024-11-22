@@ -160,6 +160,12 @@ mod TestIterable {
         Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
     }
 
+    @test
+    def iterableMutList05(): Bool = region rc {
+        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutList(rc);
+        Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // MutMap instance                                                         //
     /////////////////////////////////////////////////////////////////////////////
@@ -199,13 +205,6 @@ mod TestIterable {
         let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, List#{'A', 'B', 'D', 'C'});
         Iterable.iterator(rc, mq) |> Iterator.toList == List#{'D', 'C', 'B', 'A'}
-    }
-
-    @test
-    def iterableMutQueue04(): Bool = region rc {
-        let mq = MutQueue.empty(rc);
-        MutQueue.enqueueAll(mq, List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')});
-        Iterable.iterator(rc, mq) |> Iterator.toList == List#{(11, 'D'), (8, 'C'), (5, 'B'), (2, 'A')}
     }
 
     /////////////////////////////////////////////////////////////////////////////

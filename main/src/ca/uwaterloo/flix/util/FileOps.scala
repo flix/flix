@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path}
+import java.nio.file.{Files, LinkOption, Path, Paths}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 object FileOps {
 
@@ -67,4 +68,27 @@ object FileOps {
     FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
   }
 
+  /**
+    * Returns all files ending with `.flix` in `path`.
+    *
+    * The search is limited at `depth - 1` levels of subdirectories.
+    *
+    * E.g., if `depth = 1` then given the directory structure below,
+    * `Subfile.flix` will not be included.
+    *
+    * {{{
+    * path
+    * ├── Main.flix
+    * └── subdir
+    *     └── Subfile.flix
+    * }}}
+    *
+    *
+    */
+  def getFlixFilesIn(path: String, depth: Int): List[Path] = {
+    Files.walk(Paths.get(path), depth)
+      .iterator().asScala
+      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .toList.sorted
+  }
 }

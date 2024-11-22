@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
@@ -62,7 +63,7 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubToken)(Formatter.getDefault, System.out).toHardResult match {
+      Bootstrap.bootstrap(cwd, options.githubToken)(Formatter.getDefault, System.out).toResult match {
         case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
@@ -77,6 +78,7 @@ object SimpleRunner {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
+      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
       val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addFlix(file.toPath)
@@ -91,8 +93,7 @@ object SimpleRunner {
     flix.setFormatter(Formatter.getDefault)
 
     // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult.toHardResult match {
+    flix.compile().toResult match {
       case Result.Ok(compilationResult) =>
 
         compilationResult.getMain match {
@@ -112,7 +113,7 @@ object SimpleRunner {
         Result.Ok(())
 
       case Result.Err(errors) =>
-        flix.mkMessages(Chain.from(errors.toSeq.sortBy(_.source.name))).foreach(println)
+        flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         Result.Err(1)

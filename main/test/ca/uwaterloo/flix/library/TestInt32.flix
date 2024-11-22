@@ -1194,20 +1194,17 @@ mod TestInt32 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
         let i = Int32.valueOf(0);
-        equals(i, checked_cast(Int32.valueOf(0)))
+        unsafe i.equals(Int32.valueOf(0))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
         let i = Int32.valueOf(1);
-        equals(i, checked_cast(Int32.valueOf(1)))
+        unsafe i.equals(Int32.valueOf(1))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
         let i = Int32.valueOf(-1);
-        equals(i, checked_cast(Int32.valueOf(-1)))
+        unsafe i.equals(Int32.valueOf(-1))
 
 }

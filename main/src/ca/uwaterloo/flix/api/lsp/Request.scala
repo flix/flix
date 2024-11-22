@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
+import org.json4s.jvalue2monadic
 import org.json4s.JsonAST.{JString, JValue}
 
 import java.util.Base64
@@ -443,16 +444,6 @@ object Request {
     v \\ k match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected $k: '$s'.")
-    }
-  }
-
-  /**
-    * Attempts to parse the `projectRootUri` from the given JSON value `v`.
-    */
-  private def parseProjectRootUri(v: JValue): Result[String, String] = {
-    v \\ "projectRootUri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected projectRootUri: '$s'.")
     }
   }
 

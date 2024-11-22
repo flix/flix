@@ -16,6 +16,13 @@
 
 mod TestFromJava {
 
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+    import java.util.{List => JList}
+    import java.lang.{String => JString}
+    import java.math.BigInteger
+    import java.math.BigDecimal
+
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -106,14 +113,12 @@ mod TestFromJava {
 
     @test
     def bigIntFromJava01(): Bool =
-        import static java.math.BigInteger.valueOf(Int64): ##java.math.BigInteger \ {};
-        let i = valueOf(0i64);
+        let i = unsafe BigInteger.valueOf(0i64);
         FromJava.fromJava(i) == 0ii
 
     @test
     def bigIntFromJava02(): Bool =
-        import static java.math.BigInteger.valueOf(Int64): ##java.math.BigInteger \ {};
-        let i = valueOf(100i64);
+        let i = unsafe BigInteger.valueOf(100i64);
         FromJava.fromJava(i) == 100ii
 
     /////////////////////////////////////////////////////////////////////////////
@@ -122,14 +127,12 @@ mod TestFromJava {
 
     @test
     def bigDecimalFromJava01(): Bool =
-        import static java.math.BigDecimal.valueOf(Int64): ##java.math.BigDecimal \ {};
-        let d = valueOf(0i64);
+        let d = unsafe BigDecimal.valueOf(0i64);
         FromJava.fromJava(d) == 0.0ff
 
     @test
     def bigDecimalFromJava02(): Bool =
-        import static java.math.BigDecimal.valueOf(Int64): ##java.math.BigDecimal \ {};
-        let d = valueOf(100i64);
+        let d = unsafe BigDecimal.valueOf(100i64);
         FromJava.fromJava(d) == 100.0ff
 
     /////////////////////////////////////////////////////////////////////////////
@@ -152,14 +155,12 @@ mod TestFromJava {
 
     @test
     def stringFromJava01(): Bool =
-        import static java.lang.String.valueOf(Bool): ##java.lang.String \ {};
-        let s = valueOf(true);
+        let s = unsafe JString.valueOf(true);
         FromJava.fromJava(s) == "true"
 
     @test
     def stringFromJava02(): Bool =
-        import static java.lang.String.valueOf(Bool): ##java.lang.String \ {};
-        let s = valueOf(false);
+        let s = unsafe JString.valueOf(false);
         FromJava.fromJava(s) == "false"
 
     /////////////////////////////////////////////////////////////////////////////
@@ -168,20 +169,17 @@ mod TestFromJava {
 
     @test
     def chainFromJava01(): Bool =
-        import static java.util.List.of(): ##java.util.List \ {};
-        let l = of();
+        let l = unsafe JList.of();
         (FromJava.fromJava(l): Chain[String]) == (Chain.empty(): Chain[String])
 
     @test
     def chainFromJava02(): Bool =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        let l = of(checked_cast("one"));
+        let l = unsafe JList.of("one");
         (FromJava.fromJava(l): Chain[String]) == Chain.singleton("one")
 
     @test
     def chainFromJava03(): Bool =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        let l = of(checked_cast("one"), checked_cast("two"));
+        let l = unsafe JList.of("one", "two");
         (FromJava.fromJava(l): Chain[String]) == List.toChain(List#{"one", "two"})
 
     /////////////////////////////////////////////////////////////////////////////
@@ -190,20 +188,17 @@ mod TestFromJava {
 
     @test
     def listFromJava01(): Bool =
-        import static java.util.List.of(): ##java.util.List \ {};
-        let l = of();
+        let l = unsafe JList.of();
         (FromJava.fromJava(l): List[String]) == (Nil: List[String])
 
     @test
     def listFromJava02(): Bool =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        let l = of(checked_cast("one"));
+        let l = unsafe JList.of("one");
         (FromJava.fromJava(l): List[String]) == List#{"one"}
 
     @test
     def listFromJava03(): Bool =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        let l = of(checked_cast("one"), checked_cast("two"));
+        let l = unsafe JList.of("one", "two");
         (FromJava.fromJava(l): List[String]) == List#{"one", "two"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -212,20 +207,17 @@ mod TestFromJava {
 
     @test
     def mapFromJava01(): Bool =
-        import static java.util.Map.of(): ##java.util.Map \ {};
-        let m = of();
+        let m = unsafe JMap.of();
         (FromJava.fromJava(m): Map[String, String]) == Map#{}
 
     @test
     def mapFromJava02(): Bool =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
-        let m = of(checked_cast("a"), checked_cast("one"));
+        let m = unsafe JMap.of("a", "one");
         (FromJava.fromJava(m): Map[String, String]) == Map#{"a" => "one"}
 
     @test
     def mapFromJava03(): Bool =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
-        let m = of(checked_cast("a"), checked_cast("one"), checked_cast("b"), checked_cast("two"));
+        let m = unsafe JMap.of("a", "one", "b", "two");
         (FromJava.fromJava(m): Map[String, String]) == Map#{"a" => "one", "b" => "two"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -234,20 +226,17 @@ mod TestFromJava {
 
     @test
     def setFromJava01(): Bool=
-        import static java.util.Set.of(): ##java.util.Set \ {};
-        let s = of();
+        let s = unsafe JSet.of();
         (FromJava.fromJava(s): Set[String]) == Set#{}
 
     @test
     def setFromJava02(): Bool =
-        import static java.util.Set.of(##java.lang.Object): ##java.util.Set \ {};
-        let s = of(checked_cast("one"));
+        let s = unsafe JSet.of("one");
         (FromJava.fromJava(s): Set[String]) == Set#{"one"}
 
     @test
     def setFromJava03(): Bool =
-        import static java.util.Set.of(##java.lang.Object, ##java.lang.Object): ##java.util.Set \ {};
-        let s = of(checked_cast("one"), checked_cast("two"));
+        let s = unsafe JSet.of("one", "two");
         (FromJava.fromJava(s): Set[String]) == Set#{"one", "two"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -256,20 +245,17 @@ mod TestFromJava {
 
     @test
     def vectorFromJava01(): Bool =
-        import static java.util.List.of(): ##java.util.List \ {};
-        let v = of();
+        let v = unsafe JList.of();
         (FromJava.fromJava(v): Vector[String]) == Vector#{}
 
     @test
     def vectorFromJava02(): Bool =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        let v = of(checked_cast("one"));
+        let v = unsafe JList.of("one");
         (FromJava.fromJava(v): Vector[String]) == Vector#{"one"}
 
     @test
     def vectorFromJava03(): Bool =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        let v = of(checked_cast("one"), checked_cast("two"));
+        let v = unsafe JList.of("one", "two");
         (FromJava.fromJava(v): Vector[String]) == Vector#{"one", "two"}
 
 }

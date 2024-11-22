@@ -1,7 +1,14 @@
+import java.lang.System
+
 ///
 /// Static denotes the region of global lifetime.
 ///
 pub type alias Static = IO
+
+///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
 
 ///
 /// An enum that holds type information where a witness is not available.
@@ -11,12 +18,88 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Generic IO Effect.
+/// The uninterpretable `Env` effect.
 ///
-/// The `IO` effect is the most general effect of any
-/// operation that interacts with the environment.
+/// The `Env` effect represents actions that read from the environment (e.g. information
+/// about the shell, operating system, or hardware)
+///
+/// The `Env` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Env
+
+///
+/// The uninterpretable `Exec` effect.
+///
+/// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
+///
+/// This includes use of `System.exec`, the `Process` class, and the `ProcessBuilder` class.
+///
+/// The `Exec` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exec
+
+///
+/// The uninterpretable `FsRead` effect.
+///
+/// The `FsRead` effect represents the actions to required to read from the file system.
+///
+/// The `FsRead` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FsRead
+
+///
+/// The uninterpretable `FsWrite` effect.
+///
+/// The `FsWrite` effect represents the actions to required to write to the file system.
+///
+/// The `FsWrite` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FsWrite
+
+///
+/// A type alias for the `FileRead` and `FileWrite` effects.
+///
+type alias FileIO = {FsRead, FsWrite}
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
+
+///
+/// The uninterpretable `Net` effect.
+///
+/// The `Net` effect represents the actions required to communicate over the network.
+///
+/// This includes binding to local ports, DNS resolution, and connecting to the outside.
+///
+/// The `Net` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Net
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
+
+///
+/// The uninterpretable `Sys` effect.
+///
+/// The `Sys` effect represents actions that interact with the JVM.
+///
+/// This includes use of class loaders, the `Runtime` class, and reflection.
+///
+/// The `Sys` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Sys
 
 ///
 /// The pure identity function.
@@ -104,9 +187,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    x |> ToString.toString |> println(getOut())
+    System.out.println(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.
@@ -117,16 +198,12 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
-    import static java_get_field java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.String.repeat(Int32): ##java.lang.String \ {};
-    let prt = println(getErr());
-    prt(repeat("*", 80));
-    prt("**") ;
-    prt("**  BUG: ${m}") ;
-    prt("**") ;
-    prt(repeat("*", 80));
-    prt("");
+    System.err.println("*".repeat(80));
+    System.err.println("**") ;
+    System.err.println("**  BUG: ${m}") ;
+    System.err.println("**") ;
+    System.err.println("*".repeat(80));
+    System.err.println("");
     ?panic
 })
 

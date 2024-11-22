@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -24,11 +25,11 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
+  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type])
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
@@ -99,7 +100,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
 
@@ -107,7 +108,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LetRec(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -121,11 +122,11 @@ object DocAst {
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
 
-    case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
+    case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
     val Unknown: Expr =
       Meta("unknown exp")
@@ -135,10 +136,6 @@ object DocAst {
 
     val Wild: Expr =
       AsIs("_")
-
-    /** e.g. `x_2` */
-    def VarWithOffset(sym: Symbol.VarSym): Expr =
-      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
 
     def Hole(sym: Symbol.HoleSym): Expr =
       AsIs("?" + sym.toString)
@@ -160,21 +157,11 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr): Expr =
-      Keyword("untag", d)
+    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+      Keyword("untag_"+idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))
-
-    /** The control separated return statement */
-    def Ret(d: Expr): Expr =
-      Keyword("ret", d)
-
-    def Ref(d: Expr): Expr =
-      Keyword("ref", d)
-
-    def Deref(d: Expr): Expr =
-      Keyword("deref", d)
 
     def Discard(d: Expr): Expr =
       Keyword("discard", d)
@@ -204,6 +191,19 @@ object DocAst {
     def ArrayStore(d1: Expr, index: Expr, d2: Expr): Expr =
       Assign(SquareApp(d1, List(index)), d2)
 
+    def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
+      val beforeRecord = "new " + sym.toString
+      val name = Name.Label(sym.name, sym.loc)
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
+      DoubleKeyword(beforeRecord, record, "@", Left(d2))
+    }
+
+    def StructGet(d1: Expr, field: Symbol.StructFieldSym): Expr =
+      Dot(d1, AsIs(field.name))
+
+    def StructPut(d1: Expr, field: Symbol.StructFieldSym, d2: Expr): Expr =
+      Assign(Dot(d1, AsIs(field.name)), d2)
+
     def VectorLit(ds: List[Expr]): Expr =
       DoubleSquareApp(AsIs(""), ds)
 
@@ -219,10 +219,13 @@ object DocAst {
     def Force(d: Expr): Expr =
       Keyword("force", d)
 
+    def Throw(d: Expr): Expr =
+      Keyword("throw", d)
+
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
-    def InstanceOf(d: Expr, clazz: Class[_]): Expr =
+    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
@@ -245,22 +248,22 @@ object DocAst {
     def Without(d: Expr, sym: Symbol.EffectSym): Expr =
       Binary(d, "without", AsIs(sym.toString))
 
-    def Cst(cst: Ast.Constant): Expr =
+    def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(d, ds)
 
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[ExpPosition]): Expr =
       App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
-    def JavaInvokeMethod2(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
+    def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(methodName.name)), ds)
 
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
@@ -274,7 +277,7 @@ object DocAst {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
-    def JavaInvokeConstructor(c: Constructor[_], ds: List[Expr]): Expr = {
+    def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
     }
 
@@ -298,9 +301,6 @@ object DocAst {
 
     val Absent: Expr =
       AsIs("Absent")
-
-    def Present(d: Expr): Expr =
-      App(AsIs("Present"), List(d))
 
   }
 
@@ -330,9 +330,9 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
-    case class JvmConstructor(constructor: Constructor[_]) extends Atom
+    case class JvmConstructor(constructor: Constructor[?]) extends Atom
 
     case class JvmMethod(method: Method) extends Atom
 
@@ -371,11 +371,11 @@ object DocAst {
 
     val Region: Type = AsIs("Region")
 
+    val Null: Type = AsIs("Null")
+
     def Array(t: Type): Type = App("Array", List(t))
 
     def Lazy(t: Type): Type = App("Lazy", List(t))
-
-    def Ref(t: Type): Type = App("Ref", List(t))
 
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
 

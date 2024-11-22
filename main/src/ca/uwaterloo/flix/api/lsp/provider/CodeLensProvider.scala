@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range, ResponseStatu
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object CodeLensProvider {
 

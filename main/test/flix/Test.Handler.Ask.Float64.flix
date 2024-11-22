@@ -1,11 +1,11 @@
 mod Test.Handler.Ask.Float64 {
 
     eff Ask {
-        pub def ask(x: Float64): Unit
+        def ask(x: Float64): Unit
     }
 
     def generator(x: Float64): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1.0f64)
+        Ask.ask(x); generator(x + 1.0f64)
 
     def sample(limit: Float64): List[Float64] =
         try {

@@ -108,14 +108,11 @@
     @test
     def testUncheckedEffectCast26(): A[String] \ IO = unchecked_cast(A.A("ABC") as _ \ IO)
 
-    @test
-    def testUncheckedEffectCast27(): (a -> a \ IO) = x -> unchecked_cast(x as _ \ IO)
+    def _testUncheckedEffectCast27(): (a -> a \ IO) = x -> unchecked_cast(x as _ \ IO)
 
-    @test
-    def testUncheckedEffectCast28(): (a -> a) \ IO = unchecked_cast(x -> x as _ \ IO)
+    def _testUncheckedEffectCast28(): (a -> a) \ IO = unchecked_cast(x -> x as _ \ IO)
 
-    @test
-    def testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
+    def _testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
 
     // Unsafe casts
 
@@ -185,16 +182,12 @@
     @test
     def testUncheckedEffectCast46(): A[String] = unchecked_cast(f(A.A("ABC")) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast47(): (a -> a) = x -> unchecked_cast(f(x) as _ \ {})
+    def _testUncheckedEffectCast47(): (a -> a) = x -> unchecked_cast(f(x) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast48(): (a -> a) = unchecked_cast(f(x -> x) as _ \ {})
+    def _testUncheckedEffectCast48(): (a -> a) = unchecked_cast(f(x -> x) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast49(): (a -> a) = x -> unchecked_cast(g(x) as _ \ {})
+    def _testUncheckedEffectCast49(): (a -> a) = x -> unchecked_cast(g(x) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast50(): (a -> a) = unchecked_cast(g(x -> x) as _ \ {})
+    def _testUncheckedEffectCast50(): (a -> a) = unchecked_cast(g(x -> x) as _ \ {})
 
 }

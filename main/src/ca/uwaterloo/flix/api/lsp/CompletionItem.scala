@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[CompletionItem]].
@@ -44,13 +44,13 @@ object CompletionItem {
   *                         will be ignored.
   */
 case class CompletionItem(
-  label: String, 
+  label: String,
   sortText: String,
   filterText: Option[String] = None,
   textEdit: TextEdit,
-  detail: Option[String] = None, 
-  documentation: Option[String] = None, 
-  kind: CompletionItemKind, 
+  detail: Option[String] = None,
+  documentation: Option[String] = None,
+  kind: CompletionItemKind,
   insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
   commitCharacters: List[String] = Nil) {
 

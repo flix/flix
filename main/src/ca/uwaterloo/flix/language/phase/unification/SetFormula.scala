@@ -178,33 +178,7 @@ object SetFormula {
       }
   }
 
-  /**
-    * Returns a minimized type based on SetFormula minimization.
-    */
-  def minimizeType(tpe: Type, sym: Symbol.RestrictableEnumSym, univ: SortedSet[Symbol.RestrictableCaseSym], loc: SourceLocation): Type = {
-    val (m, setFormulaUniv) = mkEnv(List(tpe), univ)
-    val setFormula = fromCaseType(tpe, m, setFormulaUniv)
-    val minimizedSetFormula = minimize(setFormula)(setFormulaUniv)
-    toCaseType(minimizedSetFormula, sym, m, loc)
-  }
-
   private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
-
-  /**
-    * Substitutes all variables in `f` using the substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a (new) variable.
-    */
-  def substitute(f: SetFormula, m: Map[Int, Int]): SetFormula = f match {
-    case Cst(s) => Cst(s)
-    case Var(x) => m.get(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
-      case Some(y) => Var(y)
-    }
-    case Not(f1) => Not(substitute(f1, m))
-    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
-    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
-  }
 
   /**
     * Runs the function `fn` on all the variables in the formula.
@@ -221,8 +195,8 @@ object SetFormula {
     * Creates an environment for mapping between proper types and formulas.
     */
   def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
-    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
-    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
+    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var.apply)
+    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case.apply)
     // TODO RESTR-VARS do I even need the ts part here?
 
     val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
@@ -232,7 +206,7 @@ object SetFormula {
       case sym => forward(VarOrCase.Case(sym))
     }
 
-    (Bimap(forward, backward), newUniv.toSet)
+    (Bimap(forward, backward), newUniv)
   }
 
   /**
@@ -258,7 +232,7 @@ object SetFormula {
     }
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
       val cases = syms.toSet
-        .map(VarOrCase.Case) // convert to case
+        .map(VarOrCase.Case.apply) // convert to case
         .map(m.getForward) // lookup in the map
         .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
 

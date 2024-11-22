@@ -17,16 +17,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
-
-import java.io.IOException
-import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
+import java.io.IOException
 import java.net.URLEncoder
+import java.nio.file.{Files, Path, Paths}
 import scala.annotation.tailrec
 
 /**
@@ -682,7 +682,7 @@ object HtmlDocumentor {
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
-    docTypeConstraints(trt.decl.superTraits)
+    docTraitConstraints(trt.decl.superTraits)
     sb.append("</code>")
     docActions(None, trt.decl.loc)
     sb.append("</div>")
@@ -1105,7 +1105,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec, Some(s"def-${defn.sym.name}"))
+    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1116,7 +1116,7 @@ object HtmlDocumentor {
     */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
-    docSpec(sig.sym.name, sig.spec, Some(s"sig-${sig.sym.name}"))
+    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${esc(sig.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1127,7 +1127,7 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, Some(s"op-${op.sym.name}"))
+    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${esc(op.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1137,7 +1137,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1147,10 +1147,10 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
-    docTypeConstraints(spec.tconstrs)
+    docTraitConstraints(spec.tconstrs)
     docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
-    docActions(linkId, spec.loc)
+    docActions(linkId, loc)
     sb.append("</div>")
     docDoc(spec.doc)
   }
@@ -1190,7 +1190,7 @@ object HtmlDocumentor {
     sb.append("[")
     docType(instance.tpe)
     sb.append("]")
-    docTypeConstraints(instance.tconstrs)
+    docTraitConstraints(instance.tconstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
@@ -1199,14 +1199,14 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given list of `TypeConstraint`s, `tconsts`.
+    * Documents the given list of `TraitConstraint`s, `tconsts`.
     * E.g. "with Functor[m]".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }
@@ -1238,7 +1238,7 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[Ast.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
@@ -1264,7 +1264,7 @@ object HtmlDocumentor {
     *
     * If `derives` contains no elements, nothing will be generated.
     */
-  private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (derives.traits.isEmpty) {
       return
     }
@@ -1288,17 +1288,13 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      SimpleType.fromWellKindedType(c.tpe) match {
-        case SimpleType.Unit => // Nothing
-        case SimpleType.Tuple(elms) =>
+      c.tpes.map(SimpleType.fromWellKindedType) match {
+        case Nil => // Nothing
+        case elms =>
           sb.append("(")
           docList(elms) { t =>
             sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
-          sb.append(")")
-        case _ =>
-          sb.append("(")
-          docType(c.tpe)
           sb.append(")")
       }
 
@@ -1341,7 +1337,7 @@ object HtmlDocumentor {
       // the compiler will introduce a single parameter of the unit type
       case _ =>
         docList(fparams.sortBy(_.loc)) { p =>
-          sb.append(s"<span><span>${esc(p.sym.text)}</span>: ")
+          sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
         }
@@ -1354,7 +1350,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAnnotations(anns: Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (anns.annotations.isEmpty) {
       return
     }
@@ -1406,7 +1402,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDoc(doc: Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return

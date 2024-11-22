@@ -1,6 +1,6 @@
-/**
- * An implementation of the parity domain lifted over the constant propagation domain.
- */
+///
+/// An implementation of the parity domain lifted over the constant propagation domain.
+///
 mod Domain.ConstantParity {
 
     ///

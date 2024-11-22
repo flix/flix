@@ -15,18 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 
-object EnumTagCompleter extends Completer {
+object EnumTagCompleter {
 
   /**
     * Returns a List of Completion for enum tags.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
     val fqn = context.word.split('.').toList
 
@@ -44,7 +42,7 @@ object EnumTagCompleter extends Completer {
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (_, cas) => EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe))
+          case (_, cas) => EnumTagCompletion(enumSym, cas)
         }
     }
   }
@@ -72,27 +70,12 @@ object EnumTagCompleter extends Completer {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe)))
+              Some(EnumTagCompletion(enumSym, cas))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
             }
         }
-    }
-  }
-
-  /**
-    *
-    * Returns the arity of the given enumTag type `tpe`
-    *
-    * @param tpe the type.
-    * @return    the arity.
-    */
-  private def getArityForEnumTag(tpe: Type): Int = {
-    tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) => 0
-      case Some(TypeConstructor.Tuple(arity)) => arity
-      case _ => 1
     }
   }
 

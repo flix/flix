@@ -12,7 +12,7 @@ mod Test.Derives.Coerce {
     enum RegionEnum[r: Eff, a: Type](Region[r], a) with Coerce
 
     @Test
-    def testUnitEnum(): Bool = Coerce.coerce(UnitEnum.UnitEnum()) == ()
+    def testUnitEnum(): Bool = Coerce.coerce(UnitEnum.UnitEnum) == ()
 
     @Test
     def testInt32Enum(): Bool = Coerce.coerce(Int32Enum.Int32Enum(123)) == 123

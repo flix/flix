@@ -1,6 +1,6 @@
 name: Community Build
 
-on: [pull_request]
+on: [pull_request, merge_group]
 
 permissions:
   contents: read
@@ -41,6 +41,7 @@ jobs:
       matrix:
         repo:
           - "JonathanStarup/Flix-ANSI-Terminal"
+          - "JonathanStarup/ListSet"
           - "flix/museum"
           - "jaschdoc/flix-parsers"
           - "mlutze/flix-json"

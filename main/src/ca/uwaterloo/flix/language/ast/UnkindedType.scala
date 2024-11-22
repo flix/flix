@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -315,7 +316,7 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): UnkindedType.Var = {
+  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
@@ -466,10 +467,10 @@ object UnkindedType {
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Ast.Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Ast.Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
     }
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
@@ -511,6 +512,11 @@ object UnkindedType {
   def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
   /**
+    * Returns the type `Difference(tpe1, tpe2)`.
+    */
+  def mkDifference(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
+
+  /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
@@ -549,7 +555,7 @@ object UnkindedType {
   /**
     * Returns the Flix UnkindedType of a Java Class
     */
-  def getFlixType(c: Class[_]): UnkindedType = {
+  def getFlixType(c: Class[?]): UnkindedType = {
     if (c == java.lang.Boolean.TYPE) {
       UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
     }

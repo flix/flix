@@ -17,11 +17,12 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 import java.nio.file.Path
@@ -210,14 +211,17 @@ object CompilerPerf {
   /**
     * Run compiler performance experiments.
     */
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
+    // Options
+    val o = opts.copy(progress = false, loadClassFiles = false)
+
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
     // Run the experiments.
-    val baseline = aggregate(perfBaseLine(N, o))
+    val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
     val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-    val baselineWithParInc = aggregate(perfBaseLineWithParInc(N, o))
+    val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
 
     // Find the number of lines of source code.
     val lines = baselineWithPar.lines.toLong
@@ -264,15 +268,15 @@ object CompilerPerf {
     // Speedup
     //
     val speedupPar =
-    ("timestamp" -> timestamp) ~
-      ("minThreads" -> MinThreads) ~
-      ("maxThreads" -> MaxThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
-        case ((phase, times1), (_, times2)) =>
-          ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-      })
+      ("timestamp" -> timestamp) ~
+        ("minThreads" -> MinThreads) ~
+        ("maxThreads" -> MaxThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+          case ((phase, times1), (_, times2)) =>
+            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+        })
     writeFile("speedupWithPar.json", speedupPar)
 
     // Note: Baseline is withPar.
@@ -287,18 +291,18 @@ object CompilerPerf {
         })
     writeFile("speedupWithInc.json", speedupInc)
 
-    ///
-    /// Throughput
-    ///
+    //
+    // Throughput
+    //
     val throughoutBaseLine =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-      ("results" -> baseline.times.zipWithIndex.map({
-        case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-      }))
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+        ("results" -> baseline.times.zipWithIndex.map({
+          case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        }))
     writeFile("throughput.json", throughoutBaseLine)
 
     val throughputPar =
@@ -327,13 +331,13 @@ object CompilerPerf {
     // Time
     //
     val timeBaseline =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.map {
-        case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-      })
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.phases.map {
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+        })
     writeFile("time.json", timeBaseline)
 
     val timeWithPar =
@@ -360,11 +364,11 @@ object CompilerPerf {
     // Summary
     //
     val summaryJSON =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MaxThreads) ~
-      ("lines" -> lines) ~
-      ("iterations" -> N) ~
-      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MaxThreads) ~
+        ("lines" -> lines) ~
+        ("iterations" -> N) ~
+        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeFile("summary.json", s)
 
@@ -389,10 +393,8 @@ object CompilerPerf {
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -405,10 +407,8 @@ object CompilerPerf {
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -421,10 +421,8 @@ object CompilerPerf {
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
-    flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
+    flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
     (0 until N).map { _ =>
-      flushCaches()
-
       addInputs(flix)
       runSingle(flix)
     }
@@ -434,15 +432,21 @@ object CompilerPerf {
     * Runs Flix once.
     */
   private def runSingle(flix: Flix): Run = {
-    val frontendOnly = flix.options.XPerfFrontend
+    // Clear caches.
+    ZhegalkinCache.clearCaches()
 
+    val frontendOnly = flix.options.XPerfFrontend
     val totalLines =
       if (frontendOnly) {
-        flix.check().toHardFailure.unsafeGet.sources.foldLeft(0) {
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+        }
+        optRoot.get.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
-        flix.compile().toHardFailure.unsafeGet.getTotalLines
+        flix.compile().unsafeGet.getTotalLines
       }
 
     val phases = flix.phaseTimers.map {
@@ -458,7 +462,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
+      return Runs(0, List(0), Nil)
     }
 
     val lines = l.head.lines
@@ -483,17 +487,10 @@ object CompilerPerf {
   private def milliseconds(l: Double): Double = l / 1_000_000.0
 
   /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
-  }
-
-  /**
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))

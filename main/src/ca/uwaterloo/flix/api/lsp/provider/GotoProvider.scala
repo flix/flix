@@ -15,11 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object GotoProvider {
 
@@ -43,10 +44,13 @@ object GotoProvider {
         case Entity.CaseUse(sym, loc, _) =>
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
+        case Entity.StructFieldUse(sym, loc, _) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructFieldSym(sym, loc)(root).toJSON)
+
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
+          case Pattern.Tag(CaseSymUse(sym, loc), _, _, _) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
@@ -55,6 +59,9 @@ object GotoProvider {
         case Entity.Type(t) => t match {
           case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
+
+          case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructSym(sym, loc)(root).toJSON)
 
           case Type.Cst(TypeConstructor.Effect(sym), loc) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
@@ -69,10 +76,12 @@ object GotoProvider {
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
         case Entity.Case(_) => mkNotFound(uri, pos)
+        case Entity.StructField(_) => mkNotFound(uri, pos)
         case Entity.Trait(_) => mkNotFound(uri, pos)
         case Entity.Def(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.Struct(_) => mkNotFound(uri, pos)
         case Entity.TypeAlias(_) => mkNotFound(uri, pos)
         case Entity.AssocType(_) => mkNotFound(uri, pos)
         case Entity.Label(_) => mkNotFound(uri, pos)

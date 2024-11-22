@@ -17,24 +17,27 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnvironment, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 object Instances {
+
+  // We use top scope everywhere here since we are only looking at declarations.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Validates instances and traits in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] =
-    flix.phase("Instances") {
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[InstanceError]) =
+    flix.phaseNew("Instances") {
       val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
-
-      Validation.toSuccessOrSoftFailure(root, errors)
-    }(DebugValidation())
+      (root, errors)
+    }
 
   /**
     * Validates all instances in the given AST root.
@@ -51,7 +54,7 @@ object Instances {
     // Case 1: lawful trait
     case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-        case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
+        case (acc, TypedAst.Def(_, _, exp, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
       }
       val unusedSigs = sigs.map(_.sym).toSet -- usedSigs
       unusedSigs.toList.map {
@@ -125,6 +128,10 @@ object Instances {
 
       case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
       case Type.AssocType(assoc, _, _, loc) => List(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
+      case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff in instance declaration", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
     }
   }
 
@@ -134,7 +141,7 @@ object Instances {
   private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
     unsafeGetHead(inst1) match {
-      case TypeConstructor.Error(_) =>
+      case TypeConstructor.Error(_, _) =>
         // Suppress error for Type.Error.
         Nil
       case tc => heads.get(tc) match {
@@ -155,10 +162,10 @@ object Instances {
     * Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
     */
   private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
-    val clazz = root.traits(inst.trt.sym)
+    val trt = root.traits(inst.trt.sym)
 
     // Step 1: check that each signature has an implementation.
-    val sigMatchVal = clazz.sigs.flatMap {
+    val sigMatchVal = trt.sigs.flatMap {
       sig =>
         (inst.defs.find(_.sym.text == sig.sym.name), sig.exp) match {
           // Case 1: there is no definition with the same name, and no default implementation
@@ -171,8 +178,8 @@ object Instances {
           case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => List(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, root.eqEnv)) {
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, TraitEnv(root.traitEnv), root.eqEnv)) {
               // Case 5.1: the schemes match. Success!
               Nil
             } else {
@@ -184,7 +191,7 @@ object Instances {
     // Step 2: check that there are no extra definitions
     val extraDefVal = inst.defs.flatMap {
       defn =>
-        clazz.sigs.find(_.sym.name == defn.sym.text) match {
+        trt.sigs.find(_.sym.name == defn.sym.text) match {
           case None => List(InstanceError.ExtraneousDef(defn.sym, inst.trt.sym, defn.sym.loc))
           case _ => Nil
         }
@@ -196,13 +203,13 @@ object Instances {
   /**
     * Finds an instance of the trait for a given type.
     */
-  def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
+  def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
     val superInsts = root.traitEnv.get(trt).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
       superInst =>
-        Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
-          case (subst, _) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+        Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty, root.eqEnv).map {
+          case subst => (superInst, subst)
         }
     }
   }
@@ -222,7 +229,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv).toHardResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), TraitEnv(root.traitEnv), root.eqEnv).toResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, trt.loc)
@@ -241,8 +248,8 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
-    val isTraitStable = inst.trt.loc.source.stable
-    val isInstanceStable = inst.loc.source.stable
+    val isTraitStable = inst.trt.loc.source.input.isStable
+    val isInstanceStable = inst.loc.source.input.isStable
     val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
     if (isIncremental && isTraitStable && isInstanceStable) {
       return Nil

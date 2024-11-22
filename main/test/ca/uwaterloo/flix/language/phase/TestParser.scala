@@ -20,13 +20,13 @@ class TestParser extends Suites(
   * There is an theoretically infinite amount of possible syntax errors (we could just start fuzzing random strings),
   * so these test cover some "sensible amount" of broad errors.
   * Some areas that could use more test are:
-  * - Declarations other than definitions (module, enum, trait, signature, effect).
-  * - Patterns
-  * - Map, Set, List, Vector and Array literals.
-  * - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
+  *   - Declarations other than definitions (module, enum, trait, signature, effect).
+  *   - Patterns
+  *   - Map, Set, List, Vector and Array literals.
+  *   - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
   *
   * Note that these tests use [[check]] rather than [[compile]].
-  * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
+  * That's because a compile converts any check failure into a [[ca.uwaterloo.flix.util.Validation.Failure]] before running, codegen so the result we would like to expect is lost.
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
@@ -687,6 +687,34 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("ChainedApplyRecordSelect.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |
+        |def foo(): Int32 =
+        |    let f = () -> { g = () -> { h = () -> 12 } };
+        |    f()#
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("ChainedApplyRecordSelect.02") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |
+        |def foo(): Int32 =
+        |    let f = () -> { g = () -> { h = () -> 12 } };
+        |    f()#g()#
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("LetMatchNoStatement.01") {
     val input =
       """
@@ -733,6 +761,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingTryBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true }
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -1051,6 +1091,33 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |    mod othermod {
         |    }
         |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("BadThrow.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = throw
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("StructNoTParams.01") {
+    val input =
+      """
+        |struct S { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("NewStructNoBody.01") {
+    val input =
+      """
+        |def foo(s: S[r]): Int32 = new Struct @ r |> ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

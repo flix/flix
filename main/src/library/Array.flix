@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2024 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,42 @@
  * limitations under the License.
  */
 
+instance Indexable[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+
+    pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.get(i, t)
+        else OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
+instance IndexableMut[Array[a, r]] {
+    type Aef = r + OutOfBounds
+
+    pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
+        else OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
 instance Iterable[Array[a, r]] {
     type Elm = a
     type Aef = r
+
     pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
-        Array.iterator(rc, a)
+        checked_ecast(Array.iterator(rc, a))
 }
 
 mod Array {
+    import java.lang.Object
+    import java.util.Arrays
+    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -50,24 +79,24 @@ mod Array {
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        let first = ref true @ rc2;
+        let first = Ref.fresh(rc2, true);
 
-        StringBuilder.appendString!("Array#{", sb);
+        StringBuilder.appendString("Array#{", sb);
 
         let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
-            StringBuilder.appendString!("${x}", sb)
+            if (not Ref.get(first)) StringBuilder.appendString(", ", sb) else Ref.put(false, first);
+            StringBuilder.appendString("${x}", sb)
         };
         forEach(f, a);
 
-        StringBuilder.appendString!("}", sb);
+        StringBuilder.appendString("}", sb);
         StringBuilder.toString(sb)
     }
 
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
@@ -94,17 +123,22 @@ mod Array {
     ///
     /// Returns `true` if the given array `a` is empty.
     ///
-    pub def isEmpty(a: Array[a, r]): Bool \ r = length(a) == 0
+    pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
 
     ///
     /// Returns `true` if the given array `a` is non-empty.
     ///
-    pub def nonEmpty(a: Array[a, r]): Bool \ r = not isEmpty(a)
+    pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
+
+    ///
+    /// Returns the number of elements in the array `a`.
+    ///
+    pub def size(a: Array[a, r]): Int32 = length(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
@@ -237,7 +271,7 @@ mod Array {
             copyOfRange(rc3, 0, len2, b)
         else {
             let out = copyOfRange(rc3, 0, len1 + len2, a);
-            updateSequence!(len1, b, out);
+            updateSequence(len1, b, out);
             out
         }
 
@@ -429,7 +463,7 @@ mod Array {
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
-    pub def transform!(f: a -> a \ ef, arr: Array[a, r]): Unit \ { ef, r } =
+    pub def transform(f: a -> a \ ef, arr: Array[a, r]): Unit \ { ef, r } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -453,7 +487,7 @@ mod Array {
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
-    pub def transformWithIndex!(f: (Int32, a) -> a \ ef, arr: Array[a, r]): Unit \ { ef, r } =
+    pub def transformWithIndex(f: (Int32, a) -> a \ ef, arr: Array[a, r]): Unit \ { ef, r } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -473,17 +507,9 @@ mod Array {
         init(rc1, i -> f(get(i, a)), len) |> flatten(rc1)
 
     ///
-    /// Returns the reverse of `a`.
-    ///
-    pub def reverse(rc1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        let len = length(a);
-        let end = len - 1;
-        init(rc1, i -> get(end - i, a), len)
-
-    ///
     /// Reverse the array `arr`, mutating it in place.
     ///
-    pub def reverse!(arr: Array[a, r]): Unit \ r =
+    pub def reverse(arr: Array[a, r]): Unit \ r =
         let len = length(arr);
         let halflen = len / 2;
         def loop(i, j) = {
@@ -561,29 +587,10 @@ mod Array {
         init(rc1, f, len)
 
     ///
-    /// Returns a copy of `a` with every occurrence of `src` replaced by `dst`.
-    ///
-    pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == src#src) dst#dst else e, a)
-
-    ///
     /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
-    pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == src#src) dst#dst else e, a)
-
-    ///
-    /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
-    ///
-    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
-    /// If `a` becomes depleted then no further patching is done.
-    /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
-    ///
-    pub def patch(rc3: Region[r3], i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
-        let len1 = length(a);
-        let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(rc3, 0, size, a);
-        updateSequence(rc3, i, sub, b)
+    pub def replace(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+        transform(e -> if (e == src#src) dst#dst else e, a)
 
     ///
     /// Update the mutable array `b` replacing `n` elements starting at index `i` with the corresponding elements of array `a`.
@@ -592,11 +599,11 @@ mod Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { r1, r2 } = region rc3 {
+    pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { r1, r2 } = region rc3 {
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
         let sub = copyOfRange(rc3, 0, size, a);
-        updateSequence!(i, sub, b)
+        updateSequence(i, sub, b)
     }
 
     ///
@@ -648,7 +655,7 @@ mod Array {
     /// Helper function for `intercalate` which needs to do sucessive writing.
     ///
     def arrayWrites(pos: Int32, sub: Array[a, r1], out: Array[a, r2]): Int32 \ { r1, r2 } =
-        updateSequence!(pos, sub, out);
+        updateSequence(pos, sub, out);
         pos + length(sub)
 
     ///
@@ -656,7 +663,7 @@ mod Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def sumLengths(arrs: Array[Array[a, r1], r2]): Int32 \ {r1, r2} =
+    def sumLengths(arrs: Array[Array[a, r1], r2]): Int32 \ r2 =
         foldLeft((acc, a) -> acc + length(a), 0, arrs)
 
     ///
@@ -698,7 +705,7 @@ mod Array {
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a, r1], r2], l: Int32): Bool \ {r1, r2} =
+    def uniformHelper(a: Array[Array[a, r1], r2], l: Int32): Bool \ r2 =
         exists(x -> length(x) != l, a)
 
     ///
@@ -1284,7 +1291,7 @@ mod Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(rc1, 0, c, a);
-        MutList.MutList(rc1, ref copy @ rc1, ref len @ rc1)
+        new MutList @ rc1 {r = rc1, values = copy, length = len}
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1339,7 +1346,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push!(i, l) else ();
+                if (f(get(i, a))) MutList.push(i, l) else ();
                 loop(i + 1)
             }
         };
@@ -1390,7 +1397,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
@@ -1398,7 +1405,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ {r1, r2} =
+    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
         iterator(rc, a) |> Iterator.zipWithIndex
 
     ///
@@ -1432,18 +1439,9 @@ mod Array {
         loop(0)
 
     ///
-    /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
-    ///
-    pub def updateSequence(rc3: Region[r3], i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
-        let end = i + length(sub);
-        let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, a);
-        let len = length(a);
-        init(rc3, f, len)
-
-    ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
-    pub def updateSequence!(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { r1, r2 } =
+    pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { r1, r2 } =
         let end = i + length(sub);
         let f = { (ix, _) ->
             if (ix >= i and ix < end)
@@ -1465,48 +1463,12 @@ mod Array {
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc1 {
-        use StringBuilder.append!;
+        use StringBuilder.append;
         let lastSep = String.length(sep);
         let sb = StringBuilder.empty(rc1);
-        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
+        forEach(x -> { append(f(x), sb); append(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
-
-    ///
-    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
-    /// their `Order` instance.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sort(rc1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[a] =
-        sortWith(rc1, Order.compare, a)
-
-    ///
-    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
-    /// the `Order` instance for the values obtained by applying `f` to each element.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortBy(rc1: Region[r1], f: a -> b, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[b] =
-        sortWith(rc1, Order.compare `on` f, a)
-
-    ///
-    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
-    /// the comparison function `cmp`.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortWith(rc1: Region[r1], cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        let len = length(a);
-        let b = copyOfRange(rc1, 0, len, a);
-        sortWith!(cmp, b);
-        b
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to their `Order` instance.
@@ -1516,8 +1478,8 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(a: Array[a, r]): Unit \ r with Order[a] =
-        sortWith!(Order.compare, a)
+    pub def sort(a: Array[a, r]): Unit \ r with Order[a] =
+        sortWith(Order.compare, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
@@ -1527,8 +1489,8 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, a: Array[a, r]): Unit \ r with Order[b] =
-        sortWith!(Order.compare `on` f, a)
+    pub def sortBy(f: a -> b, a: Array[a, r]): Unit \ r with Order[b] =
+        sortWith(Order.compare `on` f, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1538,8 +1500,8 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a, r]): Unit \ r =
-        sortWithin!(cmp, 0, length(a) - 1, a)
+    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Unit \ r =
+        sortWithin(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1550,13 +1512,13 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a, r]): Unit \ r=
+    pub def sortWithin(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a, r]): Unit \ r=
         if (lo >= hi)
             ()
         else {
             let p = quicksortPartition(cmp, a, lo, hi);
-            sortWithin!(cmp, lo, p - 1, a);
-            sortWithin!(cmp, p + 1, hi, a)
+            sortWithin(cmp, lo, p - 1, a);
+            sortWithin(cmp, p + 1, hi, a)
         }
 
     ///
@@ -1564,7 +1526,7 @@ mod Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    pub def swap!(i: Int32, j: Int32, a: Array[a, r]): Unit \ r =
+    pub def swap(i: Int32, j: Int32, a: Array[a, r]): Unit \ r =
         let x = get(i, a);
         let y = get(j, a);
         Array.put(y, i, a);
@@ -1577,12 +1539,12 @@ mod Array {
         let pivot = get(hi, a);
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(get(j, a), pivot) == Comparison.LessThan) {
-                swap!(ix, j, a);
+                swap(ix, j, a);
                 ix+1
             } else
                 ix
             );
-        swap!(i, hi, a);
+        swap(i, hi, a);
         i
 
     ///
@@ -1610,67 +1572,46 @@ mod Array {
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         // All of the below casts are required to cast the type to `Array[a, ...]`.
         typematch a {
-            case arr: Array[Unit, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+            // The casts here are used to both modify the java method type and to simulate GADT typing
             case arr: Array[Bool, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Char, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigDecimal, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int8, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int16, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigInt, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
-            case arr: Array[String, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[a, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                // `a` must be non-primitive now
+                let arrObj = unchecked_cast(arr as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
             case _: _ => unreachable!()
         }
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, IO} =
+    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
+        let rnd = new JRandom();
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(rnd, i + 1);
-                Array.swap!(i, j, a);
+                let j = rnd.nextInt(i + 1);
+                Array.swap(i, j, a);
                 loop(i - 1)
             }
             else
                 ()
         };
         loop(len - 1)
+    } as _ \ {r, NonDet})
 
 }

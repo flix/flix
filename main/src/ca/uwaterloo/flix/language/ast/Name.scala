@@ -27,12 +27,11 @@ object Name {
     * Returns the given string `fqn` as a qualified name.
     */
   def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
-    if (!fqn.contains('.'))
+    val split = fqn.split('.')
+    if (split.length == 1)
       return QName(Name.RootNS, Ident(fqn, loc), loc)
-
-    val index = fqn.indexOf('.')
-    val parts = fqn.substring(0, index).split('/').toList
-    val name = fqn.substring(index + 1, fqn.length)
+    val parts = split.init.toList
+    val name = split.last
     mkQName(parts, name, loc)
   }
 
@@ -61,6 +60,16 @@ object Name {
   def mkUnlocatedNName(parts: List[String]): NName = {
     val idents = parts.map(Ident(_, SourceLocation.Unknown))
     NName(idents, SourceLocation.Unknown)
+  }
+
+  /**
+    * Builds an unlocated name from the given namespace parts.
+    *
+    * The source location of each part is Unknown, but the source location of the entire NName is known.
+    */
+  def mkUnlocatedNNameWithLoc(parts: List[String], loc: SourceLocation): NName = {
+    val idents = parts.map(Ident(_, SourceLocation.Unknown))
+    NName(idents, loc)
   }
 
   /**

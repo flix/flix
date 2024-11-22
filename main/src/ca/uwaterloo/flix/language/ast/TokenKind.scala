@@ -50,9 +50,9 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
-      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
+      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
@@ -70,13 +70,11 @@ sealed trait TokenKind {
       case TokenKind.KeywordCheckedECast => "'checked_ecast'"
       case TokenKind.KeywordChoose => "'choose'"
       case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDebug => "'debug'"
-      case TokenKind.KeywordDebugBang => "'debug!'"
-      case TokenKind.KeywordDebugBangBang => "'debug!'"
+      case TokenKind.KeywordDebug => "'dbg'"
+      case TokenKind.KeywordDebugBang => "'dbg!'"
+      case TokenKind.KeywordDebugBangBang => "'dbg!!'"
       case TokenKind.KeywordDef => "'def'"
-      case TokenKind.KeywordDeref => "'deref'"
       case TokenKind.KeywordDiscard => "'discard'"
-      case TokenKind.KeywordDo => "'do'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
       case TokenKind.KeywordEnum => "'enum'"
@@ -95,9 +93,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordJavaGetField => "'java_get_field'"
-      case TokenKind.KeywordJavaNew => "'java_new'"
-      case TokenKind.KeywordJavaSetField => "'java_set_field'"
       case TokenKind.KeywordLaw => "'law'"
       case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
@@ -105,6 +100,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordMaskedCast => "'masked_cast'"
       case TokenKind.KeywordMatch => "'match'"
       case TokenKind.KeywordMod => "'mod'"
+      case TokenKind.KeywordMut => "'mut'"
       case TokenKind.KeywordNew => "'new'"
       case TokenKind.KeywordNot => "'not'"
       case TokenKind.KeywordNull => "'null'"
@@ -116,9 +112,10 @@ sealed trait TokenKind {
       case TokenKind.KeywordPub => "'pub'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
-      case TokenKind.KeywordRef => "'ref'"
+      case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
+      case TokenKind.KeywordRun => "'run'"
       case TokenKind.KeywordRvadd => "'rvadd'"
       case TokenKind.KeywordRvand => "'rvand'"
       case TokenKind.KeywordRvnot => "'rvnot'"
@@ -130,6 +127,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordStatic => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
@@ -155,6 +153,7 @@ sealed trait TokenKind {
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
       case TokenKind.StarStar => "'**'"
+      case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleAmpersand => "'&&&'"
       case TokenKind.TripleAngleL => "'<<<'"
@@ -170,7 +169,6 @@ sealed trait TokenKind {
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameGreek => "<greek name>"
-      case TokenKind.NameJava => "<java name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -229,9 +227,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordDebugBang => true
     case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
-    case TokenKind.KeywordDeref => true
     case TokenKind.KeywordDiscard => true
-    case TokenKind.KeywordDo => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
     case TokenKind.KeywordEnum => true
@@ -250,9 +246,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
-    case TokenKind.KeywordJavaGetField => true
-    case TokenKind.KeywordJavaNew => true
-    case TokenKind.KeywordJavaSetField => true
     case TokenKind.KeywordLaw => true
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
@@ -271,7 +264,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordProject => true
     case TokenKind.KeywordQuery => true
-    case TokenKind.KeywordRef => true
     case TokenKind.KeywordRegion => true
     case TokenKind.KeywordRestrictable => true
     case TokenKind.KeywordRvadd => true
@@ -284,6 +276,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
@@ -308,6 +301,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSealed
          | TokenKind.KeywordLawful
          | TokenKind.KeywordPub
+         | TokenKind.KeywordMut
          | TokenKind.KeywordInline
          | TokenKind.KeywordOverride => true
     case _ => false
@@ -404,7 +398,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordLazy
          | TokenKind.KeywordForce
          | TokenKind.KeywordDiscard
-         | TokenKind.KeywordDeref
          | TokenKind.KeywordIf
          | TokenKind.KeywordLet
          | TokenKind.Annotation
@@ -424,14 +417,13 @@ sealed trait TokenKind {
          | TokenKind.ListHash
          | TokenKind.SetHash
          | TokenKind.MapHash
-         | TokenKind.KeywordRef
+         | TokenKind.DotDotDot
          | TokenKind.KeywordCheckedCast
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
-         | TokenKind.KeywordDo
          | TokenKind.KeywordNew
          | TokenKind.KeywordStaticUppercase
          | TokenKind.KeywordSelect
@@ -447,8 +439,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringL
          | TokenKind.KeywordDebug
          | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang
-         | TokenKind.NameJava => true
+         | TokenKind.KeywordDebugBangBang => true
     case _ => false
   }
 
@@ -468,7 +459,6 @@ sealed trait TokenKind {
          | TokenKind.CurlyL
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
-         | TokenKind.NameJava
          | TokenKind.AngleL
          | TokenKind.KeywordNot
          | TokenKind.Tilde
@@ -652,11 +642,11 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
-  case object Currency extends TokenKind
-
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
+
+  case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
 
@@ -706,11 +696,7 @@ object TokenKind {
 
   case object KeywordDef extends TokenKind
 
-  case object KeywordDeref extends TokenKind
-
   case object KeywordDiscard extends TokenKind
-
-  case object KeywordDo extends TokenKind
 
   case object KeywordEff extends TokenKind
 
@@ -748,12 +734,6 @@ object TokenKind {
 
   case object KeywordInto extends TokenKind
 
-  case object KeywordJavaGetField extends TokenKind
-
-  case object KeywordJavaNew extends TokenKind
-
-  case object KeywordJavaSetField extends TokenKind
-
   case object KeywordLaw extends TokenKind
 
   case object KeywordLawful extends TokenKind
@@ -767,6 +747,8 @@ object TokenKind {
   case object KeywordMatch extends TokenKind
 
   case object KeywordMod extends TokenKind
+
+  case object KeywordMut extends TokenKind
 
   case object KeywordNew extends TokenKind
 
@@ -790,11 +772,13 @@ object TokenKind {
 
   case object KeywordQuery extends TokenKind
 
-  case object KeywordRef extends TokenKind
+  case object KeywordRedef extends TokenKind
 
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
+
+  case object KeywordRun extends TokenKind
 
   case object KeywordRvadd extends TokenKind
 
@@ -817,6 +801,8 @@ object TokenKind {
   case object KeywordStaticUppercase extends TokenKind
 
   case object KeywordStruct extends TokenKind
+
+  case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
 
@@ -884,8 +870,6 @@ object TokenKind {
 
   case object NameGreek extends TokenKind
 
-  case object NameJava extends TokenKind
-
   case object NameLowerCase extends TokenKind
 
   case object NameMath extends TokenKind
@@ -907,6 +891,8 @@ object TokenKind {
   case object Star extends TokenKind
 
   case object StarStar extends TokenKind
+
+  case object StructArrow extends TokenKind
 
   case object Tilde extends TokenKind
 

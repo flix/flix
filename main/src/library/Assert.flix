@@ -24,7 +24,7 @@ mod Assert {
         if (expected == actual)
             true
         else {
-            use Console.{green, red};
+            use Chalk.{green, red};
             println("Assertion Error");
             println("  Expected: ${green(expected)}");
             println("  Actual:   ${red(actual)}");

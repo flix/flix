@@ -33,9 +33,7 @@ instance Mul[Float64] {
 }
 
 instance Mul[BigDecimal] {
-    pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.multiply(BigDecimal): BigDecimal \ {};
-        x `multiply` y
+    pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal = unsafe x.multiply(y)
 }
 
 instance Mul[Int8] {
@@ -55,7 +53,5 @@ instance Mul[Int64] {
 }
 
 instance Mul[BigInt] {
-    pub def mul(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.multiply(BigInt): BigInt \ {};
-        x `multiply` y
+    pub def mul(x: BigInt, y: BigInt): BigInt = unsafe x.multiply(y)
 }

@@ -76,7 +76,7 @@ object Tester {
 
       // Import formatter.
       val formatter = flix.getFormatter
-      import formatter._
+      import formatter.*
 
       // Initialize the terminal.
       implicit val terminal: Terminal = TerminalBuilder
@@ -148,7 +148,7 @@ object Tester {
             terminal.flush()
             finished = true
 
-          case _ => // nop
+          case null => () // tester have not started yet, retry
         }
       }
     }
@@ -236,27 +236,27 @@ object Tester {
     */
   class TeeOutputStream(out: OutputStream, branch: OutputStream) extends PrintStream(out) {
 
-    override def write(b: Array[Byte]) = synchronized {
+    override def write(b: Array[Byte]): Unit = synchronized {
       super.write(b)
       branch.write(b)
     }
 
-    override def write(b: Array[Byte], off: Int, len: Int) = synchronized {
+    override def write(b: Array[Byte], off: Int, len: Int): Unit = synchronized {
       super.write(b, off, len)
       branch.write(b, off, len)
     }
 
-    override def write(b: Int) = synchronized {
+    override def write(b: Int): Unit = synchronized {
       super.write(b)
       branch.write(b)
     }
 
-    override def flush() = synchronized {
+    override def flush(): Unit = synchronized {
       super.flush()
       branch.flush()
     }
 
-    override def close() = synchronized {
+    override def close(): Unit = synchronized {
       try {
         super.close()
       } finally {

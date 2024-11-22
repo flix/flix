@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 
 object OpPrinter {
 
@@ -175,7 +175,7 @@ object OpPrinter {
     case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
-    case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
+    case (AtomicOp.Untag(sym, idx), List(d)) => Untag(sym, d, idx)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
     case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)
@@ -183,9 +183,10 @@ object OpPrinter {
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
-    case (AtomicOp.Ref, List(d)) => Ref(d)
-    case (AtomicOp.Deref, List(d)) => Deref(d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.StructNew(sym, fields), d :: rs) => Expr.StructNew(sym, fields.zip(rs), d)
+    case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
+    case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
     case (AtomicOp.Force, List(d)) => Force(d)
     case (AtomicOp.GetField(field), List(d)) => JavaGetField(field, d)
@@ -196,7 +197,6 @@ object OpPrinter {
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
-    case (AtomicOp.Assign, List(d1, d2)) => Assign(d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
     case (AtomicOp.ArrayLoad, List(d1, d2)) => ArrayLoad(d1, d2)
     case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)

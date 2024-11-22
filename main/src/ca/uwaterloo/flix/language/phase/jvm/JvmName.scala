@@ -71,7 +71,7 @@ object JvmName {
     JvmName(l.init.toList, l.last)
   }
 
-  def ofClass(clazz: Class[_]): JvmName = {
+  def ofClass(clazz: Class[?]): JvmName = {
     // TODO: Ugly hack.
     // Maybe use clazz.getPackage and clazz.getSimpleName
     val fqn = clazz.getName.replace('.', '/')
@@ -119,7 +119,8 @@ object JvmName {
     replace("#", Flix.Delimiter + "hashtag").
     replace(":", Flix.Delimiter + "colon").
     replace("?", Flix.Delimiter + "question").
-    replace("@", Flix.Delimiter + "at")
+    replace("@", Flix.Delimiter + "at").
+    replace(".", Flix.Delimiter + "dot")
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

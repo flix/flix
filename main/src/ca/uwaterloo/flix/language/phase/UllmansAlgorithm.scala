@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Stratification
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -75,7 +76,7 @@ object UllmansAlgorithm {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[Ast.Stratification, StratificationError] = {
+  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //
@@ -141,7 +142,7 @@ object UllmansAlgorithm {
     }
 
     // We are done. Successfully return the computed stratification.
-    Result.Ok(Ast.Stratification(stratumOf.toMap))
+    Result.Ok(Stratification(stratumOf.toMap))
   }
 
   /**

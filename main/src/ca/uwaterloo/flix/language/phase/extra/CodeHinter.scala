@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
 object CodeHinter {
@@ -49,8 +50,8 @@ object CodeHinter {
     val uses = enumUses ++ tagUses
     val isDeprecated = enum0.ann.isDeprecated
     val isExperimental = enum0.ann.isExperimental
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 
@@ -60,9 +61,9 @@ object CodeHinter {
   private def visitTrait(trt: TypedAst.Trait)(implicit index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
     val isExperimental = trt.ann.isExperimental
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 
@@ -79,15 +80,7 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc) ++
-        checkExperimental(sym, loc) ++
-        checkParallel(sym, loc) ++
-        checkLazy(sym, loc)
-
-    case Expr.Sig(_, _, _) => Nil
-
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
@@ -100,13 +93,22 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, loc) =>
-      val hints0 = (exp, exps) match {
-        case (Expr.Def(sym, _, _), lambda :: _) =>
-          checkEffect(sym, lambda.tpe, loc)
-        case _ => Nil
-      }
-      hints0 ++ visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.ApplyDef(DefSymUse(sym, loc1), exps, _, _, _, _) =>
+      val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
+      val hints1 = checkDeprecated(sym, loc1) ++
+        checkExperimental(sym, loc1) ++
+        checkParallel(sym, loc1) ++
+        checkLazy(sym, loc1)
+      hints0 ++ hints1 ++ visitExps(exps)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -114,10 +116,10 @@ object CodeHinter {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _) => Nil
@@ -149,11 +151,11 @@ object CodeHinter {
         case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      visitExps(exps)
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
@@ -184,6 +186,15 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.map { case (_, v) => v }.flatMap(visitExp) ++ visitExp(region)
+
+    case Expr.StructGet(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
@@ -192,15 +203,6 @@ object CodeHinter {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -224,6 +226,8 @@ object CodeHinter {
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
+
+    case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {

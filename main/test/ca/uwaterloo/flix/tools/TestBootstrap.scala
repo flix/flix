@@ -141,13 +141,6 @@ class TestBootstrap extends AnyFunSuite {
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
-  test("benchmark") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.benchmark(new Flix())
-  }
-
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)

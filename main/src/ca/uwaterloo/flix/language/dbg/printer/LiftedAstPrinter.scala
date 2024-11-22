@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
+import ca.uwaterloo.flix.language.ast.LiftedAst.Expr.*
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -28,14 +28,14 @@ object LiftedAstPrinter {
     */
   def print(root: LiftedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, _) =>
+      case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           MonoTypePrinter.print(tpe),
-          PurityPrinter.print(purity),
+          PurityPrinter.print(exp.purity),
           print(exp)
         )
     }.toList
@@ -49,13 +49,12 @@ object LiftedAstPrinter {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case ApplyClo(exp, exps, _, _, _) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
+    case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)), None)
     case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import org.json4s.JValue
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 /**
   * Represents a `CodeAction` in LSP.

@@ -1,5 +1,7 @@
 mod TestRedBlackTree {
 
+    import java.util.Random
+
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
 
@@ -192,10 +194,9 @@ mod TestRedBlackTree {
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
-        let seed = 42i64;
-        let r = Random.freshWithSeed(seed);
+        let rnd = new Random();
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
-            List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+            List.map(_ -> rnd.nextInt(), List.range(0, n)))
     }
 
 
@@ -251,7 +252,7 @@ mod TestRedBlackTree {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 
@@ -291,13 +292,13 @@ mod TestRedBlackTree {
     def parMinimumBy01(): Bool =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
-        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((0, 0))
 
     @test
     def parMinimumBy02(): Bool =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((1999, 0))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -308,13 +309,13 @@ mod TestRedBlackTree {
     def parMaximumBy01(): Bool =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
-        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 1999)
+        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((1999, 1999))
 
     @test
     def parMaximumBy02(): Bool =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 1999)
+        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((0, 1999))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -394,18 +395,18 @@ mod TestRedBlackTree {
 
     @test
     def forEach01(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        21 == deref x
+        21 == Ref.get(x)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        1 == deref x
+        1 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -414,18 +415,18 @@ mod TestRedBlackTree {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        21 == deref x
+        21 == Ref.get(x)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let x = ref 21 @ rc;
+        let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        0 == deref x
+        0 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -749,36 +750,36 @@ mod TestRedBlackTree {
 
     @test
     def mapAWithKey01(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty()) and deref st == '#'
+        ans == Identity.Identity(RedBlackTree.empty()) and Ref.get(st) == '#'
     }
 
     @test
     def mapAWithKey02(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and Ref.get(st) == 'a'
     }
 
     @test
     def mapAWithKey03(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and Ref.get(st) == 'b'
     }
 
     @test
     def mapAWithKey04(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
-                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and Ref.get(st) == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////

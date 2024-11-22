@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[Range]].
@@ -57,4 +57,25 @@ object Range {
   */
 case class Range(start: Position, end: Position) {
   def toJSON: JValue = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
+
+  /**
+    * Returns the range that starts earlier.
+    */
+  private def earlierStart(that: Range): Range =
+     if (start < that.start) this else that
+
+  /**
+    * Returns the range that ends later.
+    */
+  private def laterEnd(that: Range): Range =
+    if (end > that.end) this else that
+
+  /**
+    * Checks if this range overlaps with the other range.
+    */
+  def overlapsWith(that: Range): Boolean = {
+    val fst = earlierStart(that)
+    val lst = laterEnd(that)
+    fst == lst || fst.end > lst.start
+  }
 }

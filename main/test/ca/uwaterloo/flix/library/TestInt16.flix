@@ -1149,20 +1149,17 @@ mod TestInt16 {
 
     @test
     def valueOf01(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(0i16);
-        equals(i, checked_cast(Int16.valueOf(0i16)))
+        unsafe i.equals(Int16.valueOf(0i16))
 
     @test
     def valueOf02(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(1i16);
-        equals(i, checked_cast(Int16.valueOf(1i16)))
+        unsafe i.equals(Int16.valueOf(1i16))
 
     @test
     def valueOf03(): Bool =
-        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
         let i = Int16.valueOf(-1i16);
-        equals(i, checked_cast(Int16.valueOf(-1i16)))
+        unsafe i.equals(Int16.valueOf(-1i16))
 
 }

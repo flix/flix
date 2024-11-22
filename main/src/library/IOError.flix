@@ -13,11 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+///
+/// An error that can occur when performing I/O operations involving the file system.
+///
+/// The first element describes the general kind of error that occurred.
+/// This can be used to determine the correct action to take to handle specific kinds of errors.
+///
+/// The second element is a string that describes the error, meant to be used for debugging purposes.
+///
+pub enum IoError(IoError.ErrorKind, String) with Eq
+
+mod IoError {
+
+    pub enum ErrorKind with Eq, ToString {
+        case AlreadyExists,
+        case PermissionDenied,
+        case Interrupted,
+        case InvalidPath,
+        case InvalidInput,
+        case InvalidData,
+        case NotFound,
+        case NotFile,
+        case NotDirectory,
+        case UnexpectedEof,
+        case Unsupported,
+        case Other
+    }
+
+}
+
 pub enum IOError with Eq, Order, ToString, Hash, Sendable {
     case Generic(String)
 }
 
 mod IOError {
+
+    import java.lang.Exception
 
     use IOError.Generic
 
@@ -34,9 +66,7 @@ mod IOError {
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(checked_cast(e))))
+            case e: Exception => Err(Generic(unsafe e.getMessage()))
         }
 
 }

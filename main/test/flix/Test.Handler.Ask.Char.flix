@@ -1,11 +1,11 @@
 mod Test.Handler.Ask.Char {
 
     eff Ask {
-        pub def ask(x: Char): Unit
+        def ask(x: Char): Unit
     }
 
     def generator(x: Char): Unit \ Ask =
-        do Ask.ask(x); generator(next(x))
+        Ask.ask(x); generator(next(x))
 
     def sample(limit: Char): List[Char] =
         try {
