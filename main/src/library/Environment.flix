@@ -109,9 +109,9 @@ mod Environment {
     ///
     /// Handles the `Environment` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Environment` effect using the `IO` effect.
+    /// In other words, re-interprets the `Environment` effect using the `Sys` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Sys, IO} = x ->
         try {
             f(x)
         } with Environment {
@@ -136,19 +136,13 @@ mod Environment {
                     case _: Exception => k(None)
                 }
 
-            def getProp(name, k) =
-                try {
-                    let result = unsafe System.getProperty(name);
-                    k(Object.toOption(result))
-                } catch {
-                    case _: Exception => k(None)
-                }
+            def getProp(name, k) = k(getPropHelper(name))
 
-            def getOsName(k) = k(getProp("os.name"))
+            def getOsName(k) = k(getPropHelper("os.name"))
 
-            def getOsArch(k) = k(getProp("os.arch"))
+            def getOsArch(k) = k(getPropHelper("os.arch"))
 
-            def getOsVersion(k) = k(getProp("os.version"))
+            def getOsVersion(k) = k(getPropHelper("os.version"))
 
             def getFileSeparator(k) = k(unsafe JFile.separator)
 
@@ -156,16 +150,24 @@ mod Environment {
 
             def getLineSeparator(k) = k(unsafe System.lineSeparator())
 
-            def getCurrentWorkingDirectory(k) = k(getProp("user.dir"))
+            def getCurrentWorkingDirectory(k) = k(getPropHelper("user.dir"))
 
-            def getTemporaryDirectory(k) = k(getProp("java.io.tmpdir"))
+            def getTemporaryDirectory(k) = k(getPropHelper("java.io.tmpdir"))
 
-            def getUserName(k) = k(getProp("user.name"))
+            def getUserName(k) = k(getPropHelper("user.name"))
 
-            def getUserHomeDirectory(k) = k(getProp("user.home"))
+            def getUserHomeDirectory(k) = k(getPropHelper("user.home"))
 
             def getVirtualProcessors(k) = k(unsafe Runtime.getRuntime().availableProcessors())
         }
+
+    def getPropHelper(name: String): Option[String] \ {Sys, IO} =
+            try {
+                let result = System.getProperty(name);
+                Object.toOption(result)
+            } catch {
+                case _: Exception => None
+            }
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         if (unsafe iter.hasNext())
