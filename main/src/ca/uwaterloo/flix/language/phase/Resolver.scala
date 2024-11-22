@@ -2080,7 +2080,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Derivations = {
     val qnames = derives0.traits
     val derives = qnames.flatMap(resolveDerivation(_, env, ns0, root))
     // Check for [[DuplicateDerivation]].
@@ -2096,7 +2096,7 @@ object Resolver {
       }
     }
     errors.foreach(sctx.errors.add)
-    Ast.Derivations(derives, derives0.loc)
+    Derivations(derives, derives0.loc)
   }
 
   /**

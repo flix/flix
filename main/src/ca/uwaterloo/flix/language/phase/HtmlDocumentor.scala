@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Doc, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -1198,7 +1198,7 @@ object HtmlDocumentor {
     *
     * If `derives` contains no elements, nothing will be generated.
     */
-  private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (derives.traits.isEmpty) {
       return
     }
