@@ -112,7 +112,7 @@ mod RedBlackTree {
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    def threads(): Int32 \ Environment =
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
         multiplier * Environment.getVirtualProcessors()
@@ -632,7 +632,8 @@ mod RedBlackTree {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(t))
-                    parMapWithKey(threads() - 1, g, t)
+                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
+                    parMapWithKey(threads - 1, g, t)
                 else
                     seqMapWithKey(f, t)
             case Purity2.Impure(_) => seqMapWithKey(f, t)

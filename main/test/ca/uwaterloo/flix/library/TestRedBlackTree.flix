@@ -207,10 +207,11 @@ mod TestRedBlackTree {
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    def threads(): Int32 \ {Sys, IO} =
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        let virualProcessors = Environment.handle(Environment.getVirtualProcessors)();
+        multiplier * virualProcessors
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -274,12 +275,12 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parCount01(): Bool =
+    def parCount01(): Bool \ {Sys, IO} =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def parCount02(): Bool =
+    def parCount02(): Bool \ {Sys, IO} =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
@@ -289,13 +290,13 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMinimumBy01(): Bool =
+    def parMinimumBy01(): Bool \ {Sys, IO} =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((0, 0))
 
     @test
-    def parMinimumBy02(): Bool =
+    def parMinimumBy02(): Bool \ {Sys, IO} =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((1999, 0))
@@ -306,13 +307,13 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMaximumBy01(): Bool =
+    def parMaximumBy01(): Bool \ {Sys, IO} =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((1999, 1999))
 
     @test
-    def parMaximumBy02(): Bool =
+    def parMaximumBy02(): Bool \ {Sys, IO} =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some((0, 1999))
@@ -347,20 +348,20 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parExists01(): Bool =
+    def parExists01(): Bool \ {Sys, IO} =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
 
     @test
-    def parExists02(): Bool =
+    def parExists02(): Bool \ {Sys, IO} =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
 
     @test
-    def parExists03(): Bool =
+    def parExists03(): Bool \ {Sys, IO} =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
@@ -371,19 +372,19 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parForAll01(): Bool =
+    def parForAll01(): Bool \ {Sys, IO} =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parForAll(threads() - 1, (k, v) -> k == v, t)
 
     @test
-    def parForAll02(): Bool =
+    def parForAll02(): Bool \ {Sys, IO} =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parForAll(threads() - 1, (k, _) -> k == 1, t)
 
     @test
-    def parForAll03(): Bool =
+    def parForAll03(): Bool \ {Sys, IO} =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
@@ -571,12 +572,12 @@ mod TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parSumWith01(): Bool =
+    def parSumWith01(): Bool \ {Sys, IO} =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
 
     @test
-    def parSumWith02(): Bool =
+    def parSumWith02(): Bool \ {Sys, IO} =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 

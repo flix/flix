@@ -27,8 +27,8 @@ mod TestFile {
     /// Helper - make a filepath within the temp directory.
     /// Use `java.nio.file.Path` functions for platform independence.
     ///
-    def makeTempPath(fileName: String): Result[IOError, String] = region rc {
-        let tempdir = match Environment.getTemporaryDirectory() {
+    def makeTempPath(fileName: String): Result[IOError, String] \ {Sys, IO} = region rc {
+        let tempdir = match Environment.handle(Environment.getTemporaryDirectory)() {
             case Some(dir)  => Ok(dir)
             case None       => Err(Generic("Could not find TemporaryDirectory"))
         };
@@ -196,7 +196,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def setLength01(): Bool \ IO =
+    def setLength01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                         File.setLength!(10i64),
@@ -469,7 +469,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def write01(): Bool \ IO = region rc {
+    def write01(): Bool \ {Sys, IO} = region rc {
         let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
         let dest = Array.empty(rc, 4);
         let expected = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
@@ -486,7 +486,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeWith01(): Bool \ IO = region rc {
+    def writeWith01(): Bool \ {Sys, IO} = region rc {
         let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
         let dest = Array.empty(rc, 2);
         let expected = Array#{2i8, 3i8} @ rc;
@@ -503,7 +503,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeBool01(): Bool \ IO =
+    def writeBool01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeBool!(true),
@@ -513,7 +513,7 @@ mod TestFile {
 
 
     @test
-    def writeBool02(): Bool \ IO =
+    def writeBool02(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeBool!(false),
@@ -526,7 +526,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeAsChar01(): Bool \ IO =
+    def writeAsChar01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeAsChar!(65),
@@ -539,7 +539,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeAsByte01(): Bool \ IO =
+    def writeAsByte01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeAsByte!(100),
@@ -552,7 +552,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeAsShort01(): Bool \ IO =
+    def writeAsShort01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeAsShort!(100),
@@ -565,7 +565,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeInt3201(): Bool \ IO =
+    def writeInt3201(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeInt32!(100),
@@ -578,7 +578,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeInt6401(): Bool \ IO =
+    def writeInt6401(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeInt64!(100i64),
@@ -591,7 +591,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeFloat3201(): Bool \ IO =
+    def writeFloat3201(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeFloat32!(100.0f32),
@@ -604,7 +604,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeFloat6401(): Bool \ IO =
+    def writeFloat6401(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeFloat64!(100.0f64),
@@ -617,7 +617,7 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def writeModifiedUTF01(): Bool \ IO =
+    def writeModifiedUTF01(): Bool \ {Sys, IO} =
         (makeTempPath("outfile01.bin") >>= path ->
             testWriteFunctionWithReadBack(path,
                     File.writeModifiedUTF!("Hello World!"),
