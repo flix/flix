@@ -32,9 +32,9 @@ object SyntaxTreePrinter {
   private def print(token: Token): DocAst.Expr = token.kind match {
     // Err is not a case object, so we can't rely on the generated `toString`.
     case TokenKind.Err(_) =>
-      DocAst.Expr.App(DocAst.Expr.AsIs("Err"), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
+      DocAst.Expr.SquareApp(DocAst.Expr.AsIs("Err"), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
     case other =>
-      DocAst.Expr.App(DocAst.Expr.AsIs(other.toString), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
+      DocAst.Expr.SquareApp(DocAst.Expr.AsIs(other.toString), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
   }
 
   private def print(child: SyntaxTree.Child): DocAst.Expr = child match {
