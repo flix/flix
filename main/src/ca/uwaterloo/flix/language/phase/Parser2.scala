@@ -1071,21 +1071,8 @@ object Parser2 {
         Type.parameters()
       }
       // Singleton short-hand
-      val isShorthand = at(TokenKind.ParenL)
-      if (isShorthand) {
-        val markType = open()
-        val mark = open()
-        oneOrMore(
-          namedTokenSet = NamedTokenSet.Type,
-          getItem = () => Type.ttype(),
-          checkForItem = _.isFirstType,
-          breakWhen = _.isRecoverType,
-          context = SyntacticContext.Type.OtherType
-        ) match {
-          case Some(error) => closeWithError(mark, error)
-          case None => close(mark, TreeKind.Type.Tuple)
-        }
-        close(markType, TreeKind.Type.Type)
+      if (at(TokenKind.ParenL)) {
+        typeTermList()
       }
       // derivations
       if (at(TokenKind.KeywordWith)) {
@@ -1093,7 +1080,7 @@ object Parser2 {
       }
 
       // Check for illegal enum using both shorthand and body
-      if (isShorthand && eat(TokenKind.CurlyL)) {
+      if (at(TokenKind.ParenL) && eat(TokenKind.CurlyL)) {
         val mark = open()
         enumCases()
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Enum)
@@ -1124,25 +1111,23 @@ object Parser2 {
         }
         name(NAME_TAG, context = SyntacticContext.Decl.Enum)
         if (at(TokenKind.ParenL)) {
-          val mark = open()
-          val markTuple = open()
-          oneOrMore(
-            namedTokenSet = NamedTokenSet.Type,
-            getItem = () => Type.ttype(),
-            checkForItem = _.isFirstType,
-            breakWhen = _.isRecoverDecl,
-            context = SyntacticContext.Decl.Enum
-          ) match {
-            case Some(error) =>
-              close(markTuple, TreeKind.Type.Tuple)
-              closeWithError(mark, error)
-            case None =>
-              close(markTuple, TreeKind.Type.Tuple)
-              close(mark, TreeKind.Type.Type)
-          }
+          typeTermList()
         }
         close(mark, TreeKind.Case)
       }
+    }
+
+    private def typeTermList()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Type,
+        getItem = () => Type.ttype(),
+        checkForItem = _.isFirstType,
+        breakWhen = _.isRecoverDecl, // TODO: should also include 'case' for non-shorthand, and maybe even comma.
+        context = SyntacticContext.Decl.Enum
+      )
+      close(mark, TreeKind.TypeTermList)
     }
 
     private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
