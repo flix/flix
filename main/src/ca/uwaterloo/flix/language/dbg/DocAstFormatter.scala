@@ -27,7 +27,7 @@ object DocAstFormatter {
 
   def format(p: Program)(implicit i: Indent): List[Doc] = {
     import scala.math.Ordering.Implicits.seqOrdering
-    val Program(enums0, defs0) = p
+    val Program(enums0, defs0, misc0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, tparams, cases) =>
         val tparamsf = if (tparams.isEmpty) empty else text("[") |:: sep(text(", "), tparams.map {
@@ -58,7 +58,13 @@ object DocAstFormatter {
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
-    (enums ++ defs).sortBy(_._1).map(_._2)
+    val misc = misc0.map {
+      case (name, expr) =>
+        val intro = text("/*") +: sep(breakWith(" "), name.split(" ").toList.map(text)) +: text("*/")
+        val e = format(expr)
+        intro +: e
+    }
+    (enums ++ defs).sortBy(_._1).map(_._2) ++ misc
   }
 
   def format(d: Expr)(implicit i: Indent): Doc =
