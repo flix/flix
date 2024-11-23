@@ -30,7 +30,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
         DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
     }.toList
-    DocAst.Program(Nil, defs)
+    DocAst.Program(Nil, defs, Nil)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `exp`. */

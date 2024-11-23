@@ -22,7 +22,7 @@ object MonoAstPrinter {
         val e = print(exp)
         DocAst.Def(ann, mod, sym, fps, rtpe, ef, e)
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(enums, defs, Nil)
   }
 
   private def print(e: MonoAst.Expr): DocAst.Expr = e match {

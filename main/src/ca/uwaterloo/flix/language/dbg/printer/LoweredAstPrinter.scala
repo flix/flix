@@ -45,7 +45,7 @@ object LoweredAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(enums, defs, Nil)
   }
 
   /**
