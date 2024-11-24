@@ -10,7 +10,7 @@ def createAndShowGUI(): Unit \ IO = {
     let frame = new JFrame("Dialog App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    let button = button("Click me", _ -> showDialog(title = "Are you sure?", content = "The button was clicked. Pick an option", frame));
+    let button = button("Click me to open a dialog", _ -> showDialog(title = "Are you sure?", content = "The button was clicked. Pick an option", frame));
 
     frame.getContentPane().add(button);
     frame.pack();
