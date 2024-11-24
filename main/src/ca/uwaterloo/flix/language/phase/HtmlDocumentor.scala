@@ -64,11 +64,6 @@ object HtmlDocumentor {
   val Script: String = "/doc/index.js"
 
   /**
-    * The path to the `search.js` script, relative to the resources folder.
-    */
-  val SearchScript: String = "/doc/search.js"
-
-  /**
     * The path to the the icon directory, relative to the resources folder.
     */
   val Icons: String = "/doc/icons"
@@ -83,8 +78,7 @@ object HtmlDocumentor {
     val filteredModulesRoot = filterModules(modulesRoot, packageModules)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    val generatedPages = visitMod(pairedModulesRoot)
-    createSitemap(generatedPages)
+    visitMod(pairedModulesRoot)
 
     writeAssets()
   }
@@ -535,25 +529,6 @@ object HtmlDocumentor {
   }
 
   /**
-    * Generates the sitemap from the given list of filenames, and writes it to disk.
-    */
-  private def createSitemap(fileNames: List[String]): Unit = {
-    // The sitemap.json file is in a non-standard format for use with the search function.
-    // In contrast to the standard sitemap.xml, the locations are relative to the origin.
-    val sb = new StringBuilder()
-    sb.append("[")
-    for ((fileName, i) <- fileNames.zipWithIndex) {
-      sb.append(s"\"$fileName\"")
-      if (i < fileNames.length - 1) {
-        sb.append(",")
-      }
-    }
-    sb.append("]")
-    val sitemapJson = sb.toString()
-    writeFile("sitemap.json", sitemapJson.getBytes)
-  }
-
-  /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
@@ -880,7 +855,6 @@ object HtmlDocumentor {
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script defer type='module' src='./index.js'></script>
-       |<script defer type='module' src='./search.js'></script>
        |<title>Flix | ${esc(name)}</title>
        |</head>
     """.stripMargin
@@ -899,11 +873,7 @@ object HtmlDocumentor {
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
 
-    sb.append("<button id='search-button'>")
-    inlineIcon("search")
-    sb.append("<span>Search</span>")
-    sb.append("<kbd class='keyboard-shortcut'>/</kbd>")
-    sb.append("</button>")
+    sb.append("<div class='spacer' role='presentation'></div>")
 
     sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
     sb.append("<span class='dark icon'>")
@@ -925,16 +895,6 @@ object HtmlDocumentor {
     sb.append("</div>")
 
     sb.append("</header>")
-
-    sb.append("<dialog id='search-box' aria-label='Search Box'>")
-    sb.append("<div class='input-field'>")
-    sb.append("<input type='text' autofocus placeholder='Search' aria-label='Search Text Input'>")
-    sb.append("<button id='close-search-box' aria-label='Close Search Box'>")
-    inlineIcon("close")
-    sb.append("</button>")
-    sb.append("</div>")
-    sb.append("<ul class='results'></ul>")
-    sb.append("</dialog>")
   }
 
   /**
@@ -1490,9 +1450,6 @@ object HtmlDocumentor {
 
     val script = readResource(Script)
     writeFile("index.js", script)
-
-    val searchScript = readResource(SearchScript)
-    writeFile("search.js", searchScript)
   }
 
   /**

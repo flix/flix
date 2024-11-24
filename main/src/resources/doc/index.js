@@ -1,5 +1,3 @@
-import { search } from "./search.js";
-
 function initTheme() {
     const storeKey = "flix-html-docs:use-dark-theme";
 
@@ -73,120 +71,13 @@ function initLinks() {
 function initLink(link) {
     const isAnchor = link.getAttribute("href").includes("#");
 
-    // Hide menu and search box when navigating somewhere within the page
+    // Hide menu when navigating somewhere within the page
     if (isAnchor) link.addEventListener("click", () => {
         const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
         menuToggleCheckbox.checked = false;
-
-        const searchBox = document.querySelector("#search-box");
-        searchBox.close();
-    });
-}
-
-function initSearch() {
-    const searchButton = document.querySelector("#search-button");
-    const searchBox = document.querySelector("#search-box");
-    const closeSearchBoxButton = document.querySelector("#close-search-box");
-    const input = document.querySelector("#search-box input");
-    const resultList = document.querySelector("#search-box .results");
-
-    function openSearchBox() {
-        input.value = "";
-        updateSearchResults();
-        searchBox.showModal();
-    }
-    searchButton.addEventListener("click", openSearchBox);
-    window.addEventListener("keydown", (e) => {
-        if (e.key === "/" && searchBox.open === false) {
-            e.preventDefault();
-            openSearchBox();
-        }
-    });
-
-    function closeSearchBox() {
-        searchBox.close();
-    }
-    closeSearchBoxButton.addEventListener("click", closeSearchBox);
-    searchBox.addEventListener("click", (e) => {
-        // Little hack to detect if the backdrop was clicked.
-        const backdropClicked = e.target === e.currentTarget;
-        if (backdropClicked) {
-            closeSearchBox();
-        }
-    });
-    window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            closeSearchBox();
-        }
-    });
-
-
-    async function updateSearchResults() {
-        const phrase = input.value;
-        resultList.innerHTML = "Searching...";
-        const results = await search(phrase);
-
-        if (input.value !== phrase) {
-            // The results are outdated
-            return;
-        }
-
-        resultList.innerHTML = "";
-        if (results.length === 0) {
-            resultList.innerHTML = "No results found";
-        } else {
-            for (const result of results) {
-                const item = document.createElement("li");
-                const link = document.createElement("a");
-                link.href = result.url;
-
-                const type = document.createElement("span");
-                type.classList.add("type");
-                type.textContent = result.type;
-                link.append(type);
-
-                link.append(" ");
-
-                const title = document.createElement("span");
-                title.classList.add("title");
-                title.textContent = result.title;
-                link.append(title);
-
-                initLink(link);
-                item.append(link);
-                resultList.append(item);
-            }
-        }
-    }
-    input.addEventListener("input", updateSearchResults);
-
-    searchBox.addEventListener("keydown", (e) => {
-        if (["ArrowDown", "ArrowUp"].includes(e.key)) {
-            const orderedElements = [
-                input,
-                ...resultList.querySelectorAll("a"),
-            ];
-            const focusedElement = document.activeElement;
-            const currentIndex = orderedElements.findIndex(e => e === focusedElement);
-
-            const nextIndex = currentIndex + {
-                ArrowUp: -1,
-                ArrowDown: 1,
-            }[e.key];
-            if (nextIndex < 0 || nextIndex >= orderedElements.length) {
-                return;
-            }
-
-            const nextElement = orderedElements[nextIndex];
-            nextElement.focus();
-            e.preventDefault();
-        } else if (!["Control", "Meta", "Alt", "Shift", "Enter"].includes(e.key)) {
-            input.focus();
-        }
     });
 }
 
 initTheme();
 initCopyLinks();
 initLinks();
-initSearch();
