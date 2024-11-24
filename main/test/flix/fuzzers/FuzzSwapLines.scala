@@ -34,19 +34,19 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   private val numSwapLines = 15
 
   test("simple-card-game") {
-    val filepath = Paths.get("examples/simple-card-game.flix")
+    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val lines = Files.lines(filepath)
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
   test("using-channels-and-select") {
-    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val filepath = Paths.get("examples/concurrency-and-parallelism/using-channels-and-select.flix")
     val lines = Files.lines(filepath)
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
