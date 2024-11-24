@@ -4,7 +4,7 @@ import javax.swing.JLabel
 import javax.swing.SwingUtilities
 
 def createAndShowGUI(): Unit \ IO = {
-    let frame = new JFrame("Dialog App");
+    let frame = new JFrame("Hello App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     let label = new JLabel("Hello World!");
