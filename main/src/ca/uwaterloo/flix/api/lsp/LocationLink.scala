@@ -27,9 +27,9 @@ import org.json4s.*
   */
 object LocationLink {
   /**
-    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol]] `sym`.
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.AssocTypeSym]] `sym`.
     *
-    * @param sym        target [[Symbol]] that the returned [[LocationLink]] points to.
+    * @param sym        target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
     * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
     * @return           [[LocationLink]] from `originLoc` to the target `sym`.
     */
@@ -137,6 +137,13 @@ object LocationLink {
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
+  /**
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.TraitSym]] `sym`.
+    *
+    * @param sym        target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
+    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    */
   def fromTraitSym(sym: Symbol.TraitSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = sym.loc.source.name
