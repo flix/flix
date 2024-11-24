@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -38,8 +39,33 @@ object GotoProvider {
       .getOrElse(mkNotFound(uri, pos))
   }
 
+  /**
+    * Returns the most specific AST node under the space immediately right of the thin cursor if there is one.
+    * Otherwise, returns [[None]].
+    *
+    * Note that the given [[Position]] `pos` of the cursor is interpreted as the [[Position]]
+    * to the immediate right of the thin cursor.
+    *
+    * @param uri  the URI of the file that the cursor is in.
+    * @param pos  the [[Position]] to the immediate right of the thin cursor.
+    * @param root the root AST node of the Flix program.
+    * @return     the most specific AST node under the space immediately right of the thin cursor
+    *             if there is one. Otherwise, returns [[None]].
+    */
   private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
+  /**
+    * Returns the most specific AST node under the space immediately left of the thin cursor.
+    *
+    * Note that the given [[Position]] `pos` of the cursor is interpreted as the [[Position]]
+    * to the immediate right of the thin cursor.
+    *
+    * @param uri  URI of the file that the cursor is in.
+    * @param pos  [[Position]] to the immediate right of the thin cursor.
+    * @param root Root AST node of the Flix Program.
+    * @return     the most specific AST node under the space immediately left of the thin cursor
+    *             if there is one. Otherwise, returns [[None]].
+    */
   private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
       val left = Position(pos.line, pos.character - 1)
@@ -49,12 +75,34 @@ object GotoProvider {
     }
   }
 
+  /**
+    * Returns the most specific AST node under the [[Position]] `pos` if there is one.
+    * Otherwise, returns [[None]].
+    *
+    * @param uri  URI of the file that the [[Position]] `pos` is in.
+    * @param pos  [[Position]] that we're searching under.
+    * @param root Root AST node of the Flix program.
+    * @return     The most specific AST node under the [[Position]] `pos`
+    *             if there is one. Otherwise, returns [[None]].
+    */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
     Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
     consumer.getStack.filter(isReal).headOption
   }
 
+  /**
+    * Returns an LSP Goto response for when the cursor is on `x`, if `x` is the occurrence of a [[Symbol]].
+    * Otherwise, returns [[None]].
+    *
+    * The LSP Goto response will take the form of an LSP [[LocationLink]] from the [[SourceLocation]] of
+    * `x` to the [[SourceLocation]] of the [[Symbol]]s definition site.
+    *
+    * @param x    Object that the cursor is on.
+    * @param root Root AST node of the Flix program
+    * @return     LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
+    *             Otherwise, returns [[None]].
+    */
   private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
     // Assoc Types
     case SymUse.AssocTypeSymUse(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
