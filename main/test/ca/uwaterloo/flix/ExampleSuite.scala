@@ -26,11 +26,17 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/fixpoints")
   mkTestDir("examples/functional-style")
   mkTestDir("examples/imperative-style")
+
+  mkTestDir("examples/interoperability/anonymous-classes")
+  mkTestDir("examples/interoperability/calling-methods")
+  mkTestDir("examples/interoperability/exceptions")
+  mkTestDir("examples/interoperability/files")
+  mkTestDir("examples/interoperability/swing")
+
   mkTestDir("examples/io")
   mkTestDir("examples/quality-of-life")
   mkTestDir("examples/records")
   mkTestDir("examples/structs")
-  mkTestDir("examples/swing")
   mkTestDir("examples/traits")
   mkTestDir("examples/type-level-programming")
 
