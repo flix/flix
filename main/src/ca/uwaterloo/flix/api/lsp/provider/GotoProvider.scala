@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
@@ -87,7 +89,7 @@ object GotoProvider {
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
-    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
     consumer.getStack.filter(isReal).headOption
   }
 
