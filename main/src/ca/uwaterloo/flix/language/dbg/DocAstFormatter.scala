@@ -27,7 +27,7 @@ object DocAstFormatter {
 
   def format(p: Program)(implicit i: Indent): List[Doc] = {
     import scala.math.Ordering.Implicits.seqOrdering
-    val Program(enums0, defs0) = p
+    val Program(enums0, defs0, misc0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, tparams, cases) =>
         val tparamsf = if (tparams.isEmpty) empty else text("[") |:: sep(text(", "), tparams.map {
@@ -37,10 +37,10 @@ object DocAstFormatter {
           })
         }) |:: text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
-          case Case(sym, tpe@Type.Tuple(_)) =>
-            text("case") +: text(sym.name) |:: formatType(tpe, paren = false)
-          case Case(sym, tpe) =>
-            text("case") +: text(sym.name) |:: parens(formatType(tpe, paren = false))
+          case Case(sym, Nil) =>
+            text("case") +: text(sym.name)
+          case Case(sym, tpes) =>
+            text("case") +: text(sym.name) |:: formatType(Type.Tuple(tpes), paren = false)
         }))
         val d = text("enum") +: text(sym.toString) |:: tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
@@ -58,7 +58,13 @@ object DocAstFormatter {
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
-    (enums ++ defs).sortBy(_._1).map(_._2)
+    val misc = misc0.map {
+      case (name, expr) =>
+        val intro = text("/*") +: sep(breakWith(" "), name.split(" ").toList.map(text)) +: text("*/")
+        val e = format(expr)
+        intro +: e
+    }
+    (enums ++ defs).sortBy(_._1).map(_._2) ++ misc
   }
 
   def format(d: Expr)(implicit i: Indent): Doc =

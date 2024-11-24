@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, Is
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 /**
@@ -41,8 +42,9 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
+    case BackendObjType.NullaryTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
-    case BackendObjType.Tag(tpe) => JvmName(RootPackage, mkClassName("Tag", tpe))
+    case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
@@ -327,7 +329,38 @@ object BackendObjType {
     }
   }
 
-  case class Tag(elms: List[BackendType]) extends BackendObjType with Generatable {
+  sealed trait TagType extends BackendObjType with Generatable
+
+  case class NullaryTag(sym: Symbol.CaseSym) extends TagType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
+
+      cm.mkStaticConstructor(StaticConstructor)
+      cm.mkField(SingletonField)
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "singleton", this.toTpe)
+
+    def StaticConstructor: StaticConstructorMethod = singletonStaticConstructor(Constructor, SingletonField)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
+      thisLoad() ~ INVOKESPECIAL(Tagged.Constructor) ~
+        thisLoad() ~ Tagged.mkTagName(sym) ~ PUTFIELD(Tagged.NameField) ~
+        RETURN()
+    ))
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
+      Tagged.mkTagName(sym) ~ xReturn(String.toTpe)
+    ))
+  }
+
+  case class Tag(elms: List[BackendType]) extends TagType {
+    if (elms.isEmpty) throw InternalCompilerException(s"Unexpected nullary Tag type", SourceLocation.Unknown)
+
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
@@ -344,10 +377,10 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
 
-    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
       xReturn(String.toTpe)
-    }))
+    ))
 
     /** `[] --> [this.index(i).xString()]` */
     private def getIndexString(i: Int): InstructionSet = {

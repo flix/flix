@@ -107,10 +107,10 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp(_))
-      TypedAst.Expr.ApplyClo(e, es, subst(tvar), subst(evar), loc)
+    case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -242,15 +242,14 @@ object TypeReconstruction2 {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.Tag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.Tag(sym, exps, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val eff = Type.mkUnion(es.map(_.eff), loc)
+      TypedAst.Expr.Tag(sym, es, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.RestrictableTag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.RestrictableTag(sym, exps, _, tvar, evar, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.RestrictableTag(sym, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))
@@ -493,7 +492,7 @@ object TypeReconstruction2 {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
@@ -504,7 +503,7 @@ object TypeReconstruction2 {
     case KindedAst.Expr.PutStaticField(field, exp, loc) =>
       val e = visitExp(exp)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
@@ -668,7 +667,8 @@ object TypeReconstruction2 {
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
+    case KindedAst.Pattern.Tag(sym, pats, tvar, loc) =>
+      TypedAst.Pattern.Tag(sym, pats.map(visitPattern), subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)

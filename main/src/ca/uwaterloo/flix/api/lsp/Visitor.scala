@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 object Visitor {
@@ -214,12 +214,11 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, tpe, _, loc) = cse
+    val Case(_, tpes, _, loc) = cse
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
-
-    visitType(tpe)
+    tpes.foreach(visitType)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -432,9 +431,9 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp, exps, _, _, _) =>
-        visitExpr(exp)
-        exps.foreach(visitExpr)
+      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
         visitDefSymUse(symUse)
@@ -494,9 +493,9 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.Tag(symUse, exp, _, _, _) =>
+      case Expr.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
-        visitExpr(exp)
+        exps.foreach(visitExpr)
 
       case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
@@ -904,9 +903,9 @@ object Visitor {
     	case Wild(_, _) => ()
     	case Var(varSym, _, _) => visitBinder(varSym)
     	case Cst(_, _, _) => ()
-    	case Tag(sym, pat, _, _) =>
+    	case Tag(sym, pats, _, _) =>
     	  visitCaseSymUse(sym)
-        visitPattern(pat)
+        pats.foreach(visitPattern)
     	case Tuple(pats, _, _) =>
     	  pats.foreach(visitPattern)
     	case Record(pats, pat, _, _) =>

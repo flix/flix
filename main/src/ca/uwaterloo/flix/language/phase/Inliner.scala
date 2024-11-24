@@ -68,7 +68,7 @@ object Inliner {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    Validation.Success(LiftedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.Success(LiftedAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources))
   }
 
   /**
@@ -94,7 +94,7 @@ object Inliner {
   }
 
   private def visitEnumCase(caze: OccurrenceAst.Case): LiftedAst.Case = caze match {
-    case OccurrenceAst.Case(sym, tpe, loc) => LiftedAst.Case(sym, tpe, loc)
+    case OccurrenceAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct: OccurrenceAst.Struct): LiftedAst.Struct = struct match {
@@ -145,22 +145,12 @@ object Inliner {
 
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
-      op match {
-        case AtomicOp.Untag(_) =>
-          val List(e) = es
-          // Inline expressions of the form Untag(Tag(e)) => e
-          e match {
-            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-            case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-          }
+      LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-        case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-      }
-
-    case OccurrenceAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      val es = exps.map(visitExp(_, subst0))
-      e match {
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      e1 match {
         case LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
@@ -168,11 +158,11 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs ++ es, Map.empty)
+            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
           } else {
-            LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+            LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
           }
-        case _ => LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+        case _ => LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
@@ -382,10 +372,10 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))

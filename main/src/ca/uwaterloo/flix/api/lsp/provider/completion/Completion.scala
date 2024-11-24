@@ -177,12 +177,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(sym, tpe) =>
+    case Completion.VarCompletion(name) =>
       CompletionItem(
-        label    = sym.text,
-        sortText = Priority.toSortText(Priority.Low, sym.text),
-        textEdit = TextEdit(context.range, sym.text),
-        detail   = Some(FormatType.formatType(tpe)(flix)),
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Variable
       )
 
@@ -307,12 +306,12 @@ sealed trait Completion {
         kind          = CompletionItemKind.Method
       )
 
-    case Completion.EnumTagCompletion(enumSym, cas, arity) =>
+    case Completion.EnumTagCompletion(enumSym, cas) =>
       val name = s"${enumSym.toString}.${cas.sym.name}"
-      val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
+      val args = (1 until cas.tpes.length + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
-        label            = CompletionUtils.getLabelForEnumTags(name, cas, arity),
+        label            = CompletionUtils.getLabelForEnumTags(name, cas),
         sortText         = Priority.toSortText(Priority.Lower, name),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(enumSym.name),
@@ -547,11 +546,9 @@ object Completion {
   /**
     * Represents a Var completion
     *
-    * @param sym the Var symbol.
-    * @param tpe the type for FormatType to provide a human-readable string with additional information
-    *            about the symbol.
+    * @param name the name of the variable to complete.
     */
-  case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
+  case class VarCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
@@ -638,9 +635,8 @@ object Completion {
     *
     * @param enumSym the sym of the enum.
     * @param cas     the case (for that specific enum).
-    * @param arity   the arity of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case) extends Completion
 
   /**
    * Represents a struct field completion.

@@ -193,7 +193,7 @@ object Summary {
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
-    case Expr.ApplyClo(exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplySig(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
@@ -215,8 +215,8 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.Tag(_, exp, _, _, _) => countCheckedEcasts(exp)
-    case Expr.RestrictableTag(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RecordEmpty(_, _) => 0
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)

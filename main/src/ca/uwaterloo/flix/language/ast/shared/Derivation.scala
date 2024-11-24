@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.errors
+package ca.uwaterloo.flix.language.ast.shared
+
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 /**
-  * A marker trait for errors that are recoverable.
+  * Represents a derivation on an enum (e.g. `enum E with Eq`).
   */
-trait Recoverable {
-  final def cannotBeBothRecoverableAndUnrecoverable(): Unit = ()
-}
+case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
