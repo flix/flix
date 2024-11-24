@@ -213,7 +213,6 @@ object HighlightProvider {
     case SymUse.StructFieldSymUse(_, loc) => loc.isReal
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
-    case _: Symbol => true
     case tpe: Type => tpe.loc.isReal
     case _ => false
   }
