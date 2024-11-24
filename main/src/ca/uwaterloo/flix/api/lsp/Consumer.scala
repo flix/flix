@@ -3,8 +3,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
-import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, AssocTypeSig, Binder, Case, CatchRule, Constraint, ConstraintParam, Def, Effect, Enum, Expr, FormalParam, HandlerRule, Instance, JvmMethod, MatchRule, Op, ParYieldFragment, Pattern, Predicate, PredicateParam, SelectChannelRule, Sig, Struct, StructField, Trait, TypeAlias, TypeMatchRule, TypeParam}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, CaseSymUse, DefSymUse, EffectSymUse, LocalDefSymUse, OpSymUse, SigSymUse, StructFieldSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivations, EqualityConstraint, TraitConstraint}
 
 /**
