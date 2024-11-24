@@ -306,6 +306,11 @@ header > .spacer {
     width: 100%;
 }
 
+header .icon svg {
+    /* Get rid of weird padding on the icon */
+    display: block;
+}
+
 header > .toggle {
     display: flex;
     align-items: center;
