@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
-import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
