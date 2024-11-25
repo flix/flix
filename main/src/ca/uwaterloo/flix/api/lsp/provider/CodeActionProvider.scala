@@ -191,9 +191,10 @@ object CodeActionProvider {
       root.restrictableEnums.map { case (sym, _) => sym.name } ++
       root.traits.map { case (sym, _) => sym.name } ++
       root.typeAliases.map { case (sym, _) => sym.name } ++
-      root.effects.map { case (sym, _) => sym.name }
+      root.effects.map { case (sym, _) => sym.name } ++
+      root.structs.map {case (sym, _) => sym.name}
 
-    val syms = (root.enums ++ root.restrictableEnums ++ root.traits ++ root.typeAliases ++ root.effects).map {
+    val syms = (root.enums ++ root.restrictableEnums ++ root.traits ++ root.typeAliases ++ root.effects ++ root.structs).map {
       case (sym, _) => sym
     }
 
