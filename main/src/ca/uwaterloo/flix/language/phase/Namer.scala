@@ -223,6 +223,7 @@ object Namer {
     */
   private def mkDuplicateNamePair(name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
+    // NB: Sometimes `name` can be empty so we carefully check this
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
       sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
