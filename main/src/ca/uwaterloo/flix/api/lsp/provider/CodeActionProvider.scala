@@ -56,7 +56,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
-    case ResolutionError.UndefinedType(qn, ap, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedType(qn, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>

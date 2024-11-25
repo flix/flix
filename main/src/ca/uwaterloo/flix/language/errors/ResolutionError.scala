@@ -933,7 +933,7 @@ object ResolutionError {
     * @param ap  the enclosing module.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
