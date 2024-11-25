@@ -19,17 +19,28 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.Resolution
 
 /**
-  * Provides completions for local scope variables.
+  * Provides completions for all the things in local scope.
+  *
   * Everything that is resolved to Resolution.Var in the LocalScope is considered a local scope variable, including arguments.
   */
-object VarCompleter {
+object LocalScopeCompleter {
   def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] = {
-    val matchingVars = err.env.m.collect {
+    err.env.m.collect {
       case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
-        case Resolution.Var(_) => true
+        case Resolution.LocalDef(_, _)
+        | Resolution.Var(_)
+        | Resolution.Declaration(_) => true
         case _ => false
       } => k
-    }
-    matchingVars.map(Completion.VarCompletion(_))
+    }.map(Completion.LocalScopeCompletion(_))
+  }
+
+  def getCompletions(err: ResolutionError.UndefinedType): Iterable[Completion] = {
+    err.env.m.collect {
+      case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
+        case Resolution.Declaration(_) => true
+        case _ => false
+      } => k
+    }.map(Completion.LocalScopeCompletion(_))
   }
 }
