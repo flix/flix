@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -110,7 +110,36 @@ object RenameProvider {
     // Vars
     case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
     case TypedAst.Binder(sym, _) => Some(getVarOccurs(sym))
+    // Case
+    case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
+    case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
     case _ => None
+  }
+
+  private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = {
+        // NB: it's safe to simply offset the column to account for the enum name, since the case symbol must be on a single line
+        val enumNameLen = sym.sym.enumSym.name.length
+        val colWithoutEnumName = (sym.loc.sp1.col + enumNameLen + 1).toShort
+        val occurLen = sym.loc.sp2.col - sym.loc.sp1.col
+        val longForm = sym.sym.enumSym.name.length + sym.sym.name.length + 1
+        val occurContainsEnumName = occurLen == longForm
+        val col = if (occurContainsEnumName) { colWithoutEnumName } else { sym.loc.sp1.col }
+        val start = SourcePosition(sym.loc.sp1.source, sym.loc.sp1.line, col)
+        val loc = SourceLocation(sym.loc.isReal, start, sym.loc.sp2)
+        consider(sym.sym, loc)
+      }
+    }
+
+    Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
