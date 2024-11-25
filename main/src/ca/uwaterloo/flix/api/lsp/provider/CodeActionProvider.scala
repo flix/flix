@@ -42,7 +42,7 @@ object CodeActionProvider {
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
-      mkNewStruct(qn.ident.name, uri, ap)
+      mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
@@ -199,6 +199,16 @@ object CodeActionProvider {
     }
 
     mkUseSym(ident, names, syms, uri, ap)
+  }
+
+  /**
+    * Returns a code action that proposes to `use` a struct.
+    */
+  private def mkUseStruct(ident: Name.Ident, uri: String, position: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+    val syms = root.structs.map {
+      case (sym, _) => sym
+    }
+    mkUseSym(ident, syms.map(_.name), syms, uri, position)
   }
 
   /**
