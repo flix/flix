@@ -29,8 +29,6 @@ object ExprCompleter {
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
-      EnumCompleter.getCompletions(context) ++
-      StructCompleter.getCompletions(context) ++
       ModuleCompleter.getCompletions(context) ++
       HoleCompletion.getHoleCompletion(context, index, root) ++
       OpCompleter.getCompletions(context)
