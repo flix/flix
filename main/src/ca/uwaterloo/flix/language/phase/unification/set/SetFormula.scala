@@ -54,6 +54,8 @@ sealed trait SetFormula {
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
     case Union(_, _, varsPos, _, _, varsNeg, other) =>
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
+    case Xor(other) =>
+      SortedSet.from(other.flatMap(_.variables))
   }
 
   /** Faster alternative to `this.variables.contains(v)`. */
@@ -68,6 +70,8 @@ sealed trait SetFormula {
       varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
     case Union(_, _, varsPos, _, _, varsNeg, other) =>
       varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
+    case Xor(other) =>
+      other.exists(_.contains(v))
   }
 
   /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
@@ -89,6 +93,8 @@ sealed trait SetFormula {
         varsPos.isEmpty &&
         cstsNeg.isEmpty &&
         varsNeg.isEmpty &&
+        other.forall(_.isGround)
+    case Xor(other) =>
         other.forall(_.isGround)
   }
 
@@ -120,6 +126,8 @@ sealed trait SetFormula {
           varsNeg.iterator.map(_.x) ++
           other.iterator.flatMap(_.unknowns)
       )
+    case Xor(other) =>
+      SortedSet.from(other.iterator.flatMap(_.unknowns))
   }
 
   /**
@@ -167,6 +175,9 @@ sealed trait SetFormula {
           countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
         case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
           countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+        case Xor(other) =>
+          counter +=1
+          workList = other ::: workList
       }
     }
     counter
@@ -182,7 +193,7 @@ sealed trait SetFormula {
     case Var(x) => s"x$x"
     case Compl(f) => f match {
       case Univ | Empty | Cst(_) | ElemSet(_) | Var(_) | Compl(_) => s"!$f"
-      case Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) => s"!($f)"
+      case Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) | Xor(_) => s"!($f)"
     }
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val subformulas = subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
@@ -190,6 +201,8 @@ sealed trait SetFormula {
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val subformulas = subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
       s"(${subformulas.mkString(" ∪ ")})"
+    case Xor(other) =>
+      s"(${other.mkString(" ⊕ ")})"
   }
 
 }
@@ -353,6 +366,35 @@ object SetFormula {
     }
   }
 
+  /**
+    * A xor (symmetric difference) of formulas (`f1 ⊕ f2`).
+    *
+    * The xor
+    * {{{
+    * other    = List(e1 ∩ x9, x10)
+    * }}}
+    * represents the formula
+    * {{{ (e1 ∩ x9) ⊕ x10 }}}
+    *
+    * Property: An empty xor is ???.
+    *
+    * Invariant: There is at least two formulas in the xor.
+    *
+    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
+    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
+    * still public. However, we do not use the `copy` method anywhere for [[Xor]], so this is
+    * fine.
+    */
+  @nowarn
+  final case class Xor private(
+                              other: List[SetFormula]
+                              ) extends SetFormula {
+    if (CHECK_INVARIANTS) {
+      // There is always at least two subformulas.
+      assert(other.sizeIs >= 2, message = this.toString)
+    }
+  }
+
   /** Returns an iterator of the subformulas of the union or intersection. */
   def subformulasOf(
                              elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
@@ -407,6 +449,8 @@ object SetFormula {
       mkUnionAll(inter.mapSubformulas(mkCompl))
     case union@Union(_, _, _, _, _, _, _) =>
       mkInterAll(union.mapSubformulas(mkCompl))
+    case xor@Xor(_) =>
+      Compl(xor)
   }
 
   /**
@@ -494,6 +538,8 @@ object SetFormula {
           workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
         case union@Union(_, _, _, _, _, _, _) =>
           other += union
+        case xor@Xor(_) =>
+          other += xor
         case compl@Compl(_) =>
           other += compl
       }
@@ -630,6 +676,8 @@ object SetFormula {
           workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
         case inter@Inter(_, _, _, _, _, _, _) =>
           other += inter
+        case xor@Xor(_) =>
+          other += xor
         case compl@Compl(_) =>
           other += compl
       }
@@ -677,6 +725,26 @@ object SetFormula {
       SortedSet.from(varsNeg),
       other.toList
     )
+  }
+
+  /** Returns the Xor of `f1` and `f2` (`f1 ⊕ f2`). */
+  def mkXorDirect(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+    case (Univ, _) => mkCompl(f2)
+    case (_, Univ) => mkCompl(f1)
+    case (Empty, _) => f2
+    case (_, Empty) => f1
+    case _ => Xor(List(f1, f2))
+  }
+
+  /**
+    * Returns the xor of `fs` (`fs1 ⊕ fs2 ⊕ ..`).
+    *
+    * Nested xors are put into a single xor.
+    */
+  def mkXorDirectAll(fs: List[SetFormula]): SetFormula = fs match {
+    case Nil => Empty
+    case List(one) => one
+    case _ => Xor(fs)
   }
 
   /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */
@@ -802,6 +870,7 @@ object SetFormula {
           case Compl(_) => other.append(fProp)
           case Inter(_, _, _, _, _, _, _) => other.append(fProp)
           case Union(_, _, _, _, _, _, _) => other.append(fProp)
+          case Xor(_) => other.append(fProp)
         }
       }
       mkInterAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
@@ -880,9 +949,13 @@ object SetFormula {
           case Compl(_) => other.append(fProp)
           case Inter(_, _, _, _, _, _, _) => other.append(fProp)
           case Union(_, _, _, _, _, _, _) => other.append(fProp)
+          case Xor(_) => other.append(fProp)
         }
       }
       mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
+
+    case Xor(other) =>
+      mkXorDirectAll(other.map(propagationWithInsts(_, insts)))
   }
 
   /**
@@ -969,7 +1042,7 @@ object SetFormula {
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, _) if elemPos.nonEmpty ||
       cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
       varsNeg.nonEmpty => false
-    case _ =>
+    case Compl(_) | Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) | Xor(_) =>
       isEmptyEquivalentExhaustive(f)
   }
 
@@ -1053,6 +1126,13 @@ object SetFormula {
         for (t <- other) {
           running = CISet.union(running, evaluate(t, univUnknowns))
           if (running.isUniverse) return CISet.universe
+        }
+        running
+
+      case Xor(other) =>
+        var running = CISet.empty
+        for (t <- other) {
+          running = CISet.xor(running, evaluate(t, univUnknowns))
         }
         running
     }
