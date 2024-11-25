@@ -30,6 +30,7 @@ object LocalScopeCompleter {
       case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
         case Resolution.LocalDef(_, _)
         | Resolution.Var(_)
+        | Resolution.JavaClass(_)
         | Resolution.Declaration(_) => true
         case _ => false
       } => k
@@ -39,7 +40,8 @@ object LocalScopeCompleter {
   def getCompletions(err: ResolutionError.UndefinedType): Iterable[Completion] = {
     err.env.m.collect {
       case (k, v) if k.startsWith(err.qn.ident.name) && v.exists{
-        case Resolution.Declaration(_) => true
+        case Resolution.Declaration(_)
+        | Resolution.JavaClass(_) => true
         case _ => false
       } => k
     }.map(Completion.LocalScopeCompletion(_))

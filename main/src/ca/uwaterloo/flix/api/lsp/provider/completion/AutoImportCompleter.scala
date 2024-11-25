@@ -26,7 +26,7 @@ object AutoImportCompleter {
    * Returns a list of import completions to auto complete the class name and import the java class.
    *
    * Example:
-   *  If we have an undefined name which is the prefix of an existing java class
+   *  If we have an undefined name which is the prefix of an existing and unimported java class
    *
    *  {{{
    *    let s = Mat // undefined name error
@@ -54,12 +54,11 @@ object AutoImportCompleter {
   private def javaClassCompletionsByClass(prefix: String, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(_.startsWith(prefix)).flatMap { className =>
-      availableClasses(className).map{path =>
+      availableClasses(className).collect { case path if (!env.m.contains(className)) =>
         val completePath = path.mkString(".") + "." + className
-        val shouldImport = !env.m.contains(className)
-        val label = if (shouldImport) s"$className (import $completePath)" else className
-        AutoImportCompletion(label, className, completePath, ap, Some(completePath), shouldImport)
+        val label = s"$className (import $completePath)"
+          AutoImportCompletion(label, className, completePath, ap, Some(completePath))
       }
     }
-  }
+ }
 }
