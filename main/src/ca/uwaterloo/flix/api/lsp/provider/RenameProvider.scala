@@ -104,9 +104,31 @@ object RenameProvider {
   }
 
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
+    // Defs
     case TypedAst.Def(sym, _, _, _) => Some(getDefOccurs(sym))
     case SymUse.DefSymUse(sym, _) => Some(getDefOccurs(sym))
+    // Vars
+    case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
+    case TypedAst.Binder(sym, _) => Some(getVarOccurs(sym))
     case _ => None
+  }
+
+  private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object VarSymConsumer extends Consumer {
+      override def consumeBinder(bnd: TypedAst.Binder): Unit = consider(bnd.sym, bnd.sym.loc)
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.Var(s, _, loc) => consider(s, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, VarSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getDefOccurs(sym: Symbol.DefnSym)(implicit root: Root): Set[SourceLocation] = {
