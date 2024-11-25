@@ -250,7 +250,7 @@ object WeededAst {
     }
 
     def Unit(loc: SourceLocation): Expr =
-      Ambiguous(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), loc)
+      Ambiguous(Name.mkQName(List("Unit"), "Unit", loc), loc)
 
   }
 
@@ -281,7 +281,7 @@ object WeededAst {
     }
 
     def Unit(loc: SourceLocation): Pattern =
-      Tag(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), Nil, loc)
+      Tag(Name.mkQName(List("Unit"), "Unit", loc), Nil, loc)
 
   }
 
@@ -395,7 +395,7 @@ object WeededAst {
     case class Error(loc: SourceLocation) extends Type
 
     def Unit(loc: SourceLocation): Type =
-      Ambiguous(Name.mkQName(List("Unit"), "Unit", loc), loc)
+      Ambiguous(Name.mkQName(Nil, "Unit", loc), loc)
 
   }
 

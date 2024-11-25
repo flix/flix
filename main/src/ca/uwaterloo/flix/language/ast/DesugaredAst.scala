@@ -214,7 +214,7 @@ object DesugaredAst {
     }
 
     def Unit(loc: SourceLocation): Expr =
-      DesugaredAst.Expr.Ambiguous(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), loc)
+      DesugaredAst.Expr.Ambiguous(Name.mkQName(List("Unit"), "Unit", loc), loc)
 
   }
 
