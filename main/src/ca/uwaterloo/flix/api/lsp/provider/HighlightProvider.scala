@@ -16,8 +16,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
-import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
+import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
@@ -151,7 +152,7 @@ object HighlightProvider {
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val stackConsumer = StackConsumer()
-    Visitor.visitRoot(root, stackConsumer, Visitor.InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, stackConsumer, InsideAcceptor(uri, pos))
     stackConsumer
       .getStack
       .filter(isNotEmptyRecord)
@@ -261,7 +262,7 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   private def highlightAny(x: AnyRef, uri: String)(implicit root: Root): Option[JObject] = {
-    implicit val acceptor: Visitor.Acceptor = Visitor.FileAcceptor(uri)
+    implicit val acceptor: Acceptor = FileAcceptor(uri)
     x match {
       // Assoc Types
       case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(highlightAssocTypeSym(sym))
@@ -312,7 +313,7 @@ object HighlightProvider {
     }
   }
 
-  private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object AssocTypeSymConsumer extends Consumer {
@@ -325,7 +326,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object DefnSymConsumer extends Consumer {
@@ -338,7 +339,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object EffectSymConsumer extends Consumer {
@@ -355,7 +356,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object EnumSymConsumer extends Consumer {
@@ -371,7 +372,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object CaseSymConsumer extends Consumer {
@@ -384,7 +385,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightOpSym(sym: Symbol.OpSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightOpSym(sym: Symbol.OpSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object OpSymConsumer extends Consumer {
@@ -397,7 +398,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(label)
 
     object LabelConsumer extends Consumer {
@@ -414,7 +415,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object SigSymConsumer extends Consumer {
@@ -427,7 +428,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object StructSymConsumer extends Consumer {
@@ -447,7 +448,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object StructFieldSymConsumer extends Consumer {
@@ -460,7 +461,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object TraitSymConsumer extends Consumer {
@@ -474,7 +475,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object TypeAliasSymConsumer extends Consumer {
@@ -490,7 +491,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object TypeVarSymConsumer extends Consumer {
@@ -506,7 +507,7 @@ object HighlightProvider {
     builder.build
   }
 
-  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Visitor.Acceptor): JObject = {
+  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Acceptor): JObject = {
     val builder = new HighlightBuilder(sym)
 
     object VarSymConsumer extends Consumer {
