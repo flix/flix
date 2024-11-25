@@ -159,7 +159,7 @@ sealed trait Completion {
       )
 
     case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
-      val priority = if (shouldImport) Priority.Lower else Priority.Low
+      val priority = if (shouldImport) Priority.Lowest else Priority.Lower
       CompletionItem(
         label               = label,
         sortText            = Priority.toSortText(priority, name),
@@ -232,24 +232,13 @@ sealed trait Completion {
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(
         label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText         = Priority.toSortText(Priority.Highest, name),
+        sortText         = Priority.toSortText(Priority.Lower, name),
         filterText       = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
         documentation    = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Interface
-      )
-
-    case Completion.MatchCompletion(enm, completion) =>
-      val label = s"match ${enm.sym.toString}"
-      CompletionItem(
-        label            = label,
-        sortText         = Priority.toSortText(Priority.Lower, label),
-        textEdit         = TextEdit(context.range, completion),
-        documentation    = None,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Snippet
       )
 
     case Completion.InstanceCompletion(trt, completion) =>
@@ -325,7 +314,7 @@ sealed trait Completion {
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
         label            = CompletionUtils.getLabelForEnumTags(name, cas),
-        sortText         = Priority.toSortText(Priority.Lower, name),
+        sortText         = Priority.toSortText(Priority.Default, name),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(enumSym.name),
         documentation    = None,
@@ -337,7 +326,7 @@ sealed trait Completion {
       val name = modSym.toString
       CompletionItem(
         label    = name,
-        sortText = Priority.toSortText(Priority.Lowest, name),
+        sortText = Priority.toSortText(Priority.Default, name),
         textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Module
       )
@@ -594,14 +583,6 @@ object Completion {
     * @param decl the op decl.
     */
   case class OpCompletion(decl: TypedAst.Op) extends Completion
-
-  /**
-    * Represents an exhaustive Match completion
-    *
-    * @param enm        the enum for the match.
-    * @param completion the completion string (used as information for TextEdit).
-    */
-  case class MatchCompletion(enm: TypedAst.Enum, completion: String) extends Completion
 
   /**
     * Represents an Instance completion (based on traits)
