@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
@@ -157,6 +158,18 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
+    case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
+      val priority = if (shouldImport) Priority.Lower else Priority.Low
+      CompletionItem(
+        label               = label,
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = documentation,
+        insertTextFormat    = InsertTextFormat.PlainText,
+        kind                = CompletionItemKind.Class,
+        additionalTextEdits = if (shouldImport) List(Completion.mkTextEdit(ap, s"import $path")) else Nil
+      )
+
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(
         label            = name,
@@ -177,12 +190,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(sym, tpe) =>
+    case Completion.VarCompletion(name) =>
       CompletionItem(
-        label    = sym.text,
-        sortText = Priority.toSortText(Priority.Low, sym.text),
-        textEdit = TextEdit(context.range, sym.text),
-        detail   = Some(FormatType.formatType(tpe)(flix)),
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Variable
       )
 
@@ -526,6 +538,17 @@ object Completion {
   case class ImportCompletion(name: String) extends Completion
 
   /**
+    * Represents an auto-import completion.
+    *
+    * @param name          the name of the completion.
+    * @param path          the path of the completion.
+    * @param ap            the anchor position.
+    * @param documentation a human-readable string that represents a doc-comment.
+    * @param shouldImport  a boolean indicating whether the completion should be imported.
+    */
+  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String], shouldImport: Boolean) extends Completion
+
+  /**
     * Represents a Snippet completion
     *
     * @param name          the name of the snippet.
@@ -547,11 +570,9 @@ object Completion {
   /**
     * Represents a Var completion
     *
-    * @param sym the Var symbol.
-    * @param tpe the type for FormatType to provide a human-readable string with additional information
-    *            about the symbol.
+    * @param name the name of the variable to complete.
     */
-  case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
+  case class VarCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
@@ -681,4 +702,24 @@ object Completion {
     */
   case class HoleCompletion(sym: Symbol.VarSym, decl: TypedAst.Def, priority: String, loc: SourceLocation) extends Completion
 
+  /**
+    * Returns a TextEdit that is inserted and indented according to the given `ap`.
+    * This function will:
+    *   - add leadingSpaces before the given text.
+    *   - add leadingSpaces after each newline.
+    *   - add a newline at the end.
+    *
+    * Example:
+    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    *   The result will be:
+    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    */
+  private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
+    val insertPosition = Position(ap.line, ap.col)
+    val leadingSpaces = " " * ap.spaces
+    TextEdit(
+      Range(insertPosition, insertPosition),
+      leadingSpaces + text.replace("\n", s"\n$leadingSpaces") + "\n"
+    )
+  }
 }

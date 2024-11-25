@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.errors
+package ca.uwaterloo.flix.api.lsp.acceptors
+
+import ca.uwaterloo.flix.api.lsp.Acceptor
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
-  * A marker trait for errors that are recoverable.
+  * Acceptor that accepts all AST nodes whose `SourceLocation` is within
+  * the file given by the path `uri`.
+  *
+  * @param uri  the path of the file that an AST node [[SourceLocation]] must be within to be accepted.
   */
-trait Recoverable {
-  final def cannotBeBothRecoverableAndUnrecoverable(): Unit = ()
+case class FileAcceptor(uri: String) extends Acceptor {
+  def accept(loc: SourceLocation): Boolean = uri == loc.source.name
 }

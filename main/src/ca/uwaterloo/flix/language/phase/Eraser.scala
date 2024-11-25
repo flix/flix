@@ -156,8 +156,8 @@ object Eraser {
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
       }
 
-    case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
+      val ac = ApplyClo(visitExp(exp1), visitExp(exp2), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)

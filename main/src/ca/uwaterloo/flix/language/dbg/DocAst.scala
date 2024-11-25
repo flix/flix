@@ -33,7 +33,8 @@ object DocAst {
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
-  case class Program(enums: List[Enum], defs: List[Def])
+  /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
+  case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
   case class JvmMethod(ident: Name.Ident, fparams: List[Expr.Ascription], clo: Expr, tpe: Type)
 

@@ -22,14 +22,12 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
-import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.*
+import org.objectweb.asm.Opcodes.*
 
 /**
   * Generate expression
@@ -543,12 +541,19 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val taggedType = BackendObjType.Tagged
-
+        val MonoType.Enum(_, targs) = exp.tpe
+        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        val terms = cases(sym)
         compileExpr(exp)
-        val ins = {
-          import BytecodeInstructions.*
-          CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+        val ins = terms match {
+          case Nil =>
+            import BytecodeInstructions.*
+            // nullary tags have their own distinct class
+            INSTANCEOF(BackendObjType.NullaryTag(sym).jvmName)
+          case _ =>
+            import BytecodeInstructions.*
+            val taggedType = BackendObjType.Tagged
+            CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
             BackendObjType.Tagged.mkTagName(sym) ~ BackendObjType.Tagged.eqTagName()
         }
         ins(new BytecodeInstructions.F(mv))
@@ -556,11 +561,16 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val MonoType.Enum(_, targs) = tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val tagType = BackendObjType.Tag(cases(sym))
-
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
+        val terms = cases(sym)
+        val ins = terms match {
+          case Nil =>
+            import BytecodeInstructions.*
+            val tagType = BackendObjType.NullaryTag(sym)
+            GETSTATIC(tagType.SingletonField)
+          case _ =>
+            import BytecodeInstructions.*
+            val tagType = BackendObjType.Tag(terms)
+            NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
             composeN(exps.zipWithIndex.map {
               case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
@@ -572,6 +582,7 @@ object GenExpression {
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+        // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
         val tagType = BackendObjType.Tag(cases(sym))
 
         compileExpr(exp)
@@ -1019,7 +1030,7 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           NEW(lazyType.jvmName) ~
-            DUP() ~  cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
+          DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
         }
         ins(new BytecodeInstructions.F(mv))
 
@@ -1071,49 +1082,45 @@ object GenExpression {
         mv.visitInsn(ATHROW)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, _, purity, loc) =>
+    case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       ct match {
         case ExpPosition.Tail =>
           // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
+          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
           // Evaluating the closure
-          compileExpr(exp)
+          compileExpr(exp1)
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
           // retrieving the unique thread object
           mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-          // Putting args on the Fn class
-          for ((arg, i) <- exps.zipWithIndex) {
-            // Duplicate the FunctionInterface
-            mv.visitInsn(DUP)
-            // Evaluating the expression
-            compileExpr(arg)
-            mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-              s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-          }
+          // Putting arg on the Fn class
+          // Duplicate the FunctionInterface
+          mv.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpr(exp2)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
           // Return the closure
           mv.visitInsn(ARETURN)
 
         case ExpPosition.NonTail =>
           // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
+          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
 
-          compileExpr(exp)
+          compileExpr(exp1)
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
           // retrieving the unique thread object
           mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-          // Putting args on the Fn class
-          for ((arg, i) <- exps.zipWithIndex) {
-            // Duplicate the FunctionInterface
-            mv.visitInsn(DUP)
-            // Evaluating the expression
-            compileExpr(arg)
-            mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-              s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-          }
+          // Putting arg on the Fn class
+          // Duplicate the FunctionInterface
+          mv.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpr(exp2)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
           // Calling unwind and unboxing
 
           if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))

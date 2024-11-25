@@ -22,7 +22,7 @@ object MonoAstPrinter {
         val e = print(exp)
         DocAst.Def(ann, mod, sym, fps, rtpe, ef, e)
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(enums, defs, Nil)
   }
 
   private def print(e: MonoAst.Expr): DocAst.Expr = e match {
@@ -30,7 +30,7 @@ object MonoAstPrinter {
     case Expr.Var(sym, _, _) => printVar(sym)
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
-    case Expr.ApplyClo(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
