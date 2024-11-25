@@ -1042,9 +1042,7 @@ object SetFormula {
     case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, _) if elemPos.nonEmpty ||
       cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
       varsNeg.nonEmpty => false
-    case Inter(_, _, _, _, _, _, _) =>
-      isEmptyEquivalentExhaustive(f)
-    case Xor(_) =>
+    case Compl(_) | Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) | Xor(_) =>
       isEmptyEquivalentExhaustive(f)
   }
 
