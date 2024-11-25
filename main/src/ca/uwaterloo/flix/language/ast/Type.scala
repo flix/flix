@@ -1084,6 +1084,14 @@ object Type {
   }
 
   /**
+    * Returns the type `Xor(tpe1, Xor(tpe2, ...))`.
+    */
+  def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Pure
+    case x :: xs => mkSymmetricDiff(x, mkSymmetricDiff(xs, loc), loc)
+  }
+
+  /**
     * Returns the type `tpe1 - tpe2`.
     */
   def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {

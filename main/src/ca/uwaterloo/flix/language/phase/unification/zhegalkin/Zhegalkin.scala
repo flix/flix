@@ -42,6 +42,9 @@ object Zhegalkin {
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
       polys.reduce(ZhegalkinExpr.mkUnion)
+    case Xor(other) =>
+      val polys = other.map(toZhegalkin)
+      polys.reduce(ZhegalkinExpr.mkXor)
   }
 
   /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */

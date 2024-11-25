@@ -243,6 +243,8 @@ object EffUnification3 {
       Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
     case union@SetFormula.Union(_, _, _, _, _, _, _) =>
       Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
+    case xor@SetFormula.Xor(other) =>
+      Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
   }
 
   /**

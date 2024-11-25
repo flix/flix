@@ -117,6 +117,9 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
         ts += t1
       }
       SetFormula.mkUnionAll(ts.toList)
+
+    case SetFormula.Xor(other) =>
+      SetFormula.mkXorDirectAll(other.map(applyInternal))
   }
 
   /** Applies `this` to both sides of `eq`. */
