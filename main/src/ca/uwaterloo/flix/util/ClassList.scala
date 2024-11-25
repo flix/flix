@@ -38,10 +38,6 @@ object ClassList {
     *
     * Finally, remove the `./` prefix, e.g., `./com/sun/...` should be `com/sun/...`.
     *
-    * Note that we will remove all classes with a lowercase name.
     */
-  val TheList: List[String] = {
-    val wholeList = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
-    wholeList.filter(_.stripSuffix(".java").split('/').last.exists(_.isUpper))
-  }
+  val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
 }

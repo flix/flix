@@ -122,7 +122,6 @@ object CompletionProvider {
   }
 
   private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
-    println(errors)
     errorsAt(ctx.uri, ctx.pos, errors).flatMap({
 
       //

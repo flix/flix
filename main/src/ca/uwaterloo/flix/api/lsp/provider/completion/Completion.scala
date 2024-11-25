@@ -159,7 +159,7 @@ sealed trait Completion {
       )
 
     case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
-      val priority = if (shouldImport) Priority.Low else Priority.High
+      val priority = if (shouldImport) Priority.Lower else Priority.Low
       CompletionItem(
         label               = label,
         sortText            = Priority.toSortText(priority, name),
