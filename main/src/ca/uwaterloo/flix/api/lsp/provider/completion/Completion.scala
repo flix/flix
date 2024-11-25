@@ -159,9 +159,10 @@ sealed trait Completion {
       )
 
     case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
+      val priority = if (shouldImport) Priority.Low else Priority.High
       CompletionItem(
         label               = label,
-        sortText            = Priority.toSortText(Priority.Highest, name),
+        sortText            = Priority.toSortText(priority, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
@@ -701,6 +702,18 @@ object Completion {
     */
   case class HoleCompletion(sym: Symbol.VarSym, decl: TypedAst.Def, priority: String, loc: SourceLocation) extends Completion
 
+  /**
+    * Returns a TextEdit that is inserted and indented according to the given `ap`.
+    * This function will:
+    *   - add leadingSpaces before the given text.
+    *   - add leadingSpaces after each newline.
+    *   - add a newline at the end.
+    *
+    * Example:
+    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    *   The result will be:
+    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
     val insertPosition = Position(ap.line, ap.col)
     val leadingSpaces = " " * ap.spaces
