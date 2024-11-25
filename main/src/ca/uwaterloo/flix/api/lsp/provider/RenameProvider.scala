@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus, TextEdit, WorkspaceEdit}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, FileAcceptor, InsideAcceptor}
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -27,67 +29,99 @@ object RenameProvider {
   /**
     * Processes a rename request.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit index: Index): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
+    val consumer = StackConsumer()
 
-      case Some(entity) => entity match {
+    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
 
-        case Entity.Case(caze) => renameCase(caze.sym, newName)
+    consumer
+      .getStack
+      .headOption
+      .flatMap(getOccurs)
+      .map(occurs => rename(newName, occurs))
+      .getOrElse(mkNotFound(uri, pos))
 
-        case Entity.StructField(field) => renameStructField(field.sym, newName)
+//    index.query(uri, pos) match {
+//      case None => mkNotFound(uri, pos)
+//
+//      case Some(entity) => entity match {
+//
+//        case Entity.Case(caze) => renameCase(caze.sym, newName)
+//
+//        case Entity.StructField(field) => renameStructField(field.sym, newName)
+//
+//        case Entity.Def(defn) => renameDef(defn.sym, newName)
+//
+//        case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
+//
+//        case Entity.VarUse(sym, _, _) => renameVar(sym, newName)
+//
+//        case Entity.DefUse(sym, _, _) => renameDef(sym, newName)
+//
+//        case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
+//
+//        case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
+//
+//        case Entity.Exp(_) => mkNotFound(uri, pos)
+//
+//        case Entity.Label(label) => renameLabel(label, newName)
+//
+//        case Entity.Pattern(pat) => pat match {
+//          case Pattern.Var(Binder(sym, _), _, _) => renameVar(sym, newName)
+//          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
+//          case _ => mkNotFound(uri, pos)
+//        }
+//
+//        case Entity.Pred(pred, _) => renamePred(pred, newName)
+//
+//        case Entity.FormalParam(fparam) => renameVar(fparam.bnd.sym, newName)
+//
+//        case Entity.LocalVar(sym, _) => renameVar(sym, newName)
+//
+//        case Entity.Type(t) => t match {
+//          case Type.Cst(tc, _) => tc match {
+//            case TypeConstructor.RecordRowExtend(label) => renameLabel(label, newName)
+//            case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
+//            case _ => mkNotFound(uri, pos)
+//          }
+//          case Type.Var(sym, _) => renameTypeVar(sym, newName)
+//          case _ => mkNotFound(uri, pos)
+//        }
+//
+//        case Entity.Trait(_) => mkNotFound(uri, pos)
+//        case Entity.AssocType(_) => mkNotFound(uri, pos)
+//        case Entity.Effect(_) => mkNotFound(uri, pos)
+//        case Entity.Enum(_) => mkNotFound(uri, pos)
+//        case Entity.Struct(_) => mkNotFound(uri, pos)
+//        case Entity.Op(_) => mkNotFound(uri, pos)
+//        case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
+//        case Entity.Sig(_) => mkNotFound(uri, pos)
+//        case Entity.SigUse(_, _, _) => mkNotFound(uri, pos)
+//        case Entity.TypeVar(_) => mkNotFound(uri, pos)
+//      }
+//    }
 
-        case Entity.Def(defn) => renameDef(defn.sym, newName)
+  }
 
-        case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
+  private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
+    case TypedAst.Def(sym, _, _, _) => Some(getDefOccurs(sym))
+    case SymUse.DefSymUse(sym, _) => Some(getDefOccurs(sym))
+    case _ => None
+  }
 
-        case Entity.VarUse(sym, _, _) => renameVar(sym, newName)
-
-        case Entity.DefUse(sym, _, _) => renameDef(sym, newName)
-
-        case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
-
-        case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
-
-        case Entity.Exp(_) => mkNotFound(uri, pos)
-
-        case Entity.Label(label) => renameLabel(label, newName)
-
-        case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(Binder(sym, _), _, _) => renameVar(sym, newName)
-          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.Pred(pred, _) => renamePred(pred, newName)
-
-        case Entity.FormalParam(fparam) => renameVar(fparam.bnd.sym, newName)
-
-        case Entity.LocalVar(sym, _) => renameVar(sym, newName)
-
-        case Entity.Type(t) => t match {
-          case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(label) => renameLabel(label, newName)
-            case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
-            case _ => mkNotFound(uri, pos)
-          }
-          case Type.Var(sym, _) => renameTypeVar(sym, newName)
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.Trait(_) => mkNotFound(uri, pos)
-        case Entity.AssocType(_) => mkNotFound(uri, pos)
-        case Entity.Effect(_) => mkNotFound(uri, pos)
-        case Entity.Enum(_) => mkNotFound(uri, pos)
-        case Entity.Struct(_) => mkNotFound(uri, pos)
-        case Entity.Op(_) => mkNotFound(uri, pos)
-        case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
-        case Entity.Sig(_) => mkNotFound(uri, pos)
-        case Entity.SigUse(_, _, _) => mkNotFound(uri, pos)
-        case Entity.TypeVar(_) => mkNotFound(uri, pos)
-      }
+  private def getDefOccurs(sym: Symbol.DefnSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object DefnSymConsumer extends Consumer {
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeDef(defn: TypedAst.Def): Unit = consider(defn.sym, defn.sym.loc)
     }
 
+    Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   /**
@@ -112,60 +146,6 @@ object RenameProvider {
 
     // Construct the JSON result.
     ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
-  }
-
-  private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameTypeAlias(sym: Symbol.TypeAliasSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameLabel(label: Name.Label, newName: String)(implicit index: Index): JObject = {
-    val defs = index.defsOf(label)
-    val uses = index.usesOf(label)
-    rename(newName, defs ++ uses)
-  }
-
-  private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index): JObject = {
-    val defs = index.defsOf(pred)
-    val uses = index.usesOf(pred)
-    rename(newName, defs ++ uses)
-  }
-
-  private def renameCase(sym: Symbol.CaseSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameStructField(sym: Symbol.StructFieldSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
-  private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
   }
 
   /**
