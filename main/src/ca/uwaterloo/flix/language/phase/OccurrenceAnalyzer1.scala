@@ -236,12 +236,12 @@ object OccurrenceAnalyzer1 {
         val o1 = visitAtomicOp(op, o)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
-      case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-        val (e, o1) = visit(exp)
-        val (es, o2) = visitExps(exps)
+      case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+        val (e1, o1) = visit(exp1)
+        val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
-        val o4 = combineApplyCloInfo(o3, e)
-        (OccurrenceAst1.Expr.ApplyClo(e, es, tpe, eff, loc), increment(o4))
+        val o4 = combineApplyCloInfo(o3, e1)
+        (OccurrenceAst1.Expr.ApplyClo(e1, e2, tpe, eff, loc), increment(o4))
 
       case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, o1) = visitExps(exps)

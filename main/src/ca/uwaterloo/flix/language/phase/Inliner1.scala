@@ -227,27 +227,27 @@ object Inliner1 {
           case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
         }
 
-      case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
+      case OccurrenceAst1.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
         // TODO: Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
-        val es = exps.map(visit)
+        val e2 = visit(exp2)
 
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
-              val e = refreshBinders(lambda)(Map.empty, flix)
-              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+              val e1 = refreshBinders(lambda)(Map.empty, flix)
+              MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
-              val e = refreshBinders(lambda)(Map.empty, flix)
-              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+              val e1 = refreshBinders(lambda)(Map.empty, flix)
+              MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case _ =>
-              val e = visit(exp)
-              MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+              val e1 = visit(exp1)
+              MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
           }
         }
 
-        exp match {
+        exp1 match {
           case OccurrenceAst1.Expr.Var(sym, _, _) =>
             varSubst0.get(sym) match {
               case Some(freshVarSym) => maybeInline(freshVarSym)
@@ -255,17 +255,17 @@ object Inliner1 {
               case None =>
                 // If it is the inScopeSet then we have added it via a let-binding so the varSubst should contain sym.
                 // Thus, this is only possible if `sym` is a parameter of the top-level def.
-                val e = visit(exp)
-                MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+                val e1 = visit(exp1)
+                MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
             }
 
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
-            inlineLocalAbstraction(body, List(fparam), es)
+            inlineLocalAbstraction(body, List(fparam), List(e2))
 
           case _ =>
-            val e = visit(exp)
-            MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+            val e1 = visit(exp1)
+            MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
         }
 
       case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
@@ -585,10 +585,10 @@ object Inliner1 {
       val es = exps.map(refreshBinders)
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
-    case MonoAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
-      val es = exps.map(refreshBinders)
-      Expr.ApplyClo(e, es, tpe, eff, loc)
+    case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = refreshBinders(exp1)
+      val e2 = refreshBinders(exp2)
+      Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(refreshBinders)
@@ -832,10 +832,10 @@ object Inliner1 {
       val es = exps.map(toMonoAstExpr)
       MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val es = exps.map(toMonoAstExpr)
-      val e = toMonoAstExpr(exp)
-      MonoAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+    case OccurrenceAst1.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = toMonoAstExpr(exp1)
+      val es = toMonoAstExpr(exp2)
+      MonoAst.Expr.ApplyClo(e1, es, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(toMonoAstExpr)

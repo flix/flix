@@ -467,10 +467,10 @@ object Inliner {
       val es = exps.map(toLiftedExpr)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = toLiftedExpr(exp)
-      val es = exps.map(toLiftedExpr)
-      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = toLiftedExpr(exp1)
+      val e2 = toLiftedExpr(exp2)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(toLiftedExpr)
