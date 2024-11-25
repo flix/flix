@@ -939,6 +939,8 @@ object Monomorpher {
       CofiniteEffSet.intersection(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
       CofiniteEffSet.difference(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+      CofiniteEffSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
