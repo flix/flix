@@ -19,9 +19,10 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.Resolution
 
 /**
-  * Provides completions for all the things in local scope.
-  *
-  * Everything that is resolved to Resolution.Var in the LocalScope is considered a local scope variable, including arguments.
+  * Provides completions for items in local scope, including:
+  *   - Resolution.Var: local variables, arguments.
+  *   - Resolution.LocalDef: local definitions.
+  *   - Resolution.Declaration: functions, structs, enums, etc.
   */
 object LocalScopeCompleter {
   def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] = {
