@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.Modifier.{Mutable, Public}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
@@ -111,8 +112,8 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` a trait.
     */
   private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val syms = root.traits.map {
-      case (sym, _) => sym
+    val syms = root.traits.collect {
+      case (sym, trt) if trt.mod.mod.contains(Public)  => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -121,8 +122,8 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` an effect.
     */
   private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val syms = root.effects.map {
-      case (sym, _) => sym
+    val syms = root.effects.collect {
+      case (sym, eff) if eff.mod.mod.contains(Public)=> sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -144,7 +145,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Public))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
@@ -172,7 +173,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName))
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Public))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
