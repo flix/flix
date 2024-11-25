@@ -55,7 +55,7 @@ object AutoImportCompleter {
       availableClasses(className).map{path =>
         val completePath = path.mkString(".") + "." + className
         val shouldImport = !env.m.contains(className)
-        val label = if (shouldImport) s"$className (import $className)" else className
+        val label = if (shouldImport) s"$className (import $completePath)" else className
         AutoImportCompletion(label, className, completePath, ap, Some(completePath), shouldImport)
       }
     }
