@@ -187,8 +187,7 @@ object EffUnification3 {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)
-      // a ⊕ b = (a ∪ b) - (a ∩ b)
-      SetFormula.mkDifference(SetFormula.mkUnion(f1, f2), SetFormula.mkInter(f1, f2))
+      SetFormula.mkXorDirect(f1, f2)
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
