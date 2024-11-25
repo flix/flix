@@ -202,11 +202,11 @@ object CodeActionProvider {
   /**
     * Returns a code action that proposes to `use` a struct.
     */
-  private def mkUseStruct(ident: Name.Ident, str1: String, position: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseStruct(ident: Name.Ident, uri: String, position: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.structs.map {
       case (sym, _) => sym
     }
-    mkUseSym(ident, syms.map(_.name), syms, str1, position)
+    mkUseSym(ident, syms.map(_.name), syms, uri, position)
   }
 
   /**
