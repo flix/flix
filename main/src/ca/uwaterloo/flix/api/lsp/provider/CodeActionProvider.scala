@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.Modifier.{Mutable, Public}
+import ca.uwaterloo.flix.language.ast.shared.Modifier
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
@@ -102,8 +102,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val syms = root.defs.map {
-      case (sym, _) => sym
+    val syms = root.defs.collect {
+      case (sym, defi) if defi.spec.mod.mod.contains(Modifier.Public) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -113,7 +113,7 @@ object CodeActionProvider {
     */
   private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.traits.collect {
-      case (sym, trt) if trt.mod.mod.contains(Public)  => sym
+      case (sym, trt) if trt.mod.mod.contains(Modifier.Public)  => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -123,7 +123,7 @@ object CodeActionProvider {
     */
   private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.effects.collect {
-      case (sym, eff) if eff.mod.mod.contains(Public)=> sym
+      case (sym, eff) if eff.mod.mod.contains(Modifier.Public)=> sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -145,7 +145,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Public))
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Modifier.Public))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
@@ -173,7 +173,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Public))
+    val candidateEnums = root.enums.filter(_._2.cases.keys.exists(_.name == tagName)).filter(_._2.mod.mod.contains(Modifier.Public))
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
@@ -188,16 +188,15 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` a type.
     */
   private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val names = root.enums.map { case (sym, _) => sym.name } ++
-      root.restrictableEnums.map { case (sym, _) => sym.name } ++
-      root.traits.map { case (sym, _) => sym.name } ++
-      root.typeAliases.map { case (sym, _) => sym.name } ++
-      root.effects.map { case (sym, _) => sym.name } ++
-      root.structs.map {case (sym, _) => sym.name}
+    val names = root.enums.collect { case (sym, enm) if enm.mod.mod.contains(Modifier.Public) => sym.name } ++
+      root.restrictableEnums.collect { case (sym, enm) if enm.mod.mod.contains(Modifier.Public) => sym.name } ++
+      root.traits.collect { case (sym, trt) if trt.mod.mod.contains(Modifier.Public) => sym.name } ++
+      root.typeAliases.collect { case (sym, alias) if alias.mod.mod.contains(Modifier.Public) => sym.name }
 
-    val syms = (root.enums ++ root.restrictableEnums ++ root.traits ++ root.typeAliases ++ root.effects ++ root.structs).map {
-      case (sym, _) => sym
-    }
+    val syms = (root.enums.collect { case (sym, enm) if enm.mod.mod.contains(Modifier.Public) => sym } ++
+      root.restrictableEnums.collect { case (sym, enm) if enm.mod.mod.contains(Modifier.Public) => sym } ++
+      root.traits.collect { case (sym, trt) if trt.mod.mod.contains(Modifier.Public) => sym } ++
+      root.typeAliases.collect { case (sym, alias) if alias.mod.mod.contains(Modifier.Public) => sym })
 
     mkUseSym(ident, names, syms, uri, ap)
   }
