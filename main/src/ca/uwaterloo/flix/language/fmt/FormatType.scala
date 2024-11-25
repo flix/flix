@@ -157,7 +157,6 @@ object FormatType {
       case SimpleType.Hole => true
       case SimpleType.Void => true
       case SimpleType.AnyType => true
-      case SimpleType.Unit => true
       case SimpleType.Null => true
       case SimpleType.Bool => true
       case SimpleType.Char => true
@@ -231,7 +230,6 @@ object FormatType {
       case SimpleType.Hole => "?"
       case SimpleType.Void => "Void"
       case SimpleType.AnyType => "AnyType"
-      case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
       case SimpleType.Bool => "Bool"
       case SimpleType.Char => "Char"

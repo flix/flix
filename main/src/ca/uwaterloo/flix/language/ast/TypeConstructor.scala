@@ -33,13 +33,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the Unit type.
-    */
-  case object Unit extends TypeConstructor {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type constructor that represent the Null type.
     */
   case object Null extends TypeConstructor {

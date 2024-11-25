@@ -38,7 +38,6 @@ sealed trait BackendObjType {
     * The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`.
     */
   val jvmName: JvmName = this match {
-    case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
@@ -132,29 +131,6 @@ object BackendObjType {
 
   private def mkClassName(prefix: String): String = {
     JvmName.mkClassName(prefix)
-  }
-
-  case object Unit extends BackendObjType with Generatable {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.jvmName, IsFinal)
-
-      cm.mkStaticConstructor(StaticConstructor)
-      cm.mkConstructor(Constructor)
-      cm.mkField(SingletonField)
-      cm.mkMethod(ToStringMethod)
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
-
-    def StaticConstructor: StaticConstructorMethod = singletonStaticConstructor(Constructor, SingletonField)
-
-    def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
-
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
-      pushString("()") ~ ARETURN()
-    ))
   }
 
   case object BigDecimal extends BackendObjType
@@ -1236,7 +1212,7 @@ object BackendObjType {
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
-        DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
+        DUP() ~ GETSTATIC(NullaryTag(Symbol.UnitCase).SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
         Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
         POP() ~ RETURN()
       )

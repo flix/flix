@@ -25,7 +25,6 @@ object ConstantPrinter {
     * Returns the [[Expr]] representation of `cst`.
     */
   def print(cst: Constant): Expr = cst match {
-    case Constant.Unit => Expr.Unit
     case Constant.Null => Expr.AsIs("null")
     case Constant.Bool(lit) => Expr.AsIs(lit.toString)
     case Constant.Char(lit) => Expr.AsIs("'''" + lit.toString + "'''")

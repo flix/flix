@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -61,7 +62,7 @@ object PredDeps {
       }
       t.baseType match {
         case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
-        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
+        case Type.Cst(TypeConstructor.Enum(Symbol.Unit, _), _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
     case _ =>

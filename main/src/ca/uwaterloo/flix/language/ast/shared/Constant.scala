@@ -21,8 +21,6 @@ package ca.uwaterloo.flix.language.ast.shared
 sealed trait Constant
 
 object Constant {
-  case object Unit extends Constant
-
   case object Null extends Constant
 
   case class Bool(lit: scala.Boolean) extends Constant

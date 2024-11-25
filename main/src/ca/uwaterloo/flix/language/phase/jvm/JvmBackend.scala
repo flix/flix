@@ -48,6 +48,7 @@ object JvmBackend {
 
       // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
       val requiredTypes = Set(
+        MonoType.Enum(Symbol.Unit, Nil), // by everything
         MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
         MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
         MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
@@ -98,8 +99,6 @@ object JvmBackend {
 
       val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
-      val unitClass = Map(genClass(BackendObjType.Unit))
-
       // Generate error classes.
       val flixErrorClass = Map(genClass(BackendObjType.FlixError))
       val rslClass = Map(genClass(BackendObjType.ReifiedSourceLocation))
@@ -146,7 +145,6 @@ object JvmBackend {
         recordExtendClasses,
         lazyClasses,
         anonClasses,
-        unitClass,
         flixErrorClass,
         rslClass,
         holeErrorClass,

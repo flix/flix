@@ -102,6 +102,9 @@ object SimplifiedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    def Unit(loc: SourceLocation): Expr =
+      ApplyAtomic(AtomicOp.Tag(Symbol.UnitCase), Nil, MonoType.Unit, Purity.Pure, loc)
+
   }
 
   /** [[Type]] is used here because [[Enum]] declarations are not monomorphized. */

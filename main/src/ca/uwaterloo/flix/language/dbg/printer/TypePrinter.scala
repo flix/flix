@@ -38,8 +38,6 @@ object TypePrinter {
       case Type.Cst(TypeConstructor.Tuple(_), _) =>
         val args = tpe.typeArguments
         DocAst.Type.Tuple(args.map(printSimple))
-      case Type.Cst(TypeConstructor.Unit, _) =>
-        DocAst.Type.Unit
       case _ => printSimple(tpe)
     }
   }

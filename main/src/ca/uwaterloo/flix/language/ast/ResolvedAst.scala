@@ -241,6 +241,9 @@ object ResolvedAst {
       override def loc: SourceLocation = m.loc
     }
 
+    def Unit(loc: SourceLocation): Expr =
+      Expr.Tag(CaseSymUse(Symbol.UnitCase, loc), Nil, loc)
+
   }
 
   sealed trait Pattern {

@@ -781,7 +781,7 @@ object Lowering {
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
-          case Some(TypeConstructor.Unit) => 0
+          case Some(TypeConstructor.Enum(Symbol.Unit, _)) => 0
           case _ => 1
         }
         case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
@@ -803,7 +803,7 @@ object Lowering {
       val arity = Type.eraseAliases(tpe) match {
         case Type.Apply(Type.Cst(_, _), innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
-          case Some(TypeConstructor.Unit) => 0
+          case Some(TypeConstructor.Enum(Symbol.Unit, _)) => 0
           case _ => 1
         }
         case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.", loc)
@@ -1220,7 +1220,7 @@ object Lowering {
           val boxSym: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Ast.Shared.box")
           val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
-          val innerApply = LoweredAst.Expr.ApplyDef(latticeSym, List(LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
+          val innerApply = LoweredAst.Expr.ApplyDef(latticeSym, List(LoweredAst.Expr.Unit(loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
           LoweredAst.Expr.ApplyDef(boxSym, List(innerApply), boxType, boxedDenotationType, Type.Pure, loc)
       }
   }

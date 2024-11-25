@@ -172,7 +172,7 @@ object Simplifier {
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
       val t = visitType(d.tpe)
-      SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Unit(loc), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
@@ -276,8 +276,6 @@ object Simplifier {
           case TypeConstructor.Void => MonoType.Void
 
           case TypeConstructor.AnyType => MonoType.AnyType
-
-          case TypeConstructor.Unit => MonoType.Unit
 
           case TypeConstructor.Null => MonoType.Null
 
@@ -439,8 +437,6 @@ object Simplifier {
           case TypeConstructor.Void => cst
 
           case TypeConstructor.AnyType => cst
-
-          case TypeConstructor.Unit => cst
 
           case TypeConstructor.Null => cst
 

@@ -892,7 +892,7 @@ object Deriver {
       // the body is a tuplish of whatever we extracted
       val vars = varSyms.map(KindedAst.Expr.Var(_, loc))
       val exp = vars match {
-        case Nil => KindedAst.Expr.Cst(Constant.Unit, loc)
+        case Nil => KindedAst.Expr.Unit(loc)
         case x :: Nil => x
         case xs@(_ :: _ :: _) => KindedAst.Expr.Tuple(xs, loc)
       }
@@ -950,7 +950,7 @@ object Deriver {
     * Anything else unpacks to the singleton list of itself.
     */
   private def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
-    case Some(TypeConstructor.Unit) => Nil
+    case Some(TypeConstructor.Enum(Symbol.Unit, _)) => Nil
     case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
   }

@@ -249,6 +249,9 @@ object WeededAst {
       override def loc: SourceLocation = m.loc
     }
 
+    def Unit(loc: SourceLocation): Expr =
+      Ambiguous(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), loc)
+
   }
 
   sealed trait Pattern {
@@ -276,6 +279,9 @@ object WeededAst {
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
+
+    def Unit(loc: SourceLocation): Pattern =
+      Tag(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), Nil, loc)
 
   }
 
@@ -334,8 +340,6 @@ object WeededAst {
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends Type
 
-    case class Unit(loc: SourceLocation) extends Type
-
     case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
@@ -389,6 +393,9 @@ object WeededAst {
     case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type
 
     case class Error(loc: SourceLocation) extends Type
+
+    def Unit(loc: SourceLocation): Type =
+      Ambiguous(Name.mkQName(List("Unit"), "Unit", loc), loc)
 
   }
 

@@ -29,6 +29,9 @@ sealed trait Symbol
 
 object Symbol {
 
+  val Unit: EnumSym = Symbol.mkEnumSym("Unit")
+  val UnitCase: CaseSym = Symbol.mkCaseSym(Unit, Name.Ident("Unit", SourceLocation.Unknown))
+
   /**
     * The primitive effects defined in the Prelude.
     */

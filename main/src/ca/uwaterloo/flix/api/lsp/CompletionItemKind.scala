@@ -30,7 +30,7 @@ sealed trait CompletionItemKind {
     case CompletionItemKind.Interface => 8
     case CompletionItemKind.Module => 9
     case CompletionItemKind.Property => 10
-    case CompletionItemKind.Unit => 11
+    // case CompletionItemKind.Unit => 11
     case CompletionItemKind.Value => 12
     case CompletionItemKind.Enum => 13
     case CompletionItemKind.Keyword => 14
@@ -68,8 +68,6 @@ object CompletionItemKind {
   case object Module extends CompletionItemKind
 
   case object Property extends CompletionItemKind
-
-  case object Unit extends CompletionItemKind
 
   case object Value extends CompletionItemKind
 

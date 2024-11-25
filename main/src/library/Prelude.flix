@@ -1,5 +1,9 @@
 import java.lang.System
 
+pub enum Unit {
+    case Unit
+}
+
 ///
 /// Static denotes the region of global lifetime.
 ///

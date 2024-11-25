@@ -164,7 +164,6 @@ object BackendType {
     tpe0 match {
       case MonoType.Void => BackendObjType.JavaObject.toTpe
       case MonoType.AnyType => BackendObjType.JavaObject.toTpe
-      case MonoType.Unit => BackendObjType.Unit.toTpe
       case MonoType.Bool => BackendType.Bool
       case MonoType.Char => BackendType.Char
       case MonoType.Float32 => BackendType.Float32

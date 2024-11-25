@@ -53,8 +53,6 @@ object DocAst {
 
     sealed trait RecordOp extends Atom
 
-    case object Unit extends Atom
-
     case class Tuple(elms: List[Expr]) extends Atom
 
     case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
@@ -312,8 +310,6 @@ object DocAst {
     sealed trait Atom extends Type
 
     sealed trait Composite extends Type
-
-    case object Unit extends Atom
 
     case class AsIs(s: String) extends Atom
 

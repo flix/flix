@@ -52,10 +52,6 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit =>
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-          BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
-
       case Constant.Null =>
         mv.visitInsn(ACONST_NULL)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
@@ -780,7 +776,7 @@ object GenExpression {
           // with the store instruction corresponding to the stored element
           mv.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
           // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          pushUnit(mv)
         case _ => throw InternalCompilerException("Mismatched Arity", loc)
       }
 
@@ -840,7 +836,7 @@ object GenExpression {
         // set the field `field${offset}`
         mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        pushUnit(mv)
 
       case AtomicOp.InstanceOf(clazz) =>
         val List(exp) = exps
@@ -921,7 +917,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          pushUnit(mv)
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -939,7 +935,7 @@ object GenExpression {
           mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
         }
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          pushUnit(mv)
         }
 
       case AtomicOp.GetField(field) =>
@@ -960,7 +956,7 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        pushUnit(mv)
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
@@ -977,7 +973,7 @@ object GenExpression {
         mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        pushUnit(mv)
 
       case AtomicOp.Throw =>
         // Add source line number for debugging (can fail when handling exception)
@@ -1017,7 +1013,7 @@ object GenExpression {
         }
 
         // Put a Unit value on the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        pushUnit(mv)
 
 
       case AtomicOp.Lazy =>
@@ -1470,6 +1466,10 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def pushUnit(mv: MethodVisitor): Unit = {
+    mv.visitFieldInsn(GETSTATIC, BackendObjType.NullaryTag(Symbol.UnitCase).jvmName.toInternalName, BackendObjType.NullaryTag(Symbol.UnitCase).SingletonField.name, BackendObjType.NullaryTag(Symbol.UnitCase).jvmName.toDescriptor)
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {

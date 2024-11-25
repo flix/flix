@@ -1039,9 +1039,6 @@ object Namer {
     * Names the given type `tpe0`.
     */
   private def visitType(tpe0: DesugaredAst.Type)(implicit sctx: SharedContext, flix: Flix): NamedAst.Type = tpe0 match {
-    case DesugaredAst.Type.Unit(loc) =>
-      NamedAst.Type.Unit(loc)
-
     case DesugaredAst.Type.Var(ident, loc) =>
       //
       // Check for [[NameError.SuspiciousTypeVarName]].
@@ -1211,7 +1208,6 @@ object Namer {
   private def freeVars(pat0: DesugaredAst.Pattern): List[Name.Ident] = pat0 match {
     case DesugaredAst.Pattern.Var(ident, _) => List(ident)
     case DesugaredAst.Pattern.Wild(_) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Unit, _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Bool(true), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Bool(false), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Char(_), _) => Nil
@@ -1248,7 +1244,6 @@ object Namer {
   private def freeTypeVars(tpe0: DesugaredAst.Type): List[Name.Ident] = tpe0 match {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
-    case DesugaredAst.Type.Unit(_) => Nil
     case DesugaredAst.Type.Tuple(elms, _) => elms.flatMap(freeTypeVars)
     case DesugaredAst.Type.RecordRowEmpty(_) => Nil
     case DesugaredAst.Type.RecordRowExtend(_, t, r, _) => freeTypeVars(t) ::: freeTypeVars(r)

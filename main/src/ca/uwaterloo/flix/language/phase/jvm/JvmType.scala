@@ -17,6 +17,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 /**
   * A common super-type for JVM types.
   *
@@ -119,5 +121,5 @@ object JvmType {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
+  val Unit: JvmType.Reference = Reference(BackendObjType.NullaryTag(Symbol.UnitCase).jvmName)
 }

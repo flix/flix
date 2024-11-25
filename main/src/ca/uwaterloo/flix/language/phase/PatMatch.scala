@@ -52,8 +52,6 @@ object PatMatch {
 
   private object TyCon {
 
-    case object Unit extends TyCon
-
     case object True extends TyCon
 
     case object False extends TyCon
@@ -525,7 +523,6 @@ object PatMatch {
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon, xs: List[TyCon]) = x match {
       // For built in constructors, we can add all the options since we know them a priori
-      case TyCon.Unit => TyCon.Unit :: xs
       case TyCon.True => TyCon.True :: TyCon.False :: xs
       case TyCon.False => TyCon.True :: TyCon.False :: xs
       case a: TyCon.Tuple => a :: xs
@@ -562,7 +559,6 @@ object PatMatch {
     * @return The number of arguments for the constructor
     */
   private def countCtorArgs(ctor: TyCon): Int = ctor match {
-    case TyCon.Unit => 0
     case TyCon.True => 0
     case TyCon.False => 0
     case TyCon.Char => 0
@@ -595,7 +591,6 @@ object PatMatch {
     * @return A human readable string of the constructor
     */
   private def prettyPrintCtor(ctor: TyCon): String = ctor match {
-    case TyCon.Unit => "Unit"
     case TyCon.True => "True"
     case TyCon.False => "False"
     case TyCon.Char => "Char"
@@ -652,7 +647,6 @@ object PatMatch {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Cst(Constant.Unit, _, _) => TyCon.Unit
     case Pattern.Cst(Constant.Bool(true), _, _) => TyCon.True
     case Pattern.Cst(Constant.Bool(false), _, _) => TyCon.False
     case Pattern.Cst(Constant.Char(_), _, _) => TyCon.Char

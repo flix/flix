@@ -353,7 +353,7 @@ object UnkindedType {
    * Returns the Unit type.
    */
   def mkUnit(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Unit, loc)
+    UnkindedType.Cst(TypeConstructor.Enum(Symbol.Unit, Kind.Star), loc)
   }
 
   /**
@@ -423,7 +423,7 @@ object UnkindedType {
     */
   def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case Nil => mkUnit(loc)
       case x :: Nil => x
       case xs => mkTuple(xs, loc)
     }
@@ -436,7 +436,7 @@ object UnkindedType {
     */
   def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case Nil => mkUnit(loc)
       case x :: Nil => x
       case xs => mkTuple(xs, loc)
     }
@@ -473,7 +473,7 @@ object UnkindedType {
       case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
     }
     val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case Nil => mkUnit(loc)
       case x :: Nil => x
       case xs => UnkindedType.mkTuple(xs, loc)
     }
@@ -593,7 +593,7 @@ object UnkindedType {
       UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
     }
     else if (c == java.lang.Void.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
+      mkUnit(SourceLocation.Unknown)
     }
     // handle arrays of types
     else if (c.isArray) {

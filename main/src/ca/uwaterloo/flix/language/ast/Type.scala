@@ -314,7 +314,7 @@ object Type {
   /**
     * Represents the Unit type.
     */
-  val Unit: Type = Type.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
+  val Unit: Type = Type.Cst(TypeConstructor.Enum(Symbol.Unit, Kind.Star), SourceLocation.Unknown)
 
   /**
     * Represents the Null type.
@@ -683,7 +683,7 @@ object Type {
   /**
     * Returns the Unit type with given source location `loc`.
     */
-  def mkUnit(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Unit, loc)
+  def mkUnit(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(Symbol.Unit, Kind.Star), loc)
 
   /**
     * Returns the Null type with the given source location `loc`.
@@ -1335,7 +1335,6 @@ object Type {
     * Returns the type of the given constant.
     */
   def constantType(cst: Constant): Type = cst match {
-    case Constant.Unit => Type.Unit
     case Constant.Null => Type.Null
     case Constant.Bool(_) => Type.Bool
     case Constant.Char(_) => Type.Char

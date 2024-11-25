@@ -72,13 +72,9 @@ object DocAstFormatter {
 
   private def aux(d: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
-      case Unit =>
-        text("()")
       case Tuple(elms) =>
         tuple(elms.map(aux(_, paren = false)))
       case Tag(sym, Nil) =>
-        text(sym.toString)
-      case Tag(sym, List(Unit)) =>
         text(sym.toString)
       case Tag(sym, List(Tuple(args))) =>
         text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
@@ -325,8 +321,6 @@ object DocAstFormatter {
     */
   private def formatType(tpe: Type, paren: Boolean = true)(implicit i: Indent): Doc = {
     val d = tpe match {
-      case Type.Unit =>
-        text("Unit")
       case Type.AsIs(s) =>
         text(s)
       case Type.App(obj, Nil) =>
@@ -368,7 +362,7 @@ object DocAstFormatter {
         val predicatesf = predicates.map {
           case Type.SchemaExtend(name, Type.Tuple(elms), _) =>
             text(name) |:: tuple(elms.map(formatType(_, paren = false)))
-          case Type.SchemaExtend(name, Type.Unit, _) =>
+          case Type.SchemaExtend(name, Type.App("Unit.Unit", Nil), _) =>
             text(name)
           case Type.SchemaExtend(name, otherType, _) =>
             text(name) |:: parens(formatType(otherType, paren = false))

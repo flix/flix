@@ -213,6 +213,9 @@ object DesugaredAst {
       override def loc: SourceLocation = m.loc
     }
 
+    def Unit(loc: SourceLocation): Expr =
+      DesugaredAst.Expr.Ambiguous(Name.QName(Name.NName(List(Name.Ident("Unit", loc)), loc), Name.Ident("Unit", loc), loc), loc)
+
   }
 
   sealed trait Pattern {
@@ -295,8 +298,6 @@ object DesugaredAst {
     case class Var(ident: Name.Ident, loc: SourceLocation) extends Type
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends Type
-
-    case class Unit(loc: SourceLocation) extends Type
 
     case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
 

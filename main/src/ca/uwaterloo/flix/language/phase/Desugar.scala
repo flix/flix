@@ -263,9 +263,6 @@ object Desugar {
     case WeededAst.Type.Ambiguous(qname, loc) =>
       DesugaredAst.Type.Ambiguous(qname, loc)
 
-    case WeededAst.Type.Unit(loc) =>
-      DesugaredAst.Type.Unit(loc)
-
     case WeededAst.Type.Tuple(elms, loc) =>
       val ts = elms.map(visitType)
       DesugaredAst.Type.Tuple(ts, loc)
@@ -1127,7 +1124,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Unit(loc1.asSynthetic), loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
@@ -1169,7 +1166,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
+        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Unit(loc1.asSynthetic)), loc1.asSynthetic)
         DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
@@ -1289,12 +1286,12 @@ object Desugar {
   }
 
   /**
-    * Rewrites empty tuples to [[Constant.Unit]] and eliminate single-element tuples.
+    * Rewrites empty tuples to [[DesugaredAst.Expr.Unit]] and eliminate single-element tuples.
     */
   private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     es match {
-      case Nil => DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      case Nil => DesugaredAst.Expr.Unit(loc0)
       case x :: Nil => x
       case xs => DesugaredAst.Expr.Tuple(xs, loc0)
     }
@@ -1382,7 +1379,7 @@ object Desugar {
       // Vector.toSet requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty set directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Unit(loc0)
       mkApplyFqn("Set.empty", List(unit), loc0)
     } else {
       desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
@@ -1397,7 +1394,7 @@ object Desugar {
       // Vector.toMap requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty map directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Unit(loc0)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
       val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }

@@ -48,7 +48,6 @@ object Verifier {
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
       case Constant.Null => tpe
       case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
       case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)

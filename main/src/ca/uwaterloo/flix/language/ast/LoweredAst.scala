@@ -136,6 +136,9 @@ object LoweredAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    def Unit(loc: SourceLocation): Expr =
+      ApplyAtomic(AtomicOp.Tag(Symbol.UnitCase), Nil, Type.mkUnit(loc), Type.Pure, loc)
+
   }
 
   sealed trait Pattern {

@@ -875,7 +875,7 @@ object Resolver {
             // Check for a single Unit argument
             // Returns out of resolveExp
             return flatMapN(expsVal) {
-              case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
+              case ResolvedAst.Expr.Tag(CaseSymUse(Symbol.UnitCase, _), Nil, _) :: Nil =>
                 Validation.Success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, Nil, outerLoc))
               case es =>
                 Validation.Success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, es, outerLoc))
@@ -2338,12 +2338,11 @@ object Resolver {
             Validation.Success(UnkindedType.Error(loc))
         }
 
-      case NamedAst.Type.Unit(loc) => Validation.Success(UnkindedType.Cst(TypeConstructor.Unit, loc))
+      case NamedAst.Type.Unit(loc) => Validation.Success(UnkindedType.Enum(Symbol.Unit, loc))
 
       case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
         // Basic Types
         case "Void" => Validation.Success(UnkindedType.Cst(TypeConstructor.Void, loc))
-        case "Unit" => Validation.Success(UnkindedType.Cst(TypeConstructor.Unit, loc))
         case "Null" => Validation.Success(UnkindedType.Cst(TypeConstructor.Null, loc))
         case "Bool" => Validation.Success(UnkindedType.Cst(TypeConstructor.Bool, loc))
         case "Char" => Validation.Success(UnkindedType.Cst(TypeConstructor.Char, loc))

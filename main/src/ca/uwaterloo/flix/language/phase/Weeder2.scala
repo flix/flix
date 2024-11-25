@@ -1098,7 +1098,7 @@ object Weeder2 {
         (unnamed, named) =>
           unnamed ++ named match {
             // Add synthetic unit arguments if there are none
-            case Nil => List(Expr.Cst(Constant.Unit, tree.loc))
+            case Nil => List(Expr.Unit(tree.loc))
             case args => args.sortBy(_.loc)
           }
       }
@@ -1416,7 +1416,6 @@ object Weeder2 {
           val inner = pats.map {
             case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc)
-            case Pattern.Cst(Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case other =>
               val error = UnsupportedRestrictedChoicePattern(isStar, loc)
               sctx.errors.add(error)
@@ -2281,7 +2280,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => List(Pattern.Cst(Constant.Unit, tree.loc))
+        case Nil => List(Pattern.Unit(tree.loc))
         case xs => xs
       }
     }
@@ -2290,7 +2289,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => Pattern.Cst(Constant.Unit, tree.loc)
+        case Nil => Pattern.Unit(tree.loc)
         case x :: Nil => x
         case xs => Pattern.Tuple(xs, tree.loc)
       }

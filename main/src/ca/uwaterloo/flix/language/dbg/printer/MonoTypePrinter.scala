@@ -27,7 +27,6 @@ object MonoTypePrinter {
   def print(tpe: MonoType): Type = tpe match {
     case MonoType.Void => Type.Void
     case MonoType.AnyType => Type.AnyType
-    case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
     case MonoType.Float32 => Type.Float32

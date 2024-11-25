@@ -123,7 +123,7 @@ object EntryPoints {
     */
   @tailrec
   private def isUnitType(tpe: Type): Boolean = tpe match {
-    case Type.Cst(TypeConstructor.Unit, _) => true
+    case Type.Cst(TypeConstructor.Enum(Symbol.Unit, _), _) => true
     case Type.Cst(_, _) => false
     case Type.Apply(_, _, _) => false
     case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
@@ -543,7 +543,7 @@ object EntryPoints {
       val mainArrowType = oldEntryPoint.spec.declaredScheme.base
       val mainSym = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
       val mainArgType = Type.Unit
-      val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
+      val mainArg = TypedAst.Expr.Unit(SourceLocation.Unknown)
       val mainReturnType = mainArrowType.arrowResultType
       val mainEffect = mainArrowType.arrowEffectType
       // `mainFunc()`

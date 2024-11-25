@@ -270,6 +270,9 @@ object TypedAst {
       override def loc: SourceLocation = m.loc
     }
 
+    def Unit(loc: SourceLocation): Expr =
+      Tag(CaseSymUse(Symbol.UnitCase, loc), Nil, Type.mkUnit(loc), Type.Pure, loc)
+
   }
 
   sealed trait Pattern {

@@ -1292,7 +1292,7 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, _, Type.Cst(TypeConstructor.Unit, _), _, _)) =>
+      case List(TypedAst.FormalParam(_, _, Type.Cst(TypeConstructor.Enum(Symbol.Unit, _), _), _, _)) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>

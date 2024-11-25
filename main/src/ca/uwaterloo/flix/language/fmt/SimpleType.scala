@@ -48,8 +48,6 @@ object SimpleType {
 
   case object AnyType extends SimpleType
 
-  case object Unit extends SimpleType
-
   case object Null extends SimpleType
 
   case object Bool extends SimpleType
@@ -361,7 +359,6 @@ object SimpleType {
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
         case TypeConstructor.AnyType => AnyType
-        case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null
         case TypeConstructor.Bool => Bool
         case TypeConstructor.Char => Char
@@ -640,7 +637,7 @@ object SimpleType {
     */
   private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
     case Tuple(fields) => fields
-    case Unit => Nil
+    case Apply(Name("Unit"), Nil) => Nil
     case t => t :: Nil
   }
 

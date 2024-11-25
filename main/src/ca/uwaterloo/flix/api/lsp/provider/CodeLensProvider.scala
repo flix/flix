@@ -89,7 +89,7 @@ object CodeLensProvider {
     * Returns `true` if the given type `tpe` is the Unit type.
     */
   private def isUnitType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Unit) => true
+    case Some(TypeConstructor.Enum(Symbol.Unit, _)) => true
     case _ => false
   }
 

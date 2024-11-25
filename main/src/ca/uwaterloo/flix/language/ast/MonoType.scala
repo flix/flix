@@ -35,8 +35,6 @@ object MonoType {
 
   case object AnyType extends MonoType
 
-  case object Unit extends MonoType
-
   case object Bool extends MonoType
 
   case object Char extends MonoType
@@ -89,6 +87,8 @@ object MonoType {
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 
+  val Unit: MonoType = Enum(Symbol.Unit, Nil)
+
   /** Returns `tpe` if it's a primitive type and returns [[MonoType.Object]] otherwise. */
   def erase(tpe: MonoType): MonoType = {
     tpe match {
@@ -100,7 +100,7 @@ object MonoType {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+      case Void | AnyType | BigDecimal | BigInt | String | Regex | Region | Array(_) |
            Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
            RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object

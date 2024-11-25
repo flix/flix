@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -223,6 +224,9 @@ object KindedAst {
     case class Error(m: CompilationMessage, tvar: Type.Var, evar: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc
     }
+
+    def Unit(loc: SourceLocation)(implicit scope: ca.uwaterloo.flix.language.ast.shared.Scope, flix: Flix): Expr =
+      Tag(CaseSymUse(Symbol.UnitCase, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
 
   }
 
