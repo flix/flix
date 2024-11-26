@@ -582,7 +582,7 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    val reminder = ListBuffer.empty[SetFormula]
+    val reminder = mutable.Set.empty[SetFormula]
     for (f <- fs) {
       f match {
         case Empty => // nop
