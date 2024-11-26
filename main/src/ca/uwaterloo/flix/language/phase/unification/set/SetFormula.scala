@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
+import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException, TwoList}
 
 import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -52,8 +53,8 @@ sealed trait SetFormula {
     case Compl(f) => f.variables
     case Inter(_, _, varsPos, _, _, varsNeg, other) =>
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
-    case Union(_, _, varsPos, _, _, varsNeg, other) =>
-      SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
+    case Union(l) =>
+      SortedSet.from(l.iterator.flatMap(_.variables))
     case Xor(other) =>
       SortedSet.from(other.flatMap(_.variables))
   }
@@ -68,8 +69,7 @@ sealed trait SetFormula {
     case Compl(f) => f.contains(v)
     case Inter(_, _, varsPos, _, _, varsNeg, other) =>
       varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
-    case Union(_, _, varsPos, _, _, varsNeg, other) =>
-      varsPos.contains(v) || varsNeg.contains(v) || other.exists(_.contains(v))
+    case Union(l) => l.exists(f => f.contains(v))
     case Xor(other) =>
       other.exists(_.contains(v))
   }
@@ -88,12 +88,7 @@ sealed trait SetFormula {
         cstsNeg.isEmpty &&
         varsNeg.isEmpty &&
         other.forall(_.isGround)
-    case Union(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
-      cstsPos.isEmpty &&
-        varsPos.isEmpty &&
-        cstsNeg.isEmpty &&
-        varsNeg.isEmpty &&
-        other.forall(_.isGround)
+    case Union(l) => l.forall(_.isGround)
     case Xor(other) =>
         other.forall(_.isGround)
   }
@@ -118,14 +113,7 @@ sealed trait SetFormula {
           varsNeg.iterator.map(_.x) ++
           other.iterator.flatMap(_.unknowns)
       )
-    case Union(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
-      SortedSet.from(
-        cstsPos.iterator.map(_.c) ++
-          varsPos.iterator.map(_.x) ++
-          cstsNeg.iterator.map(_.c) ++
-          varsNeg.iterator.map(_.x) ++
-          other.iterator.flatMap(_.unknowns)
-      )
+    case Union(l) => SortedSet.from(l.iterator.flatMap(_.unknowns))
     case Xor(other) =>
       SortedSet.from(other.iterator.flatMap(_.unknowns))
   }
@@ -173,8 +161,9 @@ sealed trait SetFormula {
           workList = f :: workList
         case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
           countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-        case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-          countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+        case Union(l) =>
+          counter += l.length - 1
+          workList = l.toList ::: workList
         case Xor(other) =>
           counter +=1
           workList = other ::: workList
@@ -193,14 +182,13 @@ sealed trait SetFormula {
     case Var(x) => s"x$x"
     case Compl(f) => f match {
       case Univ | Empty | Cst(_) | ElemSet(_) | Var(_) | Compl(_) => s"!$f"
-      case Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) | Xor(_) => s"!($f)"
+      case Inter(_, _, _, _, _, _, _) | Union(_) | Xor(_) => s"!($f)"
     }
     case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
       val subformulas = subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
       s"(${subformulas.mkString(" ∩ ")})"
-    case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val subformulas = subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-      s"(${subformulas.mkString(" ∪ ")})"
+    case Union(l) =>
+      s"(${l.iterator.mkString(" ∪ ")})"
     case Xor(other) =>
       s"(${other.mkString(" ⊕ ")})"
   }
@@ -346,24 +334,9 @@ object SetFormula {
     * fine.
     */
   @nowarn
-  final case class Union private(
-                                  elemPos: Option[ElemSet], cstsPos: SortedSet[Cst], varsPos: SortedSet[Var],
-                                  elemNeg: Option[ElemSet], cstsNeg: SortedSet[Cst], varsNeg: SortedSet[Var],
-                                  other: List[SetFormula]
-                                ) extends SetFormula {
-    if (CHECK_INVARIANTS) {
-      // `varsPos` and `varsNeg` are disjoint.
-      assert(!varsPos.exists(varsNeg.contains), message = this.toString)
-      // `cstsPos` and `cstsNeg` are disjoint.
-      assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      // There is always at least two subformulas.
-      assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
-    }
-
+  final case class Union(l: TwoList[SetFormula]) extends SetFormula {
     /** Applies `f` to the subformulas of `this`. */
-    def mapSubformulas[T](f: SetFormula => T): List[T] = {
-      subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).map(f).toList
-    }
+    def mapSubformulas[T](f: SetFormula => T): List[T] = l.toList.map(f)
   }
 
   /**
@@ -447,8 +420,8 @@ object SetFormula {
     case Compl(f1) => f1
     case inter@Inter(_, _, _, _, _, _, _) =>
       mkUnionAll(inter.mapSubformulas(mkCompl))
-    case union@Union(_, _, _, _, _, _, _) =>
-      mkInterAll(union.mapSubformulas(mkCompl))
+    case Union(l) =>
+      Compl(f)
     case xor@Xor(_) =>
       Compl(xor)
   }
@@ -536,7 +509,7 @@ object SetFormula {
           }
           // Add the positive subformulas to the work list
           workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
-        case union@Union(_, _, _, _, _, _, _) =>
+        case union@Union(_) =>
           other += union
         case xor@Xor(_) =>
           other += xor
@@ -609,122 +582,21 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    // We need to do two things:
-    // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
-    // - Flatten nested unions.
-
-    // es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..
-    // empty ∪ es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..       (neutral union formula)
-    // = (empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ ..   (intersection associativity)
-    // = !!(empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ .. (double complement)
-    // = !(univ ∩ !es1 ∩ !es3 ∩ es2 ∩ es4) ∪ .. (double complement)
-    // So we keep one CofiniteIntSet that represents both element sets -
-    // differencing positive elems and intersecting negative elements.
-
-    val cstsPos = mutable.Set.empty[Cst]
-    val varsPos = mutable.Set.empty[Var]
-    var elemNeg0 = CofiniteIntSet.universe
-    val cstsNeg = mutable.Set.empty[Cst]
-    val varsNeg = mutable.Set.empty[Var]
-    val other = mutable.ListBuffer.empty[SetFormula]
-
-    // Variables and constants are checked for overlap immediately.
-    // Elements are checked at the end.
-
-    var workList = fs
-    while (workList.nonEmpty) {
-      val f0 :: next = workList
-      workList = next
-      f0 match {
-        case Empty =>
-          ()
-        case Univ =>
-          return Univ
-        case x@Cst(_) =>
-          if (cstsNeg.contains(x)) return Univ
-          cstsPos += x
-        case Compl(x@Cst(_)) =>
-          if (cstsPos.contains(x)) return Univ
-          cstsNeg += x
-        case ElemSet(s) =>
-          elemNeg0 = CofiniteIntSet.difference(elemNeg0, s)
-          if (elemNeg0.isEmpty) return Univ
-        case Compl(ElemSet(s)) =>
-          elemNeg0 = CofiniteIntSet.intersection(elemNeg0, s)
-          if (elemNeg0.isEmpty) return Univ
-        case x@Var(_) =>
-          if (varsNeg.contains(x)) return Univ
-          varsPos += x
-        case Compl(x@Var(_)) =>
-          if (varsPos.contains(x)) return Univ
-          varsNeg += x
-        case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
-          // To avoid wrapping negated subformulas, we process them inline
-          for (e <- elemNeg1) {
-            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, e.s)
-            if (elemNeg0.isEmpty) return Univ
-          }
-          for (x <- cstsNeg1) {
-            if (cstsPos.contains(x)) return Univ
-            cstsNeg += x
-          }
-          for (x <- varsNeg1) {
-            if (varsPos.contains(x)) return Univ
-            varsNeg += x
-          }
-          // Add the positive subformulas to the work list
-          workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
-        case inter@Inter(_, _, _, _, _, _, _) =>
-          other += inter
-        case xor@Xor(_) =>
-          other += xor
-        case compl@Compl(_) =>
-          other += compl
+    val reminder = ListBuffer.empty[SetFormula]
+    for (f <- fs) {
+      f match {
+        case Empty => // nop
+        case Univ => return Univ
+        case Union(l) => reminder ++= l.toList
+        case other => reminder += other
       }
     }
-    // Split into pos/neg elements.
-    val (elemPos, elemNeg) = elemNeg0 match {
-      case CofiniteIntSet.Set(s) =>
-        if (s.isEmpty) {
-          // !empty ∪ ..
-          // = univ ∪ ..   (complement distribution)
-          // = univ        (idempotent union formula)
-          // Could return Univ, but unreachable since we check for empty at each operation.
-          throw InternalCompilerException(s"Impossible empty ElemSet $s", SourceLocation.Unknown)
-        } else {
-          // s.nonEmpty
-          // !s ∪ ..
-          (None, Some(ElemSet(s)))
-        }
-      case CofiniteIntSet.Compl(s) =>
-        if (s.isEmpty) {
-          // !!empty ∪ ..
-          // = empty ∪ ..  (double complement)
-          // = ..          (neutral union formula)
-          (None, None)
-        } else {
-          // s.nonEmpty
-          // !!s ∪ ..
-          // = s ∪ ..      (double complement)
-          (Some(ElemSet(s)), None)
-        }
-    }
 
-    // Avoid unions with zero or one subformula.
-    subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
-      case Nil => return Empty
-      case one :: Nil => return one
-      case _ => ()
+    reminder.toList match {
+      case Nil => Empty
+      case f :: Nil => f
+      case f1 :: f2 :: rest => Union(TwoList(f1, f2, rest))
     }
-    Union(
-      elemPos,
-      SortedSet.from(cstsPos),
-      SortedSet.from(varsPos),
-      elemNeg,
-      SortedSet.from(cstsNeg),
-      SortedSet.from(varsNeg),
-      other.toList
-    )
   }
 
   /** Returns the Xor of `f1` and `f2` (`f1 ⊕ f2`). */
@@ -869,90 +741,13 @@ object SetFormula {
           case Empty => return Empty
           case Compl(_) => other.append(fProp)
           case Inter(_, _, _, _, _, _, _) => other.append(fProp)
-          case Union(_, _, _, _, _, _, _) => other.append(fProp)
+          case Union(_) => other.append(fProp)
           case Xor(_) => other.append(fProp)
         }
       }
       mkInterAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
 
-    case Union(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, other0) =>
-      // Compute element sets and check for early exits.
-      val elemPos = elemPos0.map(instElemSet(_, insts)) match {
-        case Some(e) => e match {
-          case Univ => return Univ
-          case Empty => None
-          case e@ElemSet(_) => Some(e)
-          case other =>
-            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
-            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
-        }
-        case None => None
-      }
-      if (cstsPos0.exists(c => insts.get(c.c).contains(Univ))) return Univ
-      if (varsPos0.exists(x => insts.get(x.x).contains(Univ))) return Univ
-      val elemNeg = elemNeg0.map(instElemSet(_, insts)) match {
-        case Some(e) => e match {
-          case Univ => None
-          case Empty => return Univ
-          case e@ElemSet(_) => Some(e)
-          case other =>
-            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
-            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
-        }
-        case None => None
-      }
-      if (cstsNeg0.exists(c => insts.get(c.c).contains(Empty))) return Univ
-      if (varsNeg0.exists(x => insts.get(x.x).contains(Empty))) return Univ
-
-      // Compute constants and variables by removing constants and variables that are redundant.
-      // We know from previous checks that none are mapped to the respective short-circuit element.
-      val cstsPos = cstsPos0.filterNot(c => insts.get(c.c).contains(Empty))
-      val varsPos = varsPos0.filterNot(x => insts.get(x.x).contains(Empty))
-      val cstsNeg = cstsNeg0.filterNot(c => insts.get(c.c).contains(Univ))
-      val varsNeg = varsNeg0.filterNot(x => insts.get(x.x).contains(Univ))
-
-      // Add new instantiations.
-      var currentInsts = insts ++
-        setElemOneOpt(elemPos, Empty) ++
-        setElemOneOpt(elemNeg, Univ) ++
-        cstsPos.iterator.map(_.c -> Empty) ++
-        cstsNeg.iterator.map(_.c -> Univ) ++
-        varsPos.iterator.map(_.x -> Empty) ++
-        varsNeg.iterator.map(_.x -> Univ)
-
-      // Recursively instantiate `other` while collecting further instantiations as we go.
-      val other = mutable.ListBuffer.empty[SetFormula]
-      for (f <- other0) {
-        val fProp = propagationWithInsts(f, currentInsts)
-        // Add elements, constants, and variables to the instantiations.
-        fProp match {
-          case Cst(c) =>
-            currentInsts += (c -> Empty)
-            other.append(fProp)
-          case Compl(Cst(c)) =>
-            currentInsts += (c -> Univ)
-            other.append(fProp)
-          case Var(x) =>
-            currentInsts += (x -> Empty)
-            other.append(fProp)
-          case Compl(Var(x)) =>
-            currentInsts += (x -> Univ)
-            other.append(fProp)
-          case e@ElemSet(_) =>
-            currentInsts ++= setElemOne(e, Empty)
-            other.append(fProp)
-          case Compl(e@ElemSet(_)) =>
-            currentInsts ++= setElemOne(e, Univ)
-            other.append(fProp)
-          case Univ => return Univ
-          case Empty => () // Redundant, so don't include.
-          case Compl(_) => other.append(fProp)
-          case Inter(_, _, _, _, _, _, _) => other.append(fProp)
-          case Union(_, _, _, _, _, _, _) => other.append(fProp)
-          case Xor(_) => other.append(fProp)
-        }
-      }
-      mkUnionAll(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList)
+    case Union(l) => Union(l)
 
     case Xor(other) =>
       mkXorDirectAll(other.map(propagationWithInsts(_, insts)))
@@ -1038,11 +833,7 @@ object SetFormula {
     case Var(_) => false
     case ElemSet(_) => false
     case Empty => true
-    // If there are unknowns in a union, then it will clearly be non-empty for some instantiation.
-    case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, _) if elemPos.nonEmpty ||
-      cstsPos.nonEmpty || varsPos.nonEmpty || elemNeg.nonEmpty || cstsNeg.nonEmpty ||
-      varsNeg.nonEmpty => false
-    case Compl(_) | Inter(_, _, _, _, _, _, _) | Union(_, _, _, _, _, _, _) | Xor(_) =>
+    case Compl(_) | Inter(_, _, _, _, _, _, _) | Union(_) | Xor(_) =>
       isEmptyEquivalentExhaustive(f)
   }
 
@@ -1112,18 +903,10 @@ object SetFormula {
         }
         running
 
-      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+      case Union(l) =>
         // Evaluate the subformulas, exiting early in case the running set is `univ`.
         var running = CISet.empty
-        for (t <- elemPos.iterator ++ cstsPos.iterator ++ varsPos.iterator) {
-          running = CISet.union(running, evaluate(t, univUnknowns))
-          if (running.isUniverse) return CISet.universe
-        }
-        for (t <- elemNeg.iterator ++ cstsNeg.iterator ++ varsNeg.iterator) {
-          running = CISet.union(running, CISet.complement(evaluate(t, univUnknowns)))
-          if (running.isUniverse) return CISet.universe
-        }
-        for (t <- other) {
+        for (t <- l.toList) {
           running = CISet.union(running, evaluate(t, univUnknowns))
           if (running.isUniverse) return CISet.universe
         }

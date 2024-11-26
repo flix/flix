@@ -91,32 +91,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       }
       SetFormula.mkInterAll(ts.toList)
 
-    case union@SetFormula.Union(_, _, varsPos, _, _, varsNeg, Nil)
-      if varsPos.forall(v => !this.m.contains(v.x)) && varsNeg.forall(v => !this.m.contains(v.x)) =>
-      union
-
-    case SetFormula.Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val ts = ListBuffer.empty[SetFormula]
-      for (x <- varsPos) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Univ) return SetFormula.Univ
-        ts += x1
-      }
-      for (x <- varsNeg) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Empty) return SetFormula.Univ
-        ts += SetFormula.mkCompl(x1)
-      }
-      for (e <- elemPos) ts += e
-      for (cst <- cstsPos) ts += cst
-      for (e <- elemNeg) ts += SetFormula.mkCompl(e)
-      for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
-      for (t <- other) {
-        val t1 = applyInternal(t)
-        if (t1 == SetFormula.Univ) return SetFormula.Univ
-        ts += t1
-      }
-      SetFormula.mkUnionAll(ts.toList)
+    case SetFormula.Union(l) => SetFormula.Union(l.map(applyInternal))
 
     case SetFormula.Xor(other) =>
       SetFormula.mkXorDirectAll(other.map(applyInternal))

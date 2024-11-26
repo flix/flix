@@ -313,12 +313,12 @@ object SetUnification {
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
-      case (union@Union(_, _, _, _, _, _, _), Empty) =>
+      case (union@Union(_), Empty) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric Case.
-      case (Empty, union@Union(_, _, _, _, _, _, _)) =>
+      case (Empty, union@Union(_)) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
