@@ -189,12 +189,36 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.LocalScopeCompletion(name) =>
+    case Completion.VarCompletion(name) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
         textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Variable
+      )
+
+    case Completion.DeclarationCompletion(name) =>
+        CompletionItem(
+          label    = name,
+          sortText = Priority.toSortText(Priority.High, name),
+          textEdit = TextEdit(context.range, name),
+          kind     = CompletionItemKind.Enum
+        )
+
+    case Completion.JavaClassCompletion(name) =>
+      CompletionItem(
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
+        kind     = CompletionItemKind.Class
+      )
+
+    case Completion.LocalDefCompletion(name) =>
+      CompletionItem(
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
+        kind     = CompletionItemKind.Function
       )
 
     case Completion.DefCompletion(decl) =>
@@ -560,7 +584,28 @@ object Completion {
     *
     * @param name the name of the variable to complete.
     */
-  case class LocalScopeCompletion(name: String) extends Completion
+  case class VarCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Declaration completion
+   *
+   * @param name the name of the declaration to complete.
+   */
+  case class DeclarationCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Java Class completion
+   *
+   * @param name the name of the java class to complete.
+   */
+  case class JavaClassCompletion(name: String) extends Completion
+
+  /**
+   * Represents a local def completion
+   *
+   * @param name the name of the local function to complete.
+   */
+  case class LocalDefCompletion(name: String) extends Completion
 
   /**
     * Represents a Def completion
