@@ -66,6 +66,6 @@ object LocalScopeCompleter {
     * Tries to create a LocalDefCompletion for the given name and resolutions.
     */
   private def mkLocalDefCompletion(k: String, v: List[Resolution]): Iterable[Completion] =
-    if (v.exists(_.isInstanceOf[Resolution.LocalDef])) Completion.LocalDefCompletion(k) :: Nil else Nil
+    v.collect{ case Resolution.LocalDef(sym, fparams) => (sym, fparams)}.map(Completion.LocalDefCompletion.tupled)
 
 }

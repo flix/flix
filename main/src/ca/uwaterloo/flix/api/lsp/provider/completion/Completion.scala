@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
 import java.lang.reflect.{Field, Method}
@@ -213,11 +213,13 @@ sealed trait Completion {
         kind     = CompletionItemKind.Class
       )
 
-    case Completion.LocalDefCompletion(name) =>
+    case Completion.LocalDefCompletion(sym, fparams) =>
+      val snippet = sym.text + fparams.zipWithIndex.map{ case (fparam, idx) => s"$${${idx + 1}:${fparam.sym.text}}" }.mkString("(", ", ", ")")
       CompletionItem(
-        label    = name,
-        sortText = Priority.toSortText(Priority.High, name),
-        textEdit = TextEdit(context.range, name),
+        label    = sym.text,
+        sortText = Priority.toSortText(Priority.High, sym.text),
+        textEdit = TextEdit(context.range, snippet),
+        insertTextFormat = InsertTextFormat.Snippet,
         kind     = CompletionItemKind.Function
       )
 
@@ -603,9 +605,10 @@ object Completion {
   /**
    * Represents a local def completion
    *
-   * @param name the name of the local function to complete.
+   * @param sym the symbol of the local function
+   * @param fparams the formal parameters of the local function
    */
-  case class LocalDefCompletion(name: String) extends Completion
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
 
   /**
     * Represents a Def completion
