@@ -582,17 +582,28 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    val reminder = mutable.Set.empty[SetFormula]
-    for (f <- fs) {
-      f match {
-        case Empty => // nop
-        case Univ => return Univ
-        case Union(l) => reminder ++= l.toList
-        case other => reminder += other
-      }
+    def visit(l: List[SetFormula], seenCsts: Set[Int], seenVars: Set[Int]): List[SetFormula] = l match {
+      case Nil => Nil
+
+      case (f@Cst(c)) :: rs =>
+        if (seenCsts.contains(c))
+          visit(rs, seenCsts, seenVars)
+        else
+          f :: visit(rs, seenCsts + c, seenVars)
+
+      case (f@Var(x)) :: rs =>
+        if (seenVars.contains(x))
+          visit(rs, seenCsts, seenVars)
+        else
+          f :: visit(rs, seenCsts, seenVars + x)
+
+      case Union(l2) :: rs =>
+        visit(l2.toList ::: rs, seenCsts, seenVars)
+
+      case f :: rs => f :: visit(rs, seenCsts, seenVars)
     }
 
-    reminder.toList match {
+    visit(fs, Set.empty, Set.empty) match {
       case Nil => Empty
       case f :: Nil => f
       case f1 :: f2 :: rest => Union(TwoList(f1, f2, rest))
