@@ -209,8 +209,8 @@ sealed trait SetFormula {
 
 object SetFormula {
 
-  private implicit val ordCst: Ordering[Cst] = Ordering.by(_.c)
-  private implicit val ordVar: Ordering[Var] = Ordering.by(_.x)
+  implicit val ordCst: Ordering[Cst] = Ordering.by(_.c)
+  implicit val ordVar: Ordering[Var] = Ordering.by(_.x)
 
   /** Skip invariant checks if `false`. */
   private val CHECK_INVARIANTS: Boolean = true
