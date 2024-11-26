@@ -44,7 +44,7 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
@@ -82,7 +82,7 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
