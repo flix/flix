@@ -582,28 +582,30 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    def visit(l: List[SetFormula], seenCsts: Set[Int], seenVars: Set[Int]): List[SetFormula] = l match {
-      case Nil => Nil
+    def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: Set[Int], seenVars: Set[Int]): List[SetFormula] = l match {
+      case Nil => if (elmAcc.isEmpty) Nil else ElemSet(elmAcc) :: Nil
+
+      case ElemSet(s) :: rs => visit(rs, elmAcc ++ s, seenCsts, seenVars)
 
       case (f@Cst(c)) :: rs =>
         if (seenCsts.contains(c))
-          visit(rs, seenCsts, seenVars)
+          visit(rs, elmAcc, seenCsts, seenVars)
         else
-          f :: visit(rs, seenCsts + c, seenVars)
+          f :: visit(rs, elmAcc, seenCsts + c, seenVars)
 
       case (f@Var(x)) :: rs =>
         if (seenVars.contains(x))
-          visit(rs, seenCsts, seenVars)
+          visit(rs, elmAcc, seenCsts, seenVars)
         else
-          f :: visit(rs, seenCsts, seenVars + x)
+          f :: visit(rs, elmAcc, seenCsts, seenVars + x)
 
       case Union(l2) :: rs =>
-        visit(l2.toList ::: rs, seenCsts, seenVars)
+        visit(l2.toList ::: rs, elmAcc, seenCsts, seenVars)
 
-      case f :: rs => f :: visit(rs, seenCsts, seenVars)
+      case f :: rs => f :: visit(rs, elmAcc, seenCsts, seenVars)
     }
 
-    visit(fs, Set.empty, Set.empty) match {
+    visit(fs, SortedSet.empty, Set.empty, Set.empty) match {
       case Nil => Empty
       case f :: Nil => f
       case f1 :: f2 :: rest => Union(TwoList(f1, f2, rest))
