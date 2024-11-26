@@ -741,10 +741,31 @@ object SetFormula {
     *
     * Nested xors are put into a single xor.
     */
-  def mkXorDirectAll(fs: List[SetFormula]): SetFormula = fs match {
-    case Nil => Empty
-    case List(one) => one
-    case _ => Xor(fs)
+  def mkXorDirectAll(fs: List[SetFormula]): SetFormula = {
+    val other = mutable.ListBuffer.empty[SetFormula]
+    var compl = false
+    var workList = fs
+    while (workList.nonEmpty) {
+      val f0 :: next = workList
+      workList = next
+      f0 match {
+        case Univ => compl = !compl // `Univ ⊕ .. = !..`
+        case Empty => () // `Empty ⊕ .. = ..`
+        case cst@Cst(_) => other += cst
+        case x@Var(_) => other += x
+        case e@ElemSet(_) => other += e
+        case compl@Compl(_) => other += compl
+        case inter@Inter(_, _, _, _, _, _, _) => other += inter
+        case union@Union(_, _, _, _, _, _, _) => other += union
+        case Xor(other) => workList = other ++ workList
+      }
+    }
+    if (compl) other += Univ
+    other.toList match {
+      case Nil => Empty
+      case List(one) => one
+      case more => Xor(more)
+    }
   }
 
   /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */

@@ -59,23 +59,21 @@ object Zhegalkin {
     def visitTerm(term: ZhegalkinTerm): SetFormula = term match {
       case ZhegalkinTerm(cst, vars) =>
         // c ∩ x1 ∩ x2 ∩ ... ∩ xn
-        val flexVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
-          case (acc, zvar) if zvar.flexible => SetFormula.mkInter(acc, SetFormula.Var(zvar.id))
-          case (acc, _) => acc
+        val flexVars = vars.toList.flatMap{
+          case zvar if zvar.flexible => Some(SetFormula.Var(zvar.id))
+          case _ => None
         }
-        val rigidVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
-          case (acc, zvar) if !zvar.flexible => SetFormula.mkInter(acc, SetFormula.Cst(zvar.id))
-          case (acc, _) => acc
+        val rigidVars = vars.toList.flatMap{
+          case zvar if !zvar.flexible => Some(SetFormula.Cst(zvar.id))
+          case _ => None
         }
-        SetFormula.mkInterAll(List(visitCst(cst), flexVars, rigidVars))
+        SetFormula.mkInterAll(visitCst(cst) :: flexVars ::: rigidVars)
     }
 
     z match {
       case ZhegalkinExpr(cst, terms) =>
         // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
-        terms.foldLeft(visitCst(cst): SetFormula) {
-          case (acc, term) => SetFormula.mkXorDirect(acc, visitTerm(term))
-        }
+        SetFormula.mkXorDirectAll(visitCst(cst) :: terms.map(visitTerm))
     }
   }
 
