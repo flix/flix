@@ -43,6 +43,7 @@ object Inliner1 {
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     MonoAst.Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
+    // TODO: Returns stats from sctx here. Remember to fold over each field and return as maps.
   }
 
   private type InVar = Symbol.VarSym
