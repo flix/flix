@@ -123,23 +123,31 @@ object RenameProvider {
     }
     object CaseSymConsumer extends Consumer {
       override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = {
-        // NB: it's safe to simply offset the column to account for the enum name, since the case symbol must be on a single line
-        val enumNameLen = sym.sym.enumSym.name.length
-        val colWithoutEnumName = (sym.loc.sp1.col + enumNameLen + 1).toShort
-        val occurLen = sym.loc.sp2.col - sym.loc.sp1.col
-        val longForm = sym.sym.enumSym.name.length + sym.sym.name.length + 1
-        val occurContainsEnumName = occurLen == longForm
-        val col = if (occurContainsEnumName) { colWithoutEnumName } else { sym.loc.sp1.col }
-        val start = SourcePosition(sym.loc.sp1.source, sym.loc.sp1.line, col)
-        val loc = SourceLocation(sym.loc.isReal, start, sym.loc.sp2)
-        consider(sym.sym, loc)
-      }
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, fixCaseSymUseLoc(sym))
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
 
     occurs
+  }
+
+  private def fixCaseSymUseLoc(use: SymUse.CaseSymUse): SourceLocation = {
+    val SymUse.CaseSymUse(sym, loc) = use
+    val enumNameLen = sym.enumSym.name.length
+    val occurLen = loc.sp2.col - loc.sp1.col
+    val caseWithEnumNameLen = sym.enumSym.name.length + sym.name.length + 1
+
+    val occurContainsEnumName = occurLen == caseWithEnumNameLen
+    val col = if (occurContainsEnumName) {
+      // NB: it's safe to simply offset the column to account for the enum name, since the case symbol occurrence must be on a single line
+      val colWithoutEnumName = (loc.sp1.col + enumNameLen + 1).toShort
+      colWithoutEnumName
+    } else {
+      loc.sp1.col
+    }
+
+    val start = SourcePosition(loc.sp1.source, loc.sp1.line, col)
+    SourceLocation(loc.isReal, start, loc.sp2)
   }
 
   private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
