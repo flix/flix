@@ -199,6 +199,7 @@ object Inliner1 {
             // Case 2:
             // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
             case Some(e1) =>
+              sctx.inlinedVars.add((sym0, sym))
               e1 match {
                 // If `e1` is a `LiftedExp` then `e1` has already been visited
                 case SubstRange.DoneExp(e) =>
@@ -232,12 +233,14 @@ object Inliner1 {
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
+              sctx.inlinedVars.add((sym0, sym1))
               assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
               assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
+              sctx.inlinedVars.add((sym0, sym1))
               assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
               assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
@@ -263,6 +266,7 @@ object Inliner1 {
 
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
+            sctx.betaReductions.add((sym0, 1))
             val e = inlineLocalAbstraction(body, List(fparam), List(e2))
             assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
             assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
@@ -279,6 +283,7 @@ object Inliner1 {
         // If `def1` is a single non-self call or is trivial
         // then inline the body of `def1`
         if (canInlineDef(def1.context, context0)) {
+          sctx.inlinedDefs.add((sym0, sym))
           val e = inlineDef(def1.exp, def1.fparams, es)
           assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
           assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
@@ -302,10 +307,12 @@ object Inliner1 {
             // Case 1:
             // If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
             // Both code size and runtime are reduced
+            sctx.eliminatedVars.add((sym0, sym))
             visit(exp2)
           } else {
             // Case 2:
             // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
+            sctx.eliminatedVars.add((sym0, sym))
             val e1 = visitExp(exp1, varSubst0, subst0, inScopeSet0, context0)
             MonoAst.Expr.Stm(e1, visit(exp2), tpe, eff, loc)
           }
@@ -318,6 +325,7 @@ object Inliner1 {
           // There is a small decrease in code size and runtime.
           val wantToPreInline = isUsedOnceAndPure(occur, exp1.eff)
           if (wantToPreInline) {
+            sctx.eliminatedVars.add((sym0, sym))
             val subst1 = subst0 + (freshVarSym -> SubstRange.SuspendedExp(exp1))
             visitExp(exp2, varSubst1, subst1, inScopeSet0, context0)
           } else {
@@ -329,6 +337,7 @@ object Inliner1 {
             if (wantToPostInline) {
               // If `e1` is to be inlined:
               // Add map `sym` to `e1` and return `e2` without constructing the let expression.
+              sctx.eliminatedVars.add((sym0, sym))
               val subst1 = subst0 + (freshVarSym -> SubstRange.DoneExp(e1))
               visitExp(exp2, varSubst1, subst1, inScopeSet0, context0)
             } else {
@@ -345,6 +354,7 @@ object Inliner1 {
       case OccurrenceAst1.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
         // TODO: Treat like let-binding above, except it is never trivial so some checks can be omitted
         if (isDead(occur)) { // Probably never happens
+          sctx.eliminatedVars.add((sym0, sym))
           visit(exp2)
         } else {
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -365,8 +375,12 @@ object Inliner1 {
       case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visit(exp1)
         e1 match {
-          case MonoAst.Expr.Cst(Constant.Bool(true), _, _) => visit(exp2)
-          case MonoAst.Expr.Cst(Constant.Bool(false), _, _) => visit(exp3)
+          case MonoAst.Expr.Cst(Constant.Bool(true), _, _) =>
+            sctx.simplifiedIfThenElse.add((sym0, 1))
+            visit(exp2)
+          case MonoAst.Expr.Cst(Constant.Bool(false), _, _) =>
+            sctx.simplifiedIfThenElse.add((sym0, 1))
+            visit(exp3)
           case _ => MonoAst.Expr.IfThenElse(e1, visit(exp2), visit(exp3), tpe, eff, loc)
         }
 
@@ -375,6 +389,7 @@ object Inliner1 {
         // If `exp1` is pure, so it has no side effects, then it is safe to remove
         // Both code size and runtime are reduced
         if (isPure(exp1.eff)) {
+          sctx.eliminatedStms.add((sym0, 1))
           visit(exp2)
         } else {
           val e1 = visit(exp1)
@@ -1031,14 +1046,18 @@ object Inliner1 {
     *
     * inlinedDefs is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
     * inlinedVars is a map where each def `def1` points to a set of vars that have been inlined at their use sites in `def1`.
+    * betaReductions is a map where each def `def1` points to the number of beta reductions that have been performed in `def1`.
+    * eliminatedVars is a map where each def `def1` points to the vars that have been removed from `def1`.
+    * simplifiedIfThenElse is a map where each def `def1` points to the number of simplifications of `if (constant) e1 else e2` in `def1`.
+    * eliminatedStms is a map where each def `def1` points to the number of removed Stms that were pure `def1`.
     */
-  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)], inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)])
+  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)], inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)], betaReductions: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)], eliminatedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)], simplifiedIfThenElse: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)], eliminatedStms: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)])
 
   private object SharedContext {
 
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 }
