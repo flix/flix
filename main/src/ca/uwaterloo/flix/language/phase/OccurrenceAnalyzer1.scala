@@ -78,6 +78,17 @@ object OccurrenceAnalyzer1 {
   }
 
   /**
+    * A set of functions that contain masked casts.
+    *
+    * Must be manually maintained since Lowering erases the masked cast.
+    */
+  private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
+
+  private def toReadableFunction(sym: Symbol.DefnSym): String = {
+    sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
+  }
+
+  /**
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
@@ -101,7 +112,7 @@ object OccurrenceAnalyzer1 {
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     ds.foldLeft(Map.empty[DefnSym, OccurrenceAst1.Def]) {
       case (macc, defn) =>
-        val occur = defOccur.getOrElse(defn.sym, Dead)
+        val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) Dangerous else defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
         val defWithContext = defn.copy(context = newContext)
         macc + (defn.sym -> defWithContext)
