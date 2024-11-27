@@ -114,7 +114,7 @@ object Inliner1 {
   private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc) =>
       if (ctx.occur != Dangerous) {
-        val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(root, flix)
+        val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(sym, root, flix)
         val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
         MonoAst.Def(sym, sp, e, loc)
       } else {
@@ -180,7 +180,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp00: OccurrenceAst1.Expr, varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def visitExp(exp00: OccurrenceAst1.Expr, varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
 
     def visit(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
       case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
@@ -199,12 +199,12 @@ object Inliner1 {
               e1 match {
                 // If `e1` is a `LiftedExp` then `e1` has already been visited
                 case SubstRange.DoneExp(e) =>
-                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                   e
                 // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
                 case SubstRange.SuspendedExp(exp) =>
                   val e = visit(exp)
-                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                   e
               }
           }
@@ -229,14 +229,14 @@ object Inliner1 {
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1'")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1'")
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1'")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1'")
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -277,8 +277,8 @@ object Inliner1 {
         // then inline the body of `def1`
         if (canInlineDef(def1.context, context0)) {
           val e = inlineDef(def1.exp, def1.fparams, es)
-          assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
-          assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym'")
+          assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
+          assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
           e
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -517,7 +517,7 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineDef(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def inlineDef(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
     bind(exp0, symbols, args, Map.empty, Map.empty, Map.empty, Context.Stop)
   }
 
@@ -525,7 +525,7 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def bind(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
     def bnd(syms: List[(OccurrenceAst1.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): MonoAst.Expr = (syms, as) match {
       case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
