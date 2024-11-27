@@ -18,12 +18,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, Symbol}
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -233,7 +232,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
-        val o1 = visitAtomicOp(op, o)
+        val o1 = visitAtomicOp(op, o, loc)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
@@ -361,7 +360,7 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
-    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo)(implicit letBinding: Option[VarSym]): OccurInfo = op0 match {
+    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo, loc: SourceLocation)(implicit letBinding: Option[VarSym]): OccurInfo = op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" =>
         occurInfo0 :+ sym0 -> DontInline
 
@@ -370,10 +369,7 @@ object OccurrenceAnalyzer1 {
         case None => occurInfo0
       }
 
-      case AtomicOp.MatchError => letBinding match {
-        case Some(varSym) => occurInfo0 + (varSym -> DontInline)
-        case None => occurInfo0
-      }
+      case AtomicOp.MatchError => throw InternalCompilerException("unexpected MatchError Op", loc)
 
       case AtomicOp.Cast => occurInfo0 :+ sym0 -> Dangerous
 
