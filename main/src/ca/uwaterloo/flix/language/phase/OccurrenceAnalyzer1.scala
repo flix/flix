@@ -272,8 +272,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
-        val o2 = o1 :+ sym0 -> DontInline
-        (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), increment(o2))
+        (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, o1) = visit(exp1)
