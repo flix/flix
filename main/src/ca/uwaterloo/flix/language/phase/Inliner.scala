@@ -138,12 +138,12 @@ object Inliner {
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
             case Expr.LiftedExp(e) =>
-              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
+              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
               e
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
             case Expr.OccurrenceExp(exp) =>
               val e = visitExp(exp, subst0)
-              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
+              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
               e
           }
       }
@@ -164,8 +164,8 @@ object Inliner {
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
             val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
-            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
-            assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc")
+            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+            assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
             e
           } else {
             LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
@@ -181,8 +181,8 @@ object Inliner {
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
         val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
-        assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
-        assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc")
+        assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+        assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
         e
       } else {
         LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
