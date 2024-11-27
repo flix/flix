@@ -325,7 +325,7 @@ object OccurrenceAnalyzer1 {
       case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, o1) = visit(exp)
         val (rs, o2) = visitTryCatchRules(rules)
-        val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
+        val o3 = combineInfoBranch(o1, o2) :+ sym0 -> DontInline
         (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
 
       case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
