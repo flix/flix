@@ -215,7 +215,7 @@ object OccurrenceAnalyzer1 {
       * The implicit parameter `letBinding` is `Some(sym)` if visiting the right-hand side
       * of a let-binding, i.e., in `let sym = exp` it recurses on `exp` with `letBinding = Some(sym)`.
       */
-    def visit(exp0: MonoAst.Expr)(implicit letBinding: Option[VarSym]): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
+    def visit(exp0: MonoAst.Expr): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
       case MonoAst.Expr.Cst(cst, tpe, loc) =>
         (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
@@ -232,7 +232,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, o) = visitExps(exps)
-        val o1 = visitAtomicOp(op, o, loc)
+        val o1 = visitAtomicOp(op, o)
         (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
@@ -253,7 +253,7 @@ object OccurrenceAnalyzer1 {
         (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), increment(o2))
 
       case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-        val (e1, o1) = visit(exp1)(Some(sym))
+        val (e1, o1) = visit(exp1)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
         val occur = o3.get(sym)
@@ -262,7 +262,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
         val fps = fparams.map(visitFormalParam)
-        val (e1, o10) = visit(exp1)(None)
+        val (e1, o10) = visit(exp1)
         val o1 = captureVars(o10)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
@@ -347,7 +347,7 @@ object OccurrenceAnalyzer1 {
       * Performs occurrence analysis on a list of expressions `exps` and merges occurrences.
       * Captures `sym0`.
       */
-    def visitExps(exps: List[MonoAst.Expr])(implicit letBinding: Option[VarSym]): (List[OccurrenceAst1.Expr], OccurInfo) = {
+    def visitExps(exps: List[MonoAst.Expr]): (List[OccurrenceAst1.Expr], OccurInfo) = {
       val (es, o1) = exps.map(visit).unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)(combineInfo)
       (es, o2)
@@ -359,23 +359,16 @@ object OccurrenceAnalyzer1 {
       case _ => occurInfo0
     }
 
-    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo, loc: SourceLocation)(implicit letBinding: Option[VarSym]): OccurInfo = op0 match {
+    def visitAtomicOp(op0: AtomicOp, occurInfo0: OccurInfo): OccurInfo = op0 match {
       case AtomicOp.Is(sym) if sym.name == "Choice" =>
         occurInfo0 :+ sym0 -> DontInline
-
-      case AtomicOp.HoleError(_) => letBinding match {
-        case Some(varSym) => occurInfo0 + (varSym -> DontInline)
-        case None => occurInfo0
-      }
-
-      case AtomicOp.MatchError => throw InternalCompilerException("unexpected MatchError Op", loc)
 
       case AtomicOp.Cast => occurInfo0 :+ sym0 -> Dangerous
 
       case _ => occurInfo0
     }
 
-    def visitMatchRules(rules0: List[MonoAst.MatchRule])(implicit letBinding: Option[VarSym]): (List[OccurrenceAst1.MatchRule], OccurInfo) = {
+    def visitMatchRules(rules0: List[MonoAst.MatchRule]): (List[OccurrenceAst1.MatchRule], OccurInfo) = {
       val (rs, o) = rules0.map {
         case MonoAst.MatchRule(pat, guard, exp) =>
           val (g, o1) = guard.map(visit).unzip
@@ -389,7 +382,7 @@ object OccurrenceAnalyzer1 {
       (rs, o1)
     }
 
-    def visitTryCatchRules(rules0: List[MonoAst.CatchRule])(implicit letBinding: Option[VarSym]): (List[OccurrenceAst1.CatchRule], OccurInfo) = {
+    def visitTryCatchRules(rules0: List[MonoAst.CatchRule]): (List[OccurrenceAst1.CatchRule], OccurInfo) = {
       val (rs, o) = rules0.map {
         case MonoAst.CatchRule(sym, clazz, exp) =>
           val (e, o) = visit(exp)
@@ -399,7 +392,7 @@ object OccurrenceAnalyzer1 {
       (rs, o1)
     }
 
-    def visitTryWithRules(rules0: List[MonoAst.HandlerRule])(implicit letBinding: Option[VarSym]): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
+    def visitTryWithRules(rules0: List[MonoAst.HandlerRule]): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
       val (rs, o) = rules0.map {
         case MonoAst.HandlerRule(op, fparams, exp) =>
           val (e, o) = visit(exp)
@@ -410,18 +403,18 @@ object OccurrenceAnalyzer1 {
       (rs, o1)
     }
 
-    def visitJvmMethods(methods0: List[MonoAst.JvmMethod])(implicit letBinding: Option[VarSym]): (List[OccurrenceAst1.JvmMethod], OccurInfo) = {
+    def visitJvmMethods(methods0: List[MonoAst.JvmMethod]): (List[OccurrenceAst1.JvmMethod], OccurInfo) = {
       val (ms, o) = methods0.map {
         case MonoAst.JvmMethod(ident, fparams, clo, retTpe, eff, loc) =>
           val f = fparams.map(visitFormalParam)
-          val (c, o) = visit(clo)(None)
+          val (c, o) = visit(clo)
           (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, eff, loc), increment(o))
       }.unzip
       val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
       (ms, o1)
     }
 
-    visit(exp00)(None)
+    visit(exp00)
 
   }
 
