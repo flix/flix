@@ -18,11 +18,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -367,7 +367,7 @@ object OccurrenceAnalyzer1 {
         val (g, o1) = guard.map(visitExp).unzip
         val (e, o2) = visitExp(exp)
         val o3 = combineInfoOpt(o1, o2)
-        val (p, syms) = visitPattern(pat, o3)
+        val (p, syms) = visitPattern(pat)(o3)
         val o4 = o3 -- syms
         (OccurrenceAst1.MatchRule(p, g, e), o4)
     }.unzip
@@ -407,45 +407,41 @@ object OccurrenceAnalyzer1 {
     (ms, o1)
   }
 
-  private def visitPattern(pattern00: MonoAst.Pattern, occurInfo: OccurInfo): (OccurrenceAst1.Pattern, Set[VarSym]) = {
+  private def visitPattern(pattern0: MonoAst.Pattern)(implicit occurInfo: OccurInfo): (OccurrenceAst1.Pattern, Set[VarSym]) = pattern0 match {
 
-    def visit(pattern0: MonoAst.Pattern): (OccurrenceAst1.Pattern, Set[VarSym]) = pattern0 match {
-      case MonoAst.Pattern.Wild(tpe, loc) =>
-        (OccurrenceAst1.Pattern.Wild(tpe, loc), Set.empty)
+    case MonoAst.Pattern.Wild(tpe, loc) =>
+      (OccurrenceAst1.Pattern.Wild(tpe, loc), Set.empty)
 
-      case MonoAst.Pattern.Var(sym, tpe, loc) =>
-        (OccurrenceAst1.Pattern.Var(sym, tpe, occurInfo.get(sym), loc), Set(sym))
+    case MonoAst.Pattern.Var(sym, tpe, loc) =>
+      (OccurrenceAst1.Pattern.Var(sym, tpe, occurInfo.get(sym), loc), Set(sym))
 
-      case MonoAst.Pattern.Cst(cst, tpe, loc) =>
-        (OccurrenceAst1.Pattern.Cst(cst, tpe, loc), Set.empty)
+    case MonoAst.Pattern.Cst(cst, tpe, loc) =>
+      (OccurrenceAst1.Pattern.Cst(cst, tpe, loc), Set.empty)
 
-      case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
-        val (ps, listOfSyms) = pats.map(visit).unzip
-        val syms = Set.from(listOfSyms.flatten)
-        (OccurrenceAst1.Pattern.Tag(sym, ps, tpe, loc), syms)
+    case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, listOfSyms) = pats.map(visitPattern).unzip
+      val syms = Set.from(listOfSyms.flatten)
+      (OccurrenceAst1.Pattern.Tag(sym, ps, tpe, loc), syms)
 
-      case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
-        val (ps, listOfSyms) = pats.map(visit).unzip
-        val syms = Set.from(listOfSyms.flatten)
-        (OccurrenceAst1.Pattern.Tuple(ps, tpe, loc), syms)
+    case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
+      val (ps, listOfSyms) = pats.map(visitPattern).unzip
+      val syms = Set.from(listOfSyms.flatten)
+      (OccurrenceAst1.Pattern.Tuple(ps, tpe, loc), syms)
 
-      case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
-        val (ps, listOfSyms) = pats.map(visitRecordLabelPattern).unzip
-        val (p, syms0) = visit(pat)
-        val syms = Set.from(listOfSyms.flatten) ++ syms0
-        (OccurrenceAst1.Pattern.Record(ps, p, tpe, loc), syms)
+    case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, listOfSyms) = pats.map(visitRecordLabelPattern).unzip
+      val (p, syms0) = visitPattern(pat)
+      val syms = Set.from(listOfSyms.flatten) ++ syms0
+      (OccurrenceAst1.Pattern.Record(ps, p, tpe, loc), syms)
 
-      case MonoAst.Pattern.RecordEmpty(tpe, loc) =>
-        (OccurrenceAst1.Pattern.RecordEmpty(tpe, loc), Set.empty)
-    }
+    case MonoAst.Pattern.RecordEmpty(tpe, loc) =>
+      (OccurrenceAst1.Pattern.RecordEmpty(tpe, loc), Set.empty)
+  }
 
-    def visitRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern): (OccurrenceAst1.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
-      case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-        val (p, syms) = visit(pat)
-        (OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
-    }
-
-    visit(pattern00)
+  private def visitRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern)(implicit occurInfo: OccurInfo): (OccurrenceAst1.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
+    case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val (p, syms) = visitPattern(pat)
+      (OccurrenceAst1.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
   }
 
   /**
