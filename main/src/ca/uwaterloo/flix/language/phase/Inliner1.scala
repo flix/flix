@@ -37,7 +37,8 @@ object Inliner1 {
     * Performs inlining on the given AST `root`.
     */
   def run(root: OccurrenceAst1.Root)(implicit flix: Flix): MonoAst.Root = {
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(flix, root))
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
@@ -113,10 +114,10 @@ object Inliner1 {
     * Performs expression inlining on the given definition `def0`.
     * Converts definition from [[OccurrenceAst1]] to [[MonoAst]].
     */
-  private def visitDef(def0: OccurrenceAst1.Def)(implicit flix: Flix, root: OccurrenceAst1.Root): MonoAst.Def = def0 match {
+  private def visitDef(def0: OccurrenceAst1.Def)(implicit root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): MonoAst.Def = def0 match {
     case OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc) =>
       if (ctx.occur != Dangerous) {
-        val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(sym, root, flix)
+        val e = visitExp(exp, Map.empty, Map.empty, Map.empty, Context.Start)(sym, root, sctx, flix)
         val sp = visitSpec(spec, fparams.map { case (fp, _) => fp })
         MonoAst.Def(sym, sp, e, loc)
       } else {
@@ -182,7 +183,7 @@ object Inliner1 {
     * Performs inlining operations on the expression `exp0` from [[OccurrenceAst1.Expr]].
     * Returns a [[MonoAst.Expr]]
     */
-  private def visitExp(exp00: OccurrenceAst1.Expr, varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def visitExp(exp00: OccurrenceAst1.Expr, varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): MonoAst.Expr = {
 
     def visit(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
       case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
@@ -528,7 +529,7 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineDef(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def inlineDef(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): MonoAst.Expr = {
     bind(exp0, symbols, args, Map.empty, Map.empty, Map.empty, Context.Stop)
   }
 
@@ -536,7 +537,7 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, flix: Flix): MonoAst.Expr = {
+  private def bind(exp0: OccurrenceAst1.Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): MonoAst.Expr = {
     def bnd(syms: List[(OccurrenceAst1.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): MonoAst.Expr = (syms, as) match {
       case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
@@ -1029,14 +1030,15 @@ object Inliner1 {
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     *
     * inlinedDefs is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
+    * inlinedVars is a map where each def `def1` points to a set of vars that have been inlined at their use sites in `def1`.
     */
-  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Set[Symbol.DefnSym])])
+  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)], inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)])
 
   private object SharedContext {
 
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 }
