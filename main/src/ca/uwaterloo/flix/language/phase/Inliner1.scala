@@ -215,17 +215,7 @@ object Inliner1 {
 
       case OccurrenceAst1.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps.map(visit)
-        op match {
-          case AtomicOp.Untag(_, _) =>
-            val List(e) = es
-            // Inline expressions of the form Untag(Tag(e)) => e
-            e match {
-              case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-              case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-            }
-
-          case _ => MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
-        }
+        MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
       case OccurrenceAst1.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
         // TODO: Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
