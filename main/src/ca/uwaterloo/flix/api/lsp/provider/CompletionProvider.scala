@@ -127,8 +127,8 @@ object CompletionProvider {
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ VarCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
 
       case _ => Nil
