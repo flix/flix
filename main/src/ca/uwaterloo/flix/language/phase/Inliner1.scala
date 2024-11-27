@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.ast.MonoAst.Expr
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
 /**
   * The inliner optionally performs beta-reduction at call-sites.
@@ -536,14 +536,14 @@ object Inliner1 {
       case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
         // If the parameter is unused and the argument is NOT pure, then put it in a statement.
         val nextLet = bnd(nextSymbols, nextExpressions, env)
-        val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
+        val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         MonoAst.Expr.Stm(e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
       case ((OccurrenceAst1.FormalParam(sym, _, _, _, _), _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env + (sym -> freshVar)
         val nextLet = bnd(nextSymbols, nextExpressions, env1)
-        val eff = Type.mkUnion(e1.eff, nextLet.eff, e1.loc)
+        val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         MonoAst.Expr.Let(freshVar, e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
       case _ => visitExp(exp0, varSubst0 ++ env, subst0, inScopeSet0, context0)
@@ -795,6 +795,37 @@ object Inliner1 {
     case Dead => isPure(eff0)
     case _ => false
   }
+
+  /** Returns a canonical effect type equivalent to `eff` */
+  private def canonicalEffect(eff: Type): Type = {
+    evalToType(eval(eff), eff.loc)
+  }
+
+  /** Evaluates a ground, simplified effect type */
+  private def eval(eff: Type): CofiniteEffSet = eff match {
+    case Type.Univ => CofiniteEffSet.universe
+    case Type.Pure => CofiniteEffSet.empty
+    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+      CofiniteEffSet.mkSet(sym)
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
+      CofiniteEffSet.complement(eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+      CofiniteEffSet.union(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+      CofiniteEffSet.intersection(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+      CofiniteEffSet.difference(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+      CofiniteEffSet.xor(eval(x), eval(y))
+    case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
+  }
+
+  /** Returns the [[Type]] representation of `set` with `loc`. */
+  private def evalToType(set: CofiniteEffSet, loc: SourceLocation): Type = set match {
+    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
+    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  }
+
 
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
