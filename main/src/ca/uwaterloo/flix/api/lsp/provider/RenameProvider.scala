@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, FileAcceptor, InsideAcc
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -121,7 +121,55 @@ object RenameProvider {
     case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
     case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
     case SymUse.StructFieldSymUse(symUse, _) => Some(getStructFieldSymOccurs(symUse))
+    // Traits
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+    case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
+    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     case _ => None
+  }
+
+  private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.TraitSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = consider(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = sepTrtAndSigSymOccur(symUse)._1.foreach(traitLoc => consider(symUse.sym.trt, traitLoc))
+
+    }
+
+    Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def sepTrtAndSigSymOccur(symUse: SymUse.SigSymUse): (Option[SourceLocation], SourceLocation) = {
+    val SymUse.SigSymUse(sym, loc) = symUse
+    val traitNameLen = sym.trt.name.length
+    val occurLen = loc.sp2.col - loc.sp1.col
+    val sigWithTraitNameLen = traitNameLen + sym.name.length + 1
+
+    val occurContainsTraitName = occurLen == sigWithTraitNameLen
+    if (occurContainsTraitName) {
+      val sepCol = loc.sp1.col + traitNameLen
+
+      // Extract trait symbol SourceLocation
+      val traitEndColWithoutSigName = sepCol.toShort
+      val traitSymEnd = SourcePosition(loc.sp2.source, loc.sp2.line, traitEndColWithoutSigName)
+      val traitSymLoc = SourceLocation(loc.isReal, loc.sp1, traitSymEnd)
+
+      // Extract sig symbol SourceLocation
+      val sigStartColWithoutTraitName = (sepCol + 1).toShort
+      val sigSymStart = SourcePosition(loc.sp1.source, loc.sp1.line, sigStartColWithoutTraitName)
+      val sigSymLoc = SourceLocation(loc.isReal, sigSymStart, loc.sp2)
+
+      (Some(traitSymLoc), sigSymLoc)
+    } else {
+      (None, loc)
+    }
   }
 
   private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root): Set[SourceLocation] = {
