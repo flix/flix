@@ -229,14 +229,14 @@ object Inliner1 {
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got ${lambda.tpe.arrowResultType} at $loc")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got ${lambda.tpe.arrowEffectType} at $loc")
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got ${lambda.tpe.arrowResultType} at $loc")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got ${lambda.tpe.arrowEffectType} at $loc")
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -261,8 +261,8 @@ object Inliner1 {
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
             val e = inlineLocalAbstraction(body, List(fparam), List(e2))
-            assert(e.tpe == tpe, s"expected '$tpe', got ${e.tpe} at $loc")
-            assert(e.eff == eff, s"expected '$eff', got ${e.eff} at $loc")
+            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
+            assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc")
             e
 
           case _ =>
@@ -277,8 +277,8 @@ object Inliner1 {
         // then inline the body of `def1`
         if (canInlineDef(def1.context, context0)) {
           val e = inlineDef(def1.exp, def1.fparams, es)
-          assert(e.tpe == tpe, s"expected '$tpe', got ${e.tpe} at $loc")
-          assert(e.eff == eff, s"expected '$eff', got ${e.eff} at $loc")
+          assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc")
+          assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc")
           e
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
