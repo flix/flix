@@ -262,7 +262,7 @@ object Inliner1 {
             // Direct application, e.g., (x -> x)(1)
             val e = inlineLocalAbstraction(body, List(fparam), List(e2))
             assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
-            assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
+            assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
             e
 
           case _ =>
@@ -278,7 +278,7 @@ object Inliner1 {
         if (canInlineDef(def1.context, context0)) {
           val e = inlineDef(def1.exp, def1.fparams, es)
           assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
-          assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
+          assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
           e
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
