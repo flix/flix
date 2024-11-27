@@ -361,12 +361,10 @@ object Inliner1 {
 
       case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val e3 = visit(exp3)
         e1 match {
-          case MonoAst.Expr.Cst(Constant.Bool(true), _, _) => e2
-          case MonoAst.Expr.Cst(Constant.Bool(false), _, _) => e3
-          case _ => MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+          case MonoAst.Expr.Cst(Constant.Bool(true), _, _) => visit(exp2)
+          case MonoAst.Expr.Cst(Constant.Bool(false), _, _) => visit(exp3)
+          case _ => MonoAst.Expr.IfThenElse(e1, visit(exp2), visit(exp3), tpe, eff, loc)
         }
 
       case OccurrenceAst1.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
