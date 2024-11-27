@@ -158,7 +158,10 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            assert(e.tpe == tpe)
+            assert(e.purity == purity)
+            e
           } else {
             LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
           }
@@ -172,7 +175,10 @@ object Inliner {
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        assert(e.tpe == tpe)
+        assert(e.purity == purity)
+        e
       } else {
         LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
