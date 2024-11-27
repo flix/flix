@@ -421,7 +421,7 @@ object OccurrenceAnalyzer1 {
           val (c, o) = visit(clo)
           (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, eff, loc), increment(o))
       }.unzip
-      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
+      val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
       (ms, o1)
     }
 
