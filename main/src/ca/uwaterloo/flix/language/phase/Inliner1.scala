@@ -757,7 +757,7 @@ object Inliner1 {
   }
 
   private def isPure(eff0: Type): Boolean = {
-    eff0.effects.isEmpty
+    eff0 == Type.Pure
   }
 
   /**
