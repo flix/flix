@@ -749,7 +749,7 @@ object Inliner1 {
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(ctx: DefContext, context: Context): Boolean = {
-    val mayInline = ctx.occur != DontInline && !ctx.isSelfRecursive && context != Context.Stop
+    val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && context != Context.Stop
     val shouldInline = ctx.isDirectCall ||
       ctx.occur == Once ||
       ctx.occur == OnceInAbstraction // May duplicate work?

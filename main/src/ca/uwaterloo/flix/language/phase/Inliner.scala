@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -52,7 +52,7 @@ object Inliner {
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val mayInline = def0.context.occur != DontInline && def0.context.occur != Dangerous && !def0.context.isSelfRecursive
     val belowSoft = def0.context.size < SoftInlineThreshold
     val belowHard = def0.context.size < HardInlineThreshold
     val shouldInline = belowSoft || (def0.context.isDirectCall && belowHard) || (def0.context.occur == Once && belowHard)
