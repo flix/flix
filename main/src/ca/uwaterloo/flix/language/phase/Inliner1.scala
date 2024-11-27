@@ -229,10 +229,14 @@ object Inliner1 {
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got ${lambda.tpe.arrowResultType} at $loc")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got ${lambda.tpe.arrowEffectType} at $loc")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
+              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got ${lambda.tpe.arrowResultType} at $loc")
+              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got ${lambda.tpe.arrowEffectType} at $loc")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -256,7 +260,10 @@ object Inliner1 {
 
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
-            inlineLocalAbstraction(body, List(fparam), List(e2))
+            val e = inlineLocalAbstraction(body, List(fparam), List(e2))
+            assert(e.tpe == tpe, s"expected '$tpe', got ${e.tpe} at $loc")
+            assert(e.eff == eff, s"expected '$eff', got ${e.eff} at $loc")
+            e
 
           case _ =>
             val e1 = visit(exp1)
@@ -269,7 +276,10 @@ object Inliner1 {
         // If `def1` is a single non-self call or is trivial
         // then inline the body of `def1`
         if (canInlineDef(def1.context, context0)) {
-          inlineDef(def1.exp, def1.fparams, es)
+          val e = inlineDef(def1.exp, def1.fparams, es)
+          assert(e.tpe == tpe, s"expected '$tpe', got ${e.tpe} at $loc")
+          assert(e.eff == eff, s"expected '$eff', got ${e.eff} at $loc")
+          e
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
         }
@@ -312,7 +322,7 @@ object Inliner1 {
             // Case 4:
             // If `e1` is trivial and pure, then it is safe to inline.
             // Code size and runtime are not impacted, because only trivial expressions are inlined
-            val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline
+            val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline && occur != Dangerous
             if (wantToPostInline) {
               // If `e1` is to be inlined:
               // Add map `sym` to `e1` and return `e2` without constructing the let expression.
