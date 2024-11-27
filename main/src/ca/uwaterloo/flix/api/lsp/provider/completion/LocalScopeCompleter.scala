@@ -51,7 +51,7 @@ object LocalScopeCompleter {
     if (v.exists{
       case Resolution.Declaration(_) => true
       case _ => false
-    }) Completion.DeclarationCompletion(k) :: Nil else Nil
+    }) Completion.LocalDeclarationCompletion(k) :: Nil else Nil
 
   /**
     * Tries to create a JavaClassCompletion for the given name and resolutions.
@@ -60,7 +60,7 @@ object LocalScopeCompleter {
     if (v.exists{
       case Resolution.JavaClass(_) => true
       case _ => false
-    }) Completion.JavaClassCompletion(k) :: Nil else Nil
+    }) Completion.LocalJavaClassCompletion(k) :: Nil else Nil
 
   /**
     * Tries to create a VarCompletion for the given name and resolutions.
@@ -69,7 +69,7 @@ object LocalScopeCompleter {
     if (v.exists{
       case Resolution.Var(_) => true
       case _ => false
-    }) Completion.VarCompletion(k) :: Nil else Nil
+    }) Completion.LocalVarCompletion(k) :: Nil else Nil
   }
 
   /**

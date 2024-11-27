@@ -189,7 +189,7 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(name) =>
+    case Completion.LocalVarCompletion(name) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
@@ -197,7 +197,7 @@ sealed trait Completion {
         kind     = CompletionItemKind.Variable
       )
 
-    case Completion.DeclarationCompletion(name) =>
+    case Completion.LocalDeclarationCompletion(name) =>
         CompletionItem(
           label    = name,
           sortText = Priority.toSortText(Priority.High, name),
@@ -205,7 +205,7 @@ sealed trait Completion {
           kind     = CompletionItemKind.Enum
         )
 
-    case Completion.JavaClassCompletion(name) =>
+    case Completion.LocalJavaClassCompletion(name) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
@@ -586,21 +586,21 @@ object Completion {
     *
     * @param name the name of the variable to complete.
     */
-  case class VarCompletion(name: String) extends Completion
+  case class LocalVarCompletion(name: String) extends Completion
 
   /**
    * Represents a Declaration completion
    *
    * @param name the name of the declaration to complete.
    */
-  case class DeclarationCompletion(name: String) extends Completion
+  case class LocalDeclarationCompletion(name: String) extends Completion
 
   /**
    * Represents a Java Class completion
    *
    * @param name the name of the java class to complete.
    */
-  case class JavaClassCompletion(name: String) extends Completion
+  case class LocalJavaClassCompletion(name: String) extends Completion
 
   /**
    * Represents a local def completion
