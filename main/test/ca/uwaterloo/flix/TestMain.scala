@@ -189,11 +189,4 @@ class TestMain extends AnyFunSuite {
     assert(opts.xsummary)
   }
 
-  test("--Xzhegalkin") {
-    val args = Array("--Xzhegalkin")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xzhegalkin)
-  }
-
-
 }

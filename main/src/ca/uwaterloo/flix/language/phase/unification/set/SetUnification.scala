@@ -30,13 +30,12 @@ object SetUnification {
     *
     * @param sizeThreshold       if positive, [[solve]] will give up before SVE if there are more equations than this
     * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
-    * @param zhegalkin           if true, use Zhegalkin polynomials for SVE.
     */
-  final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int, zhegalkin: Boolean)
+  final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int)
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(25, 10_000, zhegalkin = false)
+    val default: Options = Options(25, 10_000)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -54,9 +53,6 @@ object SetUnification {
 
     /** Is called when a unification phase completes. If it made progress, `state` is `true`. */
     def onExitPhase(state: State, progress: Boolean): Unit = ()
-
-    /** Is called when [[successiveVariableElimination]] is called, directly or recursively. */
-    def onSveCall(f: SetFormula): Unit = ()
   }
 
   final object SolverListener {
@@ -70,9 +66,6 @@ object SetUnification {
 
       override def onExitPhase(state: State, progress: Boolean): Unit =
         if (progress) p(stateString(state.eqs, state.subst))
-
-      override def onSveCall(f: SetFormula): Unit =
-        p(s"sve call: $f")
     }
   }
 
@@ -441,16 +434,6 @@ object SetUnification {
   }
 
   /**
-    * Runs SVE -- either using SetFormulas or Zhegalkin polynomials.
-    */
-  private def sve(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    if (opts.zhegalkin)
-      sveZhegalkin(eq)
-    else
-      sveSetFormula(eq)
-  }
-
-  /**
     * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
     *
     * SVE can always make progress, so [[None]] is never returned.
@@ -458,27 +441,7 @@ object SetUnification {
     * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]].
     */
-  private def sveSetFormula(eq: Equation)(implicit listener: SolverListener, opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    val query = mkEmptyQuery(eq.f1, eq.f2)
-    val fvs = query.variables.toList.reverse
-    try {
-      val subst = successiveVariableElimination(query, fvs)
-      Some(Nil, subst)
-    } catch {
-      case NoSolutionException() => Some(List(eq.toUnsolvable), SetSubstitution.empty)
-      case ComplexException(msg) => Some(List(eq.toTimeout(msg)), SetSubstitution.empty)
-    }
-  }
-
-  /**
-    * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
-    *
-    * SVE can always make progress, so [[None]] is never returned.
-    *
-    * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
-    * [[Equation.Status.Timeout]].
-    */
-  private def sveZhegalkin(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def sve(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val f1 = Zhegalkin.toZhegalkin(eq.f1)
     val f2 = Zhegalkin.toZhegalkin(eq.f2)
@@ -495,61 +458,6 @@ object SetUnification {
         Some(List(eq.toUnsolvable), SetSubstitution.empty)
     }
   }
-
-  /**
-    * The Successive Variable Elimination algorithm.
-    *
-    * Returns the most-general unifier of the equation `f ~ empty` where `fvs` is the free
-    * variables in `f`. If there is no unifier then [[NoSolutionException]] is thrown.
-    *
-    * Eliminates variables recursively from `fvs`.
-    *
-    * If the formula that is recursively built is ever larger than `recSizeThreshold` then
-    * [[ComplexException]] is thrown. If `recSizeThreshold` is non-positive then there is no
-    * checking.
-    */
-  private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit listener: SolverListener, opts: Options): SetSubstitution = {
-    listener.onSveCall(f)
-    fvs match {
-      case Nil =>
-        // `fvs` is empty so `f` has no variables.
-        // The remaining constants are rigid so `f` has to be empty no matter their instantiation.
-        // Return the empty substitution if `f` is equivalent to `empty`.
-        if (isEmptyEquivalent(f)) SetSubstitution.empty
-        else throw NoSolutionException()
-
-      case x :: xs =>
-        val f0 = SetSubstitution.singleton(x, Empty)(f)
-        val f1 = SetSubstitution.singleton(x, Univ)(f)
-        val recFormula = propagation(mkInter(f0, f1))
-        assertSveRecSize(recFormula)
-        val se = successiveVariableElimination(recFormula, xs)
-        val xFormula = propagation(mkUnion(se(f0), mkDifference(Var(x), se(f1))))
-        // We can safely use `unsafeExtend` because `xFormula` contains no variables and we only add
-        // each variable of `fvs` once (which is assumed to have no duplicates).
-        // `se`, `x`, and `xFormula` therefore have disjoint variables.
-        se.unsafeExtend(x, xFormula)
-    }
-  }
-
-  /** Throws [[ComplexException]] if `f` is larger than [[Options.sveRecSizeThreshold]]. */
-  private def assertSveRecSize(f: SetFormula)(implicit opts: Options): Unit = {
-    if (opts.sveRecSizeThreshold > 0) {
-      val fSize = f.size
-      if (fSize > opts.sveRecSizeThreshold) throw ComplexException(
-        s"SetFormula size ($fSize) is over recursive SVE threshold (${opts.sveRecSizeThreshold})."
-      )
-    }
-  }
-
-  /** Thrown by [[successiveVariableElimination]] to indicate that there is no solution. */
-  private case class NoSolutionException() extends RuntimeException
-
-  /**
-    * Thrown to indicate that a [[SetFormula]], an [[Equation]], or a [[SetSubstitution]] is too
-    * big.
-    */
-  private case class ComplexException(msg: String) extends RuntimeException
 
   //
   // Checking and Debugging.

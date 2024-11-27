@@ -15,50 +15,50 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.StructCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
 import ca.uwaterloo.flix.api.lsp.TextEdit
-import ca.uwaterloo.flix.language.ast.Symbol.StructSym
+import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
-object StructCompleter {
+object EnumTypeCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[StructCompletion] = {
-    val structsInModule = getStructSymsInModule(ctx)
-    getStructCompletions(structsInModule, ctx)
+  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+    val enumsInModule = getEnumSymsInModule(ctx)
+    getEnumCompletions(enumsInModule, ctx)
   }
 
-  private def getStructSymsInModule(ctx: CompletionContext)(implicit root: TypedAst.Root): List[Symbol.StructSym] = {
+  private def getEnumSymsInModule(ctx: CompletionContext)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
     val modFragment = ModuleSymFragment.parseModuleSym(ctx.word)
 
     modFragment match {
       case ModuleSymFragment.Complete(modSym) => root.modules.getOrElse(modSym, Nil).collect {
-        case sym: StructSym => sym
+        case sym: EnumSym => sym
       }
       case ModuleSymFragment.Partial(modSym, suffix) => root.modules.getOrElse(modSym, Nil).collect {
-        case sym: StructSym if matches(sym, suffix) => sym
+        case sym: EnumSym if matches(sym, suffix) => sym
       }
     }
   }
 
   /**
-    * Returns `true` if the given struct `sym` matches the given `suffix`.
+    * Returns `true` if the given enum `sym` matches the given `suffix`.
     *
     * (Color, "Col") => true
     * (Color, "Li")  => false
     */
-  private def matches(sym: StructSym, suffix: String): Boolean = {
+  private def matches(sym: EnumSym, suffix: String): Boolean = {
     sym.name.startsWith(suffix)
   }
 
-  private def getStructCompletions(structs: List[Symbol.StructSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[StructCompletion] = {
-    structs.map(sym => getStructCompletion(root.structs(sym), ctx))
+  private def getEnumCompletions(enums: List[Symbol.EnumSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+    enums.map(sym => getEnumCompletion(root.enums(sym), ctx))
   }
 
-  private def getStructCompletion(decl: TypedAst.Struct, ctx: CompletionContext): StructCompletion = {
+  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
     val sym = decl.sym
     val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.StructCompletion(sym, formatTParams(decl.tparams), internalPriority,
+    Completion.EnumCompletion(sym, formatTParams(decl.tparams), internalPriority,
       TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
   }
 
