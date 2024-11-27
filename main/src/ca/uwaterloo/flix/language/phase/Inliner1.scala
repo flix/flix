@@ -230,13 +230,13 @@ object Inliner1 {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
               assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
+              assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
               assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              assert(lambda.tpe.arrowEffectType == eff, s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
+              assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -464,6 +464,15 @@ object Inliner1 {
 
 
     visit(exp00)
+  }
+
+  private def validSubEff(eff1: Type, eff2: Type): Boolean = {
+    if (eff1 == Type.Pure) {
+      true
+    }
+    else {
+      eff1 == eff2
+    }
   }
 
   private def visitPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, VarSubst) = {
