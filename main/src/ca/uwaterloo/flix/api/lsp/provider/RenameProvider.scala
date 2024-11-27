@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -113,7 +113,31 @@ object RenameProvider {
     // Case
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
+    // Enum
+    case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
     case _ => None
+  }
+
+  private def getEnumSymOccurs(sym: Symbol.EnumSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object EnumSymConsumer extends Consumer {
+      override def consumeEnum(enm: TypedAst.Enum): Unit = consider(enm.sym, enm.sym.loc)
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = seperateEnumAndCaseSymOccur(sym)._1.foreach(enmLoc => consider(sym.sym.enumSym, enmLoc))
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+        case _ => ()
+      }
+
+    }
+
+    Visitor.visitRoot(root, EnumSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
@@ -123,7 +147,7 @@ object RenameProvider {
     }
     object CaseSymConsumer extends Consumer {
       override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, fixCaseSymUseLoc(sym))
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, seperateEnumAndCaseSymOccur(sym)._2)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
@@ -131,23 +155,32 @@ object RenameProvider {
     occurs
   }
 
-  private def fixCaseSymUseLoc(use: SymUse.CaseSymUse): SourceLocation = {
+  private def seperateEnumAndCaseSymOccur(use: SymUse.CaseSymUse): (Option[SourceLocation], SourceLocation) = {
+    // NB: it's safe to simply offset the columns to account for the enum name, since the case symbol occurrence must be on a single line
     val SymUse.CaseSymUse(sym, loc) = use
     val enumNameLen = sym.enumSym.name.length
     val occurLen = loc.sp2.col - loc.sp1.col
     val caseWithEnumNameLen = sym.enumSym.name.length + sym.name.length + 1
 
     val occurContainsEnumName = occurLen == caseWithEnumNameLen
-    val col = if (occurContainsEnumName) {
-      // NB: it's safe to simply offset the column to account for the enum name, since the case symbol occurrence must be on a single line
-      val colWithoutEnumName = (loc.sp1.col + enumNameLen + 1).toShort
-      colWithoutEnumName
-    } else {
-      loc.sp1.col
-    }
+    if (occurContainsEnumName) {
+      // Column position of separating "." between enum symbol occurrence and case symbol occurrence.
+      val sepCol = loc.sp1.col + enumNameLen
 
-    val start = SourcePosition(loc.sp1.source, loc.sp1.line, col)
-    SourceLocation(loc.isReal, start, loc.sp2)
+      // Extract case symbol occurrence SourceLocation
+      val enumEndColWithoutCaseName = sepCol.toShort
+      val enumSymEnd = SourcePosition(loc.sp1.source, loc.sp2.line, enumEndColWithoutCaseName)
+      val enumSymOccurLoc = SourceLocation(loc.isReal, loc.sp1, enumSymEnd)
+
+      // Extract enum symbol occurrence SourceLocation
+      val caseSymStartColWithoutEnumName = (sepCol + 1).toShort
+      val caseSymStart = SourcePosition(loc.sp1.source, loc.sp1.line, caseSymStartColWithoutEnumName)
+      val caseSymOccurLoc = SourceLocation(loc.isReal, caseSymStart, loc.sp2)
+
+      (Some(enumSymOccurLoc), caseSymOccurLoc)
+    } else {
+      (None, loc)
+    }
   }
 
   private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
