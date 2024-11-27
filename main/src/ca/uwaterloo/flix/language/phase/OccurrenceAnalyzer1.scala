@@ -263,7 +263,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
         val fps = fparams.map(visitFormalParam)
-        val (e1, o10) = visit(exp1)
+        val (e1, o10) = visit(exp1)(None)
         val o1 = captureVars(o10)
         val (e2, o2) = visit(exp2)
         val o3 = combineInfo(o1, o2)
