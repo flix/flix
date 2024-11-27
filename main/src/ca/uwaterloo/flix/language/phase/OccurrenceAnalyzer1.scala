@@ -415,7 +415,7 @@ object OccurrenceAnalyzer1 {
       val (ms, o) = methods0.map {
         case MonoAst.JvmMethod(ident, fparams, clo, retTpe, eff, loc) =>
           val f = fparams.map(visitFormalParam)
-          val (c, o) = visit(clo)
+          val (c, o) = visit(clo)(None)
           (OccurrenceAst1.JvmMethod(ident, f, c, retTpe, eff, loc), increment(o))
       }.unzip
       val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
