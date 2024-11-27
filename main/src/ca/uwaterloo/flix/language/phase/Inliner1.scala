@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 /**
   * The inliner optionally performs beta-reduction at call-sites.
   * TODO: Improve this documentation
@@ -1018,5 +1020,23 @@ object Inliner1 {
     }
 
     visit(pattern00)
+  }
+
+
+  /**
+    * A context shared across threads.
+    *
+    * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
+    *
+    * inlinedDefs is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
+    */
+  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Set[Symbol.DefnSym])])
+
+  private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
   }
 }
