@@ -137,9 +137,14 @@ object Inliner {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expr.LiftedExp(exp) => exp
+            case Expr.LiftedExp(exp) =>
+              assert(exp.tpe == tpe)
+              exp
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case Expr.OccurrenceExp(exp) =>
+              val e = visitExp(exp, subst0)
+              assert(e.tpe == tpe)
+              e
           }
       }
 
