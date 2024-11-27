@@ -319,7 +319,7 @@ object OccurrenceAnalyzer1 {
 
       case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
         val (e, o) = visit(exp)
-        val o1 = o :+ sym0 -> Dangerous
+        val o1 = if (declaredEff.isDefined) o :+ sym0 -> Dangerous else o
         (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
