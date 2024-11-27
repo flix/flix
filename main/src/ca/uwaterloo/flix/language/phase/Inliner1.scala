@@ -261,8 +261,8 @@ object Inliner1 {
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
             val e = inlineLocalAbstraction(body, List(fparam), List(e2))
-            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda")
-            assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining lambda")
+            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
+            assert(e.eff == eff, s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
             e
 
           case _ =>
