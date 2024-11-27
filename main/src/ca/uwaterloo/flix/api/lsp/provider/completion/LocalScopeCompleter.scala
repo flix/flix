@@ -48,19 +48,29 @@ object LocalScopeCompleter {
     * Tries to create a DeclarationCompletion for the given name and resolutions.
     */
   private def mkDeclarationCompletion(k: String, v: List[Resolution]): Iterable[Completion] =
-    if (v.exists(_.isInstanceOf[Resolution.Declaration])) Completion.DeclarationCompletion(k) :: Nil else Nil
+    if (v.exists{
+      case Resolution.Declaration(_) => true
+      case _ => false
+    }) Completion.DeclarationCompletion(k) :: Nil else Nil
 
   /**
     * Tries to create a JavaClassCompletion for the given name and resolutions.
     */
   private def mkJavaClassCompletion(k: String, v: List[Resolution]): Iterable[Completion] =
-    if (v.exists(_.isInstanceOf[Resolution.JavaClass])) Completion.JavaClassCompletion(k) :: Nil else Nil
+    if (v.exists{
+      case Resolution.JavaClass(_) => true
+      case _ => false
+    }) Completion.JavaClassCompletion(k) :: Nil else Nil
 
   /**
     * Tries to create a VarCompletion for the given name and resolutions.
     */
-  private def mkVarCompletion(k: String, v: List[Resolution]): Iterable[Completion] =
-    if (v.exists(_.isInstanceOf[Resolution.Var])) Completion.VarCompletion(k) :: Nil else Nil
+  private def mkVarCompletion(k: String, v: List[Resolution]): Iterable[Completion] = {
+    if (v.exists{
+      case Resolution.Var(_) => true
+      case _ => false
+    }) Completion.VarCompletion(k) :: Nil else Nil
+  }
 
   /**
     * Tries to create a LocalDefCompletion for the given name and resolutions.
