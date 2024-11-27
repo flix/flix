@@ -198,9 +198,14 @@ object Inliner1 {
             case Some(e1) =>
               e1 match {
                 // If `e1` is a `LiftedExp` then `e1` has already been visited
-                case SubstRange.DoneExp(exp) => exp
+                case SubstRange.DoneExp(exp) =>
+                  assert(exp.tpe == tpe)
+                  exp
                 // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-                case SubstRange.SuspendedExp(exp) => visit(exp)
+                case SubstRange.SuspendedExp(exp) =>
+                  val e = visit(exp)
+                  assert(e.tpe == tpe)
+                  e
               }
           }
           case None => // Function parameter occurrence
