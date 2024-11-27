@@ -13,6 +13,7 @@ target
 .vscode
 .bloop
 crash_report_*.txt
+.DS_Store
 
 # local development files
 **/personal/**
