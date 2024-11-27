@@ -371,7 +371,7 @@ object Inliner1 {
         // Case 1:
         // If `exp1` is pure, so it has no side effects, then it is safe to remove
         // Both code size and runtime are reduced
-        if (isPure(exp1.eff) && !isHole(exp1)) {
+        if (isPure(exp1.eff)) {
           visit(exp2)
         } else {
           val e1 = visit(exp1)
@@ -840,13 +840,6 @@ object Inliner1 {
     case MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivialExp)
-    case _ => false
-  }
-
-  private def isHole(exp0: OccurrenceAst1.Expr): Boolean = exp0 match {
-    case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Throw, _, _, _, _) => true
-    case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => true
-    case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => true
     case _ => false
   }
 
