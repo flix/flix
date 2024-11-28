@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
@@ -158,12 +158,12 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(label, name, path, ap, documentation, priority) =>
+    case Completion.AutoImportCompletion(label, name, path, ap, labelDetails , priority) =>
       CompletionItem(
         label               = label,
+        labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
         textEdit            = TextEdit(context.range, name),
-        documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
@@ -574,12 +574,12 @@ object Completion {
     *
     * @param label         the label of the completion, displayed in the completion item.
     * @param name          the name to be completed under cursor.
-    * @param path          the path of the java class we will auto-import.
+    * @param qualifiedName          the path of the java class we will auto-import.
     * @param ap            the anchor position.
-    * @param documentation a human-readable string that represents a doc-comment.
+    * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String], priority: Priority) extends Completion
+  case class AutoImportCompletion(label: String, name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
    * Represents an auto-import completion.

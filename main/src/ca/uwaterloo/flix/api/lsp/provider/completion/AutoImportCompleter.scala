@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
@@ -58,6 +59,7 @@ object AutoImportCompleter {
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
         val label = s"$className (import $qualifiedName)"
+        val labelDetails = CompletionItemLabelDetails(None, Some(qualifiedName))
           AutoImportCompletion(label, className, qualifiedName, ap, Some(qualifiedName), priority)
       }
     }
