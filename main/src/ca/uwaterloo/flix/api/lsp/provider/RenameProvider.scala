@@ -143,7 +143,14 @@ object RenameProvider {
 
     Visitor.visitRoot(root, SigSymConsumer, AllAcceptor)
 
-    occurs
+    println(root.instances)
+    val implOccurs = root
+      .instances(sym.trt)
+      .flatMap(ins => ins.defs)
+      .filter(defn => defn.sym.text == sym.name)
+      .map(defn => defn.sym.loc)
+
+    occurs ++ implOccurs
   }
 
   private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root): Set[SourceLocation] = {
