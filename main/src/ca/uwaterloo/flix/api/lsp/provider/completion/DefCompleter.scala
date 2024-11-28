@@ -42,13 +42,10 @@ object DefCompleter {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      decl.sym.toString.startsWith(word)
-    else
-      false
     val isInFile = decl.sym.loc.source.name == uri
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = decl.sym.toString.startsWith(word)
 
-    isMatch && (isPublic || isInFile)
+    isNamespace && isMatch && (isPublic || isInFile)
   }
 }
