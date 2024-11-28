@@ -1537,7 +1537,8 @@ object Desugar {
     val e = visitExp(exp0)
     val prefix = mkDebugPrefix(e, kind0, loc0)
     val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
+    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
+    DesugaredAst.Expr.UncheckedCast(call, None, Some(DesugaredAst.Type.Pure(loc0)), loc0)
   }
 
   /**
