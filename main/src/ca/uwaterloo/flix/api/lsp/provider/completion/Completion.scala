@@ -169,6 +169,16 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
+    case Completion.AutoUseCompletion(label, name, path, ap, kind) =>
+      CompletionItem(
+        label               = label,
+        sortText            = Priority.toSortText(Priority.Lower, name),
+        textEdit            = TextEdit(context.range, name),
+        insertTextFormat    = InsertTextFormat.PlainText,
+        kind                = kind,
+        additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $path;"))
+      )
+
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(
         label            = name,
@@ -561,6 +571,17 @@ object Completion {
     * @param shouldImport  a boolean indicating whether the completion should be imported.
     */
   case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param label         the label of the completion, displayed in the completion item.
+   * @param name          the name to be completed under cursor.
+   * @param path          the path of a flix construct to be used.
+   * @param ap            the anchor position for the use statement.
+   * @param kind          the kind of the completion.
+   */
+  case class AutoUseCompletion(label: String, name:String, path: String, ap: AnchorPosition, kind: CompletionItemKind) extends Completion
 
   /**
     * Represents a Snippet completion
