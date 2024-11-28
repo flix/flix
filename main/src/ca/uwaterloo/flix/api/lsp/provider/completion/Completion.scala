@@ -158,9 +158,9 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(label, name, path, ap, labelDetails , priority) =>
+    case Completion.AutoImportCompletion(name, path, ap, labelDetails , priority) =>
       CompletionItem(
-        label               = label,
+        label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
         textEdit            = TextEdit(context.range, name),
@@ -572,14 +572,13 @@ object Completion {
   /**
     * Represents an auto-import completion.
     *
-    * @param label         the label of the completion, displayed in the completion item.
     * @param name          the name to be completed under cursor.
-    * @param qualifiedName          the path of the java class we will auto-import.
+    * @param qualifiedName the path of the java class we will auto-import.
     * @param ap            the anchor position.
     * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(label: String, name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
+  case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
    * Represents an auto-import completion.

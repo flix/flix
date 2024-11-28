@@ -58,9 +58,8 @@ object AutoImportCompleter {
       availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
-        val label = s"$className (import $qualifiedName)"
         val labelDetails = CompletionItemLabelDetails(None, Some(qualifiedName))
-          AutoImportCompletion(label, className, qualifiedName, ap, Some(qualifiedName), priority)
+          AutoImportCompletion(className, qualifiedName, ap, labelDetails, priority)
       }
     }
  }
