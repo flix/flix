@@ -44,6 +44,7 @@ mod Test.Dec.Enum {
         match PolyMulti.Zero {
             case PolyMulti.Two(a, b) => a and b
             case PolyMulti.Tuple(t) => fst(t) and snd(t)
+            case _ => true
         }
 
     pub enum Recursive {
