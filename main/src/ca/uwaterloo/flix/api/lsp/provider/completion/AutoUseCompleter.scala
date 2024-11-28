@@ -78,7 +78,7 @@ object AutoUseCompleter {
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
-      decl.sym.toString.startsWith(word)
+      false
     else
       decl.sym.text.startsWith(word)
     val isInFile = decl.sym.loc.source.name == uri

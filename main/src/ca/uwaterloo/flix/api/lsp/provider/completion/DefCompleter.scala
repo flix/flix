@@ -46,7 +46,7 @@ object DefCompleter {
     val isMatch = if (isNamespace)
       decl.sym.toString.startsWith(word)
     else
-      decl.sym.text.startsWith(word)
+      false
     val isInFile = decl.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
