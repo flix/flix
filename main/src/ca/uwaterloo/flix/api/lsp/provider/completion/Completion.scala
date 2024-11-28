@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
@@ -174,9 +174,12 @@ sealed trait Completion {
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
-      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        Some(qualifiedName))
       CompletionItem(
-        label               = label,
+        label               = name,
+        labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(context.range, snippet),
