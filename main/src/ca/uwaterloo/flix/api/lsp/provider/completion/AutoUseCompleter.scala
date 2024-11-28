@@ -16,9 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, Resolution, LocalScope}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object AutoUseCompleter {
@@ -45,15 +46,17 @@ object AutoUseCompleter {
     *    let s = bar
     *  }}}
     */
-  def getCompletions(err: ResolutionError.UndefinedName, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] =
-    defCompletions(err.env, err.ap, ctx)
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] =
+    defCompletions(err.qn, err.env, err.ap)
 
   /**
     * Returns a List of Completion for defs.
     */
-  private def defCompletions(env: LocalScope, ap: AnchorPosition, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
+  private def defCompletions(qn: QName, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
+    if (qn.namespace.idents.nonEmpty)
+      return Nil
     root.defs.values
-      .filter(decl => matchesDef(decl, ctx.word, ctx.uri) && outOfScope(decl, env))
+      .filter(decl => matchesDef(decl, qn.ident.name) && outOfScope(decl, env))
       .map(Completion.AutoUseDefCompletion(_,ap))
   }
 
@@ -72,18 +75,13 @@ object AutoUseCompleter {
   /**
     * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
-  private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
+  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      false
-    else
-      decl.sym.text.startsWith(word)
-    val isInFile = decl.sym.loc.source.name == uri
+    val isMatch = decl.sym.text.startsWith(word)
 
-    isMatch && (isPublic || isInFile)
+    isMatch && isPublic
   }
 
 }
