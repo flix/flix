@@ -212,17 +212,6 @@ pub def bug!(m: String): a = masked_cast({
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
-///
-/// Prints the argument unless it is ().
-///
-@Internal
-pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    typematch x {
-        case _: Unit => ()
-        case _: _    => println(x)
-    }
-}
-
 pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)
     case Impure(a -> b \ ef)
