@@ -158,10 +158,10 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(label, name, path, ap, documentation) =>
+    case Completion.AutoImportCompletion(label, name, path, ap, documentation, priority) =>
       CompletionItem(
         label               = label,
-        sortText            = Priority.toSortText(Priority.Lower, name),
+        sortText            = Priority.toSortText(priority, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
@@ -577,8 +577,9 @@ object Completion {
     * @param path          the path of the java class we will auto-import.
     * @param ap            the anchor position.
     * @param documentation a human-readable string that represents a doc-comment.
+    * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String], priority: Priority) extends Completion
 
   /**
    * Represents an auto-import completion.
