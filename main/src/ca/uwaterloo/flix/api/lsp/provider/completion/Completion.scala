@@ -169,14 +169,22 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
-    case Completion.AutoUseCompletion(label, name, path, ap, kind) =>
+    case Completion.AutoUseDefCompletion(decl, ap) =>
+      val qualifiedName = decl.sym.toString
+      val name = decl.sym.name
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
       CompletionItem(
         label               = label,
-        sortText            = Priority.toSortText(Priority.Lower, name),
-        textEdit            = TextEdit(context.range, name),
-        insertTextFormat    = InsertTextFormat.PlainText,
-        kind                = kind,
-        additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $path;"))
+        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation       = Some(decl.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = List(useTextEdit)
       )
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
@@ -575,13 +583,10 @@ object Completion {
   /**
    * Represents an auto-import completion.
    *
-   * @param label         the label of the completion, displayed in the completion item.
-   * @param name          the name to be completed under cursor.
-   * @param path          the path of a flix construct to be used.
+   * @param decl          the definition of the function to complete and use.
    * @param ap            the anchor position for the use statement.
-   * @param kind          the kind of the completion.
    */
-  case class AutoUseCompletion(label: String, name:String, path: String, ap: AnchorPosition, kind: CompletionItemKind) extends Completion
+  case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion

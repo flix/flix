@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.CompletionItemKind.Function
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, Resolution, LocalScope}
@@ -46,21 +45,16 @@ object AutoUseCompleter {
     *    let s = bar
     *  }}}
     */
-  def getCompletions(err: ResolutionError.UndefinedName, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseCompletion] =
+  def getCompletions(err: ResolutionError.UndefinedName, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] =
     defCompletions(err.qn.ident.name, err.env, err.ap, ctx)
 
   /**
     * Returns a List of Completion for defs.
     */
-  private def defCompletions(word: String, env: LocalScope, ap: AnchorPosition, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseCompletion] = {
+  private def defCompletions(word: String, env: LocalScope, ap: AnchorPosition, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
     root.defs.values
       .filter(decl => matchesDef(decl, word, ctx.uri) && outOfScope(decl, env))
-      .map { decl =>
-        val path = decl.sym.toString
-        val name = decl.sym.name
-        val label = s"$name (use $path)"
-        Completion.AutoUseCompletion(label, name, path, ap, Function)
-      }
+      .map(Completion.AutoUseDefCompletion(_,ap))
   }
 
   /**
