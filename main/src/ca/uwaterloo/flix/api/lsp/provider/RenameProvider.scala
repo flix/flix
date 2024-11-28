@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Position, Range, ResponseStat
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -199,7 +199,28 @@ object RenameProvider {
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
+
+    case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
+    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
     case _ => None
+  }
+
+  private def getTypeAliasSymOccurs(sym: Symbol.TypeAliasSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object TypeAliasSymConsumer extends Consumer {
+      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = consider(alias.sym, alias.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeAliasSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
