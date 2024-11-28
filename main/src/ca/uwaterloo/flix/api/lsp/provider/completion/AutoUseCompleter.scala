@@ -58,7 +58,7 @@ object AutoUseCompleter {
       .map { decl =>
         val path = decl.sym.toString
         val name = decl.sym.name
-        val label = s"${name} (use ${path})"
+        val label = s"$name (use $path)"
         Completion.AutoUseCompletion(label, name, path, ap, Function)
       }
   }
