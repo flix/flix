@@ -554,11 +554,11 @@ object Completion {
   /**
     * Represents an auto-import completion.
     *
-    * @param name          the name of the completion.
-    * @param path          the path of the completion.
+    * @param label         the label of the completion, displayed in the completion item.
+    * @param name          the name to be completed under cursor.
+    * @param path          the path of the java class we will auto-import.
     * @param ap            the anchor position.
     * @param documentation a human-readable string that represents a doc-comment.
-    * @param shouldImport  a boolean indicating whether the completion should be imported.
     */
   case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
 
