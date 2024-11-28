@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
@@ -33,7 +33,7 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = defn match {
     case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -44,8 +44,8 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None, _) => Validation.success(SubstitutionTree.empty)
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = sig match {
+    case KindedAst.Sig(_, _, None, _) => Validation.Success(SubstitutionTree.empty)
     case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -56,7 +56,7 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult2(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -95,7 +95,7 @@ object ConstraintSolverInterface {
 
       val (leftovers, tree) = ConstraintSolver2.solveAll(constrs)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
-        case Nil => Validation.success(tree)
+        case Nil => Validation.Success(tree)
         case err :: _ => Validation.toSoftFailure(tree, toTypeError(err, renv))
       }
   }
@@ -161,9 +161,9 @@ object ConstraintSolverInterface {
     *   instance Order[b]
     * }}}
     */
-  private def expandTraitEnv(tenv: TraitEnv, tconstrs: List[Ast.TraitConstraint]): TraitEnv = {
+  private def expandTraitEnv(tenv: TraitEnv, tconstrs: List[TraitConstraint]): TraitEnv = {
     tconstrs.foldLeft(tenv) {
-      case (acc, Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, _), arg, loc)) =>
+      case (acc, TraitConstraint(TraitConstraint.Head(sym, _), arg, loc)) =>
         acc.addInstance(sym, arg)
     }
   }
@@ -187,10 +187,10 @@ object ConstraintSolverInterface {
     *   Elm[b] ~ String
     * }}}
     */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
-      case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
-        val assoc = Ast.AssocTypeDef(tpe1, tpe2)
+      case (acc, EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
+        val assoc = AssocTypeDef(tpe1, tpe2)
         acc + (sym -> assoc)
     }
   }
