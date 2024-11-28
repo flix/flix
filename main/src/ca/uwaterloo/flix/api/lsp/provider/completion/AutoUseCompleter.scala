@@ -46,14 +46,14 @@ object AutoUseCompleter {
     *  }}}
     */
   def getCompletions(err: ResolutionError.UndefinedName, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] =
-    defCompletions(err.qn.ident.name, err.env, err.ap, ctx)
+    defCompletions(err.env, err.ap, ctx)
 
   /**
     * Returns a List of Completion for defs.
     */
-  private def defCompletions(word: String, env: LocalScope, ap: AnchorPosition, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
+  private def defCompletions(env: LocalScope, ap: AnchorPosition, ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
     root.defs.values
-      .filter(decl => matchesDef(decl, word, ctx.uri) && outOfScope(decl, env))
+      .filter(decl => matchesDef(decl, ctx.word, ctx.uri) && outOfScope(decl, env))
       .map(Completion.AutoUseDefCompletion(_,ap))
   }
 
