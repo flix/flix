@@ -16,7 +16,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.02") {
@@ -26,7 +26,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.03") {
@@ -36,7 +36,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.04") {
@@ -46,7 +46,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.05") {
@@ -56,7 +56,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.06") {
@@ -66,7 +66,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result)
+    expectEnum(result, "Example", cases = 1)
   }
 
   test("Enum.07") {
@@ -76,7 +76,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result, derivations = 1)
+    expectEnum(result, "Example", cases = 1, derivations = 1)
   }
 
   test("Enum.08") {
@@ -86,7 +86,7 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result, derivations = 1)
+    expectEnum(result, "Example", cases = 1, derivations = 1)
   }
 
   test("Enum.09") {
@@ -96,11 +96,11 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectEnum("Example", 1, result, derivations = 1)
+    expectEnum(result, "Example", cases = 1, derivations = 1)
   }
 
   /** Asserts that `result` contains an enum named `name` with `cases` amount of cases. */
-  private def expectEnum(name: String, cases: Int, result: (Option[TypedAst.Root], List[CompilationMessage]), derivations: Int = 0): Unit = result match {
+  private def expectEnum(result: (Option[TypedAst.Root], List[CompilationMessage]), name: String, cases: Int, derivations: Int = 0): Unit = result match {
     case (Some(root), _) =>
       root.enums.find { case (sym, _) => sym.toString == name } match {
         case Some((_, enm)) =>
