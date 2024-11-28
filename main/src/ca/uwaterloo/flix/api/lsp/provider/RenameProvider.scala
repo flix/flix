@@ -196,7 +196,29 @@ object RenameProvider {
     // Ops
     case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
     case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
+    // Type Vars
+    case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
+    case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
     case _ => None
+  }
+
+  private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object TypeVarSymConsumer extends Consumer {
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.loc)
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Var(sym, loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeVarSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root): Set[SourceLocation] = {
