@@ -1,5 +1,5 @@
 /// A function that sends every element of a list
-def sendAll(l: List[Int32], s: Sender[Int32]): Unit \ Global + IO =
+def sendAll(l: List[Int32], s: Sender[Int32]): Unit \ Global =
     match l {
         case Nil     => ()
         case x :: xs => Channel.send(x, s); sendAll(xs, s)
@@ -14,9 +14,9 @@ def recvN(n: Int32, r: Receiver[Int32]): List[Int32] \ Global + NonDet =
     }
 
 /// Spawn a process for send and wait, and print the result.
-def main(): Unit \ Global + IO = region rc {
+def main(): Unit \ Global + NonDet = {
     let l = 1 :: 2 :: 3 :: Nil;
     let (tx, rx) = Channel.buffered(100);
-    spawn sendAll(l, tx) @ rc;
-    spawn recvN(List.length(l), rx) @ rc
+    spawn sendAll(l, tx);
+    spawn recvN(List.length(l), rx)
 }

@@ -809,10 +809,9 @@ object Namer {
       val e = exp.map(visitExp(_, ns0))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
-    case DesugaredAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.Spawn(e1, e2, loc)
+    case DesugaredAst.Expr.Spawn(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Spawn(e, loc)
 
     case DesugaredAst.Expr.ParYield(frags, exp, loc) =>
       val e = visitExp(exp, ns0)

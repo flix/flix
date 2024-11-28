@@ -1390,12 +1390,11 @@ object Resolver {
         case (rs, d) => ResolvedAst.Expr.SelectChannel(rs, d, loc)
       }
 
-    case NamedAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, env0)
-      val e2Val = resolveExp(exp2, env0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) =>
-          ResolvedAst.Expr.Spawn(e1, e2, loc)
+    case NamedAst.Expr.Spawn(exp, loc) =>
+      val eVal = resolveExp(exp, env0)
+      mapN(eVal) {
+        case e =>
+          ResolvedAst.Expr.Spawn(e, loc)
       }
 
     case NamedAst.Expr.ParYield(frags, exp, loc) =>

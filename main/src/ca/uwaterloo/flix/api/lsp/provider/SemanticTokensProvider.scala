@@ -581,7 +581,7 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
-    case Expr.Spawn(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Spawn(exp, _, _, _) => visitExp(exp)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       val e0 = visitExp(exp)

@@ -160,24 +160,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal effect in a spawn expression.
-    *
-    * @param eff the illegal effect.
-    * @param loc the source location of the spawn.
-    */
-  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
-    override def summary: String = "Illegal spawn effect"
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a primitive effect.
-         |
-         |${code(loc, "illegal effect.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that the Java class in a catch clause is not a Throwable.
     *
     * @param loc the location of the catch parameter.

@@ -58,7 +58,7 @@ mod Channel {
     ///
     pub def timeout(d: Duration): Receiver[Unit] \ {Global, IO} =
         let (tx, rx) = Channel.buffered(1);
-        spawn { Thread.sleep(d); send((), tx) } @ Static;
+        spawn { Thread.sleep(d); send((), tx) };
         rx
 
 }

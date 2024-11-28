@@ -196,7 +196,7 @@ object KindedAst {
 
     case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Spawn(exp: Expr, loc: SourceLocation) extends Expr
 
     case class ParYield(frags: List[ParYieldFragment], exp: Expr, loc: SourceLocation) extends Expr
 

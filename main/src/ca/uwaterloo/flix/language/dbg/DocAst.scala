@@ -234,8 +234,8 @@ object DocAst {
       if (ds.isEmpty) defName else App(defName, ds)
     }
 
-    def Spawn(d1: Expr, d2: Expr): Expr =
-      InRegion(Keyword("spawn", d1), d2)
+    def Spawn(d1: Expr): Expr =
+      Keyword("spawn", d1)
 
     def Cast(d: Expr, tpe: Type): Expr =
       DoubleKeyword("cast", d, "as", Right(tpe))

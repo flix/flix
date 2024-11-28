@@ -987,34 +987,17 @@ object GenExpression {
         mv.visitInsn(ATHROW)
 
       case AtomicOp.Spawn =>
-        val List(exp1, exp2) = exps
+        val List(exp) = exps
         // Add source line number for debugging (can fail when spawning thread)
         addSourceLine(mv, loc)
 
-        exp2 match {
-          // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
+        // Compile the expression, putting a function implementing the Runnable interface on the stack
+        compileExpr(exp)
+        mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
-            // Compile the expression, putting a function implementing the Runnable interface on the stack
-            compileExpr(exp1)
-            mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-            // make a thread and run it
-            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-            mv.visitInsn(POP)
-
-          case _ =>
-            // Compile the expression representing the region
-            compileExpr(exp2)
-            mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-            // Compile the expression, putting a function implementing the Runnable interface on the stack
-            compileExpr(exp1)
-            mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-            // Call the Region's `spawn` method
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
-        }
+        // make a thread and run it
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+        mv.visitInsn(POP)
 
         // Put a Unit value on the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)

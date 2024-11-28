@@ -26,10 +26,10 @@ def recvWithTimeout(c: Receiver[Int32]): Int32 \ { Global, NonDet, IO } =
 /// Creates two channels.
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
-def main(): Unit \ { Global, NonDet, IO } = region rc {
+def main(): Unit \ { Global, NonDet, IO } = {
     let (tx1, rx1) = Channel.buffered(1);
     let (tx2, rx2) = Channel.buffered(1);
-    spawn slow(123, tx1) @ rc;
-    spawn slow(456, tx2) @ rc;
+    spawn slow(123, tx1);
+    spawn slow(456, tx2);
     (recvWithDefault(rx1) + recvWithTimeout(rx2)) |> println
 }

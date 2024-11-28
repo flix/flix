@@ -225,7 +225,7 @@ object PatMatch {
         val chans = rules.map(_.chan)
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp)
 
-      case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.Spawn(exp, _, _, _) => visitExp(exp)
 
       case Expr.ParYield(frags, exp, _, _, loc) =>
         val fragsExps = frags.map(_.exp)

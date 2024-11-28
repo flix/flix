@@ -295,13 +295,8 @@ object Safety {
         case SelectChannelRule(_, chan, body) => visitExp(chan) ++ visitExp(body)
       } ++ default.map(visitExp).getOrElse(Nil)
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
-      val illegalSpawnEffect = {
-        if (hasControlEffects(exp1.eff)) List(IllegalSpawnEffect(exp1.eff, exp1.loc))
-        else Nil
-      }
-
-      illegalSpawnEffect ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Spawn(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       frags.flatMap(fragment => visitExp(fragment.exp)) ++ visitExp(exp)

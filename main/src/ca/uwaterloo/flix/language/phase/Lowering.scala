@@ -719,11 +719,10 @@ object Lowering {
         case ((sym, c), e) => LoweredAst.Expr.Let(sym, c, e, t, eff, loc)
       }
 
-    case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+    case TypedAst.Expr.Spawn(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e), t, eff, loc)
 
     case TypedAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {

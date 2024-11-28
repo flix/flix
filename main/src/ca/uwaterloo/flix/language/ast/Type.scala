@@ -434,6 +434,11 @@ object Type {
   val Global: Type = Type.Cst(TypeConstructor.Effect(Symbol.Global), SourceLocation.Unknown)
 
   /**
+    * The union of the primitive effects.
+    */
+  def PrimitiveEffs: Type = Type.mkUnion(Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)), SourceLocation.Unknown)
+
+  /**
     * Represents the Sys effect.
     */
   val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)

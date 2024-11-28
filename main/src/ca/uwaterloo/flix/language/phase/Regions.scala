@@ -255,8 +255,8 @@ object Regions {
       val defaultErrors = default.map(visitExp).getOrElse(Nil)
       rulesErrors ++ defaultErrors ++ checkType(tpe, loc)
 
-    case Expr.Spawn(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+    case Expr.Spawn(exp, tpe, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.ParYield(frags, exp, tpe, _, loc) =>
       val fragsErrors = frags.flatMap {

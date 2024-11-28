@@ -902,15 +902,13 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Spawn(exp1, exp2, loc) =>
-        // TODO it is unclear what the type rules of spawn should be
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
-        val (_, _) = visitExp(exp1)
-        val (tpe2, _) = visitExp(exp2)
-        c.expectType(expected = regionType, actual = tpe2, exp2.loc)
+      case Expr.Spawn(exp, loc) =>
+        val (_, eff) = visitExp(exp)
+        val allowedEffs = Type.PrimitiveEffs
+        val expectedEff = Type.mkIntersection(Type.freshVar(Kind.Eff, loc), allowedEffs, loc)
+        c.expectType(expectedEff, actual = eff, loc)
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(Type.IO, regionVar, loc)
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, _) =>

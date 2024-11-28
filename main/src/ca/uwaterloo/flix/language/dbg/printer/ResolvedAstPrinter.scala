@@ -107,7 +107,7 @@ object ResolvedAstPrinter {
     case Expr.GetChannel(_, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _) => DocAst.Expr.Unknown
-    case Expr.Spawn(_, _, _) => DocAst.Expr.Unknown
+    case Expr.Spawn(_, _) => DocAst.Expr.Unknown
     case Expr.ParYield(_, _, _) => DocAst.Expr.Unknown
     case Expr.Lazy(_, _) => DocAst.Expr.Unknown
     case Expr.Force(_, _) => DocAst.Expr.Unknown

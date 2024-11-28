@@ -340,9 +340,8 @@ object EffectVerifier {
       default.foreach { d => visitExp(d) }
       // TODO region stuff
       ()
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.Spawn(exp, tpe, eff, loc) =>
+      visitExp(exp)
       // TODO ?
       ()
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>

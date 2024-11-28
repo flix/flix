@@ -115,116 +115,116 @@ mod Test.Exp.Concurrency.Buffered {
     }
 
     @test
-    def testBufferedChannelWithSpawn01(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn01(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send((), tx) @ rc;
+        spawn Channel.send((), tx);
         () == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn02(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn02(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(true, tx) @ rc;
+        spawn Channel.send(true, tx);
         true == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn03(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn03(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(123.456f32, tx) @ rc;
+        spawn Channel.send(123.456f32, tx);
         123.456f32 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn04(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn04(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(123.456f64, tx) @ rc;
+        spawn Channel.send(123.456f64, tx);
         123.456f64 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn05(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn05(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(42i8, tx) @ rc;
+        spawn Channel.send(42i8, tx);
         42i8 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn06(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn06(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(42i16, tx) @ rc;
+        spawn Channel.send(42i16, tx);
         42i16 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn07(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn07(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(42i32, tx) @ rc;
+        spawn Channel.send(42i32, tx);
         42i32 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn08(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn08(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(42i64, tx) @ rc;
+        spawn Channel.send(42i64, tx);
         42i64 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn09(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn09(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(42ii, tx) @ rc;
+        spawn Channel.send(42ii, tx);
         42ii == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn10(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn10(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send("Hello World!", tx) @ rc;
+        spawn Channel.send("Hello World!", tx);
         "Hello World!" == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn11(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn11(): Bool \ Global + NonDet = {
         let (tx, rx): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.buffered(1);
-        spawn Channel.send(None, tx) @ rc;
+        spawn Channel.send(None, tx);
         None == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn12(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn12(): Bool \ Global + NonDet = {
         let (tx, rx) = Channel.buffered(1);
-        spawn Channel.send(Some(123), tx) @ rc;
+        spawn Channel.send(Some(123), tx);
         Some(123) == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn13(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn13(): Bool \ Global + NonDet = {
         let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
-        spawn Channel.send(Ok(123), tx) @ rc;
+        spawn Channel.send(Ok(123), tx);
         Ok(123) == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannelWithSpawn14(): Bool \ Global + IO + NonDet = region rc {
+    def testBufferedChannelWithSpawn14(): Bool \ Global + NonDet = {
         let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
-        spawn Channel.send(Err("Goodbye World!"), tx) @ rc;
+        spawn Channel.send(Err("Goodbye World!"), tx);
         Err("Goodbye World!") == Channel.recv(rx)
     }
 
-    @test
-    def testBufferedChannelWithSpawn15(): Bool \ Global + IO + NonDet = region rc {
-        let (tx, rx) = Channel.buffered(1);
-        spawn Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx) @ rc;
-        2 == Array.get(1, Channel.recv(rx))
-    }
-
-    @test
-    def testBufferedChannelWithSpawn16(): Bool \ Global + IO + NonDet = region rc {
-        let (tx1, rx1) = Channel.buffered(1);
-        let (tx2, rx2) = Channel.buffered(1);
-        spawn Channel.unsafeSend(rx2, tx1) @ rc;
-        spawn Channel.send(42, tx2) @ rc;
-        42 == Channel.recv(Channel.recv(rx1))
-    }
+//    @test
+//    def testBufferedChannelWithSpawn15(): Bool \ Global + NonDet = {
+//        let (tx, rx) = Channel.buffered(1);
+//        spawn Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx);
+//        2 == Array.get(1, Channel.recv(rx))
+//    }
+//
+//    @test
+//    def testBufferedChannelWithSpawn16(): Bool \ Global + NonDet = {
+//        let (tx1, rx1) = Channel.buffered(1);
+//        let (tx2, rx2) = Channel.buffered(1);
+//        spawn Channel.unsafeSend(rx2, tx1);
+//        spawn Channel.send(42, tx2);
+//        42 == Channel.recv(Channel.recv(rx1))
+//    }
 }

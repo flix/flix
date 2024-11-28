@@ -518,9 +518,8 @@ object Visitor {
         rules.foreach(visitSelectChannelRule)
         default.foreach(visitExpr)
 
-      case Expr.Spawn(exp1, exp2, _, _, _) =>
-        visitExpr(exp1)
-        visitExpr(exp2)
+      case Expr.Spawn(exp, _, _, _) =>
+        visitExpr(exp)
 
       case Expr.ParYield(frags, exp, _, _, _) =>
         visitExpr(exp)

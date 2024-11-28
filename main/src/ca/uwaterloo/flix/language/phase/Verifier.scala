@@ -391,13 +391,12 @@ object Verifier {
           check(expected = MonoType.Region)(actual = tpe, loc)
 
         case AtomicOp.Spawn =>
-          val List(t1, t2) = ts
-          t1 match {
+          val List(t) = ts
+          t match {
             case MonoType.Arrow(List(MonoType.Unit), _) => ()
-            case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
+            case _ => failMismatchedShape(t, "Arrow(List(Unit), _)", loc)
           }
 
-          check(expected = MonoType.Region)(actual = t2, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
         case AtomicOp.GetField(field) =>

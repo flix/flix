@@ -452,8 +452,8 @@ object Indexer {
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.Spawn(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)

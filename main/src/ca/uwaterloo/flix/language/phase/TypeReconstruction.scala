@@ -526,12 +526,11 @@ object TypeReconstruction {
       val d = default.map(visitExp(_))
       TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+    case KindedAst.Expr.Spawn(exp, loc) =>
+      val e = visitExp(exp)
       val tpe = Type.Unit
-      val eff = Type.IO
-      TypedAst.Expr.Spawn(e1, e2, tpe, eff, loc)
+      val eff = e.eff
+      TypedAst.Expr.Spawn(e, tpe, eff, loc)
 
     case KindedAst.Expr.ParYield(frags, exp, loc) =>
       val e = visitExp(exp)

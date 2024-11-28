@@ -36,28 +36,28 @@ mod Test.Handler.Spawn {
         }
 
     @Test
-    def testSpawn01(): Bool \ Global + NonDet + IO =
-        let result = region rc {
+    def testSpawn01(): Bool \ Global + NonDet =
+        let result = {
             let (tx, rx) = Channel.unbuffered();
-            spawn runGen(tx) @ rc;
+            spawn runGen(tx);
             Channel.recv(rx)
         };
         Assert.eq(42, result)
 
     @Test
-    def testSpawn02(): Bool \ Global + NonDet + IO =
-        let result = region rc {
+    def testSpawn02(): Bool \ Global + NonDet =
+        let result = {
             let (tx, rx) = Channel.unbuffered();
-            spawn runAsk(tx) @ rc;
+            spawn runAsk(tx);
             Channel.recv(rx)
         };
         Assert.eq(42, result)
 
     @Test
-    def testSpawn03(): Bool \ Global + NonDet + IO =
-        let result = region rc {
+    def testSpawn03(): Bool \ Global + NonDet =
+        let result = {
             let (tx, rx) = Channel.unbuffered();
-            spawn runGenAsk(tx) @ rc;
+            spawn runGenAsk(tx);
             Channel.recv(rx)
         };
         Assert.eq(84, result)

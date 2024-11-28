@@ -89,7 +89,7 @@ object TypedAstPrinter {
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
+    case Expr.Spawn(exp, _, _, _) => DocAst.Expr.Spawn(print(exp))
     case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
     case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))

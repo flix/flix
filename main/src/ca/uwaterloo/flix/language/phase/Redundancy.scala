@@ -770,10 +770,8 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
+    case Expr.Spawn(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       val (used, env1, fvs) = visitParYieldFragments(frags, env0, rc)

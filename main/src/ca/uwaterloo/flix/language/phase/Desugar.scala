@@ -761,10 +761,9 @@ object Desugar {
       val es = exp.map(visitExp)
       Expr.SelectChannel(rs, es, loc)
 
-    case WeededAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Spawn(e1, e2, loc)
+    case WeededAst.Expr.Spawn(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Spawn(e, loc)
 
     case WeededAst.Expr.ParYield(frags, exp, loc) =>
       val fs = frags.map(visitParYieldFragment)

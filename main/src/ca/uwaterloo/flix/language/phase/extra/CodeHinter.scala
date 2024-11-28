@@ -274,8 +274,8 @@ object CodeHinter {
         case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
       } ++ default.map(visitExp).getOrElse(Nil)
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Spawn(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       frags.flatMap {

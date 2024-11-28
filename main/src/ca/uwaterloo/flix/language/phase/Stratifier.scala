@@ -366,10 +366,9 @@ object Stratifier {
       val rs = rules.map(visitSelectChannelRule)
       Expr.SelectChannel(rs, e, tpe, eff, loc)
 
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Spawn(e1, e2, tpe, eff, loc)
+    case Expr.Spawn(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.Spawn(e, tpe, eff, loc)
 
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

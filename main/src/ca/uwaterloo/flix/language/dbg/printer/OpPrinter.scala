@@ -199,7 +199,7 @@ object OpPrinter {
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
     case (AtomicOp.ArrayLoad, List(d1, d2)) => ArrayLoad(d1, d2)
-    case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)
+    case (AtomicOp.Spawn, List(d)) => Spawn(d)
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)

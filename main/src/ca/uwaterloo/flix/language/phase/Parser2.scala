@@ -2634,7 +2634,6 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr)
       expression()
-      scopeName()
       close(mark, TreeKind.Expr.Spawn)
     }
 

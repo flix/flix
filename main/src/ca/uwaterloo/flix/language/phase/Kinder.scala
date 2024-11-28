@@ -696,10 +696,9 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.SelectChannel(rules, exp, tvar, evar, loc)
 
-    case ResolvedAst.Expr.Spawn(exp10, exp20, loc) =>
-      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
-      KindedAst.Expr.Spawn(exp1, exp2, loc)
+    case ResolvedAst.Expr.Spawn(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Spawn(exp, loc)
 
     case ResolvedAst.Expr.ParYield(frags0, exp0, loc) =>
       val frags = frags0.map {
