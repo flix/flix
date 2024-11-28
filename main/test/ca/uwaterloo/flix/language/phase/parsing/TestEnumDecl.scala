@@ -99,7 +99,12 @@ class TestEnumDecl extends AnyFunSuite with TestUtils {
     expectEnum(result, "Example", cases = 1, derivations = 1)
   }
 
-  /** Asserts that `result` contains an enum named `name` with `cases` amount of cases. */
+  /**
+    * Asserts that `result` contains the described enum.
+    * @param name the expected name of the enum (with namespace)
+    * @param cases the expected number of defined cases
+    * @param derivations the expected number of trait derivations
+    */
   private def expectEnum(result: (Option[TypedAst.Root], List[CompilationMessage]), name: String, cases: Int, derivations: Int = 0): Unit = result match {
     case (Some(root), _) =>
       root.enums.find { case (sym, _) => sym.toString == name } match {
