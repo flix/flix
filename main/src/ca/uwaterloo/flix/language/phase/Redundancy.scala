@@ -664,9 +664,6 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
     case Expr.Without(exp, effUse, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
       visitExp(exp, env0, rc)
@@ -989,13 +986,13 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isPure(exp)
 
   /**
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isMustUseType(exp.tpe)
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.

@@ -354,8 +354,6 @@ object SyntaxTree {
 
       case object UncheckedCast extends Expr
 
-      case object UncheckedMaskingCast extends Expr
-
       case object Unsafe extends Expr
 
       case object Use extends Expr

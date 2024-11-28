@@ -226,10 +226,6 @@ object Safety {
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp) ++ castErrors
 
-    case Expr.UncheckedMaskingCast(exp, _, _, loc) =>
-      val permissionErrors = checkAllPermissions(loc.security, loc)
-      permissionErrors ++ visitExp(exp)
-
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 

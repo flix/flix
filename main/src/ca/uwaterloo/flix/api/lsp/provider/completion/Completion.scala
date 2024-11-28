@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
 import java.lang.reflect.{Field, Method}
@@ -158,16 +158,33 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(label, name, path, ap, documentation, shouldImport) =>
-      val priority = if (shouldImport) Priority.Lowest else Priority.Lower
+    case Completion.AutoImportCompletion(label, name, path, ap, documentation) =>
       CompletionItem(
         label               = label,
-        sortText            = Priority.toSortText(priority, name),
+        sortText            = Priority.toSortText(Priority.Lower, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
-        additionalTextEdits = if (shouldImport) List(Completion.mkTextEdit(ap, s"import $path")) else Nil
+        additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
+      )
+
+    case Completion.AutoUseDefCompletion(decl, ap) =>
+      val qualifiedName = decl.sym.toString
+      val name = decl.sym.name
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
+      CompletionItem(
+        label               = label,
+        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation       = Some(decl.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = List(useTextEdit)
       )
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
@@ -190,12 +207,38 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.VarCompletion(name) =>
+    case Completion.LocalVarCompletion(name) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
         textEdit = TextEdit(context.range, name),
         kind     = CompletionItemKind.Variable
+      )
+
+    case Completion.LocalDeclarationCompletion(name) =>
+        CompletionItem(
+          label    = name,
+          sortText = Priority.toSortText(Priority.High, name),
+          textEdit = TextEdit(context.range, name),
+          kind     = CompletionItemKind.Enum
+        )
+
+    case Completion.LocalJavaClassCompletion(name) =>
+      CompletionItem(
+        label    = name,
+        sortText = Priority.toSortText(Priority.High, name),
+        textEdit = TextEdit(context.range, name),
+        kind     = CompletionItemKind.Class
+      )
+
+    case Completion.LocalDefCompletion(sym, fparams) =>
+      val snippet = sym.text + fparams.zipWithIndex.map{ case (fparam, idx) => s"$${${idx + 1}:${fparam.sym.text}}" }.mkString("(", ", ", ")")
+      CompletionItem(
+        label    = sym.text,
+        sortText = Priority.toSortText(Priority.High, sym.text),
+        textEdit = TextEdit(context.range, snippet),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind     = CompletionItemKind.Function
       )
 
     case Completion.DefCompletion(decl) =>
@@ -529,13 +572,21 @@ object Completion {
   /**
     * Represents an auto-import completion.
     *
-    * @param name          the name of the completion.
-    * @param path          the path of the completion.
+    * @param label         the label of the completion, displayed in the completion item.
+    * @param name          the name to be completed under cursor.
+    * @param path          the path of the java class we will auto-import.
     * @param ap            the anchor position.
     * @param documentation a human-readable string that represents a doc-comment.
-    * @param shouldImport  a boolean indicating whether the completion should be imported.
     */
-  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String], shouldImport: Boolean) extends Completion
+  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param decl          the definition of the function to complete and use.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -561,7 +612,29 @@ object Completion {
     *
     * @param name the name of the variable to complete.
     */
-  case class VarCompletion(name: String) extends Completion
+  case class LocalVarCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Declaration completion
+   *
+   * @param name the name of the declaration to complete.
+   */
+  case class LocalDeclarationCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Java Class completion
+   *
+   * @param name the name of the java class to complete.
+   */
+  case class LocalJavaClassCompletion(name: String) extends Completion
+
+  /**
+   * Represents a local def completion
+   *
+   * @param sym the symbol of the local function
+   * @param fparams the formal parameters of the local function
+   */
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
 
   /**
     * Represents a Def completion

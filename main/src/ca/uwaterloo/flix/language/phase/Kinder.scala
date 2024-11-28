@@ -595,10 +595,6 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
 
-    case ResolvedAst.Expr.UncheckedMaskingCast(exp0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.UncheckedMaskingCast(exp, loc)
-
     case ResolvedAst.Expr.Without(exp0, eff, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Without(exp, eff, loc)

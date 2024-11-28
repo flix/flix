@@ -45,6 +45,7 @@ object CompletionItem {
   */
 case class CompletionItem(
   label: String,
+  labelDetails: Option[CompletionItemLabelDetails] = None,
   sortText: String,
   filterText: Option[String] = None,
   textEdit: TextEdit,
@@ -57,6 +58,7 @@ case class CompletionItem(
 
   def toJSON: JValue =
     ("label" -> label) ~
+      ("labelDetails" -> labelDetails.map(_.toJSON)) ~
       ("sortText" -> sortText) ~
       ("filterText" -> filterText) ~
       ("textEdit" -> textEdit.toJSON) ~

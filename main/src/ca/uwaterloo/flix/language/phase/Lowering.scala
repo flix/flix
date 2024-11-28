@@ -589,9 +589,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Cast(e, dt, declaredEff, t, eff, loc)
 
-    case TypedAst.Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
-
     case TypedAst.Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 

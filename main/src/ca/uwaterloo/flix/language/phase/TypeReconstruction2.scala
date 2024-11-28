@@ -388,14 +388,6 @@ object TypeReconstruction2 {
           TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
       }
 
-    case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
-      // Later it is erased and the effect of the subexpression is unmasked
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = Type.Pure
-      TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
-
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
