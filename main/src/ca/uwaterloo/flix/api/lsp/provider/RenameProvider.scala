@@ -128,7 +128,57 @@ object RenameProvider {
     // Sig
     case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
     case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
+    // Effects
+    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
+    case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
     case _ => None
+  }
+
+  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object EffectSymConsumer extends Consumer {
+      override def consumeEff(eff: TypedAst.Effect): Unit = consider(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = sepEffAndOpSymOccur(sym)._1.foreach(effLoc => consider(sym.sym.eff, effLoc))
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Effect(sym), loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EffectSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def sepEffAndOpSymOccur(symUse: SymUse.OpSymUse): (Option[SourceLocation], SourceLocation) = {
+    val SymUse.OpSymUse(sym, loc) = symUse
+    val effNameLen = sym.name.length
+    val occurLen = loc.sp2.col - loc.sp1.col
+    val opWithEffNameLen = effNameLen + sym.name.length + 1
+
+    val occurContainsEffName = occurLen == opWithEffNameLen
+    if (occurContainsEffName) {
+      val sepCol = loc.sp1.col + effNameLen
+
+      // Extract effect symbol occurrence
+      val effEndColWithoutOpName = sepCol.toShort
+      val effSymEnd = SourcePosition(loc.sp2.source, loc.sp2.line, effEndColWithoutOpName)
+      val effSymLoc = SourceLocation(loc.isReal, loc.sp1, effSymEnd)
+
+      // Extract op symbol occurrence
+      val opStartColWithoutOpName = (sepCol + 1).toShort
+      val opSymStart = SourcePosition(loc.sp1.source, loc.sp1.line, opStartColWithoutOpName)
+      val opSymLoc = SourceLocation(loc.isReal, opSymStart, loc.sp2)
+
+      (Some(effSymLoc), opSymLoc)
+    } else {
+      (None, loc)
+    }
   }
 
   private def getSigSymOccurs(sym: Symbol.SigSym)(implicit root: Root): Set[SourceLocation] = {
