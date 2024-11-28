@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.readyToComplete
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
@@ -46,8 +47,10 @@ object AutoUseCompleter {
     *    let s = bar
     *  }}}
     */
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] =
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (!readyToComplete(err.qn.ident.name)) return Nil
     defCompletions(err.qn, err.env, err.ap)
+  }
 
   /**
     * Returns a List of Completion for defs.
