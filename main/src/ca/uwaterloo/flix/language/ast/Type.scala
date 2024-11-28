@@ -429,6 +429,11 @@ object Type {
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
 
   /**
+    * Represents the Global effect.
+    */
+  val Global: Type = Type.Cst(TypeConstructor.Effect(Symbol.Global), SourceLocation.Unknown)
+
+  /**
     * Represents the Sys effect.
     */
   val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
@@ -761,16 +766,16 @@ object Type {
   def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
-    * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Sender[tpe]` with the given optional source location `loc`.
     */
-  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Sender, loc), tpe, loc), reg, loc)
+  def mkSender(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Sender, loc), tpe, loc)
 
   /**
-    * Returns the type `Receiver[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Receiver[tpe]` with the given optional source location `loc`.
     */
-  def mkReceiver(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc), reg, loc)
+  def mkReceiver(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc)
 
   /**
     * Returns the Lazy type with the given source location `loc`.

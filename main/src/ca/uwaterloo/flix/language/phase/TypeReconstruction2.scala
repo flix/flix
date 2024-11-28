@@ -504,10 +504,10 @@ object TypeReconstruction2 {
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), subst(evar), loc)
+    case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
+      val e = visitExp(exp)
+      val eff = Type.mkUnion(e.eff, Type.Global, loc)
+      TypedAst.Expr.NewChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)

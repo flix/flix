@@ -188,7 +188,7 @@ object NamedAst {
 
     case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
     case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
 

@@ -36,6 +36,7 @@ object Symbol {
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
   val FsWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
+  val Global: EffectSym = mkEffectSym(Name.RootNS, Ident("Global", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
@@ -45,7 +46,7 @@ object Symbol {
     * The set of all primitive effects defined in the Prelude.
     */
   val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
-    Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
+    Env, Exec, FsRead, FsWrite, Global, IO, Net, NonDet, Sys
   ))
 
   /**
@@ -56,6 +57,7 @@ object Symbol {
     case Exec => true
     case FsRead => true
     case FsWrite => true
+    case Global => true
     case IO => true
     case Net => true
     case NonDet => true
@@ -73,6 +75,7 @@ object Symbol {
     case "Exec" => Exec
     case "FsRead" => FsRead
     case "FsWrite" => FsWrite
+    case "Global" => Global
     case "IO" => IO
     case "Net" => Net
     case "NonDet" => NonDet

@@ -62,6 +62,15 @@ pub eff FsWrite
 type alias FileIO = {FsRead, FsWrite}
 
 ///
+/// The uninterpretable Global effect.
+///
+/// The `Global` effect represents a region with a global scope.
+///
+/// The `Global` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Global
+
+///
 /// The uninterpretable IO effect.
 ///
 /// The `IO` effect represents the actions not described by any other effect.

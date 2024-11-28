@@ -2172,7 +2172,7 @@ object Weeder2 {
         case ("INT64_GE", e1 :: e2 :: Nil) => Validation.Success(Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
         case ("CHANNEL_GET", e1 :: Nil) => Validation.Success(Expr.GetChannel(e1, loc))
         case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.Success(Expr.PutChannel(e1, e2, loc))
-        case ("CHANNEL_NEW", e1 :: e2 :: Nil) => Validation.Success(Expr.NewChannel(e1, e2, loc))
+        case ("CHANNEL_NEW", e :: Nil) => Validation.Success(Expr.NewChannel(e, loc))
         case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => Validation.Success(Expr.ArrayNew(e1, e2, e3, loc))
         case ("ARRAY_LENGTH", e1 :: Nil) => Validation.Success(Expr.ArrayLength(e1, loc))
         case ("ARRAY_LOAD", e1 :: e2 :: Nil) => Validation.Success(Expr.ArrayLoad(e1, e2, loc))

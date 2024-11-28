@@ -85,7 +85,7 @@ object TypedAstPrinter {
     case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
     case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methods.map(printJvmMethod))
-    case Expr.NewChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
