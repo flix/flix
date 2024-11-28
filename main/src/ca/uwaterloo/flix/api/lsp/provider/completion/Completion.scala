@@ -169,6 +169,24 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
+    case Completion.AutoUseDefCompletion(decl, ap) =>
+      val qualifiedName = decl.sym.toString
+      val name = decl.sym.name
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
+      CompletionItem(
+        label               = label,
+        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation       = Some(decl.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = List(useTextEdit)
+      )
+
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(
         label            = name,
@@ -561,6 +579,14 @@ object Completion {
     * @param documentation a human-readable string that represents a doc-comment.
     */
   case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param decl          the definition of the function to complete and use.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion
