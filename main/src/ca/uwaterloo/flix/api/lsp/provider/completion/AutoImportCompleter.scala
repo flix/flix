@@ -56,7 +56,7 @@ object AutoImportCompleter {
     availableClasses.keys.filter(_.startsWith(prefix)).flatMap { className =>
       availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
         val qualifiedName = namespace.mkString(".") + "." + className
-        val priority = mkPriotiry(qualifiedName)
+        val priority = mkPriority(qualifiedName)
         val label = s"$className (import $qualifiedName)"
           AutoImportCompletion(label, className, qualifiedName, ap, Some(qualifiedName), priority)
       }
@@ -66,23 +66,26 @@ object AutoImportCompleter {
   /**
     * Returns the priority of the completion item based on the qualified name.
     *
-    * We will those packages a Low priority:
+    * We give these packages the `Low` priority:
     *  - java.lang
     *  - java.io
     *  - java.nio
     *  - java.util
     *
-    * And we will give those packages a Lowest priority:
+    * We give these packages the `Lowest` priority:
     * - com.sun
     * - sun.
     *
-    * Other packages will have a Lower priority.
+    * Every other package gets the `Lower` priority.
     */
-  private def mkPriotiry(qualifiedName: String): Priority = {
-    val corePackages = List("java.lang", "java.io", "java.nio", "java.util")
-    val sunPackages = List("com.sun", "sun.")
-    if (corePackages.exists(qualifiedName.startsWith)) Priority.Low
-    else if (sunPackages.exists(qualifiedName.startsWith)) Priority.Lowest
-    else Priority.Lower
+  private def mkPriority(qualifiedName: String): Priority = {
+    val frequentlyUsedPackages = List("java.lang", "java.io", "java.nio", "java.util")
+    val rarelyUsedPackages = List("com.sun", "sun.")
+    if (frequentlyUsedPackages.exists(qualifiedName.startsWith))
+      Priority.Low
+    else if (rarelyUsedPackages.exists(qualifiedName.startsWith))
+      Priority.Lowest
+    else
+      Priority.Lower
   }
 }
