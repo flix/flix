@@ -1254,12 +1254,6 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
-    case NamedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val eVal = resolveExp(exp, env0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.UncheckedMaskingCast(e, loc)
-      }
-
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>

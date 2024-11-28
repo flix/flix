@@ -693,10 +693,6 @@ object Desugar {
       val eff = declaredEff.map(visitType)
       Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.UncheckedMaskingCast(e, loc)
-
     case WeededAst.Expr.Unsafe(exp, loc) =>
       // We desugar an unsafe expression to an unchecked cast to pure.
       val e = visitExp(exp)
@@ -1541,8 +1537,7 @@ object Desugar {
     val e = visitExp(exp0)
     val prefix = mkDebugPrefix(e, kind0, loc0)
     val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-    DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
+    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
   }
 
   /**

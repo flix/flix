@@ -459,9 +459,6 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visitExpr(exp)
-
       case Expr.Without(exp, effUse, _, _, _) =>
         visitExpr(exp)
         visitEffectSymUse(effUse)

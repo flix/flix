@@ -86,7 +86,6 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
-    case Expr.UncheckedMaskingCast(exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))

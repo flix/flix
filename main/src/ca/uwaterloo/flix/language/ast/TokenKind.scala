@@ -97,7 +97,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
       case TokenKind.KeywordLet => "'let'"
-      case TokenKind.KeywordMaskedCast => "'masked_cast'"
       case TokenKind.KeywordMatch => "'match'"
       case TokenKind.KeywordMod => "'mod'"
       case TokenKind.KeywordMut => "'mut'"
@@ -250,7 +249,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
     case TokenKind.KeywordLet => true
-    case TokenKind.KeywordMaskedCast => true
     case TokenKind.KeywordMatch => true
     case TokenKind.KeywordMod => true
     case TokenKind.KeywordNew => true
@@ -422,7 +420,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
          | TokenKind.KeywordUnsafe
-         | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
          | TokenKind.KeywordNew
          | TokenKind.KeywordStaticUppercase
@@ -741,8 +738,6 @@ object TokenKind {
   case object KeywordLazy extends TokenKind
 
   case object KeywordLet extends TokenKind
-
-  case object KeywordMaskedCast extends TokenKind
 
   case object KeywordMatch extends TokenKind
 

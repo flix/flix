@@ -162,8 +162,6 @@ object KindedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class UncheckedMaskingCast(exp: Expr, loc: SourceLocation) extends Expr
-
     case class Without(exp: Expr, eff: EffectSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr

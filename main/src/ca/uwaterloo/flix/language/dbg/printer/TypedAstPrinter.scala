@@ -72,7 +72,6 @@ object TypedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.UncheckedMaskingCast(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
