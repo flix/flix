@@ -197,7 +197,7 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = masked_cast({
+pub def bug!(m: String): a = unchecked_cast({
     System.err.println("*".repeat(80));
     System.err.println("**") ;
     System.err.println("**  BUG: ${m}") ;
@@ -205,7 +205,7 @@ pub def bug!(m: String): a = masked_cast({
     System.err.println("*".repeat(80));
     System.err.println("");
     ?panic
-})
+} as _ \ {})
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.

@@ -194,9 +194,6 @@ object Regions {
     case Expr.UncheckedCast(exp, _, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.UncheckedMaskingCast(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
     case Expr.Without(exp, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 

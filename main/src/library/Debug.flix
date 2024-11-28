@@ -17,9 +17,10 @@ mod Debug {
     /// Note: For internal use only. The actual `dbg(exp)` expression is parsed and ultimately rewritten to call this function.
     ///
     @Internal
-    pub def debugWithPrefix(prefix: String, x: a): a \ IO =
+    pub def debugWithPrefix(prefix: String, x: a): a = unchecked_cast({
         System.out.println("${prefix}%{x}");
         x
+    } as _ \ {})
 
     ///
     /// Escapes the given string per Flix's escaping rules.
