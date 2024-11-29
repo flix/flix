@@ -16,11 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
-import java.lang.reflect.{Constructor, Executable, Method}
 
 object CompletionUtils {
 
@@ -146,8 +146,52 @@ object CompletionUtils {
   }
 
   /**
-    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
-    * Currently, we will only offer them if at least three characters have been typed.
+    * Filters the definitions in the given `root` by the given `word` and `env`.
+    * If `whetherInScope` is `true`, we return the matched defs in the root module or in the scope
+    * If `whetherInScope` is `false`, we return the matched defs not in the root module and not in the scope
     */
+  def filterDefsByScope(word: String, root: TypedAst.Root, env: LocalScope, whetherInScope: Boolean): Iterable[TypedAst.Def] = {
+    val matchedDefs = root.defs.filter{case (_, decl) => matchesDef(decl, word)}
+    val rootModuleMatches = matchedDefs.collect{
+        case (sym, decl) if whetherInScope && sym.namespace.isEmpty => decl
+    }
+    val scopeMatches = matchedDefs.collect{
+      case (sym, decl) if sym.namespace.nonEmpty && checkScope(decl, env, whetherInScope) => decl
+    }
+    rootModuleMatches ++ scopeMatches
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` is not in the given `scope`.
+    */
+  private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
+    val thisName = decl.sym.toString
+    val inScope = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Def(thatName, _, _, _)) =>
+        thisName == thatName.toString
+      case _ => false
+    })
+    if (whetherInScope)
+      inScope
+    else
+      !inScope
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` should be included in the suggestions.
+    */
+  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
+    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
+
+    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
+    val isMatch = decl.sym.text.startsWith(word)
+
+    isMatch && isPublic
+  }
+
+  /**
+   * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+   * Currently, we will only offer them if at least three characters have been typed.
+   */
   def shouldComplete(word: String): Boolean = word.length >= 3
 }
