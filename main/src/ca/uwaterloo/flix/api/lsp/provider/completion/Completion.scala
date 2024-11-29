@@ -244,13 +244,14 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl) =>
-      val name = decl.sym.toString
-      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+    case Completion.DefCompletion(decl, qualified) =>
+      val qualifiedName = decl.sym.toString
+      val label = if (qualified) qualifiedName else decl.sym.name
+      val snippet = CompletionUtils.getApplySnippet(qualifiedName, decl.spec.fparams)(context)
       CompletionItem(
-        label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        filterText       = Some(CompletionUtils.getFilterTextForName(name)),
+        label            = CompletionUtils.getLabelForNameAndSpec(label, decl.spec)(flix),
+        sortText         = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText       = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
         documentation    = Some(decl.spec.doc.text),
@@ -634,7 +635,7 @@ object Completion {
   /**
    * Represents a local def completion
    *
-   * @param sym the symbol of the local function
+   * @param sym     the symbol of the local function
    * @param fparams the formal parameters of the local function
    */
   case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
@@ -642,9 +643,10 @@ object Completion {
   /**
     * Represents a Def completion
     *
-    * @param decl the def decl.
+    * @param decl       the def decl.
+    * @param qualified  indicate whether to use a qualified label
     */
-  case class DefCompletion(decl: TypedAst.Def) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, qualified: Boolean) extends Completion
 
   /**
     * Represents a Signature completion
