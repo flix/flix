@@ -176,7 +176,7 @@ sealed trait Completion {
       val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
       val labelDetails = CompletionItemLabelDetails(
         Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
-        Some(qualifiedName))
+        Some(s" use $qualifiedName"))
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
