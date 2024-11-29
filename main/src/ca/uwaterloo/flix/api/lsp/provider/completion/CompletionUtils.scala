@@ -162,7 +162,8 @@ object CompletionUtils {
   }
 
   /**
-    * Returns `true` if the given definition `decl` is not in the given `scope`.
+    * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
+    * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
     */
   private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
     val thisName = decl.sym.toString
