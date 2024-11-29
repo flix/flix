@@ -36,9 +36,8 @@ object LocalScopeCompleter {
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] =
    err.env.env.m.foldLeft((List.empty[Completion])){case (acc, (name, resolutions)) =>
       acc ++ mkDeclarationCompletionForExpr(name, resolutions) ++ mkJavaClassCompletion(name, resolutions) ++
-        mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(resolutions) ++
-        mkDefCompletion(err.qn.ident.name, err.env)
-   }
+        mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(resolutions)
+   } ++ mkDefCompletion(err.qn.ident.name, err.env)
 
   /**
     * Returns a list of completions for UndefinedType.
