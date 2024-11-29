@@ -29,7 +29,7 @@ object DefCompleter {
     root.defs.values.filter(matchesDef(_, word, uri))
       .flatMap(decl =>
         if (CompletionUtils.canApplySnippet(decl.spec.fparams)(context))
-          Some(Completion.DefCompletion(decl))
+          Some(Completion.DefCompletion(decl, qualified = true))
         else
           None
       )
