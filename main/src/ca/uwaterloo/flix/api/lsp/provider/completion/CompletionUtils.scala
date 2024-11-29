@@ -28,10 +28,10 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
+  def getParamsLabelForEnumTags(cas: TypedAst.Case)(implicit flix: Flix): String = {
     cas.tpes.length match {
-      case 0 => name
-      case _ => s"$name(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
+      case 0 => ""
+      case _ => s"(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
     }
   }
 
