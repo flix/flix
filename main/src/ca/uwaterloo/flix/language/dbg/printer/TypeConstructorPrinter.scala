@@ -45,6 +45,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.Str => DocAst.Type.Str
     case TypeConstructor.Regex => DocAst.Type.Regex
     case TypeConstructor.Arrow(arity) => DocAst.Type.AsIs(s"Arrow($arity)")
+    case TypeConstructor.ArrowWithoutEffect(arity) => DocAst.Type.AsIs(s"ArrowWithoutEffect($arity)")
     case TypeConstructor.RecordRowEmpty => DocAst.Type.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(label) => DocAst.Type.AsIs(s"RecordRowExtend($label)")
     case TypeConstructor.Record => DocAst.Type.Record
@@ -62,6 +63,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.JvmMethod(method) => DocAst.Type.JvmMethod(method)
     case TypeConstructor.JvmField(field) => DocAst.Type.JvmField(field)
     case TypeConstructor.Array => DocAst.Type.AsIs("Array")
+    case TypeConstructor.ArrayWithoutRegion => DocAst.Type.AsIs("ArrayWithoutRegion")
     case TypeConstructor.Vector => DocAst.Type.AsIs("Vector")
     case TypeConstructor.Tuple(l) => DocAst.Type.AsIs(s"Tuple($l)")
     case TypeConstructor.Relation => DocAst.Type.AsIs("Relation")
@@ -71,17 +73,20 @@ object TypeConstructorPrinter {
     case TypeConstructor.Not => DocAst.Type.AsIs("Not")
     case TypeConstructor.And => DocAst.Type.AsIs("And")
     case TypeConstructor.Or => DocAst.Type.AsIs("Or")
-    case TypeConstructor.Pure => DocAst.Type.AsIs("Pure")
+    case TypeConstructor.Pure => DocAst.Type.Pure
     case TypeConstructor.Univ => DocAst.Type.AsIs("Univ")
     case TypeConstructor.Complement => DocAst.Type.AsIs("Complement")
     case TypeConstructor.Union => DocAst.Type.AsIs("Union")
     case TypeConstructor.Intersection => DocAst.Type.AsIs("Intersection")
+    case TypeConstructor.Difference => DocAst.Type.AsIs("Difference")
+    case TypeConstructor.SymmetricDiff => DocAst.Type.AsIs("SymmetricDiff")
     case TypeConstructor.Effect(sym) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.CaseComplement(_) => DocAst.Type.AsIs("CaseComplement")
     case TypeConstructor.CaseUnion(_) => DocAst.Type.AsIs("CaseUnion")
     case TypeConstructor.CaseIntersection(_) => DocAst.Type.AsIs("CaseIntersection")
     case TypeConstructor.CaseSet(syms, _) => DocAst.Type.CaseSet(syms)
     case TypeConstructor.RegionToStar => DocAst.Type.AsIs("Region")
+    case TypeConstructor.RegionWithoutRegion => DocAst.Type.AsIs("RegionWithoutRegion")
     case TypeConstructor.Error(_, _) => DocAst.Type.Error
   }
 

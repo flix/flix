@@ -26,7 +26,7 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Type, body: Expr)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
@@ -110,7 +110,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr, next: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -322,8 +322,6 @@ object DocAst {
 
     case class Tuple(elms: List[Type]) extends Atom
 
-    case class Arrow(args: List[Type], res: Type) extends Composite
-
     case class ArrowEff(args: List[Type], res: Type, eff: Type) extends Composite
 
     case object RecordRowEmpty extends Atom
@@ -352,7 +350,15 @@ object DocAst {
 
     case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym]) extends Atom
 
-    /** inserted string printed as-is (assumed not to require parenthesis) */
+    case object Pure extends Atom
+
+    /** Represents the union of IO and all regions. */
+    case object Impure extends Atom
+
+    /** Represents Impure and all algebraic effect. */
+    case object ControlImpure extends Atom
+
+    /** Inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 
     val Void: Type = AsIs("Void")
@@ -399,6 +405,8 @@ object DocAst {
 
     val Error: Type = AsIs("Error")
 
+    def Arrow(args: List[Type], res: Type): Type = ArrowEff(args, res, Type.Pure)
+
     def Alias(sym: Symbol.TypeAliasSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
     def AssocType(sym: Symbol.AssocTypeSym, arg: Type): Type = App(AsIs(sym.toString), List(arg))
@@ -412,25 +420,6 @@ object DocAst {
     def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
     def Var(sym: Symbol.KindedTypeVarSym): Type = AsIs(sym.toString)
-  }
-
-  sealed trait Eff
-
-  object Eff {
-
-    case object Pure extends Eff
-
-    /** Represents the union of IO and all regions. */
-    case object Impure extends Eff
-
-    /** Represents Impure and all algebraic effect. */
-    case object ControlImpure extends Eff
-
-    case class AsIs(s: String) extends Eff
-
-    /** Represents the top effect. */
-    def Univ: Eff = AsIs("Univ")
-
   }
 
 }
