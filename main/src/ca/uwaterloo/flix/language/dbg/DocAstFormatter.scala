@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.dbg.Doc.*
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 import ca.uwaterloo.flix.language.dbg.DocAst.*
+import ca.uwaterloo.flix.language.dbg.printer.TypePrinter
 
 import scala.annotation.tailrec
 
@@ -50,7 +51,7 @@ object DocAstFormatter {
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
-        val effectf = formatEffect(effect, paren = false)
+        val effectf = formatEffectSuffix(effect)
         val bodyf = format(body)
         val d = group(
           text("def") +: text(name) |:: tuple(args) |::
@@ -248,7 +249,7 @@ object DocAstFormatter {
         val args = parameters.map(aux(_, paren = false))
         val colon = if (resType.isDefined) text(":") else Doc.empty
         val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
-        val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
+        val effectf = effect.map(formatEffectSuffix(_)).getOrElse(Doc.empty)
         val equals = if (effect.isDefined) effectf +: text("=") else text("=")
         val bodyf = format(body)
         group(
@@ -329,23 +330,25 @@ object DocAstFormatter {
         text("Unit")
       case Type.AsIs(s) =>
         text(s)
-      case Type.App(obj, Nil) =>
-        text(obj)
       case Type.App(obj, args) =>
-        text(obj) |:: squareTuple(args.map(formatType(_, paren = false)))
+        formatType(obj) |:: squareTuple(args.map(formatType(_, paren = false)))
       case Type.Tuple(elms) =>
         tuple(elms.map(formatType(_, paren = false)))
-      case arrow@Type.Arrow(_, _) =>
-        val (curriedArgs, res) = collectArrowTypes(arrow)
-        val formattedArgs = curriedArgs.map {
-          case ts@Type.Tuple(_) :: Nil =>
+      case Type.ArrowEff(args0, res, eff) =>
+        val args = args0 match {
+          case ts@(Type.Tuple(_) :: Nil) =>
             tuple(ts.map(formatType(_, paren = false)))
-          case ts@_ :: Nil =>
-            tuplish(ts.map(formatType(_, paren = true)))
           case ts =>
             tuplish(ts.map(formatType(_, paren = false)))
         }
-        group(nest(sep(text(" ->") |:: breakWith(" "), formattedArgs :+ formatType(res))))
+        val resForm = if (res.isInstanceOf[Type.ArrowEff]) formatType(res, paren = false) else formatType(res)
+        group(args +: text("->") +\: resForm |:: formatEffectSuffix(eff))
+      case Type.RecordRowEmpty =>
+        text("()")
+      case Type.RecordRowExtend(label, value, rest) =>
+        parens(text(label) +: text("=") +: formatType(value, paren = false) +: text("|") +\: formatType(rest, paren = false))
+      case Type.RecordOf(t) =>
+        formatType(Type.App(Type.AsIs("Record"), List(t)), paren)
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
@@ -361,6 +364,12 @@ object DocAstFormatter {
           case None =>
             curlyTuple(exsf)
         }
+      case Type.SchemaRowEmpty =>
+        text("#()")
+      case Type.SchemaRowExtend(label, value, rest) =>
+        text("#") |:: parens(text(label) +: text("=") +: formatType(value, paren = false) +: text("|") +\: formatType(rest, paren = false))
+      case Type.SchemaOf(t) =>
+        formatType(Type.App(Type.AsIs("Schema"), List(t)), paren)
       case Type.SchemaEmpty =>
         text("#{}")
       case se@Type.SchemaExtend(_, _, _) =>
@@ -386,6 +395,38 @@ object DocAstFormatter {
         formatJavaClass(constructor.getClass)
       case Type.JvmMethod(method) =>
         formatJavaClass(method.getClass)
+      case Type.JvmField(field) =>
+        formatJavaClass(field.getClass)
+      case Type.Not(t) =>
+        text("not") +: formatType(t)
+      case Type.And(t1, t2) =>
+        formatType(t1) +: text("and") +: formatType(t2)
+      case Type.Or(t1, t2) =>
+        formatType(t1) +: text("or") +: formatType(t2)
+      case Type.Complement(t) =>
+        text("~") +: formatType(t)
+      case Type.Union(t1, t2) =>
+        formatType(t1) +: text("+") +: formatType(t2)
+      case Type.Intersection(t1, t2) =>
+        formatType(t1) +: text("&") +: formatType(t2)
+      case Type.Difference(t1, t2) =>
+        formatType(t1) +: text("-") +: formatType(t2)
+      case Type.SymmetricDiff(t1, t2) =>
+        formatType(t1) +: text("xor") +: formatType(t2)
+      case Type.CaseSet(_) =>
+        text(meta("Unknown"))
+      case Type.CaseComplement(t) =>
+        text("~~") +: formatType(t)
+      case Type.CaseUnion(t1, t2) =>
+        formatType(t1) +: text("++") +: formatType(t2)
+      case Type.CaseIntersection(t1, t2) =>
+        formatType(t1) +: text("&&") +: formatType(t2)
+      case Type.Pure =>
+        text("Pure")
+      case Type.Impure =>
+        text("Impure")
+      case Type.ControlImpure =>
+        text("ControlImpure")
       case Type.Meta(s) =>
         text(meta(s))
     }
@@ -393,22 +434,6 @@ object DocAstFormatter {
       case _: Type.Composite if paren => parens(d)
       case _: Type.Composite | _: Type.Atom => d
     }
-  }
-
-  /**
-    * Collects a sequence of [[Type.Arrow]] into a shallow list of their
-    * arguments and the final return type.
-    */
-  private def collectArrowTypes(tpe: Type): (List[List[Type]], Type) = {
-    @tailrec
-    def chase(tpe0: Type, acc: List[List[Type]]): (List[List[Type]], Type) = {
-      tpe0 match {
-        case Type.Arrow(args, res) => chase(res, args :: acc)
-        case other => (acc.reverse, other)
-      }
-    }
-
-    chase(tpe, List())
   }
 
   /**
@@ -451,11 +476,10 @@ object DocAstFormatter {
     chase(tpe, List())
   }
 
-  private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
-    case Eff.Pure => empty
-    case Eff.Impure => text(" ") |:: text("\\") +: text("Impure")
-    case Eff.ControlImpure => text(" ") |:: text("\\") +: text("ControlImpure")
-    case Eff.AsIs(s) => text(" ") |:: text("\\") +: text(s)
+  /** Returns ` \ ef` if `ef` is not pure, otherwise nothing */
+  private def formatEffectSuffix(effect: DocAst.Type)(implicit i: Indent): Doc = effect match {
+    case DocAst.Type.Pure => empty
+    case other => text(" ") |:: text("\\") +: formatType(other, paren = false)
   }
 
 }
