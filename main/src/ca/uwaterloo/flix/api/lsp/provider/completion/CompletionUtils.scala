@@ -143,4 +143,9 @@ object CompletionUtils {
     }
   }
 
+  /**
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
+  def shouldComplete(word: String): Boolean = word.length >= 3
 }
