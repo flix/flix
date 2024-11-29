@@ -18,7 +18,7 @@ object MonoAstPrinter {
       case MonoAst.Def(sym, MonoAst.Spec(_, ann, mod, fparams, _, retTpe, eff), exp, _) =>
         val fps = fparams.map(printFormalParam)
         val rtpe = TypePrinter.print(retTpe)
-        val ef = TypePrinter.printAsEffect(eff)
+        val ef = TypePrinter.print(eff)
         val e = print(exp)
         DocAst.Def(ann, mod, sym, fps, rtpe, ef, e)
     }.toList
@@ -34,7 +34,7 @@ object MonoAstPrinter {
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.printAsEffect(eff)), print(exp1), print(exp2))
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))

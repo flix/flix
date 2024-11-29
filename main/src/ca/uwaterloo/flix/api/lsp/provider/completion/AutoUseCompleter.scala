@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.filterDefsByScope
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.shouldComplete
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object AutoUseCompleter {
@@ -46,8 +47,10 @@ object AutoUseCompleter {
     *    let s = bar
     *  }}}
     */
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] =
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (!shouldComplete(err.qn.ident.name)) return Nil
     defCompletions(err.qn, err.env, err.ap)
+  }
 
   /**
     * Returns a List of Completion for defs.
@@ -55,33 +58,7 @@ object AutoUseCompleter {
   private def defCompletions(qn: QName, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
     if (qn.namespace.idents.nonEmpty)
       return Nil
-    root.defs.values
-      .filter(decl => matchesDef(decl, qn.ident.name) && outOfScope(decl, env))
-      .map(Completion.AutoUseDefCompletion(_,ap))
+    filterDefsByScope(qn.ident.name, root, env, whetherInScope = false)
+      .map(Completion.AutoUseDefCompletion(_, ap))
   }
-
-  /**
-    * Returns `true` if the given definition `decl` is not in the given `scope`.
-    */
-  private def outOfScope(decl: TypedAst.Def, scope: LocalScope): Boolean = {
-    val thisName = decl.sym.toString
-    scope.m.values.forall(_.exists {
-      case Resolution.Declaration(Def(thatName, _, _, _)) =>
-        thisName != thatName.toString
-      case _ => true
-    })
-  }
-
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
-  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
-
-    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = decl.sym.text.startsWith(word)
-
-    isMatch && isPublic
-  }
-
 }
