@@ -242,19 +242,6 @@ object GitHub {
   }
 
   /**
-    * Gets the project release with the highest semantic version.
-    */
-  def getLatestRelease(project: Project, apiKey: Option[String]): Result[Release, PackageError] = {
-    getReleases(project, apiKey).flatMap {
-      releases =>
-        releases.maxByOption(_.version) match {
-          case None => Err(PackageError.NoReleasesFound(project))
-          case Some(latest) => Ok(latest)
-        }
-    }
-  }
-
-  /**
     * Gets the project release with the relevant semantic version.
     */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {

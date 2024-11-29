@@ -22,7 +22,7 @@ pub eff Logger {
     ///
     /// Logs the given message `m` at the given severity `s`.
     ///
-    pub def log(s: Severity, m: String): Unit
+    def log(s: Severity, m: String): Unit
 
 }
 
@@ -70,6 +70,6 @@ mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
 }

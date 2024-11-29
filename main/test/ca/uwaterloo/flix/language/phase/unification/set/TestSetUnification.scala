@@ -29,7 +29,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
 
   implicit val genOpts: Options = Options.default
   implicit val solveOpts: SetUnification.Options = SetUnification.Options.default
-  implicit val listener: SolverListener = SolverListener.doNothing
+  implicit val listener: SolverListener = SolverListener.DoNothing
 
   test("TestSetUnification.EqSelf") {
     val seed = System.currentTimeMillis()

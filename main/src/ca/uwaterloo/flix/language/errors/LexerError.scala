@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
-sealed trait LexerError extends CompilationMessage with Recoverable {
+sealed trait LexerError extends CompilationMessage {
   val kind = "Lexer Error"
 }
 
@@ -30,7 +30,7 @@ object LexerError {
     *
     * @param loc The location of the opening "\*".
     */
-  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
+  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Block-comment nested too deep."
 
     override def message(formatter: Formatter): String = {
@@ -51,7 +51,7 @@ object LexerError {
     *
     * @param loc The location of the double dotted number literal.
     */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError with Recoverable {
+  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Number has two decimal dots."
 
     override def message(formatter: Formatter): String = {
@@ -71,7 +71,7 @@ object LexerError {
     *
     * @param loc The location of the double e number literal.
     */
-  case class DoubleEInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+  case class DoubleEInNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Number has two scientific notation indicators."
 
     override def message(formatter: Formatter): String = {
@@ -91,7 +91,7 @@ object LexerError {
     *
     * @param loc The location of the number literal.
     */
-  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Number has sequence of '_'"
 
     override def message(formatter: Formatter): String = {
@@ -112,7 +112,7 @@ object LexerError {
     *
     * @param loc The location of the '.'.
     */
-  case class FreeDot(loc: SourceLocation) extends LexerError with Recoverable {
+  case class FreeDot(loc: SourceLocation) extends LexerError {
     override def summary: String = s"'.' has leading whitespace."
 
     override def message(formatter: Formatter): String = {
@@ -132,7 +132,7 @@ object LexerError {
     *
     * @param loc The location of the number literal.
     */
-  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Number ends on a '_'."
 
     override def message(formatter: Formatter): String = {
@@ -152,7 +152,7 @@ object LexerError {
     *
     * @param loc The location of the number literal.
     */
-  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError with Recoverable {
+  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Hex literal starts on a '_'."
 
     override def message(formatter: Formatter): String = {
@@ -172,7 +172,7 @@ object LexerError {
     *
     * @param loc The location of the opening "${".
     */
-  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
+  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError {
     override def summary: String = s"String interpolation nested too deep."
 
     override def message(formatter: Formatter): String = {
@@ -193,7 +193,7 @@ object LexerError {
     * @param s   the problematic character.
     * @param loc the location of char.
     */
-  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unexpected character '$s'."
 
     override def message(formatter: Formatter): String = {
@@ -213,7 +213,7 @@ object LexerError {
     *
     * @param loc The location of the opening "/ *".
     */
-  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated block-comment."
 
     override def message(formatter: Formatter): String = {
@@ -233,7 +233,7 @@ object LexerError {
     *
     * @param loc The location of the opening "$".
     */
-  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
@@ -253,7 +253,7 @@ object LexerError {
     *
     * @param loc The location of the opening `'`.
     */
-  case class UnterminatedChar(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated char."
 
     override def message(formatter: Formatter): String = {
@@ -273,7 +273,7 @@ object LexerError {
     *
     * @param loc The location of the opening '&#96;'.
     */
-  case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
 
     override def message(formatter: Formatter): String = {
@@ -293,7 +293,7 @@ object LexerError {
     *
     * @param loc The location of the opening `"`.
     */
-  case class UnterminatedRegex(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated regex."
 
     override def message(formatter: Formatter): String = {
@@ -313,7 +313,7 @@ object LexerError {
     *
     * @param loc The location of the opening `"`.
     */
-  case class UnterminatedString(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedString(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated string."
 
     override def message(formatter: Formatter): String = {
@@ -333,7 +333,7 @@ object LexerError {
     *
     * @param loc The location of the opening `{`.
     */
-  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError with Recoverable {
+  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated string interpolation."
 
     override def message(formatter: Formatter): String = {

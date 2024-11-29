@@ -145,4 +145,8 @@ object CofiniteEffSet {
   def difference(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
     difference(s1, mkSet(s2))
 
+  /** Returns the symmetric difference of `s1` and `s2`. */
+  def xor(s1: CofiniteEffSet, s2: CofiniteEffSet): CofiniteEffSet =
+    union(difference(s1, s2), difference(s2, s1))
+
 }

@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
-  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+  val empty: Root = Root(Map.empty, None, AvailableClasses.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses)
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -117,8 +117,6 @@ object WeededAst {
 
     case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
-
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
@@ -183,8 +181,6 @@ object WeededAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class UncheckedMaskingCast(exp: Expr, loc: SourceLocation) extends Expr
-
     case class Unsafe(exp: Expr, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
@@ -195,11 +191,11 @@ object WeededAst {
 
     case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -265,7 +261,7 @@ object WeededAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -293,7 +289,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
+    case class Tag(qname: Name.QName, pats: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
@@ -326,7 +322,9 @@ object WeededAst {
 
   }
 
-  sealed trait Type
+  sealed trait Type {
+    def loc: SourceLocation
+  }
 
   object Type {
 
@@ -374,6 +372,8 @@ object WeededAst {
 
     case class Intersection(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
 
+    case class Difference(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
+
     case class Pure(loc: SourceLocation) extends Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends Type
@@ -398,11 +398,11 @@ object WeededAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(mod: Modifiers, name: Name.Label, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
 
@@ -415,8 +415,6 @@ object WeededAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
-
-  case class JavaClassMember(prefix: String, suffix: List[String], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
@@ -477,26 +475,6 @@ object WeededAst {
     case object DebugWithLoc extends DebugKind
 
     case object DebugWithLocAndSrc extends DebugKind
-
-  }
-
-  sealed trait JvmOp
-
-  object JvmOp {
-
-    case class Constructor(fqn: Name.JavaName, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class Method(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
-
-    case class StaticMethod(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
-
-    case class GetField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class PutField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class GetStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
-
-    case class PutStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
 
   }
 

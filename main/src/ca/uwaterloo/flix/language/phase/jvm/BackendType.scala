@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
@@ -160,7 +160,7 @@ object BackendType {
     * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
     * use [[toErasedBackendType]].
     */
-  def toBackendType(tpe0: MonoType): BackendType = {
+  def toBackendType(tpe0: MonoType)(implicit root: ReducedAst.Root): BackendType = {
     tpe0 match {
       case MonoType.Void => BackendObjType.JavaObject.toTpe
       case MonoType.AnyType => BackendObjType.JavaObject.toTpe
@@ -183,7 +183,7 @@ object BackendType {
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
-      case MonoType.Struct(_, elms, _) => BackendObjType.Struct(elms.map(toBackendType)).toTpe
+      case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
@@ -220,7 +220,7 @@ object BackendType {
     case MonoType.Float64 => BackendType.Float64
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) |
+         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Arrow(_, _) |
          MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) | MonoType.Native(_) |
          MonoType.Region | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
@@ -238,7 +238,7 @@ object BackendType {
     case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) |
+         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Arrow(_, _) |
          MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) | MonoType.Native(_) |
          MonoType.Region | MonoType.Null =>
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
@@ -267,7 +267,7 @@ object BackendType {
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Tuple(_) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _, _) | MonoType.Null =>
+         MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }
 

@@ -159,7 +159,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
-    case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, _) => None // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => None
     case Type.JvmToEff(_, _) => None
     case Type.UnresolvedJvmType(_, _) => None
@@ -189,7 +189,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
-    case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, _) => Nil // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => Nil
     case Type.JvmToEff(_, _) => Nil
     case Type.UnresolvedJvmType(_, _) => Nil
@@ -259,7 +259,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -269,7 +269,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.last
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -279,7 +279,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.head
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -291,10 +291,10 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.AssocType(_, arg, kind, _) => arg.size + 1
+    case Type.AssocType(_, arg, _, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
     case Type.JvmToEff(tpe, _) => tpe.size + 1
-    case Type.UnresolvedJvmType(member, loc) => member.getTypeArguments.map(_.size).sum + 1
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.map(_.size).sum + 1
   }
 
   /**
@@ -460,6 +460,13 @@ object Type {
   val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
 
   /**
+    * Represents the Difference type constructor.
+    *
+    * NB: This type has kind: Eff -> (Eff -> Eff).
+    */
+  val Difference: Type = Type.Cst(TypeConstructor.Difference, SourceLocation.Unknown)
+
+  /**
     * Represents the True Boolean algebra value.
     */
   val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
@@ -508,11 +515,6 @@ object Type {
     def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
-
-    /**
-      * Removes the kind from this var.
-      */
-    def withoutKind: UnkindedType.Var = UnkindedType.Var(sym.withoutKind, loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
@@ -614,7 +616,7 @@ object Type {
       */
     def getTypeArguments: List[Type] = this match {
       case JvmMember.JvmConstructor(_, tpes) => tpes
-      case JvmMember.JvmField(tpe, _) => List(tpe)
+      case JvmMember.JvmField(_, tpe, _) => List(tpe)
       case JvmMember.JvmMethod(tpe, _, tpes) => tpe :: tpes
       case JvmMember.JvmStaticMethod(_, _, tpes) => tpes
     }
@@ -624,7 +626,7 @@ object Type {
       */
     def map(f: Type => Type): JvmMember = this match {
       case JvmMember.JvmConstructor(clazz, tpes) => JvmMember.JvmConstructor(clazz, tpes.map(f))
-      case JvmMember.JvmField(tpe, name) => JvmMember.JvmField(f(tpe), name)
+      case JvmMember.JvmField(base, tpe, name) => JvmMember.JvmField(base, f(tpe), name)
       case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
     }
@@ -640,7 +642,7 @@ object Type {
     /**
       * A Java field, defined by the receiver type and the field name.
       */
-    case class JvmField(tpe: Type, name: Name.Ident) extends JvmMember
+    case class JvmField(base: SourceLocation, tpe: Type, name: Name.Ident) extends JvmMember
 
     /**
       * A Java method, defined by the receiver type, the method name, and the argument types.
@@ -787,6 +789,12 @@ object Type {
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
+    * Returns the type `ArrayWithoutRegion[tpe]` with the given source location `loc`.
+    */
+  def mkArrayWithoutRegion(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.ArrayWithoutRegion, loc), tpe, loc)
+
+  /**
     * Returns the type `Array[tpe]` with the given source location `loc`.
     */
   def mkVector(tpe: Type, loc: SourceLocation): Type =
@@ -809,42 +817,72 @@ object Type {
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the IO curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ IO.
-    */
-  def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
-
-  /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    val a = as.last
-    val base = mkArrowWithEffect(a, p, b, loc)
-    as.init.foldRight(base)(mkPureArrow(_, _, loc))
+    if (as.isEmpty) {
+      b
+    } else {
+      val a = as.last
+      val base = mkArrowWithEffect(a, p, b, loc)
+      as.init.foldRight(base)(mkPureArrow(_, _, loc))
+    }
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Apply(acc, x, loc)
+    if (as.isEmpty) {
+      b
+    } else {
+      val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
+      val inner = as.foldLeft(arrow: Type) {
+        case (acc, x) => Apply(acc, x, loc)
+      }
+      Apply(inner, b, loc)
     }
-    Apply(inner, b, loc)
+  }
+
+  /**
+    * Constructs the backend arrow type (A_1, ..., A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
+    */
+  def mkArrowWithoutEffect(as: List[Type], b: Type, loc: SourceLocation): Type = {
+    if (as.isEmpty) {
+      b
+    } else {
+      val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
+      val inner = as.foldLeft(arrow: Type) {
+        case (acc, x) => Apply(acc, x, loc)
+      }
+      Apply(inner, b, loc)
+    }
   }
 
   /**
@@ -1046,9 +1084,24 @@ object Type {
   }
 
   /**
+    * Returns the type `Xor(tpe1, Xor(tpe2, ...))`.
+    */
+  def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Pure
+    case x :: xs => mkSymmetricDiff(x, mkSymmetricDiff(xs, loc), loc)
+  }
+
+  /**
     * Returns the type `tpe1 - tpe2`.
     */
-  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
+  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
+    case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
+    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.mkComplement(tpe2, loc)
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Pure
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => Type.Pure
+    case _ => Type.Apply(Type.Apply(Type.Difference, tpe1, loc), tpe2, loc)
+  }
 
   /**
     * Returns the type `And(tpe1, tpe2)`.
@@ -1135,18 +1188,6 @@ object Type {
     */
   def mkRegion(r: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
-
-  /**
-    * Returns the type `tpe1 => tpe2`.
-    */
-  def mkImplies(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(Type.mkComplement(tpe1, loc), tpe2, loc)
-
-  /**
-    * Returns a Boolean type that represents the equivalence of `x` and `y`.
-    *
-    * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
-    */
-  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 
   /**
     * Replace type aliases with the types they represent.

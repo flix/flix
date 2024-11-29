@@ -21,8 +21,25 @@ class ExampleSuite extends FlixSuite(incremental = true) {
 
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDir("examples")
-  mkTestDir("examples/effects")
+  mkTestDir("examples/algebraic-effects")
+  mkTestDir("examples/concurrency-and-parallelism")
+  mkTestDir("examples/fixpoints")
+  mkTestDir("examples/functional-style")
+  mkTestDir("examples/imperative-style")
+
+  mkTestDir("examples/interoperability/anonymous-classes")
+  mkTestDir("examples/interoperability/calling-methods")
+  mkTestDir("examples/interoperability/exceptions")
+  mkTestDir("examples/interoperability/files")
+  mkTestDir("examples/interoperability/swing")
+
+  mkTestDir("examples/io")
+  mkTestDir("examples/quality-of-life")
+  mkTestDir("examples/records")
+  mkTestDir("examples/structs")
+  mkTestDir("examples/traits")
+  mkTestDir("examples/type-level-programming")
+
   mkTestDir("examples/larger-examples")
   mkTestDir("examples/larger-examples/datalog")
   mkTestDir("examples/larger-examples/program-analysis")

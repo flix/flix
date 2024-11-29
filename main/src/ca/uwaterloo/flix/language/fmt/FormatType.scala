@@ -75,13 +75,6 @@ object FormatType {
   /**
     * Transforms the given kinded type variable symbol into a string.
     */
-  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
-    formatTypeVarSymWithOptions(sym, flix.getFormatOptions)
-  }
-
-  /**
-    * Transforms the given kinded type variable symbol into a string.
-    */
   def formatTypeVarSymWithOptions(sym: Symbol.KindedTypeVarSym, fmt: FormatOptions): String = {
     val tpe = Type.Var(sym, SourceLocation.Unknown)
     formatTypeWithOptions(tpe, fmt)
@@ -154,10 +147,11 @@ object FormatType {
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
       case SimpleType.SymmetricDiff(_) => false
-      case SimpleType.Difference(_, _) => false
+      case SimpleType.Difference(_) => false
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
+      case SimpleType.ArrowWithoutEffect(_, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -178,6 +172,7 @@ object FormatType {
       case SimpleType.Str => true
       case SimpleType.Regex => true
       case SimpleType.Array => true
+      case SimpleType.ArrayWithoutRegion => true
       case SimpleType.Vector => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
@@ -187,6 +182,7 @@ object FormatType {
       case SimpleType.Pure => true
       case SimpleType.Univ => true
       case SimpleType.Region => true
+      case SimpleType.RegionWithoutRegion => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -250,6 +246,7 @@ object FormatType {
       case SimpleType.Str => "String"
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
+      case SimpleType.ArrayWithoutRegion => "ArrayWithoutRegion"
       case SimpleType.Vector => "Vector"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
@@ -262,6 +259,7 @@ object FormatType {
       }
       case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
+      case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"{ $labelString }"
@@ -312,7 +310,9 @@ object FormatType {
       case SimpleType.SymmetricDiff(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" ⊕ ")
-      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
+      case SimpleType.Difference(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" - ")
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -331,6 +331,10 @@ object FormatType {
         val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
+      case SimpleType.ArrowWithoutEffect(arg, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val retString = delimit(ret, Mode.Type)
+        s"$argString --> $retString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>

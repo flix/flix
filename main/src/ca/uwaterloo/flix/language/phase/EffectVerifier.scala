@@ -16,10 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Instance, Root, Sig}
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.eraseTopAliases
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -50,7 +49,7 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given definition.
     */
-  def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
+  def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = {
     visitExp(defn.exp)
     expectType(expected = defn.spec.eff, defn.exp.eff, defn.exp.loc)
   }
@@ -58,7 +57,7 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given signature.
     */
-  def visitSig(sig: Sig)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit =
+  def visitSig(sig: Sig)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit =
     sig.exp match {
       case Some(exp) =>
         visitExp(exp)
@@ -69,13 +68,13 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given instance.
     */
-  def visitInstance(ins: Instance)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit =
+  def visitInstance(ins: Instance)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit =
     ins.defs.foreach(visitDef)
 
   /**
     * Verifies the effects in the given expression
     */
-  def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = e match {
+  def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
     case Expr.Hole(sym, tpe, eff, loc) => ()
@@ -88,10 +87,10 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      visitExp(exp)
-      exps.foreach(visitExp)
-      val expected = Type.mkUnion(Type.eraseTopAliases(exp.tpe).arrowEffectType :: exp.eff :: exps.map(_.eff), loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      val expected = Type.mkUnion(Type.eraseTopAliases(exp1.tpe).arrowEffectType :: exp1.eff :: exp2.eff :: Nil, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.ApplyDef(_, exps, itpe, _, eff, loc) =>
@@ -174,14 +173,14 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Tag(sym, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
+    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
+    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Tuple(elms, tpe, eff, loc) =>
@@ -237,7 +236,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(fields.map { case (k, v) => v.eff } :+ region.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-      fields.map { case (k, v) => v }.map(visitExp)
+      fields.map { case (k, v) => v }.foreach(visitExp)
       visitExp(region)
     case Expr.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff
@@ -266,8 +265,6 @@ object EffectVerifier {
     case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      visitExp(exp)
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.Without(exp, effUse, tpe, eff, loc) =>
       visitExp(exp)
@@ -392,7 +389,7 @@ object EffectVerifier {
   /**
     * Throws an exception if the actual type does not match the expected type.
     */
-  private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
+  private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
     if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {

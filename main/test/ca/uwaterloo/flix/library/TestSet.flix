@@ -539,7 +539,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let s = range |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.count(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+        discard Set.count(x -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); true }, s);
         MutList.toList(a) == range
     }
 
@@ -610,7 +610,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -965,7 +965,7 @@ mod TestSet {
         let range = List.range(0, 2000);
         let s = List.toSet(range);
         let a = MutList.empty(rc);
-        discard Set.map(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+        discard Set.map(x -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); x }, s);
         MutList.toList(a) == range
     }
 
@@ -1375,27 +1375,27 @@ mod TestSet {
 
     @test
     def unfold01(): Bool =
-        Set.unfold(s -> if (true) None else Some(s + 48, s + 1), 0) == Set#{}
+        Set.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0) == Set#{}
 
     @test
     def unfold02(): Bool =
-        Set.unfold(s -> if (s > 0) None else Some(s + 48, s + 1), 0) == Set#{48}
+        Set.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0) == Set#{48}
 
     @test
     def unfold03(): Bool =
-        Set.unfold(s -> if (s > 1) None else Some(s + 48, s + 1), 0) == Set#{48, 49}
+        Set.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0) == Set#{48, 49}
 
     @test
     def unfold04(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 0) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 
     @test
     def unfold05(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 5) == Set#{53, 54, 55, 56, 57}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5) == Set#{53, 54, 55, 56, 57}
 
     @test
     def unfold06(): Bool =
-        Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 2), 0) == Set#{48, 50, 52, 54, 56}
+        Set.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0) == Set#{48, 50, 52, 54, 56}
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithIter                                                          //
@@ -1564,7 +1564,7 @@ mod TestSet {
     def minimumBy05(): Bool = region rc {
         let s = List.range(0, 2000) |> List.toSet;
         let a = MutList.empty(rc);
-        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

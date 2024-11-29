@@ -93,14 +93,10 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordJavaGetField => "'java_get_field'"
-      case TokenKind.KeywordJavaNew => "'java_new'"
-      case TokenKind.KeywordJavaSetField => "'java_set_field'"
       case TokenKind.KeywordLaw => "'law'"
       case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
       case TokenKind.KeywordLet => "'let'"
-      case TokenKind.KeywordMaskedCast => "'masked_cast'"
       case TokenKind.KeywordMatch => "'match'"
       case TokenKind.KeywordMod => "'mod'"
       case TokenKind.KeywordMut => "'mut'"
@@ -118,6 +114,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
+      case TokenKind.KeywordRun => "'run'"
       case TokenKind.KeywordRvadd => "'rvadd'"
       case TokenKind.KeywordRvand => "'rvand'"
       case TokenKind.KeywordRvnot => "'rvnot'"
@@ -248,14 +245,10 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
-    case TokenKind.KeywordJavaGetField => true
-    case TokenKind.KeywordJavaNew => true
-    case TokenKind.KeywordJavaSetField => true
     case TokenKind.KeywordLaw => true
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
     case TokenKind.KeywordLet => true
-    case TokenKind.KeywordMaskedCast => true
     case TokenKind.KeywordMatch => true
     case TokenKind.KeywordMod => true
     case TokenKind.KeywordNew => true
@@ -281,6 +274,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
@@ -426,7 +420,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
          | TokenKind.KeywordUnsafe
-         | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
          | TokenKind.KeywordNew
          | TokenKind.KeywordStaticUppercase
@@ -738,12 +731,6 @@ object TokenKind {
 
   case object KeywordInto extends TokenKind
 
-  case object KeywordJavaGetField extends TokenKind
-
-  case object KeywordJavaNew extends TokenKind
-
-  case object KeywordJavaSetField extends TokenKind
-
   case object KeywordLaw extends TokenKind
 
   case object KeywordLawful extends TokenKind
@@ -751,8 +738,6 @@ object TokenKind {
   case object KeywordLazy extends TokenKind
 
   case object KeywordLet extends TokenKind
-
-  case object KeywordMaskedCast extends TokenKind
 
   case object KeywordMatch extends TokenKind
 
@@ -787,6 +772,8 @@ object TokenKind {
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
+
+  case object KeywordRun extends TokenKind
 
   case object KeywordRvadd extends TokenKind
 

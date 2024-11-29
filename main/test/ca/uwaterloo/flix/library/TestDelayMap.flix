@@ -160,7 +160,7 @@ mod TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.empty(rc);
-        discard DelayMap.count((k, _) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+        discard DelayMap.count((k, _) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); true }, m);
         MutList.toList(a) == range
     }
 
@@ -1882,7 +1882,7 @@ mod TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.empty(rc);
-        discard DelayMap.sumWith((k, _) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
+        discard DelayMap.sumWith((k, _) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); 0 }, m);
         MutList.toList(a) == range
     }
 

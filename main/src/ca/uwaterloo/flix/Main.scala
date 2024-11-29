@@ -133,7 +133,7 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd).toHardResult match {
+          Bootstrap.init(cwd).toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -147,7 +147,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -161,7 +161,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -172,7 +172,7 @@ object Main {
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -183,7 +183,7 @@ object Main {
         case Command.BuildFatJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildFatJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -194,7 +194,7 @@ object Main {
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildPkg()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -208,7 +208,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -226,7 +226,7 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -240,7 +240,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -253,7 +253,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken).toHardResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken).toResult match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -280,7 +280,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -294,7 +294,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.outdated(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(false) =>
               // Up to date
               System.exit(0)
@@ -414,7 +414,7 @@ object Main {
       case "mod-defs" => Subeffecting.ModDefs
       case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {

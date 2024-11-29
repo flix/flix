@@ -45,17 +45,20 @@ object CompletionItem {
   */
 case class CompletionItem(
   label: String,
+  labelDetails: Option[CompletionItemLabelDetails] = None,
   sortText: String,
   filterText: Option[String] = None,
   textEdit: TextEdit,
   detail: Option[String] = None,
   documentation: Option[String] = None,
   kind: CompletionItemKind,
+  additionalTextEdits: List[TextEdit] = Nil,
   insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
   commitCharacters: List[String] = Nil) {
 
   def toJSON: JValue =
     ("label" -> label) ~
+      ("labelDetails" -> labelDetails.map(_.toJSON)) ~
       ("sortText" -> sortText) ~
       ("filterText" -> filterText) ~
       ("textEdit" -> textEdit.toJSON) ~
@@ -63,5 +66,6 @@ case class CompletionItem(
       ("documentation" -> documentation) ~
       ("kind" -> kind.toInt) ~
       ("insertTextFormat" -> insertTextFormat.toInt) ~
+      ("additionalTextEdits" -> additionalTextEdits.map(_.toJSON)) ~
       ("commitCharacters" -> commitCharacters)
 }

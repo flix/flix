@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -79,7 +79,7 @@ class Flix {
   /**
     * The set of known Java classes and interfaces.
     */
-  private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
+  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -261,11 +261,15 @@ class Flix {
     "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
     "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
     "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
-    "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
+    "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
+    "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
+    "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
+    "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
@@ -475,19 +479,18 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
+  def mkMessages(errors: List[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse(""))
     else
-      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
   }
 
   /**
     * Compiles the Flix program and returns a typed ast.
+    * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = try {
-    import Validation.Implicit.AsMonad
-
+  def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -500,49 +503,90 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    implicit class MappableValidation[A, B](v: Validation[A, B]) {
-      implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
-    }
+    // The global collection of errors
+    val errors = mutable.ListBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs, knownClassesAndInterfaces)
+    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
+    errors ++= readerErrors
+
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    errors ++= lexerErrors
+
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    errors ++= parserErrors
 
-    /** Remember to update [[AstPrinter]] about the list of phases. */
-    val result = for {
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet).withSoftFailures(readerErrors).withSoftFailures(lexerErrors).withSoftFailures(parserErrors)
-      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-      (afterNamer, namerErrors) = Namer.run(afterDesugar)
-      (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      afterResolver <- resolverValidation.withSoftFailures(resolutionErrors).withSoftFailures(namerErrors)
-      (afterKinder, kinderErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
-      (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet).withSoftFailures(kinderErrors).withSoftFailures(derivationErrors)
-      () = EffectVerifier.run(afterTyper)
-      (afterRegions, regionErrors) = Regions.run(afterTyper)
-      (afterEntryPoint, entryPointErrors) = EntryPoint.run(afterRegions)
-      (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
-      (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
-      (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
-      (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
-      (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
-      errors = regionErrors ::: entryPointErrors ::: instanceErrors ::: predDepErrors ::: stratificationErrors ::: patMatchErrors ::: redundancyErrors ::: safetyErrors
-      output <- Validation.toSuccessOrSoftFailure(afterSafety, errors) // Minimal change for things to still work. Will be removed once Validation is removed.
-    } yield {
-      // Update caches for incremental compilation.
-      if (options.incremental) {
-        this.cachedLexerTokens = afterLexer
-        this.cachedParserCst = afterParser
-        this.cachedWeederAst = afterWeeder
-        this.cachedDesugarAst = afterDesugar
-        this.cachedKinderAst = afterKinder
-        this.cachedResolverAst = afterResolver
-        this.cachedTyperAst = afterTyper
-      }
-      output
+    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    errors ++= weederErrors
+
+    val result = weederValidation match {
+      case Validation.Failure(failures) =>
+        errors ++= failures.toList
+        None
+
+      case Validation.Success(afterWeeder) =>
+        val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+
+        val (afterNamer, nameErrors) = Namer.run(afterDesugar)
+        errors ++= nameErrors
+
+        val (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+        errors ++= resolutionErrors
+
+        resolverValidation match {
+          case Validation.Failure(failures) =>
+            errors ++= failures.toList
+            None
+
+          case Validation.Success(afterResolver) =>
+
+            val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+            errors ++= kindErrors
+
+            val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+            errors ++= derivationErrors
+
+            val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+            errors ++= typeErrors
+
+            EffectVerifier.run(afterTyper)
+
+            val (afterRegions, regionErrors) = Regions.run(afterTyper)
+            errors ++= regionErrors
+
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
+            errors ++= entryPointErrors
+
+            val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+            errors ++= instanceErrors
+
+            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+            errors ++= predDepErrors
+
+            val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+            errors ++= stratificationErrors
+
+            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+            errors ++= patMatchErrors
+
+            val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+            errors ++= redundancyErrors
+
+            val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
+            errors ++= safetyErrors
+
+            if (options.incremental) {
+              this.cachedLexerTokens = afterLexer
+              this.cachedParserCst = afterParser
+              this.cachedWeederAst = afterWeeder
+              this.cachedDesugarAst = afterDesugar
+              this.cachedKinderAst = afterKinder
+              this.cachedResolverAst = afterResolver
+              this.cachedTyperAst = afterTyper
+            }
+
+            Some(afterSafety)
+        }
     }
-
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
 
@@ -551,14 +595,14 @@ class Flix {
 
     // Print summary?
     if (options.xsummary) {
-      result.map(root => {
+      result.foreach(root => {
         val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
         table.getMarkdownLines.foreach(println)
       })
     }
 
     // Return the result (which could contain soft failures).
-    result
+    (result, errors.toList)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -598,7 +642,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    Validation.success(result)
+    Validation.Success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -612,8 +656,12 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val result = check().toHardFailure
-    Validation.flatMapN(result)(codeGen)
+    val (result, errors) = check()
+    if (errors.isEmpty) {
+      codeGen(result.get)
+    } else {
+      Validation.Failure(Chain.from(errors))
+    }
   }
 
   /**
@@ -729,7 +777,7 @@ class Flix {
     * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
     */
   private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
-    knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
+    availableClasses = availableClasses ++ getPackageContent(getClassesAndInterfacesOfJar(p))
   }
 
   /**

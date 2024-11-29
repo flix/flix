@@ -1,7 +1,7 @@
 mod Test.Handler.MultiShot.Bool {
 
     eff AskTell {
-        pub def askTell(x: Bool): Bool
+        def askTell(x: Bool): Bool
     }
 
     @Test

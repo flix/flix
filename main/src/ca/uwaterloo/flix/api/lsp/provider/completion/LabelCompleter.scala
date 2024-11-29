@@ -15,17 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
 
 object LabelCompleter {
 
   /**
     * Returns a list of [[LabelCompletion]]s.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[LabelCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit index: Index): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil

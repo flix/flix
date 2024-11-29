@@ -30,7 +30,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
         DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
     }.toList
-    DocAst.Program(Nil, defs)
+    DocAst.Program(Nil, defs, Nil)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
@@ -41,18 +41,18 @@ object ResolvedAstPrinter {
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Expr.ApplyClo(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
+    case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
-    case Expr.Lambda(fparam, exp, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
+    case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.IfThenElse(exp1, exp2, exp3, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
-    case Expr.LocalDef(sym, _, exp1, exp2, _) => DocAst.Expr.LetRec(printVarSym(sym), None, print(exp1), print(exp2))
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
@@ -62,7 +62,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, _, exp) => (printVarSym(sym), DocAst.Type.Unknown, print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Tag(sym, exp, _) => DocAst.Expr.Tag(sym.sym, List(print(exp)))
+    case Expr.Tag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordEmpty(_) => DocAst.Expr.RecordEmpty
@@ -86,24 +86,19 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
-    case Expr.UncheckedMaskingCast(exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.TryWith(exp, eff, rules, _) => DocAst.Expr.TryWith(print(exp), eff.sym, rules.map {
-      case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam).toList, print(exp))
+      case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.Do(op, exps, _) => DocAst.Expr.Do(op.sym, exps.map(print))
-    case Expr.InvokeConstructor2(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeMethod2(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeStaticMethod2(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.GetField2(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeConstructorOld(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeMethodOld(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeStaticMethodOld(_, _, _) => DocAst.Expr.Unknown
-    case Expr.GetFieldOld(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.GetField(_, _, _) => DocAst.Expr.Unknown
     case Expr.PutField(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetStaticField(_, _) => DocAst.Expr.Unknown
     case Expr.PutStaticField(_, _, _) => DocAst.Expr.Unknown
@@ -131,7 +126,7 @@ object ResolvedAstPrinter {
     case Pattern.Wild(_) => DocAst.Expr.Wild
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(sym, pat, _) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, pats, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.RecordEmpty(_) => DocAst.Expr.RecordEmpty

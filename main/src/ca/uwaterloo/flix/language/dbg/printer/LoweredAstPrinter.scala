@@ -28,8 +28,8 @@ object LoweredAstPrinter {
     val enums = root.enums.values.map {
       case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _) =>
         val cases = cases0.values.map {
-          case LoweredAst.Case(sym, tpe, _, _) =>
-            DocAst.Case(sym, TypePrinter.print(tpe))
+          case LoweredAst.Case(sym, tpes, _, _) =>
+            DocAst.Case(sym, tpes.map(TypePrinter.print))
         }.toList
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
@@ -45,7 +45,7 @@ object LoweredAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(enums, defs, Nil)
   }
 
   /**
@@ -55,13 +55,13 @@ object LoweredAstPrinter {
     case Expr.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
     case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
     case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)), None)
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Var(sym), exps.map(print), None)
     case Expr.ApplySig(sym, exps, _, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Sig(sym), exps.map(print), None)
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
     case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => DocAst.Expr.LetRec(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.printAsEffect(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => DocAst.Expr.Scope(DocAst.Expr.Var(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => DocAst.Expr.Stm(print(exp1), print(exp2))
@@ -122,7 +122,7 @@ object LoweredAstPrinter {
     case Pattern.Wild(tpe, loc) => DocAst.Expr.Wild
     case Pattern.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
     case Pattern.Cst(cst, tpe, loc) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(sym, pat, tpe, loc) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, pats, tpe, loc) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
     case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty

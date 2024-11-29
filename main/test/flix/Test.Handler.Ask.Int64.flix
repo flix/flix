@@ -1,7 +1,7 @@
 mod Test.Handler.Ask.Int64 {
 
     eff Ask {
-        pub def ask(x: Int64): Unit
+        def ask(x: Int64): Unit
     }
 
     def generator(x: Int64): Unit \ Ask =

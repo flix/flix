@@ -34,7 +34,7 @@ object PredicateCompleter {
     //
     for (
       (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
-      (tpe, loc) <- arityAndLocs;
+      (tpe, loc) <- arityAndLocs
       if loc.source.name == ctx.uri
     ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
   }

@@ -333,7 +333,7 @@ mod Graph {
         // Extract nodes in fixed order.
         res |>
             Vector.sortBy(match (x, i) -> (i, x)) |>
-            Vector.forEach(match (x, _) -> MutList.push!(x, ml));
+            Vector.forEach(match (x, _) -> MutList.push(x, ml));
         MutList.toList(ml)
     }
 
@@ -472,7 +472,7 @@ mod Graph {
     ///
     pub def toGraphviz(g: m[(t, t)]): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] = region rc {
         let sb = StringBuilder.empty(rc);
-        def output(s) = StringBuilder.appendLine!(s, sb);
+        def output(s) = StringBuilder.appendLine(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)}")
@@ -488,7 +488,7 @@ mod Graph {
     ///
     pub def toGraphvizLabeled(g: m[(t, l, t)]): String \ Foldable.Aef[m] with Foldable[m], ToString[t], ToString[l] = region rc {
         let sb = StringBuilder.empty(rc);
-        def output(s) = StringBuilder.appendLine!(s, sb);
+        def output(s) = StringBuilder.appendLine(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")

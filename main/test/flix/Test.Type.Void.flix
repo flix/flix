@@ -3,7 +3,7 @@ mod Test.Type.Void {
     // We check that `Void` is given a polymorphic type when used as the type of an effect operation.
 
     pub eff Exc {
-        pub def raise(): Void
+        def raise(): Void
     }
 
     pub def voidable01(): Void \ Exc = Exc.raise()

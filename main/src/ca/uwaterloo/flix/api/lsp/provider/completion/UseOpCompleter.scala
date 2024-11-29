@@ -22,13 +22,12 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseOpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object UseOpCompleter {
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseOpCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[UseOpCompletion] = {
     stripWord(context) match {
-      case Some(word) => {
+      case Some(word) =>
         val uri = context.uri
         val validOps = root.effects.values.flatMap(_.ops).filter(op => validMatch(op, word, uri))
         validOps.map(op => getUseOpCompletion(op))
-      }
       case None => None
     }
   }

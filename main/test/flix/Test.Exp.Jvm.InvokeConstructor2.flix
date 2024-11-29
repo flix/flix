@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeConstructor2 {
+mod Test.Exp.Jvm.InvokeConstructor {
 
     import java.lang.Boolean
     import java.lang.Byte
@@ -13,39 +13,39 @@ mod Test.Exp.Jvm.InvokeConstructor2 {
     import java.util.{Locale$Builder => Builder}
 
     @test
-    def testInvokeConstructor2_01(): Boolean \ IO =
+    def testInvokeConstructor_01(): Boolean \ IO =
         new Boolean(true)
 
     @test
-    def testInvokeConstructor2_02(): Character \ IO =
+    def testInvokeConstructor_02(): Character \ IO =
         new Character('a')
 
     @test
-    def testInvokeConstructor2_03(): Float \ IO =
+    def testInvokeConstructor_03(): Float \ IO =
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor2_04(): Double \ IO =
+    def testInvokeConstructor_04(): Double \ IO =
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor2_05(): Byte \ IO =
+    def testInvokeConstructor_05(): Byte \ IO =
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor2_06(): Short \ IO =
+    def testInvokeConstructor_06(): Short \ IO =
         new Short(123i16)
 
     @test
-    def testInvokeConstructor2_07(): Integer \ IO =
+    def testInvokeConstructor_07(): Integer \ IO =
         new Integer(123i32)
 
     @test
-    def testInvokeConstructor2_08(): Long \ IO =
+    def testInvokeConstructor_08(): Long \ IO =
         new Long(123i64)
 
     @test
-    def testInvokeConstructor2_09(): JString \ IO =
+    def testInvokeConstructor_09(): JString \ IO =
         new JString("Hello World")
 
     @test

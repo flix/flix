@@ -1,7 +1,7 @@
 mod Test.Dec.AssocEff {
 
     eff Time {
-        pub def getTime(): String
+        def getTime(): String
     }
 
     ////////////////
@@ -91,14 +91,14 @@ mod Test.Dec.AssocEff {
     }
 
     eff Console {
-        pub def println(s: String): Unit
+        def println(s: String): Unit
     }
 
     pub def serveDessert(): Unit \ {Console} = region rc {
         let fruits = List#{"Apple", "Peach", "Mango"};
         let creams = MutList.empty(rc);
-        MutList.push!("Caramel", creams);
-        MutList.push!("Vanilla", creams);
+        MutList.push("Caramel", creams);
+        MutList.push("Vanilla", creams);
         foreach(fruit <- fruits; cream <- creams)
             Console.println("${fruit} topped with ${cream}")
     }

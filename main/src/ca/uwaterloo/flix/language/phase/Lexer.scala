@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation.*
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.collection.mutable
 import scala.util.Random
@@ -178,8 +176,11 @@ object Lexer {
     if (c == '\n') {
       s.current.line -= 1
       s.current.column = 0
+      s.end.line -= 1
+      s.end.column = 0
     } else {
       s.current.column -= 1
+      s.end.column -= 1
     }
   }
 
@@ -218,7 +219,7 @@ object Lexer {
 
   /**
     * Peeks the character that state is currently sitting on without advancing.
-    * Note: Peek does not to bound checks. This is done under the assumption that the lexer
+    * Note: Peek does not perform bound checks. This is done under the assumption that the lexer
     * is only ever advanced using `advance`.
     * Since `advance` cannot move past EOF peek will always be in bounds.
     */
@@ -345,10 +346,10 @@ object Lexer {
           TokenKind.Dot
         }
       case '$' if peek().isUpper => acceptBuiltIn()
-      case '₹' =>
-        // Don't include the rupee sign in the name
+      case '$' if peek().isLower =>
+        // Don't include the $ sign in the name
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        acceptName(false)
+        acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -418,9 +419,6 @@ object Lexer {
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("java_get_field") => TokenKind.KeywordJavaGetField
-      case _ if isKeyword("java_set_field") => TokenKind.KeywordJavaSetField
-      case _ if isKeyword("java_new") => TokenKind.KeywordJavaNew
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
@@ -432,7 +430,6 @@ object Lexer {
       case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lazy") => TokenKind.KeywordLazy
       case _ if isKeyword("let") => TokenKind.KeywordLet
-      case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
       case _ if isKeyword("match") => TokenKind.KeywordMatch
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("mut") => TokenKind.KeywordMut
@@ -450,6 +447,7 @@ object Lexer {
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
+      case _ if isKeyword("run") => TokenKind.KeywordRun
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
       case _ if isKeyword("rvand") => TokenKind.KeywordRvand
       case _ if isKeyword("rvsub") => TokenKind.KeywordRvsub

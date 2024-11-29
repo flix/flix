@@ -99,16 +99,6 @@ object ParOps {
   }
 
   /**
-    * Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
-  def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
-    val parVals = parTraverse(m) {
-      case (k, v) => Validation.mapN(f(v))((k, _))
-    }
-    Validation.mapN(parVals)(_.toMap)
-  }
-
-  /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
     */
   def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {

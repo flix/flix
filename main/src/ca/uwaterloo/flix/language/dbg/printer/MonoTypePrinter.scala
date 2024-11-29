@@ -46,7 +46,7 @@ object MonoTypePrinter {
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
     case MonoType.Tuple(elms) => Type.Tuple(elms.map(print))
     case MonoType.Enum(sym, targs) => Type.Enum(sym, targs.map(print))
-    case MonoType.Struct(sym, _, targs) => Type.Struct(sym, targs.map(print))
+    case MonoType.Struct(sym, targs) => Type.Struct(sym, targs.map(print))
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))

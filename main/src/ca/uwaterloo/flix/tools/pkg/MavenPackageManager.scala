@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.io.PrintStream
 import coursier.{Dependency as CoursierDependency, Fetch, Resolve}
@@ -36,7 +36,7 @@ object MavenPackageManager {
   /**
     * Installs all MavenDependencies for a Manifest including transitive
     * dependencies using coursier in the /lib/cache folder of `path`.
-    * Returns a list of paths to the downloadet .jars.
+    * Returns a list of paths to the downloaded .jars.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit formatter: Formatter, out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Maven dependencies...")
@@ -69,7 +69,7 @@ object MavenPackageManager {
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
           return Err(PackageError.CoursierError(message))
       }
-      l.toOk
+      Ok(l)
     }
   }
 
@@ -77,7 +77,7 @@ object MavenPackageManager {
     * Finds the MavenDependencies for a Manifest
     * and converts them to Strings.
     */
-  def getMavenDependencyStrings(manifest: Manifest): List[String] = {
+  private def getMavenDependencyStrings(manifest: Manifest): List[String] = {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
     }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.versionTag}")

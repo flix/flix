@@ -61,8 +61,8 @@ mod Seq {
     pub def toString(l: Seq[s][a]): String with ToString[a] = region rc {
         let sb = StringBuilder.empty(rc);
         foreach (x <- l)
-            StringBuilder.appendString!("${x} :: ", sb);
-        StringBuilder.appendString!("Nil", sb);
+            StringBuilder.appendString("${x} :: ", sb);
+        StringBuilder.appendString("Nil", sb);
         StringBuilder.toString(sb)
     }
 

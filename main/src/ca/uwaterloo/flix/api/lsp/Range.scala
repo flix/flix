@@ -57,4 +57,25 @@ object Range {
   */
 case class Range(start: Position, end: Position) {
   def toJSON: JValue = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
+
+  /**
+    * Returns the range that starts earlier.
+    */
+  private def earlierStart(that: Range): Range =
+     if (start < that.start) this else that
+
+  /**
+    * Returns the range that ends later.
+    */
+  private def laterEnd(that: Range): Range =
+    if (end > that.end) this else that
+
+  /**
+    * Checks if this range overlaps with the other range.
+    */
+  def overlapsWith(that: Range): Boolean = {
+    val fst = earlierStart(that)
+    val lst = laterEnd(that)
+    fst == lst || fst.end > lst.start
+  }
 }

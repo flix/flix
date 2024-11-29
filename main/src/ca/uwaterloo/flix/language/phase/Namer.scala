@@ -61,7 +61,7 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
-      (NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala.toList)
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses), sctx.errors.asScala.toList)
     }
 
   /**
@@ -138,7 +138,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       fields.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.StructField(_, sym, tpe, loc) =>
+    case NamedAst.Declaration.StructField(_, sym, _, _) =>
       // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
       tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
 
@@ -223,7 +223,8 @@ object Namer {
     */
   private def mkDuplicateNamePair(name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
-    if (name.charAt(0).isUpper) {
+    // NB: Sometimes `name` can be empty so we carefully check this
+    if (name.nonEmpty && name.charAt(0).isUpper) {
       // Case 1: uppercase name
       sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
       sctx.errors.add(NameError.DuplicateUpperName(name, loc2, loc1))
@@ -356,10 +357,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
-    case DesugaredAst.Case(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.Case(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
-      NamedAst.Declaration.Case(caseSym, t, loc)
+      NamedAst.Declaration.Case(caseSym, ts, loc)
   }
 
   /**
@@ -377,10 +378,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableCase = case0 match {
-    case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.RestrictableCase(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
+      NamedAst.Declaration.RestrictableCase(caseSym, ts, loc)
   }
 
   /**
@@ -753,10 +754,6 @@ object Namer {
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
-    case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.UncheckedMaskingCast(e, loc)
-
     case DesugaredAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Without(e, eff, loc)
@@ -775,70 +772,18 @@ object Namer {
       val rs = rules.map(visitTryWithRule(_, ns0))
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
-    case DesugaredAst.Expr.InvokeConstructor2(className, exps, loc) =>
+    case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.InvokeConstructor2(className, es, loc)
+      NamedAst.Expr.InvokeConstructor(className, es, loc)
 
-    case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+    case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp, ns0)
       val es = exps.map(visitExp(_, ns0))
-      NamedAst.Expr.InvokeMethod2(e, name, es, loc)
+      NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
-    case DesugaredAst.Expr.GetField2(exp, name, loc) =>
+    case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetField2(e, name, loc)
-
-    case DesugaredAst.Expr.InvokeConstructorOld(className, exps, sig, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      NamedAst.Expr.InvokeConstructorOld(className, es, ts, loc)
-
-    case DesugaredAst.Expr.InvokeMethodOld(className, methodName, exp, exps, sig, tpe, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      val t = visitType(tpe)
-      NamedAst.Expr.InvokeMethodOld(className, methodName, e, es, ts, t, loc)
-
-    case DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, exps, sig, tpe, loc) =>
-      if (flix.options.xnodeprecated) {
-        val m = NameError.Deprecated(loc)
-        sctx.errors.add(m)
-        return NamedAst.Expr.Error(m)
-      }
-
-      val es = exps.map(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      val t = visitType(tpe)
-      NamedAst.Expr.InvokeStaticMethodOld(className, methodName, es, ts, t, loc)
-
-    case DesugaredAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.GetFieldOld(className, fieldName, e, loc)
-
-    case DesugaredAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.PutField(className, fieldName, e1, e2, loc)
-
-    case DesugaredAst.Expr.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expr.GetStaticField(className, fieldName, loc)
-
-    case DesugaredAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.PutStaticField(className, fieldName, e, loc)
+      NamedAst.Expr.GetField(e, name, loc)
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1014,8 +959,8 @@ object Namer {
 
     case DesugaredAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
-    case DesugaredAst.Pattern.Tag(qname, pat, loc) =>
-      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
+    case DesugaredAst.Pattern.Tag(qname, pats, loc) =>
+      NamedAst.Pattern.Tag(qname, pats.map(visitPattern), loc)
 
     case DesugaredAst.Pattern.Tuple(elms, loc) =>
       NamedAst.Pattern.Tuple(elms.map(visitPattern), loc)
@@ -1054,8 +999,8 @@ object Namer {
     }
 
     pat0 match {
-      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
-        NamedAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarPlace), loc)
+      case DesugaredAst.RestrictableChoosePattern.Tag(qname, pats, loc) =>
+        NamedAst.RestrictableChoosePattern.Tag(qname, pats.map(visitVarPlace), loc)
       case DesugaredAst.RestrictableChoosePattern.Error(loc) =>
         NamedAst.RestrictableChoosePattern.Error(loc)
     }
@@ -1188,6 +1133,11 @@ object Namer {
       val t2 = visitType(tpe2)
       NamedAst.Type.Intersection(t1, t2, loc)
 
+    case DesugaredAst.Type.Difference(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Difference(t1, t2, loc)
+
     case DesugaredAst.Type.Pure(loc) =>
       NamedAst.Type.Pure(loc)
 
@@ -1273,7 +1223,7 @@ object Namer {
     case DesugaredAst.Pattern.Cst(Constant.Str(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Regex(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
-    case DesugaredAst.Pattern.Tag(_, p, _) => freeVars(p)
+    case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
     case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.RecordEmpty(_) => Nil
@@ -1315,6 +1265,7 @@ object Namer {
     case DesugaredAst.Type.Complement(tpe, _) => freeTypeVars(tpe)
     case DesugaredAst.Type.Union(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.Intersection(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
+    case DesugaredAst.Type.Difference(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.Pure(_) => Nil
     case DesugaredAst.Type.CaseSet(_, _) => Nil
     case DesugaredAst.Type.CaseComplement(tpe, _) => freeTypeVars(tpe)
@@ -1389,7 +1340,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.TypeParam] = {
+  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case tparams@(_ :: _) => visitExplicitTypeParams(tparams)

@@ -190,9 +190,9 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
-      case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
+      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
 
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
@@ -241,16 +241,18 @@ object RestrictableChooseConstraintGen {
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
-        // The tag type is a function from the type of variant to the type of the enum.
+        // The tag type is a function from the type of terms to the type of the enum.
         //
         // Γ ⊢ e: τ
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, enumType, loc)
+        c.unifyType(tagType, constructorBase, loc)
         targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
         c.unifyType(enumTypeOut, tvar, loc)
+        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
     }
   }
@@ -352,8 +354,8 @@ object RestrictableChooseConstraintGen {
         // The tag type is a function from the type of variant to the type of the enum.
         //
         val tpes = pat.map(visitVarOrWild)
-        val tpe = Type.mkTuplish(tpes, loc)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
+        c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         resTpe
 

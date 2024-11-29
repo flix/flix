@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
+import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationMessage with Recoverable {
+sealed trait TypeError extends CompilationMessage {
   val kind: String = "Type Error"
 }
 
@@ -70,8 +70,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"Java '${clazz.getName}' constructor not found")}
          |""".stripMargin
@@ -100,10 +99,11 @@ object TypeError {
   /**
     * Java field not found type error.
     *
+    * @param base the source location of the receiver expression.
     * @param tpe the type of the receiver object.
     * @param loc the location where the error occurred.
     */
-  case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
 
     def message(formatter: Formatter): String = {
@@ -564,7 +564,7 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
@@ -728,9 +728,9 @@ object TypeError {
 
   /**
    * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
+   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
    */
-  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
+  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved constructor"
 
     def message(formatter: Formatter): String = s"Unresolved constructor"
@@ -738,9 +738,9 @@ object TypeError {
 
   /**
    * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField2.
+   * This is a dummy error used in Java field type reconstruction for GetField.
    */
-  case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
+  case class UnresolvedField(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved field"
 
     def message(formatter: Formatter): String = s"Unresolved field"
@@ -748,9 +748,9 @@ object TypeError {
 
   /**
    * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
+   * This is a dummy error used in Java method type reconstruction for InvokeMethod.
    */
-  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
+  case class UnresolvedMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved method"
 
     def message(formatter: Formatter): String = s"Unresolved method"
@@ -758,9 +758,9 @@ object TypeError {
 
   /**
    * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod2.
+   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
    */
-  case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError with Recoverable {
+  case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved static method"
 
     def message(formatter: Formatter): String = s"Unresolved static method"
@@ -796,7 +796,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
 
     def message(formatter: Formatter): String = {

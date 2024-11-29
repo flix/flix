@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
-import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -32,10 +33,10 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[BroadEqualityConstraint]), UnificationError] = {
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
-      return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
+      return Ok((Substitution.empty, List(BroadEqualityConstraint(tpe1, tpe2))))
     }
 
     // Check for Type.Error
@@ -53,7 +54,7 @@ object BoolUnification {
   /**
     * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
-  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Result[Substitution, UnificationError] = {
     implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
 
     //
@@ -69,8 +70,8 @@ object BoolUnification {
     // Run the expensive Boolean unification algorithm.
     //
     SveAlgorithm.unify(f1, f2, renv) match {
-      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => toTypeSubstitution(subst, env).toOk
+      case None => Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case Some(subst) => Ok(toTypeSubstitution(subst, env))
     }
   }
 
@@ -79,7 +80,7 @@ object BoolUnification {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[IrreducibleEff, Int] = {
+  private def getEnv(fs: List[Type]): Bimap[IrreducibleEff, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))

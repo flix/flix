@@ -1,7 +1,7 @@
-mod Test.Exp.ReifyType {
+mod Test.Exp.TypeMatch {
 
     //////////////////////////////////////
-    // Emulating reifyType              //
+    // Emulating type reflection        //
     //////////////////////////////////////
 
     @Test
@@ -313,7 +313,7 @@ mod Test.Exp.ReifyType {
     }
 
     //////////////////////////////////////
-    // Emulating reifyEff               //
+    // Emulating effect reflection      //
     //////////////////////////////////////
 
     @Test

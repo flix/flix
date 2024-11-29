@@ -34,7 +34,8 @@ object AstPrinter {
   implicit object DebugUnit extends DebugNoOp[Unit]
 
   implicit object DebugSyntaxTree extends Debug[SyntaxTree.Root] {
-    override def emit(phase: String, root: SyntaxTree.Root)(implicit flix: Flix): Unit = ()
+    override def emit(phase: String, root: SyntaxTree.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, SyntaxTreePrinter.print(root))
   }
 
   implicit object DebugWeededAst extends Debug[WeededAst.Root] {
@@ -79,7 +80,8 @@ object AstPrinter {
   }
 
   implicit object DebugMonoAst extends Debug[MonoAst.Root] {
-    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = ()
+    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, MonoAstPrinter.print(root))
   }
 
   implicit object DebugReducedAst extends Debug[ReducedAst.Root] {

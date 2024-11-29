@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.ast.ops
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.SigSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
 
 object TypedAstOps {
 
@@ -16,11 +16,13 @@ object TypedAstOps {
     * Returns the set of variable symbols bound by the given pattern `pat0`.
     */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
-    case Pattern.Wild(tpe, loc) => Map.empty
-    case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
+    case Pattern.Wild(_, _) => Map.empty
+    case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
-    case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
-    case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+    case Pattern.Tag(_, pats, _, _) => pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (macc, pat) => macc ++ binds(pat)
+    }
+    case Pattern.Tuple(elms, _, _) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
     case Pattern.Record(pats, pat, _, _) =>
@@ -44,7 +46,7 @@ object TypedAstOps {
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
-    case Expr.ApplyClo(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
@@ -60,8 +62,8 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.Tag(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.RestrictableTag(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expr.RecordEmpty(_, _) => Set.empty
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
@@ -82,7 +84,6 @@ object TypedAstOps {
     case Expr.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
-    case Expr.UncheckedMaskingCast(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
@@ -145,12 +146,10 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expr.Lambda(fparam, exp, _, _) =>
-      freeVars(exp) - fparam.sym
+      freeVars(exp) - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      exps.foldLeft(freeVars(exp)) {
-        case (acc, exp) => freeVars(exp) ++ acc
-      }
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.ApplyDef(_, exps, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -176,14 +175,14 @@ object TypedAstOps {
     case Expr.Let(bnd, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
-      val bound = sym :: fparams.map(_.sym)
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+      val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
     case Expr.Region(_, _) =>
       Map.empty
 
-    case Expr.Scope(sym, _, exp, _, _, _) =>
+    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
       freeVars(exp) - sym
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -203,7 +202,7 @@ object TypedAstOps {
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, TypeMatchRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
+        case (acc, TypeMatchRule(bnd, _, exp)) => acc ++ (freeVars(exp) - bnd.sym)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
@@ -213,11 +212,15 @@ object TypedAstOps {
       }
       e ++ rs
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      freeVars(exp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      freeVars(exp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -253,7 +256,7 @@ object TypedAstOps {
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      freeVars(region) ++ fields.flatMap { case (k, v) => freeVars(v) }
+      freeVars(region) ++ fields.flatMap { case (_, v) => freeVars(v) }
 
     case Expr.StructGet(e, _, _, _, _) =>
       freeVars(e)
@@ -287,19 +290,16 @@ object TypedAstOps {
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      freeVars(exp)
-
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
+        case (acc, CatchRule(bnd, _, exp)) => acc ++ freeVars(exp) - bnd.sym
       }
 
     case Expr.Throw(exp, _, _, _) => freeVars(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
+        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.Do(_, exps, _, _, _) =>
@@ -334,7 +334,7 @@ object TypedAstOps {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
+        case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.NewChannel(exp1, exp2, _, _, _) =>
@@ -349,7 +349,7 @@ object TypedAstOps {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val d = default.map(freeVars).getOrElse(Map.empty)
       rules.foldLeft(d) {
-        case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
+        case (acc, SelectChannelRule(Binder(sym, _), chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
@@ -400,14 +400,17 @@ object TypedAstOps {
     */
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
-    case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
+    case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
-    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pats, _, _) =>
+      pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
     case Pattern.Tuple(elms, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
-    case Pattern.Record(pats, pat, tpe, loc) =>
+    case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, rfp) => acc ++ freeVars(rfp.pat)
       }
@@ -428,7 +431,7 @@ object TypedAstOps {
 
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
-    case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
+    case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
     case RestrictableChoosePattern.Error(_, _) => None
   }
 
@@ -437,7 +440,7 @@ object TypedAstOps {
     */
   private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
     case Constraint(cparams0, head, body, _) =>
-      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
+      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.bnd.sym)
   }
 
   /**

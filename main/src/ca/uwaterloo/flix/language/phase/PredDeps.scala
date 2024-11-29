@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -36,7 +35,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): (Root, List[CompilationMessage & Recoverable]) = flix.phaseNew("PredDeps") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
@@ -93,11 +92,8 @@ object PredDeps {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc + visitExp(exp)
-      }
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.ApplyDef(_, exps, _, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
@@ -160,11 +156,15 @@ object PredDeps {
       }
       dg1 + dg2
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledPrecedenceGraph.empty) {
@@ -232,9 +232,6 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>

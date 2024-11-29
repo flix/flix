@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -49,7 +49,7 @@ object TypeReduction {
     *   Elm[Elm[a]]   ~> Elm[Elm[a]]
     * }}}
     */
-  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
 
@@ -110,10 +110,10 @@ object TypeReduction {
     case Type.JvmToEff(j0, _) =>
       simplify(j0, renv0, loc).map {
         case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) =>
-          (BaseEffects.getConstructorEffs(constructor, loc), true)
+          (PrimitiveEffects.getConstructorEffs(constructor, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) =>
-          (BaseEffects.getMethodEffs(method, loc), true)
+          (PrimitiveEffects.getMethodEffs(method, loc), true)
 
         case (Type.Cst(TypeConstructor.JvmField(_), _), _) =>
           // Fields should never have any effect other than IO.
@@ -155,13 +155,13 @@ object TypeReduction {
           Result.Ok((meth, false))
       }
 
-    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
+    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(base, tpe, name), _) =>
       lookupField(tpe, name.name) match {
         case JavaFieldResolution.Resolved(field) =>
           val tpe = Type.Cst(TypeConstructor.JvmField(field), loc)
           Result.Ok((tpe, true))
         case JavaFieldResolution.NotFound =>
-          Result.Err(TypeError.FieldNotFound(name, tpe, loc))
+          Result.Err(TypeError.FieldNotFound(base, name, tpe, loc))
         case JavaFieldResolution.UnresolvedTypes =>
           Result.Ok((field, false))
       }
@@ -176,7 +176,7 @@ object TypeReduction {
     val c = ConstructorUtils.getMatchingAccessibleConstructor(clazz, tparams *)
 
     // Check if we found a matching constructor.
-    if (c != null) {
+    if (c != null && !usesBoxing(tparams, c.getParameterTypes)) {
       JavaConstructorResolution.Resolved(c)
     } else {
       JavaConstructorResolution.NotFound
@@ -207,7 +207,7 @@ object TypeReduction {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
     // We check if we found a method and if its static flag matches.
-    if (m != null && JvmUtils.isStatic(m) == static) {
+    if (m != null && JvmUtils.isStatic(m) == static && !usesBoxing(tparams, m.getParameterTypes)) {
       // Case 1: We found the method on the clazz.
       JavaMethodResolution.Resolved(m)
     } else {
@@ -215,13 +215,45 @@ object TypeReduction {
       // We make one attempt on java.lang.Object.
       val classObj = classOf[java.lang.Object]
       val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
-      if (m != null && JvmUtils.isStatic(m) == static) {
+      if (m != null && JvmUtils.isStatic(m) == static && !usesBoxing(tparams, m.getParameterTypes)) {
         // Case 2.1: We found the method on java.lang.Object.
         JavaMethodResolution.Resolved(m)
       } else {
         // Case 2.2: We failed to find the method, so we report an error on the original clazz.
         JavaMethodResolution.NotFound
       }
+    }
+  }
+
+  /**
+    * Returns `true` if `args` and `params` have indices that are equivalent only by boxing.
+    *
+    * This function is used to check [[MethodUtils.getMatchingAccessibleMethod]] and
+    * [[ConstructorUtils.getMatchingAccessibleConstructor]] matches.
+    */
+  private def usesBoxing(args: List[Class[?]], params: Array[Class[?]]): Boolean = {
+    // This method is checking an existing match, so zip is fine.
+    args.zip(params).exists {
+      // Primitive type boxing.
+      case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
+      case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true
+      case (clazz, java.lang.Short.TYPE) if clazz != java.lang.Short.TYPE => true
+      case (clazz, java.lang.Integer.TYPE) if clazz != java.lang.Integer.TYPE => true
+      case (clazz, java.lang.Long.TYPE) if clazz != java.lang.Long.TYPE => true
+      case (clazz, java.lang.Character.TYPE) if clazz != java.lang.Character.TYPE => true
+      case (clazz, java.lang.Float.TYPE) if clazz != java.lang.Float.TYPE => true
+      case (clazz, java.lang.Double.TYPE) if clazz != java.lang.Double.TYPE => true
+      // Symmetric cases.
+      case (java.lang.Boolean.TYPE, clazz) if clazz != java.lang.Boolean.TYPE => true
+      case (java.lang.Byte.TYPE, clazz) if clazz != java.lang.Byte.TYPE => true
+      case (java.lang.Short.TYPE, clazz) if clazz != java.lang.Short.TYPE => true
+      case (java.lang.Integer.TYPE, clazz) if clazz != java.lang.Integer.TYPE => true
+      case (java.lang.Long.TYPE, clazz) if clazz != java.lang.Long.TYPE => true
+      case (java.lang.Character.TYPE, clazz) if clazz != java.lang.Character.TYPE => true
+      case (java.lang.Float.TYPE, clazz) if clazz != java.lang.Float.TYPE => true
+      case (java.lang.Double.TYPE, clazz) if clazz != java.lang.Double.TYPE => true
+      // Otherwise it is not boxing.
+      case _ => false
     }
   }
 

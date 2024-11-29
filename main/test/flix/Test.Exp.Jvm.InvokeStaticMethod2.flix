@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeStaticMethod2 {
+mod Test.Exp.Jvm.InvokeStaticMethod {
 
     import dev.flix.test.TestClassWithInheritedMethod
     import java.lang.{String => JString}
@@ -7,27 +7,27 @@ mod Test.Exp.Jvm.InvokeStaticMethod2 {
     import java.util.Arrays
 
     @test
-    def testInvokeStaticMethod2_01(): Bool \ IO =
+    def testInvokeStaticMethod_01(): Bool \ IO =
         JString.valueOf(true) == "true"
 
     @test
-    def testInvokeStaticMethod2_02(): Bool \ IO =
+    def testInvokeStaticMethod_02(): Bool \ IO =
         JString.valueOf('A') == "A"
 
     @test
-    def testInvokeStaticMethod2_03(): Bool \ IO =
+    def testInvokeStaticMethod_03(): Bool \ IO =
         JString.valueOf(21.42f32) == "21.42"
 
     @test
-    def testInvokeStaticMethod2_04(): Bool \ IO =
+    def testInvokeStaticMethod_04(): Bool \ IO =
         JString.valueOf(21.42f64) == "21.42"
 
     @test
-    def testInvokeStaticMethod2_05(): Bool \ IO =
+    def testInvokeStaticMethod_05(): Bool \ IO =
         JString.valueOf(42i32) == "42"
 
     @test
-    def testInvokeStaticMethod2_06(): Bool \ IO =
+    def testInvokeStaticMethod_06(): Bool \ IO =
         JString.valueOf(42i64) == "42"
 
     @test
@@ -48,7 +48,7 @@ mod Test.Exp.Jvm.InvokeStaticMethod2 {
         unsafe TestClassWithInheritedMethod.staticMethod(1) == 2
 
     @test
-    def testInvokeStaticMethod2_WithArrayParam(): Bool \ IO = region rc {
+    def testInvokeStaticMethod_WithArrayParam(): Bool \ IO = region rc {
         Arrays.fill(Array#{"this", "that"} @ rc, "foo");
         true
     }

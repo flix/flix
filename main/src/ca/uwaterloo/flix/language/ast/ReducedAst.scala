@@ -24,17 +24,19 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   types: Set[MonoType],
                   anonClasses: List[AnonClass],
-                  entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
+                  mainEntryPoint: Option[Symbol.DefnSym],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation]) {
 
-    def getMain: Option[Def] = entryPoint.flatMap(defs.get)
+    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
 
   }
 
@@ -48,6 +50,10 @@ object ReducedAst {
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: MonoType)
+
+  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+
+  case class Struct(ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -73,7 +79,7 @@ object ReducedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -101,6 +107,12 @@ object ReducedAst {
 
   }
 
+  /** [[Type]] is used here because [[Enum]] declarations are not monomorphized. */
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation)
+
+  /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+
   case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
@@ -110,6 +122,8 @@ object ReducedAst {
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
+
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   case class LocalParam(sym: Symbol.VarSym, tpe: MonoType)
 

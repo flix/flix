@@ -19,128 +19,11 @@ import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 object Visitor {
-
-  /**
-    * Defines how each AST node type is handled when it's visited.
-    *
-    * Each consume function `consumeX` takes a value of type `X` and returns [[Unit]].
-    * Thus, anything it does is through effects.
-    *
-    * Implementations need only implement the consume functions that they care about,
-    * Any consume function not implemented falls back on the default of doing nothing
-    * upon consuming the corresponding AST node.
-    *
-    * Example
-    * {{{
-    * object ExprListConsumer extends Consumer {
-    *   var stack: List[Expr] = Nil
-    *   override consumeExpr(exp: Expr): Unit = {
-    *     stack = exp :: stack
-    *   }
-    * }
-    * }}}
-    *
-    * This consumer only cares about [[Expr]]s and simply collects all expressions visited.
-    */
-  trait Consumer {
-    def consumeAnnotation(ann: Annotation): Unit = ()
-    def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
-    def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
-    def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
-    def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
-    def consumeBinder(bnd: Binder): Unit = ()
-    def consumeCase(cse: Case): Unit = ()
-    def consumeCaseSymUse(sym: CaseSymUse): Unit = ()
-    def consumeCatchRule(rule: CatchRule): Unit = ()
-    def consumeConstraint(c: Constraint): Unit = ()
-    def consumeConstraintParam(cparam: ConstraintParam): Unit = ()
-    def consumeDef(defn: Def): Unit = ()
-    def consumeDefSymUse(sym: DefSymUse): Unit = ()
-    def consumeDerivation(derive: Derivation): Unit = ()
-    def consumeDerivations(derives: Derivations): Unit = ()
-    def consumeEff(eff: Effect): Unit = ()
-    def consumeEffectSymUse(effUse: EffectSymUse): Unit = ()
-    def consumeEnum(enm: Enum): Unit = ()
-    def consumeEqualityConstraint(ec: EqualityConstraint): Unit = ()
-    def consumeExpr(exp: Expr): Unit = ()
-    def consumeFormalParam(fparam: FormalParam): Unit = ()
-    def consumeParYieldFragment(frag: ParYieldFragment): Unit = ()
-    def consumeHandlerRule(rule: HandlerRule): Unit = ()
-    def consumeInstance(ins: Instance): Unit = ()
-    def consumeJvmMethod(method: JvmMethod): Unit = ()
-    def consumeLocalDefSym(symUse: LocalDefSymUse): Unit = ()
-    def consumeMatchRule(rule: MatchRule): Unit = ()
-    def consumeOp(op: Op): Unit = ()
-    def consumeOpSymUse(sym: OpSymUse): Unit = ()
-    def consumePattern(pat: Pattern): Unit = ()
-    def consumePredicate(p: Predicate): Unit = ()
-    def consumePredicateParam(pparam: PredicateParam): Unit = ()
-    def consumeRecordLabelPattern(pat: RecordLabelPattern): Unit = ()
-    def consumeSelectChannelRule(rule: SelectChannelRule): Unit = ()
-    def consumeSig(sig: Sig): Unit = ()
-    def consumeSigSymUse(symUse: SigSymUse): Unit = ()
-    def consumeStruct(struct: Struct): Unit = ()
-    def consumeStructField(field: StructField): Unit = ()
-    def consumeStructFieldSymUse(symUse: StructFieldSymUse): Unit = ()
-    def consumeTypeMatchRule(rule: TypeMatchRule): Unit = ()
-    def consumeTrait(traitt: Trait): Unit = ()
-    def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
-    def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = ()
-    def consumeTraitSymUse(symUse: TraitSymUse): Unit= ()
-    def consumeType(tpe: Type): Unit = ()
-    def consumeTypeAlias(alias: TypeAlias): Unit = ()
-    def consumeTypeParam(tparam: TypeParam): Unit = ()
-    def consumeVarBinder(varSym: Symbol.VarSym, tpe: Type): Unit = ()
-  }
-
-  /**
-    * Defines whether AST nodes are visited.
-    */
-  trait Acceptor {
-    /**
-      * Defines whether an AST node is visited based on its [[SourceLocation]]
-      *
-      * @param loc  [[SourceLocation]] of the AST node
-      * @return     true if the AST node should be visited, `false` otherwise
-      */
-    def accept(loc: SourceLocation): Boolean;
-  }
-
-  /**
-    * Acceptor that accepts all AST nodes.
-    */
-  case object AllAcceptor extends Acceptor {
-    def accept(loc: SourceLocation): Boolean = true
-  }
-
-  /**
-    * Acceptor that accepts all AST nodes whose `SourceLocation` is within
-    * the file given by the path `uri`.
-    *
-    * @param uri  the path of the file that an AST node [[SourceLocation]] must be within to be accepted.
-    */
-  case class FileAcceptor(uri: String) extends Acceptor {
-    def accept(loc: SourceLocation): Boolean = uri == loc.source.name
-  }
-
-  /**
-    * Acceptor that accepts an AST node if it contains a given position.
-    *
-    * [[InsideAcceptor]] accepts an AST if it's [[SourceLocation]] is within the file given by `uri`
-    * and the `pos` is within the [[SourceLocation]] of the AST.
-    *
-    * @param uri  the path to the file that the AST node [[SourceLocation]] must be in to be accepted.
-    * @param pos  the [[Position]] that must be within the AST node's [[SourceLocation]] for the node to be accepted.
-    */
-  case class InsideAcceptor(uri: String, pos: Position) extends Acceptor {
-    def accept(loc: SourceLocation): Boolean = inside(uri, pos)(loc)
-  }
-
   /**
     * Visits the root AST node and recursively visits
     * all children that are accepted by the acceptor,
@@ -167,6 +50,9 @@ object Visitor {
     implicit val c: Consumer = consumer
     implicit val a: Acceptor = acceptor
 
+    // NB: the signatures in `root.sigs` are not visited here, since they will be visited after
+    // their corresponding trait
+
     root.defs.values.foreach(visitDef)
 
     root.effects.values.foreach(visitEffect)
@@ -174,8 +60,6 @@ object Visitor {
     root.enums.values.foreach(visitEnum)
 
     root.instances.values.flatten.foreach(visitInstance)
-
-    root.sigs.values.foreach(visitSig)
 
     root.structs.values.foreach(visitStruct)
 
@@ -213,12 +97,11 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, tpe, _, loc) = cse
+    val Case(_, tpes, _, loc) = cse
     if (!a.accept(loc)) { return }
 
     c.consumeCase(cse)
-
-    visitType(tpe)
+    tpes.foreach(visitType)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -431,9 +314,9 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp, exps, _, _, _) =>
-        visitExpr(exp)
-        exps.foreach(visitExpr)
+      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
         visitDefSymUse(symUse)
@@ -466,8 +349,8 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(varSym, regionVar, exp, _, _, _) =>
-        visitVarBinder(varSym, regionVar)
+      case Expr.Scope(bnd, regionVar, exp, _, _, _) =>
+        visitBinder(bnd)
         visitType(regionVar)
         visitExpr(exp)
 
@@ -493,9 +376,9 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.Tag(symUse, exp, _, _, _) =>
+      case Expr.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
-        visitExpr(exp)
+        exps.foreach(visitExpr)
 
       case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
@@ -575,9 +458,6 @@ object Visitor {
         visitExpr(exp)
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
-
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visitExpr(exp)
 
       case Expr.Without(exp, effUse, _, _, _) =>
         visitExpr(exp)
@@ -686,12 +566,6 @@ object Visitor {
     c.consumeBinder(bnd)
   }
 
-  private def visitVarBinder(varSym: Symbol.VarSym, tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(varSym.loc)) { return }
-
-    c.consumeVarBinder(varSym, tpe)
-  }
-
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
@@ -746,25 +620,25 @@ object Visitor {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val SelectChannelRule(varSym, chan, exp) = rule
+    val SelectChannelRule(bnd, chan, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
     val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeSelectChannelRule(rule)
 
-    visitVarBinder(varSym, chan.tpe)
+    visitBinder(bnd)
     visitExpr(chan)
     visitExpr(exp)
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(varSym, _, tpe, _, loc) = fparam
+    val FormalParam(bnd, _, tpe, _, loc) = fparam
     if (!a.accept(loc)) { return }
 
     c.consumeFormalParam(fparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
     visitType(tpe)
   }
 
@@ -812,20 +686,35 @@ object Visitor {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(sym, tpe, exp) = rule
+    val TypeMatchRule(bnd, tpe, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeTypeMatchRule(rule)
 
+    visitBinder(bnd)
     visitType(tpe)
     visitExpr(exp)
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(tpe.loc)) { return }
+
     c.consumeType(tpe)
+
+    tpe match {
+      case Type.Var(_, _) => ()
+      case Type.Cst(_, _) => ()
+      case Type.Apply(t1, t2, _) =>
+        visitType(t1)
+        visitType(t2)
+      case Type.Alias(_, args, _, _) => args.foreach(visitType)
+      case Type.AssocType(_, t, _, _) => visitType(t)
+      case Type.JvmToType(t, _) => visitType(t)
+      case Type.JvmToEff(t, _) => visitType(t)
+      case Type.UnresolvedJvmType(_, _) => ()
+    }
   }
 
   private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -841,13 +730,14 @@ object Visitor {
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val CatchRule(sym, _, exp) = rule
+    val CatchRule(bnd, _, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(sym.loc) || a.accept(exp.loc)
+    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeCatchRule(rule)
 
+    visitBinder(bnd)
     visitExpr(exp)
   }
 
@@ -863,12 +753,12 @@ object Visitor {
   }
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val ConstraintParam(varSym, tpe, loc) = cparam
+    val ConstraintParam(bnd, _, loc) = cparam
     if (!a.accept(loc)) { return }
 
     c.consumeConstraintParam(cparam)
 
-    visitVarBinder(varSym, tpe)
+    visitBinder(bnd)
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -891,11 +781,11 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(varSym, tpe, _) => visitVarBinder(varSym, tpe)
+    	case Var(varSym, _, _) => visitBinder(varSym)
     	case Cst(_, _, _) => ()
-    	case Tag(sym, pat, _, _) =>
+    	case Tag(sym, pats, _, _) =>
     	  visitCaseSymUse(sym)
-        visitPattern(pat)
+        pats.foreach(visitPattern)
     	case Tuple(pats, _, _) =>
     	  pats.foreach(visitPattern)
     	case Record(pats, pat, _, _) =>
@@ -908,8 +798,11 @@ object Visitor {
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
     val RecordLabelPattern(_, p, _, loc) = pat
+
     if (!a.accept(loc)) { return }
+
     c.consumeRecordLabelPattern(pat)
+
     visitPattern(p)
   }
 

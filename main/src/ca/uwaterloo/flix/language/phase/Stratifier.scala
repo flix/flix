@@ -122,10 +122,10 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      Expr.ApplyClo(e, es, tpe, eff, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -194,13 +194,13 @@ object Stratifier {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
-    case Expr.Tag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Tag(sym, e, tpe, eff, loc)
+    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.Tag(sym, es, tpe, eff, loc)
 
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.RestrictableTag(sym, e, tpe, eff, loc)
+    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.RestrictableTag(sym, es, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -292,10 +292,6 @@ object Stratifier {
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
-
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.UncheckedMaskingCast(e, tpe, eff, loc)
 
     case Expr.Without(exp, sym, tpe, eff, loc) =>
       val e = visitExp(exp)

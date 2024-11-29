@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -24,7 +22,7 @@ object DefCompleter {
   /**
     * Returns a List of Completion for defs.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[DefCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[DefCompletion] = {
     val word = context.word
     val uri = context.uri
 
@@ -44,13 +42,10 @@ object DefCompleter {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      decl.sym.toString.startsWith(word)
-    else
-      decl.sym.text.startsWith(word)
     val isInFile = decl.sym.loc.source.name == uri
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = decl.sym.toString.startsWith(word)
 
-    isMatch && (isPublic || isInFile)
+    isNamespace && isMatch && (isPublic || isInFile)
   }
 }

@@ -286,20 +286,20 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
 
     case Request.Hover(id, uri, pos) =>
       ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
       synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
@@ -311,18 +311,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
 
-    case Request.InlayHint(id, _, _) =>
-      // InlayHints disabled due to poor ergonomics.
-      // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+    case Request.InlayHint(id, uri, range) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
     case Request.CodeAction(id, uri, range, context) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, root, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
 
   }
 
@@ -335,16 +333,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check().toSoftResult match {
-        case Result.Ok((root, Chain.empty)) =>
+      flix.check() match {
+        case (Some(root), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
 
-        case Result.Ok((root, errors)) =>
+        case (Some(root), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case Result.Err(errors) =>
+        case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Update the current errors.
@@ -366,7 +364,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
     this.currentErrors = errors.toList

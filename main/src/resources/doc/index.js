@@ -1,16 +1,18 @@
 function initTheme() {
     const storeKey = "flix-html-docs:use-dark-theme";
 
+    const root = document.querySelector(":root");
+
     const body = document.querySelector("body");
     body.classList.remove("no-script");
 
     function setTheme(useDarkTheme) {
         if (useDarkTheme) {
-            body.classList.remove("light");
-            body.classList.add("dark");
+            root.classList.remove("light");
+            root.classList.add("dark");
         } else {
-            body.classList.remove("dark");
-            body.classList.add("light");
+            root.classList.remove("dark");
+            root.classList.add("light");
         }
     }
 
@@ -26,7 +28,6 @@ function initTheme() {
     setTheme(dark);
 
     const toggle = document.querySelector("#theme-toggle");
-    toggle.removeAttribute("disabled");
     toggle.addEventListener("click", () => {
         dark = !dark;
         setTheme(dark);
@@ -37,7 +38,6 @@ function initTheme() {
 function initCopyLinks() {
     const links = document.querySelectorAll(".copy-link");
     for (const link of links) {
-        link.setAttribute("title", "Copy link");
         link.addEventListener("click", async (e) => {
             e.preventDefault();
 
@@ -55,7 +55,7 @@ function initCopyLinks() {
             msgNode.style.position = "absolute";
             msgNode.style.top = `${e.clientY}px`;
             msgNode.style.left = `${e.clientX}px`;
-            document.body.appendChild(msgNode);
+            document.body.append(msgNode);
 
             msgNode.addEventListener("animationend", () => {
                 msgNode.remove();
@@ -64,19 +64,20 @@ function initCopyLinks() {
     }
 }
 
-function initMobileInteractions() {
-    const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
-    const menuLinks = document.querySelectorAll("nav a");
+function initLinks() {
+    const links = document.querySelectorAll("a");
+    links.forEach(initLink);
+}
+function initLink(link) {
+    const isAnchor = link.getAttribute("href").includes("#");
 
-    // Hide sidebar when navigating somewhere within the page
-    for (const link of menuLinks) {
-        const isAnchor = link.getAttribute("href").startsWith("#");
-        if (isAnchor) link.addEventListener("click", () => {
-            menuToggleCheckbox.checked = false;
-        });
-    }
+    // Hide menu when navigating somewhere within the page
+    if (isAnchor) link.addEventListener("click", () => {
+        const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
+        menuToggleCheckbox.checked = false;
+    });
 }
 
 initTheme();
 initCopyLinks();
-initMobileInteractions();
+initLinks();

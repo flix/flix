@@ -30,11 +30,12 @@ object DocAst {
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type])
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
-  case class Program(enums: List[Enum], defs: List[Def])
+  /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
+  case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
   case class JvmMethod(ident: Name.Ident, fparams: List[Expr.Ascription], clo: Expr, tpe: Type)
 
@@ -109,7 +110,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LetRec(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -138,10 +139,6 @@ object DocAst {
     val Wild: Expr =
       AsIs("_")
 
-    /** e.g. `x_2` */
-    def VarWithOffset(sym: Symbol.VarSym): Expr =
-      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
-
     def Hole(sym: Symbol.HoleSym): Expr =
       AsIs("?" + sym.toString)
 
@@ -162,15 +159,11 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr): Expr =
-      Keyword("untag", d)
+    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+      Keyword("untag_"+idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))
-
-    /** The control separated return statement */
-    def Ret(d: Expr): Expr =
-      Keyword("ret", d)
 
     def Discard(d: Expr): Expr =
       Keyword("discard", d)
@@ -203,7 +196,7 @@ object DocAst {
     def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
       val beforeRecord = "new " + sym.toString
       val name = Name.Label(sym.name, sym.loc)
-      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc)}
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
       DoubleKeyword(beforeRecord, record, "@", Left(d2))
     }
 
@@ -272,7 +265,7 @@ object DocAst {
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
-    def JavaInvokeMethod2(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
+    def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(methodName.name)), ds)
 
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
@@ -310,9 +303,6 @@ object DocAst {
 
     val Absent: Expr =
       AsIs("Absent")
-
-    def Present(d: Expr): Expr =
-      App(AsIs("Present"), List(d))
 
   }
 

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifier, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -38,6 +39,8 @@ object LambdaLift {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     // Add lifted defs from the shared context to the existing defs.
@@ -45,7 +48,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -53,6 +56,28 @@ object LambdaLift {
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, Map.empty, sctx, flix)
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
+  }
+
+  private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
+    case SimplifiedAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      LiftedAst.Enum(ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: SimplifiedAst.Case): LiftedAst.Case = caze match {
+    case SimplifiedAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
+  }
+
+  private def visitStruct(struct0: SimplifiedAst.Struct): LiftedAst.Struct = struct0 match {
+    case SimplifiedAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      LiftedAst.Struct(ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: SimplifiedAst.StructField): LiftedAst.StructField = field match {
+    case SimplifiedAst.StructField(sym, tpe, loc) => LiftedAst.StructField(sym, tpe, loc)
   }
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
@@ -117,10 +142,10 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+    case SimplifiedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)

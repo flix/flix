@@ -82,7 +82,7 @@ object JvmUtils {
     *
     * If the given class is an array, the method `clone` is not included (see Class.getMethods).
     *
-    * Returns `Nil` if both static` and `instance` is `false`.
+    * Returns `Nil` if both `static` and `instance` is `false`.
     *
     * @param clazz the class to search
     * @param static whether to include static methods

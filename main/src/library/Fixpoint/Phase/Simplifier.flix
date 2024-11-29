@@ -89,7 +89,7 @@ mod Fixpoint.Phase.Simplifier {
             let (memberOf, rest) =
                 // Delete checks of the form `x[i] == x[i]` and `x ≤ x` and `x ⊓ y ≤ x`.
                 Vector.filter(e -> match e {
-                    case BoolExp.Eq(RowLoad(lhs), RowLoad(rhs)) => lhs != rhs
+                    case BoolExp.Eq(RowLoad(lhs1, lhs2), RowLoad(rhs1, rhs2)) => (lhs1, lhs2) != (rhs1, rhs2)
                     case BoolExp.Leq(_, lhs, LoadLatVar(rhsVar)) =>
                         let lhsVars = ramTermVars(lhs);
                         not Set.memberOf(rhsVar, lhsVars)
@@ -97,7 +97,7 @@ mod Fixpoint.Phase.Simplifier {
                 }, test) |>
                 // Partition into membership tests and rest.
                 Vector.partition(e -> match e {
-                    case BoolExp.NotMemberOf(_) => true
+                    case BoolExp.NotMemberOf(_, _) => true
                     case _ => false
                 });
             let newTest = Vector.append(rest, memberOf);
@@ -108,7 +108,7 @@ mod Fixpoint.Phase.Simplifier {
                 Some(RelOp.If(newTest, then))
         case RelOp.Search(rowVar, ramSym, body) =>
             let f = nb -> match ramSym {
-                case RamSym.Delta(_) =>
+                case RamSym.Delta(_, _, _) =>
                     if (Set.memberOf(ramSym, stratum))
                         Some(RelOp.Search(rowVar, ramSym, nb))
                     else
@@ -121,7 +121,7 @@ mod Fixpoint.Phase.Simplifier {
             ) yield res
         case RelOp.Query(rowVar, ramSym, qry, body) =>
             let f = nb -> match ramSym {
-                case RamSym.Delta(_) =>
+                case RamSym.Delta(_, _, _) =>
                     if (Set.memberOf(ramSym, stratum))
                         Some(RelOp.Query(rowVar, ramSym, qry, nb))
                     else
@@ -136,7 +136,7 @@ mod Fixpoint.Phase.Simplifier {
             forM(
                 newBody <- simplifyOp(stratum, body)
             ) yield RelOp.Functional(rowVar, f, terms, newBody)
-        case RelOp.Project(_)    => Some(op)
+        case RelOp.Project(_, _)    => Some(op)
     }
 
     ///

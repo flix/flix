@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -57,6 +57,10 @@ import scala.collection.mutable
   * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
   * that `Print + (Crash + Print)` becomes `Crash + Print`.
   *
+  * Enums and structs can both express type-recursion which cannot be resolved without erasure. This
+  * means that those definitions are left polymorphic, but the types are still resolved of associated
+  * types fx.
+  *
   * At a high-level, monomorphization works as follows:
   *
   *   1. We maintain a queue of functions and the concrete, normalized types they must be
@@ -69,8 +73,7 @@ import scala.collection.mutable
   *         copied).
   *      a. We enqueue (or re-used) other functions referenced by the current function which require
   *         specialization.
-  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions
-  *      (Enum declarations are deleted to avoid specializing them).
+  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
   *
@@ -103,7 +106,7 @@ object Monomorpher {
     * mapped to their default representation. `s` is used without the [[StrictSubstitution]] to
     * support variables in typematch, where it is not only used on variables.
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -176,7 +179,7 @@ object Monomorpher {
     *
     * This class is thread-safe.
     */
-  private class Context() {
+  private class Context {
 
     /**
       * A queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -316,7 +319,7 @@ object Monomorpher {
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
-    implicit val is = mkFastInstanceLookup(root.instances)
+    implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
     val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
 
@@ -338,7 +341,7 @@ object Monomorpher {
       case (sym, defn) =>
         // We use an empty substitution because the defs are non-parametric.
         // its important that non-parametric functions keep their symbol to not
-        // invalidate the set of reachable functions.
+        // invalidate the set of entryPoints functions.
         mkFreshDefn(sym, defn, empty)
     }
 
@@ -364,20 +367,28 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val enums = ParOps.parMapValues(root.enums) {
+      case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
+        val newCases = MapOps.mapValues(cases)(visitEnumCase)
+        val tparams = tparams0.map(visitTypeParam)
+        MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
+    }
+
     val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
         val newFields = fields.map(visitStructField)
-        val tparams = tparams0.map(_.sym)
+        val tparams = tparams0.map(visitTypeParam)
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      enums,
       structs,
       effects,
-      root.entryPoint,
-      root.reachable,
+      root.mainEntryPoint,
+      root.entryPoints,
       root.sources
     )
   }
@@ -392,11 +403,25 @@ object Monomorpher {
     } yield (sym, inst.tpe.typeConstructor.get) -> inst
   }
 
-  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+  /** Visit a struct field, simplifying its polymorphic type. */
+  def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, tpe, loc)
+        MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv, isGround = false), loc)
     }
+  }
+
+  /** Visit an enum case, simplifying its polymorphic type. */
+  def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
+    caze match {
+      case LoweredAst.Case(sym, tpes, _, loc) =>
+        MonoAst.Case(sym, tpes.map(simplify(_, root.eqEnv, isGround = false)), loc)
+    }
+  }
+
+  /** Convert the type param directly. */
+  private def visitTypeParam(tp: LoweredAst.TypeParam): MonoAst.TypeParam = tp match {
+    case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
   }
 
   /**
@@ -467,10 +492,10 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyClo(e, es, subst(tpe), subst(eff), loc)
+    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
@@ -638,12 +663,12 @@ object Monomorpher {
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Tag(sym, pat, tpe, loc) =>
-      val (p, env1) = visitPat(pat, subst)
-      (MonoAst.Pattern.Tag(sym, p, subst(tpe), loc), env1)
+    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, envs) = pats.map(visitPat(_, subst)).unzip
+      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
+      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
@@ -652,7 +677,7 @@ object Monomorpher {
       }.unzip
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
-      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
     case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
@@ -788,6 +813,17 @@ object Monomorpher {
   }
 
   /**
+    * Returns the combined map of `envs`.
+    *
+    * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
+    */
+  private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
+      case (acc, m) => acc ++ m
+    }
+  }
+
+  /**
     * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
@@ -799,7 +835,7 @@ object Monomorpher {
 
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
-    (params, envs.reduce(_ ++ _))
+    (params, combineEnvs(envs))
   }
 
   /**
@@ -821,12 +857,12 @@ object Monomorpher {
       case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
       case None =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '$sym'", tpe1.loc)
     }
   }
 
   /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = {
+  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
     EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
       case Ok(t) => t
       case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
@@ -837,7 +873,7 @@ object Monomorpher {
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
     */
-  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)
@@ -862,6 +898,7 @@ object Monomorpher {
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y) => Type.mkDifference(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y) => Type.mkSymmetricDiff(x, y, loc)
 
       // Simplify case equations.
@@ -900,6 +937,10 @@ object Monomorpher {
       CofiniteEffSet.union(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
       CofiniteEffSet.intersection(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+      CofiniteEffSet.difference(eval(x), eval(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+      CofiniteEffSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 

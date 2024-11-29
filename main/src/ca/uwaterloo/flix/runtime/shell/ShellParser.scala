@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.runtime.shell
 import org.jline.reader.{EOFError, ParsedLine, Parser}
 import org.jline.reader.Parser.ParseContext
 
+import java.util
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -34,11 +35,11 @@ import scala.jdk.CollectionConverters.*
 class Parsed(s: String) extends ParsedLine {
 
   def wordIndex(): Int = -1
-  def word() = s
+  def word(): String = s
   def wordCursor(): Int = s.length
-  def words() = Nil.asJava
+  def words(): util.List[String] = Nil.asJava
   def cursor() = -1
-  def line() = s
+  def line(): String = s
 }
 
 /**
@@ -52,7 +53,7 @@ class ShellParser extends Parser {
       val lines = s.linesIterator.toList
 
       // If the input starts with two backslashes on a line ...
-      if (lines.headOption == Some("\\\\")) {
+      if (lines.headOption.contains("\\\\")) {
 
         // ... and doesn't end with two backslashes on a line, throw `EOFError` to trigger line continuation
         if (!(lines.size > 1 && lines.last == "\\\\"))
@@ -60,7 +61,7 @@ class ShellParser extends Parser {
       } else {
 
         // Otherwise, if the last character in the string is a backslash, throw `EOFError` to trigger line continuation
-        if (s.lastOption == Some('\\'))
+        if (s.lastOption.contains('\\'))
           throw new EOFError(-1, -1, "Escaped new line", "newline")
       }
     }

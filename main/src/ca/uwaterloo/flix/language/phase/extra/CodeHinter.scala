@@ -93,8 +93,8 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(DefSymUse(sym, loc1), exps, _, _, _, _) =>
       val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
@@ -151,11 +151,11 @@ object CodeHinter {
         case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      visitExps(exps)
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
@@ -186,8 +186,8 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.StructNew(sym, fields, region, _, _, _) =>
-      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region)
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.map { case (_, v) => v }.flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)
@@ -214,9 +214,6 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>

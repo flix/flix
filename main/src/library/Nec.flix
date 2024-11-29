@@ -673,7 +673,7 @@ mod Nec {
     ///
     pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =
         def loop(c1, k, i) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => k(NecOne(i, x))
+            case ViewLeft.OneLeft(x)      => k(NecOne((i, x)))
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((i, x), ks)), i + 1)
         };
         loop(c, k -> k, 0)
@@ -853,7 +853,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Nec[a]): Nec[a] with Order[a] = region rc {
-        let ans = toArray(rc, c) !> Array.sort! |> fromArray;
+        let ans = toArray(rc, c) !> Array.sort |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -869,7 +869,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region rc {
-        let ans = toArray(rc, c) !> Array.sortBy!(f) |> fromArray;
+        let ans = toArray(rc, c) !> Array.sortBy(f) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -884,7 +884,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region rc {
-        let ans = toArray(rc, c) !> Array.sortWith!(cmp) |> fromArray;
+        let ans = toArray(rc, c) !> Array.sortWith(cmp) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()

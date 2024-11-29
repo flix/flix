@@ -15,14 +15,16 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 object EffUnification3 {
@@ -37,16 +39,16 @@ object EffUnification3 {
   def unifyAll(
                 eqs: List[(Type, Type, SourceLocation)],
                 scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options = SetUnification.Options.default
-              ): (List[(Type, Type, SourceLocation)], Substitution) = {
+                opts: SetUnification.Options
+              )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = opts
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
+    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
-    implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
 
     // Convert type equations into formula equations.
     val equations = try {
@@ -76,15 +78,15 @@ object EffUnification3 {
     *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
     *     The returned substitution is a most general unifier.
     */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Option[Substitution], UnificationError] = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.doNothing
+    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
-    implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
 
     // Convert the type equation into a formula equation.
     val equation = try {
@@ -114,9 +116,9 @@ object EffUnification3 {
     }
   }
 
-  /** Returns a [[Bimap]] with each [[Atom]] having a unique number. */
-  private def mkBidirectionalVarMap(atoms: Set[Atom]): Bimap[Atom, Int] =
-    Bimap.from(atoms.toList.zipWithIndex)
+  /** Returns a [[SortedBimap]] with each [[Atom]] having a unique number. */
+  private def mkBidirectionalVarMap(atoms: SortedSet[Atom]): SortedBimap[Atom, Int] =
+    SortedBimap.from(atoms.toList.zipWithIndex)
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
   private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
@@ -130,7 +132,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Atom, Int]): Equation = {
+  private def toEquation(eq: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
     val (tpe1, tpe2, loc) = eq
     Equation.mk(toSetFormula(tpe1), toSetFormula(tpe2), loc)
   }
@@ -140,7 +142,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Atom, Int]): SetFormula = t match {
+  private def toSetFormula(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
@@ -179,11 +181,13 @@ object EffUnification3 {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
+      SetFormula.mkDifference(toSetFormula(tpe1), toSetFormula(tpe2))
+
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)
-      // a ⊕ b = (a ∪ b) - (a ∩ b)
-      SetFormula.mkDifference(SetFormula.mkUnion(f1, f2), SetFormula.mkInter(f1, f2))
+      SetFormula.mkXorDirect(f1, f2)
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
@@ -191,7 +195,7 @@ object EffUnification3 {
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
-  private def fromSetSubst(s: SetSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
+  private def fromSetSubst(s: SetSubstitution)(implicit m: SortedBimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
@@ -216,7 +220,7 @@ object EffUnification3 {
     * Both constants and variables are mapped back to generic type variables. The rigidity
     * environment, in the type world, distinguishes their rigidity or flexibility.
     */
-  private def fromSetFormula(f: SetFormula, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = f match {
+  private def fromSetFormula(f: SetFormula, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = f match {
     case SetFormula.Univ => Type.Univ
     case SetFormula.Empty => Type.Pure
     case SetFormula.Cst(c) => m.getBackward(c) match {
@@ -238,6 +242,8 @@ object EffUnification3 {
       Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
     case union@SetFormula.Union(_, _, _, _, _, _, _) =>
       Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
+    case SetFormula.Xor(other) =>
+      Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
   }
 
   /**
@@ -286,6 +292,7 @@ object EffUnification3 {
     case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
+    @tailrec
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
@@ -345,7 +352,7 @@ object EffUnification3 {
       * Returns the [[Type]] represented by `atom` with location `loc`. The kind of errors and
       * associated types are set to be [[Kind.Eff]].
       */
-    def toType(atom: Atom, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = atom match {
+    def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
@@ -355,7 +362,12 @@ object EffUnification3 {
     }
   }
 
-  /** An exception used for partial functions that convert [[Type]] into [[Atom]]. */
+  /**
+    * An exception used for partial functions that convert [[Type]] into [[Atom]].
+    *
+    * This exception should not leak outside this phase - it should always be caught. It is used to
+    * avoid having [[Option]] types on recursive functions.
+    */
   private case object InvalidType extends RuntimeException
 
 }

@@ -27,7 +27,7 @@ object DocAstFormatter {
 
   def format(p: Program)(implicit i: Indent): List[Doc] = {
     import scala.math.Ordering.Implicits.seqOrdering
-    val Program(enums0, defs0) = p
+    val Program(enums0, defs0, misc0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, tparams, cases) =>
         val tparamsf = if (tparams.isEmpty) empty else text("[") |:: sep(text(", "), tparams.map {
@@ -37,10 +37,10 @@ object DocAstFormatter {
           })
         }) |:: text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
-          case Case(sym, tpe@Type.Tuple(_)) =>
-            text("case") +: text(sym.name) |:: formatType(tpe, paren = false)
-          case Case(sym, tpe) =>
-            text("case") +: text(sym.name) |:: parens(formatType(tpe, paren = false))
+          case Case(sym, Nil) =>
+            text("case") +: text(sym.name)
+          case Case(sym, tpes) =>
+            text("case") +: text(sym.name) |:: formatType(Type.Tuple(tpes), paren = false)
         }))
         val d = text("enum") +: text(sym.toString) |:: tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
@@ -58,7 +58,13 @@ object DocAstFormatter {
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
-    (enums ++ defs).sortBy(_._1).map(_._2)
+    val misc = misc0.map {
+      case (name, expr) =>
+        val intro = text("/*") +: sep(breakWith(" "), name.split(" ").toList.map(text)) +: text("*/")
+        val e = format(expr)
+        intro +: e
+    }
+    (enums ++ defs).sortBy(_._1).map(_._2) ++ misc
   }
 
   def format(d: Expr)(implicit i: Indent): Doc =
@@ -153,7 +159,7 @@ object DocAstFormatter {
         formatLetBlock(s, inBlock)
       case l: Let =>
         formatLetBlock(l, inBlock)
-      case l: LetRec =>
+      case l: LocalDef =>
         formatLetBlock(l, inBlock)
       case Scope(v, d) =>
         val bodyf = aux(d, paren = false, inBlock = true)
@@ -238,9 +244,17 @@ object DocAstFormatter {
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
-      case LetRec(v, tpe, bind, _) =>
-        val bindf = aux(bind, paren = false)
-        text("letrec") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
+      case LocalDef(name, parameters, resType, effect, body, _) =>
+        val args = parameters.map(aux(_, paren = false))
+        val colon = if (resType.isDefined) text(":") else Doc.empty
+        val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
+        val effectf = effect.map(formatEffect(_, paren = false)).getOrElse(Doc.empty)
+        val equals = if (effect.isDefined) effectf +: text("=") else text("=")
+        val bodyf = format(body)
+        group(
+          text("local def") +: aux(name) |:: tuple(args) |::
+            colon +: group(resTypef |:: equals |:: breakWith(" ")) |:: curlyOpen(bodyf)
+        )
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
     if (inBlock) group(delimitedBinders)
@@ -276,8 +290,8 @@ object DocAstFormatter {
           chase(d2, s :: acc)
         case l@Let(_, _, _, body) =>
           chase(body, l :: acc)
-        case l@LetRec(_, _, _, body) =>
-          chase(body, l :: acc)
+        case l@LocalDef(_, _, _, _, _, next) =>
+          chase(next, l :: acc)
         case other => (acc.reverse, other)
       }
     }

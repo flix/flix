@@ -32,24 +32,32 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
   /**
     * Applies this substitution tree to the given type constraint.
     */
-  def apply(constr: TypeConstraint2): TypeConstraint2 = constr match {
-    case TypeConstraint2.Equality(tpe1, tpe2, loc) =>
-      // Performance: Reuse this, if possible.
-      val t1 = root(tpe1)
-      val t2 = root(tpe2)
-      if ((t1 eq tpe1) && (t2 eq tpe2))
-        constr
-      else
-        TypeConstraint2.Equality(t1, t2, loc)
+  def apply(constr: TypeConstraint2): TypeConstraint2 = {
+    if (root.isEmpty) {
+      // Performance: The substitution is empty. Nothing to be done.
+      return constr
+    }
 
-    case TypeConstraint2.Trait(sym, tpe, loc) =>
-      TypeConstraint2.Trait(sym, root(tpe), loc)
+    constr match {
+      case TypeConstraint2.Equality(tpe1, tpe2, loc) =>
+        // Check whether the substitution has to be applied.
+        val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
+        val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
+        // Performance: Reuse this, if possible.
+        if ((t1 eq tpe1) && (t2 eq tpe2))
+          constr
+        else
+          TypeConstraint2.Equality(t1, t2, loc)
 
-    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
-      // Use the root substitution for the external effects.
-      // Use the appropriate branch substitution for the nested constraints.
-      // MATT what to do if sym not in branches?
-      TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply), loc)
+      case TypeConstraint2.Trait(sym, tpe, loc) =>
+        TypeConstraint2.Trait(sym, root(tpe), loc)
+
+      case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
+        // Use the root substitution for the external effects.
+        // Use the appropriate branch substitution for the nested constraints.
+        // MATT what to do if sym not in branches?
+        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply), loc)
+    }
   }
 
   /**
@@ -62,6 +70,13 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
     */
   def @@(that: SubstitutionTree): SubstitutionTree = that match {
     case SubstitutionTree(thatRoot, thatBranches) =>
+      // Performance: Check if `this` or `that` is empty.
+      if (this eq SubstitutionTree.empty) {
+        return that
+      }
+      if (that eq SubstitutionTree.empty) {
+        return this
+      }
       val newRoot = root @@ thatRoot
       val newBranches = MapOps.unionWith(branches, thatBranches)(_ @@ _)
       SubstitutionTree(newRoot, newBranches)

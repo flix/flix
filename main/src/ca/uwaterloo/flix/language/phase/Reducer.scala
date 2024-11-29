@@ -43,9 +43,12 @@ object Reducer {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
+    // This is an over approximation of the types in enums and structs since they are erased.
+    val enumTypes = MonoType.ErasedTypes
+    val structTypes = MonoType.ErasedTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
-    val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ effectTypes))
+    val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ enumTypes ++ structTypes ++ effectTypes))
 
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
@@ -84,11 +87,11 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
-        val e = visitExpr(exp)
-        val es = exps.map(visitExpr)
-        Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+        val e1 = visitExpr(exp1)
+        val e2 = visitExpr(exp2)
+        Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
@@ -228,7 +231,7 @@ object Reducer {
           case Lazy(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
           case Enum(_, targs) => taskList.enqueueAll(targs)
-          case Struct(_, elms, _) => taskList.enqueueAll(elms)
+          case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }

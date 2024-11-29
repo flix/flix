@@ -39,7 +39,7 @@ object SimplifiedAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(Nil, defs)
+    DocAst.Program(Nil, defs, Nil)
   }
 
   /**
@@ -51,7 +51,7 @@ object SimplifiedAstPrinter {
     case Lambda(fparams, exp, _, _) => DocAst.Expr.Lambda(fparams.map(printFormalParam), print(exp))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expr.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case ApplyClo(exp, args, _, _, _) => DocAst.Expr.ApplyClo(print(exp), args.map(print), None)
+    case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)), None)
     case ApplyDef(sym, exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(printVarSym(sym), exps.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -59,7 +59,7 @@ object SimplifiedAstPrinter {
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LocalDef(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(MonoTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, exp) =>

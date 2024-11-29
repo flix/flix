@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, Recoverable, WeederError}
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -94,7 +94,7 @@ object Parser2 {
       * Note that there is data-duplication, but not in the happy case.
       * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
       */
-    val errors: ArrayBuffer[CompilationMessage & Recoverable] = ArrayBuffer.empty
+    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
   }
 
   private sealed trait Mark
@@ -102,11 +102,11 @@ object Parser2 {
   /**
     * Marks point to positions in a list of tokens where an Open or Close event resides.
     * This is useful because it lets the parser open a group, without knowing exactly what [[TreeKind]] the group should have.
-    * For instance we need to look past doc-comments, annotations and modifiers to see what kind of declaration we a dealing with (def, enum, trait...).
+    * For instance, we need to look past doc-comments, annotations and modifiers to see what kind of declaration we are dealing with (def, enum, trait...).
     * The convention used throughout is to open a group with kind [[TreeKind.ErrorTree]] and then later close it with the correct kind.
     * This happens via the [[open]] and [[close]] functions.
     *
-    * Conversely we sometimes need to open a group before the currently open one.
+    * Conversely, we sometimes need to open a group before the currently open one.
     * The best example is binary expressions. In '1 + 2' we first see '1' and open a group for a Literal.
     * Then we see '+' which means we want to open a Expr.Binary group that also includes the '1'.
     * This is done with [[openBefore]] which takes a [[Mark.Closed]] and inserts an Open event before it.
@@ -118,7 +118,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage & Recoverable]) = flix.phaseNew("Parser2") {
+  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -137,7 +137,7 @@ object Parser2 {
     (result, errors.flatten.toList)
   }
 
-  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage & Recoverable]) = {
+  private def parse(src: Source, tokens: Array[Token]): (SyntaxTree.Tree, List[CompilationMessage]) = {
     implicit val s: State = new State(tokens, src)
     // Call the top-most grammar rule to gather all events into state.
     root()
@@ -203,10 +203,9 @@ object Parser2 {
     }
 
     // Set source location of the root
-    val openToken = locationStack.last
     stack.last.loc = SourceLocation(
       isReal = true,
-      openToken.sp1,
+      SourcePosition(s.src, 1, 1),
       tokens.head.sp2
     )
 
@@ -285,7 +284,7 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage & Recoverable, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
     token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
@@ -297,7 +296,7 @@ object Parser2 {
   /**
     * Wrap the next token in an error.
     */
-  private def advanceWithError(error: CompilationMessage & Recoverable, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+  private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
     val m = mark.getOrElse(open())
     nth(0) match {
       // Avoid double reporting lexer errors.
@@ -1384,9 +1383,9 @@ object Parser2 {
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation
             if (at(TokenKind.ParenL)) {
               arguments()
-              lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+              lhs = close(mark, TreeKind.Expr.InvokeMethod)
             } else {
-              lhs = close(mark, TreeKind.Expr.GetField2)
+              lhs = close(mark, TreeKind.Expr.GetField)
             }
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
@@ -1440,6 +1439,12 @@ object Parser2 {
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
+          // We want to allow an unbounded number of cons (a :: b :: c :: ...).
+          // Hence we special case on whether the left token is ::. If it is,
+          // we avoid consuming any fuel.
+          // The next nth lookup will always fail, so we add fuel to account for it.
+          // The lookup for KeywordWithout will always happen to we add fuel to account for it.
+          if (left == TokenKind.ColonColon) s.fuel += 2
           continue = false
         }
       }
@@ -1603,7 +1608,6 @@ object Parser2 {
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
-        case TokenKind.KeywordImport => letImportExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
         case TokenKind.KeywordTypeMatch => typematchExpr()
@@ -1623,7 +1627,7 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
+        case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
@@ -1871,34 +1875,6 @@ object Parser2 {
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LocalDef)
-    }
-
-    private def letImportExpr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordImport))
-      val mark = open()
-      expect(TokenKind.KeywordImport, SyntacticContext.Expr.OtherExpr)
-      val markJvmOp = open()
-      nth(0) match {
-        case TokenKind.KeywordJavaNew => JvmOp.constructor()
-        case TokenKind.KeywordJavaGetField => JvmOp.getField()
-        case TokenKind.KeywordJavaSetField => JvmOp.putField()
-        case TokenKind.KeywordStatic => nth(1) match {
-          case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
-          case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
-          case t =>
-            val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
-            advanceWithError(error)
-        }
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
-        case t =>
-          val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
-          advanceWithError(error)
-      }
-      close(markJvmOp, TreeKind.JvmOp.JvmOp)
-      expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
-      statement()
-      close(mark, TreeKind.Expr.LetImport)
     }
 
     private def scopeExpr()(implicit s: State): Mark.Closed = {
@@ -2434,15 +2410,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Unsafe)
     }
 
-    private def uncheckedMaskingCastExpr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordMaskedCast))
+    private def runExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRun))
       val mark = open()
-      expect(TokenKind.KeywordMaskedCast, SyntacticContext.Expr.OtherExpr)
-      if (eat(TokenKind.ParenL)) {
-        expression()
-        expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
+      expression()
+      while (at(TokenKind.KeywordWith)) {
+        withBody()
       }
-      close(mark, TreeKind.Expr.UncheckedMaskingCast)
+      close(mark, TreeKind.Expr.Try)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
@@ -2581,7 +2557,7 @@ object Parser2 {
       } else {
         // Case 3: new Type(exps...)
         arguments()
-        close(mark, TreeKind.Expr.InvokeConstructor2)
+        close(mark, TreeKind.Expr.InvokeConstructor)
       }
     }
 
@@ -3348,21 +3324,6 @@ object Parser2 {
       }
     }
 
-    private def nativeType()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      var continue = true
-      while (continue && !eof()) {
-        nth(0) match {
-          case TokenKind.NameUpperCase
-               | TokenKind.NameLowerCase
-               | TokenKind.Dot
-               | TokenKind.Dollar => advance()
-          case _ => continue = false
-        }
-      }
-      close(mark, TreeKind.Type.Native)
-    }
-
     private def caseSetType()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.AngleL))
       val mark = open()
@@ -3564,106 +3525,6 @@ object Parser2 {
         })
       )
       close(mark, kind)
-    }
-  }
-
-  private object JvmOp {
-    private def signature()(implicit s: State): Unit = {
-      val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Type,
-        getItem = () => Type.ttype(),
-        checkForItem = _.isFirstType,
-        breakWhen = _.isRecoverType,
-        context = SyntacticContext.Type.OtherType
-      )
-      close(mark, TreeKind.JvmOp.Sig)
-    }
-
-    private def ascription()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
-      Type.typeAndEffect()
-      close(mark, TreeKind.JvmOp.Ascription)
-    }
-
-    def constructor()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordJavaNew))
-      val mark = open()
-      expect(TokenKind.KeywordJavaNew, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      signature()
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-      close(mark, TreeKind.JvmOp.Constructor)
-    }
-
-    private def methodBody()(implicit s: State): Unit = {
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      signature()
-      ascription()
-      if (eat(TokenKind.KeywordAs)) {
-        name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-      }
-    }
-
-    def method()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      methodBody()
-      close(mark, TreeKind.JvmOp.Method)
-    }
-
-    def staticMethod()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      methodBody()
-      close(mark, TreeKind.JvmOp.StaticMethod)
-    }
-
-    private def fieldGetBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordJavaGetField, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-    }
-
-    private def putBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordJavaSetField, SyntacticContext.Expr.OtherExpr)
-      name(NAME_JAVA, tail = Set(), allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      ascription()
-      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
-      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-    }
-
-    def getField()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      fieldGetBody()
-      close(mark, TreeKind.JvmOp.GetField)
-    }
-
-    def staticGetField()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      fieldGetBody()
-      close(mark, TreeKind.JvmOp.StaticGetField)
-    }
-
-    def putField()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      putBody()
-      close(mark, TreeKind.JvmOp.PutField)
-    }
-
-    def staticPutField()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordStatic))
-      val mark = open()
-      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
-      putBody()
-      close(mark, TreeKind.JvmOp.StaticPutField)
     }
   }
 
