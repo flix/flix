@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.filterDefsB
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.NamedAst
-import ca.uwaterloo.flix.language.ast.shared.Resolution
 
 /**
   * Provides completions for items in local scope, including:
@@ -58,11 +56,11 @@ object LocalScopeCompleter {
     v.collect {
       case Resolution.Declaration(Namespace(_, _, _, _)) |
            Resolution.Declaration(Sig(_, _, _, _)) |
-           Resolution.Declaration(Def(_, _, _, _)) |
            Resolution.Declaration(StructField(_, _, _, _)) |
            Resolution.Declaration(Op(_, _, _)) |
            Resolution.Declaration(Case(_, _, _)) => Completion.LocalDeclarationCompletion(k)
     }
+
   /**
     * Tries to create a DeclarationCompletion for the given name and resolutions, the returned Completion should fit in a type context.
     */
