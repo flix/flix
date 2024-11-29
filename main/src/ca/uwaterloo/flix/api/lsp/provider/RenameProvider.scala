@@ -218,9 +218,9 @@ object RenameProvider {
     object AssocTypeSymConsumer extends Consumer {
       override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = consider(tsig.sym, tsig.sym.loc)
       override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = consider(symUse.sym, symUse.loc)
-      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, rmTrtFromAssocTypeSymLoc(tcst.sym, tcst.loc))
+      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, sepTrtAndAssocSymOccur(tcst.sym, tcst.loc)._2)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, rmTrtFromAssocTypeSymLoc(sym, loc))
+        case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, sepTrtAndAssocSymOccur(sym, loc)._2)
         case _ => ()
       }
     }
@@ -234,6 +234,31 @@ object RenameProvider {
     val newStartCol = (loc.sp1.col + sym.trt.name.length + 1).toShort
     val newStartPos = SourcePosition(loc.source, loc.sp1.line, newStartCol)
     SourceLocation(loc.isReal, newStartPos, loc.sp2)
+  }
+
+  private def sepTrtAndAssocSymOccur(sym: Symbol.AssocTypeSym, loc: SourceLocation): (Option[SourceLocation], SourceLocation) = {
+    val traitNameLen = sym.trt.name.length
+    val occurLen = loc.sp2.col - loc.sp1.col
+    val assocWithTraitNameLen = traitNameLen + sym.name.length + 1
+
+    val occurContainsTraitName = occurLen == assocWithTraitNameLen
+    if (occurContainsTraitName) {
+      val sepCol = loc.sp1.col + traitNameLen
+
+      // Extract trait symbol occurrence
+      val traitEndCol = sepCol.toShort
+      val traitSymOccurEndPos = SourcePosition(loc.source, loc.sp2.line, traitEndCol)
+      val traitSymOccurLoc = SourceLocation(loc.isReal, loc.sp1, traitSymOccurEndPos)
+
+      // Extract assoc type symbol occurrence
+      val assocStartCol = (sepCol + 1).toShort
+      val assocSymOccurStartPos = SourcePosition(loc.source, loc.sp1.line, assocStartCol)
+      val assocSymOccurLoc = SourceLocation(loc.isReal, assocSymOccurStartPos, loc.sp2)
+
+      (Some(traitSymOccurLoc), assocSymOccurLoc)
+    } else {
+      (None, loc)
+    }
   }
 
   private def getTypeAliasSymOccurs(sym: Symbol.TypeAliasSym)(implicit root: Root): Set[SourceLocation] = {
@@ -366,7 +391,20 @@ object RenameProvider {
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
       override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
       override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = sepTrtAndSigSymOccur(symUse)._1.foreach(traitLoc => consider(symUse.sym.trt, traitLoc))
+
       //override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = sepTrtAndAssocSymOccur(symUse)._1.foreach(traitLoc => consider(symUse.sym.trt, traitLoc))
+      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = {
+        if (tcst.sym.trt == sym) {
+          sepTrtAndAssocSymOccur(tcst.sym, tcst.loc)._1.foreach(traitLoc => occurs += traitLoc)
+        }
+      }
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.AssocType(Ast.AssocTypeConstructor(s, loc), _, _, _) =>
+          if (s.trt == sym) {
+            sepTrtAndAssocSymOccur(s, loc)._1.foreach(traitLoc => occurs += traitLoc)
+          }
+        case _ => ()
+      }
 
     }
 
