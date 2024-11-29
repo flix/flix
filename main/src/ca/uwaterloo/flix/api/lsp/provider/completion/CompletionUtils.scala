@@ -167,14 +167,10 @@ object CompletionUtils {
   private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
     val thisName = decl.sym.toString
     val inScope = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Def(thatName, _, _, _)) =>
-        thisName == thatName.toString
+      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
-    if (whetherInScope)
-      inScope
-    else
-      !inScope
+    if (whetherInScope) inScope else !inScope
   }
 
   /**
