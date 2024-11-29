@@ -277,8 +277,12 @@ sealed trait Completion {
       // NB: priority is high because only an op can come after `do`
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        label            = name,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Lower, name),
         filterText       = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit         = TextEdit(context.range, snippet),
@@ -359,8 +363,12 @@ sealed trait Completion {
       val name = s"${enumSym.toString}.${cas.sym.name}"
       val args = (1 until cas.tpes.length + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getParamsLabelForEnumTags(cas)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForEnumTags(name, cas),
+        label            = name,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Default, name),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(enumSym.name),
@@ -425,14 +433,19 @@ sealed trait Completion {
       } ::: sym.text :: Nil
       val params = args.mkString(", ")
       val snippet = s"$name($params)"
-      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-        filterText = Some(s"${sym.text}?$name"),
-        sortText = priority,
-        textEdit = TextEdit(Range.from(loc), snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-        documentation = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Function)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
+      CompletionItem(
+        label             = name,
+        labelDetails      = Some(labelDetails),
+        filterText        = Some(s"${sym.text}?$name"),
+        sortText          = priority,
+        textEdit          = TextEdit(Range.from(loc), snippet),
+        detail            = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation     = Some(decl.spec.doc.text),
+        insertTextFormat  = InsertTextFormat.Snippet,
+        kind              = CompletionItemKind.Function)
 
   }
 }
