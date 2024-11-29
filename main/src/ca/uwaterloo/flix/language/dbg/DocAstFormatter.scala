@@ -341,11 +341,14 @@ object DocAstFormatter {
           case ts =>
             tuplish(ts.map(formatType(_, paren = false)))
         }
-        group(args +: text("->") +\: formatType(res) |:: formatEffectSuffix(eff))
+        val resForm = if (res.isInstanceOf[Type.ArrowEff]) formatType(res, paren = false) else formatType(res)
+        group(args +: text("->") +\: resForm |:: formatEffectSuffix(eff))
       case Type.RecordRowEmpty =>
         text("()")
       case Type.RecordRowExtend(label, value, rest) =>
         parens(text(label) +: text("=") +: formatType(value, paren = false) +: text("|") +\: formatType(rest, paren = false))
+      case Type.RecordOf(t) =>
+        formatType(Type.App(Type.AsIs("Record"), List(t)), paren)
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
@@ -365,6 +368,8 @@ object DocAstFormatter {
         text("#()")
       case Type.SchemaRowExtend(label, value, rest) =>
         text("#") |:: parens(text(label) +: text("=") +: formatType(value, paren = false) +: text("|") +\: formatType(rest, paren = false))
+      case Type.SchemaOf(t) =>
+        formatType(Type.App(Type.AsIs("Schema"), List(t)), paren)
       case Type.SchemaEmpty =>
         text("#{}")
       case se@Type.SchemaExtend(_, _, _) =>
@@ -392,8 +397,30 @@ object DocAstFormatter {
         formatJavaClass(method.getClass)
       case Type.JvmField(field) =>
         formatJavaClass(field.getClass)
+      case Type.Not(t) =>
+        text("not") +: formatType(t)
+      case Type.And(t1, t2) =>
+        formatType(t1) +: text("and") +: formatType(t2)
+      case Type.Or(t1, t2) =>
+        formatType(t1) +: text("or") +: formatType(t2)
+      case Type.Complement(t) =>
+        text("~") +: formatType(t)
+      case Type.Union(t1, t2) =>
+        formatType(t1) +: text("+") +: formatType(t2)
+      case Type.Intersection(t1, t2) =>
+        formatType(t1) +: text("&") +: formatType(t2)
+      case Type.Difference(t1, t2) =>
+        formatType(t1) +: text("-") +: formatType(t2)
+      case Type.SymmetricDiff(t1, t2) =>
+        formatType(t1) +: text("xor") +: formatType(t2)
       case Type.CaseSet(_) =>
         text(meta("Unknown"))
+      case Type.CaseComplement(t) =>
+        text("~~") +: formatType(t)
+      case Type.CaseUnion(t1, t2) =>
+        formatType(t1) +: text("++") +: formatType(t2)
+      case Type.CaseIntersection(t1, t2) =>
+        formatType(t1) +: text("&&") +: formatType(t2)
       case Type.Pure =>
         text("Pure")
       case Type.Impure =>

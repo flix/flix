@@ -35,21 +35,53 @@ object TypePrinter {
         // safe match because of the case guard
         val (arrowEff :: arrowArgs, List(arrowRes)) = args.splitAt(args.length-1)
         DocAst.Type.ArrowEff(arrowArgs.map(print), print(arrowRes), print(arrowEff))
+      case (Type.Cst(TypeConstructor.ArrowWithoutEffect(arity), _), _) if args.lengthIs == arity && arity >= 2 =>
+        // `(a1, a2, ..) -> b \ ef` is represented as List(ef, a1, a2, .., b)
+        // safe match because of the case guard
+        val (arrowArgs, List(arrowRes)) = args.splitAt(args.length - 1)
+        DocAst.Type.Arrow(arrowArgs.map(print), print(arrowRes))
       case (Type.Cst(TypeConstructor.RecordRowExtend(label), _), List(arg0, arg1)) =>
         DocAst.Type.RecordRowExtend(label.toString, print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Record, _), List(arg0)) =>
+        DocAst.Type.RecordOf(print(arg0))
       case (Type.Cst(TypeConstructor.SchemaRowExtend(label), _), List(arg0, arg1)) =>
         DocAst.Type.SchemaRowExtend(label.toString, print(arg0), print(arg1))
-      case (Type.Cst(TypeConstructor.Lazy, _), List(arg0)) =>
-        DocAst.Type.Lazy(print(arg0))
+      case (Type.Cst(TypeConstructor.Schema, _), List(arg0)) =>
+        DocAst.Type.SchemaOf(print(arg0))
       case (Type.Cst(TypeConstructor.Tuple(arity), _), _) if args.lengthIs == arity =>
         DocAst.Type.Tuple(args.map(print))
-      // TODO not, and, or, pure?, univ?, complement, union, intersection, caseXOp
+      case (Type.Cst(TypeConstructor.Not, _), List(arg0)) =>
+        DocAst.Type.Not(print(arg0))
+      case (Type.Cst(TypeConstructor.And, _), List(arg0, arg1)) =>
+        DocAst.Type.And(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Or, _), List(arg0, arg1)) =>
+        DocAst.Type.Or(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Complement, _), List(arg0)) =>
+        DocAst.Type.Complement(print(arg0))
+      case (Type.Cst(TypeConstructor.Union, _), List(arg0, arg1)) =>
+        DocAst.Type.Union(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Intersection, _), List(arg0, arg1)) =>
+        DocAst.Type.Intersection(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Difference, _), List(arg0, arg1)) =>
+        DocAst.Type.Difference(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(arg0, arg1)) =>
+        DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.CaseComplement(_), _), List(arg0)) =>
+        DocAst.Type.CaseComplement(print(arg0))
+      case (Type.Cst(TypeConstructor.CaseUnion(_), _), List(arg0, arg1)) =>
+        DocAst.Type.CaseUnion(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.CaseIntersection(_), _), List(arg0, arg1)) =>
+        DocAst.Type.CaseIntersection(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Difference, _), List(arg0, arg1)) =>
+        DocAst.Type.Difference(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(arg0, arg1)) =>
+        DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
       case (Type.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (Type.Alias(cst, aliasArgs, _, _), _) => mkApp(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
       case (Type.AssocType(cst, arg, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, print(arg)), args.map(print))
       case (Type.JvmToType(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(tpe))), args.map(print))
       case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
-      case (Type.UnresolvedJvmType(member, _), _) => mkApp(DocAst.Type.App(printJvmMember(member), List(print(tpe))), args.map(print))
+      case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
       case (Type.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.
         DocAst.Type.Meta("bug in TypePrinter")

@@ -328,6 +328,8 @@ object DocAst {
 
     case class RecordRowExtend(label: String, value: Type, rest: Type) extends Atom
 
+    case class RecordOf(tpe: Type) extends Atom
+
     case object RecordEmpty extends Atom
 
     case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
@@ -335,6 +337,8 @@ object DocAst {
     case object SchemaRowEmpty extends Atom
 
     case class SchemaRowExtend(label: String, tpe: Type, rest: Type) extends Atom
+
+    case class SchemaOf(tpe: Type) extends Atom
 
     case object SchemaEmpty extends Atom
 
@@ -348,7 +352,30 @@ object DocAst {
 
     case class JvmField(field: Field) extends Atom
 
+
+    case class Not(tpe: Type) extends Composite
+
+    case class And(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Or(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Complement(tpe: Type) extends Composite
+
+    case class Union(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Intersection(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Difference(tpe1: Type, tpe2: Type) extends Composite
+
+    case class SymmetricDiff(tpe1: Type, tpe2: Type) extends Composite
+
     case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym]) extends Atom
+
+    case class CaseComplement(tpe: Type) extends Composite
+
+    case class CaseUnion(tpe1: Type, tpe2: Type) extends Composite
+
+    case class CaseIntersection(tpe1: Type, tpe2: Type) extends Composite
 
     case object Pure extends Atom
 
@@ -391,19 +418,15 @@ object DocAst {
 
     val Regex: Type = AsIs("Regex")
 
-    val Record: Type = AsIs("Record")
-
     val Region: Type = AsIs("Region")
 
     val Null: Type = AsIs("Null")
 
     val Schema: Type = AsIs("Schema")
 
-    val Sender: Type = AsIs("Sender")
-
-    val Receiver: Type = AsIs("Receiver")
-
     val Error: Type = AsIs("Error")
+
+    val Univ: Type = AsIs("Univ")
 
     def Arrow(args: List[Type], res: Type): Type = ArrowEff(args, res, Type.Pure)
 

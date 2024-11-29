@@ -48,12 +48,12 @@ object TypeConstructorPrinter {
     case TypeConstructor.ArrowWithoutEffect(arity) => DocAst.Type.AsIs(s"ArrowWithoutEffect($arity)")
     case TypeConstructor.RecordRowEmpty => DocAst.Type.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(label) => DocAst.Type.AsIs(s"RecordRowExtend($label)")
-    case TypeConstructor.Record => DocAst.Type.Record
+    case TypeConstructor.Record => DocAst.Type.AsIs("Record")
     case TypeConstructor.SchemaRowEmpty => DocAst.Type.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => DocAst.Type.AsIs(s"SchemaRowExtend($pred)")
     case TypeConstructor.Schema => DocAst.Type.Schema
-    case TypeConstructor.Sender => DocAst.Type.Sender
-    case TypeConstructor.Receiver => DocAst.Type.Receiver
+    case TypeConstructor.Sender => DocAst.Type.AsIs("Sender")
+    case TypeConstructor.Receiver => DocAst.Type.AsIs("Receiver")
     case TypeConstructor.Lazy => DocAst.Type.AsIs("Lazy")
     case TypeConstructor.Enum(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.Struct(sym, _) => DocAst.Type.AsIs(sym.toString)
@@ -74,7 +74,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.And => DocAst.Type.AsIs("And")
     case TypeConstructor.Or => DocAst.Type.AsIs("Or")
     case TypeConstructor.Pure => DocAst.Type.Pure
-    case TypeConstructor.Univ => DocAst.Type.AsIs("Univ")
+    case TypeConstructor.Univ => DocAst.Type.Univ
     case TypeConstructor.Complement => DocAst.Type.AsIs("Complement")
     case TypeConstructor.Union => DocAst.Type.AsIs("Union")
     case TypeConstructor.Intersection => DocAst.Type.AsIs("Intersection")
