@@ -88,6 +88,7 @@ object TypePrinter {
     }
   }
 
+  /** Constructs [[DocAst.Type.App]] unless `args` is empty */
   private def mkApp(base: DocAst.Type, args: List[DocAst.Type]): DocAst.Type = args match {
     case Nil => base
     case other => DocAst.Type.App(base, other)
