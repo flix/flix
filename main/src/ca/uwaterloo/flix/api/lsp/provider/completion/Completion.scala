@@ -174,9 +174,12 @@ sealed trait Completion {
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
-      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        Some(s" use $qualifiedName"))
       CompletionItem(
-        label               = label,
+        label               = name,
+        labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(context.range, snippet),

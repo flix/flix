@@ -35,7 +35,9 @@ object CompletionUtils {
     }
   }
 
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = name + getLabelForSpec(spec)
+
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
@@ -51,7 +53,7 @@ object CompletionUtils {
         case p => raw" \ " + FormatType.formatType(p)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$eff"
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
