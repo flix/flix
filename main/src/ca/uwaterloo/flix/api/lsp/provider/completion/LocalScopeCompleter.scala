@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{AssocTypeDef, AssocTypeSig, Case, Def, Effect, Enum, Namespace, Op, Sig, Struct, StructField, TypeAlias}
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.ast.shared.{Resolution, LocalScope}
+import ca.uwaterloo.flix.language.ast.shared.Resolution
 
 /**
   * Provides completions for items in local scope, including:
@@ -32,7 +33,7 @@ object LocalScopeCompleter {
     */
   def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] =
     err.env.env.m.foldLeft((List.empty[Completion])){case (acc, (name, resolutions)) =>
-      acc ++ mkDeclarationCompletion(name, resolutions) ++ mkJavaClassCompletion(name, resolutions) ++ mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(name, resolutions)
+      acc ++ mkDeclarationCompletionForExpr(name, resolutions) ++ mkJavaClassCompletion(name, resolutions) ++ mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(name, resolutions)
     }
 
   /**
@@ -41,18 +42,34 @@ object LocalScopeCompleter {
     */
   def getCompletions(err: ResolutionError.UndefinedType): Iterable[Completion] =
     err.env.env.m.foldLeft((List.empty[Completion])){case (acc, (name, resolutions)) =>
-       acc ++ mkDeclarationCompletion(name, resolutions) ++ mkJavaClassCompletion(name, resolutions)
+       acc ++ mkDeclarationCompletionForType(name, resolutions) ++ mkJavaClassCompletion(name, resolutions)
     }
 
   /**
-    * Tries to create a DeclarationCompletion for the given name and resolutions.
+    * Tries to create a DeclarationCompletion for the given name and resolutions. the returned Completion should fit in an expression context.
     */
-  private def mkDeclarationCompletion(k: String, v: List[Resolution]): Iterable[Completion] =
-    if (v.exists{
-      case Resolution.Declaration(_) => true
-      case _ => false
-    }) Completion.LocalDeclarationCompletion(k) :: Nil else Nil
-
+  private def mkDeclarationCompletionForExpr(k: String, v: List[Resolution]): Iterable[Completion] =
+    v.collect {
+      case Resolution.Declaration(Namespace(_, _, _, _)) |
+           Resolution.Declaration(Sig(_, _, _, _)) |
+           Resolution.Declaration(Def(_, _, _, _)) |
+           Resolution.Declaration(StructField(_, _, _, _)) |
+           Resolution.Declaration(Op(_, _, _)) |
+           Resolution.Declaration(Case(_, _, _)) => Completion.LocalDeclarationCompletion(k)
+    }
+  /**
+    * Tries to create a DeclarationCompletion for the given name and resolutions, the returned Completion should fit in a type context.
+    */
+  private def mkDeclarationCompletionForType(k: String, v: List[Resolution]): Iterable[Completion] =
+    v.collect {
+      case Resolution.Declaration(Namespace(_, _, _, _)) |
+           Resolution.Declaration(Enum(_, _, _, _, _, _, _, _)) |
+           Resolution.Declaration(Struct(_, _, _, _, _, _, _, _)) |
+           Resolution.Declaration(TypeAlias(_, _, _, _, _, _, _)) |
+           Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
+           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) |
+           Resolution.Declaration(Effect(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+    }
   /**
     * Tries to create a JavaClassCompletion for the given name and resolutions.
     */
