@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Def, Op, RestrictableCase}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Def, Op, RestrictableCase, StructField}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.Resolution
 
@@ -59,6 +59,7 @@ object LocalScopeCompleter {
   private def mkDeclarationCompletionForType(k: String, v: List[Resolution]): Iterable[Completion] =
     if (v.exists{
       case Resolution.Declaration(Def(_, _, _, _))
+        | Resolution.Declaration(StructField(_, _, _, _))
         | Resolution.Declaration(Op(_, _, _))
         | Resolution.Declaration(Case(_, _, _))
         | Resolution.Declaration(RestrictableCase(_, _, _)) => false
