@@ -199,10 +199,41 @@ object RenameProvider {
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
-
+    // Type Aliases
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
     case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+    // Assoc Types
+    case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSym(sym))
+    case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSym(sym))
+    case AssocTypeConstructor(sym, _) => Some(getAssocTypeSym(sym))
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSym(sym))
     case _ => None
+  }
+
+  private def getAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+    def consider(s: Symbol.AssocTypeSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+    object AssocTypeSymConsumer extends Consumer {
+      override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = consider(tsig.sym, tsig.sym.loc)
+      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, rmTrtFromAssocTypeSymLoc(tcst.sym, tcst.loc))
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, rmTrtFromAssocTypeSymLoc(sym, loc))
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, AssocTypeSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def rmTrtFromAssocTypeSymLoc(sym: Symbol.AssocTypeSym, loc: SourceLocation): SourceLocation = {
+    val newStartCol = (loc.sp1.col + sym.trt.name.length + 1).toShort
+    val newStartPos = SourcePosition(loc.source, loc.sp1.line, newStartCol)
+    SourceLocation(loc.isReal, newStartPos, loc.sp2)
   }
 
   private def getTypeAliasSymOccurs(sym: Symbol.TypeAliasSym)(implicit root: Root): Set[SourceLocation] = {
@@ -335,6 +366,7 @@ object RenameProvider {
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
       override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
       override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = sepTrtAndSigSymOccur(symUse)._1.foreach(traitLoc => consider(symUse.sym.trt, traitLoc))
+      //override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = sepTrtAndAssocSymOccur(symUse)._1.foreach(traitLoc => consider(symUse.sym.trt, traitLoc))
 
     }
 
