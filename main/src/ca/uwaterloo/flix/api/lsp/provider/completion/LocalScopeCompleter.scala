@@ -78,8 +78,8 @@ object LocalScopeCompleter {
     }
 
   /**
-   * Tries to create a DefCompletion for the given word and env.
-   */
+    * Tries to create a DefCompletion for the given word and env.
+    */
   private def mkDefCompletion(name: String, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] =
     filterDefsByScope(name, root, env, whetherInScope = true).map(Completion.DefCompletion(_, qualified = false))
 
