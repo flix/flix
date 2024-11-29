@@ -14,7 +14,7 @@ mod Test.Dec.Enum {
                 Int32.toString(i) == s
         }
 
-    pub enum SingletonTuple((Int32, Int32))
+    pub enum SingletonTuple((Int32, String))
 
     @Test
     def example02(): Bool =
