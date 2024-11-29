@@ -371,23 +371,23 @@ object Weeder2 {
         pickDocumentation(tree),
         pickNameIdent(tree),
         Types.pickParameters(tree),
-        traverseOpt(shorthandTuple)(Types.visitType),
+        traverseOpt(shorthandTuple)(Types.visitCaseType),
         traverse(cases)(visitEnumCase)
       ) {
         (doc, ident, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Empty singleton enum
-            case (Some(Type.Error(_)), Nil) =>
+            case (Some(List(Type.Error(_))), Nil) =>
               // Fall back on no cases, parser has already reported an error
               Validation.Success(List.empty)
             // Singleton enum
-            case (Some(t), cs) =>
+            case (Some(ts), cs) =>
               // Error if both singleton shorthand and cases provided
               // Treat this as an implicit case with the type t, e.g.,
               // enum Foo(Int32) { case Bar, case Baz }
               // ===>
               // enum Foo { case Foo(Int32), case Bar, case Baz }
-              val syntheticCase = WeededAst.Case(ident, flattenEnumCaseType(t), ident.loc)
+              val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
               val errors = getDuplicates(allCases, (c: Case) => c.ident.name).map {
                 case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
