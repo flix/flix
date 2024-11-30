@@ -14,14 +14,14 @@ def createAndShowGUI(): Unit \ IO = {
     let frame = new JFrame("Dialog App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    let button = button("Click me to open a dialog", _ -> showDialog(title = "Are you sure?", content = "The button was clicked. Pick an option", frame));
+    let button = mkButton("Click me to open a dialog", _ -> showDialog(title = "Are you sure?", content = "The button was clicked. Pick an option", frame));
 
     frame.getContentPane().add(button);
     frame.pack();
     frame.setVisible(true)
 }
 
-def button(content: String, onClick: ActionEvent -> Unit \ ef): JButton \ IO = {
+def mkButton(content: String, onClick: ActionEvent -> Unit \ ef): JButton \ IO = {
     let button = new JButton();
     button.setText(content);
     let listener = new ActionListener {
