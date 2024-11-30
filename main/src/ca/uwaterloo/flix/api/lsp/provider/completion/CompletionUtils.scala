@@ -193,8 +193,7 @@ object CompletionUtils {
   def shouldComplete(word: String): Boolean = word.length >= 3
 
   /**
-    * Returns `true` if the given `thisName` and `thatName` are a loose match
-    * A loose match is when the first three characters of the two names are the same.
+    * Returns `true` if the first `comparedLength` characters of `name1` and `name2` are equal.
     */
   def looseMatch(name1: String, name2: String): Boolean = {
     val comparedLength = Math.min(Math.min(name1.length, name2.length), 3)
