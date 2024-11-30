@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.54.0:
+
+
+
 Version 0.53.0:
 - Language: Added support for algebraic effects (thanks everyone!)
 - Library: Added algebraic effects: Console, FileRead, FileWrite, Http, ... (thanks Holger and Magnus!)
