@@ -31,78 +31,28 @@ object RenameProvider {
     * Processes a rename request.
     */
   def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
-    val consumer = StackConsumer()
+    val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
+    val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
-    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-
-    consumer
-      .getStack
-      .filter(isReal)
-      .headOption
-      .flatMap(getOccurs)
-      .map(occurs => rename(newName, occurs))
+    right.orElse(left)
+      .map(rename(newName))
       .getOrElse(mkNotFound(uri, pos))
+  }
 
-//    index.query(uri, pos) match {
-//      case None => mkNotFound(uri, pos)
-//
-//      case Some(entity) => entity match {
-//
-//        case Entity.Case(caze) => renameCase(caze.sym, newName)
-//
-//        case Entity.StructField(field) => renameStructField(field.sym, newName)
-//
-//        case Entity.Def(defn) => renameDef(defn.sym, newName)
-//
-//        case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
-//
-//        case Entity.VarUse(sym, _, _) => renameVar(sym, newName)
-//
-//        case Entity.DefUse(sym, _, _) => renameDef(sym, newName)
-//
-//        case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
-//
-//        case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
-//
-//        case Entity.Exp(_) => mkNotFound(uri, pos)
-//
-//        case Entity.Label(label) => renameLabel(label, newName)
-//
-//        case Entity.Pattern(pat) => pat match {
-//          case Pattern.Var(Binder(sym, _), _, _) => renameVar(sym, newName)
-//          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => renameCase(sym, newName)
-//          case _ => mkNotFound(uri, pos)
-//        }
-//
-//        case Entity.Pred(pred, _) => renamePred(pred, newName)
-//
-//        case Entity.FormalParam(fparam) => renameVar(fparam.bnd.sym, newName)
-//
-//        case Entity.LocalVar(sym, _) => renameVar(sym, newName)
-//
-//        case Entity.Type(t) => t match {
-//          case Type.Cst(tc, _) => tc match {
-//            case TypeConstructor.RecordRowExtend(label) => renameLabel(label, newName)
-//            case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
-//            case _ => mkNotFound(uri, pos)
-//          }
-//          case Type.Var(sym, _) => renameTypeVar(sym, newName)
-//          case _ => mkNotFound(uri, pos)
-//        }
-//
-//        case Entity.Trait(_) => mkNotFound(uri, pos)
-//        case Entity.AssocType(_) => mkNotFound(uri, pos)
-//        case Entity.Effect(_) => mkNotFound(uri, pos)
-//        case Entity.Enum(_) => mkNotFound(uri, pos)
-//        case Entity.Struct(_) => mkNotFound(uri, pos)
-//        case Entity.Op(_) => mkNotFound(uri, pos)
-//        case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
-//        case Entity.Sig(_) => mkNotFound(uri, pos)
-//        case Entity.SigUse(_, _, _) => mkNotFound(uri, pos)
-//        case Entity.TypeVar(_) => mkNotFound(uri, pos)
-//      }
-//    }
+  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    if (pos.character >= 2) {
+      search(uri, Position(pos.line, pos.character - 1))
+    } else {
+      None
+    }
+  }
 
+  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+
+  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    val consumer = StackConsumer()
+    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    consumer.getStack.filter(isReal).headOption
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
@@ -574,7 +524,7 @@ object RenameProvider {
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
-  private def rename(newName: String, occurrences: Set[SourceLocation]): JObject = {
+  private def rename(newName: String)(occurrences: Set[SourceLocation]): JObject = {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
