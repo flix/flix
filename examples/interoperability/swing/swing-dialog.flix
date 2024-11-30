@@ -6,6 +6,10 @@ import javax.swing.JFrame
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 
+def main(): Unit \ IO = {
+    createAndShowGUI()
+}
+
 def createAndShowGUI(): Unit \ IO = {
     let frame = new JFrame("Dialog App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -30,8 +34,4 @@ def button(content: String, onClick: ActionEvent -> Unit \ ef): JButton \ IO = {
 def showDialog(title: { title = String }, content: { content = String }, frame: JFrame): Unit \ IO = {
     JOptionPane.showConfirmDialog(frame, content#content, title#title, JOptionPane.YES_NO_CANCEL_OPTION);
     ()
-}
-
-def main(): Unit \ IO = {
-    createAndShowGUI()
 }
