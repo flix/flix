@@ -2,7 +2,11 @@
 
 Version 0.54.0:
 
-
+- Compiler: Improved auto-completion suggestions (thanks Chenhao!)
+- Compiler: Added `AutoImportCompleter` (thanks Chenhao!)
+- Compiler: Added `AutoUseCompleter` (thanks Chenhao!)
+- Compiler: Added `LocalScopeCompleter` (thanks Chenhao!)
+- Compiler: Reworked compilation of enums (thanks Jonathan!)
 
 Version 0.53.0:
 - Language: Added support for algebraic effects (thanks everyone!)
