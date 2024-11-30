@@ -1254,12 +1254,6 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
-    case NamedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val eVal = resolveExp(exp, env0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.UncheckedMaskingCast(e, loc)
-      }
-
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>
@@ -2375,7 +2369,7 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
+              val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
               sctx.errors.add(error)
               Validation.Success(UnkindedType.Error(loc))
           }
@@ -2392,7 +2386,7 @@ object Resolver {
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
+            val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
             sctx.errors.add(error)
             Validation.Success(UnkindedType.Error(loc))
         }
