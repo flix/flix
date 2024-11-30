@@ -90,8 +90,7 @@ object CompletionProvider {
       //
       // Patterns.
       //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++
-        EnumCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
       //
       // Uses.
@@ -128,8 +127,8 @@ object CompletionProvider {
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ VarCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
 
       case _ => Nil

@@ -266,8 +266,6 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
-      visitExp(exp)
     case Expr.Without(exp, effUse, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff

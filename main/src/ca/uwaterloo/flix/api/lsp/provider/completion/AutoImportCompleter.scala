@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.shouldComplete
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -26,7 +28,7 @@ object AutoImportCompleter {
    * Returns a list of import completions to auto complete the class name and import the java class.
    *
    * Example:
-   *  If we have an undefined name which is the prefix of an existing java class
+   *  If we have an undefined name which is the prefix of an existing and unimported java class
    *
    *  {{{
    *    let s = Mat // undefined name error
@@ -52,14 +54,41 @@ object AutoImportCompleter {
    * Note: we will not propose completions for classes with a lowercase name.
    */
   private def javaClassCompletionsByClass(prefix: String, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
+    if (!shouldComplete(prefix)) return Nil
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(_.startsWith(prefix)).flatMap { className =>
-      availableClasses(className).map{path =>
-        val completePath = path.mkString(".") + "." + className
-        val shouldImport = !env.m.contains(className)
-        val label = if (shouldImport) s"$className (import $completePath)" else className
-        AutoImportCompletion(label, className, completePath, ap, Some(completePath), shouldImport)
+      availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
+        val qualifiedName = namespace.mkString(".") + "." + className
+        val priority = mkPriority(qualifiedName)
+        val labelDetails = CompletionItemLabelDetails(None, Some(s"import $qualifiedName"))
+          AutoImportCompletion(className, qualifiedName, ap, labelDetails, priority)
       }
     }
+ }
+
+  /**
+    * Returns the priority of the completion item based on the qualified name.
+    *
+    * We give these packages the `Low` priority:
+    *  - java.lang
+    *  - java.io
+    *  - java.nio
+    *  - java.util
+    *
+    * We give these packages the `Lowest` priority:
+    * - com.sun
+    * - sun.
+    *
+    * Every other package gets the `Lower` priority.
+    */
+  private def mkPriority(qualifiedName: String): Priority = {
+    val frequentlyUsedPackages = List("java.lang", "java.io", "java.nio", "java.util")
+    val rarelyUsedPackages = List("com.sun", "sun.")
+    if (frequentlyUsedPackages.exists(qualifiedName.startsWith))
+      Priority.Low
+    else if (rarelyUsedPackages.exists(qualifiedName.startsWith))
+      Priority.Lowest
+    else
+      Priority.Lower
   }
 }

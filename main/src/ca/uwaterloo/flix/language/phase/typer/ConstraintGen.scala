@@ -701,14 +701,6 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.UncheckedMaskingCast(exp, _) =>
-        // A masking cast expression is unsound; the type system assumes the declared type and effect are correct.
-        // The expression is treated as impure later in the compiler to prevent erasure in optimizations.
-        val (tpe, _) = visitExp(exp)
-        val resTpe = tpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
       case Expr.Without(exp, effSymUse, _) =>
         //
         // e: tpe \ eff - effSym
