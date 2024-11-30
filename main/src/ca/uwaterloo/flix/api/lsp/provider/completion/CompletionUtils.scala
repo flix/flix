@@ -181,14 +181,23 @@ object CompletionUtils {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = decl.sym.text.startsWith(word)
+    val isMatch = looseMatch(decl.sym.text, word)
 
     isMatch && isPublic
   }
 
   /**
-   * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
-   * Currently, we will only offer them if at least three characters have been typed.
-   */
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
   def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the given `thisName` and `thatName` are a loose match
+    * A loose match is when the first three characters of the two names are the same.
+    */
+  def looseMatch(name1: String, name2: String): Boolean = {
+    val comparedLength = Math.min(Math.min(name1.length, name2.length), 3)
+    name1.take(comparedLength) == name2.take(comparedLength)
+  }
 }
