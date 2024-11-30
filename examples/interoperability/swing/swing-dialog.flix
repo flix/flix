@@ -33,10 +33,5 @@ def showDialog(title: { title = String }, content: { content = String }, frame: 
 }
 
 def main(): Unit \ IO = {
-    let invokable = new Runnable {
-        def $run(_: Runnable): Unit \ IO = {
-            createAndShowGUI()
-        }
-    };
-    SwingUtilities.invokeLater(invokable)
+    createAndShowGUI()
 }
