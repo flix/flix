@@ -64,7 +64,7 @@ import scala.collection.mutable
   *
   * NB: All errors must be printed to std err.
   */
-class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
+class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
   /**
     * The custom date format to use for logging.
@@ -392,7 +392,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   private def asynchronouslyUpdateIndex(root: Root): Unit = {
     this.indexingFuture = indexingPool.submit(new Runnable {
       override def run(): Unit = {
-        LanguageServer.this.index = Indexer.visitRoot(root)
+        VSCodeLspServer.this.index = Indexer.visitRoot(root)
       }
     })
   }

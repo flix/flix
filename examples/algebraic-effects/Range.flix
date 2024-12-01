@@ -43,7 +43,7 @@ mod EffectExamples.Range {
     ///
     pub def sumTo(n: Int32): Int32 = region rc {
         let s = Ref.fresh(rc, 0);
-        try {
+        run {
             // Call an effectful function.
             // Note that `sumTo` does not
             // inherit the `Emission` effect type
