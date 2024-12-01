@@ -11,7 +11,7 @@ mod InputOutputExample {
 
         println("");
         println("First with hardcoded input:");
-        try helloExample() with InputOutput {
+        run helloExample() with InputOutput {
             def read(k) = k("Alice")
             def write(s, k) = {println(s); k()}
         };
@@ -22,7 +22,7 @@ mod InputOutputExample {
     }
 
     def runWithConsole(f: Unit -> t \ ef + InputOutput): Result[String, t] \ ef + IO = {
-        try Ok(f()) with InputOutput {
+        run Ok(f()) with InputOutput {
             def read(k) = k(System.console().readLine())
             def write(s, k) = {println(s); k()}
         }

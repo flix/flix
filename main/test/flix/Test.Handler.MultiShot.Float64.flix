@@ -7,7 +7,7 @@ mod Test.Handler.MultiShot.Float64 {
     @Test
     def testLinear01(): Bool =
         def f1() = AskTell.askTell(42.0f64);
-        let result = try {
+        let result = run {
             f1()
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -18,7 +18,7 @@ mod Test.Handler.MultiShot.Float64 {
     def testLinear02(): Bool =
         def f1() = AskTell.askTell(42.0f64);
         def f2() = f1();
-        let result = try {
+        let result = run {
             f2()
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -30,7 +30,7 @@ mod Test.Handler.MultiShot.Float64 {
         def f1() = AskTell.askTell(42.0f64);
         def f2() = f1();
         def f3() = f2();
-        let result = try {
+        let result = run {
             f3()
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -41,7 +41,7 @@ mod Test.Handler.MultiShot.Float64 {
     def testRecursiveLetRec01(): Bool =
         def f() = AskTell.askTell(42.0f64);
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(0)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -52,7 +52,7 @@ mod Test.Handler.MultiShot.Float64 {
     def testRecursiveLetRec02(): Bool =
         def f() = AskTell.askTell(42.0f64);
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(1)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -63,7 +63,7 @@ mod Test.Handler.MultiShot.Float64 {
     def testRecursiveLetRec03(): Bool =
         def f1() = AskTell.askTell(42.0f64);
         def r(x) = if (x == 0) f1() else r(x - 1);
-        let result = try {
+        let result = run {
             r(10)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -72,7 +72,7 @@ mod Test.Handler.MultiShot.Float64 {
 
     @Test
     def testMutualRecursive01(): Bool =
-        let result = try {
+        let result = run {
             mutual1(0)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -81,7 +81,7 @@ mod Test.Handler.MultiShot.Float64 {
 
     @Test
     def testMutualRecursive02(): Bool =
-        let result = try {
+        let result = run {
             mutual1(1)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -90,7 +90,7 @@ mod Test.Handler.MultiShot.Float64 {
 
     @Test
     def testMutualRecursive03(): Bool =
-        let result = try {
+        let result = run {
             mutual1(2)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -99,7 +99,7 @@ mod Test.Handler.MultiShot.Float64 {
 
     @Test
     def testMutualRecursive04(): Bool =
-        let result = try {
+        let result = run {
             mutual1(3)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)
@@ -108,7 +108,7 @@ mod Test.Handler.MultiShot.Float64 {
 
     @Test
     def testMutualRecursive05(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with AskTell {
             def askTell(x, k) = k(x) + k(x)

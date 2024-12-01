@@ -8,7 +8,7 @@ mod Test.Handler.Ask.Int64 {
         Ask.ask(x); generator(x + 1i64)
 
     def sample(limit: Int64): List[Int64] =
-        try {
+        run {
             generator(0i64); Nil
         } with Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()
