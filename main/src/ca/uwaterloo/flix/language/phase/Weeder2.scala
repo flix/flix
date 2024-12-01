@@ -1734,7 +1734,7 @@ object Weeder2 {
       ) {
         // Bad case: run expr
         case (_, Nil) =>
-          // Fall back on Expr.Error, Parser has already reported an error.
+          // Fall back on Expr.Error
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
             actual = None,
