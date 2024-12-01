@@ -195,7 +195,6 @@ object PatMatch {
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
       case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
-      case Expr.UncheckedMaskingCast(exp, _, _, _) => visitExp(exp)
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>

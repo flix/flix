@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -233,9 +232,6 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>

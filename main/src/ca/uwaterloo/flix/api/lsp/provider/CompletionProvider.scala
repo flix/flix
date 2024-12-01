@@ -90,8 +90,7 @@ object CompletionProvider {
       //
       // Patterns.
       //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++
-        EnumCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
       //
       // Uses.
@@ -128,8 +127,9 @@ object CompletionProvider {
       // Imports.
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => VarCompleter.getCompletions(err)
 
       case _ => Nil
     })
@@ -213,7 +213,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedUse(_, _, _, _) => (1, SyntacticContext.Use)
       case ResolutionError.UndefinedName(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
+      case ResolutionError.UndefinedType(_, _, _, _) => (1, SyntacticContext.Type.OtherType)
       case ResolutionError.UndefinedTag(_, _,  _, _) => (1, SyntacticContext.Pat.OtherPat)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)

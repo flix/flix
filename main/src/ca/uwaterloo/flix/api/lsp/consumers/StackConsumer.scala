@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp
+package ca.uwaterloo.flix.api.lsp.consumers
 
-import ca.uwaterloo.flix.api.lsp.Visitor.Consumer
-import ca.uwaterloo.flix.language.ast.Ast.{AssocTypeConstructor, Derivations}
-import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
+import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
+import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
   * Consumer that collects every visited AST nodes on a stack where the head is the last element visited.

@@ -292,7 +292,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))

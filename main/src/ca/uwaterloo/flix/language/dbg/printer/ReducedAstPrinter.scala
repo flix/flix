@@ -39,7 +39,7 @@ object ReducedAstPrinter {
           print(stmt)
         )
     }.toList
-    DocAst.Program(Nil, defs)
+    DocAst.Program(Nil, defs, Nil)
   }
 
   /**

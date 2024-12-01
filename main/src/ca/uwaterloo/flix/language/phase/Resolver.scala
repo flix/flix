@@ -1254,12 +1254,6 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
-    case NamedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val eVal = resolveExp(exp, env0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.UncheckedMaskingCast(e, loc)
-      }
-
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>
@@ -2080,7 +2074,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private def resolveDerivations(derives0: NamedAst.Derivations, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Ast.Derivations = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Derivations = {
     val qnames = derives0.traits
     val derives = qnames.flatMap(resolveDerivation(_, env, ns0, root))
     // Check for [[DuplicateDerivation]].
@@ -2096,7 +2090,7 @@ object Resolver {
       }
     }
     errors.foreach(sctx.errors.add)
-    Ast.Derivations(derives, derives0.loc)
+    Derivations(derives, derives0.loc)
   }
 
   /**
@@ -2375,7 +2369,7 @@ object Resolver {
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
             case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
             case TypeLookupResult.NotFound =>
-              val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
+              val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
               sctx.errors.add(error)
               Validation.Success(UnkindedType.Error(loc))
           }
@@ -2392,7 +2386,7 @@ object Resolver {
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
           case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
           case TypeLookupResult.NotFound =>
-            val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
+            val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
             sctx.errors.add(error)
             Validation.Success(UnkindedType.Error(loc))
         }

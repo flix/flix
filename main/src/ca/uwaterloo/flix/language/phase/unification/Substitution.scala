@@ -67,33 +67,15 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
         case Type.Cst(_, _) => t
 
         case Type.Apply(t1, t2, loc) =>
+          // Note: While we could perform simplifications here,
+          // experimental results have shown that it is not worth it.
+          val x = visit(t1)
           val y = visit(t2)
-          visit(t1) match {
-            // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _) => Type.mkDifference(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _) => Type.mkSymmetricDiff(x, y, loc)
-
-            // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
-
-            // Simplify set expressions.
-            case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
-
-            // Else just apply.
-            case x =>
-              // Performance: Reuse t, if possible.
-              if ((x eq t1) && (y eq t2))
-                t
-              else
-                Type.Apply(x, y, loc)
-          }
+          // Performance: Reuse t, if possible.
+          if ((x eq t1) && (y eq t2))
+            t
+          else
+            Type.Apply(x, y, loc)
 
         case Type.Alias(sym, args0, tpe0, loc) =>
           val args = args0.map(visit)

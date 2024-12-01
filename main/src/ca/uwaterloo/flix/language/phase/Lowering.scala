@@ -53,8 +53,6 @@ object Lowering {
 
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.facts$arity")
 
-    lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
-
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
@@ -588,9 +586,6 @@ object Lowering {
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
       LoweredAst.Expr.Cast(e, dt, declaredEff, t, eff, loc)
-
-    case TypedAst.Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
 
     case TypedAst.Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)

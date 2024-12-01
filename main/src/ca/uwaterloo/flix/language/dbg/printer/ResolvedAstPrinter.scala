@@ -28,9 +28,9 @@ object ResolvedAstPrinter {
   def print(root: ResolvedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
       case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
-        DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
+        DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Type.AsIs("Unknown"), print(exp))
     }.toList
-    DocAst.Program(Nil, defs)
+    DocAst.Program(Nil, defs, Nil)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
@@ -86,7 +86,6 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
-    case Expr.UncheckedMaskingCast(exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))

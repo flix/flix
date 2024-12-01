@@ -18,9 +18,9 @@ object TypedAstPrinter {
     }.toList
     val defs = root.defs.values.map {
       case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp, _) =>
-        DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.printAsEffect(eff), print(exp))
+        DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.print(eff), print(exp))
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(enums, defs, Nil)
   }
 
   /**
@@ -41,7 +41,7 @@ object TypedAstPrinter {
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.printAsEffect(eff)), print(exp1), print(exp2))
+    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -72,7 +72,6 @@ object TypedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.UncheckedMaskingCast(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
