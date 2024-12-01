@@ -50,6 +50,7 @@ tasks.withType(ScalaCompile).configureEach {
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11",
             "-opt:inline:ca.uwaterloo.**",
+            "-Xmixin-force-forwarders:false",
             "-Xsource:3",    // Scala 3 migration flag
             "-Ytasty-reader" // Scala 3 migration flag
     ]
