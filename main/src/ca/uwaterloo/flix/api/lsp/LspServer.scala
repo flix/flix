@@ -40,7 +40,8 @@ object LspServer {
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
       System.err.println(s"initialize: $initializeParams")
 
-      CompletableFuture.completedFuture(new InitializeResult())
+      val capabilities = new ServerCapabilities
+      CompletableFuture.completedFuture(new InitializeResult(capabilities))
     }
 
     override def shutdown(): CompletableFuture[AnyRef] = {

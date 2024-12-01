@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
+import ca.uwaterloo.flix.api.lsp.{LanguageServer, LspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -264,6 +264,7 @@ object Main {
           }
 
         case Command.Lsp(port) =>
+          LspServer.run()
           val o = options.copy(progress = false)
           try {
             val languageServer = new LanguageServer(port, o)
