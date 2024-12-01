@@ -110,7 +110,7 @@ mod TestMutList {
 
     @test
     def get01(): Bool = region rc {
-        let r = try MutList.get(0, MutList.empty(rc)) with OutOfBounds {
+        let r = run MutList.get(0, MutList.empty(rc)) with OutOfBounds {
             def outOfBounds(msg, _) = msg
         };
         r == "index 0 is out of bounds for MutList of length 0"
@@ -120,7 +120,7 @@ mod TestMutList {
     def get02(): Bool = region rc {
         let l = MutList.empty(rc);
         MutList.push("item", l);
-        let r = try MutList.get(0, l) with OutOfBounds {
+        let r = run MutList.get(0, l) with OutOfBounds {
             def outOfBounds(_, _) = "error"
         };
         r == "item"

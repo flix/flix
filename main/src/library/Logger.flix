@@ -59,7 +59,7 @@ mod Logger {
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Logger) + IO = x ->
-        try {
+        run {
             f(x)
         } with Logger {
             def log(s, m, k) = { println("[${s}] ${m}"); k() }

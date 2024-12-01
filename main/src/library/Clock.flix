@@ -44,7 +44,7 @@ mod Clock {
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Clock) + IO = x ->
-        try {
+        run {
             f(x)
         } with Clock {
             def currentTime(u, k) = {
