@@ -41,6 +41,7 @@ object LspServer {
       System.err.println(s"initialize: $initializeParams")
 
       val capabilities = new ServerCapabilities
+      capabilities.setHoverProvider(true)
       CompletableFuture.completedFuture(new InitializeResult(capabilities))
     }
 
@@ -65,17 +66,21 @@ object LspServer {
 
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
       System.err.println(s"didChange: $didChangeTextDocumentParams")
-
     }
 
     override def didClose(didCloseTextDocumentParams: DidCloseTextDocumentParams): Unit = {
       System.err.println(s"didCloseTextDocumentParams: $didCloseTextDocumentParams")
-
     }
 
     override def didSave(didSaveTextDocumentParams: DidSaveTextDocumentParams): Unit = {
       System.err.println(s"didSaveTextDocumentParams: $didSaveTextDocumentParams")
+    }
 
+    override def hover(params: HoverParams): CompletableFuture[Hover] = {
+      System.err.println(s"hover: $params")
+
+      val h = new Hover(new MarkupContent("plaintext", "Hello World from Hover!"))
+      CompletableFuture.completedFuture(h)
     }
   }
 

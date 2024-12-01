@@ -264,7 +264,6 @@ object Main {
           }
 
         case Command.Lsp(port) =>
-          LspServer.run()
           val o = options.copy(progress = false)
           try {
             val languageServer = new LanguageServer(port, o)
