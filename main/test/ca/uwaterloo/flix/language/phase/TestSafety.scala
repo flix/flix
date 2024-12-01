@@ -334,7 +334,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO =
         |  new Runnable {
-        |    def run(): Unit = ()
+        |    def $run(): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -373,7 +373,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO =
         |  new Runnable {
-        |    def run(_this: Runnable): Unit = ()
+        |    def $run(_this: Runnable): Unit = ()
         |    def anExtraMethod(_this: Runnable): Unit = ()
         |  }
       """.stripMargin
