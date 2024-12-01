@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.phase.Inliner1.Stats
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
@@ -31,12 +32,14 @@ object Optimizer1 {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
     var result = root
+    var stats: Stats = null
     for (_ <- 1 to 3) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
-      val (afterInliner, stats) = Inliner1.run(afterOccurrenceAnalyzer)
-      println(stats)
+      val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
+      stats = if (stats == null) stats1 else stats ++ stats1
       result = afterInliner
     }
+    println(stats)
     result
   }
 }

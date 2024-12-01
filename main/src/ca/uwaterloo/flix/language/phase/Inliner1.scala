@@ -1083,17 +1083,27 @@ object Inliner1 {
                    simplifiedIfThenElse: Map[Symbol.DefnSym, Int],
                    eliminatedStms: Map[Symbol.DefnSym, Int]) {
     def ++(that: Stats): Stats = {
-      val inlinedDefs1 = inlinedDefs ++ that.inlinedDefs
-      val inlinedVars1 = inlinedVars ++ that.inlinedVars
-      val betaReductions1 = betaReductions ++ that.betaReductions
-      val eliminatedVars1 = eliminatedVars ++ that.eliminatedVars
-      val simplifiedIfThenElse1 = simplifiedIfThenElse ++ that.simplifiedIfThenElse
-      val eliminatedStms1 = eliminatedStms ++ that.eliminatedStms
+      val inlinedDefs1 = Stats.merge(inlinedDefs, that.inlinedDefs)(_ ++ _)
+      val inlinedVars1 = Stats.merge(inlinedVars, that.inlinedVars)(_ ++ _)
+      val betaReductions1 = Stats.merge(betaReductions, that.betaReductions)(_ + _)
+      val eliminatedVars1 = Stats.merge(eliminatedVars, that.eliminatedVars)(_ ++ _)
+      val simplifiedIfThenElse1 = Stats.merge(simplifiedIfThenElse, that.simplifiedIfThenElse)(_ + _)
+      val eliminatedStms1 = Stats.merge(eliminatedStms, that.eliminatedStms)(_ + _)
       Stats(inlinedDefs1, inlinedVars1, betaReductions1, eliminatedVars1, simplifiedIfThenElse1, eliminatedStms1)
     }
   }
 
   private object Stats {
+    private def merge[A, B](m1: Map[A, B], m2: Map[A, B])(combine: (B, B) => B): Map[A, B] = {
+      val smallest = if (m1.size < m2.size) m1 else m2
+      smallest.foldLeft(m2) {
+        case (acc, (k, v1)) => acc.get(k) match {
+          case Some(v2) => acc + (k -> combine(v1, v2))
+          case None => acc + (k -> v1)
+        }
+      }
+    }
+
     private def toMapSet[A, B](iterable: Iterable[(A, B)]): Map[A, Set[B]] = {
       iterable.foldLeft(Map.empty[A, Set[B]]) {
         case (m, (k, v)) => m.get(k) match {
