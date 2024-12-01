@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Derivation, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -172,7 +172,7 @@ object SemanticTokensProvider {
         Iterator(t),
         visitTypeParams(tparams),
         Iterator(derives.traits *).map {
-          case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
+          case Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
         },
         cases.foldLeft(Iterator.empty[SemanticToken]) {
           case (acc, (_, caze)) => acc ++ visitCase(caze)
@@ -345,10 +345,8 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      exps.foldLeft(visitExp(exp)) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
@@ -505,9 +503,6 @@ object SemanticTokensProvider {
 
     case Expr.UncheckedCast(exp, _, _, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.Without(exp, eff, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)

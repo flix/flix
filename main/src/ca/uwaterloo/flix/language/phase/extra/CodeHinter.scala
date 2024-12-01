@@ -93,8 +93,8 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(DefSymUse(sym, loc1), exps, _, _, _, _) =>
       val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
@@ -214,9 +214,6 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>

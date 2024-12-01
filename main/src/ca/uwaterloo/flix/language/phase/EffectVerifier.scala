@@ -87,10 +87,10 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      visitExp(exp)
-      exps.foreach(visitExp)
-      val expected = Type.mkUnion(Type.eraseTopAliases(exp.tpe).arrowEffectType :: exp.eff :: exps.map(_.eff), loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      val expected = Type.mkUnion(Type.eraseTopAliases(exp1.tpe).arrowEffectType :: exp1.eff :: exp2.eff :: Nil, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.ApplyDef(_, exps, itpe, _, eff, loc) =>
@@ -265,8 +265,6 @@ object EffectVerifier {
     case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      visitExp(exp)
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.Without(exp, effUse, tpe, eff, loc) =>
       visitExp(exp)

@@ -223,7 +223,8 @@ object Namer {
     */
   private def mkDuplicateNamePair(name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
-    if (name.charAt(0).isUpper) {
+    // NB: Sometimes `name` can be empty so we carefully check this
+    if (name.nonEmpty && name.charAt(0).isUpper) {
       // Case 1: uppercase name
       sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
       sctx.errors.add(NameError.DuplicateUpperName(name, loc2, loc1))
@@ -752,10 +753,6 @@ object Namer {
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
-
-    case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.UncheckedMaskingCast(e, loc)
 
     case DesugaredAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp, ns0)

@@ -53,8 +53,6 @@ object Lowering {
 
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.facts$arity")
 
-    lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
-
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
@@ -376,11 +374,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
+    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyClo(e, es, t, eff, loc)
+      LoweredAst.Expr.ApplyClo(e1, e2, t, eff, loc)
 
     case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -588,9 +586,6 @@ object Lowering {
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
       LoweredAst.Expr.Cast(e, dt, declaredEff, t, eff, loc)
-
-    case TypedAst.Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
 
     case TypedAst.Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
@@ -1846,10 +1841,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Lambda(p, e, tpe, loc)
 
-    case LoweredAst.Expr.ApplyClo(exp, exps, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.ApplyClo(e, es, tpe, eff, loc)
+    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

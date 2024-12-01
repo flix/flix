@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -110,7 +111,18 @@ object Doc {
     * This data exists as a simpler format that [[Doc]] is translated into
     * before computing a string.
     */
-  private sealed trait SDoc
+  private sealed trait SDoc {
+    def reverse: SDoc = SDoc.reverseAux(this, SNil)
+  }
+
+  private object SDoc {
+    @tailrec
+    def reverseAux(l: SDoc, acc: SDoc): SDoc = l match {
+      case SNil => acc
+      case SText(s, d) => reverseAux(d, SText(s, acc))
+      case SLine(i, d) => reverseAux(d, SLine(i, acc))
+    }
+  }
 
   private case object SNil extends SDoc
 
@@ -173,26 +185,26 @@ object Doc {
     * @param k used width
     */
   @tailrec
-  private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
+  private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], acc: SDoc): SDoc = l match {
     case Nil =>
-      cont(SNil)
+      acc
     case (_, _, DNil) :: z =>
-      format(w, k, z, cont)
+      format(w, k, z, acc)
     case (i, m, DCons(x, y)) :: z =>
-      format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
+      format(w, k, (i, m, x) :: (i, m, y) :: z, acc)
     case (i, m, Nest(j, x)) :: z =>
-      format(w, k, (i + j, m, x) :: z, cont)
+      format(w, k, (i + j, m, x) :: z, acc)
     case (_, _, Text(s)) :: z =>
-      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+      format(w, k + s.length, z, SText(s, acc))
     case (_, MFlat, Break(s)) :: z =>
-      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+      format(w, k + s.length, z, SText(s, acc))
     case (i, MBreak, Break(_)) :: z =>
-      format(w, i, z, v1 => cont(SLine(i, v1)))
+      format(w, i, z, SLine(i, acc))
     case (i, _, Group(x)) :: z =>
       if (fits(w - k, (i, MFlat, x) :: z)) {
-        format(w, k, (i, MFlat, x) :: z, cont)
+        format(w, k, (i, MFlat, x) :: z, acc)
       } else {
-        format(w, k, (i, MBreak, x) :: z, cont)
+        format(w, k, (i, MBreak, x) :: z, acc)
       }
   }
 
@@ -205,7 +217,7 @@ object Doc {
     * @param i the width of each indentation level
     */
   def pretty(w: Int, d: Doc)(implicit i: Indent): String =
-    sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
+    sdocToString(format(w, 0, List((0, MBreak, d)), SNil).reverse)
 
   // aux
 

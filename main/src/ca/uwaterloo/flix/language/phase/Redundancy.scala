@@ -337,9 +337,9 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
@@ -664,9 +664,6 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
     case Expr.Without(exp, effUse, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
       visitExp(exp, env0, rc)
@@ -989,13 +986,13 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isPure(exp)
 
   /**
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isMustUseType(exp.tpe)
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.

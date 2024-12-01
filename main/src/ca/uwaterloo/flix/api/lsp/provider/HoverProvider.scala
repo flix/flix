@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, StackConsumer, Visitor}
+import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
@@ -29,7 +31,7 @@ object HoverProvider {
 
   def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
     val consumer = StackConsumer()
-    Visitor.visitRoot(root, consumer, Visitor.InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
 
     consumer.getStack.headOption match {
       case None => mkNotFound(uri, pos)

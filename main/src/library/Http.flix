@@ -18,7 +18,7 @@
 /// The effect used to interact with the HTTP protocol.
 ///
 eff Http {
-    def get(url: String, headers: Map[String, List[String]]): Http.Response
+    def request(method: String, url: String, headers: Map[String, List[String]], body: Option[String]): Http.Response
 }
 
 mod Http {
@@ -26,6 +26,7 @@ mod Http {
     import java.net.http.HttpClient
     import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.net.http.HttpRequest
+    import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
     import java.net.URI
     import java.util.{List => JList}
 
@@ -47,6 +48,56 @@ mod Http {
     }
 
     ///
+    /// Send a `GET` request to the given `url` with the given `headers` and wait for the response.
+    ///
+    pub def get(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
+        Http.request("GET", url, headers, None)
+
+    ///
+    /// Send a `HEAD` request to the given `url` with the given `headers` and wait for the response.
+    ///
+    /// A `HEAD` request is identical to a `GET` request except that the server should not return a message-body in the response.
+    ///
+    pub def head(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
+        Http.request("HEAD", url, headers, None)
+
+    ///
+    /// Send a `DELETE` request to the given `url` with the given `headers` and wait for the response.
+    ///
+    pub def delete(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
+        Http.request("DELETE", url, headers, None)
+
+    ///
+    /// Send an `OPTIONS` request to the given `url` with the given `headers` and wait for the response.
+    ///
+    pub def options(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
+        Http.request("OPTIONS", url, headers, None)
+
+    ///
+    /// Send a `TRACE` request to the given `url` with the given `headers` and wait for the response.
+    ///
+    pub def trace(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
+        Http.request("TRACE", url, headers, None)
+
+    ///
+    /// Send a `POST` request to the given `url` with the given `headers` and `body` and wait for the response.
+    ///
+    pub def post(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
+        Http.request("POST", url, headers, Some(body))
+
+    ///
+    /// Send a `PUT` request to the given `url` with the given `headers` and `body` and wait for the response.
+    ///
+    pub def put(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
+        Http.request("PUT", url, headers, Some(body))
+
+    ///
+    /// Send a `PATCH` request to the given `url` with the given `headers` and `body` and wait for the response.
+    ///
+    pub def patch(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
+        Http.request("PATCH", url, headers, Some(body))
+
+    ///
     /// Handles the `Http` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
@@ -55,28 +106,32 @@ mod Http {
         try {
             f(x)
         } with Http {
-            def get(url, headers, k) = {
-                let builder =
-                    HttpRequest.newBuilder(URI.create(url))
-                        |> builder -> Map.foldLeftWithKey(
-                            (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
-                            builder,
-                            headers
-                        );
-                let request = builder.build();
+            def request(method, url, headers, body, k) = {
+               let bodyPublisher = match body {
+                   case Some(b) => BodyPublishers.ofString(b)
+                   case None    => BodyPublishers.noBody()
+               };
+               let builder =
+                   HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
+                       |> builder -> Map.foldLeftWithKey(
+                           (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
+                           builder,
+                           headers
+                       );
+               let request = builder.build();
 
-                let client = HttpClient.newHttpClient();
-                let response = client.send(request, BodyHandlers.ofString());
+               let client = HttpClient.newHttpClient();
+               let response = client.send(request, BodyHandlers.ofString());
 
-                let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
-                let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
+               let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
+               let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
 
-                k(Http.Response.Response({
-                    status = response.statusCode(),
-                    headers = responseHeaders,
-                    body = response.body().toString() // Body already is a string but has type Object
-                }))
-            }
+               k(Http.Response.Response({
+                   status = response.statusCode(),
+                   headers = responseHeaders,
+                   body = response.body().toString() // Body already is a string but has type Object
+               }))
+           }
         }
 
 }

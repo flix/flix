@@ -362,12 +362,12 @@ object Kinder {
     case ResolvedAst.Expr.Cst(cst, loc) =>
       KindedAst.Expr.Cst(cst, loc)
 
-    case ResolvedAst.Expr.ApplyClo(exp0, exps0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+    case ResolvedAst.Expr.ApplyClo(exp10, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ApplyClo(exp, exps, tvar, evar, loc)
+      KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc)
 
     case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
@@ -594,10 +594,6 @@ object Kinder {
       val declaredEff = declaredEff0.map(visitType(_, Kind.Eff, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
-
-    case ResolvedAst.Expr.UncheckedMaskingCast(exp0, loc) =>
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.UncheckedMaskingCast(exp, loc)
 
     case ResolvedAst.Expr.Without(exp0, eff, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
