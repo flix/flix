@@ -23,12 +23,24 @@ eff Http {
 
 mod Http {
 
+    import java.io.IOException
+    import java.io.UncheckedIOException
+    import java.lang.IllegalArgumentException
+    import java.lang.InterruptedException
+    import java.net.ConnectException
     import java.net.http.HttpClient
     import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.net.http.HttpRequest
     import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
     import java.net.URI
     import java.util.{List => JList}
+
+    ///
+    /// An error that can occur when performing HTTP operations.
+    ///
+    pub enum Error {
+        case Generic(String)
+    }
 
     ///
     /// A response from an HTTP request.
@@ -102,36 +114,43 @@ mod Http {
     ///
     /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[Http.Error, b] \ (ef - Http) + {Net, IO} = x ->
         try {
-            f(x)
+            Ok(f(x))
         } with Http {
-            def request(method, url, headers, body, k) = {
-               let bodyPublisher = match body {
-                   case Some(b) => BodyPublishers.ofString(b)
-                   case None    => BodyPublishers.noBody()
-               };
-               let builder =
-                   HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
-                       |> builder -> Map.foldLeftWithKey(
-                           (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
-                           builder,
-                           headers
-                       );
-               let request = builder.build();
+            def request(method, url, headers, body, k) =
+                try {
+                    let bodyPublisher = match body {
+                       case Some(b) => BodyPublishers.ofString(b)
+                       case None    => BodyPublishers.noBody()
+                    };
+                    let builder =
+                       HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
+                           |> builder -> Map.foldLeftWithKey(
+                               (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
+                               builder,
+                               headers
+                           );
+                    let request = builder.build();
 
-               let client = HttpClient.newHttpClient();
-               let response = client.send(request, BodyHandlers.ofString());
+                    let client = HttpClient.newHttpClient();
+                    let response = client.send(request, BodyHandlers.ofString());
 
-               let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
-               let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
+                    let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
+                    let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
 
-               k(Http.Response.Response({
-                   status = response.statusCode(),
-                   headers = responseHeaders,
-                   body = response.body().toString() // Body already is a string but has type Object
-               }))
-           }
+                    k(Http.Response.Response({
+                       status = response.statusCode(),
+                       headers = responseHeaders,
+                       body = response.body().toString() // Body already is a string but has type Object
+                    }))
+                } catch {
+                    case ex: IllegalArgumentException => Err(Http.Error.Generic(ex.getMessage()))
+                    case ex: ConnectException         => Err(Http.Error.Generic(ex.getMessage()))
+                    case ex: InterruptedException     => Err(Http.Error.Generic(ex.getMessage()))
+                    case ex: UncheckedIOException     => Err(Http.Error.Generic(ex.getMessage()))
+                    case ex: IOException              => Err(Http.Error.Generic(ex.getMessage()))
+                }
         }
 
 }
