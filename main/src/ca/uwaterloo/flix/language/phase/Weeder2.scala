@@ -315,6 +315,10 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+          if (ident.isUpper) {
+            val error = ???
+            sctx.errors.add(error)
+          }
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
