@@ -397,6 +397,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordNew
          | TokenKind.KeywordNot
          | TokenKind.KeywordNull
+         | TokenKind.KeywordOpenVariant
          | TokenKind.KeywordOpenVariantAs
          | TokenKind.KeywordPar
          | TokenKind.KeywordQuery
