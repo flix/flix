@@ -317,6 +317,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  test("IllegalCapitalizedDef.01") {
+    val input =
+      """
+        |def F(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalCapitalizedDef](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
