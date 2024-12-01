@@ -38,7 +38,7 @@ mod Exit {
     /// Note: The returned function can still return normally if `exit` is never called by `f`.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + {Sys, IO} = x ->
-        try {
+        run {
             f(x)
         } with Exit {
             def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)

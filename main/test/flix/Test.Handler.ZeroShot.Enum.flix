@@ -7,7 +7,7 @@ mod Test.Handler.ZeroShot.Enum {
     @Test
     def testLinear01(): Bool =
         def f1() = Exc.raise();
-        let result = try {
+        let result = run {
             f1()
         } with Exc {
             def raise(_k) = Some(42)
@@ -18,7 +18,7 @@ mod Test.Handler.ZeroShot.Enum {
     def testLinear02(): Bool =
         def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
-        let result = try {
+        let result = run {
             f2()
         } with Exc {
             def raise(_k) = Some(42)
@@ -30,7 +30,7 @@ mod Test.Handler.ZeroShot.Enum {
         def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
-        let result = try {
+        let result = run {
             f3()
         } with Exc {
             def raise(_k) = Some(42)
@@ -41,7 +41,7 @@ mod Test.Handler.ZeroShot.Enum {
     def testRecursiveLetRec01(): Bool =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(0)
         } with Exc {
             def raise(_k) = Some(42)
@@ -52,7 +52,7 @@ mod Test.Handler.ZeroShot.Enum {
     def testRecursiveLetRec02(): Bool =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(1)
         } with Exc {
             def raise(_k) = Some(42)
@@ -63,7 +63,7 @@ mod Test.Handler.ZeroShot.Enum {
     def testRecursiveLetRec03(): Bool =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(10)
         } with Exc {
             def raise(_k) = Some(42)
@@ -72,7 +72,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive01(): Bool =
-        let result = try {
+        let result = run {
             mutual1(0)
         } with Exc {
             def raise(_k) = Some(42)
@@ -81,7 +81,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive02(): Bool =
-        let result = try {
+        let result = run {
             mutual1(1)
         } with Exc {
             def raise(_k) = Some(42)
@@ -90,7 +90,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive03(): Bool =
-        let result = try {
+        let result = run {
             mutual1(2)
         } with Exc {
             def raise(_k) = Some(42)
@@ -99,7 +99,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive04(): Bool =
-        let result = try {
+        let result = run {
             mutual1(3)
         } with Exc {
             def raise(_k) = Some(42)
@@ -108,7 +108,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive05(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with Exc {
             def raise(_k) = Some(42)
@@ -117,7 +117,7 @@ mod Test.Handler.ZeroShot.Enum {
 
     @Test
     def testMutualRecursive06(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with Exc {
             def raise(_k) = None
