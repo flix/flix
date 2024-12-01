@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
+import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{Scope, Source}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope, Source}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
