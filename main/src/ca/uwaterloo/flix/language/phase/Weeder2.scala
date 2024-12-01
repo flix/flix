@@ -885,6 +885,7 @@ object Weeder2 {
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
+        case TreeKind.Expr.Run => visitRunExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
@@ -1724,33 +1725,47 @@ object Weeder2 {
       }
     }
 
-    private def visitTryExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Try)
-      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
+    private def visitRunExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Run)
       val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree)
       flatMapN(
         pickExpr(tree),
-        traverse(maybeCatch)(visitTryCatchBody),
         traverse(maybeWith)(visitTryWithBody),
       ) {
-        // Bad case: try expr
-        case (_, Nil, Nil) =>
+        // Bad case: run expr
+        case (_, Nil) =>
           // Fall back on Expr.Error, Parser has already reported an error.
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
             actual = None,
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
+          sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (_, _ :: _, _ :: _) =>
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordTry)), SyntacticContext.Expr.OtherExpr, hint = Some(s"Use either ${TokenKind.KeywordWith.display} or ${TokenKind.KeywordCatch.display} on ${TokenKind.KeywordTry.display}."), tree.loc)
-          // Fall back on Expr.Error, Parser has already reported an error.
+        // Case: run expr with eff { handlers... }
+        case (expr, withs) => Validation.Success(Expr.TryWith(expr, withs, tree.loc))
+      }
+    }
+
+    private def visitTryExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Try)
+      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
+      flatMapN(
+        pickExpr(tree),
+        traverse(maybeCatch)(visitTryCatchBody),
+      ) {
+        // Bad case: try expr
+        case (_, Nil) =>
+          // Fall back on Expr.Error
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
+            actual = None,
+            SyntacticContext.Expr.OtherExpr,
+            loc = tree.loc)
+          sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
         // Case: try expr catch { rules... }
-        case (expr, catches, Nil) => Validation.Success(Expr.TryCatch(expr, catches.flatten, tree.loc))
-        // Case: try expr with eff { handlers... }
-        case (expr, Nil, withs) => Validation.Success(Expr.TryWith(expr, withs, tree.loc))
+        case (expr, catches) => Validation.Success(Expr.TryCatch(expr, catches.flatten, tree.loc))
       }
     }
 

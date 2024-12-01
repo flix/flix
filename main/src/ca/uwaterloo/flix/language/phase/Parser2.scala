@@ -2418,7 +2418,7 @@ object Parser2 {
       while (at(TokenKind.KeywordWith)) {
         withBody()
       }
-      close(mark, TreeKind.Expr.Try)
+      close(mark, TreeKind.Expr.Run)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
@@ -2426,18 +2426,9 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordTry, SyntacticContext.Expr.OtherExpr)
       expression()
-      if (at(TokenKind.KeywordCatch)) {
-        while (at(TokenKind.KeywordCatch)) {
-          catchBody()
-        }
-      } else if (at(TokenKind.KeywordWith)) {
-        while (at(TokenKind.KeywordWith)) {
-          withBody()
-        }
-      } else {
-        expectAny(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith), SyntacticContext.Expr.OtherExpr)
+      while (at(TokenKind.KeywordCatch)) {
+        catchBody()
       }
-
       close(mark, TreeKind.Expr.Try)
     }
 
