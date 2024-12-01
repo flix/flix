@@ -745,7 +745,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Bool =
-        |    let result = try {
+        |    let result = run {
         |        mutual1(10)
         |    } with AskTell ;
         |    Assert.eq(Some(84), result)
@@ -761,6 +761,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingRunBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    run { true }
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
