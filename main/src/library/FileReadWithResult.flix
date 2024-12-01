@@ -120,7 +120,7 @@ mod FileReadWithResult {
     /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileReadWithResult) + IO = x ->
-        try {
+        run {
             f(x)
         } with FileReadWithResult {
             def exists(f, k) = {

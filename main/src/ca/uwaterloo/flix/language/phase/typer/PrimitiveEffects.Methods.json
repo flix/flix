@@ -8,6 +8,8 @@
     "java.lang.System::console": "IO",
     "java.lang.System::currentTimeMillis": "IO",
     "java.lang.System::getenv": "Env, IO",
-    "java.lang.System::nanoTime": "IO"
+    "java.lang.System::nanoTime": "IO",
+    "java.net.http.HttpClient::send": "Net, IO",
+    "java.net.http.HttpClient::sendAsync": "Net, IO"
   }
 }

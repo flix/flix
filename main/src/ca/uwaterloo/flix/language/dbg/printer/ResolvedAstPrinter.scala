@@ -28,7 +28,7 @@ object ResolvedAstPrinter {
   def print(root: ResolvedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
       case ResolvedAst.Declaration.Def(sym, spec, exp, _) =>
-        DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Eff.AsIs("Unknown"), print(exp))
+        DocAst.Def(spec.ann, spec.mod, sym, spec.fparams.map(printFormalParam), DocAst.Type.Unknown, DocAst.Type.AsIs("Unknown"), print(exp))
     }.toList
     DocAst.Program(Nil, defs, Nil)
   }

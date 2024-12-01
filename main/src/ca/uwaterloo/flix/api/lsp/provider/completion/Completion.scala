@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
@@ -158,12 +158,12 @@ sealed trait Completion {
         kind             = CompletionItemKind.Class
       )
 
-    case Completion.AutoImportCompletion(label, name, path, ap, documentation) =>
+    case Completion.AutoImportCompletion(name, path, ap, labelDetails , priority) =>
       CompletionItem(
-        label               = label,
-        sortText            = Priority.toSortText(Priority.Lower, name),
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
         textEdit            = TextEdit(context.range, name),
-        documentation       = documentation,
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
@@ -174,9 +174,12 @@ sealed trait Completion {
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
-      val label = CompletionUtils.getLabelForNameAndSpec(name, decl.spec)(flix) + s" (use $qualifiedName)"
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        Some(s" use $qualifiedName"))
       CompletionItem(
-        label               = label,
+        label               = name,
+        labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(context.range, snippet),
@@ -241,13 +244,18 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl) =>
-      val name = decl.sym.toString
-      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+    case Completion.DefCompletion(decl, qualified) =>
+      val qualifiedName = decl.sym.toString
+      val label = if (qualified) qualifiedName else decl.sym.name
+      val snippet = CompletionUtils.getApplySnippet(qualifiedName, decl.spec.fparams)(context)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        filterText       = Some(CompletionUtils.getFilterTextForName(name)),
+        label            = label,
+        labelDetails     = Some(labelDetails),
+        sortText         = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText       = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
         documentation    = Some(decl.spec.doc.text),
@@ -258,8 +266,12 @@ sealed trait Completion {
     case Completion.SigCompletion(decl) =>
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        label            = name,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Lower, name),
         filterText       = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit         = TextEdit(context.range, snippet),
@@ -273,8 +285,12 @@ sealed trait Completion {
       // NB: priority is high because only an op can come after `do`
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        label            = name,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Lower, name),
         filterText       = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit         = TextEdit(context.range, snippet),
@@ -355,8 +371,12 @@ sealed trait Completion {
       val name = s"${enumSym.toString}.${cas.sym.name}"
       val args = (1 until cas.tpes.length + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getParamsLabelForEnumTags(cas)),
+        None)
       CompletionItem(
-        label            = CompletionUtils.getLabelForEnumTags(name, cas),
+        label            = name,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Default, name),
         textEdit         = TextEdit(context.range, snippet),
         detail           = Some(enumSym.name),
@@ -402,12 +422,17 @@ sealed trait Completion {
       val returnType = method.getReturnType.getSimpleName
       val returnEffect = "IO"
 
-      val label = method.getName + "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect
+      val label = method.getName
+      val labelDetails = CompletionItemLabelDetails(
+        Some( "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect),
+        None
+      )
       val text = method.getName + "(" + argsWithName.zipWithIndex.map {case (arg, i) => s"$${${i + 1}:$arg}" }.mkString(", ") + ")"
       val range = Range.from(ident.loc)
 
       CompletionItem(
         label            = label,
+        labelDetails     = Some(labelDetails),
         sortText         = Priority.toSortText(Priority.Lowest, label),
         textEdit         = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.Snippet,
@@ -421,14 +446,19 @@ sealed trait Completion {
       } ::: sym.text :: Nil
       val params = args.mkString(", ")
       val snippet = s"$name($params)"
-      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-        filterText = Some(s"${sym.text}?$name"),
-        sortText = priority,
-        textEdit = TextEdit(Range.from(loc), snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-        documentation = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Function)
+      val labelDetails = CompletionItemLabelDetails(
+        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        None)
+      CompletionItem(
+        label             = name,
+        labelDetails      = Some(labelDetails),
+        filterText        = Some(s"${sym.text}?$name"),
+        sortText          = priority,
+        textEdit          = TextEdit(Range.from(loc), snippet),
+        detail            = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation     = Some(decl.spec.doc.text),
+        insertTextFormat  = InsertTextFormat.Snippet,
+        kind              = CompletionItemKind.Function)
 
   }
 }
@@ -572,13 +602,13 @@ object Completion {
   /**
     * Represents an auto-import completion.
     *
-    * @param label         the label of the completion, displayed in the completion item.
     * @param name          the name to be completed under cursor.
-    * @param path          the path of the java class we will auto-import.
+    * @param qualifiedName the path of the java class we will auto-import.
     * @param ap            the anchor position.
-    * @param documentation a human-readable string that represents a doc-comment.
+    * @param labelDetails  to show the namespace of class we are going to import
+    * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(label: String, name:String, path: String, ap: AnchorPosition, documentation: Option[String]) extends Completion
+  case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
    * Represents an auto-import completion.
@@ -631,7 +661,7 @@ object Completion {
   /**
    * Represents a local def completion
    *
-   * @param sym the symbol of the local function
+   * @param sym     the symbol of the local function
    * @param fparams the formal parameters of the local function
    */
   case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
@@ -639,9 +669,10 @@ object Completion {
   /**
     * Represents a Def completion
     *
-    * @param decl the def decl.
+    * @param decl       the def decl.
+    * @param qualified  indicate whether to use a qualified label
     */
-  case class DefCompletion(decl: TypedAst.Def) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, qualified: Boolean) extends Completion
 
   /**
     * Represents a Signature completion
