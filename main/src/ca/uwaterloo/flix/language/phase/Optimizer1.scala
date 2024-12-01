@@ -33,7 +33,8 @@ object Optimizer1 {
     var result = root
     for (_ <- 1 to 3) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
-      val afterInliner = Inliner1.run(afterOccurrenceAnalyzer)
+      val (afterInliner, stats) = Inliner1.run(afterOccurrenceAnalyzer)
+      println(stats)
       result = afterInliner
     }
     result
