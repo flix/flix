@@ -1113,7 +1113,8 @@ object Inliner1 {
   private object Stats {
     private def merge[A, B](m1: Map[A, B], m2: Map[A, B])(combine: (B, B) => B): Map[A, B] = {
       val smallest = if (m1.size < m2.size) m1 else m2
-      smallest.foldLeft(m2) {
+      val biggest = if (m1.size >= m2.size) m1 else m2
+      smallest.foldLeft(biggest) {
         case (acc, (k, v1)) => acc.get(k) match {
           case Some(v2) => acc + (k -> combine(v1, v2))
           case None => acc + (k -> v1)
