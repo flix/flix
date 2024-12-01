@@ -266,6 +266,27 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
+
+  /**
+    * An error raised to indicate that a function begins with an uppercase character.
+    *
+    * @param loc the location of the function name.
+    */
+  case class IllegalCapitalizedDef(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Unexpected uppercase start of function name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> $summary
+         |
+         |${code(loc, "unexpected uppercase name")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some("Functions must begin with a lowercase character.")
+  }
+
   /**
     * An error raised to indicate that type parameters are present on an effect or operation.
     *
