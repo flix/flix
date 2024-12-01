@@ -17,9 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
-import org.eclipse.lsp4j.services.{NotebookDocumentService, TextDocumentService, WorkspaceService}
+import org.eclipse.lsp4j.services.{TextDocumentService, WorkspaceService}
 
-import java.util
 import java.util.concurrent.CompletableFuture
 
 object LspServer {
@@ -28,14 +27,14 @@ object LspServer {
     val in = System.in
     val out = System.out
 
-    val server = new Server
+    val server = new FlixLanguageServer
     LSPLauncher.createServerLauncher(server, in, out).startListening
   }
 
-  private class Server() extends org.eclipse.lsp4j.services.LanguageServer {
+  private class FlixLanguageServer extends org.eclipse.lsp4j.services.LanguageServer {
 
-    private val txtDocService = new FlixTextDocumentService
-    private val wrkSpaceService = new FlixWorkspaceService
+    private val flixTextDocumentService = new FlixTextDocumentService
+    private val flixWorkspaceService = new FlixWorkspaceService
 
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
       System.err.println(s"initialize: $initializeParams")
@@ -54,9 +53,9 @@ object LspServer {
       System.err.println("exit")
     }
 
-    override def getTextDocumentService: TextDocumentService = txtDocService
+    override def getTextDocumentService: TextDocumentService = flixTextDocumentService
 
-    override def getWorkspaceService: WorkspaceService = wrkSpaceService
+    override def getWorkspaceService: WorkspaceService = flixWorkspaceService
   }
 
   private class FlixTextDocumentService extends TextDocumentService {
