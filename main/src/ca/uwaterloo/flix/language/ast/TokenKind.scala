@@ -401,6 +401,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordPar
          | TokenKind.KeywordQuery
          | TokenKind.KeywordRegion
+         | TokenKind.KeywordRun
          | TokenKind.KeywordSelect
          | TokenKind.KeywordSolve
          | TokenKind.KeywordSpawn
