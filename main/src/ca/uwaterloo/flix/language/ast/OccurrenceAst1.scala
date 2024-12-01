@@ -214,7 +214,7 @@ object OccurrenceAst1 {
     * `occur` represents the number of times a def is references in the entire program.
     * `size` denotes the cumulative weight of each expression in the body of the def
     */
-  case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, isSelfRecursive: Boolean)
+  case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, localDefs: Int, isSelfRecursive: Boolean)
 
 }
 

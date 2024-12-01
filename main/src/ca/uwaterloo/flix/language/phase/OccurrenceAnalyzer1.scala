@@ -35,19 +35,19 @@ object OccurrenceAnalyzer1 {
     /**
       * Occurrence information for an empty sequence of expressions
       */
-    val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0)
+    val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 0)
 
     /**
       * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
       */
-    val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
+    val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 1)
   }
 
   /**
     * The occurrence of `defs` and `vars` inside the body of a `def`
     * `size` represents the number of expressions in the body of a `def`
     */
-  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) {
+  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
     def :+(kv: (DefnSym, Occur)): OccurInfo = {
       this.copy(defs = this.defs + kv)
     }
@@ -70,6 +70,10 @@ object OccurrenceAnalyzer1 {
 
     def get(varSym: VarSym): Occur = {
       this.vars.getOrElse(varSym, Dead)
+    }
+
+    def countLocalDef: OccurInfo = {
+      this.copy(localDefs = localDefs + 1)
     }
   }
 
@@ -157,7 +161,7 @@ object OccurrenceAnalyzer1 {
     }
 
     val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
-    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, isSelfRecursive(occurInfo))
+    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isSelfRecursive(occurInfo))
     val spec = visitSpec(defn0.spec)
     val fparams = defn0.spec.fparams.map(visitFormalParam).map(p => p -> occurInfo.get(p.sym))
     (OccurrenceAst1.Def(defn0.sym, fparams, spec, exp, defContext, defn0.loc), occurInfo)
@@ -272,7 +276,8 @@ object OccurrenceAnalyzer1 {
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
       val o4 = o3 - sym
-      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o4))
+      val o5 = o4.countLocalDef
+      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
 
     case MonoAst.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
@@ -483,8 +488,9 @@ object OccurrenceAnalyzer1 {
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
     val defMap = combineMaps(o1.defs, o2.defs, combine)
+    val localDefs = o1.localDefs + o2.localDefs
     val size = o1.size + o2.size
-    OccurInfo(defMap, varMap, size)
+    OccurInfo(defMap, varMap, localDefs, size)
   }
 
   /**
