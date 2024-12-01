@@ -1091,6 +1091,23 @@ object Inliner1 {
       val eliminatedStms1 = Stats.merge(eliminatedStms, that.eliminatedStms)(_ + _)
       Stats(inlinedDefs1, inlinedVars1, betaReductions1, eliminatedVars1, simplifiedIfThenElse1, eliminatedStms1)
     }
+
+    override def toString: String = {
+      s"""====== STATISTICS ======
+         |
+         |Inlined Defs: $inlinedDefs
+         |
+         |Inlined Vars: $inlinedVars
+         |
+         |Eliminated Vars: $eliminatedVars
+         |
+         |Beta Reductions: $betaReductions
+         |
+         |Eliminated Stms: $eliminatedStms
+         |
+         |Eliminated Ifs: $simplifiedIfThenElse
+         |""".stripMargin
+    }
   }
 
   private object Stats {
