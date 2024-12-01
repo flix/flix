@@ -34,53 +34,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Inliner1 {
 
-  case class Stats(inlinedDefs: Map[Symbol.DefnSym, Set[Symbol.DefnSym]],
-                   inlinedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
-                   betaReductions: Map[Symbol.DefnSym, Int],
-                   eliminatedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
-                   simplifiedIfThenElse: Map[Symbol.DefnSym, Int],
-                   eliminatedStms: Map[Symbol.DefnSym, Int]) {
-    def ++(that: Stats): Stats = {
-      val inlinedDefs1 = inlinedDefs ++ that.inlinedDefs
-      val inlinedVars1 = inlinedVars ++ that.inlinedVars
-      val betaReductions1 = betaReductions ++ that.betaReductions
-      val eliminatedVars1 = eliminatedVars ++ that.eliminatedVars
-      val simplifiedIfThenElse1 = simplifiedIfThenElse ++ that.simplifiedIfThenElse
-      val eliminatedStms1 = eliminatedStms ++ that.eliminatedStms
-      Stats(inlinedDefs1, inlinedVars1, betaReductions1, eliminatedVars1, simplifiedIfThenElse1, eliminatedStms1)
-    }
-  }
-
-  private object Stats {
-    private def toMapSet[A, B](iterable: Iterable[(A, B)]): Map[A, Set[B]] = {
-      iterable.foldLeft(Map.empty[A, Set[B]]) {
-        case (m, (k, v)) => m.get(k) match {
-          case Some(set) => m + (k -> (set + v))
-          case None => m + (k -> Set(v))
-        }
-      }
-    }
-
-    private def toCount[A](iterable: Iterable[(A, Int)]): Map[A, Int] = {
-      iterable.foldLeft(Map.empty[A, Int]) {
-        case (m, (k, i)) => m.get(k) match {
-          case Some(j) => m + (k -> (i + j))
-          case None => m + (k -> i)
-        }
-      }
-    }
-
-    def from(sctx: SharedContext): Stats = {
-      val inlinedDefs = toMapSet(sctx.inlinedDefs.asScala)
-      val inlinedVars = toMapSet(sctx.inlinedVars.asScala)
-      val betaReductions = toCount(sctx.betaReductions.asScala)
-      val eliminatedVars = toMapSet(sctx.eliminatedVars.asScala)
-      val simplifiedIfThenElse = toCount(sctx.simplifiedIfThenElse.asScala)
-      val eliminatedStms = toCount(sctx.eliminatedStms.asScala)
-      Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
-    }
-  }
-
   /**
     * Performs inlining on the given AST `root`.
     */
@@ -1110,4 +1063,53 @@ object Inliner1 {
       */
     def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
+
+
+  case class Stats(inlinedDefs: Map[Symbol.DefnSym, Set[Symbol.DefnSym]],
+                   inlinedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
+                   betaReductions: Map[Symbol.DefnSym, Int],
+                   eliminatedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
+                   simplifiedIfThenElse: Map[Symbol.DefnSym, Int],
+                   eliminatedStms: Map[Symbol.DefnSym, Int]) {
+    def ++(that: Stats): Stats = {
+      val inlinedDefs1 = inlinedDefs ++ that.inlinedDefs
+      val inlinedVars1 = inlinedVars ++ that.inlinedVars
+      val betaReductions1 = betaReductions ++ that.betaReductions
+      val eliminatedVars1 = eliminatedVars ++ that.eliminatedVars
+      val simplifiedIfThenElse1 = simplifiedIfThenElse ++ that.simplifiedIfThenElse
+      val eliminatedStms1 = eliminatedStms ++ that.eliminatedStms
+      Stats(inlinedDefs1, inlinedVars1, betaReductions1, eliminatedVars1, simplifiedIfThenElse1, eliminatedStms1)
+    }
+  }
+
+  private object Stats {
+    private def toMapSet[A, B](iterable: Iterable[(A, B)]): Map[A, Set[B]] = {
+      iterable.foldLeft(Map.empty[A, Set[B]]) {
+        case (m, (k, v)) => m.get(k) match {
+          case Some(set) => m + (k -> (set + v))
+          case None => m + (k -> Set(v))
+        }
+      }
+    }
+
+    private def toCount[A](iterable: Iterable[(A, Int)]): Map[A, Int] = {
+      iterable.foldLeft(Map.empty[A, Int]) {
+        case (m, (k, i)) => m.get(k) match {
+          case Some(j) => m + (k -> (i + j))
+          case None => m + (k -> i)
+        }
+      }
+    }
+
+    def from(sctx: SharedContext): Stats = {
+      val inlinedDefs = toMapSet(sctx.inlinedDefs.asScala)
+      val inlinedVars = toMapSet(sctx.inlinedVars.asScala)
+      val betaReductions = toCount(sctx.betaReductions.asScala)
+      val eliminatedVars = toMapSet(sctx.eliminatedVars.asScala)
+      val simplifiedIfThenElse = toCount(sctx.simplifiedIfThenElse.asScala)
+      val eliminatedStms = toCount(sctx.eliminatedStms.asScala)
+      Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
+    }
+  }
+
 }
