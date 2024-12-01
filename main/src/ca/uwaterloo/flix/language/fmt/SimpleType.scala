@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -291,7 +292,7 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: Ast.VarText) extends SimpleType
 
   /**
     * A tuple.

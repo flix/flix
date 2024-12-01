@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope, Source}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -119,14 +120,14 @@ object Symbol {
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): KindedTypeVarSym = {
+  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): KindedTypeVarSym = {
     new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isRegion, scope, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: VarText, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): UnkindedTypeVarSym = {
+  def freshUnkindedTypeVarSym(text: Ast.VarText, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): UnkindedTypeVarSym = {
     new UnkindedTypeVarSym(flix.genSym.freshId(), text, isRegion, scope, loc)
   }
 
@@ -372,7 +373,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: VarText, val kind: Kind, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
+  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Returns `true` if `this` variable is non-synthetic.
@@ -384,7 +385,7 @@ object Symbol {
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, scope, loc)
 
-    def withText(newText: VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
+    def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id
 
@@ -418,7 +419,7 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: VarText, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
+  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
