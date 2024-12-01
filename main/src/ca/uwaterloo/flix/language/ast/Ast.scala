@@ -16,56 +16,12 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Derivation
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * Represents the way a variable is bound.
-    */
-  sealed trait BoundBy
-
-  object BoundBy {
-
-    /**
-      * Represents a variable that is bound by a formal parameter.
-      */
-    case object FormalParam extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a let-binding.
-      */
-    case object Let extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a pattern.
-      */
-    case object Pattern extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a select.
-      */
-    case object SelectRule extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a catch rule.
-      */
-    case object CatchRule extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a constraint.
-      */
-    case object Constraint extends BoundBy
-
-    /**
-      * Represents a variable that is bound by a local def.
-      */
-    case object LocalDef extends BoundBy
-  }
 
   /**
     * Represents the text of a variable.
