@@ -779,13 +779,24 @@ object Inliner1 {
   }
 
   /**
+    * A function below the soft threshold is typically inlined.
+    */
+  private val SoftInlineThreshold: Int = 4
+
+  /**
+    * A function above the hard threshold is never inlined.
+    */
+  private val HardInlineThreshold: Int = 8
+
+  /**
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(ctx: DefContext, context: Context): Boolean = {
     val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && context != Context.Stop
-    val shouldInline = ctx.isDirectCall ||
-      ctx.occur == Once ||
-      ctx.occur == OnceInAbstraction // May duplicate work?
+    val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInAbstraction
+    val belowSoft = ctx.size < SoftInlineThreshold
+    val belowHard = ctx.size < HardInlineThreshold
+    val shouldInline = belowSoft || (ctx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
     mayInline && shouldInline
   }
 
