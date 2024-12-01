@@ -794,8 +794,8 @@ object Inliner1 {
   private def canInlineDef(ctx: DefContext, context: Context): Boolean = {
     val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && context != Context.Stop
     val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInAbstraction
-    val belowSoft = ctx.size < SoftInlineThreshold
-    val belowHard = ctx.size < HardInlineThreshold
+    val belowSoft = ctx.size - ctx.localDefs * 8 < SoftInlineThreshold
+    val belowHard = ctx.size - ctx.localDefs * 8 < HardInlineThreshold
     val shouldInline = belowSoft || (ctx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
     mayInline && shouldInline
   }
