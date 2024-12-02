@@ -87,13 +87,13 @@ object SetUnification {
     val trivialPhaseName = "Trivial Equations"
 
     runWithState(state, runRule(constantAssignment), "Constant Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAlias), "Variable Aliases")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(trivial, findFixpoint = false), trivialPhaseName)
+    runWithState(state, runRule(variableAlias, findFixpoint = false), "Variable Aliases")
+    runWithState(state, runRule(trivial, findFixpoint = false), trivialPhaseName)
+    runWithState(state, runRule(variableAssignment, findFixpoint = false), "Simple Variable Assignment")
+    runWithState(state, runRule(trivial, findFixpoint = false), trivialPhaseName)
     runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
-    runWithState(state, runRule(trivial), trivialPhaseName)
+    runWithState(state, runRule(trivial, findFixpoint = false), trivialPhaseName)
     runWithState(state, assertSveEquationCount, "Assert Size")
     runWithState(state, runRule(sve), "SVE")
 
@@ -150,8 +150,12 @@ object SetUnification {
     if (changed) Some(result.reverse, SetSubstitution.empty) else None
   }
 
-  /** Run a unification rule on an equation system in a fixpoint. */
-  private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  /**
+    * Run a unification rule on an equation system in a fixpoint.
+    *
+    * @param findFixpoint if true, the rule will be run again and again until nothing happens.
+    */
+  private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)], findFixpoint: Boolean = true)(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     // Procedure:
     //   - Run the `rule` on all the (pending) equations in `iterationWorkList`, building
     //     `overallSubst` and producing `iterationOutput`.
@@ -193,6 +197,8 @@ object SetUnification {
       // Swap `iterationOutput` into `iterationWorkList` for next iteration or for return.
       iterationWorkList = iterationOutput
       iterationOutput = Nil
+      // Avoid re-looping.
+      if (!findFixpoint) iterationProgress = false
     }
 
     if (overallProgress) {
