@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.MonoType
-
 import java.lang.reflect.{Field, Member, Method}
 
 object JvmUtils {
