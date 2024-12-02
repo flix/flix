@@ -128,12 +128,32 @@ object FindReferencesProvider {
     // Sigs
     case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
     case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
-    // Effect
+    // Effects
     case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
     case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
     case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+    // Ops
+    case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
+    case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
 
     case _ => None
+  }
+
+  private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.OpSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object OpSymConsumer extends Consumer {
+      override def consumeOp(op: TypedAst.Op): Unit = consider(op.sym, op.sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root): Set[SourceLocation] = {
