@@ -317,6 +317,9 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.InlinerExperiments =>
+          println("todo :)")
+
       }
     }
 
@@ -402,6 +405,8 @@ object Main {
 
     case object CompilerMemory extends Command
 
+    case object InlinerExperiments extends Command
+
   }
 
   /**
@@ -482,6 +487,9 @@ object Main {
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
       ).hidden()
+
+      cmd("Xinliner").action((_, c) => c.copy(command = Command.InlinerExperiments))
+        .text("Runs experiments for the new inliner")
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
