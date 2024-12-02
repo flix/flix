@@ -535,6 +535,37 @@ object ResolutionError {
   }
 
   /**
+    * An error indicating the number of term patterns does not match the enum tag term count.
+    *
+    * @param caze     the enum case symbol.
+    * @param expected the expected number of terms.
+    * @param actual   the actual number of patterns.
+    * @param loc      the location where the error occurred.
+    */
+  case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "term")} but found $actual."
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Mismatched arity.
+         |
+         |The enum case $caze expects ${Grammar.n_things(expected, "term")},
+         |but ${Grammar.n_are(actual)} provided here.
+         |
+         |${code(loc, s"expected ${Grammar.n_things(expected, "term")} but found $actual")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate a missing associated type definition.
     *
     * @param name the name of the missing associated type definition.
