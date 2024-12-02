@@ -92,6 +92,11 @@ object Monomorpher {
     * Companion object for [[StrictSubstitution]].
     */
   private object StrictSubstitution {
+    /**
+      * A smart constructor for [[StrictSubstitution]].
+      *
+      * The smart constructor ensures that all types in the substitution are grounded.
+      */
     def mk(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): StrictSubstitution = {
       val m = s.m.map {
         case (sym, tpe) => sym -> simplify(tpe.map(default), eqEnv, isGround = true)
