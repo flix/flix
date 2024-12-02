@@ -321,7 +321,7 @@ object Main {
           CompilerMemory.run(options)
 
         case Command.InlinerExperiments =>
-          println("todo :)")
+          BenchmarkInliner.run(options)
 
       }
     }
