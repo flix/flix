@@ -96,6 +96,7 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
       xnooptimizer = cmdOpts.xnooptimizer,
+      xnooptimizer1 = cmdOpts.xnooptimizer1,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -352,6 +353,7 @@ object Main {
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xnooptimizer: Boolean = false,
+                     xnooptimizer1: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -567,6 +569,10 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
+
+      // Xno-optimizer
+      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer1 = true)).
+        text("[experimental] disables new compiler optimizations.")
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).

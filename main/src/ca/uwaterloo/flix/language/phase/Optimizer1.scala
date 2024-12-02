@@ -31,15 +31,19 @@ object Optimizer1 {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
-    var result = root
-    var stats: Stats = null
-    for (_ <- 1 to 3) {
-      val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
-      val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
-      stats = if (stats == null) stats1 else stats ++ stats1
-      result = afterInliner
+    if (flix.options.xnooptimizer1) {
+      root
+    } else {
+      var result = root
+      var stats: Stats = null
+      for (_ <- 1 to 3) {
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
+        val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
+        stats = if (stats == null) stats1 else stats ++ stats1
+        result = afterInliner
+      }
+      println(stats)
+      result
     }
-    println(stats)
-    result
   }
 }
