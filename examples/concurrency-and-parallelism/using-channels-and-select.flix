@@ -1,26 +1,26 @@
  /// Mooo's `n` times on channel `c`.
-def mooo(tx: Sender[String], n: Int32): Unit \ Global =
+def mooo(tx: Sender[String], n: Int32): Unit \ Chan =
     match n {
         case 0 => ()
         case x => Channel.send("Mooo!", tx); mooo(tx, x - 1)
     }
 
 /// Meow's `n` times on channel `c`.
-def meow(tx: Sender[String], n: Int32): Unit \ Global =
+def meow(tx: Sender[String], n: Int32): Unit \ Chan =
     match n {
         case 0 => ()
         case x => Channel.send("Meow!", tx); meow(tx, x - 1)
     }
 
 /// Hiss'es `n` times on channel `c`.
-def hiss(tx: Sender[String], n: Int32): Unit \ Global =
+def hiss(tx: Sender[String], n: Int32): Unit \ Chan =
     match n {
         case 0 => ()
         case x => Channel.send("Hiss!", tx); hiss(tx, x - 1)
     }
 
 /// Start the animal farm...
-def main(): Unit \ Global + IO + NonDet = region rc {
+def main(): Unit \ {Chan, NonDet, IO} = region rc {
     let (tx1, rx1) = Channel.buffered(10);
     let (tx2, rx2) = Channel.buffered(10);
     let (tx3, rx3) = Channel.buffered(10);
