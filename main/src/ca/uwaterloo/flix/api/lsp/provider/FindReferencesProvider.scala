@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
@@ -51,7 +51,64 @@ object FindReferencesProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-    consumer.getStack.headOption
+    consumer.getStack.filter(isReal).headOption
+  }
+
+  private def isReal(x: AnyRef): Boolean = x match {
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Sig(_, _, _, loc) => loc.isReal
+    case TypedAst.Def(_, _, _, loc) => loc.isReal
+    case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Struct(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Op(_, _, loc) => loc.isReal
+    case exp: TypedAst.Expr => exp.loc.isReal
+    case pat: TypedAst.Pattern => pat.loc.isReal
+    case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Tag(_, _, _, loc) => loc.isReal
+    case TypedAst.RestrictableChoosePattern.Error(_, loc) => loc.isReal
+    case p: TypedAst.Predicate => p.loc.isReal
+    case TypedAst.Binder(sym, _) => sym.loc.isReal
+    case TypedAst.Case(_, _, _, loc) => loc.isReal
+    case TypedAst.StructField(_, _, loc) => loc.isReal
+    case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
+    case TypedAst.Constraint(_, _, _, loc) => loc.isReal
+    case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
+    case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
+    case TypedAst.PredicateParam(_, _, loc) => loc.isReal
+    case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.CatchRule(_, _, _) => true
+    case TypedAst.HandlerRule(_, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.TypeParam(_, _, loc) => loc.isReal
+    case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
+
+    case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
+    case SymUse.CaseSymUse(_, loc) => loc.isReal
+    case SymUse.DefSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.LocalDefSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
+    case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
+    case SymUse.SigSymUse(_, loc) => loc.isReal
+    case SymUse.StructFieldSymUse(_, loc) => loc.isReal
+    case SymUse.TraitSymUse(_, loc) => loc.isReal
+
+    case Ast.AssocTypeConstructor(_, loc) => loc.isReal
+    case EqualityConstraint(_, _, _, loc) => loc.isReal
+    case TraitConstraint(_, _, loc) => loc.isReal
+    case TraitConstraint.Head(_, loc) => loc.isReal
+
+    case tpe: Type => tpe.loc.isReal
+    case _ => false
   }
 
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
