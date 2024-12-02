@@ -70,17 +70,8 @@ mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.empty(rc2);
-        StringBuilder.appendString("MutDeque#{", sb);
-        forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString("${x}", sb)
-            else
-                StringBuilder.appendString(", ${x}", sb)
-            }, d);
-        StringBuilder.appendString("}", sb);
-        StringBuilder.toString(sb)
+    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
+        "MutDeque#{" + (MutDeque.iterator(rc, d) |> Iterator.join(", ")) + "}"
     }
 
     ///
@@ -375,19 +366,16 @@ mod MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] =
-        joinWith(ToString.toString, sep, d)
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
+        MutDeque.iterator(rc, d) |> Iterator.join(sep)
+    }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc1 {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc1);
-        forEach(x -> { append(f(x), sb); append(sep, sb) }, d);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc {
+        MutDeque.iterator(rc, d) |> Iterator.joinWith(f, sep)
     }
 
     ///
