@@ -39,6 +39,18 @@ object RenameProvider {
       .getOrElse(mkNotFound(uri, pos))
   }
 
+  /**
+    * Returns the most precise AST node under the space immediately left of the thin cursor.
+    *
+    * The given [[Position]] `pos` is interpreted as the space to the immediate right of the thin cursor.
+    *
+    * Note that this search filters out AST nodes synthetic [[SourceLocation]]s
+    *
+    * @param uri  The URI of the path of the file where the cursor is.
+    * @param pos  The space to the immediate right of the cursor.
+    * @param root The root AST node of the Flix project.
+    * @return     Returns the most precise AST node under the space immediately left of the thin cursor.
+    */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
       search(uri, Position(pos.line, pos.character - 1))
@@ -47,8 +59,28 @@ object RenameProvider {
     }
   }
 
+  /**
+    * Returns the most precise AST node under the space immediately right of the thin cursor.
+    *
+    * The given [[Position]] `pos` is interpreted as the space to the immediate left of the thin cursor.
+    *
+    * Note that this search filters out AST node of the Flix project.
+    *
+    * @param uri  The URI of the path of the file where the cursor is.
+    * @param pos  The [[Position]] to the immediate right of the thin cursor.
+    * @param root The root AST node of the Flix project.
+    * @return     Returns the most precise AST node under the space immediately right of the thin cursor.
+    */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
+  /**
+    * Returns the most precise AST node under a given [[Position]] `pos`.
+    *
+    * @param uri  The URI of the path of the file where the cursor is.
+    * @param pos  The [[Position]] that we are looking for the most precise AST under.
+    * @param root The root AST node of the Flix project.
+    * @return     The most precise AST node udner a given [[Position]] `pos`.
+    */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
@@ -114,6 +146,13 @@ object RenameProvider {
     case _ => false
   }
 
+  /**
+    * If `x` is a [[Symbol]] for which we support renaming, returns all occurrences of it. Otherwise, returns [[None]].
+    *
+    * @param x    The object that might be a [[Symbol]] for which we search for occurrences.
+    * @param root The root AST node for the Flix project.
+    * @return
+    */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Vars
     case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
