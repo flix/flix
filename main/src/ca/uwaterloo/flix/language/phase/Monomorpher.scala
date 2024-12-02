@@ -116,12 +116,6 @@ object Monomorpher {
     *   - No associated types
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
-    *
-    * Notes on `s`: It is only applied to variables directly in the apply of the strict
-    * substitution. They image of `s` does not have type aliases or associated types but can have
-    * type variables and non-unique types. Variables in the image are unconstrained and will be
-    * mapped to their default representation. `s` is used without the [[StrictSubstitution]] to
-    * support variables in typematch, where it is not only used on variables.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix) {
 
