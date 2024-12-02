@@ -1627,6 +1627,44 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
+  test("Test.WrongTagPattenCount.01") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(_) => 42
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
+  }
+
+  test("Test.WrongTagPattenCount.02") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(x, _xs, _bonus) => x
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
+  }
+
   test("ResolutionError.UndefinedStruct.01") {
     val input =
       """
