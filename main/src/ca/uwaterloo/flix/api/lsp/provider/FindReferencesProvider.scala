@@ -121,7 +121,29 @@ object FindReferencesProvider {
     // Cases
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
+    // Trait
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+    case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
+    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     case _ => None
+  }
+
+  private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.TraitSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object TraitSymConsumer extends Consumer {
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = consider(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
+    }
+
+    Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
