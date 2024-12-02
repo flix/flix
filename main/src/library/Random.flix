@@ -61,7 +61,7 @@ mod Random {
     ///
     pub def handle(f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
         let rnd = new JRandom(); // Reuse Random instance.
-        x -> try {
+        x -> run {
             f(x)
         } with Random {
             def randomBool(k)       = k(rnd.nextBoolean())
@@ -86,7 +86,7 @@ mod Random {
     ///
     pub def handleWithSeed(seed: Int64, f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
         let rnd = new JRandom(seed); // Reuse Random instance.
-        x -> try {
+        x -> run {
             f(x)
         } with Random {
             def randomBool(k)       = k(rnd.nextBoolean())

@@ -103,7 +103,7 @@ mod Http {
     /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + {Net, IO} = x ->
-        try {
+        run {
             f(x)
         } with Http {
             def request(method, url, headers, body, k) = {
