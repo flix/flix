@@ -19,26 +19,24 @@ import ca.uwaterloo.flix.util.Options
 
 object BenchmarkInliner {
 
-  /**
-    * The default number of compilations.
-    */
-  private val DefaultN: Int = 7
-
-  /**
-    * The number of threads to use for the single-thread experiment.
-    */
-  private val MinThreads: Int = 1
-
-  /**
-    * The number of threads to use for the multithreaded experiment.
-    */
-  private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
-
-  case class Run(lines: Int, time: Long, phases: List[(String, Long)])
-
-  case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
-
   def run(opts: Options): Unit = {
+    val o = opts.copy(progress = false, loadClassFiles = false)
+
+    // Experiments:
+    // 1. Compiler throughput
+    //    (a) without inlining
+    //    (b) with old inliner
+    //    (c) with new inliner
+    // 2. Flix program speedup (sample programs, datalog engine, parser library)
+    //    (a) without inlining
+    //    (b) with old inliner
+    //    (c) with new inliner
+    // 3. Jar size
+    //    (a) without inlining
+    //    (b) with old inliner
+    //    (c) with new inliner
+    // TODO: Vary thresholds for new inliner
+
 
   }
 
