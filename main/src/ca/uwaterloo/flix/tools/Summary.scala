@@ -259,7 +259,7 @@ object Summary {
     case Expr.NewObject(_, _, _, _, methods, _) => methods.map {
       case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
