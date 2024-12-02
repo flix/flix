@@ -10,7 +10,7 @@ mod Test.Handler.Gen.String {
     def sample(limit: String): List[String] =
         region rc {
             let counter = Ref.fresh(rc, "a");
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

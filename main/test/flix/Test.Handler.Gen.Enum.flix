@@ -10,7 +10,7 @@ mod Test.Handler.Gen.Enum {
     def sample(limit: Int32): List[Option[Int32]] =
         region rc {
             let counter = Ref.fresh(rc, Some(0));
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

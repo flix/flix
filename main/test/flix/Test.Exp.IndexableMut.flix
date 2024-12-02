@@ -2,7 +2,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def array01(): Bool = region rc {
-        try {
+        run {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[0] = 4;
             a[0] == 4
@@ -13,7 +13,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def array02(): Bool = region rc {
-        try {
+        run {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[1] = 42;
             a[1] == 42
@@ -24,7 +24,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def array03(): Bool = region rc {
-        try {
+        run {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[3] = 200;
             a[3] == 200
@@ -35,7 +35,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def array04(): Bool = region rc {
-        try {
+        run {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[-1] = 4;
             false
@@ -46,7 +46,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def array05(): Bool = region rc {
-        try {
+        run {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[5] = 4;
             false
@@ -57,7 +57,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutList01(): Bool = region rc {
-        try {
+        run {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[0] = 4;
             l[0] == 4
@@ -68,7 +68,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutList02(): Bool = region rc {
-        try {
+        run {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[1] = 42;
             l[1] == 42
@@ -79,7 +79,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutList03(): Bool = region rc {
-        try {
+        run {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[3] = 200;
             l[3] == 200
@@ -90,7 +90,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutList04(): Bool = region rc {
-        try {
+        run {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[-1] = 4;
             false
@@ -101,7 +101,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutList05(): Bool = region rc {
-        try {
+        run {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[5] = 4;
             false
@@ -112,7 +112,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap01(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[0] = -1;
             m[0] == -1
@@ -123,7 +123,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap02(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[1] = 42;
             m[1] == 42
@@ -134,7 +134,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap03(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[2] = 200;
             m[2] == 200
@@ -145,7 +145,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap04(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[3] = 1234;
             m[3] == 1234
@@ -156,7 +156,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap05(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[4] = -1;
             m[4] == -1
@@ -167,7 +167,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def mutMap06(): Bool = region rc {
-        try {
+        run {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[-1] = -1;
             m[-1] == -1
@@ -178,7 +178,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def record01(): Bool = region rc {
-        try {
+        run {
             let r = { a = Array#{0, 1, 2, 3} @ rc };
             r#a[1] = 2;
             r#a[1] == 2
@@ -189,7 +189,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def record02(): Bool = region rc {
-        try {
+        run {
             let r = { r = { a = Array#{0, 1, 2, 3} @ rc } };
             r#r#a[3] = 2;
             r#r#a[3] == 2
@@ -200,7 +200,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def record03(): Bool = region rc {
-        try {
+        run {
             let r = { r = { a = Array#{{ a = Array#{1, 2, 3, 4} @ rc } } @ rc } };
             r#r#a[0]#a[1] = 42;
             r#r#a[0]#a[1] == 42
@@ -211,7 +211,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def record04(): Bool = region rc {
-        try {
+        run {
             let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
             r#r#a[1][0]#a[1] = -1;
             r#r#a[1][0]#a[1] == -1
@@ -222,7 +222,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def record05(): Bool = region rc {
-        try {
+        run {
             let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
             r#r#a[1] = Array#{} @ rc;
             r#r#a[1][0]#a[1] == -1
@@ -234,7 +234,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def multiple01(): Bool = region rc {
-        try {
+        run {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0][2] = 42;
             a[0][0][2] == 42
@@ -245,7 +245,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def multiple02(): Bool = region rc {
-        try {
+        run {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0] = Array#{42} @ rc;
             a[0][0][0] == 42
@@ -256,7 +256,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def multiple03(): Bool = region rc {
-        try {
+        run {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0] = Array#{42} @ rc;
             a[0][0][2] == 42
@@ -267,7 +267,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def genWithRecord01(): Bool = region rc {
-        try {
+        run {
             f()()#a[0]()[0]#r#g(rc)[2] = 42;
             true
         } with OutOfBounds {
@@ -277,7 +277,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def genWithRecord02(): Bool = region rc {
-        try {
+        run {
             f()()#a[0]()[0]#r#g(rc)[2] = 42;
             true
         } with OutOfBounds {
@@ -287,7 +287,7 @@ mod Test.Exp.IndexableMut {
 
     @Test
     def genWithRecord03(): Bool = region rc {
-        try {
+        run {
             f()()#a[0]()[0]#r#g(rc)[-1] = 42;
             false
         } with OutOfBounds {
