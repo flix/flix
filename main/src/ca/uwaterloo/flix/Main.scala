@@ -96,7 +96,9 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
       xnooptimizer = cmdOpts.xnooptimizer,
+      inlinerRounds = cmdOpts.inlinerRounds.getOrElse(Options.Default.inlinerRounds),
       xnooptimizer1 = cmdOpts.xnooptimizer1,
+      inliner1Rounds = cmdOpts.inliner1Rounds.getOrElse(Options.Default.inliner1Rounds),
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -353,7 +355,9 @@ object Main {
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xnooptimizer: Boolean = false,
+                     inlinerRounds: Option[Int] = None,
                      xnooptimizer1: Boolean = false,
+                     inliner1Rounds: Option[Int] = None,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -524,6 +528,12 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Int]("inlinerRounds").action((n, c) => c.copy(inlinerRounds = Some(n))).
+        text("number of rounds of (old) inlining")
+
+      opt[Int]("inliner1Rounds").action((n, c) => c.copy(inliner1Rounds = Some(n))).
+        text("number of rounds of (new) inlining")
 
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
