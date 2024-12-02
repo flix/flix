@@ -1253,6 +1253,13 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
+    case NamedAst.Expr.UnsafeRemove(exp, eff0, loc) =>
+      val eVal = resolveExp(exp, env0)
+      val effVal = resolveType(eff0, Wildness.ForbidWild, env0, taenv, ns0, root)
+      mapN(eVal, effVal) {
+        case (e, eff) => ResolvedAst.Expr.UnsafeRemove(e, eff, loc)
+      }
+
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>

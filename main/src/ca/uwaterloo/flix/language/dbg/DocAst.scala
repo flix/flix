@@ -124,6 +124,8 @@ object DocAst {
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
 
+    case class UnsafeRemove(d: Expr, tpe: Type) extends Composite
+
     case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite

@@ -2798,7 +2798,19 @@ object Parser2 {
 
     private def intrinsicExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
-      advance()
+      advance() // arbitrary token
+      if (at(TokenKind.BracketL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.Type,
+          getItem = () => Type.ttype(),
+          checkForItem = _.isFirstType,
+          breakWhen = _.isRecoverType,
+          context = SyntacticContext.Type.OtherType,
+          optionallyWith = None,
+          delimiterL = TokenKind.BracketL,
+          delimiterR = TokenKind.BracketR
+        )
+      }
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
