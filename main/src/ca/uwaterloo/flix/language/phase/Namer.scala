@@ -639,7 +639,7 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
 
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(sym.text), isRegion = true, loc)
 
       // Visit the body in the inner scope
       val e = visitExp(exp, ns0)(scope.enter(regionVar.withKind(Kind.Eff)), sctx, flix)
@@ -1421,7 +1421,7 @@ object Namer {
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
     // We use the top scope since this function is only used for creating top-level stuff.
-    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)(Scope.Top, flix)
+    Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)(Scope.Top, flix)
   }
 
   /**

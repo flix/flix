@@ -38,7 +38,7 @@ mod Eff {
         ///
         pub def handle(f: a -> b \ ef): (a -> b \ (ef - RandomCoin) + IO) \ IO =
             let rnd = new JRandom();
-            x -> try {
+            x -> run {
                 f(x)
             } with RandomCoin {
                 def flip(k) = k(rnd.nextBoolean())
