@@ -16,9 +16,8 @@ mod Test.Exp.Null {
     }
 
     @test
-    def testNullChannel01(): Unit \ IO = region rc {
-        let _ = rc;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String, rc] \ IO)
+    def testNullChannel01(): Unit \ IO = {
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String] \ IO)
     }
 
     @test

@@ -1345,11 +1345,10 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, env0)
-      val e2Val = resolveExp(exp2, env0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.NewChannel(e1, e2, loc)
+    case NamedAst.Expr.NewChannel(exp, loc) =>
+      val eVal = resolveExp(exp, env0)
+      mapN(eVal) {
+        case e => ResolvedAst.Expr.NewChannel(e, loc)
       }
 
     case NamedAst.Expr.GetChannel(exp, loc) =>
