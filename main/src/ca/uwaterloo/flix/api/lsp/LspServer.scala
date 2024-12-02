@@ -15,23 +15,25 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.util.Options
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
-import org.eclipse.lsp4j.services.{TextDocumentService, WorkspaceService}
+import org.eclipse.lsp4j.services.{LanguageServer, TextDocumentService, WorkspaceService}
 
 import java.util.concurrent.CompletableFuture
 
 object LspServer {
 
-  def run(): Unit = {
+  def run(o: Options): Unit = {
     val in = System.in
     val out = System.out
-
     val server = new FlixLanguageServer
-    LSPLauncher.createServerLauncher(server, in, out).startListening
+    System.err.println(s"Starting Default LSP Server...")
+    LSPLauncher.createServerLauncher(server, in, out).startListening.get()
+    System.err.println(s"LSP Server Terminated.")
   }
 
-  private class FlixLanguageServer extends org.eclipse.lsp4j.services.LanguageServer {
+  private class FlixLanguageServer extends LanguageServer {
 
     private val flixTextDocumentService = new FlixTextDocumentService
     private val flixWorkspaceService = new FlixWorkspaceService
