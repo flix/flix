@@ -159,7 +159,9 @@ object Monomorpher {
       * The type must be a normalized type.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
-      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
+      case (tvar, tpe) =>
+        val t = simplify(tpe.map(default), eqEnv, isGround = true)
+        StrictSubstitution(s ++ Substitution.singleton(tvar, t), eqEnv)
     }
 
     /**
