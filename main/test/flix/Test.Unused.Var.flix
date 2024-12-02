@@ -55,7 +55,7 @@ mod Test.Unused.Var {
         }
 
     @test
-    def testUnusedVar10(): Int32 \ Global + NonDet = {
+    def testUnusedVar10(): Int32 \ {Chan, NonDet} = {
         let (tx, rx) = Channel.buffered(1);
         Channel.send(0, tx);
         select {
@@ -64,7 +64,7 @@ mod Test.Unused.Var {
     }
 
     @test
-    def testUnusedVar11(): Int32 \ Global + NonDet = {
+    def testUnusedVar11(): Int32 \ {Chan, NonDet} = {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         Channel.send(0, tx1);

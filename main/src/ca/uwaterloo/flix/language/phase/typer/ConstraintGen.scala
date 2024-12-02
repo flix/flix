@@ -867,7 +867,7 @@ object ConstraintGen {
         c.expectType(expected = Type.Int32, actual = tpe, exp.loc)
         c.unifyType(tvar, Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(eff, Type.Global, loc)
+        val resEff = Type.mkUnion(eff, Type.Chan, loc)
         (resTpe, resEff)
 
       case Expr.GetChannel(exp, tvar, evar, loc) =>
@@ -876,7 +876,7 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = receiverTpe, actual = tpe, exp.loc)
         c.unifyType(tvar, elmTpe, loc)
-        c.unifyType(evar, Type.mkUnion(eff, Type.Global, Type.NonDet, loc), loc)
+        c.unifyType(evar, Type.mkUnion(eff, Type.Chan, Type.NonDet, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -888,7 +888,7 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = senderTpe, actual = tpe1, exp1.loc)
         c.expectType(expected = elmTpe, actual = tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, Type.Global, loc), loc)
+        c.unifyType(evar, Type.mkUnion(eff1, eff2, Type.Chan, loc), loc)
         val resTpe = Type.mkUnit(loc)
         val resEff = evar
         (resTpe, resEff)
@@ -1139,7 +1139,7 @@ object ConstraintGen {
         val (bodyType, eff2) = visitExp(body)
         c.unifyType(chanType, Type.mkReceiver(sym.tvar, sym.loc), sym.loc)
         val resTpe = bodyType
-        val resEff = Type.mkUnion(eff1, eff2, Type.Global, Type.NonDet, body.loc)
+        val resEff = Type.mkUnion(eff1, eff2, Type.Chan, Type.NonDet, body.loc)
         (resTpe, resEff)
     }
   }

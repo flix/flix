@@ -31,11 +31,11 @@ object Symbol {
   /**
     * The primitive effects defined in the Prelude.
     */
+  val Chan: EffectSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
   val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
   val FsWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
-  val Global: EffectSym = mkEffectSym(Name.RootNS, Ident("Global", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
@@ -45,18 +45,18 @@ object Symbol {
     * The set of all primitive effects defined in the Prelude.
     */
   val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
-    Env, Exec, FsRead, FsWrite, Global, IO, Net, NonDet, Sys
+    Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
   ))
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
     */
   def isPrimitiveEff(sym: EffectSym): Boolean = sym match {
+    case Chan => true
     case Env => true
     case Exec => true
     case FsRead => true
     case FsWrite => true
-    case Global => true
     case IO => true
     case Net => true
     case NonDet => true
@@ -70,11 +70,11 @@ object Symbol {
     * The String must be a valid name of a primitive effect.
     */
   def parsePrimitiveEff(s: String): Symbol.EffectSym = s match {
+    case "Chan" => Chan
     case "Env" => Env
     case "Exec" => Exec
     case "FsRead" => FsRead
     case "FsWrite" => FsWrite
-    case "Global" => Global
     case "IO" => IO
     case "Net" => Net
     case "NonDet" => NonDet

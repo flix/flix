@@ -8,21 +8,21 @@ mod Test.Handler.Spawn {
         def gen(): Int32
     }
 
-    def runAsk(tx: Sender[Int32]): Unit \ Global =
+    def runAsk(tx: Sender[Int32]): Unit \ Chan =
         run {
             Ask.ask(42)
         } with Ask {
             def ask(x, _) = Channel.send(x, tx)
         }
 
-    def runGen(tx: Sender[Int32]): Unit \ Global =
+    def runGen(tx: Sender[Int32]): Unit \ Chan =
         run {
             Channel.send(Gen.gen(), tx)
         } with Gen {
             def gen(k) = k(42)
         }
 
-    def runGenAsk(tx: Sender[Int32]): Unit \ Global =
+    def runGenAsk(tx: Sender[Int32]): Unit \ Chan =
         run {
             Ask.ask(
                 run {
@@ -36,7 +36,7 @@ mod Test.Handler.Spawn {
         }
 
     @Test
-    def testSpawn01(): Bool \ Global + NonDet + IO =
+    def testSpawn01(): Bool \ {Chan, NonDet, IO} =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGen(tx) @ rc;
@@ -45,7 +45,7 @@ mod Test.Handler.Spawn {
         Assert.eq(42, result)
 
     @Test
-    def testSpawn02(): Bool \ Global + NonDet + IO =
+    def testSpawn02(): Bool \ {Chan, NonDet, IO} =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runAsk(tx) @ rc;
@@ -54,7 +54,7 @@ mod Test.Handler.Spawn {
         Assert.eq(42, result)
 
     @Test
-    def testSpawn03(): Bool \ Global + NonDet + IO =
+    def testSpawn03(): Bool \ {Chan, NonDet, IO} =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGenAsk(tx) @ rc;

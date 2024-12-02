@@ -97,7 +97,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("SpawnedThreadError.04") {
     val input =
       """
-        |def main(): Unit \ IO + Global + NonDet = region rc {
+        |def main(): Unit \ {Chan, NonDet, IO} = region rc {
         |    let (_tx, rx) = Channel.unbuffered();
         |    spawn {
         |        spawn { String.concat(checked_cast(null), "foo") } @ rc

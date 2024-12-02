@@ -417,6 +417,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+    * Represents the Global effect.
+    */
+  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
+
+  /**
    * Represents the Net effect.
    */
   val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
@@ -425,11 +430,6 @@ object Type {
     * Represents the NonDet effect.
     */
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
-
-  /**
-    * Represents the Global effect.
-    */
-  val Global: Type = Type.Cst(TypeConstructor.Effect(Symbol.Global), SourceLocation.Unknown)
 
   /**
     * Represents the Sys effect.

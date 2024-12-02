@@ -18,6 +18,15 @@ pub enum Proxy[_] {
 }
 
 ///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
 /// The uninterpretable `Env` effect.
 ///
 /// The `Env` effect represents actions that read from the environment (e.g. information
@@ -60,15 +69,6 @@ pub eff FsWrite
 /// A type alias for the `FileRead` and `FileWrite` effects.
 ///
 type alias FileIO = {FsRead, FsWrite}
-
-///
-/// The uninterpretable Global effect.
-///
-/// The `Global` effect represents a region with a global scope.
-///
-/// The `Global` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Global
 
 ///
 /// The uninterpretable IO effect.

@@ -502,7 +502,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
       val e = visitExp(exp)
-      val eff = Type.mkUnion(e.eff, Type.Global, loc)
+      val eff = Type.mkUnion(e.eff, Type.Chan, loc)
       TypedAst.Expr.NewChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
