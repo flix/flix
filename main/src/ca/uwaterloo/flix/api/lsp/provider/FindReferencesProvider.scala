@@ -61,7 +61,27 @@ object FindReferencesProvider {
     // Enums
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
     case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
+    // Cases
+    case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
+    case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
     case _ => None
+  }
+
+  private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getEnumSymOccurs(sym: Symbol.EnumSym)(implicit root: Root): Set[SourceLocation] = {
