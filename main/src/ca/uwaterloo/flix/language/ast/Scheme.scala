@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, BroadEqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -56,7 +56,7 @@ object Scheme {
     val substMap = sc.quantifiers.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        macc + (tvar -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
+        macc + (tvar -> Type.freshVar(tvar.kind, loc, tvar.isRegion, VarText.Absent))
     }
     val freshVars = substMap.map { case (k, v) => k.id -> v }
 
