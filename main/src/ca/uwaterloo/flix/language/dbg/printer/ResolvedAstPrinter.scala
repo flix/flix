@@ -104,7 +104,7 @@ object ResolvedAstPrinter {
     case Expr.GetStaticField(_, _) => DocAst.Expr.Unknown
     case Expr.PutStaticField(_, _, _) => DocAst.Expr.Unknown
     case Expr.NewObject(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.NewChannel(_, _, _) => DocAst.Expr.Unknown
+    case Expr.NewChannel(_, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _) => DocAst.Expr.Unknown

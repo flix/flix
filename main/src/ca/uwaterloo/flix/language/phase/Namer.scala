@@ -795,10 +795,9 @@ object Namer {
       val name = s"Anon$$${flix.genSym.freshId()}"
       NamedAst.Expr.NewObject(name, t, ms, loc)
 
-    case DesugaredAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.NewChannel(e1, e2, loc)
+    case DesugaredAst.Expr.NewChannel(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.NewChannel(e, loc)
 
     case DesugaredAst.Expr.GetChannel(exp, loc) =>
       val e = visitExp(exp, ns0)

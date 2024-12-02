@@ -285,8 +285,8 @@ object PredDeps {
     case Expr.NewObject(_, _, _, _, _, _) =>
       LabelledPrecedenceGraph.empty
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp)
