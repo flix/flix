@@ -148,11 +148,15 @@ object BenchmarkInliner {
         else
           StatUtils.median(xs)
 
+      val whichInliner = if (o.xnooptimizer && o.xnooptimizer1) "No Inliner" else if (o.xnooptimizer1) "Old inliner" else "New inliner"
+      val inlinerFileName = if (o.xnooptimizer && o.xnooptimizer1) "InlinerNone" else if (o.xnooptimizer1) "InlinerOld" else "InlinerNew"
+
       //
       // Speedup
       //
       val speedupPar =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("minThreads" -> MinThreads) ~
           ("maxThreads" -> MaxThreads) ~
           ("incremental" -> false) ~
@@ -166,6 +170,7 @@ object BenchmarkInliner {
       // Note: Baseline is withPar.
       val speedupInc =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("incremental" -> true) ~
           ("lines" -> lines) ~
@@ -178,8 +183,9 @@ object BenchmarkInliner {
       //
       // Throughput
       //
-      val throughoutBaseLine =
+      val throughputBaseLine =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MinThreads) ~
           ("incremental" -> false) ~
           ("lines" -> lines) ~
@@ -187,10 +193,11 @@ object BenchmarkInliner {
           ("results" -> baseline.times.zipWithIndex.map({
             case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
           }))
-      writeFile("throughput.json", throughoutBaseLine)
+      writeFile("throughput.json", throughputBaseLine)
 
       val throughputPar =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("incremental" -> false) ~
           ("lines" -> lines) ~
@@ -202,6 +209,7 @@ object BenchmarkInliner {
 
       val throughputParInc =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("incremental" -> true) ~
           ("lines" -> lines) ~
@@ -216,6 +224,7 @@ object BenchmarkInliner {
       //
       val timeBaseline =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MinThreads) ~
           ("incremental" -> false) ~
           ("lines" -> lines) ~
@@ -226,6 +235,7 @@ object BenchmarkInliner {
 
       val timeWithPar =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("incremental" -> false) ~
           ("lines" -> lines) ~
@@ -236,6 +246,7 @@ object BenchmarkInliner {
 
       val timeWithParInc =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("incremental" -> true) ~
           ("lines" -> lines) ~
@@ -249,26 +260,19 @@ object BenchmarkInliner {
       //
       val summaryJSON =
         ("timestamp" -> timestamp) ~
+          ("inliner" -> whichInliner) ~
           ("threads" -> MaxThreads) ~
           ("lines" -> lines) ~
           ("iterations" -> N) ~
           ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
       val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-      writeFile("summary.json", s)
+      val summaryFile = "summary.json"
+      writeFile(summaryFile, s)
 
       //
       // Python Plot
       //
       // FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
-
-      println("~~~~ Flix Compiler Performance ~~~~")
-      println()
-      println(f"Throughput (best): $max%,6d lines/sec (with $MaxThreads threads.)")
-      println()
-      println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $mdn%,6d")
-      println()
-      println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
-
     }
 
     /**
