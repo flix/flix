@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
@@ -147,8 +147,31 @@ object FindReferencesProvider {
     // Struct Fields
     case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
     case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
+    // Vars
+    case Binder(sym, _) => Some(getVarSymOccurs(sym))
+    case TypedAst.Expr.Var(sym, _, _) => Some(getVarSymOccurs(sym))
 
     case _ => None
+  }
+
+  private def getVarSymOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object VarSymConsumer extends Consumer {
+      override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, VarSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root): Set[SourceLocation] = {
