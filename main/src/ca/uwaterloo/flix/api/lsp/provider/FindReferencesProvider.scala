@@ -15,192 +15,70 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position, ResponseStatus}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
 
 object FindReferencesProvider {
 
-  def findRefs(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+  def findRefs(uri: String, pos: Position)(implicit root: Root): JObject = {
+    val left = searchLeftOfCursor(uri, pos)
+    val right = searchRightOfCursor(uri, pos)
 
-      case Some(entity) => entity match {
+    right
+      .orElse(left)
+      .flatMap(getOccurs)
+      .map(mkResponse)
+      .getOrElse(mkNotFound(uri, pos))
+  }
 
-        case Entity.Case(caze) => findCaseReferences(caze.sym)
-
-        case Entity.Trait(trait0) => findTraitReferences(trait0.sym)
-
-        case Entity.Def(defn) => findDefReferences(defn.sym)
-
-        case Entity.Sig(sig0) => findSigReferences(sig0.sym)
-
-        case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
-
-        case Entity.Struct(struct0) => findStructReferences(struct0.sym)
-
-        case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
-
-        case Entity.AssocType(assoc) => findAssocTypeReferences(assoc.sym)
-
-        case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
-
-        case Entity.Op(op0) => findOpReferences(op0.sym)
-
-        case Entity.DefUse(sym, _, _) => findDefReferences(sym)
-
-        case Entity.SigUse(sym, _, _) => findSigReferences(sym)
-
-        case Entity.VarUse(sym, _, _) => findVarReferences(sym)
-
-        case Entity.CaseUse(sym, _, _) => findCaseReferences(sym)
-
-        case Entity.StructFieldUse(sym, _, _) => findStructFieldReferences(sym)
-
-        case Entity.StructField(field0) => findStructFieldReferences(field0.sym)
-
-        case Entity.Exp(_) => mkNotFound(uri, pos)
-
-        case Entity.Label(label) => findLabelReferences(label)
-
-        case Entity.FormalParam(param) => findVarReferences(param.bnd.sym)
-
-        case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(Binder(sym, _), _, _) => findVarReferences(sym)
-          case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => findCaseReferences(sym)
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.Pred(pred, _) => findPredReferences(pred)
-
-        case Entity.LocalVar(sym, _) => findVarReferences(sym)
-
-        case Entity.Type(t) => t match {
-          case Type.Var(sym, _) => findTypeVarReferences(sym)
-          case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(label) => findLabelReferences(label)
-            case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
-            case TypeConstructor.Enum(sym, _) => findEnumReferences(sym)
-            case TypeConstructor.Effect(sym) => findEffectReferences(sym)
-            case _ => mkNotFound(uri, pos)
-          }
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.OpUse(sym, _, _) => findOpReferences(sym)
-
-        case Entity.TypeVar(sym) => findTypeVarReferences(sym)
-
-      }
+  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    if (pos.character >= 2) {
+      val left = Position(pos.line, pos.character - 1)
+      search(uri, left)
+    } else {
+      search(uri, pos)
     }
   }
 
-  private def findTraitReferences(sym: Symbol.TraitSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+
+  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    val consumer = StackConsumer()
+    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    consumer.getStack.headOption
   }
 
-  private def findDefReferences(sym: Symbol.DefnSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
+    case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
+    case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
+    case _ => None
   }
 
-  private def findSigReferences(sym: Symbol.SigSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  private def getDefnSymOccurs(sym: Symbol.DefnSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object DefnSymConsumer extends Consumer {
+      override def consumeDef(defn: TypedAst.Def): Unit = consider(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
+
+    occurs
   }
 
-  private def findEnumReferences(sym: Symbol.EnumSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findStructReferences(sym: Symbol.StructSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findAssocTypeReferences(sym: Symbol.AssocTypeSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findLabelReferences(label: Name.Label)(implicit index: Index): JObject = {
-    val defSites = index.defsOf(label)
-    val useSites = index.usesOf(label)
-    val locs = (defSites ++ useSites).toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findPredReferences(pred: Name.Pred)(implicit index: Index): JObject = {
-    val defSites = index.defsOf(pred)
-    val useSites = index.usesOf(pred)
-    val locs = (defSites ++ useSites).toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findStructFieldReferences(sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
-    val defSite = Location.from(root.structs(sym.structSym).fields(sym).loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findCaseReferences(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
-    val defSite = Location.from(root.enums(sym.enumSym).cases(sym).loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findVarReferences(sym: Symbol.VarSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findTypeVarReferences(sym: Symbol.KindedTypeVarSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findEffectReferences(sym: Symbol.EffectSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
-  }
-
-  private def findOpReferences(sym: Symbol.OpSym)(implicit index: Index): JObject = {
-    val defSite = Location.from(sym.loc)
-    val useSites = index.usesOf(sym)
-    val locs = defSite :: useSites.toList.map(Location.from)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  private def mkResponse(refs: Set[SourceLocation]): JObject = {
+    ("status" -> ResponseStatus.Success) ~ ("result" -> refs.map(Location.from).map(_.toJSON))
   }
 
   /**
