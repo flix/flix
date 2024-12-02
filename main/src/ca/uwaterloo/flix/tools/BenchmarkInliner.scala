@@ -149,6 +149,7 @@ object BenchmarkInliner {
           StatUtils.median(xs)
 
       val whichInliner = if (o.xnooptimizer && o.xnooptimizer1) "No Inliner" else if (o.xnooptimizer1) "Old inliner" else "New inliner"
+      // TODO: Fix json Filenames
       val inlinerFileName = if (o.xnooptimizer && o.xnooptimizer1) "InlinerNone" else if (o.xnooptimizer1) "InlinerOld" else "InlinerNew"
 
       //
