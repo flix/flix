@@ -143,9 +143,29 @@ object FindReferencesProvider {
     case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
     // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(getStructSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
+    // Struct Fields
+    case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
+    case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
 
     case _ => None
+  }
+
+  private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object StructFieldSymConsumer extends Consumer {
+      override def consumeStructField(field: TypedAst.StructField): Unit = consider(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = consider(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, StructFieldSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getStructSymOccurs(sym: Symbol.StructSym)(implicit root: Root): Set[SourceLocation] = {
