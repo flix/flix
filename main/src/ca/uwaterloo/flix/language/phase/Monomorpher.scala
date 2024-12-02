@@ -89,6 +89,18 @@ object Monomorpher {
   private implicit val S: Scope = Scope.Top
 
   /**
+    * Companion object for [[StrictSubstitution]].
+    */
+  private object StrictSubstitution {
+    def mk(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): StrictSubstitution = {
+      val m = s.m.map {
+        case (sym, tpe) => sym -> simplify(tpe.map(default), eqEnv, isGround = true)
+      }
+      StrictSubstitution(Substitution(m), eqEnv)
+    }
+  }
+
+  /**
     * A strict substitution is similar to a regular substitution except that free type variables are
     * replaced by an appropriate default type. In other words, when performing a type substitution,
     * if there is no requirement on a polymorphic type, we assume it to be the default type of its
@@ -114,18 +126,9 @@ object Monomorpher {
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
     def apply(tpe0: Type): Type = tpe0 match {
-      case v@Type.Var(sym, _) =>
-        // Remove variables by substitution, otherwise by default type.
-        s.m.get(sym) match {
-          case Some(t) =>
-            // Use default since variables in the output of `s.m` are unconstrained.
-            // It is important to do this before apply to avoid looping on variables.
-            val t1 = t.map(default)
-            // `t1` is ground but still might need normalization.
-            simplify(t1, eqEnv, isGround = true)
-          case None =>
-            // Default types are already normalized, so no normalization needed.
-            default(v)
+      case v@Type.Var(sym, _) => s.m.get(sym) match {
+          case None => default(v) // Case 1: Variable unbound. Use the default type.
+          case Some(t) => t       // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
         }
 
       case cst@Type.Cst(_, _) =>
@@ -321,7 +324,7 @@ object Monomorpher {
     implicit val r: LoweredAst.Root = root
     implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
-    val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
+    val empty = StrictSubstitution.mk(Substitution.empty, root.eqEnv)
 
     /*
      * Collect all non-parametric function definitions.
@@ -396,7 +399,7 @@ object Monomorpher {
   /**
     * Creates a table for fast lookup of instances.
     */
-  def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+  private def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
     for {
       (sym, insts) <- instances
       inst <- insts
@@ -590,9 +593,9 @@ object Monomorpher {
               val env1 = env0 + (sym -> freshSym)
               val subst1 = caseSubst @@ subst.nonStrict
               // visit the body under the extended environment
-              val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
+              val body = visitExp(body0, env1, StrictSubstitution.mk(subst1, root.eqEnv))
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution.mk(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match
 
@@ -744,26 +747,6 @@ object Monomorpher {
   }
 
   /**
-    * Returns `false` if it is *impossible* for `tpe1` and `tpe2` to unify.
-    *
-    * For example, the two function types: `Option[a] -> Unit` and `Bool -> b` cannot possibly unify.
-    *
-    * If the function returns `true` it does not reveal any information: the two types may unify, or they may not unify.
-    */
-  private def fastCanMaybeUnify(tpe1: Type, tpe2: Type): Boolean = {
-    // We only inspect star-types.
-    if (tpe1.kind != Kind.Star || tpe2.kind != Kind.Star) {
-      return true // No information -- may or may not unify.
-    }
-
-    (tpe1, tpe2) match {
-      case (Type.Cst(tc1, _), Type.Cst(tc2, _)) => tc1 == tc2
-      case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) => fastCanMaybeUnify(tpe11, tpe21) && fastCanMaybeUnify(tpe12, tpe22)
-      case _ => true // No information -- may or may not unify.
-    }
-  }
-
-  /**
     * Converts a signature with an implementation into the equivalent definition.
     */
   private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr, loc: SourceLocation): LoweredAst.Def = {
@@ -855,7 +838,7 @@ object Monomorpher {
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
       case Some(subst) =>
-        StrictSubstitution(subst, root.eqEnv)
+        StrictSubstitution.mk(subst, root.eqEnv)
       case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '$sym'", tpe1.loc)
     }
