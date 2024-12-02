@@ -28,6 +28,7 @@ import java.nio.file.{Files, LinkOption, Path}
 object AstPrinter {
 
   case class DebugNoOp[T]() extends Debug[T] {
+    override val hasAst: Boolean = false
     override def emit(phase: String, root: T)(implicit flix: Flix): Unit = ()
   }
 
@@ -39,14 +40,17 @@ object AstPrinter {
   }
 
   implicit object DebugWeededAst extends Debug[WeededAst.Root] {
+    override val hasAst: Boolean = false
     override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugDesugaredAst extends Debug[DesugaredAst.Root] {
+    override val hasAst: Boolean = false
     override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugNamedAst extends Debug[NamedAst.Root] {
+    override val hasAst: Boolean = false
     override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
@@ -56,6 +60,7 @@ object AstPrinter {
   }
 
   implicit object DebugKindedAst extends Debug[KindedAst.Root] {
+    override val hasAst: Boolean = false
     override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
@@ -90,10 +95,14 @@ object AstPrinter {
   }
 
   case class DebugValidation[T, E]()(implicit d: Debug[T]) extends Debug[Validation[T, E]] {
-    override def emit(phase: String, v: Validation[T, E])(implicit flix: Flix): Unit =
+    override val hasAst: Boolean = d.hasAst
+
+    override def output(name: String, v: Validation[T, E])(implicit flix: Flix): Unit =
       Validation.mapN(v) {
-        case x => d.emit(phase, x)
+        case x => d.output(name, x)
       }
+
+    override def emit(name: String, a: Validation[T, E])(implicit flix: Flix): Unit = ()
   }
 
   private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {
@@ -115,21 +124,19 @@ object AstPrinter {
     */
   private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
     val filePath = phaseOutputPath(phaseName)
-    Files.createDirectories(filePath.getParent)
-
-    // Check if the file already exists.
-    if (Files.exists(filePath)) {
-      // Check that the file is a regular file.
-      if (!Files.isRegularFile(filePath, LinkOption.NOFOLLOW_LINKS)) {
-        throw InternalCompilerException(s"Unable to write to non-regular file: '$filePath'.", SourceLocation.Unknown)
-      }
-
-      // Check if the file is writable.
-      if (!Files.isWritable(filePath)) {
-        throw InternalCompilerException(s"Unable to write to read-only file: '$filePath'.", SourceLocation.Unknown)
-      }
-    }
     FileOps.writeString(filePath, content)
+  }
+
+  /** Makes sure that the phases file exists and is empty. */
+  def resetPhaseFile()(implicit flix: Flix): Unit = {
+    val filePath = astFolderPath.resolve("0phases.txt")
+    FileOps.writeString(filePath, "")
+  }
+
+  def appendPhaseToDisk(phaseName: String, hasAst: Boolean)(implicit flix: Flix): Unit = {
+    val filePath = astFolderPath.resolve("0phases.txt")
+    val line = s"$phaseName${if (hasAst) "" else " (no output)"}${System.lineSeparator()}"
+    FileOps.writeString(filePath, line, append = true)
   }
 
   /**
