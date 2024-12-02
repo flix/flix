@@ -36,7 +36,7 @@ object Optimizer1 {
     } else {
       var result = root
       var stats: Stats = null
-      for (_ <- 1 to 3) {
+      for (_ <- 1 to 3) { // TODO: add flag to set n
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
         val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
         stats = if (stats == null) stats1 else stats ++ stats1
