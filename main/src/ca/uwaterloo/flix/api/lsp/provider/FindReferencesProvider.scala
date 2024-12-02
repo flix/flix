@@ -121,11 +121,36 @@ object FindReferencesProvider {
     // Cases
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
-    // Trait
+    // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
     case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
+    // Sigs
+    case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
+    case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
     case _ => None
+  }
+
+  private def getSigSymOccurs(sym: Symbol.SigSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.SigSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object SigSymConsumer extends Consumer {
+      override def consumeSig(sig: TypedAst.Sig): Unit = consider(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = consider(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, SigSymConsumer, AllAcceptor)
+
+    val implOccurs = root.instances(sym.trt)
+      .flatMap(_.defs)
+      .filter(defn => defn.sym.text == sym.name)
+      .map(_.sym.loc)
+
+    occurs ++ implOccurs
   }
 
   private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root): Set[SourceLocation] = {
