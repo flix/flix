@@ -12,7 +12,7 @@ mod Test.Handler.NewObject {
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
         def $run(_this: Runnable): Unit \ { rc } =
-            try {
+            run {
               Ask.ask(42)
             } with Ask {
                 def ask(x, _) = Ref.put(x, r)
@@ -21,7 +21,7 @@ mod Test.Handler.NewObject {
 
     def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
         def $run(_this: Runnable): Unit \ { rc } =
-            try {
+            run {
               Ref.put(Gen.gen(), r)
             } with Gen {
                 def gen(k) = k(42)
@@ -30,9 +30,9 @@ mod Test.Handler.NewObject {
 
     def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
         def $run(_this: Runnable): Unit \ { rc } =
-            try {
+            run {
                 Ask.ask(
-                    try {
+                    run {
                         Gen.gen()
                     } with Gen {
                         def gen(k) = k(42)

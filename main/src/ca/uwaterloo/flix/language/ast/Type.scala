@@ -17,12 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -517,7 +515,7 @@ object Type {
     */
   case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
 
-    def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
+    def withText(text: VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
 
@@ -667,7 +665,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }

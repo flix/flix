@@ -530,7 +530,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedEffect.01") {
     val input =
       """
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -543,7 +543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |eff E
         |
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -1618,7 +1618,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
+        |    run checked_ecast(()) with E {
         |        def op(x, y, cont) = ()
         |    }
         |}
@@ -1903,7 +1903,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try {
+        |    run {
         |      E.op()
         |    } with E {
         |    }
@@ -1922,7 +1922,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try {
+        |    run {
         |      E.op1()
         |    } with E {
         |      def op1(k): Unit = k()

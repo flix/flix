@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 object SymUse {

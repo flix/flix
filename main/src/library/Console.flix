@@ -56,7 +56,7 @@ mod Console {
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
-        try {
+        run {
             f(x)
         } with Console {
             def readln(k)      = { k(System.console().readLine()) }

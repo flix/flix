@@ -69,14 +69,14 @@ mod EffectExamples.Queens {
     /// of size `size * size` with `size` number of queens.
     ///
     pub def countSolutions(size: Int32): Int32 =
-        try {
+        run {
             findOneSolution(size, size);
             1
         } with Searchable {
             //
             // Returns 0 without calling the continuation,
             // so control is never transferred back to
-            // `findOneSolution` or the try-block above.
+            // `findOneSolution` or the run-block above.
             //
             def fail(_) = 0
 
@@ -88,7 +88,7 @@ mod EffectExamples.Queens {
             // with the index up to `sz` and that it returns
             // 1 because `findOneSolution` returns a solution
             // without raising `Searchable.fail()`
-            // and the try-block above returns 1.
+            // and the run-block above returns 1.
             //
             // Thus, if a solution exists, `findOneSolution`
             // returns and 1 is returned to the `pick` handler
