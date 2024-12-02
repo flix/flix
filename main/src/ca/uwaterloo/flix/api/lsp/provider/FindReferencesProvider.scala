@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -135,8 +136,35 @@ object FindReferencesProvider {
     // Ops
     case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
     case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
+    // Assoc Types
+    case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
+    case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
+    case AssocTypeConstructor(sym, _) => Some(getAssocTypeSymOccurs(sym))
+    case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
 
     case _ => None
+  }
+
+  private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.AssocTypeSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object AssocTypeSymConsumer extends Consumer {
+      override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = consider(tsig.sym, tsig.sym.loc)
+      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = consider(symUse.sym, symUse.loc)
+      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, tcst.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.AssocType(AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, AssocTypeSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root): Set[SourceLocation] = {
