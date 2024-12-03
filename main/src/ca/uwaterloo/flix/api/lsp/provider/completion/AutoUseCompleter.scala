@@ -27,6 +27,7 @@ object AutoUseCompleter {
 
   /**
     * Returns a list of auto-use completions to complete the name and use the flix construct.
+    * The completions should fit in an expression context.
     *
     * Example:
     *  If we have an undefined name which is the prefix of an existing and unused flix function
@@ -50,7 +51,17 @@ object AutoUseCompleter {
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (!shouldComplete(err.qn.ident.name)) return Nil
     if (err.qn.namespace.idents.nonEmpty) return Nil
-    mkDefCompletions(err.qn.ident.name, err.env, err.ap) ++ mkEffCompletions(err.qn.ident.name, err.env, err.ap)
+    mkDefCompletions(err.qn.ident.name, err.env, err.ap)
+  }
+
+  /**
+    * Returns a list of auto-use completions to complete the name and use the flix construct.
+    * The completions should fit in a type context.
+    */
+  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (!shouldComplete(err.qn.ident.name)) return Nil
+    if (err.qn.namespace.idents.nonEmpty) return Nil
+    mkEffCompletions(err.qn.ident.name, err.env, err.ap)
   }
 
   /**
