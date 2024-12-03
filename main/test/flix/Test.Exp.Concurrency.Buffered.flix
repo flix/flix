@@ -213,7 +213,7 @@ mod Test.Exp.Concurrency.Buffered {
     }
 
     @test
-    def testBufferedChannelWithSpawn16(): Bool \ {Chan, NonDet} = region rc {
+    def testBufferedChannelWithSpawn15(): Bool \ {Chan, NonDet} = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         spawn Channel.unsafeSend(rx2, tx1) @ rc;

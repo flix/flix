@@ -195,6 +195,41 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
+    def testSelectRandom03(): Unit \ {Chan, NonDet, IO} = region rc {
+        let (tx14, rx14) = Channel.buffered(0);
+        let (tx15, rx15) = Channel.buffered(0);
+        let (tx16, rx16) = Channel.buffered(0);
+        let (tx17, rx17) = Channel.buffered(0);
+        let (tx18, rx18) = Channel.buffered(0);
+        spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; let (tx141, rx141) = Channel.buffered(0);
+        let (tx139, rx139) = Channel.buffered(0);
+        let (tx140, rx140) = Channel.buffered(0);
+        spawn { Channel.send((), tx141) ; () } @ rc; spawn { Channel.send((), tx140) ; () } @ rc; spawn { Channel.send((), tx139) ; () } @ rc; spawn { Channel.send((), tx141) ; () } @ rc; spawn { Channel.send((), tx140) ; () } @ rc; spawn { Channel.send((), tx139) ; () } @ rc; spawn { Channel.send((), tx141) ; () } @ rc; spawn { Channel.send((), tx140) ; () } @ rc; spawn { Channel.send((), tx139) ; () } @ rc; spawn { select {
+        case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx139) => Channel.recv(rx140) ; Channel.recv(rx141) ; ()
+        case _ <- recv(rx140) => Channel.recv(rx141) ; Channel.recv(rx139) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx139) => select {
+        case _ <- recv(rx140) => ()
+        case _ <- recv(rx140) => ()
+        } ; Channel.recv(rx141) ; ()
+        case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx15) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx14) ; ()
+        case _ <- recv(rx14) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; select {
+        case _ <- recv(rx16) => ()
+        case _ <- recv(rx16) => ()
+        } ; Channel.recv(rx14)
+        case _ <- recv(rx18) => Channel.recv(rx15) ; Channel.recv(rx14) ; Channel.recv(rx17) ; Channel.recv(rx16) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx16) => Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
+        } } @ rc;
+        ()
+    }
+
+    @test
     def testSelectRandom04(): Unit \ {Chan, NonDet} = region rc {
         let (tx10, rx10) = Channel.buffered(0);
         let (tx11, rx11) = Channel.buffered(0);
@@ -219,6 +254,43 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
+    def testSelectRandom05(): Unit \ {Chan, NonDet, IO} = region rc {
+        let (tx14, rx14) = Channel.buffered(0);
+        let (tx15, rx15) = Channel.buffered(0);
+        let (tx16, rx16) = Channel.buffered(0);
+        let (tx17, rx17) = Channel.buffered(0);
+        spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16)
+        } } @ rc; spawn { select {
+        case _ <- recv(rx16) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx171, rx171) = Channel.buffered(0);
+        let (tx172, rx172) = Channel.buffered(0);
+        let (tx173, rx173) = Channel.buffered(0);
+        spawn { Channel.send((), tx173) ; () } @ rc; spawn { Channel.send((), tx172) ; () } @ rc; spawn { Channel.send((), tx171) ; () } @ rc; spawn { Channel.send((), tx173) ; () } @ rc; spawn { Channel.send((), tx172) ; () } @ rc; spawn { Channel.send((), tx171) ; () } @ rc; spawn { Channel.send((), tx173) ; () } @ rc; spawn { Channel.send((), tx172) ; () } @ rc; spawn { Channel.send((), tx171) ; () } @ rc; spawn { Channel.send((), tx173) ; () } @ rc; spawn { Channel.send((), tx172) ; () } @ rc; spawn { Channel.send((), tx171) ; () } @ rc; spawn { select {
+        case _ <- recv(rx172) => Channel.recv(rx173) ; Channel.recv(rx171) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx173) => Channel.recv(rx172) ; Channel.recv(rx171) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx171) => Channel.recv(rx173) ; select {
+        case _ <- recv(rx172) => ()
+        case _ <- recv(rx172) => ()
+        } ; ()
+        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
+        } } @ rc; ()
+        case _ <- recv(rx14) => Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
+        } } @ rc;
+        ()
+    }
+
+    @test
     def testSelectRandom06(): Unit \ {Chan, NonDet} = region rc {
         let (tx2, rx2) = Channel.buffered(0);
         let (tx3, rx3) = Channel.buffered(0);
@@ -230,6 +302,75 @@ mod Test.Exp.Concurrency.Select {
         case _ <- recv(rx24) => ()
         case _ <- recv(rx24) => ()
         } } @ rc; Channel.send((), tx24) ;
+        ()
+    }
+
+    @test
+    def testSelectRandom07(): Unit \ {Chan, NonDet, IO} = region rc {
+        let (tx12, rx12) = Channel.buffered(0);
+        let (tx13, rx13) = Channel.buffered(0);
+        let (tx14, rx14) = Channel.buffered(0);
+        let (tx15, rx15) = Channel.buffered(0);
+        let (tx16, rx16) = Channel.buffered(0);
+        spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx13) ; () } @ rc; spawn { Channel.send((), tx12) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx13) ; () } @ rc; spawn { Channel.send((), tx12) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx14) ; () } @ rc; spawn { Channel.send((), tx13) ; () } @ rc; spawn { Channel.send((), tx12) ; () } @ rc; spawn { select {
+        case _ <- recv(rx14) => Channel.recv(rx12) ; Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx16) => Channel.recv(rx13) ; Channel.recv(rx14) ; Channel.recv(rx12) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx14) ; Channel.recv(rx13) ; Channel.recv(rx16) ; Channel.recv(rx12) ; ()
+        case _ <- recv(rx12) => Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx180, rx180) = Channel.buffered(0);
+        let (tx178, rx178) = Channel.buffered(0);
+        let (tx179, rx179) = Channel.buffered(0);
+        spawn { Channel.send((), tx180) ; () } @ rc; spawn { Channel.send((), tx179) ; () } @ rc; spawn { Channel.send((), tx178) ; () } @ rc; spawn { Channel.send((), tx180) ; () } @ rc; spawn { Channel.send((), tx179) ; () } @ rc; spawn { Channel.send((), tx178) ; () } @ rc; spawn { select {
+        case _ <- recv(rx178) => Channel.recv(rx180) ; Channel.recv(rx179)
+        case _ <- recv(rx179) => select {
+        case _ <- recv(rx178) => ()
+        case _ <- recv(rx178) => ()
+        } ; Channel.recv(rx180) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx178) => Channel.recv(rx179) ; Channel.recv(rx180) ; ()
+        case _ <- recv(rx180) => Channel.recv(rx178) ; Channel.recv(rx179) ; ()
+        } } @ rc; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx14) => Channel.recv(rx15) ; Channel.recv(rx12) ; Channel.recv(rx16) ; Channel.recv(rx13) ; ()
+        case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
+        } } @ rc;
+        ()
+    }
+
+    @test
+    def testSelectRandom08(): Unit \ {Chan, NonDet, IO} = region rc {
+        let (tx15, rx15) = Channel.buffered(0);
+        let (tx16, rx16) = Channel.buffered(0);
+        let (tx17, rx17) = Channel.buffered(0);
+        let (tx18, rx18) = Channel.buffered(0);
+        let (tx19, rx19) = Channel.buffered(0);
+        spawn { Channel.send((), tx19) ; () } @ rc; spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx19) ; () } @ rc; spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx19) ; () } @ rc; spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { Channel.send((), tx19) ; () } @ rc; spawn { Channel.send((), tx18) ; () } @ rc; spawn { Channel.send((), tx17) ; () } @ rc; spawn { Channel.send((), tx16) ; () } @ rc; spawn { Channel.send((), tx15) ; () } @ rc; spawn { select {
+        case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx15) => Channel.recv(rx19) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx18) => Channel.recv(rx19) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx19) => Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx16) ; Channel.recv(rx18) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx19) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
+        } } @ rc; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx18) ; select {
+        case _ <- recv(rx15) => ()
+        case _ <- recv(rx15) => ()
+        } ; Channel.recv(rx17) ; Channel.recv(rx19) ; let (tx214, rx214) = Channel.buffered(0);
+        let (tx215, rx215) = Channel.buffered(0);
+        let (tx216, rx216) = Channel.buffered(0);
+        let (tx217, rx217) = Channel.buffered(0);
+        spawn { Channel.send((), tx217) ; () } @ rc; spawn { Channel.send((), tx216) ; () } @ rc; spawn { Channel.send((), tx215) ; () } @ rc; spawn { Channel.send((), tx214) ; () } @ rc; select {
+        case _ <- recv(rx215) => Channel.recv(rx214) ; Channel.recv(rx216) ; Channel.recv(rx217) ; ()
+        case _ <- recv(rx214) => Channel.recv(rx216) ; Channel.recv(rx215) ; Channel.recv(rx217) ; ()
+        case _ <- recv(rx216) => Channel.recv(rx214) ; Channel.recv(rx217) ; Channel.recv(rx215)
+        }
+        } } @ rc;
         ()
     }
 

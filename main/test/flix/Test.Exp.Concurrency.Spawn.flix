@@ -50,4 +50,39 @@ mod Test.Exp.Concurrency.Spawn {
     @test
     def testSpawn16(): Unit = region rc { spawn Err(42) @ rc }
 
+    @test
+    def testSpawn17(): Unit = region rc { spawn spawn 123 @ rc @ rc }
+
+    @test
+    def testSpawn18(): Unit = region rc { spawn spawn spawn 123 @ rc @ rc @ rc }
+
+    @test
+    def testExceptionsInChildThread01(): Bool \ IO =
+        try {
+            region rc {
+                spawn {
+                    spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
+                } @ rc;
+                Thread.sleep(Time.Duration.fromSeconds(1));
+                false
+            }
+        } catch {
+            case _: NullPointerException => true
+        }
+
+
+    @test
+    def testExceptionsInChildThread02(): Bool \ IO = region rc {
+        spawn {
+            spawn {
+                try {
+                    println(String.concat(checked_cast(null), "foo"))
+                } catch {
+                    case _: NullPointerException => ()
+                }
+            } @ rc
+        } @ rc;
+        Thread.sleep(Time.Duration.fromSeconds(1));
+        true
+
 }

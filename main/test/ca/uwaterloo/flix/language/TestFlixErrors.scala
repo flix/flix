@@ -109,5 +109,4 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
     expectRuntimeError(result, "NullPointerException")
   }
 
-
 }
