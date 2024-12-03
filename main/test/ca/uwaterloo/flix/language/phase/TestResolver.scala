@@ -1627,7 +1627,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
-  test("Test.WrongTagPattenCount.01") {
+  test("Test.MismatchedTagPatternArity.01") {
     val input =
       """
         |enum List[t] {
@@ -1646,7 +1646,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedTagPatternArity](result)
   }
 
-  test("Test.WrongTagPattenCount.02") {
+  test("Test.MismatchedTagPatternArity.02") {
     val input =
       """
         |enum List[t] {

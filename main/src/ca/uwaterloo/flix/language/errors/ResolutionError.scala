@@ -514,9 +514,6 @@ object ResolutionError {
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
 
-    /**
-      * Returns the formatted error message.
-      */
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Mismatched arity.
@@ -527,15 +524,10 @@ object ResolutionError {
          |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error indicating the number of term patterns does not match the enum tag term count.
+    * An error indicating that the number of arguments to a tag-pattern is mismatched.
     *
     * @param caze     the enum case symbol.
     * @param expected the expected number of terms.
@@ -543,26 +535,15 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "term")} but found $actual."
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found $actual actual ${Grammar.n_things(expected, "argument")}."
 
-    /**
-      * Returns the formatted error message.
-      */
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Mismatched arity.
+      s""" Expected ${Grammar.n_things(expected, "argument")} for ${cyan(caze.toString)} but found ${Grammar.n_things(actual, "argument")}.
          |
-         |The enum case $caze expects ${Grammar.n_things(expected, "term")},
-         |but ${Grammar.n_are(actual)} provided here.
-         |
-         |${code(loc, s"expected ${Grammar.n_things(expected, "term")} but found $actual")}
+         |${code(loc, s"mismatched arguments")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -581,8 +562,6 @@ object ResolutionError {
          |${code(loc, s"missing associated type definition: $name.")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

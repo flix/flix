@@ -1843,13 +1843,13 @@ object Resolver {
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
             val ps0 = pats.map(visit)
-            // If there is not a pattern for each term, give an error.
+            // Check if the number of arguments match.
             val ps = if (ps0.lengthCompare(c.tpes) != 0) {
               val expectedTerms = c.tpes.length
               val error = ResolutionError.MismatchedTagPatternArity(c.sym, expected = expectedTerms, actual = ps0.length, loc)
               sctx.errors.add(error)
-              // maintain as many sensible arguments to allow further type checking, etc.
-              ps0.take(expectedTerms).padTo(expectedTerms, ResolvedAst.Pattern.Wild(loc.asSynthetic))
+              // Maintain as many sensible arguments as possible to allow further type checking, etc.
+              ps0.take(expectedTerms).padTo(expectedTerms, ResolvedAst.Pattern.Error(loc.asSynthetic))
             } else {
               ps0
             }
