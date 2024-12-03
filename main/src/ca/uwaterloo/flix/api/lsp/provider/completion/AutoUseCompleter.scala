@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.filterDefsByScope
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.shouldComplete
-import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Effect
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object AutoUseCompleter {
@@ -49,16 +49,34 @@ object AutoUseCompleter {
     */
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (!shouldComplete(err.qn.ident.name)) return Nil
-    defCompletions(err.qn, err.env, err.ap)
+    if (err.qn.namespace.idents.nonEmpty) return Nil
+    mkDefCompletions(err.qn.ident.name, err.env, err.ap) ++ mkEffCompletions(err.qn.ident.name, err.env, err.ap)
+  }
+
+  /**
+    * Returns a list of completions for effects.
+    */
+  private def mkEffCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[Completion] =
+    root.effects.collect{
+        case (sym, eff) if sym.name.startsWith(word) && checkEffScope(eff, env) => Completion.AutoUseEffCompletion(sym, eff.doc.text, ap)
+    }
+
+  /**
+    * Checks if the effect is in the scope.
+    */
+  private def checkEffScope(eff: TypedAst.Effect, scope: LocalScope): Boolean = {
+    val thisName = eff.sym.toString
+    scope.m.values.forall(_.exists {
+      case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thisName != thatName.toString
+      case _ => true
+    })
   }
 
   /**
     * Returns a List of Completion for defs.
     */
-  private def defCompletions(qn: QName, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
-    if (qn.namespace.idents.nonEmpty)
-      return Nil
-    filterDefsByScope(qn.ident.name, root, env, whetherInScope = false)
+  private def mkDefCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
+    filterDefsByScope(word, root, env, whetherInScope = false)
       .map(Completion.AutoUseDefCompletion(_, ap))
   }
 }
