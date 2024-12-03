@@ -66,4 +66,48 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
     expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
+  test("SpawnedThreadError.02") {
+    val input =
+      """
+        |def main(): Unit \ IO = region rc {
+        |    spawn {
+        |        spawn { println("err" + bug!("Something bad happened")) } @ rc
+        |    } @ rc;
+        |    Thread.sleep(Time.Duration.fromSeconds(1))
+        |}
+        """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+  }
+
+  test("SpawnedThreadError.03") {
+    val input =
+      """
+        |def main(): Unit \ IO = region rc {
+        |    spawn {
+        |        spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
+        |    } @ rc;
+        |    Thread.sleep(Time.Duration.fromSeconds(1))
+        |}
+        """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "NullPointerException")
+  }
+
+  test("SpawnedThreadError.04") {
+    val input =
+      """
+        |def main(): Unit \ {Chan, NonDet, IO} = region rc {
+        |    let (_tx, rx) = Channel.unbuffered();
+        |    spawn {
+        |        spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
+        |    } @ rc;
+        |    discard Channel.recv(rx)
+        |}
+        """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "NullPointerException")
+  }
+
+
 }
