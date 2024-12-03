@@ -54,7 +54,7 @@ sealed trait SetFormula {
     case Inter(_, _, varsPos, _, _, varsNeg, other) =>
       SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
     case Union(l) =>
-      SortedSet.from(l.iterator.flatMap(_.variables))
+      SortedSet.from(l.toList.flatMap(_.variables))
     case Xor(other) =>
       SortedSet.from(other.flatMap(_.variables))
   }
@@ -188,7 +188,7 @@ sealed trait SetFormula {
       val subformulas = subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
       s"(${subformulas.mkString(" ∩ ")})"
     case Union(l) =>
-      s"(${l.iterator.mkString(" ∪ ")})"
+      s"(${l.toList.mkString(" ∪ ")})"
     case Xor(other) =>
       s"(${other.mkString(" ⊕ ")})"
   }
@@ -420,7 +420,7 @@ object SetFormula {
     case Compl(f1) => f1
     case inter@Inter(_, _, _, _, _, _, _) =>
       mkUnionAll(inter.mapSubformulas(mkCompl))
-    case Union(l) =>
+    case Union(_) =>
       Compl(f)
     case xor@Xor(_) =>
       Compl(xor)
@@ -582,7 +582,7 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: Set[Int], seenVars: Set[Int]): List[SetFormula] = l match {
+    def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
       case Nil => if (elmAcc.isEmpty) Nil else ElemSet(elmAcc) :: Nil
 
       case ElemSet(s) :: rs => visit(rs, elmAcc ++ s, seenCsts, seenVars)
