@@ -2407,7 +2407,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordUnsafe, SyntacticContext.Expr.OtherExpr)
       expression()
-      close(mark, TreeKind.Expr.Unsafe)
+      close(mark, TreeKind.Expr.UnsafeBlock)
     }
 
     private def runExpr()(implicit s: State): Mark.Closed = {
