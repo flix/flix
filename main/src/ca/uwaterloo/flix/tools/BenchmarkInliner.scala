@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
-import org.json4s.JValue
+import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
@@ -36,7 +36,7 @@ object BenchmarkInliner {
     //    (a) without inlining
     //    (b) with old inliner
     //    (c) with new inliner
-    runExperiment(o)(CompilerPerf.run)
+    runExperiment(o, "compilerBenchmark.json")(BenchmarkThroughput.run)
 
     // 2. Flix program speedup (sample programs, datalog engine, parser library)
     //    (a) without inlining
@@ -55,20 +55,29 @@ object BenchmarkInliner {
     * (a) without inlining
     * (b) with old inliner
     * (c) with new inliner
+    *
+    * Writes to json file `experimentName.json`
     */
-  private def runExperiment(opts: Options)(experiment: Options => Unit): Unit = {
+  private def runExperiment(opts: Options, experimentName: String)(experiment: Options => List[JsonAST.JObject]): Unit = {
     // TODO: Copy experiments from CompilerPerf
     // Disable both inliners
     val o1 = opts.copy(xnooptimizer = true, xnooptimizer1 = true)
-    experiment(o1)
+    val res1 = experiment(o1)
+    val res1JSON = "InlinerNone" -> res1
 
     // Disable new inliner (run old)
     val o2 = opts.copy(xnooptimizer1 = true)
-    experiment(o2)
+    val res2 = experiment(o2)
+    val res2JSON = "InlinerOld" -> res2
 
     // Disable old inliner (run new)
     val o3 = opts.copy(xnooptimizer = true)
-    experiment(o3)
+    val res3 = experiment(o3)
+    val res3JSON = "InlinerNew" -> res3
+
+    val summary = res1JSON ~ res2JSON ~ res3JSON
+    writeFile(experimentName, summary)
+
   }
 
   private object BenchmarkThroughput {
@@ -96,7 +105,7 @@ object BenchmarkInliner {
     /**
       * Run compiler performance experiments.
       */
-    def run(opts: Options): Unit = {
+    def run(opts: Options): List[JsonAST.JObject] = {
       val o = opts.copy(progress = false, loadClassFiles = false)
 
       // The number of iterations.
@@ -148,132 +157,129 @@ object BenchmarkInliner {
         else
           StatUtils.median(xs)
 
-      val whichInliner = if (o.xnooptimizer && o.xnooptimizer1) "No Inliner" else if (o.xnooptimizer1) "Old inliner" else "New inliner"
-      // TODO: Fix json Filenames
-      val inlinerFileName = if (o.xnooptimizer && o.xnooptimizer1) "InlinerNone" else if (o.xnooptimizer1) "InlinerOld" else "InlinerNew"
-
       //
       // Speedup
       //
       val speedupPar =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("minThreads" -> MinThreads) ~
-          ("maxThreads" -> MaxThreads) ~
-          ("incremental" -> false) ~
-          ("lines" -> lines) ~
-          ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
-            case ((phase, times1), (_, times2)) =>
-              ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-          })
-      writeFile("speedupWithPar.json", speedupPar)
+        "speedupWithPar" -> {
+          ("timestamp" -> timestamp) ~
+            ("minThreads" -> MinThreads) ~
+            ("maxThreads" -> MaxThreads) ~
+            ("incremental" -> false) ~
+            ("lines" -> lines) ~
+            ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+              case ((phase, times1), (_, times2)) =>
+                ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            })
+        }
 
       // Note: Baseline is withPar.
       val speedupInc =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("incremental" -> true) ~
-          ("lines" -> lines) ~
-          ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
-            case ((phase, times1), (_, times2)) =>
-              ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-          })
-      writeFile("speedupWithInc.json", speedupInc)
+        "speedupWithInc" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("incremental" -> true) ~
+            ("lines" -> lines) ~
+            ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+              case ((phase, times1), (_, times2)) =>
+                ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            })
+        }
 
       //
       // Throughput
       //
       val throughputBaseLine =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MinThreads) ~
-          ("incremental" -> false) ~
-          ("lines" -> lines) ~
-          ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-          ("results" -> baseline.times.zipWithIndex.map({
-            case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-          }))
-      writeFile("throughput.json", throughputBaseLine)
+        "throughput" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MinThreads) ~
+            ("incremental" -> false) ~
+            ("lines" -> lines) ~
+            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+            ("results" -> baseline.times.zipWithIndex.map({
+              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+            }))
+        }
 
       val throughputPar =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("incremental" -> false) ~
-          ("lines" -> lines) ~
-          ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-          ("results" -> baselineWithPar.times.zipWithIndex.map({
-            case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-          }))
-      writeFile("throughputWithPar.json", throughputPar)
+        "throughputWithPar" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("incremental" -> false) ~
+            ("lines" -> lines) ~
+            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+            ("results" -> baselineWithPar.times.zipWithIndex.map({
+              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+            }))
+        }
 
       val throughputParInc =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("incremental" -> true) ~
-          ("lines" -> lines) ~
-          ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-          ("results" -> baselineWithParInc.times.zipWithIndex.map({
-            case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-          }))
-      writeFile("throughputWithParInc.json", throughputParInc)
+        "throughputWithParInc" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("incremental" -> true) ~
+            ("lines" -> lines) ~
+            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+            ("results" -> baselineWithParInc.times.zipWithIndex.map({
+              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+            }))
+        }
 
       //
       // Time
       //
       val timeBaseline =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MinThreads) ~
-          ("incremental" -> false) ~
-          ("lines" -> lines) ~
-          ("results" -> baseline.phases.map {
-            case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-          })
-      writeFile("time.json", timeBaseline)
+        "time" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MinThreads) ~
+            ("incremental" -> false) ~
+            ("lines" -> lines) ~
+            ("results" -> baseline.phases.map {
+              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+            })
+        }
 
       val timeWithPar =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("incremental" -> false) ~
-          ("lines" -> lines) ~
-          ("results" -> baselineWithPar.phases.map {
-            case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-          })
-      writeFile("timeWithPar.json", timeWithPar)
+        "timeWithPar" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("incremental" -> false) ~
+            ("lines" -> lines) ~
+            ("results" -> baselineWithPar.phases.map {
+              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+            })
+        }
 
       val timeWithParInc =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("incremental" -> true) ~
-          ("lines" -> lines) ~
-          ("results" -> baselineWithParInc.phases.map {
-            case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-          })
-      writeFile("timeWithParInc.json", timeWithParInc)
+        "timeWithParInc" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("incremental" -> true) ~
+            ("lines" -> lines) ~
+            ("results" -> baselineWithParInc.phases.map {
+              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+            })
+        }
+
 
       //
       // Summary
       //
       val summaryJSON =
-        ("timestamp" -> timestamp) ~
-          ("inliner" -> whichInliner) ~
-          ("threads" -> MaxThreads) ~
-          ("lines" -> lines) ~
-          ("iterations" -> N) ~
-          ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
-      val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-      val summaryFile = "summary.json"
-      writeFile(summaryFile, s)
+        "summary" -> {
+          ("timestamp" -> timestamp) ~
+            ("threads" -> MaxThreads) ~
+            ("lines" -> lines) ~
+            ("iterations" -> N) ~
+            ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+        }
+      // val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
 
       //
       // Python Plot
       //
       // FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+      List(speedupPar, speedupInc, throughputBaseLine, throughputPar, throughputParInc, timeBaseline, timeWithPar, timeWithParInc, summaryJSON)
     }
 
     /**
@@ -397,14 +403,15 @@ object BenchmarkInliner {
       flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
       flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
     }
-
-    /**
-      * Writes the given `json` to the given `file`.
-      */
-    private def writeFile(file: String, json: JValue): Unit = {
-      val directory = Path.of("./build/").resolve("perf/")
-      val filePath = directory.resolve(s"$file")
-      FileOps.writeJSON(filePath, json)
-    }
   }
+
+  /**
+    * Writes the given `json` to the given `file`.
+    */
+  private def writeFile(file: String, json: JValue): Unit = {
+    val directory = Path.of("./build/").resolve("perf/")
+    val filePath = directory.resolve(s"$file")
+    FileOps.writeJSON(filePath, json)
+  }
+
 }
