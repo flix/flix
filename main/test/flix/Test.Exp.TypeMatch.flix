@@ -665,8 +665,8 @@ mod Test.Exp.TypeMatch {
 
     @Test
     def typeMatchPolymorphic03(): Bool = typematch (Nil: List[String]) {
-        case _: List[_] => false
-        case _: List[String] => true
+        case _: List[_] => true
+        case _: List[String] => false
         case _: _ => false
     }
 
