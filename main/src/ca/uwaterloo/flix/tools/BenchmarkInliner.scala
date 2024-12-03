@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
-import org.json4s.native.JsonMethods
+import org.json4s.native.{JsonMethods, prettyJson}
 
 import java.nio.file.Path
 
@@ -109,180 +109,195 @@ object BenchmarkInliner {
       * Run compiler performance experiments.
       */
     def run(opts: Options): List[JsonAST.JObject] = {
-      val o = opts.copy(progress = false, loadClassFiles = false)
 
       // The number of iterations.
-      val N = o.XPerfN.getOrElse(DefaultN)
+      val N = opts.XPerfN.getOrElse(DefaultN)
 
-      // Run the experiments.
-      val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
-      val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-      val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
+      val runs = scala.collection.mutable.ListBuffer.empty[JsonAST.JObject]
 
-      // Find the number of lines of source code.
-      val lines = baselineWithPar.lines.toLong
+      for (inliningRounds <- 1 to 50) {
+        // Set the inlining rounds
+        val o = opts.copy(inlinerRounds = inliningRounds, inliner1Rounds = inliningRounds)
 
-      // Find the timings of each run.
-      val timings = baselineWithPar.times
+        // Run the experiments.
+        val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
+        val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
+        val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
 
-      // Compute the total time in seconds.
-      val totalTime = (timings.sum / 1_000_000_000L).toInt
+        // Find the number of lines of source code.
+        val lines = baselineWithPar.lines.toLong
 
-      // Find the throughput of each run.
-      val throughputs = timings.map(throughput(lines, _))
+        // Find the timings of each run.
+        val timings = baselineWithPar.times
 
-      // Compute the minimum throughput (per second).
-      val min = throughputs.min
+        // Compute the total time in seconds.
+        val totalTime = (timings.sum / 1_000_000_000L).toInt
 
-      // Compute the maximum throughput (per second).
-      val max = throughputs.max
+        // Find the throughput of each run.
+        val throughputs = timings.map(throughput(lines, _))
 
-      // Compute the average throughput (per second).
-      val avg = average(throughputs.map(_.toLong)).toInt
+        // Compute the minimum throughput (per second).
+        val min = throughputs.min
 
-      // Compute the median throughput (per second).
-      val mdn = median(throughputs.map(_.toLong)).toInt
+        // Compute the maximum throughput (per second).
+        val max = throughputs.max
 
-      // Best observed throughput.
-      val maxObservedThroughput = throughput(lines,
-        Math.min(baseline.times.min,
-          Math.min(baselineWithPar.times.min, baselineWithParInc.times.min)))
+        // Compute the average throughput (per second).
+        val avg = average(throughputs.map(_.toLong)).toInt
 
-      // Timestamp (in seconds) when the experiment was run.
-      val timestamp = System.currentTimeMillis() / 1000
+        // Compute the median throughput (per second).
+        val mdn = median(throughputs.map(_.toLong)).toInt
 
-      //
-      // The combine function uses to merge data from different runs.
-      //
-      def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
-        if (N <= 4)
-          numeric.toDouble(xs.last)
-        else
-          StatUtils.median(xs)
+        // Best observed throughput.
+        val maxObservedThroughput = throughput(lines,
+          Math.min(baseline.times.min,
+            Math.min(baselineWithPar.times.min, baselineWithParInc.times.min)))
 
-      //
-      // Speedup
-      //
-      val speedupPar =
-        "speedupWithPar" -> {
-          ("timestamp" -> timestamp) ~
-            ("minThreads" -> MinThreads) ~
-            ("maxThreads" -> MaxThreads) ~
-            ("incremental" -> false) ~
-            ("lines" -> lines) ~
-            ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
-              case ((phase, times1), (_, times2)) =>
-                ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-            })
-        }
+        // Timestamp (in seconds) when the experiment was run.
+        val timestamp = System.currentTimeMillis() / 1000
 
-      // Note: Baseline is withPar.
-      val speedupInc =
-        "speedupWithInc" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("incremental" -> true) ~
-            ("lines" -> lines) ~
-            ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
-              case ((phase, times1), (_, times2)) =>
-                ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-            })
-        }
+        //
+        // The combine function uses to merge data from different runs.
+        //
+        def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
+          if (N <= 4)
+            numeric.toDouble(xs.last)
+          else
+            StatUtils.median(xs)
 
-      //
-      // Throughput
-      //
-      val throughputBaseLine =
-        "throughput" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MinThreads) ~
-            ("incremental" -> false) ~
-            ("lines" -> lines) ~
-            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-            ("results" -> baseline.times.zipWithIndex.map({
-              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-            }))
-        }
+        //
+        // Speedup
+        //
+        val speedupPar =
+          "speedupWithPar" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("minThreads" -> MinThreads) ~
+              ("maxThreads" -> MaxThreads) ~
+              ("incremental" -> false) ~
+              ("lines" -> lines) ~
+              ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+                case ((phase, times1), (_, times2)) =>
+                  ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+              })
+          }
 
-      val throughputPar =
-        "throughputWithPar" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("incremental" -> false) ~
-            ("lines" -> lines) ~
-            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-            ("results" -> baselineWithPar.times.zipWithIndex.map({
-              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-            }))
-        }
+        // Note: Baseline is withPar.
+        val speedupInc =
+          "speedupWithInc" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("incremental" -> true) ~
+              ("lines" -> lines) ~
+              ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+                case ((phase, times1), (_, times2)) =>
+                  ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+              })
+          }
 
-      val throughputParInc =
-        "throughputWithParInc" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("incremental" -> true) ~
-            ("lines" -> lines) ~
-            ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-            ("results" -> baselineWithParInc.times.zipWithIndex.map({
-              case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-            }))
-        }
+        //
+        // Throughput
+        //
+        val throughputBaseLine =
+          "throughput" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MinThreads) ~
+              ("incremental" -> false) ~
+              ("lines" -> lines) ~
+              ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+              ("results" -> baseline.times.zipWithIndex.map({
+                case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+              }))
+          }
 
-      //
-      // Time
-      //
-      val timeBaseline =
-        "time" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MinThreads) ~
-            ("incremental" -> false) ~
-            ("lines" -> lines) ~
-            ("results" -> baseline.phases.map {
-              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-            })
-        }
+        val throughputPar =
+          "throughputWithPar" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("incremental" -> false) ~
+              ("lines" -> lines) ~
+              ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+              ("results" -> baselineWithPar.times.zipWithIndex.map({
+                case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+              }))
+          }
 
-      val timeWithPar =
-        "timeWithPar" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("incremental" -> false) ~
-            ("lines" -> lines) ~
-            ("results" -> baselineWithPar.phases.map {
-              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-            })
-        }
+        val throughputParInc =
+          "throughputWithParInc" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("incremental" -> true) ~
+              ("lines" -> lines) ~
+              ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+              ("results" -> baselineWithParInc.times.zipWithIndex.map({
+                case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+              }))
+          }
 
-      val timeWithParInc =
-        "timeWithParInc" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("incremental" -> true) ~
-            ("lines" -> lines) ~
-            ("results" -> baselineWithParInc.phases.map {
-              case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-            })
-        }
+        //
+        // Time
+        //
+        val timeBaseline =
+          "time" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MinThreads) ~
+              ("incremental" -> false) ~
+              ("lines" -> lines) ~
+              ("results" -> baseline.phases.map {
+                case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+              })
+          }
 
+        val timeWithPar =
+          "timeWithPar" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("incremental" -> false) ~
+              ("lines" -> lines) ~
+              ("results" -> baselineWithPar.phases.map {
+                case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+              })
+          }
 
-      //
-      // Summary
-      //
-      val summaryJSON =
-        "summary" -> {
-          ("timestamp" -> timestamp) ~
-            ("threads" -> MaxThreads) ~
-            ("lines" -> lines) ~
-            ("iterations" -> N) ~
-            ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
-        }
-      // val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
+        val timeWithParInc =
+          "timeWithParInc" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("incremental" -> true) ~
+              ("lines" -> lines) ~
+              ("results" -> baselineWithParInc.phases.map {
+                case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+              })
+          }
 
-      //
-      // Python Plot
-      //
-      // FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
-      List(speedupPar, speedupInc, throughputBaseLine, throughputPar, throughputParInc, timeBaseline, timeWithPar, timeWithParInc, summaryJSON)
+        //
+        // Summary
+        //
+        val summaryJSON =
+          "summary" -> {
+            ("inliningRounds" -> inliningRounds) ~
+              ("timestamp" -> timestamp) ~
+              ("threads" -> MaxThreads) ~
+              ("lines" -> lines) ~
+              ("iterations" -> N) ~
+              ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+          }
+        // val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
+
+        //
+        // Python Plot
+        //
+        // FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+        runs.addAll(List(speedupPar, speedupInc, throughputBaseLine, throughputPar, throughputParInc, timeBaseline, timeWithPar, timeWithParInc, summaryJSON))
+      }
+      runs.toList
     }
 
     /**
