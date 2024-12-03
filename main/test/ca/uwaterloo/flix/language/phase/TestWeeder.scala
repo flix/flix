@@ -1235,6 +1235,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedIntrinsic](result)
   }
 
+  test("UndefinedIntrinsic.04") {
+    val input =
+      """
+        |def f(rc: Region[r]): Unit = $MAGIC$[Int32, Array[String, r]](42)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedIntrinsic](result)
+  }
+
   // Testing that the casing of 'foo' and 'Foo' should match
   test("IllegalUse.Alias.01") {
     val input =
