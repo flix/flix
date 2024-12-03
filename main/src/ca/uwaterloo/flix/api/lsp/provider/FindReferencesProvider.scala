@@ -154,64 +154,6 @@ object FindReferencesProvider {
     case _ => None
   }
 
-  private def getVarSymOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object VarSymConsumer extends Consumer {
-      override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, VarSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
-  private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object StructFieldSymConsumer extends Consumer {
-      override def consumeStructField(field: TypedAst.StructField): Unit = consider(field.sym, field.sym.loc)
-      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = consider(symUse.sym, symUse.loc)
-    }
-
-    Visitor.visitRoot(root, StructFieldSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
-  private def getStructSymOccurs(sym: Symbol.StructSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.StructSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object StructSymConsumer extends Consumer {
-      override def consumeStruct(struct: TypedAst.Struct): Unit = consider(struct.sym, struct.sym.loc)
-
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => consider(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, StructSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
   private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
@@ -234,19 +176,36 @@ object FindReferencesProvider {
     occurs
   }
 
-  private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root): Set[SourceLocation] = {
+  private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
-    def consider(s: Symbol.OpSym, loc: SourceLocation): Unit = {
+    def consider(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
       if (s == sym) { occurs += loc }
     }
 
-    object OpSymConsumer extends Consumer {
-      override def consumeOp(op: TypedAst.Op): Unit = consider(op.sym, op.sym.loc)
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+    object CaseSymConsumer extends Consumer {
+      override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, sym.loc)
     }
 
-    Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)
+    Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def getDefnSymOccurs(sym: Symbol.DefnSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object DefnSymConsumer extends Consumer {
+      override def consumeDef(defn: TypedAst.Def): Unit = consider(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
 
     occurs
   }
@@ -268,6 +227,43 @@ object FindReferencesProvider {
     }
 
     Visitor.visitRoot(root, EffectSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def getEnumSymOccurs(sym: Symbol.EnumSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object EnumSymConsumer extends Consumer {
+      override def consumeEnum(enm: TypedAst.Enum): Unit = consider(enm.sym, enm.sym.loc)
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EnumSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.OpSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object OpSymConsumer extends Consumer {
+      override def consumeOp(op: TypedAst.Op): Unit = consider(op.sym, op.sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+    }
+
+    Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)
 
     occurs
   }
@@ -294,6 +290,44 @@ object FindReferencesProvider {
     occurs ++ implOccurs
   }
 
+  private def getStructSymOccurs(sym: Symbol.StructSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.StructSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object StructSymConsumer extends Consumer {
+      override def consumeStruct(struct: TypedAst.Struct): Unit = consider(struct.sym, struct.sym.loc)
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, StructSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
+  private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object StructFieldSymConsumer extends Consumer {
+      override def consumeStructField(field: TypedAst.StructField): Unit = consider(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = consider(symUse.sym, symUse.loc)
+    }
+
+    Visitor.visitRoot(root, StructFieldSymConsumer, AllAcceptor)
+
+    occurs
+  }
+
   private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
@@ -312,56 +346,22 @@ object FindReferencesProvider {
     occurs
   }
 
-  private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root): Set[SourceLocation] = {
+  private def getVarSymOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
-    def consider(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
+    def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
       if (s == sym) { occurs += loc }
     }
 
-    object CaseSymConsumer extends Consumer {
-      override def consumeCase(cse: TypedAst.Case): Unit = consider(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, sym.loc)
-    }
-
-    Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
-  private def getEnumSymOccurs(sym: Symbol.EnumSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object EnumSymConsumer extends Consumer {
-      override def consumeEnum(enm: TypedAst.Enum): Unit = consider(enm.sym, enm.sym.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+    object VarSymConsumer extends Consumer {
+      override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
         case _ => ()
       }
     }
 
-    Visitor.visitRoot(root, EnumSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
-  private def getDefnSymOccurs(sym: Symbol.DefnSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object DefnSymConsumer extends Consumer {
-      override def consumeDef(defn: TypedAst.Def): Unit = consider(defn.sym, defn.sym.loc)
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
-    }
-
-    Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
+    Visitor.visitRoot(root, VarSymConsumer, AllAcceptor)
 
     occurs
   }
