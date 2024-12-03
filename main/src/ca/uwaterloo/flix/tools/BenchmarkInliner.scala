@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
-import org.json4s.native.{JsonMethods, prettyJson}
 
 import java.nio.file.Path
 
