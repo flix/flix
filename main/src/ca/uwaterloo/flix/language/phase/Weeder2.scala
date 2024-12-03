@@ -883,7 +883,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCastExpr(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
-        case TreeKind.Expr.UnsafeBlock => visitUnsafeBlockExpr(tree)
+        case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
@@ -1701,10 +1701,10 @@ object Weeder2 {
       }
     }
 
-    private def visitUnsafeBlockExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.UnsafeBlock)
+    private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.UnsafeOld)
       mapN(pickExpr(tree)) {
-        expr => Expr.UnsafeBlock(expr, tree.loc)
+        expr => Expr.UnsafeOld(expr, tree.loc)
       }
     }
 
