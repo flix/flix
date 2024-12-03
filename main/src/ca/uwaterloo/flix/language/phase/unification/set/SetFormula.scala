@@ -605,7 +605,7 @@ object SetFormula {
       case f :: rs => f :: visit(rs, elmAcc, seenCsts, seenVars)
     }
 
-    visit(fs, SortedSet.empty, Set.empty, Set.empty) match {
+    visit(fs, SortedSet.empty, SortedSet.empty, SortedSet.empty) match {
       case Nil => Empty
       case f :: Nil => f
       case f1 :: f2 :: rest => Union(TwoList(f1, f2, rest))
