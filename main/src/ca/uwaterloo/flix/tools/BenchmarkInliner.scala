@@ -59,7 +59,6 @@ object BenchmarkInliner {
     * Writes to json file `experimentName.json`
     */
   private def runExperiment(opts: Options, experimentName: String)(experiment: Options => List[JsonAST.JObject]): Unit = {
-    // TODO: Copy experiments from CompilerPerf
     // Disable both inliners
     val o1 = opts.copy(xnooptimizer = true, xnooptimizer1 = true)
     val res1 = experiment(o1)
