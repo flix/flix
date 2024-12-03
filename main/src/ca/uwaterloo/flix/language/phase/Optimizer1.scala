@@ -42,7 +42,7 @@ object Optimizer1 {
         stats = if (stats == null) stats1 else stats ++ stats1
         result = afterInliner
       }
-      println(stats)
+      // println(stats)
       result
     }
   }
