@@ -99,7 +99,7 @@ mod Test.Exp.Concurrency.Unbuffered {
     }
 
     @test
-    def testUnbufferedChannelPutGet16(): Bool \ {Chan, NonDet} = region rc {
+    def testUnbufferedChannelPutGet15(): Bool \ {Chan, NonDet} = region rc {
         let (tx1, rx1) = Channel.unbuffered();
         let (tx2, rx2) = Channel.unbuffered();
         spawn Channel.unsafeSend(rx2, tx1) @ rc;
