@@ -31,6 +31,8 @@ object BenchmarkInliner {
   def run(opts: Options): Unit = {
     val o = opts.copy(progress = false, loadClassFiles = false)
 
+    println("Benchmarking inliner. This may take a while...")
+
     // Experiments:
     // 1. Compiler throughput
     //    (a) without inlining
@@ -47,6 +49,8 @@ object BenchmarkInliner {
     //    (b) with old inliner
     //    (c) with new inliner
     // TODO: Vary thresholds for new inliner
+
+    println("Done. Results written to 'build/perf'")
 
   }
 
