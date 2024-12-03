@@ -903,6 +903,9 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>
+        // Γ ⊢ e1 : τ \ ef1 ∩ prims      Γ ⊢ e2 : Region[r] \ ef2
+        // --------------------------------------------------------
+        // Γ ⊢ spawn e1 @ e2 : Unit \ (ef ∩ prims) ∪ ef2
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val anyEff = Type.freshVar(Kind.Eff, loc)
