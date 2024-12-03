@@ -84,5 +84,6 @@ mod Test.Exp.Concurrency.Spawn {
         } @ rc;
         Thread.sleep(Time.Duration.fromSeconds(1));
         true
+    }
 
 }

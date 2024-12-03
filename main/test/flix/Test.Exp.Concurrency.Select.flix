@@ -195,7 +195,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectRandom03(): Unit \ {Chan, NonDet, IO} = region rc {
+    def testSelectRandom03(): Unit \ {Chan, NonDet} = region rc {
         let (tx14, rx14) = Channel.buffered(0);
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
@@ -254,7 +254,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectRandom05(): Unit \ {Chan, NonDet, IO} = region rc {
+    def testSelectRandom05(): Unit \ {Chan, NonDet} = region rc {
         let (tx14, rx14) = Channel.buffered(0);
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
@@ -306,7 +306,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectRandom07(): Unit \ {Chan, NonDet, IO} = region rc {
+    def testSelectRandom07(): Unit \ {Chan, NonDet} = region rc {
         let (tx12, rx12) = Channel.buffered(0);
         let (tx13, rx13) = Channel.buffered(0);
         let (tx14, rx14) = Channel.buffered(0);
@@ -338,7 +338,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectRandom08(): Unit \ {Chan, NonDet, IO} = region rc {
+    def testSelectRandom08(): Unit \ {Chan, NonDet} = region rc {
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
         let (tx17, rx17) = Channel.buffered(0);
