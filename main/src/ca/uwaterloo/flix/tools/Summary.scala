@@ -240,7 +240,6 @@ object Summary {
     case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.UncheckedMaskingCast(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
@@ -260,7 +259,7 @@ object Summary {
     case Expr.NewObject(_, _, _, _, methods, _) => methods.map {
       case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {

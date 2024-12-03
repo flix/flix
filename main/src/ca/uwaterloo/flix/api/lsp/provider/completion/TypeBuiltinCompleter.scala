@@ -51,10 +51,10 @@ object TypeBuiltinCompleter {
       // L
       polycompletion("Lazy"    , List("t")         , Priority.Default),
       // R
-      polycompletion("Receiver", List("t", "r")    , Priority.Low),
+      polycompletion("Receiver", List("t")         , Priority.Low),
       polycompletion("Region"  , List("r")         , Priority.High),
       // S
-      polycompletion("Sender"  , List("t", "r")    , Priority.Low),
+      polycompletion("Sender"  , List("t")         , Priority.Low),
       Completion.TypeBuiltinCompletion("String"    , Priority.High),
       // U
       Completion.TypeBuiltinCompletion("Unit"      , Priority.Default),

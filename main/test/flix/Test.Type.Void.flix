@@ -12,7 +12,7 @@ mod Test.Type.Void {
 
     @Test
     pub def testVoid01(): Unit =
-        try {
+        run {
             Exc.raise()
         } with Exc {
             def raise(_k) = ()
@@ -20,7 +20,7 @@ mod Test.Type.Void {
 
     @Test
     pub def testVoid02(): Unit =
-        try {
+        run {
             if(Exc.raise()) () else ()
         } with Exc {
             def raise(_k) = ()
@@ -28,7 +28,7 @@ mod Test.Type.Void {
 
     @Test
     pub def testVoid03(): Unit =
-        try {
+        run {
             if(true) (Exc.raise()) else ()
         } with Exc {
             def raise(_k) = ()
@@ -36,7 +36,7 @@ mod Test.Type.Void {
 
     @Test
     pub def testVoid04(): Unit =
-        try {
+        run {
             discard (Exc.raise() + 1); ()
         } with Exc {
             def raise(_k) = ()

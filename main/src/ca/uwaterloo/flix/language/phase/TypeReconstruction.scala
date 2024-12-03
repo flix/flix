@@ -381,14 +381,6 @@ object TypeReconstruction {
       val eff = declaredEff0.getOrElse(e.eff)
       TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
-      // Later it is erased and the effect of the subexpression is unmasked
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = Type.Pure
-      TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
-
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
@@ -508,10 +500,10 @@ object TypeReconstruction {
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), subst(evar), loc)
+    case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
+      val e = visitExp(exp)
+      val eff = Type.mkUnion(e.eff, Type.Chan, loc)
+      TypedAst.Expr.NewChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)

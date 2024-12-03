@@ -234,9 +234,6 @@ object PredDeps {
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -288,8 +285,8 @@ object PredDeps {
     case Expr.NewObject(_, _, _, _, _, _) =>
       LabelledPrecedenceGraph.empty
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp)

@@ -32,7 +32,11 @@ dependencies {
     implementation('org.tomlj:tomlj:1.1.1')
     implementation('org.antlr:antlr4-runtime:4.11.1')
 
+    // JLine uses a logger. We silence it here.
     implementation('org.slf4j:slf4j-nop:2.0.13')
+
+    // Java implementation of LSP.
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1'
 
     testImplementation('org.scalatest:scalatest_2.13:3.2.19')
 }
@@ -46,8 +50,9 @@ tasks.withType(ScalaCompile).configureEach {
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11",
             "-opt:inline:ca.uwaterloo.**",
-            "-Xsource:3",    // Scala 3 migration flag
-            "-Ytasty-reader" // Scala 3 migration flag
+            "-Xmixin-force-forwarders:false",   // Required for LSP4j
+            "-Xsource:3",                       // Scala 3 migration flag
+            "-Ytasty-reader"                    // Scala 3 migration flag
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
@@ -79,6 +84,8 @@ jar {
         // This line has to come before the next
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
     }
 
     from('main') {

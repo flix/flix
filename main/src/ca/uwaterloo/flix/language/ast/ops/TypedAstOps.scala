@@ -84,7 +84,6 @@ object TypedAstOps {
     case Expr.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
-    case Expr.UncheckedMaskingCast(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
@@ -98,7 +97,7 @@ object TypedAstOps {
     case Expr.GetStaticField(_, _, _, _) => Set.empty
     case Expr.PutStaticField(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expr.NewChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.NewChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.GetChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
@@ -291,9 +290,6 @@ object TypedAstOps {
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      freeVars(exp)
-
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(bnd, _, exp)) => acc ++ freeVars(exp) - bnd.sym
@@ -341,8 +337,8 @@ object TypedAstOps {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
+    case Expr.NewChannel(exp, _, _, _) =>
+      freeVars(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
       freeVars(exp)

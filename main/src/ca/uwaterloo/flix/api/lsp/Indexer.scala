@@ -382,9 +382,6 @@ object Indexer {
       val dp = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ Index.occurrenceOf(exp0)
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.Without(exp, effUse, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
 
@@ -438,8 +435,8 @@ object Indexer {
           Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)

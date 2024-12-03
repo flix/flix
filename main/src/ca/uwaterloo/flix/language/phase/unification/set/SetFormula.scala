@@ -75,7 +75,7 @@ sealed trait SetFormula {
   }
 
   /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
-  final def isGround: Boolean = this match {
+  final lazy val isGround: Boolean = this match {
     case Univ => true
     case Empty => true
     case Cst(_) => false

@@ -195,7 +195,6 @@ object PatMatch {
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
       case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
-      case Expr.UncheckedMaskingCast(exp, _, _, _) => visitExp(exp)
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -217,7 +216,7 @@ object PatMatch {
       case Expr.GetStaticField(_, _, _, _) => Nil
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
       case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp))
-      case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
       case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
       case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
 

@@ -38,7 +38,7 @@ mod Abort {
     ///     - returns `Err(m)`  if the computation aborts with error message `m`.
     ///
     pub def handle(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
-        try {
+        run {
             Ok(f(x))
         } with Abort {
             def abort(m, _k) = Result.Err(m)

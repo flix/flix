@@ -226,10 +226,6 @@ object Safety {
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp) ++ castErrors
 
-    case Expr.UncheckedMaskingCast(exp, _, _, loc) =>
-      val permissionErrors = checkAllPermissions(loc.security, loc)
-      permissionErrors ++ visitExp(exp)
-
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -285,8 +281,8 @@ object Safety {
       val objectErrors = checkObjectImplementation(newObject)
       permissionErrors ++ objectErrors ++ methods.flatMap(method => visitExp(method.exp))
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp)

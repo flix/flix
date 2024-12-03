@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Derivation, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Derivation, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
@@ -504,9 +503,6 @@ object SemanticTokensProvider {
     case Expr.UncheckedCast(exp, _, _, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.Without(exp, eff, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
       Iterator(t) ++ visitExp(exp)
@@ -569,7 +565,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+    case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
 

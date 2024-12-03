@@ -8,7 +8,7 @@ mod Test.Handler.Ask.Char {
         Ask.ask(x); generator(next(x))
 
     def sample(limit: Char): List[Char] =
-        try {
+        run {
             generator('a'); Nil
         } with Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()

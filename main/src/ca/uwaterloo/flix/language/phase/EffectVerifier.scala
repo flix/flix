@@ -266,8 +266,6 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
-      visitExp(exp)
     case Expr.Without(exp, effUse, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
@@ -324,9 +322,8 @@ object EffectVerifier {
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()
-    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.NewChannel(exp, tpe, eff, loc) =>
+      visitExp(exp)
       // TODO region stuff
       ()
     case Expr.GetChannel(exp, tpe, eff, loc) =>
