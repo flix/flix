@@ -113,43 +113,43 @@ object FindReferencesProvider {
   }
 
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
-    // Defs
-    case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
-    case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
-    // Enums
-    case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
-    // Cases
-    case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
-    case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
-    // Traits
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
-    case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
-    // Sigs
-    case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
-    case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
-    // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-    case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
-    // Ops
-    case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
-    case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
     // Assoc Types
     case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
     case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
     case AssocTypeConstructor(sym, _) => Some(getAssocTypeSymOccurs(sym))
     case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
+    // Cases
+    case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
+    case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
+    // Defs
+    case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
+    case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
+    // Effects
+    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
+    case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+    // Enums
+    case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
+    // Ops
+    case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
+    case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
+    // Sigs
+    case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
+    case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
     // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
     case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
     // Struct Fields
     case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
     case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
+    // Traits
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+    case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
+    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     // Vars
-    case Binder(sym, _) => Some(getVarSymOccurs(sym))
     case TypedAst.Expr.Var(sym, _, _) => Some(getVarSymOccurs(sym))
+    case Binder(sym, _) => Some(getVarSymOccurs(sym))
 
     case _ => None
   }
