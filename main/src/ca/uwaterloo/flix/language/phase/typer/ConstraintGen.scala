@@ -903,7 +903,6 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>
-        // TODO it is very clear what the type rules of spawn should be
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val anyEff = Type.freshVar(Kind.Eff, loc)
@@ -913,7 +912,8 @@ object ConstraintGen {
         c.unifyType(eff1, innerEff, exp1.loc)
         c.expectType(expected = regionType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(innerEff, eff2, regionVar, loc)
+        // `regionVar` should be included but is omitted to allow spawn nesting.
+        val resEff = Type.mkUnion(innerEff, eff2, loc)
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, _) =>
