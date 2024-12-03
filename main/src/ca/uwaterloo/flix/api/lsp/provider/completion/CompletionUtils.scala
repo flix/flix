@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
+import scala.annotation.tailrec
 
 object CompletionUtils {
 
@@ -181,7 +182,7 @@ object CompletionUtils {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = looseMatch(decl.sym.text, word)
+    val isMatch = looseMatch(word, decl.sym.text)
 
     isMatch && isPublic
   }
@@ -193,10 +194,37 @@ object CompletionUtils {
   def shouldComplete(word: String): Boolean = word.length >= 3
 
   /**
-    * Returns `true` if the first `comparedLength` characters of `name1` and `name2` are equal.
+    * Returns `true` if the query is a loose match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    *
+    * Example:
+    *   - looseMatch("fBT", "fooBarTest") = true
+    *   - looseMatch("fBrT", "fooBarTest") = false
+    *   - looseMatch("fTB", "fooBarTest") = false
+    *
+    * @param query  The query string, usually from the user input.
+    * @param key    The key string, usually from the completion item.
     */
-  def looseMatch(name1: String, name2: String): Boolean = {
-    val comparedLength = Math.min(Math.min(name1.length, name2.length), 3)
-    name1.take(comparedLength) == name2.take(comparedLength)
+  def looseMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
+  }
+
+  /**
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
+    */
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?<!^)(?=[A-Z])").toList
   }
 }

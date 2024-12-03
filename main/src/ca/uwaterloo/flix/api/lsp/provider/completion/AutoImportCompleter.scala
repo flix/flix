@@ -56,7 +56,7 @@ object AutoImportCompleter {
   private def javaClassCompletionsByClass(prefix: String, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
     if (!shouldComplete(prefix)) return Nil
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
-    availableClasses.keys.filter(looseMatch(_, prefix)).flatMap { className =>
+    availableClasses.keys.filter(looseMatch(prefix, _)).flatMap { className =>
       availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
