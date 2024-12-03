@@ -69,8 +69,8 @@ object Regions {
     case Expr.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.ApplyClo(exp, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, _, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
@@ -128,11 +128,11 @@ object Regions {
       }
       expErrors ++ rulesErrors ++ checkType(tpe, loc)
 
-    case Expr.Tag(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Tag(_, exps, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.RestrictableTag(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.RestrictableTag(_, exps, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Tuple(elms, tpe, _, loc) =>
       elms.flatMap(visitExp) ++ checkType(tpe, loc)
@@ -194,9 +194,6 @@ object Regions {
     case Expr.UncheckedCast(exp, _, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.UncheckedMaskingCast(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
     case Expr.Without(exp, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
@@ -242,8 +239,8 @@ object Regions {
     case Expr.NewObject(_, _, tpe, _, methods, loc) =>
       methods.flatMap(visitJvmMethod) ++ checkType(tpe, loc)
 
-    case Expr.NewChannel(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+    case Expr.NewChannel(exp, tpe, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.GetChannel(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)

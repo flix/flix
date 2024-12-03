@@ -68,8 +68,8 @@ object Eraser {
   }
 
   private def visitEnumTag(caze: Case): Case = caze match {
-    case Case(sym, tpe, loc) =>
-      Case(sym, polymorphicErasure(tpe), loc)
+    case Case(sym, tpes, loc) =>
+      Case(sym, tpes.map(polymorphicErasure), loc)
   }
 
   private def visitStruct(struct: Struct): Struct = struct match {
@@ -119,7 +119,7 @@ object Eraser {
         case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Untag(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
@@ -156,8 +156,8 @@ object Eraser {
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
       }
 
-    case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
+      val ac = ApplyClo(visitExp(exp1), visitExp(exp2), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)

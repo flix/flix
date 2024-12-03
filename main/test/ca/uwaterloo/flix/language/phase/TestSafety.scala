@@ -334,7 +334,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO =
         |  new Runnable {
-        |    def run(): Unit = ()
+        |    def $run(): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -373,12 +373,12 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO =
         |  new Runnable {
-        |    def run(_this: Runnable): Unit = ()
+        |    def $run(_this: Runnable): Unit = ()
         |    def anExtraMethod(_this: Runnable): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.NewObjectUnreachableMethod](result)
+    expectError[SafetyError.NewObjectUndefinedMethod](result)
   }
 
   test("TestNonDefaultConstructor.01") {
@@ -433,7 +433,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try println("Hello, World!") with IO {}
+        |    run println("Hello, World!") with IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInTryWith](result)
@@ -443,7 +443,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with Exec {}
+        |    run g() with Exec {}
         |
         |def g(): Unit \ Exec = ???
       """.stripMargin
@@ -455,7 +455,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with FsRead {}
+        |    run g() with FsRead {}
         |
         |def g(): Unit \ FsRead = ???
       """.stripMargin
@@ -467,7 +467,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with FsWrite {}
+        |    run g() with FsWrite {}
         |
         |def g(): Unit \ FsWrite = ???
       """.stripMargin
@@ -479,7 +479,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with Net {}
+        |    run g() with Net {}
         |
         |def g(): Unit \ Net = ???
     """.stripMargin
@@ -491,7 +491,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with NonDet {}
+        |    run g() with NonDet {}
         |
         |def g(): Unit \ NonDet = ???
     """.stripMargin
@@ -503,7 +503,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    try g() with Sys {}
+        |    run g() with Sys {}
         |
         |def g(): Unit \ Sys = ???
     """.stripMargin

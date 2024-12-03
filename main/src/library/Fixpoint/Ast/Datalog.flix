@@ -77,7 +77,7 @@ mod Fixpoint.Ast.Datalog {
                             let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                             match toDenotation(ramSym) {
                                 case Denotation.Relational => "${ramSym}(${tupleString})."
-                                case Denotation.Latticenal(_) => "${ramSym}(${tupleString}; %{lat})."
+                                case Denotation.Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; %{lat})."
                             }
                         })
                     })
@@ -156,7 +156,7 @@ mod Fixpoint.Ast.Datalog {
         pub def toString(head: HeadPredicate[v]): String =
             match head {
                 case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
-                case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_), terms) =>
+                case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_, _, _, _), terms) =>
                     let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
                     match Vector.head(latticeTerms) {
                         case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
@@ -210,7 +210,7 @@ mod Fixpoint.Ast.Datalog {
             match body {
                 case BodyPredicate.BodyAtom(predSym, Denotation.Relational, p, f, terms) =>
                     "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
-                case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_), p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_, _, _, _), p, f, terms) =>
                     let n = Vector.length(terms)-1;
                     let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
                     match Vector.head(latticeTerms) {

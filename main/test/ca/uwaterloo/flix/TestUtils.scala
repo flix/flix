@@ -65,11 +65,11 @@ trait TestUtils {
   def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result, allowUnknown)
 
   /**
-    * Asserts that validation contains a defined entrypoint.
+    * Asserts that validation contains a defined entry point.
     */
   def expectMain(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
     case (Some(root), _) =>
-      if (root.entryPoint.isEmpty) {
+      if (root.mainEntryPoint.isEmpty) {
         fail("Expected 'main' to be defined.")
       }
     case _ => fail("Expected 'main' to be defined.")

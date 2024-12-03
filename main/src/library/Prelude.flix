@@ -18,6 +18,25 @@ pub enum Proxy[_] {
 }
 
 ///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
+/// The uninterpretable `Env` effect.
+///
+/// The `Env` effect represents actions that read from the environment (e.g. information
+/// about the shell, operating system, or hardware)
+///
+/// The `Env` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Env
+
+///
 /// The uninterpretable `Exec` effect.
 ///
 /// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
@@ -187,7 +206,7 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = masked_cast({
+pub def bug!(m: String): a = unchecked_cast({
     System.err.println("*".repeat(80));
     System.err.println("**") ;
     System.err.println("**  BUG: ${m}") ;
@@ -195,23 +214,12 @@ pub def bug!(m: String): a = masked_cast({
     System.err.println("*".repeat(80));
     System.err.println("");
     ?panic
-})
+} as _ \ {})
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
-
-///
-/// Prints the argument unless it is ().
-///
-@Internal
-pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    typematch x {
-        case _: Unit => ()
-        case _: _    => println(x)
-    }
-}
 
 pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)

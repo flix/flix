@@ -17,12 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -419,6 +417,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+    * Represents the Chan effect.
+    */
+  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
+
+  /**
    * Represents the Net effect.
    */
   val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
@@ -458,6 +461,13 @@ object Type {
     * NB: This type has kind: Eff -> (Eff -> Eff).
     */
   val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
+
+  /**
+    * Represents the Difference type constructor.
+    *
+    * NB: This type has kind: Eff -> (Eff -> Eff).
+    */
+  val Difference: Type = Type.Cst(TypeConstructor.Difference, SourceLocation.Unknown)
 
   /**
     * Represents the True Boolean algebra value.
@@ -505,7 +515,7 @@ object Type {
     */
   case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
 
-    def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
+    def withText(text: VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
 
@@ -655,7 +665,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
@@ -754,16 +764,16 @@ object Type {
   def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
-    * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Sender[tpe]` with the given optional source location `loc`.
     */
-  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Sender, loc), tpe, loc), reg, loc)
+  def mkSender(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Sender, loc), tpe, loc)
 
   /**
-    * Returns the type `Receiver[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Receiver[tpe]` with the given optional source location `loc`.
     */
-  def mkReceiver(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc), reg, loc)
+  def mkReceiver(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc)
 
   /**
     * Returns the Lazy type with the given source location `loc`.
@@ -810,48 +820,72 @@ object Type {
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    val a = as.last
-    val base = mkArrowWithEffect(a, p, b, loc)
-    as.init.foldRight(base)(mkPureArrow(_, _, loc))
+    if (as.isEmpty) {
+      b
+    } else {
+      val a = as.last
+      val base = mkArrowWithEffect(a, p, b, loc)
+      as.init.foldRight(base)(mkPureArrow(_, _, loc))
+    }
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Apply(acc, x, loc)
+    if (as.isEmpty) {
+      b
+    } else {
+      val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
+      val inner = as.foldLeft(arrow: Type) {
+        case (acc, x) => Apply(acc, x, loc)
+      }
+      Apply(inner, b, loc)
     }
-    Apply(inner, b, loc)
   }
 
   /**
-    * Constructs the backend arrow type (A_1, ..., A_n) -> B
+    * Constructs the backend arrow type (A_1, ..., A_n) -> B.
+    *
+    * Returns `b` if `as` is empty.
     */
   def mkArrowWithoutEffect(as: List[Type], b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Apply(acc, x, loc)
+    if (as.isEmpty) {
+      b
+    } else {
+      val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
+      val inner = as.foldLeft(arrow: Type) {
+        case (acc, x) => Apply(acc, x, loc)
+      }
+      Apply(inner, b, loc)
     }
-    Apply(inner, b, loc)
   }
 
   /**
@@ -1053,9 +1087,24 @@ object Type {
   }
 
   /**
+    * Returns the type `Xor(tpe1, Xor(tpe2, ...))`.
+    */
+  def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Pure
+    case x :: xs => mkSymmetricDiff(x, mkSymmetricDiff(xs, loc), loc)
+  }
+
+  /**
     * Returns the type `tpe1 - tpe2`.
     */
-  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
+  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
+    case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
+    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.mkComplement(tpe2, loc)
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Pure
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => Type.Pure
+    case _ => Type.Apply(Type.Apply(Type.Difference, tpe1, loc), tpe2, loc)
+  }
 
   /**
     * Returns the type `And(tpe1, tpe2)`.

@@ -20,20 +20,22 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
+import scala.collection.immutable.SortedSet
 
 sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Eff, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Type, body: Expr)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type])
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
-  case class Program(enums: List[Enum], defs: List[Def])
+  /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
+  case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
   case class JvmMethod(ident: Name.Ident, fparams: List[Expr.Ascription], clo: Expr, tpe: Type)
 
@@ -108,7 +110,7 @@ object DocAst {
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr, next: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -157,8 +159,8 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr): Expr =
-      Keyword("untag", d)
+    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+      Keyword("untag_"+idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))
@@ -316,15 +318,27 @@ object DocAst {
 
     case class AsIs(s: String) extends Atom
 
-    case class App(obj: String, args: List[Type]) extends Atom
+    case class App(obj: Type, args: List[Type]) extends Atom
 
     case class Tuple(elms: List[Type]) extends Atom
 
-    case class Arrow(args: List[Type], res: Type) extends Composite
+    case class ArrowEff(args: List[Type], res: Type, eff: Type) extends Composite
+
+    case object RecordRowEmpty extends Atom
+
+    case class RecordRowExtend(label: String, value: Type, rest: Type) extends Atom
+
+    case class RecordOf(tpe: Type) extends Atom
 
     case object RecordEmpty extends Atom
 
     case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
+
+    case object SchemaRowEmpty extends Atom
+
+    case class SchemaRowExtend(label: String, tpe: Type, rest: Type) extends Atom
+
+    case class SchemaOf(tpe: Type) extends Atom
 
     case object SchemaEmpty extends Atom
 
@@ -336,7 +350,42 @@ object DocAst {
 
     case class JvmMethod(method: Method) extends Atom
 
-    /** inserted string printed as-is (assumed not to require parenthesis) */
+    case class JvmField(field: Field) extends Atom
+
+
+    case class Not(tpe: Type) extends Composite
+
+    case class And(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Or(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Complement(tpe: Type) extends Composite
+
+    case class Union(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Intersection(tpe1: Type, tpe2: Type) extends Composite
+
+    case class Difference(tpe1: Type, tpe2: Type) extends Composite
+
+    case class SymmetricDiff(tpe1: Type, tpe2: Type) extends Composite
+
+    case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym]) extends Atom
+
+    case class CaseComplement(tpe: Type) extends Composite
+
+    case class CaseUnion(tpe1: Type, tpe2: Type) extends Composite
+
+    case class CaseIntersection(tpe1: Type, tpe2: Type) extends Composite
+
+    case object Pure extends Atom
+
+    /** Represents the union of IO and all regions. */
+    case object Impure extends Atom
+
+    /** Represents Impure and all algebraic effect. */
+    case object ControlImpure extends Atom
+
+    /** Inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 
     val Void: Type = AsIs("Void")
@@ -373,34 +422,27 @@ object DocAst {
 
     val Null: Type = AsIs("Null")
 
-    def Array(t: Type): Type = App("Array", List(t))
+    val Schema: Type = AsIs("Schema")
 
-    def Lazy(t: Type): Type = App("Lazy", List(t))
+    val Error: Type = AsIs("Error")
 
-    def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
+    val Univ: Type = AsIs("Univ")
 
-    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(sym.toString, args)
+    def Arrow(args: List[Type], res: Type): Type = ArrowEff(args, res, Type.Pure)
 
-    def Var(id: Int): Type = AsIs(s"var$id")
-  }
+    def Alias(sym: Symbol.TypeAliasSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
-  sealed trait Eff
+    def AssocType(sym: Symbol.AssocTypeSym, arg: Type): Type = App(AsIs(sym.toString), List(arg))
 
-  object Eff {
+    def Array(t: Type): Type = App(AsIs("Array"), List(t))
 
-    case object Pure extends Eff
+    def Lazy(t: Type): Type = App(AsIs("Lazy"), List(t))
 
-    /** Represents the union of IO and all regions. */
-    case object Impure extends Eff
+    def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
-    /** Represents Impure and all algebraic effect. */
-    case object ControlImpure extends Eff
+    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
-    case class AsIs(s: String) extends Eff
-
-    /** Represents the top effect. */
-    def Univ: Eff = AsIs("Univ")
-
+    def Var(sym: Symbol.KindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
 }

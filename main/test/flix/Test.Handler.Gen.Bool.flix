@@ -10,7 +10,7 @@ mod Test.Handler.Gen.Bool {
     def sample(limit: Int32): List[Bool] =
         region rc {
             let counter = Ref.fresh(rc, (0, true));
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

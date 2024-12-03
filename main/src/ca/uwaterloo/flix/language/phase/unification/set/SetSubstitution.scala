@@ -117,6 +117,9 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
         ts += t1
       }
       SetFormula.mkUnionAll(ts.toList)
+
+    case SetFormula.Xor(other) =>
+      SetFormula.mkXorDirectAll(other.map(applyInternal))
   }
 
   /** Applies `this` to both sides of `eq`. */
@@ -135,9 +138,6 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
   /** Returns the number of bindings in `this`. */
   def numberOfBindings: Int = m.size
 
-  /** Returns the sum of the sizes of the formulas in `this`. */
-  def totalFormulaSize: Int = m.values.map(_.size).sum
-
   /** Returns a combined substitution, first applying `that` and then applying `this`. */
   def @@(that: SetSubstitution): SetSubstitution = {
     if (this.m.isEmpty) that
@@ -151,14 +151,6 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       SetSubstitution(result.toMap)
     }
   }
-
-  /**
-    * Adds the disjoint binding `[x -> f]` to `this`.
-    *
-    * OBS: The [[SetFormula.Var]] of `this`, `x`, and `f` must not overlap.
-    */
-  def unsafeExtend(x: Int, f: SetFormula): SetSubstitution =
-    SetSubstitution(m + (x -> SetFormula.propagation(f)))
 
   /** Returns a multi-line, string representation of `this`. */
   override def toString: String = {

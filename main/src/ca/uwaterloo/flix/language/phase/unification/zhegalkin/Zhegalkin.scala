@@ -42,49 +42,41 @@ object Zhegalkin {
       val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
       val polys = terms.map(toZhegalkin)
       polys.reduce(ZhegalkinExpr.mkUnion)
+    case Xor(other) =>
+      val polys = other.map(toZhegalkin)
+      polys.reduce(ZhegalkinExpr.mkXor)
   }
 
-  /** Returns the given Zhegalkin expression: `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` as a SetFormula. */
+  /** Returns the given Zhegalkin expression as a SetFormula. */
   def toSetFormula(z: ZhegalkinExpr): SetFormula = {
-    /**
-      * Returns *ALL* variables (both flexible and rigid) in the given Zhegalkin expression `e`.
-      */
-    def allVars(e0: ZhegalkinExpr): SortedSet[ZhegalkinVar] =
-      e0.terms.foldLeft(SortedSet.empty[ZhegalkinVar]) {
-        case (s, t) => s ++ t.vars
+    def visitCst(cst: ZhegalkinCst): SetFormula = cst match {
+      case ZhegalkinCst(s) => s match {
+        case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
+        case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
       }
+    }
 
-    val variables = allVars(z)
-    val disjs = variables.subsets().map(pos => {
-      val insts = variables.iterator.map {
-        case zv@ZhegalkinVar(i, isFlexible) =>
-          val v = if (isFlexible) Var(i) else Cst(i)
-          if (pos.contains(zv)) v else mkCompl(v)
-      }.toList
-      mkInterAll(fromCofiniteIntSet(evaluate(z, pos)) :: insts)
-    })
-    mkUnionAll(disjs.toList)
-  }
+    def visitTerm(term: ZhegalkinTerm): SetFormula = term match {
+      case ZhegalkinTerm(cst, vars) =>
+        // c ∩ x1 ∩ x2 ∩ ... ∩ xn
+        val flexVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
+          case (acc, zvar) if zvar.flexible => SetFormula.mkInter(acc, SetFormula.Var(zvar.id))
+          case (acc, _) => acc
+        }
+        val rigidVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
+          case (acc, zvar) if !zvar.flexible => SetFormula.mkInter(acc, SetFormula.Cst(zvar.id))
+          case (acc, _) => acc
+        }
+        SetFormula.mkInterAll(List(visitCst(cst), flexVars, rigidVars))
+    }
 
-  /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
-  private def evaluate(z: ZhegalkinExpr, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
-    val ZhegalkinExpr(cst, terms) = z
-    (cst.s :: terms.map(evaluate(_, pos))).reduce(CofiniteIntSet.xor)
-  }
-
-  /** Evaluates `z` where all variables in `pos` are universe and all others are empty. */
-  private def evaluate(z: ZhegalkinTerm, pos: SortedSet[ZhegalkinVar]): CofiniteIntSet = {
-    val ZhegalkinTerm(cst, vars) = z
-
-    def instVar(v: ZhegalkinVar): CofiniteIntSet = if (pos.contains(v)) CofiniteIntSet.universe else CofiniteIntSet.empty
-
-    (cst.s :: vars.toList.map(instVar)).reduce(CofiniteIntSet.intersection(_, _: CofiniteIntSet))
-  }
-
-  /** Returns the [[SetFormula]] representation of `s`. */
-  private def fromCofiniteIntSet(s: CofiniteIntSet): SetFormula = s match {
-    case CofiniteIntSet.Set(s) => mkElemSet(s)
-    case CofiniteIntSet.Compl(s) => mkCompl(mkElemSet(s))
+    z match {
+      case ZhegalkinExpr(cst, terms) =>
+        // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
+        terms.foldLeft(visitCst(cst): SetFormula) {
+          case (acc, term) => SetFormula.mkXorDirect(acc, visitTerm(term))
+        }
+    }
   }
 
 }

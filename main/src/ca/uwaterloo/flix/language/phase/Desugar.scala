@@ -37,7 +37,7 @@ object Desugar {
 
     val units = ParOps.parMapValues(stale)(visitUnit)
     val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.entryPoint, root.names)
+    DesugaredAst.Root(allUnits, root.mainEntryPoint, root.availableClasses)
   }
 
   /**
@@ -346,6 +346,11 @@ object Desugar {
       val t2 = visitType(tpe2)
       DesugaredAst.Type.Intersection(t1, t2, loc)
 
+    case WeededAst.Type.Difference(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Difference(t1, t2, loc)
+
     case WeededAst.Type.Pure(loc) =>
       DesugaredAst.Type.Pure(loc)
 
@@ -422,9 +427,9 @@ object Desugar {
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
   private def visitCase(case0: WeededAst.Case): DesugaredAst.Case = case0 match {
-    case WeededAst.Case(ident, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      DesugaredAst.Case(ident, tpe, loc)
+    case WeededAst.Case(ident, tpes0, loc) =>
+      val tpes = tpes0.map(visitType)
+      DesugaredAst.Case(ident, tpes, loc)
   }
 
   /**
@@ -440,9 +445,9 @@ object Desugar {
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase): DesugaredAst.RestrictableCase = case0 match {
-    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      DesugaredAst.RestrictableCase(ident, tpe, loc)
+    case WeededAst.RestrictableCase(ident, tpes0, loc) =>
+      val tpes = tpes0.map(visitType)
+      DesugaredAst.RestrictableCase(ident, tpes, loc)
   }
 
   /**
@@ -688,11 +693,7 @@ object Desugar {
       val eff = declaredEff.map(visitType)
       Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.UncheckedMaskingCast(e, loc)
-
-    case WeededAst.Expr.Unsafe(exp, loc) =>
+    case WeededAst.Expr.UnsafeOld(exp, loc) =>
       // We desugar an unsafe expression to an unchecked cast to pure.
       val e = visitExp(exp)
       val declaredType = None
@@ -742,10 +743,9 @@ object Desugar {
       val tpe = Type.mkRegion(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
-    case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.NewChannel(e1, e2, loc)
+    case WeededAst.Expr.NewChannel(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewChannel(e, loc)
 
     case WeededAst.Expr.GetChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -856,9 +856,9 @@ object Desugar {
     case WeededAst.Pattern.Cst(cst, loc) =>
       DesugaredAst.Pattern.Cst(cst, loc)
 
-    case WeededAst.Pattern.Tag(qname, pat, loc) =>
-      val p = visitPattern(pat)
-      DesugaredAst.Pattern.Tag(qname, p, loc)
+    case WeededAst.Pattern.Tag(qname, pats, loc) =>
+      val ps = pats.map(visitPattern)
+      DesugaredAst.Pattern.Tag(qname, ps, loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)
@@ -914,9 +914,9 @@ object Desugar {
       }
 
     pat0 match {
-      case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
-        val p = pat.map(visitVarOrWild)
-        DesugaredAst.RestrictableChoosePattern.Tag(qname, p, loc)
+      case WeededAst.RestrictableChoosePattern.Tag(qname, pats, loc) =>
+        val ps = pats.map(visitVarOrWild)
+        DesugaredAst.RestrictableChoosePattern.Tag(qname, ps, loc)
       case WeededAst.RestrictableChoosePattern.Error(loc) =>
         DesugaredAst.RestrictableChoosePattern.Error(loc)
     }
@@ -1537,7 +1537,7 @@ object Desugar {
     val prefix = mkDebugPrefix(e, kind0, loc0)
     val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
     val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-    DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
+    DesugaredAst.Expr.UncheckedCast(call, None, Some(DesugaredAst.Type.Pure(loc0)), loc0)
   }
 
   /**

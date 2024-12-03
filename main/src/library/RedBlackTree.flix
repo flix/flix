@@ -267,7 +267,7 @@ mod RedBlackTree {
     pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
-                case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
+                case None => if (f(k, v)) Some((k, v)) else loop(b, kr -> match kr {
                     case None => sk(None)
                     case _    => kr
                 })
@@ -283,7 +283,7 @@ mod RedBlackTree {
     pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
-                case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
+                case None => if (f(k, v)) Some((k, v)) else loop(a, kl -> match kl {
                     case None => sk(None)
                     case _    => kl
                 })
@@ -340,7 +340,7 @@ mod RedBlackTree {
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
-            case None           => Some(k1, v1)
+            case None           => Some((k1, v1))
         }, None, t)
 
     ///
@@ -353,7 +353,7 @@ mod RedBlackTree {
     pub def reduceRight(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
-            case None           => Some(k1, v1)
+            case None           => Some((k1, v1))
         }, None, t)
 
     ///
@@ -597,7 +597,7 @@ mod RedBlackTree {
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
     pub def minimumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, Leaf, k, v, _) => Some(k, v)
+        case Node(_, Leaf, k, v, _) => Some((k, v))
         case Node(_, a, _, _, _)    => minimumKey(a)
         case _                      => None
     }
@@ -606,7 +606,7 @@ mod RedBlackTree {
     /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
     pub def maximumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, _, k, v, Leaf) => Some(k, v)
+        case Node(_, _, k, v, Leaf) => Some((k, v))
         case Node(_, _, _, _, b)    => maximumKey(b)
         case _                      => None
     }
@@ -880,10 +880,10 @@ mod RedBlackTree {
                         l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
                         r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
                     ) yield match (l, r) {                // that we distribute over the two spanned threads.
-                        case (None, None)                 => Some(k, v)
-                        case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
-                        case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
-                        case (Some(kl, vl), Some(kr, vr)) =>
+                        case (None, None)                     => Some((k, v))
+                        case (None, Some((kr, vr)))           => Some(cmp(k, v, kr, vr))
+                        case (Some((kl, vl)), None)           => Some(cmp(kl, vl, k, v))
+                        case (Some((kl, vl)), Some((kr, vr))) =>
                             let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
                             Some(cmp(km, vm, kr, vr))
                     }
@@ -896,12 +896,12 @@ mod RedBlackTree {
     def seqLimitBy(cmp: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
         case Node(_, a, k, v, b) =>
             let res = match seqLimitBy(cmp, a) {
-                case None         => (k, v)
-                case Some(kl, vl) => cmp(kl, vl, k, v)
+                case None           => (k, v)
+                case Some((kl, vl)) => cmp(kl, vl, k, v)
             };
             match seqLimitBy(cmp, b) {
-                case None         => Some(res)
-                case Some(kr, vr) =>
+                case None           => Some(res)
+                case Some((kr, vr)) =>
                     let (ks, vs) = res;
                     Some(cmp(ks, vs, kr, vr))
             }
@@ -927,11 +927,7 @@ mod RedBlackTree {
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc);
-        forEach((k, v) -> { append(f(k, v), sb); append(sep, sb) }, t);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+        RedBlackTree.iterator(rc, t) |> Iterator.joinWith(match (k, v) -> f(k, v), sep)
     }
 
     ///

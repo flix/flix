@@ -308,10 +308,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // The name of the generated main function.
         val main = Symbol.mkDefnSym("shell1")
 
-        // Cast the println to allow escaping effects
+        val effString = Symbol.PrimitiveEffs.map(_.toString).mkString(" + ")
+        // Cast to allow any subset of the primitive effects
         val src =
-          s"""def ${main.name}(): Unit \\ IO =
-             |unchecked_cast(println($s) as _ \\ IO)
+          s"""def ${main.name}(): Unit \\ $effString =
+             |checked_ecast(
+             |  println($s)
+             |)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
         run(main)

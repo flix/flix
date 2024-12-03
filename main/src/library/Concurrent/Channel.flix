@@ -142,23 +142,24 @@ mod Concurrent.Channel {
     ///
     @Internal
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
-        let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
-        let unBuffered = bufferSize == 0;
-        let reentrantLock = newLock(fairness());
-        let size = Ref.fresh(Static, 0);
-        Mpmc.Mpmc(
-            MpmcAdmin.MpmcAdmin(
-                Global.newId(),
-                reentrantLock,
-                unBuffered,
-                if (unBuffered) 1 else bufferSize,
-                size,
-                MutList.empty(Static),
-                newCyclicBarrier(2),
-                newCondition(reentrantLock)
-            ),
-            MutDeque.empty(Static)
-        )
+        if (bufferSize < 0) bug!("bufferSize < 0") else {
+            let unBuffered = bufferSize == 0;
+            let reentrantLock = newLock(fairness());
+            let size = Ref.fresh(Static, 0);
+            Mpmc.Mpmc(
+                MpmcAdmin.MpmcAdmin(
+                    Global.newId(),
+                    reentrantLock,
+                    unBuffered,
+                    if (unBuffered) 1 else bufferSize,
+                    size,
+                    MutList.empty(Static),
+                    newCyclicBarrier(2),
+                    newCondition(reentrantLock)
+                ),
+                MutDeque.empty(Static)
+            )
+        }
 
     ///
     /// Creates a new channel tuple (sender, receiver)

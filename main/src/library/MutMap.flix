@@ -53,16 +53,7 @@ mod MutMap {
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString("MutMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString("}", sb);
-        StringBuilder.toString(sb)
+        "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${k} => ${v}", ", ")) + "}"
     }
 
     ///

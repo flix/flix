@@ -44,7 +44,7 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
@@ -82,7 +82,7 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default.copy(zhegalkin = flix.options.xzhegalkin)
+    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
@@ -181,11 +181,13 @@ object EffUnification3 {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
+      SetFormula.mkDifference(toSetFormula(tpe1), toSetFormula(tpe2))
+
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)
-      // a ⊕ b = (a ∪ b) - (a ∩ b)
-      SetFormula.mkDifference(SetFormula.mkUnion(f1, f2), SetFormula.mkInter(f1, f2))
+      SetFormula.mkXorDirect(f1, f2)
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
@@ -240,6 +242,8 @@ object EffUnification3 {
       Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
     case union@SetFormula.Union(_, _, _, _, _, _, _) =>
       Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
+    case SetFormula.Xor(other) =>
+      Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
   }
 
   /**

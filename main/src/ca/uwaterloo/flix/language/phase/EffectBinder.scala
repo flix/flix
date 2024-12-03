@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, Scope}
+import ca.uwaterloo.flix.language.ast.Symbol.VarSym
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ExpPosition, Scope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -58,7 +57,7 @@ object EffectBinder {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private sealed trait Binder
@@ -88,7 +87,7 @@ object EffectBinder {
   }
 
   private def visitEnumCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
-    case LiftedAst.Case(sym, tpe, loc) => ReducedAst.Case(sym, tpe, loc)
+    case LiftedAst.Case(sym, tpes, loc) => ReducedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct: LiftedAst.Struct): ReducedAst.Struct = struct match {
@@ -245,10 +244,10 @@ object EffectBinder {
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExprWithBinders(binders)(exp)
-      val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyClo(e, es, ExpPosition.NonTail, tpe, purity, loc)
+    case LiftedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExprWithBinders(binders)(exp1)
+      val e2 = visitExprWithBinders(binders)(exp2)
+      ReducedAst.Expr.ApplyClo(e1, e2, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))

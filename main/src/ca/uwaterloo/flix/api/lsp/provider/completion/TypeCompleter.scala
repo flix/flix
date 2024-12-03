@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter {
@@ -25,9 +23,11 @@ object TypeCompleter {
     * Returns a List of Completion for types (enums, aliases and builtin).
     */
   def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
-      TypeBuiltinCompleter.getCompletions ++ ModuleCompleter.getCompletions(context) ++
-      StructCompleter.getCompletions(context)
+    ModuleCompleter.getCompletions(context) ++
+      EnumTypeCompleter.getCompletions(context) ++
+      StructTypeCompleter.getCompletions(context) ++
+      TypeAliasCompleter.getCompletions(context) ++
+      TypeBuiltinCompleter.getCompletions
   }
 
   /**

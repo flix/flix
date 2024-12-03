@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifier, Modifiers, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -48,7 +47,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -66,7 +65,7 @@ object LambdaLift {
   }
 
   private def visitEnumCase(caze: SimplifiedAst.Case): LiftedAst.Case = caze match {
-    case SimplifiedAst.Case(sym, tpe, loc) => LiftedAst.Case(sym, tpe, loc)
+    case SimplifiedAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
   }
 
   private def visitStruct(struct0: SimplifiedAst.Struct): LiftedAst.Struct = struct0 match {
@@ -142,10 +141,10 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+    case SimplifiedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)

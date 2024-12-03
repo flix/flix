@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{Modifiers, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -61,10 +61,10 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val es = exps.map(visitExp)
-      Expr.ApplyClo(e, es, tpe, purity, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
@@ -119,7 +119,7 @@ object ClosureConv {
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
-      val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)
+      val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
       val fp = FormalParam(freshSym, Modifiers.Empty, MonoType.Unit, expLoc)
       val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
       val rs = rules map {
@@ -196,8 +196,8 @@ object ClosureConv {
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
-    case Expr.ApplyClo(exp, args, _, _, _) =>
-      freeVars(exp) ++ freeVarsExps(args)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.ApplyDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
@@ -309,10 +309,10 @@ object ClosureConv {
         val e = visitExp(exp)
         Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
-      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
@@ -526,10 +526,10 @@ object ClosureConv {
         val es = exps.map(visit)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-        val e = visit(exp)
-        val es = exps.map(visit)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visit)

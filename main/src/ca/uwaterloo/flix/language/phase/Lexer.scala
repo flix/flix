@@ -176,8 +176,11 @@ object Lexer {
     if (c == '\n') {
       s.current.line -= 1
       s.current.column = 0
+      s.end.line -= 1
+      s.end.column = 0
     } else {
       s.current.column -= 1
+      s.end.column -= 1
     }
   }
 
@@ -216,7 +219,7 @@ object Lexer {
 
   /**
     * Peeks the character that state is currently sitting on without advancing.
-    * Note: Peek does not to bound checks. This is done under the assumption that the lexer
+    * Note: Peek does not perform bound checks. This is done under the assumption that the lexer
     * is only ever advanced using `advance`.
     * Since `advance` cannot move past EOF peek will always be in bounds.
     */
@@ -427,7 +430,6 @@ object Lexer {
       case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lazy") => TokenKind.KeywordLazy
       case _ if isKeyword("let") => TokenKind.KeywordLet
-      case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
       case _ if isKeyword("match") => TokenKind.KeywordMatch
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("mut") => TokenKind.KeywordMut

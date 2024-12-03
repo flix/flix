@@ -218,8 +218,6 @@ object Verifier {
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.Tag(sym) =>
-          val List(_) = ts
-          // Tag(Nil), ()) : List[t]
           // Checking this requires instantiating the enum case
           tpe match {
             case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
@@ -227,7 +225,7 @@ object Verifier {
           }
           tpe
 
-        case AtomicOp.Untag(sym) =>
+        case AtomicOp.Untag(sym, idx) =>
           val List(t1) = ts
           // Untag(Nil): Unit
           // Checking this requires instantiating the enum case
@@ -446,9 +444,9 @@ object Verifier {
           checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
-    case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
-      val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
+    case Expr.ApplyClo(exp1, exp2, _, tpe, _, loc) =>
+      val lamType1 = visitExpr(exp1)
+      val lamType2 = MonoType.Arrow(List(visitExpr(exp2)), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
