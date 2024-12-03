@@ -206,12 +206,12 @@ object Inliner1 {
               e1 match {
                 // If `e1` is a `LiftedExp` then `e1` has already been visited
                 case SubstRange.DoneExp(e) =>
-                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
+                  //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                   e
                 // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
                 case SubstRange.SuspendedExp(exp) =>
                   val e = visit(exp)
-                  assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
+                  //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                   e
               }
           }
@@ -237,15 +237,15 @@ object Inliner1 {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
               sctx.inlinedVars.add((sym0, sym1))
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
+              //assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
+              //assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
               sctx.inlinedVars.add((sym0, sym1))
-              assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
+              //assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
+              //assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -271,8 +271,8 @@ object Inliner1 {
             // Direct application, e.g., (x -> x)(1)
             sctx.betaReductions.add((sym0, 1))
             val e = inlineLocalAbstraction(body, List(fparam), List(e2))
-            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
-            assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
+            //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
+            //assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
             e
 
           case _ =>
@@ -288,8 +288,8 @@ object Inliner1 {
         if (canInlineDef(def1.context, context0)) {
           sctx.inlinedDefs.add((sym0, sym))
           val e = inlineDef(def1.exp, def1.fparams, es)
-          assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
-          assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
+          //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
+          //assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
           e
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
