@@ -1,5 +1,5 @@
 /// A function that sends every element of a list
-def sendAll(l: List[Int32], s: Sender[Int32]): Unit \ {Chan, IO} =
+def sendAll(l: List[Int32], s: Sender[Int32]): Unit \ Chan =
     match l {
         case Nil     => ()
         case x :: xs => Channel.send(x, s); sendAll(xs, s)
