@@ -182,7 +182,7 @@ object CompletionUtils {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = looseMatch(word, decl.sym.text)
+    val isMatch = fuzzyMatch(word, decl.sym.text)
 
     isMatch && isPublic
   }
@@ -194,8 +194,9 @@ object CompletionUtils {
   def shouldComplete(word: String): Boolean = word.length >= 3
 
   /**
-    * Returns `true` if the query is a loose match for the key.
+    * Returns `true` if the query is a fuzzy match for the key.
     * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
     *
     * Example:
     *   - looseMatch("fBT",  "fooBarTest") = true
@@ -205,7 +206,7 @@ object CompletionUtils {
     * @param query  The query string, usually from the user input.
     * @param key    The key string, usually from the completion item.
     */
-  def looseMatch(query: String, key: String): Boolean = {
+  def fuzzyMatch(query: String, key: String): Boolean = {
     @tailrec
     def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
       case (Nil, _) => true
