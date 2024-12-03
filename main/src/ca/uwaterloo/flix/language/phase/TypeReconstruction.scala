@@ -381,6 +381,11 @@ object TypeReconstruction {
       val eff = declaredEff0.getOrElse(e.eff)
       TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
+    case KindedAst.Expr.UnsafeRemove(exp, eff0, loc) =>
+      val e = visitExp(exp)
+      val eff = Type.mkDifference(e.eff, eff0, loc)
+      TypedAst.Expr.UncheckedCast(e, None, Some(eff), e.tpe, eff, loc)
+
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
