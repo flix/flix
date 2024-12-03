@@ -198,9 +198,9 @@ object CompletionUtils {
     * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
     *
     * Example:
-    *   - looseMatch("fBT", "fooBarTest") = true
+    *   - looseMatch("fBT",  "fooBarTest") = true
     *   - looseMatch("fBrT", "fooBarTest") = false
-    *   - looseMatch("fTB", "fooBarTest") = false
+    *   - looseMatch("fTB",  "fooBarTest") = false
     *
     * @param query  The query string, usually from the user input.
     * @param key    The key string, usually from the completion item.
