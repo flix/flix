@@ -225,6 +225,6 @@ object CompletionUtils {
     * Example: "fooBarTest" -> List("foo", "Bar", "Test")
     */
   private def splitByCamelCase(input: String): List[String] = {
-    input.split("(?<!^)(?=[A-Z])").toList
+    input.split("(?=[A-Z])").toList
   }
 }
