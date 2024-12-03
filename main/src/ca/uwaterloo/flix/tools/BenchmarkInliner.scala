@@ -33,17 +33,13 @@ object BenchmarkInliner {
     println("Benchmarking inliner. This may take a while...")
 
     // Experiments:
-    // 1. Compiler throughput
+    // 1. Compiler throughput and code size
     //    (a) without inlining
     //    (b) with old inliner
     //    (c) with new inliner
     runExperiment(o, "compilerBenchmark.json")(BenchmarkThroughput.run)
 
     // 2. Flix program speedup (sample programs, datalog engine, parser library)
-    //    (a) without inlining
-    //    (b) with old inliner
-    //    (c) with new inliner
-    // 3. Jar size
     //    (a) without inlining
     //    (b) with old inliner
     //    (c) with new inliner
@@ -99,10 +95,9 @@ object BenchmarkInliner {
       */
     private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
+    case class Run(lines: Int, time: Long, phases: List[(String, Long)], codeSize: Int)
 
-    case class Run(lines: Int, time: Long, phases: List[(String, Long)])
-
-    case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
+    case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])], codeSize: List[Int])
 
     /**
       * Run compiler performance experiments.
@@ -347,26 +342,22 @@ object BenchmarkInliner {
       // Clear caches.
       ZhegalkinCache.clearCaches()
 
-      val frontendOnly = flix.options.XPerfFrontend
-      val totalLines =
-        if (frontendOnly) {
-          val (optRoot, errors) = flix.check()
-          if (errors.nonEmpty) {
-            throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
-          }
-          optRoot.get.sources.foldLeft(0) {
-            case (acc, (_, sl)) => acc + sl.endLine
-          }
-        } else {
-          flix.compile().unsafeGet.getTotalLines
-        }
+      val (optRoot, errors) = flix.check()
+      if (errors.nonEmpty) {
+        throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+      }
+      optRoot.get.sources.foldLeft(0) {
+        case (acc, (_, sl)) => acc + sl.endLine
+      }
+      val result = flix.compile().unsafeGet
+      val totalLines = result.getTotalLines
 
       val phases = flix.phaseTimers.map {
         case PhaseTime(phase, time) => phase -> time
       }
       val totalTime = flix.getTotalTime
 
-      Run(totalLines, totalTime, phases.toList)
+      Run(totalLines, totalTime, phases.toList, result.codeSize)
     }
 
     /**
@@ -374,18 +365,19 @@ object BenchmarkInliner {
       */
     private def aggregate(l: IndexedSeq[Run]): Runs = {
       if (l.isEmpty) {
-        return Runs(0, List(0), Nil)
+        return Runs(0, List(0), Nil, List(0))
       }
 
       val lines = l.head.lines
       val times = l.map(_.time).toList
-      val phases = l.head.phases.map(_._1)
+      val codeSizes = l.map(_.codeSize).toList
 
+      val phases = l.head.phases.map(_._1)
       val phaseMatrix = l.map(_.phases.map(_._2))
       val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
       val transposedWithPhases = phases.zip(transposedMatrix)
 
-      Runs(lines, times, transposedWithPhases)
+      Runs(lines, times, transposedWithPhases, codeSizes)
     }
 
     /**
