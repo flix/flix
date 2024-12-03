@@ -75,7 +75,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |    } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
-        """.stripMargin
+      """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
@@ -89,7 +89,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |    } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
-        """.stripMargin
+      """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectRuntimeError(result, "NullPointerException")
   }
@@ -104,7 +104,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |    } @ rc;
         |    discard Channel.recv(rx)
         |}
-        """.stripMargin
+      """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectRuntimeError(result, "NullPointerException")
   }
