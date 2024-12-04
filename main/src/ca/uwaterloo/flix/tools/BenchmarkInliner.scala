@@ -79,9 +79,19 @@ object BenchmarkInliner {
   }
 
   private object BenchmarkProgram {
+
+    private case class Run(lines: Int, runningTime: Long, compilationTime: Long, phases: List[(String, Long)], codeSize: Int)
+
+    private case class Runs(lines: Int, runningTimes: List[Long], compilationTimes: List[Long], phases: List[(String, List[Long])], codeSize: List[Int])
+
     private val programs: Map[String, String] = Map("map10KLength" -> map10KLength)
 
     def run(opts: Options): List[JsonAST.JObject] = {
+      val baseline = perfBaseline(opts)
+      ???
+    }
+
+    private def perfBaseline(opts: Options): IndexedSeq[Run] = {
       val limit = if (opts.xnooptimizer && opts.xnooptimizer1) 1 else 50
       for ((name, prog) <- programs) {
         for (inliningRounds <- 1 to limit) {
@@ -94,7 +104,7 @@ object BenchmarkInliner {
               val t0 = System.nanoTime()
               mainMethod(Array.empty)
               val tDelta = System.nanoTime() - t0
-
+              ???
             case None => throw new RuntimeException(s"undefined main method for program '$name'")
           }
         }
