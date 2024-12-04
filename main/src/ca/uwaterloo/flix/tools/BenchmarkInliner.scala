@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.util.{FileOps, LibLevel, LocalResource, Options, StatUtils}
 import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
 
@@ -76,6 +76,73 @@ object BenchmarkInliner {
     val summary = res1JSON ~ res2JSON ~ res3JSON
     writeFile(experimentName, summary)
 
+  }
+
+  private object BenchmarkProgram {
+    private val programs: List[String] = List()
+
+    def run(opts: Options): List[JsonAST.JObject] = {
+      val o = opts.copy(lib = LibLevel.All)
+      val limit = if (opts.xnooptimizer && opts.xnooptimizer1) 1 else 50
+      for (prog <- programs) {
+        ???
+      }
+      ???
+    }
+
+    private def prog1: String =
+      s"""
+         |import java.lang.System
+         |
+         |def main(): Unit \\ IO = {
+         |    let ms = loop(0, 1000, Nil);
+         |    println(ms);
+         |    println("Fastest: $${List.minimum(ms) |> Option.getWithDefault(-1 i64)}");
+         |    println("Median : $${median(ms)}");
+         |    println("Slowest: $${List.maximum(ms) |> Option.getWithDefault(-1 i64)}")
+         |}
+
+         |pub def map(f: a -> b, l: List[a]) : List[b] = {
+         |    def mp(xs, acc) = match xs {
+         |        case Nil     => acc
+         |        case z :: zs => mp(zs, f(z) :: acc)
+         |    };
+         |    rev(mp(l, Nil))
+         |}
+         |
+         |pub def filterMap(f: a -> Option[b] \\ ef, l: List[a]): List[b] \\ ef = {
+         |    def fmp(ll, acc) = match ll {
+         |        case Nil     => acc
+         |        case x :: xs => match f(x) {
+         |            case None    => fmp(xs, acc)
+         |            case Some(y) => fmp(xs, y :: acc)
+         |        }
+         |    };
+         |    rev(fmp(l, Nil))
+         |}
+         |
+         |pub def rev(l: List[a]): List[a] = {
+         |    def rv(xs, acc) = match xs {
+         |        case Nil     => acc
+         |        case z :: zs => rv(zs, z :: acc)
+         |    };
+         |    rv(l, Nil)
+         |}
+         |
+         |pub def range(bot: Int32, top: Int32): List[Int32] = {
+         |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+         |    rng(top - 1, Nil)
+         |}
+         |
+         |pub def length(l: List[a]): Int32 = {
+         |    def len(xs, acc) = match xs {
+         |        case Nil     => acc
+         |        case _ :: zs => len(zs, acc + 1)
+         |    };
+         |    len(l, 0)
+         |}
+         |
+         |""".stripMargin
   }
 
   private object BenchmarkThroughput {
