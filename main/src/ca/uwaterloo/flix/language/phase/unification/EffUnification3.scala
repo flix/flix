@@ -240,7 +240,7 @@ object EffUnification3 {
     case SetFormula.Compl(f1) => Type.mkComplement(fromSetFormula(f1, loc), loc)
     case inter@SetFormula.Inter(_, _, _, _, _, _, _) =>
       Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
-    case union@SetFormula.Union(_, _, _, _, _, _, _) =>
+    case union@SetFormula.Union(_) =>
       Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
     case SetFormula.Xor(other) =>
       Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
