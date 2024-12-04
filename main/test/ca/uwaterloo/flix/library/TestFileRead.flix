@@ -29,7 +29,7 @@ mod TestFileRead {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Bool \ IO = {
+    def exists01(): Bool \ {Sys, IO} = {
         (
             makeTempPath("flix-tmpfile-68976") >>= path ->
             FileWrite.handle(() -> FileWrite.write({ str = "content" }, path))() >>= _ ->
@@ -55,8 +55,8 @@ mod TestFileRead {
     /// Helper - make a filepath within the temp directory.
     /// Use `java.nio.file.Path` functions for platform independence.
     ///
-    def makeTempPath(fileName: String): Result[IoError, String] = region rc {
-        let tempdir = match Environment.getTemporaryDirectory() {
+    def makeTempPath(fileName: String): Result[IoError, String] \ {Sys, IO} = region rc {
+        let tempdir = match Environment.handle(Environment.getTemporaryDirectory)() {
             case Some(dir)  => Ok(dir)
             case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
         };
