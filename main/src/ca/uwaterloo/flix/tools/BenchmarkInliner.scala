@@ -124,9 +124,6 @@ object BenchmarkInliner {
         // Find the timings of each run.
         val timings = baselineWithPar.times
 
-        // Compute the total time in seconds.
-        val totalTime = (timings.sum / 1_000_000_000L).toInt
-
         // Find the throughput of each run.
         val throughputs = timings.map(throughput(lines, _))
 
