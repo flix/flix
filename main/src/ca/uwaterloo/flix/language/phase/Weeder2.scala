@@ -883,7 +883,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCastExpr(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
-        case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
+        case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
@@ -1702,10 +1702,10 @@ object Weeder2 {
       }
     }
 
-    private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Unsafe)
+    private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.UnsafeOld)
       mapN(pickExpr(tree)) {
-        expr => Expr.Unsafe(expr, tree.loc)
+        expr => Expr.UnsafeOld(expr, tree.loc)
       }
     }
 
@@ -2177,7 +2177,7 @@ object Weeder2 {
         case ("INT64_GE", e1 :: e2 :: Nil) => Validation.Success(Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
         case ("CHANNEL_GET", e1 :: Nil) => Validation.Success(Expr.GetChannel(e1, loc))
         case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.Success(Expr.PutChannel(e1, e2, loc))
-        case ("CHANNEL_NEW", e1 :: e2 :: Nil) => Validation.Success(Expr.NewChannel(e1, e2, loc))
+        case ("CHANNEL_NEW", e :: Nil) => Validation.Success(Expr.NewChannel(e, loc))
         case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => Validation.Success(Expr.ArrayNew(e1, e2, e3, loc))
         case ("ARRAY_LENGTH", e1 :: Nil) => Validation.Success(Expr.ArrayLength(e1, loc))
         case ("ARRAY_LOAD", e1 :: e2 :: Nil) => Validation.Success(Expr.ArrayLoad(e1, e2, loc))

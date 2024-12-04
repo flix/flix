@@ -672,12 +672,10 @@ object Kinder {
       val methods = methods0.map(visitJvmMethod(_, kenv0, taenv, henv0, root))
       KindedAst.Expr.NewObject(name, clazz, methods, loc)
 
-    case ResolvedAst.Expr.NewChannel(exp10, exp20, loc) =>
-      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+    case ResolvedAst.Expr.NewChannel(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc)
+      KindedAst.Expr.NewChannel(exp, tvar, loc)
 
     case ResolvedAst.Expr.GetChannel(exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)

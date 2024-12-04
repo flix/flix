@@ -42,31 +42,3 @@ mod IoError {
     }
 
 }
-
-pub enum IOError with Eq, Order, ToString, Hash, Sendable {
-    case Generic(String)
-}
-
-mod IOError {
-
-    import java.lang.Exception
-
-    use IOError.Generic
-
-    ///
-    /// A version of Result.tryCatch that runs an IO based operation and returns
-    /// an IOError on failure.
-    ///
-    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
-    ///
-    /// If `f` throws a Java `Exception`, `Err(e)` is returned
-    /// where `e` is the error message.
-    ///
-    pub def tryCatch(f: Unit -> a \ ef): Result[IOError, a] \ ef =
-        try {
-            Ok(f())
-        } catch {
-            case e: Exception => Err(Generic(unsafe e.getMessage()))
-        }
-
-}
