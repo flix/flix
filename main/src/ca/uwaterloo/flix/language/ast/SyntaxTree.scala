@@ -314,6 +314,8 @@ object SyntaxTree {
 
       case object RestrictableChooseStar extends Expr
 
+      case object Run extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
