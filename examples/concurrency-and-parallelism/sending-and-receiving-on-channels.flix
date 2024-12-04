@@ -14,7 +14,7 @@ def recvN(n: Int32, r: Receiver[Int32]): List[Int32] \ {Chan, NonDet} =
     }
 
 /// Spawn a process for send and wait, and print the result.
-def main(): Unit \ {Chan, IO} = region rc {
+def main(): Unit \ {Chan, NonDet} = region rc {
     let l = 1 :: 2 :: 3 :: Nil;
     let (tx, rx) = Channel.buffered(100);
     spawn sendAll(l, tx) @ rc;

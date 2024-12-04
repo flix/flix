@@ -58,7 +58,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Unit \ IO = region rc {
-        |    spawn { bug!("Something bad happened") } @ rc;
+        |    spawn { println("err" + bug!("Something bad happened")) } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
       """.stripMargin
@@ -71,7 +71,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
       """
         |def main(): Unit \ IO = region rc {
         |    spawn {
-        |        spawn { bug!("Something bad happened")  } @ rc
+        |        spawn { println("err" + bug!("Something bad happened")) } @ rc
         |    } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
@@ -85,7 +85,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
       """
         |def main(): Unit \ IO = region rc {
         |    spawn {
-        |        spawn { String.concat(checked_cast(null), "foo") } @ rc
+        |        spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
         |    } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
@@ -100,7 +100,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |def main(): Unit \ {Chan, NonDet, IO} = region rc {
         |    let (_tx, rx) = Channel.unbuffered();
         |    spawn {
-        |        spawn { String.concat(checked_cast(null), "foo") } @ rc
+        |        spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
         |    } @ rc;
         |    discard Channel.recv(rx)
         |}

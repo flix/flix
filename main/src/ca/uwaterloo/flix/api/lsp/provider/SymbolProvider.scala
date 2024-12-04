@@ -34,7 +34,8 @@ object SymbolProvider {
     val traits = root.traits.values.collect { case t if t.sym.name.startsWith(query) => mkTraitSymbolInformation(t) }
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigSymbolInformation(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectSymbolInformation)
-    (traits ++ defs ++ enums ++ sigs ++ effs).toList
+    val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructSymbolInformation)
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList
   }
 
   /**
@@ -45,7 +46,8 @@ object SymbolProvider {
     val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
     val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
-    (traits ++ defs ++ enums ++ effs).toList
+    val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
+    (traits ++ defs ++ enums ++ effs ++ structs).toList
   }
 
   /**
@@ -97,6 +99,37 @@ object SymbolProvider {
   private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
     case TypedAst.Sig(sym, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+    )
+  }
+
+  /**
+   * Returns a Method SymbolInformation from a Struct node.
+   */
+  private def mkStructSymbolInformation(s: TypedAst.Struct): List[SymbolInformation] = s match {
+    case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
+      fields.values.map(mkFieldSymbolInformation).toList :+ SymbolInformation(
+      sym.name, SymbolKind.Struct, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+    )
+  }
+
+  private def mkFieldSymbolInformation(f: TypedAst.StructField): SymbolInformation = f match {
+    case TypedAst.StructField(sym, _, loc) => SymbolInformation(
+      sym.name, SymbolKind.Field, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
+    )
+  }
+
+  /**
+   * Returns a Function DocumentSymbol from a Struct node.
+   */
+  private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
+    case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
+      sym.name, Some(doc.text), SymbolKind.Struct, Range.from(sym.loc), Range.from(sym.loc), Nil, fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol),
+    )
+  }
+
+  private def mkFieldDocumentSymbol(f: TypedAst.StructField): DocumentSymbol = f match {
+    case TypedAst.StructField(sym, _, loc) => DocumentSymbol(
+      sym.name, None, SymbolKind.Field, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
 
