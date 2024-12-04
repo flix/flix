@@ -28,6 +28,39 @@ import org.json4s.JsonDSL.*
 
 object FindReferencesProvider {
 
+  /**
+    * Handles a "Find References" LSP request by constructing a corresponding LSP response.
+    *
+    * The "Find References" LSP response is either a "success" or "failure" response.
+    *
+    * If there is a [[Symbol]] for which Flix supports "find references" for under the cursor given by the request
+    * then the response is a "success" response which takes the form
+    *
+    * `{'status': 'success', 'result': [...]}`
+    *
+    * where `[...]` is a list of LSP [[Location]]s for each occurrence of the aforementioned [[Symbol]] in the
+    * Flix project.
+    *
+    * If there is no such [[Symbol]] or Flix doesn't support "find references" for it then the request is invalid and the
+    * response takes the form
+    *
+    * `{'status': 'invalid_request', 'result': "Nothing found in <uri> at <pos>"}`
+    *
+    * The location of the cursor given by `uri` and the [[Position]] `pos` which resp. give the path to the file where
+    * the cursor is, and it's location within said file. Both should be provided by the LSP request.
+    *
+    * We assume a thin cursor, meaning there are two [[Position]] associated with it: the on the immediate left of
+    * the cursor and the one on the immediate right. This means that we have to consider both when determining what
+    * element is under the cursor and thus what we find the references to. If there is an occurrence of a symbol that
+    * Flix supports "find references" for under one of these [[Position]]s but not the other, then we consider this
+    * under the cursor, and we find the references for it. If there is such an occurrence under both of these
+    * [[Position]]s, we prioritise the one under the right [[Position]].
+    *
+    * @param uri  The URI of the file where the cursor is, provided by the LSP request.
+    * @param pos  The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
+    * @param root The root AST node of the Flix project.
+    * @return     A "Find References" LSP response.
+    */
   def findRefs(uri: String, pos: Position)(implicit root: Root): JObject = {
     val left = searchLeftOfCursor(uri, pos)
     val right = searchRightOfCursor(uri, pos)
@@ -39,6 +72,22 @@ object FindReferencesProvider {
       .getOrElse(mkNotFound(uri, pos))
   }
 
+  /**
+    * Returns the most specific AST node under the [[Position]] to the immediate left of the thin cursor,
+    * if there is one. Returns [[None]] otherwise.
+    *
+    * If the cursor is all the way to the left then there is no [[Position]] immediately left of the cursor.
+    * In this case, trivially cannot be any element under that position, so we return [[None]].
+    *
+    * Note that the given [[Position]] `pos` that represents the cursors position is interpreted as the
+    * [[Position]] to the immediate right of the cursor.
+    *
+    * @param uri  The URI of the file where the thin cursor is.
+    * @param pos  The [[Position]] to the immediate right of the thin cursor.
+    * @param root The root AST node of the Flix project.
+    * @return     The most specific AST node under the [[Position]] to the immediate left of the thin cursor,
+    *             if there is one. Otherwise, [[None]].
+    */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
       val left = Position(pos.line, pos.character - 1)
@@ -48,8 +97,33 @@ object FindReferencesProvider {
     }
   }
 
+  /**
+    * Returns the most specific AST node under the [[Position]] to the immediate right of the thin cursor,
+    * if there is one. Returns [[None]] otherwise.
+    *
+    * Note that the given [[Position]] `pos` that represents the cursor's position is interpreted as the
+    * [[Position]] to the immediate right of the cursor.
+    *
+    * @param uri  The URI of the file where the thin cursor is.
+    * @param pos  The [[Position]] to the immediate right of the thin cursor.
+    * @param root The root AST node of the Flix Project.
+    * @return     The most specific AST node under the [[Position]] to the immediate right of the thin cursor,
+    *             if there is one. Otherwise, [[None]].
+    */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
+  /**
+    * Returns the most specific AST node under the [[Position]] `pos` in the file given by `uri`.
+    * Returns [[None]] otherwise.
+    *
+    * Note that we filter out elements with synthetic [[SourceLocation]]s.
+    *
+    * @param uri  The URI of the file where we're searching.
+    * @param pos  The [[Position]] where we're searching within the file given by `uri`.
+    * @param root The root AST node of the Flix Project.
+    * @return     The most specific AST node under the [[Position]] `pos` in the file given by `uri`,
+    *             if there is one. Otherwise, [[None]].
+    */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
@@ -113,6 +187,15 @@ object FindReferencesProvider {
     case _ => false
   }
 
+  /**
+    * Returns all the [[SourceLocation]]s of the occurrences of `x` if `x` is an element that Flix supports
+    * "find references" for. Otherwise, returns [[None]].
+    *
+    * @param x    The element that we're finding occurrences of (if it's supported)
+    * @param root The root AST node of the Flix project.
+    * @return     The [[SourceLocation]]s of the occurrences of `x` if Flix supports "find references" for it.
+    *             Otherwise, [[None]].
+    */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Assoc Types
     case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
@@ -367,6 +450,13 @@ object FindReferencesProvider {
     occurs
   }
 
+  /**
+    * Returns a successful "find references" LSP response containing the LSP [[Location]] for each
+    * [[SourceLocation]] of the occurrences of the element that we're finding references to.
+    *
+    * @param refs The [[SourceLocation]]s for the occurrences of the element that we're finding references to.
+    * @return     A successful "find references" LSP response.
+    */
   private def mkResponse(refs: Set[SourceLocation]): JObject = {
     ("status" -> ResponseStatus.Success) ~ ("result" -> refs.map(Location.from).map(_.toJSON))
   }
