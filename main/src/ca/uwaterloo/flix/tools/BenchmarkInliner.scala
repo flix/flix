@@ -345,10 +345,10 @@ object BenchmarkInliner {
 
     private def map10KLength: String = {
       s"""
-         |def main(): Unit \\ IO = {
+         def main(): Unit \\ IO = {
          |    let l1 = range(0, 10_000);
          |    let l2 = map(x -> x + 1, l1);
-         |    let l3 = length(l3);
+         |    let l3 = length(l2);
          |    blackhole(l3)
          |}
          |
@@ -412,6 +412,8 @@ object BenchmarkInliner {
          |    case Nil     => acc
          |    case _ :: zs => ln(zs, acc + 1)
          |}
+         |
+         |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
          |
          |def blackhole(t: a): Unit \\ IO =
          |    Ref.fresh(Static, t); ()
