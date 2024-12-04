@@ -135,7 +135,7 @@ object BenchmarkInliner {
       Stats(xs.min, xs.max, average(xs), median(xs))
     }
 
-    private val programs: Map[String, String] = Map("map10KLength" -> map10KLength)
+    private val programs: Map[String, String] = Map("map10KLength" -> map10KLength, "map10KLengthOptimized" -> map10KLengthOptimized)
 
     def run(opts: Options): JsonAST.JObject = {
 
@@ -245,7 +245,7 @@ object BenchmarkInliner {
       }
     }
 
-    private def map10KLength: String =
+    private def map10KLength: String = {
       s"""
          |def main(): Unit \\ IO = {
          |    let l1 = range(0, 10_000);
@@ -287,6 +287,39 @@ object BenchmarkInliner {
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
+    }
+
+    private def map10KLengthOptimized: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    let top = 10_000 - 1;
+         |    let l1 = rng(top, Nil);
+         |    let l2 = mp(l1, Nil);
+         |    let l3 = rv(l2, Nil);
+         |    let l4 = ln(l3, 0);
+         |    blackhole(l4)
+         |}
+         |
+         |pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
+         |    case Nil     => acc
+         |    case z :: zs => mp(zs, z + 1 :: acc)
+         |}
+         |
+         |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+         |    case Nil     => acc
+         |    case z :: zs => rv(zs, z :: acc)
+         |}
+         |
+         |pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
+         |    case Nil     => acc
+         |    case _ :: zs => ln(zs, acc + 1)
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
 
     /**
       * Returns the given time `l` in milliseconds.
