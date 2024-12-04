@@ -29,7 +29,37 @@ import org.json4s.JsonDSL.*
 object RenameProvider {
 
   /**
-    * Processes a rename request.
+    * Handles a Rename LSP request by constructing a corresponding LSP response for when the cursor is
+    * at [[Position]] `pos` in the file given by `uri`.
+    *
+    * Note that the LSP request should provide both `pos` and `uri`. Additionally, `pos` is interpreted
+    * as the [[Position]] to the immediate right of the thin cursor.
+    *
+    * The Rename LSP response takes one of two forms: a "success" response or an "invalid request" response.
+    *
+    * If there is a [[Symbol]] under the cursor for which Flix supports renaming, then we get a "success" LSP response
+    * of the form
+    *
+    * `{'status': "success", 'result': <workspace edit>}`
+    *
+    * where <workspace edit> is a [[WorkspaceEdit]] containing a [[TextEdit]] for each occurrence of the
+    * [[Symbol]] we're renaming to, each of which change the occurrence to `newName`.
+    *
+    * If there is no [[Symbol]] under the cursor or Flix doesn't support renaming for it, then we get an "invalid request"
+    * LSP response of the form
+    *
+    * `{'status': "invalid_request", 'result': "Nothing found in <uri> at <pos>."}`.
+    *
+    * Since a thin cursor exists between character positions, it's associated with both
+    * the [[Position]] to its immediate left and right. This means we need to consider what's under
+    * both. If there are two different [[Symbol]]s under the left and right [[Position]],
+    * we rename occurrences of the one on the right.
+    *
+    * @param newName  The new name for the [[Symbol]] we're renaming.
+    * @param uri      The URI of the file where the cursor is, provided by the LSP request.
+    * @param pos      The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
+    * @param root     The root AST node of the Flix project.
+    * @return         A [[JObject]] representing a Rename LSP response.
     */
   def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
@@ -152,7 +182,7 @@ object RenameProvider {
     *
     * @param x    The object that might be a [[Symbol]] for which we search for occurrences.
     * @param root The root AST node for the Flix project.
-    * @return
+    * @return     All occurrences of the [[Symbol]] we want to rename, if it's supported. Otherwise, [[None]].
     */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Vars
