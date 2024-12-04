@@ -1,11 +1,21 @@
 package ca.uwaterloo.flix.language
 
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+
 sealed trait CompilationMessageKind
 
 object CompilationMessageKind {
 
-  case object ParseError extends CompilationMessageKind {
-    override def toString: String = "Parse Error"
+  case object TestError extends CompilationMessageKind {
+    override def toString: String = "Test Error"
+  }
+
+  case object LexerError extends CompilationMessageKind {
+    override def toString: String = "Lexer Error"
+  }
+
+  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind {
+    override def toString: String = s"Parse Error ($sctx)"
   }
 
   case object WeederError extends CompilationMessageKind {

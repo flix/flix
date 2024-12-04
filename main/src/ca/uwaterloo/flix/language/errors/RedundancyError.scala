@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for redundancy errors.
   */
 trait RedundancyError extends CompilationMessage {
-  val kind: String = "Redundancy Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.RedundancyError
 }
 
 object RedundancyError {

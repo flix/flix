@@ -28,7 +28,7 @@ object Diagnostic {
   def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
     val severity = Some(DiagnosticSeverity.Error)
-    val code = compilationMessage.kind
+    val code = compilationMessage.kind.toString
     val summary = compilationMessage.summary
     val explanationHeading =
       s"""
