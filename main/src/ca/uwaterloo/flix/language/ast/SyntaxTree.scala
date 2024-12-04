@@ -19,17 +19,17 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
-  * Represents the source code of a compilation unit.
-  *
-  * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
-  * abstract syntax trees. This flexibility is used to capture source code that may
-  * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
-  * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
-  *
-  * Note that [[SyntaxTree]] offers few guarantees. In particular:
-  *   - There is no guarantee that a specific node is present or absent as a child.
-  *   - There is no guarantee that a specific node has a specific number of children.
-  */
+ * Represents the source code of a compilation unit.
+ *
+ * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
+ * abstract syntax trees. This flexibility is used to capture source code that may
+ * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
+ * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
+ *
+ * Note that [[SyntaxTree]] offers few guarantees. In particular:
+ *   - There is no guarantee that a specific node is present or absent as a child.
+ *   - There is no guarantee that a specific node has a specific number of children.
+ */
 object SyntaxTree {
 
   /**
@@ -49,29 +49,29 @@ object SyntaxTree {
   trait Child
 
   /**
-    * A node in a [[SyntaxTree]]
-    *
-    * @param kind     The kind of the node.
-    * @param loc      The location that the node spans in the source file.
-    * @param children The children of the node.
-    */
+   * A node in a [[SyntaxTree]]
+   *
+   * @param kind     The kind of the node.
+   * @param loc      The location that the node spans in the source file.
+   * @param children The children of the node.
+   */
   case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation) extends Child
 
 
   /**
-    * A common super-type for [[TreeKind]]s
-    */
+   * A common super-type for [[TreeKind]]s
+   */
   sealed trait TreeKind
 
   /**
-    * Different kinds of syntax nodes in a [[SyntaxTree]].
-    *
-    * The only error kind that holds data is the special [[TreeKind.ErrorTree]].
-    */
+   * Different kinds of syntax nodes in a [[SyntaxTree]].
+   *
+   * The only error kind that holds data is the special [[TreeKind.ErrorTree]].
+   */
   object TreeKind {
     /**
-      * A special error kind wrapping a [[CompilationMessage]].
-      */
+     * A special error kind wrapping a [[CompilationMessage]].
+     */
     case class ErrorTree(error: CompilationMessage) extends TreeKind
 
     /**
@@ -168,8 +168,8 @@ object SyntaxTree {
     object Expr {
 
       /**
-        * A marker kind used to wrap nested expressions.
-        */
+       * A marker kind used to wrap nested expressions.
+       */
       // For instance on a binary expression "1 + 2" you would do
       // Expr
       //   Binary
@@ -314,8 +314,6 @@ object SyntaxTree {
 
       case object RestrictableChooseStar extends Expr
 
-      case object Run extends Expr
-
       case object Scope extends Expr
 
       case object ScopeName extends Expr
@@ -371,8 +369,8 @@ object SyntaxTree {
 
     object Type {
       /**
-        * A marker kind used to wrap nested types.
-        */
+       * A marker kind used to wrap nested types.
+       */
       // For instance on a tuple type "(Int32, Bool)" you would do
       // Type
       //   Tuple
@@ -437,8 +435,8 @@ object SyntaxTree {
 
     object Pattern {
       /**
-        * A marker kind used to wrap nested patterns.
-        */
+       * A marker kind used to wrap nested patterns.
+       */
       // For instance on cons pattern "0 :: xs" you would do
       // Pattern
       //   FCons
