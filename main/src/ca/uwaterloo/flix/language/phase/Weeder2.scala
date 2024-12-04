@@ -316,7 +316,7 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
           if (ident.isUpper) {
-            val error = WeederError.IllegalCapitalizedDef(ident.loc)
+            val error = WeederError.UnexpectedNonLowerCaseName(ident.name, ident.loc)
             sctx.errors.add(error)
           }
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)

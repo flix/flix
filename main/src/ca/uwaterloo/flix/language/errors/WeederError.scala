@@ -268,23 +268,24 @@ object WeederError {
 
 
   /**
-    * An error raised to indicate that a function begins with an uppercase character.
+    * An error raised to indicate that a lowercase name was expected.
     *
-    * @param loc the location of the function name.
+    * @param name the non-lowercase name.
+    * @param loc  the location of the non-lowercase name.
     */
-  case class IllegalCapitalizedDef(loc: SourceLocation) extends WeederError {
-    override def summary: String = "Unexpected uppercase start of function name."
+  case class UnexpectedNonLowerCaseName(name: String, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Expected a lowercase name."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unexpected non-lowercase name: '$name'
          |
-         |${code(loc, "unexpected uppercase name")}
+         |${code(loc, "unexpected name")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some("Functions must begin with a lowercase character.")
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

@@ -323,7 +323,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def F(): Int32 = 123
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalCapitalizedDef](result)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
   }
 
   test("IllegalCapitalizedDef.02") {
@@ -332,7 +332,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def Map(): Int32 = 123
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalCapitalizedDef](result)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
   }
 
   test("IllegalEnum.01") {
