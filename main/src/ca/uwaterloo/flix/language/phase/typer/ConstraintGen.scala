@@ -78,7 +78,7 @@ object ConstraintGen {
         val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(tpe1, Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), loc)
+        c.expectType(Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), tpe1, loc)
         c.unifyType(tvar, lambdaBodyType, loc)
         c.unifyType(evar,  Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
         val resTpe = tvar
@@ -903,14 +903,19 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>
-        // TODO it is unclear what the type rules of spawn should be
+        // Γ ⊢ e1 : τ \ ef1 ∩ prims      Γ ⊢ e2 : Region[r] \ ef2
+        // --------------------------------------------------------
+        // Γ ⊢ spawn e1 @ e2 : Unit \ (ef1 ∩ prims) ∪ ef2
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
-        val (_, _) = visitExp(exp1)
-        val (tpe2, _) = visitExp(exp2)
+        val anyEff = Type.freshVar(Kind.Eff, loc)
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
+        c.unifyType(eff1, Type.mkIntersection(anyEff, Type.PrimitiveEffs, loc), exp1.loc)
         c.expectType(expected = regionType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(Type.IO, regionVar, loc)
+        // `regionVar` should be included but is omitted to allow spawn nesting.
+        val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, _) =>

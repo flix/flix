@@ -500,6 +500,11 @@ class Flix {
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
+    // Reset the phase list file if relevant
+    if (this.options.xprintphases) {
+      AstPrinter.resetPhaseFile()
+    }
+
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
@@ -688,7 +693,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, root)(this)
+      d.output(phase, root)(this)
     }
 
     // Return the result computed by the phase.
@@ -718,7 +723,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, r)(this)
+      d.output(phase, r)(this)
     }
 
     // Return the result computed by the phase.

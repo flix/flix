@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
+import scala.annotation.tailrec
 
 object CompletionUtils {
 
@@ -181,14 +182,50 @@ object CompletionUtils {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = decl.sym.text.startsWith(word)
+    val isMatch = fuzzyMatch(word, decl.sym.text)
 
     isMatch && isPublic
   }
 
   /**
-   * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
-   * Currently, we will only offer them if at least three characters have been typed.
-   */
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
   def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the query is a fuzzy match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
+    *
+    * Example:
+    *   - fuzzyMatch("fBT",  "fooBarTest") = true
+    *   - fuzzyMatch("fBrT", "fooBarTest") = false
+    *   - fuzzyMatch("fTB",  "fooBarTest") = false
+    *
+    * @param query  The query string, usually from the user input.
+    * @param key    The key string, usually from the completion item.
+    */
+  def fuzzyMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
+  }
+
+  /**
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
+    */
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?=[A-Z])").toList
+  }
 }
