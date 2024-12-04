@@ -200,8 +200,6 @@ object RenameProvider {
       if (s == sym) { occurs += loc }
     }
     object TypeVarSymConsumer extends Consumer {
-      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.loc)
-
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Var(sym, loc) => consider(sym, loc)
         case _ => ()
@@ -210,7 +208,7 @@ object RenameProvider {
 
     Visitor.visitRoot(root, TypeVarSymConsumer, AllAcceptor)
 
-    occurs
+    occurs + sym.loc
   }
 
   private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
@@ -220,7 +218,6 @@ object RenameProvider {
     }
 
     object VarSymConsumer extends Consumer {
-      override def consumeBinder(bnd: TypedAst.Binder): Unit = consider(bnd.sym, bnd.sym.loc)
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
         case TypedAst.Expr.Var(s, _, loc) => consider(s, loc)
         case _ => ()
@@ -229,7 +226,7 @@ object RenameProvider {
 
     Visitor.visitRoot(root, VarSymConsumer, AllAcceptor)
 
-    occurs
+    occurs + sym.loc
   }
 
   /**
