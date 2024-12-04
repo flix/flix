@@ -412,6 +412,13 @@ object Type {
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
 
   /**
+    * The union of the primitive effects.
+    */
+  def PrimitiveEffs: Type = Type.mkUnion(
+    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)), SourceLocation.Unknown
+  )
+
+  /**
     * Represents the IO effect.
     */
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
