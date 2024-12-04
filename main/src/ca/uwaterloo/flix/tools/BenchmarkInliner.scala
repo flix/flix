@@ -341,12 +341,9 @@ object BenchmarkInliner {
       // Clear caches.
       ZhegalkinCache.clearCaches()
 
-      val (optRoot, errors) = flix.check()
+      val (_, errors) = flix.check()
       if (errors.nonEmpty) {
         throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
-      }
-      optRoot.get.sources.foldLeft(0) {
-        case (acc, (_, sl)) => acc + sl.endLine
       }
       val result = flix.compile().unsafeGet
       val totalLines = result.getTotalLines
