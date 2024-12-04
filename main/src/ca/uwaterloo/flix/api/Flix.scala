@@ -193,10 +193,8 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
-    "Files.flix" -> LocalResource.get("/src/library/Files.flix"),
-    "IOError.flix" -> LocalResource.get("/src/library/IOError.flix"),
+    "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
     "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
-    "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -500,6 +498,11 @@ class Flix {
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
+    // Reset the phase list file if relevant
+    if (this.options.xprintphases) {
+      AstPrinter.resetPhaseFile()
+    }
+
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
@@ -687,7 +690,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, root)(this)
+      d.output(phase, root)(this)
     }
 
     // Return the result computed by the phase.
@@ -717,7 +720,7 @@ class Flix {
     phaseTimers += currentPhase
 
     if (this.options.xprintphases) {
-      d.emit(phase, r)(this)
+      d.output(phase, r)(this)
     }
 
     // Return the result computed by the phase.

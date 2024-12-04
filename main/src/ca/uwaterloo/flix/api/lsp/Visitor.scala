@@ -504,9 +504,8 @@ object Visitor {
       case Expr.NewObject(_, _, _, _, methods, _) =>
         methods.foreach(visitJvmMethod)
 
-      case Expr.NewChannel(exp1, exp2, _, _, _) =>
-        visitExpr(exp1)
-        visitExpr(exp2)
+      case Expr.NewChannel(exp, _, _, _) =>
+        visitExpr(exp)
 
       case Expr.GetChannel(exp, _, _, _) =>
         visitExpr(exp)
