@@ -1842,7 +1842,17 @@ object Resolver {
       case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
-            val ps = pats.map(visit)
+            val ps0 = pats.map(visit)
+            // Check if the number of arguments match.
+            val ps = if (ps0.lengthCompare(c.tpes) != 0) {
+              val expectedTerms = c.tpes.length
+              val error = ResolutionError.MismatchedTagPatternArity(c.sym, expected = expectedTerms, actual = ps0.length, loc)
+              sctx.errors.add(error)
+              // Maintain as many sensible arguments as possible to allow further type checking, etc.
+              ps0.take(expectedTerms).padTo(expectedTerms, ResolvedAst.Pattern.Error(loc.asSynthetic))
+            } else {
+              ps0
+            }
             ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), ps, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)
