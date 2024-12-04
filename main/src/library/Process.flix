@@ -37,7 +37,7 @@ mod Process {
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Process) + {Exec, IO} = x ->
-        try {
+        run {
             f(x)
         } with Process {
             def exec(cmd, args, k) = region rc {

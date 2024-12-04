@@ -33,16 +33,7 @@ mod MutSet {
     /// Returns a string representation of the given mutable set `s`.
     ///
     pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString("MutSet#{", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString("${x}", sb)
-            else
-                StringBuilder.appendString(", ${x}", sb)
-        }, s);
-        StringBuilder.appendString("}", sb);
-        StringBuilder.toString(sb)
+        "MutSet#{" + (MutSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
     }
 
     ///

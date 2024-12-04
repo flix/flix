@@ -653,11 +653,11 @@ object Lowering {
       LoweredAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
 
     // New channel expressions are rewritten as follows:
-    //     chan Int32 10
+    //     $CHANNEL_NEW$(m)
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expr.NewChannel(_, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       mkNewChannelTuple(e, t, eff, loc)
@@ -896,17 +896,15 @@ object Lowering {
       case _ => tpe0 // Performance: Reuse tpe0.
     }
 
-    // Rewrite Sender[t, r] to Concurrent.Channel.Mpmc[t, r]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe1, _), tpe2, _) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      mkChannelTpe(t1, t2, loc)
+    // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
+      val t = visitType(tpe)
+      mkChannelTpe(t, loc)
 
-    // Rewrite Receiver[t, r] to Concurrent.Channel.Mpmc[t, r]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe1, _), tpe2, _) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      mkChannelTpe(t1, t2, loc)
+    // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
+      val t = visitType(tpe)
+      mkChannelTpe(t, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)

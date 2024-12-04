@@ -663,6 +663,13 @@ mod Test.Exp.TypeMatch {
         case _: _ => false
     }
 
+    @Test
+    def typeMatchPolymorphic03(): Bool = typematch (Nil: List[String]) {
+        case _: List[_] => true
+        case _: List[String] => false
+        case _: _ => false
+    }
+
     //////////////////////////////////////
     // Recursive tests                  //
     //////////////////////////////////////

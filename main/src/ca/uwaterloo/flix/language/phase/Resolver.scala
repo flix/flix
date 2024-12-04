@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
@@ -1346,11 +1345,10 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, env0)
-      val e2Val = resolveExp(exp2, env0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.NewChannel(e1, e2, loc)
+    case NamedAst.Expr.NewChannel(exp, loc) =>
+      val eVal = resolveExp(exp, env0)
+      mapN(eVal) {
+        case e => ResolvedAst.Expr.NewChannel(e, loc)
       }
 
     case NamedAst.Expr.GetChannel(exp, loc) =>
@@ -1844,7 +1842,17 @@ object Resolver {
       case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
           case Result.Ok(c) =>
-            val ps = pats.map(visit)
+            val ps0 = pats.map(visit)
+            // Check if the number of arguments match.
+            val ps = if (ps0.lengthCompare(c.tpes) != 0) {
+              val expectedTerms = c.tpes.length
+              val error = ResolutionError.MismatchedTagPatternArity(c.sym, expected = expectedTerms, actual = ps0.length, loc)
+              sctx.errors.add(error)
+              // Maintain as many sensible arguments as possible to allow further type checking, etc.
+              ps0.take(expectedTerms).padTo(expectedTerms, ResolvedAst.Pattern.Error(loc.asSynthetic))
+            } else {
+              ps0
+            }
             ResolvedAst.Pattern.Tag(CaseSymUse(c.sym, qname.loc), ps, loc)
           case Result.Err(error) =>
             sctx.errors.add(error)

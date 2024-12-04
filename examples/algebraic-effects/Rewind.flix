@@ -11,7 +11,7 @@ mod RewindExample {
 
     pub def main(): Int32 \ IO = region rc {
         let checkpoints = MutMap.empty(rc);
-        try search(10) with Rewind {
+        run search(10) with Rewind {
             def save(label, k) = {
                 MutMap.put(label, k, checkpoints);
                 k()
