@@ -28,16 +28,17 @@ import java.nio.file.Path
 object BenchmarkInliner {
 
   def run(opts: Options): Unit = {
-    val o = opts.copy(progress = false, loadClassFiles = false)
-
     println("Benchmarking inliner. This may take a while...")
+    val programBenchmark = BenchmarkPrograms.run(opts)
+    writeFile("programsBenchmark.json", programBenchmark)
+    println("Done with 'programs'")
 
     // Experiments:
     // 1. Compiler throughput and code size
     //    (a) without inlining
     //    (b) with old inliner
     //    (c) with new inliner
-    runExperiment(o, "compilerBenchmark.json")(BenchmarkThroughput.run)
+    runExperiment(opts.copy(progress = false, loadClassFiles = false), "compilerBenchmark.json")(BenchmarkThroughput.run)
 
     // 2. Flix program speedup (sample programs, datalog engine, parser library)
     //    (a) without inlining
@@ -78,38 +79,170 @@ object BenchmarkInliner {
 
   }
 
-  private object BenchmarkProgram {
+  private object BenchmarkPrograms {
 
-    private case class Run(lines: Int, runningTime: Long, compilationTime: Long, phases: List[(String, Long)], codeSize: Int)
+    private sealed trait InlinerType
 
-    private case class Runs(lines: Int, runningTimes: List[Long], compilationTimes: List[Long], phases: List[(String, List[Long])], codeSize: List[Int])
+    private object InlinerType {
+
+      private case object NoInliner extends InlinerType
+
+      private case object Old extends InlinerType
+
+      private case object New extends InlinerType
+
+      def from(options: Options): InlinerType = {
+        if (options.xnooptimizer && options.xnooptimizer1)
+          NoInliner
+        else if (options.xnooptimizer1)
+          Old
+        else
+          New
+      }
+    }
+
+    private val NumberOfRuns = 1000
+
+    private val NumberOfSamples = 100
+
+    /**
+      * Represents a run of a single program.
+      *
+      * @param name            The name of the program
+      * @param lines           The number of lines of source code in the program
+      * @param inlinerType     Which inliner was used (if any)
+      * @param inliningRounds  The number of rounds of inlining
+      * @param runningTime     The running time of the program
+      * @param compilationTime The median time taken to compile the program
+      * @param phases          The median running time of each compilation phase
+      * @param codeSize        The number of bytes of the compiled program
+      */
+    private case class Run(name: String, lines: Int, inlinerType: InlinerType, inliningRounds: Int, runningTime: Long, compilationTime: Long, phases: List[(String, Long)], codeSize: Int) {
+      def toJson: JsonAST.JObject = {
+        ("lines" -> lines) ~
+          ("inlinerType" -> inlinerType.toString) ~
+          ("inliningRounds" -> inliningRounds) ~
+          ("runningTime" -> runningTime) ~
+          ("compilationTime" -> compilationTime) ~
+          ("phases" -> phases) ~
+          ("codeSize" -> codeSize)
+      }
+    }
+
+    private case class Stats[T](min: T, max: T, average: Double, median: Double)
+
+    private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
+      Stats(xs.min, xs.max, average(xs), median(xs))
+    }
 
     private val programs: Map[String, String] = Map("map10KLength" -> map10KLength)
 
-    def run(opts: Options): List[JsonAST.JObject] = {
-      val baseline = perfBaseline(opts)
-      ???
+    def run(opts: Options): JsonAST.JObject = {
+
+      // TODO: Best performance increase
+      // TODO: Worst performance increase
+      // TODO: Avg and median performance increase.
+
+      val programExperiments = benchmark(opts)
+
+      val runningTimeStats = programExperiments.map {
+        case (name, runs) => name -> stats(runs.map(_.runningTime))
+      }
+
+      val compilationTimeStats = programExperiments.map {
+        case (name, runs) => name -> stats(runs.map(_.compilationTime))
+      }
+
+      // Timestamp (in seconds) when the experiment was run.
+      val timestamp = System.currentTimeMillis() / 1000
+
+      ("timestamp" -> timestamp) ~
+        ("programs" -> {
+          programExperiments.map {
+            case (name, runs) => name -> {
+              ("summary" -> {
+                ("runningTime" -> {
+                  val stats = runningTimeStats.apply(name)
+                  ("best" -> stats.min) ~
+                    ("worst" -> stats.max) ~
+                    ("average" -> stats.average) ~
+                    ("median" -> stats.median)
+                }) ~
+                  ("compilationTime" -> {
+                    val stats = compilationTimeStats.apply(name)
+                    ("best" -> stats.min) ~
+                      ("worst" -> stats.max) ~
+                      ("average" -> stats.average) ~
+                      ("median" -> stats.median)
+                  })
+              }) ~
+                ("results" -> runs.map(_.toJson))
+            }
+          }
+        })
     }
 
-    private def perfBaseline(opts: Options): IndexedSeq[Run] = {
-      val limit = if (opts.xnooptimizer && opts.xnooptimizer1) 1 else 50
-      for ((name, prog) <- programs) {
-        for (inliningRounds <- 1 to limit) {
-          val o = opts.copy(inlinerRounds = inliningRounds, inliner1Rounds = inliningRounds, lib = LibLevel.All)
+    private def benchmark(opts: Options): Map[String, List[Run]] = {
+      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+      val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, inlinerRounds = 0, inliner1Rounds = 0)
+      val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false)
+      val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false)
+      val allOptions = o0 :: (1 to 50).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to 50).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+      val runConfigs = allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
+
+      val runs = scala.collection.mutable.ListBuffer.empty[Run]
+      for ((o, name, prog) <- runConfigs) {
+        // Clear caches.
+        val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
+
+        for (_ <- 1 to 10) {
           val flix = new Flix().setOptions(o)
-          implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+          ZhegalkinCache.clearCaches()
           flix.addSourceCode(s"$name.flix", prog)
-          flix.compile().unsafeGet.getMain match {
-            case Some(mainMethod) => // Repeat the run
-              val t0 = System.nanoTime()
-              mainMethod(Array.empty)
-              val tDelta = System.nanoTime() - t0
-              ???
-            case None => throw new RuntimeException(s"undefined main method for program '$name'")
+          val result = flix.compile().unsafeGet
+          compilationTimings += (result.totalTime, flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time })
+        }
+
+        val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
+        val flix = new Flix().setOptions(o)
+        ZhegalkinCache.clearCaches()
+        flix.addSourceCode(s"$name.flix", prog)
+        val result = flix.compile().unsafeGet
+        result.getMain match {
+          case Some(mainFunc) =>
+            for (_ <- 1 to NumberOfSamples) {
+              for (_ <- 1 to NumberOfRuns) {
+                val t0 = System.nanoTime()
+                mainFunc(Array.empty)
+                val tDelta = System.nanoTime() - t0
+                runningTimes += milliseconds(tDelta)
+              }
+            }
+          case None => throw new RuntimeException(s"undefined main method for program '$name'")
+        }
+
+        val lines = result.getTotalLines
+        val inlinerType = InlinerType.from(o)
+        val inliningRounds = o.inliner1Rounds
+        val runningTime = median(runningTimes.toSeq).toLong
+        val compilationTime = median(compilationTimings.map(_._1).toSeq).toLong
+        val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, List[Long]]) {
+          case (acc, (phase, time)) => acc.get(phase) match {
+            case Some(timings) => acc + (phase -> (time :: timings))
+            case None => acc + (phase -> time)
           }
+        }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
+        val codeSize = result.codeSize
+
+        runs += Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
+      }
+
+      runs.foldLeft(Map.empty[String, List[Run]]) {
+        case (acc, run) => acc.get(run.name) match {
+          case Some(runsOfProgram) => acc + (run.name -> (run :: runsOfProgram))
+          case None => acc + (run.name -> run)
         }
       }
-      ???
     }
 
     private def map10KLength: String =
@@ -154,6 +287,12 @@ object BenchmarkInliner {
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
+
+    /**
+      * Returns the given time `l` in milliseconds.
+      */
+    private def milliseconds(l: Double): Double = l / 1_000_000.0
+
   }
 
   private object BenchmarkThroughput {
