@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException, TwoLis
 import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -379,7 +378,7 @@ object SetFormula {
     case Compl(f1) => f1
     case inter@Inter(_, _, _, _, _, _, _) =>
       Compl(inter)
-    case union@Union(_, _, _, _, _, _, _) =>
+    case union@Union(_) =>
       Compl(union)
     case xor@Xor(_) =>
       Compl(xor)
