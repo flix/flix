@@ -905,18 +905,17 @@ object ConstraintGen {
       case Expr.Spawn(exp1, exp2, loc) =>
         // Γ ⊢ e1 : τ \ ef1 ∩ prims      Γ ⊢ e2 : Region[r] \ ef2
         // --------------------------------------------------------
-        // Γ ⊢ spawn e1 @ e2 : Unit \ (ef ∩ prims) ∪ ef2
+        // Γ ⊢ spawn e1 @ e2 : Unit \ (ef1 ∩ prims) ∪ ef2
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val anyEff = Type.freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        val innerEff = Type.mkIntersection(anyEff, Type.PrimitiveEffs, loc)
-        c.unifyType(eff1, innerEff, exp1.loc)
+        c.unifyType(eff1, Type.mkIntersection(anyEff, Type.PrimitiveEffs, loc), exp1.loc)
         c.expectType(expected = regionType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
         // `regionVar` should be included but is omitted to allow spawn nesting.
-        val resEff = Type.mkUnion(innerEff, eff2, loc)
+        val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, _) =>
