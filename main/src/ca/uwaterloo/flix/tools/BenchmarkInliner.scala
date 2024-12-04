@@ -135,7 +135,19 @@ object BenchmarkInliner {
       Stats(xs.min, xs.max, average(xs), median(xs))
     }
 
-    private val programs: Map[String, String] = Map("map10KLength" -> map10KLength, "map10KLengthOptimized" -> map10KLengthOptimized)
+    private val programs: Map[String, String] = Map(
+      "map10KLength" -> map10KLength,
+      "map10KLengthOptimized" -> map10KLengthOptimized,
+      "filterMap10K" -> filterMap10K,
+      "filterMap10KOptimized" -> filterMap10KOptimized,
+      "List.filter" -> listFilter,
+      "List.foldLeft" -> listFoldLeft,
+      "List.foldRight" -> listFoldRight,
+      "List.map" -> listMap,
+      "List.length" -> listLength,
+      "List.reverse" -> listReverse,
+      "List.filterMap" -> listFilterMap
+    )
 
     def run(opts: Options): JsonAST.JObject = {
 
@@ -245,6 +257,90 @@ object BenchmarkInliner {
       }
     }
 
+    private def listFilter: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listFoldLeft: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listFoldRight: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listMap: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listLength: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.length |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listReverse: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.reverse |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def listFilterMap: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
     private def map10KLength: String = {
       s"""
          |def main(): Unit \\ IO = {
@@ -253,7 +349,7 @@ object BenchmarkInliner {
          |    let l3 = length(l3);
          |    blackhole(l3)
          |}
-
+         |
          |pub def map(f: a -> b, l: List[a]) : List[b] = {
          |    def mp(xs, acc) = match xs {
          |        case Nil     => acc
@@ -314,6 +410,77 @@ object BenchmarkInliner {
          |    case Nil     => acc
          |    case _ :: zs => ln(zs, acc + 1)
          |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+    }
+
+    private def filterMap10K: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    let l1 = range(0, 10_000);
+         |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
+         |    blackhole(l2)
+         |}
+         |
+         |pub def filterMap(f: a -> Option[b] \\ ef, l: List[a]): List[b] \\ ef = {
+         |    def fmp(ll, acc) = match ll {
+         |        case Nil     => acc
+         |        case x :: xs => match f(x) {
+         |            case None    => fmp(xs, acc)
+         |            case Some(y) => fmp(xs, y :: acc)
+         |        }
+         |    };
+         |    rev(fmp(l, Nil))
+         |}
+         |
+         |pub def rev(l: List[a]): List[a] = {
+         |    def rv(xs, acc) = match xs {
+         |        case Nil     => acc
+         |        case z :: zs => rv(zs, z :: acc)
+         |    };
+         |    rv(l, Nil)
+         |}
+         |
+         |pub def range(bot: Int32, top: Int32): List[Int32] = {
+         |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+         |    rng(top - 1, Nil)
+         |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
+         |
+         |""".stripMargin
+
+    }
+
+    private def filterMap10KOptimized: String = {
+      s"""
+         |def main(): Unit \\ IO = {
+         |    let top = 10_000 - 1;
+         |    let l1 = rng(top, Nil);
+         |    let l2 = fmp(l1, Nil);
+         |    let l3 = rv(l2, Nil);
+         |    blackhole(l3)
+         |}
+         |
+         |pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
+         |    case Nil     => acc
+         |    case x :: xs =>
+         |        if (Int32.remainder(x, 2) == 0)
+         |            fmp(xs, acc)
+         |        else
+         |            fmp(xs, x :: acc)
+         |}
+         |
+         |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+         |    case Nil     => acc
+         |    case z :: zs => rv(zs, z :: acc)
+         |}
+         |
+         |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
          |
          |def blackhole(t: a): Unit \\ IO =
          |    Ref.fresh(Static, t); ()
