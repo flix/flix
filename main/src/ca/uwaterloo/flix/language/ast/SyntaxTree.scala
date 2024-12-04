@@ -342,7 +342,7 @@ object SyntaxTree {
 
       case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBodyFragment extends Expr
+      case object RunWithBodyExpr extends Expr
 
       case object TryWithRuleFragment extends Expr
 
