@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
-import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
 
@@ -313,12 +312,12 @@ object SetUnification {
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
-      case (union@Union(_, _, _, _, _, _, _), Empty) =>
+      case (union@Union(_), Empty) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric Case.
-      case (Empty, union@Union(_, _, _, _, _, _, _)) =>
+      case (Empty, union@Union(_)) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
