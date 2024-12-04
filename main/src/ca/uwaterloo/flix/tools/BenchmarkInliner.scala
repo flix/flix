@@ -79,27 +79,36 @@ object BenchmarkInliner {
   }
 
   private object BenchmarkProgram {
-    private val programs: List[String] = List()
+    private val programs: Map[String, String] = Map("map10KLength" -> map10KLength)
 
     def run(opts: Options): List[JsonAST.JObject] = {
-      val o = opts.copy(lib = LibLevel.All)
       val limit = if (opts.xnooptimizer && opts.xnooptimizer1) 1 else 50
-      for (prog <- programs) {
-        ???
+      for ((name, prog) <- programs) {
+        for (inliningRounds <- 1 to limit) {
+          val o = opts.copy(inlinerRounds = inliningRounds, inliner1Rounds = inliningRounds, lib = LibLevel.All)
+          val flix = new Flix().setOptions(o)
+          implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+          flix.addSourceCode(s"$name.flix", prog)
+          flix.compile().unsafeGet.getMain match {
+            case Some(mainMethod) => // Repeat the run
+              val t0 = System.nanoTime()
+              mainMethod(Array.empty)
+              val tDelta = System.nanoTime() - t0
+
+            case None => throw new RuntimeException(s"undefined main method for program '$name'")
+          }
+        }
       }
       ???
     }
 
-    private def prog1: String =
+    private def map10KLength: String =
       s"""
-         |import java.lang.System
-         |
          |def main(): Unit \\ IO = {
-         |    let ms = loop(0, 1000, Nil);
-         |    println(ms);
-         |    println("Fastest: $${List.minimum(ms) |> Option.getWithDefault(-1 i64)}");
-         |    println("Median : $${median(ms)}");
-         |    println("Slowest: $${List.maximum(ms) |> Option.getWithDefault(-1 i64)}")
+         |    let l1 = range(0, 10_000);
+         |    let l2 = map(x -> x + 1, l1);
+         |    let l3 = length(l3);
+         |    blackhole(l3)
          |}
 
          |pub def map(f: a -> b, l: List[a]) : List[b] = {
@@ -108,17 +117,6 @@ object BenchmarkInliner {
          |        case z :: zs => mp(zs, f(z) :: acc)
          |    };
          |    rev(mp(l, Nil))
-         |}
-         |
-         |pub def filterMap(f: a -> Option[b] \\ ef, l: List[a]): List[b] \\ ef = {
-         |    def fmp(ll, acc) = match ll {
-         |        case Nil     => acc
-         |        case x :: xs => match f(x) {
-         |            case None    => fmp(xs, acc)
-         |            case Some(y) => fmp(xs, y :: acc)
-         |        }
-         |    };
-         |    rev(fmp(l, Nil))
          |}
          |
          |pub def rev(l: List[a]): List[a] = {
@@ -141,6 +139,9 @@ object BenchmarkInliner {
          |    };
          |    len(l, 0)
          |}
+         |
+         |def blackhole(t: a): Unit \\ IO =
+         |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
   }
