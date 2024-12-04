@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -137,9 +137,14 @@ object Inliner {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expr.LiftedExp(exp) => exp
+            case Expr.LiftedExp(e) =>
+              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+              e
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case Expr.OccurrenceExp(exp) =>
+              val e = visitExp(exp, subst0)
+              assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+              e
           }
       }
 
@@ -158,7 +163,10 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+            assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
+            e
           } else {
             LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
           }
@@ -172,7 +180,10 @@ object Inliner {
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+        assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
+        e
       } else {
         LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
@@ -455,6 +466,6 @@ object Inliner {
     */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
- }
+  }
 
 }
