@@ -109,7 +109,9 @@ object BenchmarkInliner {
 
       val runs = scala.collection.mutable.ListBuffer.empty[JsonAST.JObject]
 
-      for (inliningRounds <- 1 to 50) {
+      val limit = if (opts.xnooptimizer && opts.xnooptimizer1) 1 else 50
+
+      for (inliningRounds <- 1 to limit) {
         // Set the inlining rounds
         val o = opts.copy(inlinerRounds = inliningRounds, inliner1Rounds = inliningRounds)
 
