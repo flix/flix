@@ -58,7 +58,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Unit \ IO = region rc {
-        |    spawn { bug!("Something bad happened") } @ rc;
+        |    spawn { println("err" + bug!("Something bad happened")) } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
       """.stripMargin
