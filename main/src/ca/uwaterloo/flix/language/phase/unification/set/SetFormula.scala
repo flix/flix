@@ -362,7 +362,34 @@ object SetFormula {
     * Nested intersections are put into a single intersection.
     */
   def mkInterAll(fs: List[SetFormula]): SetFormula = {
-    fs match {
+    def visit(l: List[SetFormula], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
+      case Nil => Nil
+
+      case Empty :: _ => Nil
+
+      case Univ :: rs => visit(rs, seenCsts, seenVars)
+
+      // TODO: ElmSet
+
+      case (f@Cst(c)) :: rs =>
+        if (seenCsts.contains(c))
+          visit(rs, seenCsts, seenVars)
+        else
+          f :: visit(rs, seenCsts + c, seenVars)
+
+      case (f@Var(x)) :: rs =>
+        if (seenVars.contains(x))
+          visit(rs, seenCsts, seenVars)
+        else
+          f :: visit(rs, seenCsts, seenVars + x)
+
+      case Inter(l2) :: rs =>
+        visit(l2.toList ::: rs, seenCsts, seenVars)
+
+      case f :: rs => f :: visit(rs, seenCsts, seenVars)
+    }
+
+    visit(fs, SortedSet.empty, SortedSet.empty) match {
       case Nil => Empty
       case f :: Nil => f
       case f1 :: f2 :: rest => Inter(TwoList(f1, f2, rest))
@@ -393,6 +420,8 @@ object SetFormula {
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
     def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
       case Nil => if (elmAcc.isEmpty) Nil else ElemSet(elmAcc) :: Nil
+
+      // TODO: Empty and Univ
 
       case ElemSet(s) :: rs => visit(rs, elmAcc ++ s, seenCsts, seenVars)
 
