@@ -317,24 +317,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
-  test("IllegalCapitalizedDef.01") {
-    val input =
-      """
-        |def F(): Int32 = 123
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnexpectedNonLowerCaseName](result)
-  }
-
-  test("IllegalCapitalizedDef.02") {
-    val input =
-      """
-        |def Map(): Int32 = 123
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnexpectedNonLowerCaseName](result)
-  }
-
   test("IllegalEnum.01") {
     val input =
       """
@@ -1305,6 +1287,24 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUse](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.01") {
+    val input =
+      """
+        |def F(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.02") {
+    val input =
+      """
+        |def Map(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
   }
 
   test("UnqualifiedUse.01") {
