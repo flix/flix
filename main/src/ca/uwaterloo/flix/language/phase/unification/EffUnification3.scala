@@ -238,7 +238,7 @@ object EffUnification3 {
       })
       Type.mkUnion(elementTypes, loc)
     case SetFormula.Compl(f1) => Type.mkComplement(fromSetFormula(f1, loc), loc)
-    case inter@SetFormula.Inter(_, _, _, _, _, _, _) =>
+    case inter@SetFormula.Inter(_) =>
       Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
     case union@SetFormula.Union(_) =>
       Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)

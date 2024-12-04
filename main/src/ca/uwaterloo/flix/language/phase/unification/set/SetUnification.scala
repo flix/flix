@@ -299,12 +299,12 @@ object SetUnification {
       // ---
       // {f1 ~ univ, f2 ~ univ, ..},
       // []
-      case (inter@Inter(_, _, _, _, _, _, _), Univ) =>
+      case (inter@Inter(_), Univ) =>
         val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric case.
-      case (Univ, inter@Inter(_, _, _, _, _, _, _)) =>
+      case (Univ, inter@Inter(_)) =>
         val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
         Some(eqs, SetSubstitution.empty)
 
