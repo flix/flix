@@ -446,9 +446,9 @@ object SetFormula {
     case e@ElemSet(_) => Compl(e)
     case Compl(f1) => f1
     case inter@Inter(_, _, _, _, _, _, _) =>
-      mkUnionAll(inter.mapSubformulas(mkCompl))
+      Compl(inter)
     case union@Union(_, _, _, _, _, _, _) =>
-      mkInterAll(union.mapSubformulas(mkCompl))
+      Compl(union)
     case xor@Xor(_) =>
       Compl(xor)
   }
