@@ -212,7 +212,9 @@ object BenchmarkInliner {
           ZhegalkinCache.clearCaches()
           flix.addSourceCode(s"$name.flix", prog)
           val result = flix.compile().unsafeGet
-          compilationTimings += (result.totalTime, flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time })
+          val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
+          val timing = (result.totalTime, phaseTimes)
+          compilationTimings += timing
         }
 
         val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
@@ -227,7 +229,7 @@ object BenchmarkInliner {
                 val t0 = System.nanoTime()
                 mainFunc(Array.empty)
                 val tDelta = System.nanoTime() - t0
-                runningTimes += milliseconds(tDelta)
+                runningTimes += milliseconds(tDelta).toLong
               }
             }
           case None => throw new RuntimeException(s"undefined main method for program '$name'")
@@ -238,10 +240,10 @@ object BenchmarkInliner {
         val inliningRounds = o.inliner1Rounds
         val runningTime = median(runningTimes.toSeq).toLong
         val compilationTime = median(compilationTimings.map(_._1).toSeq).toLong
-        val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, List[Long]]) {
+        val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
           case (acc, (phase, time)) => acc.get(phase) match {
-            case Some(timings) => acc + (phase -> (time :: timings))
-            case None => acc + (phase -> time)
+            case Some(timings) => acc + (phase -> timings.appended(time))
+            case None => acc + (phase -> Seq(time))
           }
         }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
         val codeSize = result.codeSize
@@ -252,7 +254,7 @@ object BenchmarkInliner {
       runs.foldLeft(Map.empty[String, List[Run]]) {
         case (acc, run) => acc.get(run.name) match {
           case Some(runsOfProgram) => acc + (run.name -> (run :: runsOfProgram))
-          case None => acc + (run.name -> run)
+          case None => acc + (run.name -> List(run))
         }
       }
     }
@@ -491,7 +493,7 @@ object BenchmarkInliner {
     /**
       * Returns the given time `l` in milliseconds.
       */
-    private def milliseconds(l: Double): Double = l / 1_000_000.0
+    private def milliseconds(l: Long): Double = l / 1_000_000.0
 
   }
 
