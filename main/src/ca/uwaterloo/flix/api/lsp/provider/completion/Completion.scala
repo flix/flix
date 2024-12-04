@@ -44,6 +44,24 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
+    case Completion.AutoUseEffCompletion(sym, doc, ap) =>
+      val name = sym.name
+      val qualifiedName = sym.toString
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName;"))
+      val labelDetails = CompletionItemLabelDetails(
+        None,
+        Some(s" use $qualifiedName"))
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = name,
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(doc),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Enum,
+        additionalTextEdits = additionalTextEdits
+      )
+
     case Completion.KeywordCompletion(name, priority) =>
       CompletionItem(
         label    = name,
@@ -617,6 +635,15 @@ object Completion {
    * @param ap            the anchor position for the use statement.
    */
   case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param eff           the effect to complete and use.
+   * @param doc           the documentation associated with the effect.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseEffCompletion(eff: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion
