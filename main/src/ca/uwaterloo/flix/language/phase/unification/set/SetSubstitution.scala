@@ -40,12 +40,6 @@ private object SetSubstitution {
   */
 case class SetSubstitution(m: Map[Int, SetFormula]) {
 
-  val s = m.toString()
-  if (s.size > 200) {
-    //println(m)
-  }
-
-
   /** Returns `true` if `this` is the empty substitution (`[]`). */
   def isEmpty: Boolean = m.isEmpty
 
