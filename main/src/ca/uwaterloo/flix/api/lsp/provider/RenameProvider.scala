@@ -185,12 +185,13 @@ object RenameProvider {
     * @return     All occurrences of the [[Symbol]] we want to rename, if it's supported. Otherwise, [[None]].
     */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
-    // Vars
-    case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
-    case TypedAst.Binder(sym, _) => Some(getVarOccurs(sym))
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
+    // Vars
+    case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
+    case TypedAst.Binder(sym, _) => Some(getVarOccurs(sym))
+
     case _ => None
   }
 
