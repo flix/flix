@@ -91,13 +91,13 @@ object BenchmarkInliner {
     private val MinThreads: Int = 1
 
     /**
-      * The number of threads to use for the multi-threaded experiment.
+      * The number of threads to use for the multithreaded experiment.
       */
     private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
-    case class Run(lines: Int, time: Long, phases: List[(String, Long)], codeSize: Int)
+    private case class Run(lines: Int, time: Long, phases: List[(String, Long)], codeSize: Int)
 
-    case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])], codeSize: List[Int])
+    private case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])], codeSize: List[Int])
 
     /**
       * Run compiler performance experiments.
