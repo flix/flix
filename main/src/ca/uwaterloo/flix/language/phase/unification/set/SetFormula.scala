@@ -16,12 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException, TwoList}
+import ca.uwaterloo.flix.util.TwoList
 
 import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -238,10 +236,7 @@ object SetFormula {
     * fine.
     */
   @nowarn
-  final case class Inter(l: TwoList[SetFormula]) extends SetFormula {
-    /** Applies `f` to the subformulas of `this`. */
-    def mapSubformulas[T](f: SetFormula => T): List[T] = l.toList.map(f)
-  }
+  final case class Inter(l: TwoList[SetFormula]) extends SetFormula
 
   /**
     * A union of formulas (`f1 ∪ f2`).
@@ -271,10 +266,7 @@ object SetFormula {
     * fine.
     */
   @nowarn
-  final case class Union(l: TwoList[SetFormula]) extends SetFormula {
-    /** Applies `f` to the subformulas of `this`. */
-    def mapSubformulas[T](f: SetFormula => T): List[T] = l.toList.map(f)
-  }
+  final case class Union(l: TwoList[SetFormula]) extends SetFormula
 
   /**
     * A xor (symmetric difference) of formulas (`f1 ⊕ f2`).
@@ -303,21 +295,6 @@ object SetFormula {
       // There is always at least two subformulas.
       assert(other.sizeIs >= 2, message = this.toString)
     }
-  }
-
-  /** Returns an iterator of the subformulas of the union or intersection. */
-  def subformulasOf(
-                             elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
-                             elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
-                             other: Iterable[SetFormula]
-                           ): Iterator[SetFormula] = {
-    elemPos.iterator ++
-      cstsPos.iterator ++
-      varsPos.iterator ++
-      elemNeg.iterator.map(Compl(_)) ++
-      cstsNeg.iterator.map(Compl(_)) ++
-      varsNeg.iterator.map(Compl(_)) ++
-      other.iterator
   }
 
   //
