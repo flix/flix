@@ -13,7 +13,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
     import java.util.{Locale$Builder => Builder}
 
     @test
-    def testInvokeConstructor_01(): Boolean \ IO =
+    def testInvokeConstructor_01(): Boolean =
         new Boolean(true)
 
     @test

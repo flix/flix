@@ -1,5 +1,7 @@
 {
   "methods": {
+    "java.lang.Boolean::getBoolean": "Env, IO",
+
     "java.lang.Runtime::availableProcessors": "Env, IO",
     "java.lang.Runtime::freeMemory": "Env, IO",
     "java.lang.Runtime::totalMemory": "Env, IO",
