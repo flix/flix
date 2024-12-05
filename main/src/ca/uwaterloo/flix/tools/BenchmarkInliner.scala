@@ -204,11 +204,11 @@ object BenchmarkInliner {
 
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((o, name, prog) <- runConfigs) {
-        // Clear caches.
         val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
         for (_ <- 1 to 10) {
           val flix = new Flix().setOptions(o)
+          // Clear caches.
           ZhegalkinCache.clearCaches()
           flix.addSourceCode(s"$name.flix", prog)
           val result = flix.compile().unsafeGet
@@ -219,18 +219,20 @@ object BenchmarkInliner {
 
         val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
         val flix = new Flix().setOptions(o)
+        // Clear caches.
         ZhegalkinCache.clearCaches()
         flix.addSourceCode(s"$name.flix", prog)
         val result = flix.compile().unsafeGet
         result.getMain match {
           case Some(mainFunc) =>
             for (_ <- 1 to NumberOfSamples) {
+              val t0 = System.nanoTime()
+              // Iterate the program NumberOfRuns time
               for (_ <- 1 to NumberOfRuns) {
-                val t0 = System.nanoTime()
                 mainFunc(Array.empty)
-                val tDelta = System.nanoTime() - t0
-                runningTimes += milliseconds(tDelta).toLong
               }
+              val tDelta = milliseconds(System.nanoTime() - t0).toLong
+              runningTimes += tDelta
             }
           case None => throw new RuntimeException(s"undefined main method for program '$name'")
         }
