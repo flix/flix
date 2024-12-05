@@ -266,6 +266,28 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
+
+  /**
+    * An error raised to indicate that a lowercase name was expected.
+    *
+    * @param name the non-lowercase name.
+    * @param loc  the location of the non-lowercase name.
+    */
+  case class UnexpectedNonLowerCaseName(name: String, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Expected a lowercase name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected non-lowercase name: '$name'
+         |
+         |${code(loc, "unexpected name")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
   /**
     * An error raised to indicate that type parameters are present on an effect or operation.
     *
