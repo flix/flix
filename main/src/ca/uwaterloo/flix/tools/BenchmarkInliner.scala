@@ -169,6 +169,16 @@ object BenchmarkInliner {
 
       val relativeRunningTimeStats = programExperiments.map {
         case (name, runs) => name -> {
+          // TODO: I don't think I need the inlinerConfigs
+          val runsTimesRuns = cartesian(runs, runs)
+          val all = configs.map {
+            case ((inl1, inl2), (inlr1, inlr2)) => runsTimesRuns.filter {
+              case (r1, r2) => r1.inlinerType == inl1 &&
+                r2.inlinerType == inl2 &&
+                r1.inliningRounds == inlr1 &&
+                r2.inliningRounds == inlr2
+            }
+          }
           ???
         }
       }
