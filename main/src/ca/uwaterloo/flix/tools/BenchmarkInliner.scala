@@ -85,11 +85,11 @@ object BenchmarkInliner {
 
     private object InlinerType {
 
-      private case object NoInliner extends InlinerType
+      case object NoInliner extends InlinerType
 
-      private case object Old extends InlinerType
+      case object Old extends InlinerType
 
-      private case object New extends InlinerType
+      case object New extends InlinerType
 
       def from(options: Options): InlinerType = {
         if (options.xnooptimizer && options.xnooptimizer1)
@@ -149,6 +149,8 @@ object BenchmarkInliner {
       "List.filterMap" -> listFilterMap
     )
 
+    private val MaxInliningRounds = 50
+
     def run(opts: Options): JsonAST.JObject = {
 
       // TODO: Best performance increase
@@ -159,6 +161,16 @@ object BenchmarkInliner {
 
       val runningTimeStats = programExperiments.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
+      }
+
+      val inlinerConfigs = cartesian(List(InlinerType.NoInliner, InlinerType.Old, InlinerType.New), List(InlinerType.NoInliner, InlinerType.Old, InlinerType.New))
+      val inlinerRoundsConfigs = cartesian(0 to MaxInliningRounds, 0 to MaxInliningRounds)
+      val configs = cartesian(inlinerConfigs, inlinerRoundsConfigs)
+
+      val relativeRunningTimeStats = programExperiments.map {
+        case (name, runs) => name -> {
+          ???
+        }
       }
 
       val compilationTimeStats = programExperiments.map {
@@ -199,7 +211,7 @@ object BenchmarkInliner {
       val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, inlinerRounds = 0, inliner1Rounds = 0)
       val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false)
       val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false)
-      val allOptions = o0 :: (1 to 50).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to 50).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+      val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
       val runConfigs = allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
 
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
@@ -499,6 +511,14 @@ object BenchmarkInliner {
       */
     private def milliseconds(l: Long): Double = l / 1_000_000.0
 
+    /**
+      * Returns the cartesian product of `xs` and `ys`.
+      */
+    private def cartesian[A, B](xs: Seq[A], ys: Seq[B]): Seq[(A, B)] = {
+      xs.flatMap {
+        x => ys.map(y => (x, y))
+      }
+    }
   }
 
   private object BenchmarkThroughput {
