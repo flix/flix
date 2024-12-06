@@ -141,8 +141,10 @@ mod Http {
                        body = response.body().toString() // Body already is a string but has type Object
                     }))
                 } catch {
+                    case ex: ConnectException =>
+                        let msg = ex.getMessage();
+                        Err(IoError(ErrorKind.ConnectionFailed, if (msg == null) "Connection failed" else msg))
                     case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case _: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, "Connection failed"))
                     case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
                     case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
                     case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
