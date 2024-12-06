@@ -806,6 +806,16 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
   }
+
+  test("BadArrowEffectApplication.01") {
+    val input =
+      """
+        |type alias T[_a] = Unit
+        |pub def seqCheck(f: a -> a \ l: T[a]): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
 }
 
 /**
