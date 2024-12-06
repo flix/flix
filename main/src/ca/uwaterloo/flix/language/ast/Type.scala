@@ -17,12 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -414,9 +412,21 @@ object Type {
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
 
   /**
+    * The union of the primitive effects.
+    */
+  def PrimitiveEffs: Type = Type.mkUnion(
+    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)), SourceLocation.Unknown
+  )
+
+  /**
     * Represents the IO effect.
     */
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+
+  /**
+    * Represents the Chan effect.
+    */
+  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
 
   /**
    * Represents the Net effect.
@@ -512,7 +522,7 @@ object Type {
     */
   case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
 
-    def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
+    def withText(text: VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
 
@@ -662,7 +672,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
@@ -761,16 +771,16 @@ object Type {
   def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
-    * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Sender[tpe]` with the given optional source location `loc`.
     */
-  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Sender, loc), tpe, loc), reg, loc)
+  def mkSender(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Sender, loc), tpe, loc)
 
   /**
-    * Returns the type `Receiver[tpe, reg]` with the given optional source location `loc`.
+    * Returns the type `Receiver[tpe]` with the given optional source location `loc`.
     */
-  def mkReceiver(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc), reg, loc)
+  def mkReceiver(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc)
 
   /**
     * Returns the Lazy type with the given source location `loc`.

@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.VSCodeLspServer
+import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -263,6 +264,10 @@ object Main {
               System.exit(1)
           }
 
+        case PlainLsp =>
+          LspServer.run(options)
+          System.exit(0)
+
         case Command.VSCodeLsp(port) =>
           val o = options.copy(progress = false)
           try {
@@ -385,6 +390,8 @@ object Main {
 
     case object Repl extends Command
 
+    case object PlainLsp extends Command
+
     case class VSCodeLsp(port: Int) extends Command
 
     case object Release extends Command
@@ -442,6 +449,9 @@ object Main {
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
+
+      cmd("lsp-plain").text("  starts the Plain-LSP server.")
+        .action((_, c) => c.copy(command = Command.PlainLsp))
 
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(

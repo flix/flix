@@ -18,6 +18,15 @@ pub enum Proxy[_] {
 }
 
 ///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
 /// The uninterpretable `Env` effect.
 ///
 /// The `Env` effect represents actions that read from the environment (e.g. information

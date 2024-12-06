@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.Ast.VarText
+import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.language.dbg.Doc.*
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 import ca.uwaterloo.flix.language.dbg.DocAst.*
-import ca.uwaterloo.flix.language.dbg.printer.TypePrinter
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 
 import scala.annotation.tailrec
 

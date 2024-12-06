@@ -216,7 +216,7 @@ object PatMatch {
       case Expr.GetStaticField(_, _, _, _) => Nil
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
       case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp))
-      case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
       case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
       case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
 

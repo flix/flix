@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
@@ -106,7 +106,7 @@ object Kinder {
       // the parser will have already notified the user of this error
       // The recovery step here is to simply add a single type param that is never used
       val tparams1 = if (tparams0.isEmpty) {
-        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc)(Scope.Top, flix), loc)
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, isRegion = false, loc)(Scope.Top, flix), loc)
         List(regionTparam)
       } else {
         tparams0
@@ -672,12 +672,10 @@ object Kinder {
       val methods = methods0.map(visitJvmMethod(_, kenv0, taenv, henv0, root))
       KindedAst.Expr.NewObject(name, clazz, methods, loc)
 
-    case ResolvedAst.Expr.NewChannel(exp10, exp20, loc) =>
-      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+    case ResolvedAst.Expr.NewChannel(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc)
+      KindedAst.Expr.NewChannel(exp, tvar, loc)
 
     case ResolvedAst.Expr.GetChannel(exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
