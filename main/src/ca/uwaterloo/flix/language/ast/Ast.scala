@@ -24,23 +24,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    * Enum representing whether a type is ascribed or inferred.
-    */
-  sealed trait TypeSource
-
-  object TypeSource {
-    /**
-      * The type is ascribed (present in the source code).
-      */
-    case object Ascribed extends TypeSource
-
-    /**
-      * The type is inferred (absent in the source code).
-      */
-    case object Inferred extends TypeSource
-  }
-
-  /**
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)

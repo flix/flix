@@ -1237,8 +1237,8 @@ object Kinder {
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.FormalParam = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
       val (t, src) = tpe0 match {
-        case None => (sym.tvar, Ast.TypeSource.Inferred)
-        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, taenv, root), Ast.TypeSource.Ascribed)
+        case None => (sym.tvar, TypeSource.Inferred)
+        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, taenv, root), TypeSource.Ascribed)
       }
       KindedAst.FormalParam(sym, mod, t, src, loc)
   }
