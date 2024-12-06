@@ -52,7 +52,7 @@ sealed trait Completion {
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
-        sortText            = Priority.toSortText(Priority.Low, name),
+        sortText            = Priority.toSortText(Priority.Lower, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = Some(doc),
         insertTextFormat    = InsertTextFormat.Snippet,
