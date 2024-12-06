@@ -47,7 +47,7 @@ sealed trait Completion {
     case Completion.AutoUseEffCompletion(sym, doc, ap) =>
       val name = sym.name
       val qualifiedName = sym.toString
-      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName;"))
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val labelDetails = CompletionItemLabelDetails(
         None,
         Some(s" use $qualifiedName"))
@@ -191,7 +191,7 @@ sealed trait Completion {
       val qualifiedName = decl.sym.toString
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName")
       val labelDetails = CompletionItemLabelDetails(
         Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
         Some(s" use $qualifiedName"))
