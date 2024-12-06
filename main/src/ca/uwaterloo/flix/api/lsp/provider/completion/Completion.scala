@@ -37,7 +37,7 @@ sealed trait Completion {
       val name = sym.toString
       CompletionItem(
         label            = name,
-        sortText         = name,
+        sortText         = Priority.toSortText(Priority.Lower, name),
         textEdit         = TextEdit(context.range, name),
         documentation    = Some(doc),
         insertTextFormat = InsertTextFormat.Snippet,
@@ -158,9 +158,9 @@ sealed trait Completion {
 
     case Completion.WithHandlerCompletion(name, textEdit) =>
       CompletionItem(
-        label = name,
-        sortText = Priority.toSortText(Priority.Highest, name),
-        textEdit = textEdit,
+        label            = name,
+        sortText         = Priority.toSortText(Priority.Highest, name),
+        textEdit         = textEdit,
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Snippet
