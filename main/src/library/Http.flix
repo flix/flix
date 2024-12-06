@@ -23,6 +23,9 @@ eff Http {
 
 mod Http {
 
+    use IoError.ErrorKind
+    use IoError.IoError
+
     import java.io.IOException
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
@@ -34,13 +37,6 @@ mod Http {
     import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
     import java.net.URI
     import java.util.{List => JList}
-
-    ///
-    /// An error that can occur when performing HTTP operations.
-    ///
-    pub enum Error {
-        case Generic(String)
-    }
 
     ///
     /// A response from an HTTP request.
@@ -114,7 +110,7 @@ mod Http {
     ///
     /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[Http.Error, b] \ (ef - Http) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
         run {
             Ok(f(x))
         } with Http {
@@ -145,11 +141,11 @@ mod Http {
                        body = response.body().toString() // Body already is a string but has type Object
                     }))
                 } catch {
-                    case ex: IllegalArgumentException => Err(Http.Error.Generic(ex.getMessage()))
-                    case ex: ConnectException         => Err(Http.Error.Generic(ex.getMessage()))
-                    case ex: InterruptedException     => Err(Http.Error.Generic(ex.getMessage()))
-                    case ex: UncheckedIOException     => Err(Http.Error.Generic(ex.getMessage()))
-                    case ex: IOException              => Err(Http.Error.Generic(ex.getMessage()))
+                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case _: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, "Connection failed"))
+                    case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+                    case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
         }
 

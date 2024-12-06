@@ -38,6 +38,7 @@ mod IoError {
         case NotDirectory,
         case UnexpectedEof,
         case Unsupported,
+        case ConnectionFailed,
         case Other
     }
 
