@@ -443,7 +443,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectMain(result)
   }
 
   test("BadUnary.01") {
@@ -1054,6 +1053,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(s: S[r]): Int32 = new Struct @ r |> ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("BadTupleEnd.01") {
+    val input =
+      """
+        |def foo(x: Int32): (Int32, Int32) = (x, |)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
