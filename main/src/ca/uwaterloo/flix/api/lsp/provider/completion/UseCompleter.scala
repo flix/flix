@@ -15,19 +15,90 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ModCompletion, UseDefCompletion, UseEffCompletion, UseEnumCompletion, UseEnumTagCompletion, UseOpCompletion, UseSignatureCompletion}
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
+import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.errors.{ResolutionError, WeederError}
 
 object UseCompleter {
   /**
-    * Returns a List of Completion for completer.
+    * Returns a List of Completions from UndefinedUse.
     */
-  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-      UseModuleCompleter.getCompletions(context)      ++
-      UseEnumCompleter.getCompletions(context)        ++
-      UseEffCompleter.getCompletions(context)         ++
-      UseDefCompleter.getCompletions(context)         ++
-      UseSignatureCompleter.getCompletions(context)   ++
-      UseOpCompleter.getCompletions(context)          ++
-      UseEnumTagCompleter.getCompletions(context)
+  def getCompletions(err: ResolutionError.UndefinedUse, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
+    getCompletions(err.qn, uri)
+
+  /**
+    * Returns a List of Completion from UnqualifiedUse.
+    */
+  def getCompletions(err: WeederError.UnqualifiedUse, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
+    getCompletions(err.qn, uri)
+
+  /**
+    * Returns a List of Completion from qualified name and uri.
+    */
+  private def getCompletions(qn: QName, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val moduleSym = Symbol.mkModuleSym(qn.namespace.idents.map(_.name))
+    root.modules.getOrElse(moduleSym, Nil).collect{
+      case mod:  Symbol.ModuleSym if fuzzyMatch(qn.ident.name, mod.ns.last) => ModCompletion(mod)
+      case enum: Symbol.EnumSym   if fuzzyMatch(qn.ident.name, enum.name)   => UseEnumCompletion(enum.toString)
+      case eff:  Symbol.EffectSym if fuzzyMatch(qn.ident.name, eff.name)    => UseEffCompletion(eff.toString)
+      case defn: Symbol.DefnSym   if fuzzyMatch(qn.ident.name, defn.name)   => UseDefCompletion(defn.toString)
+    } ++ getSigCompletions(qn, uri) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
+  }
+
+  /**
+    * Returns a List of Completion for signatures.
+    */
+  private def getSigCompletions(name: QName, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
+    root.sigs.values.collect{
+      case sig if fuzzyMatch(name.ident.name, sig.sym.name) && (sig.spec.mod.isPublic || sig.sym.loc.source.name == uri) =>
+        UseSignatureCompletion(sig.sym.toString)
+    }
+
+  /**
+    * Returns a List of Completion for ops.
+    */
+  private def getOpCompletions(name: QName)(implicit root: TypedAst.Root): Iterable[Completion] =
+    root.effects.values.flatMap(_.ops).collect{
+      case op if fuzzyMatch(name.ident.name, op.sym.name) =>
+        UseOpCompletion(op.sym.toString)
+    }
+
+  /**
+    * Returns a List of Completion for tags.
+    */
+  private def getTagCompletions(qn: QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val enums = mkEnumSymNoTag(qn) ++ mkEnumSymWithTag(qn)
+    enums.flatMap(enum => enum.cases.collect{
+      case (_, c) => UseEnumTagCompletion(enum.sym, c)
+    })
+  }
+
+  /**
+    * Returns a List of Enum from qualified name, assuming no trailing tag.
+    *
+    * Example:
+    *   - qn = "Foo.Bar.Baz" => EnumSym([Foo, Bar], Baz, Unknown)
+    *   - qn = "Foo" => EnumSym([], Foo, Unknown)
+    */
+  private def mkEnumSymNoTag(qn: QName)(implicit root: TypedAst.Root): List[TypedAst.Enum] = {
+    val enumSym = new Symbol.EnumSym(qn.namespace.idents.map(_.name), qn.ident.name, SourceLocation.Unknown)
+    root.enums.get(enumSym).toList
+  }
+
+  /**
+    * Returns a List of Enum from qualified name, assuming a trailing tag.
+    * We will assume qn.ident is the tag, and create an EnumSym from only qn.namespace. Thus, qn.namespace should not be empty.
+    *
+    * Example:
+    *   - qn = "Foo.Bar.Ba" => EnumSym([Foo], Bar, Unknown)
+    *   - qn = "Foo.B" => EnumSym([], Foo, Unknown)
+    */
+  private def mkEnumSymWithTag(qn: QName)(implicit root: TypedAst.Root): List[TypedAst.Enum] = {
+    if (qn.namespace.idents.isEmpty)
+      return Nil
+    val enumSym = new Symbol.EnumSym(qn.namespace.idents.dropRight(1).map(_.name), qn.namespace.idents.last.name, SourceLocation.Unknown)
+    root.enums.get(enumSym).toList
   }
 }
