@@ -155,7 +155,9 @@ mod MultiMap {
         Map.valuesOf(m1) |> List.map(Set.toList) |> List.flatten
 
     ///
-    /// Updates `m` with `k => v`.
+    /// Updates `m` with `k => Set.union(v, v0)` if `k => v0` is in `m`.
+    ///
+    /// Otherwise, returns `m` with `k => Set.singleton(v)`.
     ///
     pub def insert(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;
