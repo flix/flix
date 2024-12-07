@@ -125,7 +125,7 @@ mod MultiMap {
     ///
     /// Returns `Some(vs)` if `k => vs` is in `m`.
     ///
-    /// Otherwise returns `Nil`.
+    /// Otherwise returns `Set.empty()`.
     ///
     pub def get(k: k, m: MultiMap[k, v]): Set[v] with Order[k] =
         let MultiMap(t) = m;
