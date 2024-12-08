@@ -703,7 +703,7 @@ object Resolver {
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
-      // For now we don't add any tvars from the args. We should have gotten those directly from the instance
+      // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       val symVal = trt.assocs.collectFirst {
@@ -1551,7 +1551,7 @@ object Resolver {
     val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
       case (fp, (acc, first)) =>
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-        else (mkPureLambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -3632,8 +3632,8 @@ object Resolver {
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
-  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, allowSubeffecting: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting, loc)
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting = false, loc)
   }
 
   /**
