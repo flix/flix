@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.errors.TestCompilationMessage
+import ca.uwaterloo.flix.language.errors.{TestCompilationMessage, TestCompilationMessageKind}
 import ca.uwaterloo.flix.language.fmt.TestFormatType
 import ca.uwaterloo.flix.language.phase.PhaseSuite
 import org.scalatest.Suites
@@ -25,5 +25,6 @@ class LanguageSuite extends Suites(
   new PhaseSuite,
   new TestFlixErrors,
   new TestFormatType,
-  new TestCompilationMessage
+  new TestCompilationMessage,
+  new TestCompilationMessageKind
 )
