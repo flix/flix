@@ -166,8 +166,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    RedBlackTree.parCount(threads - 1, h, t)
+                    RedBlackTree.parCount(h, t)
                 else
                     c()
             case Purity2.Impure(_) => c()
@@ -209,8 +208,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    let res = RedBlackTree.parMinimumBy(threads - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
                         case None       => None
                         case Some((k, v)) => Some((k, force v))
@@ -243,8 +241,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    let res = RedBlackTree.parMinimumBy(threads - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
                         case None       => None
                         case Some((k, v)) => Some((k, force v))
@@ -282,8 +279,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    let res = RedBlackTree.parMaximumBy(threads - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
                         case None       => None
                         case Some((k, v)) => Some((k, force v))
@@ -317,8 +313,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    let res = RedBlackTree.parMaximumBy(threads - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
                         case None       => None
                         case Some((k, v)) => Some((k, force v))
@@ -859,8 +854,7 @@ mod DelayMap {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
-                    let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-                    RedBlackTree.parSumWith(threads - 1, h, t)
+                    RedBlackTree.parSumWith(h, t)
                 else
                     sw()
             case Purity2.Impure(_) => sw()
