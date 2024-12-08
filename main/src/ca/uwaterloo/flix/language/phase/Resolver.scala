@@ -550,7 +550,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(field, env, taenv, ns0, root) }
+          val fieldsVal = traverse(fields0) { case field => resolveStructField(field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
             fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
