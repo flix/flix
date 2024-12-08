@@ -2240,7 +2240,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case caze :: _ => Result.Ok(caze)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2256,7 +2256,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, AnchorPosition.mkImportOrUseAnchor(ns0), qname.loc))
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case st :: _ => Result.Ok(st)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2281,7 +2281,7 @@ object Resolver {
           // If we are in the root namespace, we can't give figure out the struct name
           Result.Err(ResolutionError.UndefinedStructField(None, name, name.loc))
         }
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case field :: _ => Result.Ok(field)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2717,7 +2717,7 @@ object Resolver {
     case class Enum(enum0: NamedAst.Declaration.Enum) extends TypeLookupResult
 
     /**
-      * The result is an struct.
+      * The result is a struct.
       */
     case class Struct(struct0: NamedAst.Declaration.Struct) extends TypeLookupResult
 
