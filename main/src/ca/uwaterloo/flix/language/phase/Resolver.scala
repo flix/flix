@@ -2303,7 +2303,7 @@ object Resolver {
       case caze :: Nil =>
         Validation.Success(caze)
       // Case 2: Multiple matches. Error
-      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: $qname", qname.loc)
+      case _ => throw InternalCompilerException(s"unexpected duplicate tag: $qname", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2365,7 +2365,7 @@ object Resolver {
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
 
         // Disambiguate type.
-        case typeName =>
+        case _ => // typeName
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum0) => Validation.Success(getEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.Struct(struct) => Validation.Success(getStructTypeIfAccessible(struct, ns0, loc))
