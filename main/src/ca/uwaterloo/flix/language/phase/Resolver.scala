@@ -550,7 +550,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(idx, field, env, taenv, ns0, root) }
+          val fieldsVal = traverse(fields0) { case field => resolveStructField(field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
             fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
@@ -589,7 +589,7 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(idx: Int, field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
@@ -703,7 +703,7 @@ object Resolver {
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
-      // For now we don't add any tvars from the args. We should have gotten those directly from the instance
+      // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       val symVal = trt.assocs.collectFirst {
@@ -1169,7 +1169,6 @@ object Resolver {
       lookupStructField(field0, env0, ns0, root) match {
         case Result.Ok(field) =>
           val eVal = resolveExp(e, env0)
-          val idx = field.sym.idx
           val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
@@ -1184,7 +1183,6 @@ object Resolver {
         case Result.Ok(field) =>
           val e1Val = resolveExp(e1, env0)
           val e2Val = resolveExp(e2, env0)
-          val idx = field.sym.idx
           val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
@@ -1475,8 +1473,6 @@ object Resolver {
       }
 
     case NamedAst.Expr.Error(m) =>
-      // Note: We must NOT use [[Validation.toSoftFailure]] because
-      // that would duplicate the error inside the Validation.
       Validation.Success(ResolvedAst.Expr.Error(m))
 
   }
@@ -1551,7 +1547,7 @@ object Resolver {
     val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
       case (fp, (acc, first)) =>
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-        else (mkPureLambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
@@ -1620,7 +1616,7 @@ object Resolver {
     *
     *   - `loop ===> x -> y -> loop(x, y)`
     */
-  private def visitLocalDef(sym: Symbol.VarSym, arity: Int, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitLocalDef(sym: Symbol.VarSym, arity: Int, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val base = es => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, arity, Nil, loc.asSynthetic)
   }
@@ -2193,10 +2189,6 @@ object Resolver {
           sctx.errors.add(error)
           ResolvedQName.Sig(sig)
         }
-      //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
-      //        // Multiple case matches. Error.
-      //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
-      // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
 
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
         ResolvedQName.Op(op)
@@ -2242,7 +2234,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case caze :: _ => Result.Ok(caze)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2258,7 +2250,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, AnchorPosition.mkImportOrUseAnchor(ns0), qname.loc))
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case st :: _ => Result.Ok(st)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2283,7 +2275,7 @@ object Resolver {
           // If we are in the root namespace, we can't give figure out the struct name
           Result.Err(ResolutionError.UndefinedStructField(None, name, name.loc))
         }
-      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case field :: _ => Result.Ok(field)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2305,7 +2297,7 @@ object Resolver {
       case caze :: Nil =>
         Validation.Success(caze)
       // Case 2: Multiple matches. Error
-      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: $qname", qname.loc)
+      case _ => throw InternalCompilerException(s"unexpected duplicate tag: $qname", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2367,7 +2359,7 @@ object Resolver {
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
 
         // Disambiguate type.
-        case typeName =>
+        case _ => // typeName
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum0) => Validation.Success(getEnumTypeIfAccessible(enum0, ns0, loc))
             case TypeLookupResult.Struct(struct) => Validation.Success(getStructTypeIfAccessible(struct, ns0, loc))
@@ -2375,7 +2367,7 @@ object Resolver {
             case TypeLookupResult.TypeAlias(typeAlias) => Validation.Success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
             case TypeLookupResult.Effect(eff) => Validation.Success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
-            case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
+            case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, loc))
             case TypeLookupResult.NotFound =>
               val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
               sctx.errors.add(error)
@@ -2392,7 +2384,7 @@ object Resolver {
           case TypeLookupResult.TypeAlias(typeAlias) => Validation.Success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
           case TypeLookupResult.Effect(eff) => Validation.Success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
-          case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
+          case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, loc))
           case TypeLookupResult.NotFound =>
             val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
             sctx.errors.add(error)
@@ -2719,7 +2711,7 @@ object Resolver {
     case class Enum(enum0: NamedAst.Declaration.Enum) extends TypeLookupResult
 
     /**
-      * The result is an struct.
+      * The result is a struct.
       */
     case class Struct(struct0: NamedAst.Declaration.Struct) extends TypeLookupResult
 
@@ -2805,7 +2797,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
-        getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+        getAssocTypeIfAccessible(assoc)
         Validation.Success(assoc)
     }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, env, qname.loc)))
   }
@@ -3211,15 +3203,15 @@ object Resolver {
     * (a) its trait is marked public, or
     * (b) the trait is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): NamedAst.Declaration.AssocTypeSig = {
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig): NamedAst.Declaration.AssocTypeSig = {
     assoc0 // TODO ASSOC-TYPES check class accessibility
   }
 
   /**
     * Returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     */
-  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): UnkindedType = {
-    getAssocTypeIfAccessible(assoc0, ns0, loc)
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, loc: SourceLocation): UnkindedType = {
+    getAssocTypeIfAccessible(assoc0)
     mkUnappliedAssocType(assoc0.sym, loc)
   }
 
@@ -3370,7 +3362,7 @@ object Resolver {
   /**
     * Adds the given use or import to the use environment.
     */
-  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): LocalScope = useOrImport match {
+  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
     case Ast.UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
@@ -3382,7 +3374,7 @@ object Resolver {
   /**
     * Adds the given uses and imports to the use environment.
     */
-  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): LocalScope = {
+  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root): LocalScope = {
     usesAndImports.foldLeft(env)(appendUseEnv(_, _, root))
   }
 
@@ -3470,17 +3462,6 @@ object Resolver {
     sym.text match {
       case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
       case VarText.SourceText(s) => LocalScope.singleton(s, Resolution.TypeVar(sym))
-    }
-  }
-
-  /**
-    * Builds a variable environment from the given resolution environment.
-    */
-  private def filterToVarEnv(env: LocalScope): Map[String, Symbol.VarSym] = {
-    env.m.flatMap {
-      case (name, res) => res.collectFirst {
-        case Resolution.Var(sym) => (name, sym)
-      }
     }
   }
 
@@ -3632,8 +3613,8 @@ object Resolver {
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
-  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, allowSubeffecting: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting, loc)
+  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting = false, loc)
   }
 
   /**
