@@ -2373,7 +2373,7 @@ object Resolver {
             case TypeLookupResult.TypeAlias(typeAlias) => Validation.Success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
             case TypeLookupResult.Effect(eff) => Validation.Success(getEffectTypeIfAccessible(eff, ns0, loc))
             case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
-            case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
+            case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, loc))
             case TypeLookupResult.NotFound =>
               val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
               sctx.errors.add(error)
@@ -2390,7 +2390,7 @@ object Resolver {
           case TypeLookupResult.TypeAlias(typeAlias) => Validation.Success(getTypeAliasTypeIfAccessible(typeAlias, ns0, loc))
           case TypeLookupResult.Effect(eff) => Validation.Success(getEffectTypeIfAccessible(eff, ns0, loc))
           case TypeLookupResult.JavaClass(clazz) => Validation.Success(flixifyType(clazz, loc))
-          case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, ns0, root, loc))
+          case TypeLookupResult.AssocType(assoc) => Validation.Success(getAssocTypeTypeIfAccessible(assoc, loc))
           case TypeLookupResult.NotFound =>
             val error = ResolutionError.UndefinedType(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, loc)
             sctx.errors.add(error)
@@ -3216,7 +3216,7 @@ object Resolver {
   /**
     * Returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     */
-  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): UnkindedType = {
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, loc: SourceLocation): UnkindedType = {
     getAssocTypeIfAccessible(assoc0)
     mkUnappliedAssocType(assoc0.sym, loc)
   }
@@ -3368,7 +3368,7 @@ object Resolver {
   /**
     * Adds the given use or import to the use environment.
     */
-  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): LocalScope = useOrImport match {
+  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
     case Ast.UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
@@ -3468,17 +3468,6 @@ object Resolver {
     sym.text match {
       case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
       case VarText.SourceText(s) => LocalScope.singleton(s, Resolution.TypeVar(sym))
-    }
-  }
-
-  /**
-    * Builds a variable environment from the given resolution environment.
-    */
-  private def filterToVarEnv(env: LocalScope): Map[String, Symbol.VarSym] = {
-    env.m.flatMap {
-      case (name, res) => res.collectFirst {
-        case Resolution.Var(sym) => (name, sym)
-      }
     }
   }
 
