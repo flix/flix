@@ -550,7 +550,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(idx, field, env, taenv, ns0, root) }
+          val fieldsVal = traverse(fields0.zipWithIndex) { case (field, idx) => resolveStructField(field, env, taenv, ns0, root) }
           mapN(fieldsVal) {
             fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
@@ -589,7 +589,7 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(idx: Int, field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
@@ -1169,7 +1169,6 @@ object Resolver {
       lookupStructField(field0, env0, ns0, root) match {
         case Result.Ok(field) =>
           val eVal = resolveExp(e, env0)
-          val idx = field.sym.idx
           val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
@@ -1184,7 +1183,6 @@ object Resolver {
         case Result.Ok(field) =>
           val e1Val = resolveExp(e1, env0)
           val e2Val = resolveExp(e2, env0)
-          val idx = field.sym.idx
           val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
