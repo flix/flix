@@ -1,5 +1,7 @@
 {
   "classes": {
+    "java.lang.Boolean": "",
+
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
     "java.lang.ProcessHandle": "Exec, IO",
