@@ -93,11 +93,6 @@ object CompletionProvider {
       case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
       //
-      // Uses.
-      //
-      case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
-
-      //
       // With.
       //
       case SyntacticContext.WithClause =>
@@ -130,6 +125,8 @@ object CompletionProvider {
       case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
       case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err, ctx.uri)
+      case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err, ctx.uri)
 
       case _ => Nil
     })
@@ -209,8 +206,6 @@ object CompletionProvider {
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errorsAt(uri, pos, errors).map({
       // We can have multiple errors, so we rank them, and pick the highest priority.
-      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedUse(_, _, _, _) => (1, SyntacticContext.Use)
       case ResolutionError.UndefinedName(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _, _) => (1, SyntacticContext.Type.OtherType)
