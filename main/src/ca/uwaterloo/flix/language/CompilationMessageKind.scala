@@ -15,25 +15,26 @@
  */
 package ca.uwaterloo.flix.language
 
+import ca.uwaterloo.flix.language.CompilationMessageKind.*
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 
 sealed trait CompilationMessageKind {
   override def toString: String = this match {
-    case CompilationMessageKind.DerivationError => "Derivation Error"
-    case CompilationMessageKind.EntryPointError => "Entry Point Error"
-    case CompilationMessageKind.InstanceError => "Instance Error"
-    case CompilationMessageKind.KindError => "Kind Error"
-    case CompilationMessageKind.LexerError => "Lexer Error"
-    case CompilationMessageKind.NameError => "Name Error"
-    case CompilationMessageKind.ParseError(sctx) => s"Parse Error ($sctx)"
-    case CompilationMessageKind.PatternMatchError => "Pattern Match Error"
-    case CompilationMessageKind.RedundancyError => "Redundancy Error"
-    case CompilationMessageKind.ResolutionError => "Resolution Error"
-    case CompilationMessageKind.SafetyError => "Safety Error"
-    case CompilationMessageKind.StratificationError => "Stratification Error"
-    case CompilationMessageKind.TestError => "Test Error"
-    case CompilationMessageKind.TypeError => "Type Error"
-    case CompilationMessageKind.WeederError => "Syntax Error"
+    case DerivationError => "Derivation Error"
+    case EntryPointError => "Entry Point Error"
+    case InstanceError => "Instance Error"
+    case KindError => "Kind Error"
+    case LexerError => "Lexer Error"
+    case NameError => "Name Error"
+    case ParseError(sctx) => s"Parse Error ($sctx)"
+    case PatternMatchError => "Pattern Match Error"
+    case RedundancyError => "Redundancy Error"
+    case ResolutionError => "Resolution Error"
+    case SafetyError => "Safety Error"
+    case StratificationError => "Stratification Error"
+    case TestError => "Test Error"
+    case TypeError => "Type Error"
+    case WeederError => "Syntax Error"
   }
 }
 
