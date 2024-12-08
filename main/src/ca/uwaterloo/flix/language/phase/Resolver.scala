@@ -2803,7 +2803,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
-        getAssocTypeIfAccessible(assoc, ns0, qname.loc)
+        getAssocTypeIfAccessible(assoc)
         Validation.Success(assoc)
     }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, env, qname.loc)))
   }
@@ -3209,7 +3209,7 @@ object Resolver {
     * (a) its trait is marked public, or
     * (b) the trait is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): NamedAst.Declaration.AssocTypeSig = {
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig): NamedAst.Declaration.AssocTypeSig = {
     assoc0 // TODO ASSOC-TYPES check class accessibility
   }
 
@@ -3217,7 +3217,7 @@ object Resolver {
     * Returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     */
   private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): UnkindedType = {
-    getAssocTypeIfAccessible(assoc0, ns0, loc)
+    getAssocTypeIfAccessible(assoc0)
     mkUnappliedAssocType(assoc0.sym, loc)
   }
 
