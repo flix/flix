@@ -3380,7 +3380,7 @@ object Resolver {
   /**
     * Adds the given uses and imports to the use environment.
     */
-  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): LocalScope = {
+  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root): LocalScope = {
     usesAndImports.foldLeft(env)(appendUseEnv(_, _, root))
   }
 
