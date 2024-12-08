@@ -40,26 +40,32 @@ sealed trait CompilationMessageKind extends Ordered[CompilationMessageKind] {
   override def compare(that: CompilationMessageKind): Int = (this, that) match {
     case _ if this == that => 0
     case (DerivationError, _) => -1
+
     case (EntryPointError, DerivationError) => 1
     case (EntryPointError, _) => -1
+
     case (InstanceError, DerivationError) => 1
     case (InstanceError, EntryPointError) => 1
     case (InstanceError, _) => -1
+
     case (KindError, DerivationError) => 1
     case (KindError, EntryPointError) => 1
     case (KindError, InstanceError) => 1
     case (KindError, _) => -1
+
     case (LexerError, DerivationError) => 1
     case (LexerError, EntryPointError) => 1
     case (LexerError, InstanceError) => 1
     case (LexerError, KindError) => 1
     case (LexerError, _) => -1
+
     case (NameError, DerivationError) => 1
     case (NameError, EntryPointError) => 1
     case (NameError, InstanceError) => 1
     case (NameError, KindError) => 1
     case (NameError, LexerError) => 1
     case (NameError, _) => -1
+
     case (ParseError(_), DerivationError) => 1
     case (ParseError(_), EntryPointError) => 1
     case (ParseError(_), InstanceError) => 1
@@ -68,6 +74,7 @@ sealed trait CompilationMessageKind extends Ordered[CompilationMessageKind] {
     case (ParseError(_), NameError) => 1
     case (ParseError(_), ParseError(_)) => 0
     case (ParseError(_), _) => -1
+
     case (PatternMatchError, DerivationError) => 1
     case (PatternMatchError, EntryPointError) => 1
     case (PatternMatchError, InstanceError) => 1
@@ -76,33 +83,40 @@ sealed trait CompilationMessageKind extends Ordered[CompilationMessageKind] {
     case (PatternMatchError, NameError) => 1
     case (PatternMatchError, ParseError(_)) => 1
     case (PatternMatchError, _) => -1
-    case (RedundancyError, _) => 1
+
     case (RedundancyError, ResolutionError) => -1
     case (RedundancyError, SafetyError) => -1
     case (RedundancyError, StratificationError) => -1
     case (RedundancyError, TestError) => -1
     case (RedundancyError, TypeError) => -1
     case (RedundancyError, WeederError) => -1
-    case (ResolutionError, _) => 1
+    case (RedundancyError, _) => 1
+
     case (ResolutionError, SafetyError) => -1
     case (ResolutionError, StratificationError) => -1
     case (ResolutionError, TestError) => -1
     case (ResolutionError, TypeError) => -1
     case (ResolutionError, WeederError) => -1
-    case (SafetyError, _) => 1
+    case (ResolutionError, _) => 1
+
     case (SafetyError, StratificationError) => -1
     case (SafetyError, TestError) => -1
     case (SafetyError, TypeError) => -1
     case (SafetyError, WeederError) => -1
-    case (StratificationError, _) => 1
+    case (SafetyError, _) => 1
+
     case (StratificationError, TestError) => -1
     case (StratificationError, TypeError) => -1
     case (StratificationError, WeederError) => -1
-    case (TestError, _) => 1
+    case (StratificationError, _) => 1
+
     case (TestError, TypeError) => -1
     case (TestError, WeederError) => -1
-    case (TypeError, _) => 1
+    case (TestError, _) => 1
+
     case (TypeError, WeederError) => -1
+    case (TypeError, _) => 1
+
     case (WeederError, _) => 1
   }
 }
