@@ -17,10 +17,13 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EffectCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EffSymCompleter {
 
-  def getCompletions()(implicit root: TypedAst.Root): Iterable[EffectCompletion] = {
+  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[EffectCompletion] = {
+    if (err.qn.namespace.idents.isEmpty)
+      return Nil
     root.effects.map {
       case (sym, eff) => Completion.EffectCompletion(sym, eff.doc.text)
     }
