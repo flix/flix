@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   * A common super-type for resolution errors.
   */
 sealed trait ResolutionError extends CompilationMessage {
-  val kind = "Resolution Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.ResolutionError
 }
 
 object ResolutionError {

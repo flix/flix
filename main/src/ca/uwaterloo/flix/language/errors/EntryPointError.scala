@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for errors produced by [[ca.uwaterloo.flix.language.phase.EntryPoints]].
   */
 sealed trait EntryPointError extends CompilationMessage {
-  val kind: String = "Entry Point Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.EntryPointError
 }
 
 object EntryPointError {
