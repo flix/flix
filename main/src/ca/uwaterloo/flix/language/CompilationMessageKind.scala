@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.CompilationMessageKind.*
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 
-sealed trait CompilationMessageKind extends Ordering[CompilationMessageKind] {
+sealed trait CompilationMessageKind extends Ordered[CompilationMessageKind] {
   override def toString: String = this match {
     case DerivationError => "Derivation Error"
     case EntryPointError => "Entry Point Error"
@@ -37,8 +37,8 @@ sealed trait CompilationMessageKind extends Ordering[CompilationMessageKind] {
     case WeederError => "Syntax Error"
   }
 
-  override def compare(x: CompilationMessageKind, y: CompilationMessageKind): Int = (x, y) match {
-    case _ if x == y => 0
+  override def compare(that: CompilationMessageKind): Int = (this, that) match {
+    case _ if this == that => 0
     case (DerivationError, _) => -1
     case (EntryPointError, DerivationError) => 1
     case (EntryPointError, _) => -1
