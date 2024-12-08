@@ -21,40 +21,8 @@ sealed trait CompilationMessageKind
 
 object CompilationMessageKind {
 
-  case object TestError extends CompilationMessageKind {
-    override def toString: String = "Test Error"
-  }
-
-  case object LexerError extends CompilationMessageKind {
-    override def toString: String = "Lexer Error"
-  }
-
-  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind {
-    override def toString: String = s"Parse Error ($sctx)"
-  }
-
-  case object WeederError extends CompilationMessageKind {
-    override def toString: String = "Syntax Error"
-  }
-
-  case object NameError extends CompilationMessageKind {
-    override def toString: String = "Name Error"
-  }
-
-  case object ResolutionError extends CompilationMessageKind {
-    override def toString: String = "Resolution Error"
-  }
-
-  case object KindError extends CompilationMessageKind {
-    override def toString: String = "Kind Error"
-  }
-
   case object DerivationError extends CompilationMessageKind {
     override def toString: String = "Derivation Error"
-  }
-
-  case object TypeError extends CompilationMessageKind {
-    override def toString: String = "Type Error"
   }
 
   case object EntryPointError extends CompilationMessageKind {
@@ -65,8 +33,20 @@ object CompilationMessageKind {
     override def toString: String = "Instance Error"
   }
 
-  case object StratificationError extends CompilationMessageKind {
-    override def toString: String = "Stratification Error"
+  case object KindError extends CompilationMessageKind {
+    override def toString: String = "Kind Error"
+  }
+
+  case object LexerError extends CompilationMessageKind {
+    override def toString: String = "Lexer Error"
+  }
+
+  case object NameError extends CompilationMessageKind {
+    override def toString: String = "Name Error"
+  }
+
+  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind {
+    override def toString: String = s"Parse Error ($sctx)"
   }
 
   case object PatternMatchError extends CompilationMessageKind {
@@ -77,8 +57,28 @@ object CompilationMessageKind {
     override def toString: String = "Redundancy Error"
   }
 
+  case object ResolutionError extends CompilationMessageKind {
+    override def toString: String = "Resolution Error"
+  }
+
   case object SafetyError extends CompilationMessageKind {
     override def toString: String = "Safety Error"
+  }
+
+  case object StratificationError extends CompilationMessageKind {
+    override def toString: String = "Stratification Error"
+  }
+
+  case object TestError extends CompilationMessageKind {
+    override def toString: String = "Test Error"
+  }
+
+  case object TypeError extends CompilationMessageKind {
+    override def toString: String = "Type Error"
+  }
+
+  case object WeederError extends CompilationMessageKind {
+    override def toString: String = "Syntax Error"
   }
 
 }
