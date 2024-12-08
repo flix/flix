@@ -17,68 +17,56 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 
-sealed trait CompilationMessageKind
+sealed trait CompilationMessageKind {
+  override def toString: String = this match {
+    case CompilationMessageKind.DerivationError => "Derivation Error"
+    case CompilationMessageKind.EntryPointError => "Entry Point Error"
+    case CompilationMessageKind.InstanceError => "Instance Error"
+    case CompilationMessageKind.KindError => "Kind Error"
+    case CompilationMessageKind.LexerError => "Lexer Error"
+    case CompilationMessageKind.NameError => "Name Error"
+    case CompilationMessageKind.ParseError(sctx) => s"Parse Error ($sctx)"
+    case CompilationMessageKind.PatternMatchError => "Pattern Match Error"
+    case CompilationMessageKind.RedundancyError => "Redundancy Error"
+    case CompilationMessageKind.ResolutionError => "Resolution Error"
+    case CompilationMessageKind.SafetyError => "Safety Error"
+    case CompilationMessageKind.StratificationError => "Stratification Error"
+    case CompilationMessageKind.TestError => "Test Error"
+    case CompilationMessageKind.TypeError => "Type Error"
+    case CompilationMessageKind.WeederError => "Syntax Error"
+  }
+}
 
 object CompilationMessageKind {
 
-  case object DerivationError extends CompilationMessageKind {
-    override def toString: String = "Derivation Error"
-  }
+  case object DerivationError extends CompilationMessageKind
 
-  case object EntryPointError extends CompilationMessageKind {
-    override def toString: String = "Entry Point Error"
-  }
+  case object EntryPointError extends CompilationMessageKind
 
-  case object InstanceError extends CompilationMessageKind {
-    override def toString: String = "Instance Error"
-  }
+  case object InstanceError extends CompilationMessageKind
 
-  case object KindError extends CompilationMessageKind {
-    override def toString: String = "Kind Error"
-  }
+  case object KindError extends CompilationMessageKind
 
-  case object LexerError extends CompilationMessageKind {
-    override def toString: String = "Lexer Error"
-  }
+  case object LexerError extends CompilationMessageKind
 
-  case object NameError extends CompilationMessageKind {
-    override def toString: String = "Name Error"
-  }
+  case object NameError extends CompilationMessageKind
 
-  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind {
-    override def toString: String = s"Parse Error ($sctx)"
-  }
+  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind
 
-  case object PatternMatchError extends CompilationMessageKind {
-    override def toString: String = "Pattern Match"
-  }
+  case object PatternMatchError extends CompilationMessageKind
 
-  case object RedundancyError extends CompilationMessageKind {
-    override def toString: String = "Redundancy Error"
-  }
+  case object RedundancyError extends CompilationMessageKind
 
-  case object ResolutionError extends CompilationMessageKind {
-    override def toString: String = "Resolution Error"
-  }
+  case object ResolutionError extends CompilationMessageKind
 
-  case object SafetyError extends CompilationMessageKind {
-    override def toString: String = "Safety Error"
-  }
+  case object SafetyError extends CompilationMessageKind
 
-  case object StratificationError extends CompilationMessageKind {
-    override def toString: String = "Stratification Error"
-  }
+  case object StratificationError extends CompilationMessageKind
 
-  case object TestError extends CompilationMessageKind {
-    override def toString: String = "Test Error"
-  }
+  case object TestError extends CompilationMessageKind
 
-  case object TypeError extends CompilationMessageKind {
-    override def toString: String = "Type Error"
-  }
+  case object TypeError extends CompilationMessageKind
 
-  case object WeederError extends CompilationMessageKind {
-    override def toString: String = "Syntax Error"
-  }
+  case object WeederError extends CompilationMessageKind
 
 }
