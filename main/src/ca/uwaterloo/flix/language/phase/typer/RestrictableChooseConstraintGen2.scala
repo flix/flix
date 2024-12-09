@@ -190,9 +190,9 @@ object RestrictableChooseConstraintGen2 {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext2, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext2, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
-      case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
+      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
 
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
@@ -244,13 +244,15 @@ object RestrictableChooseConstraintGen2 {
         // The tag type is a function from the type of variant to the type of the enum.
         //
         // Γ ⊢ e: τ
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val constructorBase = Type.mkPureUncurriedArrow(tpes, enumType, loc)
+        c.unifyType(tagType, constructorBase, loc)
         targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
         c.unifyType(enumTypeOut, tvar, loc)
+        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
     }
   }

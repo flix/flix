@@ -189,10 +189,10 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult2(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction2.visitDef(defn, subst)
   }
 
   /**

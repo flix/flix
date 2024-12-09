@@ -447,7 +447,7 @@ object ConstraintGen2 {
         val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen2.visitRestrictableTag(e)
+      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen2.visitApplyRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip

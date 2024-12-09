@@ -33,7 +33,7 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
     case KindedAst.Def(sym, spec, _, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -44,8 +44,8 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = sig match {
-    case KindedAst.Sig(_, _, None, _) => Validation.Success(SubstitutionTree.empty)
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
+    case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
     case KindedAst.Sig(sym, spec, Some(_), _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -56,7 +56,7 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[SubstitutionTree, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult2, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: ListMap[Symbol.AssocTypeSym, AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult2(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -95,8 +95,8 @@ object ConstraintSolverInterface {
 
       val (leftovers, tree) = ConstraintSolver2.solveAll(constrs)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
-        case Nil => Validation.Success(tree)
-        case err :: _ => Validation.toSoftFailure(tree, toTypeError(err, renv))
+        case Nil => (tree, Nil)
+        case errs@(_ :: _) => (tree, errs.map(toTypeError(_, renv))) // TODO use getErrorsFromTypeConstraints
       }
   }
 
