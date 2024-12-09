@@ -449,7 +449,7 @@ mod RedBlackTree {
                     case _ => false
             }
         };
-            visitSubtree(threads() - 1, t)
+        visitSubtree(threads() - 1, t)
     }
 
     ///
@@ -730,7 +730,7 @@ mod RedBlackTree {
                         ) yield l + v1 + r
                 }
         };
-            visitSubtree(threads() - 1, t)
+        visitSubtree(threads() - 1, t)
     }
 
     ///
