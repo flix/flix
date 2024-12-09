@@ -2189,7 +2189,7 @@ object Weeder2 {
         case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil, Nil) => Validation.Success(Expr.ArrayStore(e1, e2, e3, loc))
         case ("VECTOR_GET", e1 :: e2 :: Nil, Nil) => Validation.Success(Expr.VectorLoad(e1, e2, loc))
         case ("VECTOR_LENGTH", e1 :: Nil, Nil) => Validation.Success(Expr.VectorLength(e1, loc))
-        case ("UNSAFE_REMOVE", e1 :: Nil, eff :: Nil) => Validation.Success(Expr.UnsafeRemove(e1, eff, loc))
+        case ("UNSAFE_REMOVE", e1 :: Nil, eff :: Nil) => Validation.Success(Expr.Unsafe(e1, eff, loc))
         case _ =>
           val error = UndefinedIntrinsic(loc)
           sctx.errors.add(error)

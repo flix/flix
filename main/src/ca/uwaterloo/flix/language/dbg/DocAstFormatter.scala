@@ -178,7 +178,7 @@ object DocAstFormatter {
         aux(d1) +: text(":=") +: aux(d2)
       case Ascription(v, tpe) =>
         aux(v) |:: text(":") +: formatType(tpe, paren = false)
-      case UnsafeRemove(d, tpe) =>
+      case Unsafe(d, tpe) =>
         text("unsafe_remove") +: formatType(tpe, paren = false) +: curly(format(d))
       case DoubleKeyword(word1, d1, word2, d2E) =>
         val d2Part = d2E match {

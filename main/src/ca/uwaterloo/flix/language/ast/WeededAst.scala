@@ -181,7 +181,7 @@ object WeededAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class UnsafeRemove(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
     case class UnsafeOld(exp: Expr, loc: SourceLocation) extends Expr
 

@@ -693,10 +693,10 @@ object Desugar {
       val eff = declaredEff.map(visitType)
       Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.UnsafeRemove(exp, eff0, loc) =>
+    case WeededAst.Expr.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      Expr.UnsafeRemove(e, eff, loc)
+      Expr.Unsafe(e, eff, loc)
 
     case WeededAst.Expr.UnsafeOld(exp, loc) =>
       // We desugar an unsafe expression to an unchecked cast to pure.
