@@ -9,7 +9,7 @@ mod Test.Exp.Unsafe {
     def test02(): Unit = unsafe_remove IO {println(42)}
 
     @Test
-    def test03(): Int64 = unsafe_remove {IO} System.currentTimeMillis()
+    def test03(): Int64 = unsafe_remove {IO} {System.currentTimeMillis()}
 
     @Test
     def test04(): Bool = unsafe_remove {OutOfBounds} Vector#{1, 2, 3}[1] == 2
