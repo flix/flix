@@ -42,8 +42,8 @@ trait Box[a] {
 
 instance Box[Bool] {
     type Boxed = Boolean
-    pub def box(x: Bool): Boolean = unsafe Boolean.valueOf(x)
-    pub def unbox(x: Boolean): Bool = unsafe x.booleanValue()
+    pub def box(x: Bool): Boolean = Boolean.valueOf(x)
+    pub def unbox(x: Boolean): Bool = x.booleanValue()
 }
 
 instance Box[Char] {
