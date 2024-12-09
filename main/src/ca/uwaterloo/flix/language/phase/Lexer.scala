@@ -468,6 +468,7 @@ object Lexer {
       case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
       case _ if isKeyword("Univ") => TokenKind.KeywordUniv
       case _ if isKeyword("unsafe") => TokenKind.KeywordUnsafe
+      case _ if isKeyword("unsafe_remove") => TokenKind.KeywordUnsafeRemove
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
       case _ if isKeyword("with") => TokenKind.KeywordWith
