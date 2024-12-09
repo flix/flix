@@ -2982,7 +2982,8 @@ object Parser2 {
     }
 
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
+      if (left == TokenKind.ArrowThinR) return typeAndEffect()
+      var lhs = typeDelimited()
       // handle Type argument application
       while (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)
