@@ -183,7 +183,7 @@ object WeededAst {
 
     case class UnsafeRemove(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Expr, loc: SourceLocation) extends Expr
+    case class UnsafeOld(exp: Expr, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 

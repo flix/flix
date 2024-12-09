@@ -37,11 +37,29 @@ sealed trait Completion {
       val name = sym.toString
       CompletionItem(
         label            = name,
-        sortText         = name,
+        sortText         = Priority.toSortText(Priority.Lower, name),
         textEdit         = TextEdit(context.range, name),
         documentation    = Some(doc),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Enum
+      )
+
+    case Completion.AutoUseEffCompletion(sym, doc, ap) =>
+      val name = sym.name
+      val qualifiedName = sym.toString
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val labelDetails = CompletionItemLabelDetails(
+        None,
+        Some(s" use $qualifiedName"))
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = name,
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(doc),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Enum,
+        additionalTextEdits = additionalTextEdits
       )
 
     case Completion.KeywordCompletion(name, priority) =>
@@ -140,9 +158,9 @@ sealed trait Completion {
 
     case Completion.WithHandlerCompletion(name, textEdit) =>
       CompletionItem(
-        label = name,
-        sortText = Priority.toSortText(Priority.Highest, name),
-        textEdit = textEdit,
+        label            = name,
+        sortText         = Priority.toSortText(Priority.Highest, name),
+        textEdit         = textEdit,
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Snippet
@@ -173,7 +191,7 @@ sealed trait Completion {
       val qualifiedName = decl.sym.toString
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName")
       val labelDetails = CompletionItemLabelDetails(
         Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
         Some(s" use $qualifiedName"))
@@ -617,6 +635,15 @@ object Completion {
    * @param ap            the anchor position for the use statement.
    */
   case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param eff           the effect to complete and use.
+   * @param doc           the documentation associated with the effect.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseEffCompletion(eff: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion

@@ -26,9 +26,24 @@ case class TwoList[T](x: T, y: T, rest: List[T]) {
   def map[S](f: T => S): TwoList[S] = TwoList(f(x), f(y), rest.map(f))
 
   /**
+    * Returns `true` if an element in `this` list satisfies the given predicate `f`.
+    */
+  def exists(f: T => Boolean): Boolean = f(x) || f(y) || rest.exists(f)
+
+  /**
+    * Returns `true` if all elements in `this` list satisfies the given predicate `f`.
+    */
+  def forall(f: T => Boolean): Boolean = f(x) && f(y) && rest.forall(f)
+
+  /**
     * Returns an iterator of the elements of `this` list.
     */
   def iterator: Iterator[T] = Iterator(x) ++ Iterator(y) ++ rest.iterator
+
+  /**
+    * Returns the length of `this` list.
+    */
+  def length: Int = 2 + rest.length
 
   /**
     * Returns `this` list as an ordinary list.
