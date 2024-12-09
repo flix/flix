@@ -232,6 +232,9 @@ object FindReferencesProvider {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
     case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
+    // Type Vars
+    case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
+    case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
     // Vars
     case TypedAst.Expr.Var(sym, _, _) => Some(getVarSymOccurs(sym))
     case Binder(sym, _) => Some(getVarSymOccurs(sym))
@@ -245,6 +248,27 @@ object FindReferencesProvider {
     case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false
+  }
+
+  private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object TypeVarSymConsumer extends Consumer {
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Var(sym, loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeVarSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
