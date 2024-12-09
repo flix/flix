@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for naming errors.
   */
 sealed trait NameError extends CompilationMessage {
-  val kind = "Name Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.NameError
 }
 
 object NameError {
