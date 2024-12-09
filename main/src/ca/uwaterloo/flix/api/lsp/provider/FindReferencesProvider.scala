@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Input, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -68,6 +68,7 @@ object FindReferencesProvider {
     right
       .orElse(left)
       .flatMap(getOccurs)
+      .map(_.filter(isInProject))
       .map(mkResponse)
       .getOrElse(mkNotFound(uri, pos))
   }
@@ -236,6 +237,14 @@ object FindReferencesProvider {
     case Binder(sym, _) => Some(getVarSymOccurs(sym))
 
     case _ => None
+  }
+
+  private def isInProject(loc: SourceLocation): Boolean = loc.source.input match {
+    case Input.Text(_, _, stable, _) => !stable
+    case Input.TxtFile(_, _) => false
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
   }
 
   private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
