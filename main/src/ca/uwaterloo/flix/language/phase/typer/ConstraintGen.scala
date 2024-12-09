@@ -701,6 +701,12 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
+      case Expr.Unsafe(exp, eff0, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val resTpe = tpe
+        val resEff = Type.mkDifference(eff, eff0, loc)
+        (resTpe, resEff)
+
       case Expr.Without(exp, effSymUse, _) =>
         //
         // e: tpe \ eff - effSym
