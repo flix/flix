@@ -27,7 +27,49 @@ import java.nio.file.Path
 
 object BenchmarkInliner {
 
+  private val Python: String =
+    """
+      |# $ pip install pandas
+      |
+      |import json
+      |import matplotlib
+      |import matplotlib.pyplot as plt
+      |import numpy as np
+      |
+      |with open("programsBenchmark.json") as file:
+      |    data = json.load(file)
+      |
+      |    programs = data['programs']
+      |    summaries = {}
+      |    for obj in programs:
+      |        name = obj['programName']
+      |        summary = obj['summary']
+      |        summaries[name] = summary
+      |
+      |    # Plot layout stuff
+      |    x = np.arange(len(summaries))
+      |    width = 0.25
+      |    multiplier = 0
+      |
+      |    fix, ax = plt.subplots(layout='constrained')
+      |
+      |    for program, summary in summaries.items():
+      |        offset = width * multiplier
+      |        rects = ax.bar(x + offset, summary['worst'], width, label=program)
+      |        ax.bar_label(rects, padding=3)
+      |        multiplier += 1
+      |
+      |
+      |    ax.set_ylabel('Running time (ms)')
+      |    ax.set_title('Running times of Flix benchmark programs')
+      |    ax.set_xticks(x + width, list(map(lambda obj: obj['programName'], programs)))
+      |    plt.savefig('benchmarkProgramsRunningTimes.png')
+      |
+      |""".stripMargin
+
   def run(opts: Options): Unit = {
+    writeFile("charts.py", Python)
+
     val t0 = System.currentTimeMillis()
 
     println("Benchmarking inliner. This may take a while...")
@@ -190,17 +232,46 @@ object BenchmarkInliner {
           programExperiments.map {
             case (name, runs) =>
               ("programName" -> name) ~ {
-              ("summary" -> {
-                ("runningTime" -> {
-                  val stats = runningTimeStats.apply(name)
-                  ("best" -> stats.min) ~
-                    ("worst" -> stats.max) ~
-                    ("average" -> stats.average) ~
-                    ("median" -> stats.median)
-                }) ~
-                  ("relativeRunningTime" -> {
-                    val relativeTimings = relativeRunningTimes.apply(name)
-                    val stats = relativeRunningTimeStats.apply(name)
+                ("summary" -> {
+                  ("runningTime" -> {
+                    val stats = runningTimeStats.apply(name)
+                    ("best" -> stats.min) ~
+                      ("worst" -> stats.max) ~
+                      ("average" -> stats.average) ~
+                      ("median" -> stats.median)
+                  }) ~
+                    ("relativeRunningTime" -> {
+                      val relativeTimings = relativeRunningTimes.apply(name)
+                      val stats = relativeRunningTimeStats.apply(name)
+                      val best = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.min }.map {
+                        case (type1, type2, rounds1, rounds2, timing) =>
+                          ("inlinerType1" -> type1.toString) ~
+                            ("inlinerType2" -> type2.toString) ~
+                            ("inlinerRounds1" -> rounds1.toString) ~
+                            ("inlinerRounds2" -> rounds2.toString) ~
+                            ("speedup" -> timing)
+                      }
+                      val worst = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.max }.map {
+                        case (type1, type2, rounds1, rounds2, timing) =>
+                          ("inlinerType1" -> type1.toString) ~
+                            ("inlinerType2" -> type2.toString) ~
+                            ("inlinerRounds1" -> rounds1.toString) ~
+                            ("inlinerRounds2" -> rounds2.toString) ~
+                            ("speedup" -> timing)
+                      }
+                      ("best" -> best) ~
+                        ("worst" -> worst)
+                    }) ~
+                    ("compilationTime" -> {
+                      val stats = compilationTimeStats.apply(name)
+                      ("best" -> stats.min) ~
+                        ("worst" -> stats.max) ~
+                        ("average" -> stats.average) ~
+                        ("median" -> stats.median)
+                    })
+                  ("relativeCompilationTime" -> {
+                    val relativeTimings = relativeCompilationTimes.apply(name)
+                    val stats = relativeCompilationTimeStats.apply(name)
                     val best = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.min }.map {
                       case (type1, type2, rounds1, rounds2, timing) =>
                         ("inlinerType1" -> type1.toString) ~
@@ -219,39 +290,10 @@ object BenchmarkInliner {
                     }
                     ("best" -> best) ~
                       ("worst" -> worst)
-                  }) ~
-                  ("compilationTime" -> {
-                    val stats = compilationTimeStats.apply(name)
-                    ("best" -> stats.min) ~
-                      ("worst" -> stats.max) ~
-                      ("average" -> stats.average) ~
-                      ("median" -> stats.median)
                   })
-                ("relativeCompilationTime" -> {
-                  val relativeTimings = relativeCompilationTimes.apply(name)
-                  val stats = relativeCompilationTimeStats.apply(name)
-                  val best = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.min }.map {
-                    case (type1, type2, rounds1, rounds2, timing) =>
-                      ("inlinerType1" -> type1.toString) ~
-                        ("inlinerType2" -> type2.toString) ~
-                        ("inlinerRounds1" -> rounds1.toString) ~
-                        ("inlinerRounds2" -> rounds2.toString) ~
-                        ("speedup" -> timing)
-                  }
-                  val worst = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.max }.map {
-                    case (type1, type2, rounds1, rounds2, timing) =>
-                      ("inlinerType1" -> type1.toString) ~
-                        ("inlinerType2" -> type2.toString) ~
-                        ("inlinerRounds1" -> rounds1.toString) ~
-                        ("inlinerRounds2" -> rounds2.toString) ~
-                        ("speedup" -> timing)
-                  }
-                  ("best" -> best) ~
-                    ("worst" -> worst)
-                })
-              }) ~
-                ("results" -> runs.map(_.toJson))
-            }
+                }) ~
+                  ("results" -> runs.map(_.toJson))
+              }
           }
         })
     }
