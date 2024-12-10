@@ -28,10 +28,18 @@ import java.nio.file.Path
 object BenchmarkInliner {
 
   def run(opts: Options): Unit = {
+    val t0 = System.currentTimeMillis()
+
     println("Benchmarking inliner. This may take a while...")
+
     val programBenchmark = BenchmarkPrograms.run(opts)
     writeFile("programsBenchmark.json", programBenchmark)
+
     println("Done. Results written to 'build/perf'")
+
+    val tDelta = System.currentTimeMillis() - t0
+    val seconds = tDelta.toDouble / 1000
+    println(s"Took $seconds seconds")
 
     // Experiments:
     // 1. Compiler throughput and code size
