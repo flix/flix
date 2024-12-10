@@ -68,7 +68,7 @@ object BenchmarkInliner {
       |""".stripMargin
 
   def run(opts: Options): Unit = {
-    writeFile("charts.py", Python)
+    FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
     val t0 = System.currentTimeMillis()
 
