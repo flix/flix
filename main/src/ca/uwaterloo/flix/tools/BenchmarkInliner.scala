@@ -175,7 +175,7 @@ object BenchmarkInliner {
         case (name, runsXRuns) => name -> runsXRuns.map {
           case (run1, run2) => (run1.inlinerType, run2.inlinerType,
             run1.inliningRounds, run2.inliningRounds,
-            ((run1.runningTime.toDouble / run2.runningTime.toDouble) * 1000).toLong)
+            run1.runningTime.toDouble / run2.runningTime.toDouble)
         }
       }
 
@@ -193,7 +193,7 @@ object BenchmarkInliner {
         case (name, runsXRuns) => name -> runsXRuns.map {
           case (run1, run2) => (run1.inlinerType, run2.inlinerType,
             run1.inliningRounds, run2.inliningRounds,
-            ((run1.compilationTime.toDouble / run2.compilationTime.toDouble) * 1000).toLong)
+            run1.compilationTime.toDouble / run2.compilationTime.toDouble)
         }
       }
       val relativeCompilationTimeStats = relativeCompilationTimes.map {
