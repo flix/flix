@@ -54,11 +54,11 @@ object BenchmarkInliner {
 
     private object InlinerType {
 
-      case object NoInliner extends InlinerType
+      private case object NoInliner extends InlinerType
 
-      case object Old extends InlinerType
+      private case object Old extends InlinerType
 
-      case object New extends InlinerType
+      private case object New extends InlinerType
 
       def from(options: Options): InlinerType = {
         if (options.xnooptimizer && options.xnooptimizer1)
