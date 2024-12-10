@@ -37,7 +37,7 @@ sealed trait Completion {
       val name = sym.toString
       CompletionItem(
         label            = name,
-        sortText         = name,
+        sortText         = Priority.toSortText(Priority.Lower, name),
         textEdit         = TextEdit(context.range, name),
         documentation    = Some(doc),
         insertTextFormat = InsertTextFormat.Snippet,
@@ -47,7 +47,7 @@ sealed trait Completion {
     case Completion.AutoUseEffCompletion(sym, doc, ap) =>
       val name = sym.name
       val qualifiedName = sym.toString
-      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName;"))
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val labelDetails = CompletionItemLabelDetails(
         None,
         Some(s" use $qualifiedName"))
@@ -158,9 +158,9 @@ sealed trait Completion {
 
     case Completion.WithHandlerCompletion(name, textEdit) =>
       CompletionItem(
-        label = name,
-        sortText = Priority.toSortText(Priority.Highest, name),
-        textEdit = textEdit,
+        label            = name,
+        sortText         = Priority.toSortText(Priority.Highest, name),
+        textEdit         = textEdit,
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Snippet
@@ -191,7 +191,7 @@ sealed trait Completion {
       val qualifiedName = decl.sym.toString
       val name = decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName;")
+      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName")
       val labelDetails = CompletionItemLabelDetails(
         Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
         Some(s" use $qualifiedName"))
