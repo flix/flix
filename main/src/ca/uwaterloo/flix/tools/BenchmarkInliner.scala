@@ -188,7 +188,8 @@ object BenchmarkInliner {
       ("timestamp" -> timestamp) ~
         ("programs" -> {
           programExperiments.map {
-            case (name, runs) => name -> {
+            case (name, runs) =>
+              ("programName" -> name) ~ {
               ("summary" -> {
                 ("runningTime" -> {
                   val stats = runningTimeStats.apply(name)
