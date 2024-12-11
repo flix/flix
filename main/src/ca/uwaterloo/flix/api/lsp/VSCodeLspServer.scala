@@ -299,7 +299,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.Rename(id, newName, uri, pos) =>
       synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(root)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))

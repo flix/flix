@@ -17,7 +17,7 @@
 ///
 /// An effect used to write to the file system.
 ///
-/// All operations on this effect are infalliable.
+/// All operations on this effect are infallible.
 /// If an operation fails the handler must deal with it.
 ///
 pub eff FileWrite {

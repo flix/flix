@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
-import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
 
@@ -313,25 +312,14 @@ object SetUnification {
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
-      case (union@Union(_, _, _, _, _, _, _), Empty) =>
+      case (union@Union(_), Empty) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric Case.
-      case (Empty, union@Union(_, _, _, _, _, _, _)) =>
+      case (Empty, union@Union(_)) =>
         val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
-
-      // f1 ~ f2, where f1 and f2 are ground
-      // ---
-      // {}, [] if solved
-      // {f1 ~error f2}, [] if unsolvable
-      case (f1, f2) if f1.isGround && f2.isGround =>
-        if (isEquivalent(f1, f2)) {
-          Some(Nil, SetSubstitution.empty)
-        } else {
-          Some(List(eq.toUnsolvable), SetSubstitution.empty)
-        }
 
       case _ =>
         // Cannot do anything.
@@ -462,32 +450,6 @@ object SetUnification {
   //
   // Checking and Debugging.
   //
-
-  /**
-    * Verifies that `subst` is a solution to `eqs`.
-    *
-    * Note: Does not verify that `subst` is the most general solution.
-    *
-    * Note: This function is very slow since [[SetFormula.isEquivalent]] is very slow.
-    */
-  def verifySubst(eqs: List[Equation], subst: SetSubstitution): Result[Unit, String] = {
-    // Apply the substitution to every equation and check that it is solved.
-    for (e <- eqs) {
-      // We want to check that `s(f1) ~ s(f2)`
-      val f1 = subst.apply(e.f1)
-      val f2 = subst.apply(e.f2)
-      if (SetFormula.isEquivalent(f1, f2)) ()
-      else {
-        val msg =
-          s"""  Incorrect Substitution:
-             |  Original  : $e
-             |  with Subst: ${Equation(f1, f2, e.status, e.loc)}
-             |""".stripMargin
-        return Result.Err(msg)
-      }
-    }
-    Result.Ok(())
-  }
 
   /** Returns a multiline string of the given [[Equation]]s and [[SetSubstitution]]. */
   def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
