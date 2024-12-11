@@ -234,6 +234,9 @@ object FindReferencesProvider {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
     case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
+    // Type Alias
+    case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
+    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -421,6 +424,25 @@ object FindReferencesProvider {
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
+
+    occurs + sym.loc
+  }
+
+  private def getTypeAliasSymOccurs(sym: Symbol.TypeAliasSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object TypeAliasSymConsumer extends Consumer {
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Alias(Ast.AliasConstructor(sym, loc), _, _, _) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeAliasSymConsumer, AllAcceptor)
 
     occurs + sym.loc
   }
