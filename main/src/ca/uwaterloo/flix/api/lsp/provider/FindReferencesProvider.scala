@@ -242,14 +242,6 @@ object FindReferencesProvider {
     case _ => None
   }
 
-  private def isInProject(loc: SourceLocation): Boolean = loc.source.input match {
-    case Input.Text(_, _, stable, _) => !stable
-    case Input.TxtFile(_, _) => false
-    case Input.PkgFile(_, _) => false
-    case Input.FileInPackage(_, _, _, _) => false
-    case Input.Unknown => false
-  }
-
   private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
@@ -471,6 +463,15 @@ object FindReferencesProvider {
 
     occurs
   }
+
+  private def isInProject(loc: SourceLocation): Boolean = loc.source.input match {
+    case Input.Text(_, _, stable, _) => !stable
+    case Input.TxtFile(_, _) => false
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
+  }
+
 
   /**
     * Returns a successful "find references" LSP response containing the LSP [[Location]] for each
