@@ -29,7 +29,7 @@ object BenchmarkInliner {
 
   private val Python: String =
     """
-      |# $ pip install pandas
+      |# $ pip install pandas matplotlib
       |
       |import json
       |import matplotlib
