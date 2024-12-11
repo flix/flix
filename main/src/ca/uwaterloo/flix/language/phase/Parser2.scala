@@ -1627,7 +1627,7 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafeRemove => unsafeRemoveExpr()
+        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
@@ -2412,36 +2412,21 @@ object Parser2 {
     }
 
     /**
-      * `unsafe_remove TTYPE {EXPRESSION}` or `unsafe_remove {TTYPE} EXPRESSION`
+      * `unsafely TTYPE run EXPRESSION`
       *
       * produces
       *
-      *   - TreeKind.Expr.Unsafe
+      *   - TreeKind.Expr.UnsafelyRun
       *     - TreeKind.Type.Type
       *     - TreeKind.Expr.Expr
       */
-    private def unsafeRemoveExpr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordUnsafeRemove))
+    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUnsafely))
       val mark = open()
-      expect(TokenKind.KeywordUnsafeRemove, SyntacticContext.Expr.OtherExpr)
-      val curlyType = at(TokenKind.CurlyL)
+      expect(TokenKind.KeywordUnsafely, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
-      if (curlyType) {
-        expression()
-      } else if (at(TokenKind.CurlyL)) {
-        expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
-        expression()
-        expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
-      } else {
-        val exprMark = open()
-        closeWithError(open(), UnexpectedToken(
-          expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)),
-          actual = Some(nth(0)),
-          sctx = SyntacticContext.Expr.OtherExpr,
-          hint = Some(s"${TokenKind.KeywordUnsafeRemove.display} requires the effect or the expression to be enclosed by '{..}'."),
-          loc = previousSourceLocation()))
-        close(exprMark, TreeKind.Expr.Expr)
-      }
+      expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
+      expression()
       close(mark, TreeKind.Expr.Unsafe)
     }
 
