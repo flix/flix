@@ -54,10 +54,26 @@ sealed trait Completion {
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
-        sortText            = name,
+        sortText            = Priority.toSortText(Priority.Lower, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = Some(doc),
-        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Enum,
+        additionalTextEdits = additionalTextEdits
+      )
+
+    case Completion.AutoUseEnumCompletion(sym, doc, ap) =>
+      val name = sym.name
+      val qualifiedName = sym.toString
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val labelDetails = CompletionItemLabelDetails(
+        None,
+        Some(s" use $qualifiedName"))
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(Priority.Lower, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(doc),
         kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdits
       )
@@ -643,7 +659,16 @@ object Completion {
    * @param doc           the documentation associated with the effect.
    * @param ap            the anchor position for the use statement.
    */
-  case class AutoUseEffCompletion(eff: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
+  case class AutoUseEffCompletion(sym: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param enum          the enum to complete and use.
+   * @param doc           the documentation associated with the effect.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseEnumCompletion(sym: Symbol.EnumSym, doc: String, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion
