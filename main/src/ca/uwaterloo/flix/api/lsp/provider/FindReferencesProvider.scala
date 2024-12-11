@@ -250,27 +250,6 @@ object FindReferencesProvider {
     case Input.Unknown => false
   }
 
-  private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
-    var occurs: Set[SourceLocation] = Set.empty
-
-    def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
-    }
-
-    object TypeVarSymConsumer extends Consumer {
-      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
-
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => consider(sym, loc)
-        case _ => ()
-      }
-    }
-
-    Visitor.visitRoot(root, TypeVarSymConsumer, AllAcceptor)
-
-    occurs
-  }
-
   private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
@@ -450,6 +429,27 @@ object FindReferencesProvider {
     Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
 
     occurs + sym.loc
+  }
+
+  private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
+    var occurs: Set[SourceLocation] = Set.empty
+
+    def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { occurs += loc }
+    }
+
+    object TypeVarSymConsumer extends Consumer {
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Var(sym, loc) => consider(sym, loc)
+        case _ => ()
+      }
+    }
+
+    Visitor.visitRoot(root, TypeVarSymConsumer, AllAcceptor)
+
+    occurs
   }
 
   private def getVarSymOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
