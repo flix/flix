@@ -68,7 +68,7 @@ object AutoUseCompleter {
     */
   private def mkEffCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[Completion] =
     root.effects.collect{
-        case (sym, eff) if fuzzyMatch(word, sym.name) && checkEffScope(eff, env) => Completion.AutoUseCompletion(sym.name, sym.toString, eff.doc.text, ap)
+        case (sym, eff) if fuzzyMatch(word, sym.name) && checkEffScope(eff, env) => Completion.AutoUseEffCompletion(sym, eff.doc.text, ap)
     }
 
   /**
@@ -87,7 +87,7 @@ object AutoUseCompleter {
    */
   private def mkEnumCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[Completion] =
     root.enums.collect{
-      case (sym, enum) if  fuzzyMatch(word, sym.name) && checkEnumScope(enum, env) => Completion.AutoUseCompletion(sym.name, sym.toString, enum.doc.text, ap)
+      case (sym, enum) if fuzzyMatch(word, sym.name) && checkEnumScope(enum, env) => Completion.AutoUseEnumCompletion(sym, enum.doc.text, ap)
     }
 
   /**
