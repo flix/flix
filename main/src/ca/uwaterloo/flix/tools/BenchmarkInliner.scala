@@ -268,7 +268,7 @@ object BenchmarkInliner {
                         ("worst" -> stats.max) ~
                         ("average" -> stats.average) ~
                         ("median" -> stats.median)
-                    })
+                    }) ~
                   ("relativeCompilationTime" -> {
                     val relativeTimings = relativeCompilationTimes.apply(name)
                     val stats = relativeCompilationTimeStats.apply(name)
