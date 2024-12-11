@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -26,7 +26,7 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.Ascription], resType: Type, effect: Type, body: Expr)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, parameters: List[Expr.AscriptionTpe], resType: Type, effect: Type, body: Expr)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
@@ -37,7 +37,7 @@ object DocAst {
   /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
   case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[Expr.Ascription], clo: Expr, tpe: Type)
+  case class JvmMethod(ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
 
 
   sealed trait Expr
@@ -76,6 +76,8 @@ object DocAst {
 
     case class DoubleKeyword(word1: String, d1: Expr, word2: String, d2: Either[Expr, Type]) extends Composite
 
+    case class TripleKeyword(word1: String, d1: Expr, word2: String, d2: Type, word3: String, d3: Type) extends Composite
+
     case class Unary(op: String, d: Expr) extends Composite
 
     /** e.g. `arr?` */
@@ -104,13 +106,13 @@ object DocAst {
 
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
-    case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
+    case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Atom
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
 
     case class Let(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
-    case class LocalDef(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
+    case class LocalDef(sym: Expr, parameters: List[Expr.AscriptionTpe], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
@@ -122,11 +124,13 @@ object DocAst {
 
     case class Assign(d1: Expr, d2: Expr) extends Composite
 
-    case class Ascription(v: Expr, tpe: Type) extends Composite
+    case class AscriptionTpe(v: Expr, tpe: Type) extends Composite
+
+    case class AscriptionEff(v: Expr, tpe: Option[Type], eff: Option[Type]) extends Composite
 
     case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
-    case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite
+    case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 
     case class Native(clazz: Class[?]) extends Atom
 
@@ -160,7 +164,7 @@ object DocAst {
       AsIs("?astError")
 
     def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
-      Keyword("untag_"+idx, d)
+      Keyword("untag_" + idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))
@@ -241,6 +245,18 @@ object DocAst {
     def Cast(d: Expr, tpe: Type): Expr =
       DoubleKeyword("cast", d, "as", Right(tpe))
 
+    def UncheckedCast(d: Expr, tpe0: Option[Type], eff0: Option[Type]): Expr = (tpe0, eff0) match {
+      case (Some(tpe), Some(eff)) => TripleKeyword("unchecked_cast", d, "as", tpe, "\\", eff)
+      case (Some(tpe), None) => DoubleKeyword("unchecked_cast", d, "as", Right(tpe))
+      case (None, Some(eff)) => TripleKeyword("unchecked_cast", d, "as", Type.Wild, "\\", eff)
+      case (None, None) => d
+    }
+
+    def CheckedCast(cast: CheckedCastType, d: Expr): Expr = cast match {
+      case CheckedCastType.TypeCast => Keyword("checked_cast", d)
+      case CheckedCastType.EffectCast => Keyword("checked_ecast", d)
+    }
+
     def Unbox(d: Expr, tpe: Type): Expr =
       DoubleKeyword("unbox", d, "as", Right(tpe))
 
@@ -317,6 +333,8 @@ object DocAst {
     case object Unit extends Atom
 
     case class AsIs(s: String) extends Atom
+
+    case class Ascribe(tpe: Type, kind: Type) extends Composite
 
     case class App(obj: Type, args: List[Type]) extends Atom
 
@@ -428,6 +446,8 @@ object DocAst {
 
     val Univ: Type = AsIs("Univ")
 
+    val Wild: Type = AsIs("_")
+
     def Arrow(args: List[Type], res: Type): Type = ArrowEff(args, res, Type.Pure)
 
     def Alias(sym: Symbol.TypeAliasSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
@@ -443,6 +463,8 @@ object DocAst {
     def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
     def Var(sym: Symbol.KindedTypeVarSym): Type = AsIs(sym.toString)
+
+    def Var(sym: Symbol.UnkindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
 }

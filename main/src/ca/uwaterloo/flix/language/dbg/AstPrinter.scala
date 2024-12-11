@@ -21,14 +21,15 @@ import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWid
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.printer.*
 import ca.uwaterloo.flix.util.tc.Debug
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{FileOps, Validation}
 
-import java.nio.file.{Files, LinkOption, Path}
+import java.nio.file.Path
 
 object AstPrinter {
 
   case class DebugNoOp[T]() extends Debug[T] {
     override val hasAst: Boolean = false
+
     override def emit(phase: String, root: T)(implicit flix: Flix): Unit = ()
   }
 
