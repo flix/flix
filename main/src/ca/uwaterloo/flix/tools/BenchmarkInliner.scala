@@ -335,7 +335,7 @@ object BenchmarkInliner {
               for (_ <- 1 to NumberOfRuns) {
                 mainFunc(Array.empty)
               }
-              val tDelta = milliseconds(System.nanoTime() - t0).toLong
+              val tDelta = System.nanoTime() - t0
               runningTimes += tDelta
             }
           case None => throw new RuntimeException(s"undefined main method for program '$name'")
