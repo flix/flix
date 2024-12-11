@@ -65,12 +65,14 @@ object FindReferencesProvider {
     val left = searchLeftOfCursor(uri, pos)
     val right = searchRightOfCursor(uri, pos)
 
-    right
-      .orElse(left)
-      .flatMap(getOccurs)
-      .map(_.filter(isInProject))
-      .map(mkResponse)
-      .getOrElse(mkNotFound(uri, pos))
+    val lspResponse = for {
+      sym <- right.orElse(left)
+      occurs <- getOccurs(sym)
+      filtered = occurs.filter(isInProject)
+      res = mkResponse(filtered)
+    } yield res
+
+    lspResponse.getOrElse(mkNotFound(uri, pos))
   }
 
   /**
