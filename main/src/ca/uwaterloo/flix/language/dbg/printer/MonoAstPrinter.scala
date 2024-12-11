@@ -43,7 +43,7 @@ object MonoAstPrinter {
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
-    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
+    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.Cast(exp, Some(declaredType), _, _, _, _) => DocAst.Expr.Cast(print(exp), TypePrinter.print(declaredType))
     case Expr.Cast(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
@@ -63,7 +63,7 @@ object MonoAstPrinter {
   /**
     * Returns the [[DocAst]] representation of `rule`.
     */
-  private def printHandlerRule(rule: MonoAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.Ascription], DocAst.Expr) = rule match {
+  private def printHandlerRule(rule: MonoAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.AscriptionTpe], DocAst.Expr) = rule match {
     case MonoAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
   }
 
@@ -112,11 +112,11 @@ object MonoAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: MonoAst.FormalParam): DocAst.Expr.Ascription = {
+  private def printFormalParam(fp: MonoAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val MonoAst.FormalParam(sym, _, tpe, _, _) = fp
-    DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
   /**
