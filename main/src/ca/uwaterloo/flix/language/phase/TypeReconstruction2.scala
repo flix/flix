@@ -420,8 +420,9 @@ object TypeReconstruction2 {
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
+      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(rs.map(_.exp.eff), loc) // TODO temp simplification
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.loc) :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
@@ -534,7 +535,7 @@ object TypeReconstruction2 {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Spawn(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.ParYield(frags, exp, loc) =>
