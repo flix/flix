@@ -62,17 +62,13 @@ object FindReferencesProvider {
     * @return     A "Find References" LSP response.
     */
   def findRefs(uri: String, pos: Position)(implicit root: Root): JObject = {
-    val left = searchLeftOfCursor(uri, pos)
-    val right = searchRightOfCursor(uri, pos)
+    val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
+    val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
-    val lspResponse = for {
-      sym <- right.orElse(left)
-      occurs <- getOccurs(sym)
-      filtered = occurs.filter(isInProject)
-      res = mkResponse(filtered)
-    } yield res
-
-    lspResponse.getOrElse(mkNotFound(uri, pos))
+    right.orElse(left)
+      .map(_.filter(isInProject))
+      .map(mkResponse)
+      .getOrElse(mkNotFound(uri, pos))
   }
 
   /**
