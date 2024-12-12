@@ -427,6 +427,17 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an effect.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstEff: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef => true
+    case _ => false
+  })
+
+  /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
     * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
     */
