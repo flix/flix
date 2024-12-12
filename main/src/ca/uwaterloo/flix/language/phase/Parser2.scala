@@ -1240,8 +1240,8 @@ object Parser2 {
             case at =>
               val errMark = open()
               val loc = currentSourceLocation()
-              // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              // Skip ahead until we hit another declaration or any CurlyR or EOF.
+              while (!nth(0).isFirstEff && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
