@@ -222,7 +222,7 @@ object FindReferencesProvider {
     case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
     case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
     // Sigs
-    case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
+    case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym) ++ getSigImplLocs(sym))
     case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
     // Structs
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
@@ -368,12 +368,15 @@ object FindReferencesProvider {
 
     Visitor.visitRoot(root, SigSymConsumer, AllAcceptor)
 
-    val implOccurs = root.instances(sym.trt)
-      .flatMap(_.defs)
-      .filter(defn => defn.sym.text == sym.name)
-      .map(_.sym.loc)
+    occurs + sym.loc
+  }
 
-    occurs ++ implOccurs + sym.loc
+  private def getSigImplLocs(sym: Symbol.SigSym)(implicit root: Root): Set[SourceLocation] = {
+    root.instances(sym.trt)
+      .flatMap(_.defs)
+      .filter(_.sym.text == sym.name)
+      .map(_.sym.loc)
+      .toSet
   }
 
   private def getStructSymOccurs(sym: Symbol.StructSym)(implicit root: Root): Set[SourceLocation] = {
