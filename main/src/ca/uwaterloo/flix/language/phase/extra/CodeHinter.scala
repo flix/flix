@@ -30,12 +30,12 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
-    val cands = getCandidates
+    val occurs = getOccurrences
 
-    val applyDefHints = cands.applyDefs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
-    val defHints = cands.defOccurs.flatMap(visitDefSymUse)
-    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
-    val traitHints = cands.traitOccurs.flatMap(visitTraitSymUse)
+    val applyDefHints = occurs.applyDefOccurs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
+    val defHints = occurs.defOccurs.flatMap(visitDefSymUse)
+    val enumHints = occurs.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
+    val traitHints = occurs.traitOccurs.flatMap(visitTraitSymUse)
 
     val hints = applyDefHints ++ defHints ++ enumHints ++ traitHints
 
@@ -100,45 +100,45 @@ object CodeHinter {
   }
 
   /**
-    * A [[CodeHintCandidates]] represents all elements that might warrant a code hint.
+    * A [[Occurrences]] represents all elements that might warrant a code hint.
     *
-    * @param applyDefs    All def applications.
-    * @param defOccurs    All occurrences of defs.
-    * @param enumOccurs   All occurrences of enums.
-    * @param traitOccurs  All occurrences of traits.
+    * @param applyDefOccurs All def applications.
+    * @param defOccurs      All occurrences of defs.
+    * @param enumOccurs     All occurrences of enums.
+    * @param traitOccurs    All occurrences of traits.
     */
-  private case class CodeHintCandidates(applyDefs: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
+  private case class Occurrences(applyDefOccurs: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
 
   /**
-    * Returns a [[CodeHintCandidates]] for the Flix project.
+    * Returns a [[Occurrences]] for the Flix project.
     *
     * @param root The root AST node of the Flix project
-    * @return     A [[CodeHintCandidates]] for the Flix project.
+    * @return     A [[Occurrences]] for the Flix project.
     */
-  private def getCandidates(implicit root: Root): CodeHintCandidates = {
-    var applyDefs: List[(Symbol.DefnSym, List[Expr])] = Nil
-    var defUses: List[DefSymUse] = Nil
-    var enumUses: List[(Symbol.EnumSym, SourceLocation)] = Nil
-    var traitUses: List[TraitSymUse] = Nil
+  private def getOccurrences(implicit root: Root): Occurrences = {
+    var applyDefOccurs: List[(Symbol.DefnSym, List[Expr])] = Nil
+    var defOccurs: List[DefSymUse] = Nil
+    var enumOccurs: List[(Symbol.EnumSym, SourceLocation)] = Nil
+    var traitOccurs: List[TraitSymUse] = Nil
 
-    object UseConsumer extends Consumer {
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumUses = (sym.sym.enumSym, sym.loc) :: enumUses
-      override def consumeDefSymUse(sym: DefSymUse): Unit = defUses = sym :: defUses
+    object OccurConsumer extends Consumer {
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumOccurs = (sym.sym.enumSym, sym.loc) :: enumOccurs
+      override def consumeDefSymUse(sym: DefSymUse): Unit = defOccurs = sym :: defOccurs
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefs = (symUse.sym, exps) :: applyDefs
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }
-      override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitUses = symUse :: traitUses
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = traitUses = TraitSymUse(tcHead.sym, tcHead.loc) :: traitUses
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = traitOccurs = TraitSymUse(tcHead.sym, tcHead.loc) :: traitOccurs
+      override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitOccurs = symUse :: traitOccurs
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumUses = (sym, loc) :: enumUses
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumOccurs = (sym, loc) :: enumOccurs
         case _ => ()
       }
     }
 
-    Visitor.visitRoot(root, UseConsumer, AllAcceptor)
+    Visitor.visitRoot(root, OccurConsumer, AllAcceptor)
 
-    CodeHintCandidates(applyDefs, defUses, enumUses, traitUses)
+    Occurrences(applyDefOccurs, defOccurs, enumOccurs, traitOccurs)
   }
 
 
