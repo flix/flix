@@ -102,12 +102,12 @@ object CodeHinter {
   /**
     * A [[CodeHintCandidates]] represents all elements that might warrant a code hint.
     *
-    * @param traitOccurs  All occurrences of traits.
-    * @param enumOccurs   All occurrences of enums.
-    * @param defOccurs    All occurrences of defs.
     * @param defCalls     All calls to defs.
+    * @param defOccurs    All occurrences of defs.
+    * @param enumOccurs   All occurrences of enums.
+    * @param traitOccurs  All occurrences of traits.
     */
-  private case class CodeHintCandidates(traitOccurs: List[TraitSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], defOccurs: List[DefSymUse], defCalls: List[(Symbol.DefnSym, List[Expr])])
+  private case class CodeHintCandidates(defCalls: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
 
   /**
     * Returns a [[CodeHintCandidates]] for the Flix project.
