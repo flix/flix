@@ -32,10 +32,10 @@ object CodeHinter {
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
     val cands = getCandidates
 
-    val defHints = cands.defOccurs.flatMap(considerDef)
-    val defCalls = cands.defCalls.flatMap{case (sym, exps) => considerDefCall(sym, exps)}
-    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => considerEnum(sym, loc)}
-    val traitHints = cands.traitOccurs.flatMap(considerTrait)
+    val defHints = cands.defOccurs.flatMap(visitDefSymUse)
+    val defCalls = cands.defCalls.flatMap{case (sym, exps) => visitDefCall(sym, exps)}
+    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
+    val traitHints = cands.traitOccurs.flatMap(visitTraitSymUse)
 
     val hints = traitHints ++ defHints ++ enumHints ++ defCalls
 
@@ -51,7 +51,7 @@ object CodeHinter {
     * @param root   The root AST node for the Flix project.
     * @return       A collection of code quality hints
     */
-  private def considerDef(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
+  private def visitDefSymUse(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(symUse.sym)
     val ann = defn.spec.ann
     checkDeprecated(ann, symUse.loc) ++
@@ -68,7 +68,7 @@ object CodeHinter {
     * @param root The root AST node of the Flix project
     * @return     A collection of code quality hints.
     */
-  private def considerDefCall(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+  private def visitDefCall(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
@@ -80,7 +80,7 @@ object CodeHinter {
     * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
     * @return     A collection of code hints.
     */
-  private def considerEnum(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+  private def visitEnumSymUse(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val enm = root.enums(sym)
     val ann = enm.ann
     checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
@@ -93,7 +93,7 @@ object CodeHinter {
     * @param root   The root AST node of the project.
     * @return       A collection of code quality hints.
     */
-  private def considerTrait(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
+  private def visitTraitSymUse(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
     val trt = root.traits(symUse.sym)
     val ann = trt.ann
     checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
