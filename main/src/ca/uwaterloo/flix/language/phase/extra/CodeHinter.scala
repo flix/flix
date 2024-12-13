@@ -65,12 +65,30 @@ object CodeHinter {
     hints.filter(include(_, sources))
   }
 
+  /**
+    * Returns a collection of code quality hints related to a given trait's annotations.
+    *
+    * @param root The root AST node of the project.
+    * @param sym  The [[Symbol.TraitSym]] for the trait in question.
+    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
+    * @return     A collection of code quality hints.
+    */
   private def considerTrait(root: Root, sym: Symbol.TraitSym, loc: SourceLocation): List[CodeHint] = {
     val trt = root.traits(sym)
     val ann = trt.ann
     checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
   }
 
+  /**
+    * Returns a collection of code quality hints related to the given def's annotations.
+    *
+    * Note that hints related to `@LazyWhenPure` and `@ParallelWhenPure` are not included in this colleciton.
+    *
+    * @param root The root AST node for the Flix project.
+    * @param sym  The [[Symbol.DefnSym]] for the Def in question.
+    * @param loc  The [[SourceLocation]] for the occurrence of the `sym`.
+    * @return     A collection of code quality hints
+    */
   private def considerDef(root: Root, sym: Symbol.DefnSym, loc: SourceLocation): List[CodeHint] = {
     val defn = root.defs(sym)
     val ann = defn.spec.ann
@@ -80,6 +98,14 @@ object CodeHinter {
       checkParallel(ann, loc)
   }
 
+  /**
+    * Returns a collection of code quality hints related to the given enum's annotations.
+    *
+    * @param root The root AST node for the Flix project.
+    * @param sym  The [[Symbol.EnumSym]] for the enum in quesiton.
+    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
+    * @return     A collection of code hints.
+    */
   private def considerEnum(root: Root, sym: Symbol.EnumSym, loc: SourceLocation): List[CodeHint] = {
     val enm = root.enums(sym)
     val ann = enm.ann
