@@ -116,10 +116,10 @@ object CodeHinter {
     * @return     A [[CodeHintCandidates]] for the Flix project.
     */
   private def getCandidates(implicit root: Root): CodeHintCandidates = {
-    var traitUses: List[TraitSymUse] = Nil
+    var defCalls: List[(Symbol.DefnSym, List[Expr])] = Nil
     var defUses: List[DefSymUse] = Nil
     var enumUses: List[(Symbol.EnumSym, SourceLocation)] = Nil
-    var defCalls: List[(Symbol.DefnSym, List[Expr])] = Nil
+    var traitUses: List[TraitSymUse] = Nil
 
     object UseConsumer extends Consumer {
       override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitUses = symUse :: traitUses
