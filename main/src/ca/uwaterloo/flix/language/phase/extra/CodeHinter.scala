@@ -32,14 +32,26 @@ object CodeHinter {
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
     val cands = getCandidates
 
-    val applyDefs = cands.applyDefs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
+    val applyDefHints = cands.applyDefs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
     val defHints = cands.defOccurs.flatMap(visitDefSymUse)
     val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
     val traitHints = cands.traitOccurs.flatMap(visitTraitSymUse)
 
-    val hints = traitHints ++ defHints ++ enumHints ++ applyDefs
+    val hints = applyDefHints ++ defHints ++ enumHints ++ traitHints
 
     hints.filter(include(_, sources))
+  }
+
+  /**
+    * Returns a collection of code quality hints related to the given def application.
+    *
+    * @param sym  The [[Symbol.DefnSym]] for the function being applied.
+    * @param exps The arguments the function is being applied to.
+    * @param root The root AST node of the Flix project
+    * @return     A collection of code quality hints.
+    */
+  private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+    exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
   /**
@@ -58,18 +70,6 @@ object CodeHinter {
       checkExperimental(ann, symUse.loc) ++
       checkLazy(ann, symUse.loc) ++
       checkParallel(ann, symUse.loc)
-  }
-
-  /**
-    * Returns a collection of code quality hints related to the given def application.
-    *
-    * @param sym  The [[Symbol.DefnSym]] for the function being applied.
-    * @param exps The arguments the function is being applied to.
-    * @param root The root AST node of the Flix project
-    * @return     A collection of code quality hints.
-    */
-  private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
-    exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
   /**
