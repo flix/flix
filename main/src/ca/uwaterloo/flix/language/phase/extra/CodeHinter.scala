@@ -57,7 +57,7 @@ object CodeHinter {
   private case class CodeHintCandidates(traitOccurs: List[TraitSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], defOccurs: List[DefSymUse], defCalls: List[(Symbol.DefnSym, List[Expr])])
 
   /**
-    * Returns a [[CodeHintCandidates]] for Flix project.
+    * Returns a [[CodeHintCandidates]] for the Flix project.
     *
     * @param root The root AST node of the Flix project
     * @return     A [[CodeHintCandidates]] for the Flix project.
