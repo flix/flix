@@ -32,18 +32,71 @@ object CodeHinter {
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
     val cands = getCandidates
 
-    val traitHints = cands.traitOccurs.flatMap(considerTrait)
     val defHints = cands.defOccurs.flatMap(considerDef)
-    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => considerEnum(sym, loc)}
     val defCalls = cands.defCalls.flatMap{case (sym, exps) => considerDefCall(sym, exps)}
+    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => considerEnum(sym, loc)}
+    val traitHints = cands.traitOccurs.flatMap(considerTrait)
 
     val hints = traitHints ++ defHints ++ enumHints ++ defCalls
 
     hints.filter(include(_, sources))
   }
 
+  /**
+    * Returns a collection of code quality hints related to the given def's annotations.
+    *
+    * Note that hints related to `@LazyWhenPure` and `@ParallelWhenPure` are not included in this colleciton.
+    *
+    * @param symUse The [[SymUse.DefSymUse]] for the occurrence of the def in question.
+    * @param root   The root AST node for the Flix project.
+    * @return       A collection of code quality hints
+    */
+  private def considerDef(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(symUse.sym)
+    val ann = defn.spec.ann
+    checkDeprecated(ann, symUse.loc) ++
+      checkExperimental(ann, symUse.loc) ++
+      checkLazy(ann, symUse.loc) ++
+      checkParallel(ann, symUse.loc)
+  }
+
+  /**
+    * Returns a collection of code quality hints related to the given def call.
+    *
+    * @param sym  The [[Symbol.DefnSym]] for the function being called.
+    * @param exps The arguments to call.
+    * @param root The root AST node of the Flix project
+    * @return     A collection of code quality hints.
+    */
   private def considerDefCall(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
+  }
+
+  /**
+    * Returns a collection of code quality hints related to the given enum's annotations.
+    *
+    * @param root The root AST node for the Flix project.
+    * @param sym  The [[Symbol.EnumSym]] for the enum in quesiton.
+    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
+    * @return     A collection of code hints.
+    */
+  private def considerEnum(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val enm = root.enums(sym)
+    val ann = enm.ann
+    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
+  }
+
+  /**
+    * Returns a collection of code quality hints related to a given trait's annotations.
+    *
+    * @param symUse The [[SymUse.TraitSymUse]] for the occurrence of the trait in question.
+    * @param root   The root AST node of the project.
+    * @return       A collection of code quality hints.
+    */
+  private def considerTrait(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
+    val trt = root.traits(symUse.sym)
+    val ann = trt.ann
+    checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
   }
 
   /**
@@ -88,50 +141,6 @@ object CodeHinter {
     CodeHintCandidates(traitUses, enumUses, defUses, defCalls)
   }
 
-  /**
-    * Returns a collection of code quality hints related to a given trait's annotations.
-    *
-    * @param symUse The [[SymUse.TraitSymUse]] for the occurrence of the trait in question.
-    * @param root   The root AST node of the project.
-    * @return       A collection of code quality hints.
-    */
-  private def considerTrait(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
-    val trt = root.traits(symUse.sym)
-    val ann = trt.ann
-    checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
-  }
-
-  /**
-    * Returns a collection of code quality hints related to the given def's annotations.
-    *
-    * Note that hints related to `@LazyWhenPure` and `@ParallelWhenPure` are not included in this colleciton.
-    *
-    * @param symUse The [[SymUse.DefSymUse]] for the occurrence of the def in question.
-    * @param root   The root AST node for the Flix project.
-    * @return       A collection of code quality hints
-    */
-  private def considerDef(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
-    val defn = root.defs(symUse.sym)
-    val ann = defn.spec.ann
-    checkDeprecated(ann, symUse.loc) ++
-      checkExperimental(ann, symUse.loc) ++
-      checkLazy(ann, symUse.loc) ++
-      checkParallel(ann, symUse.loc)
-  }
-
-  /**
-    * Returns a collection of code quality hints related to the given enum's annotations.
-    *
-    * @param root The root AST node for the Flix project.
-    * @param sym  The [[Symbol.EnumSym]] for the enum in quesiton.
-    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
-    * @return     A collection of code hints.
-    */
-  private def considerEnum(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val enm = root.enums(sym)
-    val ann = enm.ann
-    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
-  }
 
   private def checkDeprecated(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
     if (ann.isDeprecated) { CodeHint.Deprecated(loc) :: Nil } else { Nil }
