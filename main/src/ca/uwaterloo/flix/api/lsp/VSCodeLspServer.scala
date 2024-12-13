@@ -283,7 +283,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
@@ -308,7 +308,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
