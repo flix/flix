@@ -122,18 +122,18 @@ object CodeHinter {
     var traitUses: List[TraitSymUse] = Nil
 
     object UseConsumer extends Consumer {
-      override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitUses = symUse :: traitUses
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = traitUses = TraitSymUse(tcHead.sym, tcHead.loc) :: traitUses
+      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumUses = (sym.sym.enumSym, sym.loc) :: enumUses
       override def consumeDefSymUse(sym: DefSymUse): Unit = defUses = sym :: defUses
       override def consumeExpr(exp: Expr): Unit = exp match {
         case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => defCalls = (symUse.sym, exps) :: defCalls
         case _ => ()
       }
+      override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitUses = symUse :: traitUses
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = traitUses = TraitSymUse(tcHead.sym, tcHead.loc) :: traitUses
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumUses = (sym, loc) :: enumUses
         case _ => ()
       }
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumUses = (sym.sym.enumSym, sym.loc) :: enumUses
     }
 
     Visitor.visitRoot(root, UseConsumer, AllAcceptor)
