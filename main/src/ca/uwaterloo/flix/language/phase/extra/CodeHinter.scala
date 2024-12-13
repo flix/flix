@@ -29,26 +29,26 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root, sources: Set[String]): List[CodeHint] = {
-    val uses = getUses(root)
+  def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
+    val uses = getUses
 
-    val traitHints = uses.traitUses.flatMap(considerTrait(root))
-    val defHints = uses.defUses.flatMap(considerDef(root))
-    val enumHints = uses.enumUses.flatMap{case (sym, loc) => considerEnum(root, sym, loc)}
-    val defCalls = uses.defCalls.flatMap{case (sym, exps) => considerDefCall(root, sym, exps)}
+    val traitHints = uses.traitUses.flatMap(considerTrait)
+    val defHints = uses.defUses.flatMap(considerDef)
+    val enumHints = uses.enumUses.flatMap{case (sym, loc) => considerEnum(sym, loc)}
+    val defCalls = uses.defCalls.flatMap{case (sym, exps) => considerDefCall(sym, exps)}
 
     val hints = traitHints ++ defHints ++ enumHints ++ defCalls
 
     hints.filter(include(_, sources))
   }
 
-  private def considerDefCall(root: Root, sym: Symbol.DefnSym, exps: List[Expr]): List[CodeHint] = {
-    exps.flatMap(e => checkEffect(sym, e.tpe, e.loc)(root))
+  private def considerDefCall(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+    exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
   private case class Uses(traitUses: List[TraitSymUse], enumUses: List[(Symbol.EnumSym, SourceLocation)], defUses: List[DefSymUse], defCalls: List[(Symbol.DefnSym, List[Expr])])
 
-  private def getUses(root: Root): Uses = {
+  private def getUses(implicit root: Root): Uses = {
     var traitUses: List[TraitSymUse] = Nil
     var defUses: List[DefSymUse] = Nil
     var enumUses: List[(Symbol.EnumSym, SourceLocation)] = Nil
@@ -77,12 +77,11 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints related to a given trait's annotations.
     *
-    * @param root The root AST node of the project.
-    * @param sym  The [[Symbol.TraitSym]] for the trait in question.
-    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
-    * @return     A collection of code quality hints.
+    * @param symUse The [[SymUse.TraitSymUse]] for the occurrence of the trait in question.
+    * @param root   The root AST node of the project.
+    * @return       A collection of code quality hints.
     */
-  private def considerTrait(root: Root)(symUse: SymUse.TraitSymUse): List[CodeHint] = {
+  private def considerTrait(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
     val trt = root.traits(symUse.sym)
     val ann = trt.ann
     checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
@@ -93,12 +92,11 @@ object CodeHinter {
     *
     * Note that hints related to `@LazyWhenPure` and `@ParallelWhenPure` are not included in this colleciton.
     *
-    * @param root The root AST node for the Flix project.
-    * @param sym  The [[Symbol.DefnSym]] for the Def in question.
-    * @param loc  The [[SourceLocation]] for the occurrence of the `sym`.
-    * @return     A collection of code quality hints
+    * @param symUse The [[SymUse.DefSymUse]] for the occurrence of the def in question.
+    * @param root   The root AST node for the Flix project.
+    * @return       A collection of code quality hints
     */
-  private def considerDef(root: Root)(symUse: SymUse.DefSymUse): List[CodeHint] = {
+  private def considerDef(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(symUse.sym)
     val ann = defn.spec.ann
     checkDeprecated(ann, symUse.loc) ++
@@ -115,7 +113,7 @@ object CodeHinter {
     * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
     * @return     A collection of code hints.
     */
-  private def considerEnum(root: Root, sym: Symbol.EnumSym, loc: SourceLocation): List[CodeHint] = {
+  private def considerEnum(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val enm = root.enums(sym)
     val ann = enm.ann
     checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
