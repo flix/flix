@@ -162,15 +162,12 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val lazzy = if (lazyWhenPure(sym)) {
+    if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
-    } else {
-      Nil
-    }
-    val parallel = if (parallelWhenPure(sym)) {
+    } else if (parallelWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.ParallelEvaluation(sym, loc) :: Nil
       else
@@ -178,8 +175,6 @@ object CodeHinter {
     } else {
       Nil
     }
-
-    lazzy ++ parallel
   }
 
   /**
