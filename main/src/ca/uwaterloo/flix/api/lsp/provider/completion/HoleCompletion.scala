@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index}
+import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.{Position, Visitor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -26,10 +28,16 @@ object HoleCompletion {
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  def getHoleCompletion(ctx: CompletionContext, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
-    val entity = index.query(ctx.uri, ctx.pos)
-    entity match {
-      case Some(Entity.Exp(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc))) =>
+  def getHoleCompletion(ctx: CompletionContext, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
+    val stack = StackConsumer()
+
+    if (ctx.pos.character >= 2) {
+      val leftPos = Position(ctx.pos.line, ctx.pos.character - 1)
+      Visitor.visitRoot(root, stack, InsideAcceptor(ctx.uri, leftPos))
+    }
+
+    stack.getStack.headOption match {
+      case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc)) =>
         HoleCompletion.candidates(sourceType, targetType, root)
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)

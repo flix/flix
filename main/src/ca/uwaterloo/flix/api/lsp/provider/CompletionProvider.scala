@@ -113,7 +113,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Unknown =>
         // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-        HoleCompletion.getHoleCompletion(ctx, index, root)
+        HoleCompletion.getHoleCompletion(ctx, root)
 
       case _ => Nil
     }
