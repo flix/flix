@@ -44,6 +44,11 @@ object CodeHinter {
       override def consumeDefSymUse(sym: DefSymUse): Unit = {
         hints = hints ++ considerDef(root, sym.sym, sym.loc)
       }
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) =>
+          hints = hints ++ exps.flatMap(e => checkEffect(symUse.sym, e.tpe, e.loc)(root))
+        case _ => ()
+      }
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
           hints = hints ++ considerEnum(root, sym, loc)
@@ -71,7 +76,6 @@ object CodeHinter {
     checkDeprecated(ann, loc) ++
       checkExperimental(ann, loc) ++
       checkLazy(ann, loc) ++
-      checkLazyWhenPure(sym, loc) ++
       checkParallel(ann, loc)
   }
 
@@ -101,12 +105,15 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    if (lazyWhenPure(sym)) {
+    val lazzy = if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
-    } else if (parallelWhenPure(sym)) {
+    } else {
+      Nil
+    }
+    val parallel = if (parallelWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.ParallelEvaluation(sym, loc) :: Nil
       else
@@ -114,6 +121,8 @@ object CodeHinter {
     } else {
       Nil
     }
+
+    lazzy ++ parallel
   }
 
   /**
