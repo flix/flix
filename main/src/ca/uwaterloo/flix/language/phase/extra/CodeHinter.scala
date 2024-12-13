@@ -61,26 +61,33 @@ object CodeHinter {
 
   private def considerTrait(root: Root, sym: Symbol.TraitSym, loc: SourceLocation): List[CodeHint] = {
     val trt = root.traits(sym)
-    consider(trt.ann, loc)
+    val ann = trt.ann
+    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
   }
 
   private def considerDef(root: Root, sym: Symbol.DefnSym, loc: SourceLocation): List[CodeHint] = {
     val defn = root.defs(sym)
-    consider(defn.spec.ann, loc)
+    val ann = defn.spec.ann
+    val lazzy = if (ann.isLazy) { CodeHint.Lazy(loc) :: Nil } else { Nil }
+    val parallel = if (ann.isParallel) { CodeHint.Parallel(loc) :: Nil } else { Nil }
+    checkDeprecated(ann, loc) ++
+      checkExperimental(ann, loc) ++
+      lazzy ++
+      parallel
   }
 
   private def considerEnum(root: Root, sym: Symbol.EnumSym, loc: SourceLocation): List[CodeHint] = {
     val enm = root.enums(sym)
-    consider(enm.ann, loc)
+    val ann = enm.ann
+    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
   }
 
+  private def checkDeprecated(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isDeprecated) { CodeHint.Deprecated(loc) :: Nil } else { Nil }
+  }
 
-  private def consider(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
-    val isDepricated = ann.isDeprecated
-    val isExperimental = ann.isExperimental
-    val depricated = if (isDepricated) { CodeHint.Deprecated(loc) :: Nil } else { Nil }
-    val experimental = if (isExperimental) { CodeHint.Experimental(loc) :: Nil } else { Nil }
-    depricated ++ experimental
+  private def checkExperimental(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isExperimental) { CodeHint.Experimental(loc) :: Nil } else { Nil }
   }
 
   /**
