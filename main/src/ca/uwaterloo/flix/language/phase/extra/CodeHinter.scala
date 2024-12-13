@@ -32,12 +32,12 @@ object CodeHinter {
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
     val cands = getCandidates
 
+    val applyDefs = cands.applyDefs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
     val defHints = cands.defOccurs.flatMap(visitDefSymUse)
-    val defCalls = cands.defCalls.flatMap{case (sym, exps) => visitDefCall(sym, exps)}
     val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
     val traitHints = cands.traitOccurs.flatMap(visitTraitSymUse)
 
-    val hints = traitHints ++ defHints ++ enumHints ++ defCalls
+    val hints = traitHints ++ defHints ++ enumHints ++ applyDefs
 
     hints.filter(include(_, sources))
   }
@@ -61,14 +61,14 @@ object CodeHinter {
   }
 
   /**
-    * Returns a collection of code quality hints related to the given def call.
+    * Returns a collection of code quality hints related to the given def application.
     *
-    * @param sym  The [[Symbol.DefnSym]] for the function being called.
-    * @param exps The arguments to call.
+    * @param sym  The [[Symbol.DefnSym]] for the function being applied.
+    * @param exps The arguments the function is being applied to.
     * @param root The root AST node of the Flix project
     * @return     A collection of code quality hints.
     */
-  private def visitDefCall(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+  private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
@@ -102,12 +102,12 @@ object CodeHinter {
   /**
     * A [[CodeHintCandidates]] represents all elements that might warrant a code hint.
     *
-    * @param defCalls     All calls to defs.
+    * @param applyDefs    All def applications.
     * @param defOccurs    All occurrences of defs.
     * @param enumOccurs   All occurrences of enums.
     * @param traitOccurs  All occurrences of traits.
     */
-  private case class CodeHintCandidates(defCalls: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
+  private case class CodeHintCandidates(applyDefs: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
 
   /**
     * Returns a [[CodeHintCandidates]] for the Flix project.
@@ -116,7 +116,7 @@ object CodeHinter {
     * @return     A [[CodeHintCandidates]] for the Flix project.
     */
   private def getCandidates(implicit root: Root): CodeHintCandidates = {
-    var defCalls: List[(Symbol.DefnSym, List[Expr])] = Nil
+    var applyDefs: List[(Symbol.DefnSym, List[Expr])] = Nil
     var defUses: List[DefSymUse] = Nil
     var enumUses: List[(Symbol.EnumSym, SourceLocation)] = Nil
     var traitUses: List[TraitSymUse] = Nil
@@ -125,7 +125,7 @@ object CodeHinter {
       override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumUses = (sym.sym.enumSym, sym.loc) :: enumUses
       override def consumeDefSymUse(sym: DefSymUse): Unit = defUses = sym :: defUses
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => defCalls = (symUse.sym, exps) :: defCalls
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefs = (symUse.sym, exps) :: applyDefs
         case _ => ()
       }
       override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitUses = symUse :: traitUses
@@ -138,7 +138,7 @@ object CodeHinter {
 
     Visitor.visitRoot(root, UseConsumer, AllAcceptor)
 
-    CodeHintCandidates(traitUses, enumUses, defUses, defCalls)
+    CodeHintCandidates(traitUses, enumUses, defUses, applyDefs)
   }
 
 
