@@ -68,12 +68,10 @@ object CodeHinter {
   private def considerDef(root: Root, sym: Symbol.DefnSym, loc: SourceLocation): List[CodeHint] = {
     val defn = root.defs(sym)
     val ann = defn.spec.ann
-    val lazzy = if (ann.isLazy) { CodeHint.Lazy(loc) :: Nil } else { Nil }
-    val parallel = if (ann.isParallel) { CodeHint.Parallel(loc) :: Nil } else { Nil }
     checkDeprecated(ann, loc) ++
       checkExperimental(ann, loc) ++
-      lazzy ++
-      parallel
+      checkLazy(ann, loc) ++
+      checkParallel(ann, loc)
   }
 
   private def considerEnum(root: Root, sym: Symbol.EnumSym, loc: SourceLocation): List[CodeHint] = {
@@ -88,6 +86,14 @@ object CodeHinter {
 
   private def checkExperimental(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
     if (ann.isExperimental) { CodeHint.Experimental(loc) :: Nil } else { Nil }
+  }
+
+  private def checkLazy(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isLazy) { CodeHint.Lazy(loc) :: Nil } else { Nil }
+  }
+
+  private def checkParallel(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isParallel) { CodeHint.Parallel(loc) :: Nil } else { Nil }
   }
 
   /**
