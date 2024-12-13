@@ -138,7 +138,7 @@ object CodeHinter {
 
     Visitor.visitRoot(root, UseConsumer, AllAcceptor)
 
-    CodeHintCandidates(traitUses, enumUses, defUses, applyDefs)
+    CodeHintCandidates(applyDefs, defUses, enumUses, traitUses)
   }
 
 
