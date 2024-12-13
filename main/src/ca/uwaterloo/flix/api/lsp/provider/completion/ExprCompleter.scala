@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ExprCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
       DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
@@ -30,7 +30,7 @@ object ExprCompleter {
       EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
       ModuleCompleter.getCompletions(context) ++
-      HoleCompletion.getHoleCompletion(context, index, root) ++
+      HoleCompletion.getHoleCompletion(context, root) ++
       OpCompleter.getCompletions(context)
   }
 
