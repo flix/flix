@@ -30,12 +30,12 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
-    val uses = getUses
+    val cands = getCandidates
 
-    val traitHints = uses.traitUses.flatMap(considerTrait)
-    val defHints = uses.defUses.flatMap(considerDef)
-    val enumHints = uses.enumUses.flatMap{case (sym, loc) => considerEnum(sym, loc)}
-    val defCalls = uses.defCalls.flatMap{case (sym, exps) => considerDefCall(sym, exps)}
+    val traitHints = cands.traitOccurs.flatMap(considerTrait)
+    val defHints = cands.defOccurs.flatMap(considerDef)
+    val enumHints = cands.enumOccurs.flatMap{case (sym, loc) => considerEnum(sym, loc)}
+    val defCalls = cands.defCalls.flatMap{case (sym, exps) => considerDefCall(sym, exps)}
 
     val hints = traitHints ++ defHints ++ enumHints ++ defCalls
 
@@ -46,9 +46,23 @@ object CodeHinter {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
-  private case class Uses(traitUses: List[TraitSymUse], enumUses: List[(Symbol.EnumSym, SourceLocation)], defUses: List[DefSymUse], defCalls: List[(Symbol.DefnSym, List[Expr])])
+  /**
+    * A [[CodeHintCandidates]] represents all elements that might warrant a code hint.
+    *
+    * @param traitOccurs  All occurrences of traits.
+    * @param enumOccurs   All occurrences of enums.
+    * @param defOccurs    All occurrences of defs.
+    * @param defCalls     All calls to defs.
+    */
+  private case class CodeHintCandidates(traitOccurs: List[TraitSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], defOccurs: List[DefSymUse], defCalls: List[(Symbol.DefnSym, List[Expr])])
 
-  private def getUses(implicit root: Root): Uses = {
+  /**
+    * Returns a [[CodeHintCandidates]] for Flix project.
+    *
+    * @param root The root AST node of the Flix project
+    * @return     A [[CodeHintCandidates]] for the Flix project.
+    */
+  private def getCandidates(implicit root: Root): CodeHintCandidates = {
     var traitUses: List[TraitSymUse] = Nil
     var defUses: List[DefSymUse] = Nil
     var enumUses: List[(Symbol.EnumSym, SourceLocation)] = Nil
@@ -71,7 +85,7 @@ object CodeHinter {
 
     Visitor.visitRoot(root, UseConsumer, AllAcceptor)
 
-    Uses(traitUses, enumUses, defUses, defCalls)
+    CodeHintCandidates(traitUses, enumUses, defUses, defCalls)
   }
 
   /**
