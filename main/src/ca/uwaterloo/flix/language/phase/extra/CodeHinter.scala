@@ -71,6 +71,7 @@ object CodeHinter {
     checkDeprecated(ann, loc) ++
       checkExperimental(ann, loc) ++
       checkLazy(ann, loc) ++
+      checkLazyWhenPure(sym, loc) ++
       checkParallel(ann, loc)
   }
 
@@ -94,6 +95,51 @@ object CodeHinter {
 
   private def checkParallel(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
     if (ann.isParallel) { CodeHint.Parallel(loc) :: Nil } else { Nil }
+  }
+
+  /**
+    * Checks whether `sym` would benefit from `tpe` being pure.
+    */
+  private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    if (lazyWhenPure(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.LazyEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
+    } else if (parallelWhenPure(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.ParallelEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForParallelEvaluation(sym, loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Returns `true` if the the given `sym` is marked being purity reflective
+    * and uses lazy evaluation when given a pure function argument.
+    */
+  private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.isLazyWhenPure
+  }
+
+  /**
+    * Returns `true` if the given `sym` is marked being purity reflective
+    * and uses parallel evaluation when given a pure function argument.
+    */
+  private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.isParallelWhenPure
+  }
+
+  /**
+    * Returns `true` if the given function type `tpe` is pure.
+    */
+  private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
+    case _ => false
   }
 
   /**
