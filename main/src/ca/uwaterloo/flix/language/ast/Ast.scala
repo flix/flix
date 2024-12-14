@@ -24,11 +24,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    * A constructor for a type alias. (Not a valid type by itself).
-    */
-  case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
-
-  /**
     * A constructor for an associated type. (Not a valid type by itself).
     */
   case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)

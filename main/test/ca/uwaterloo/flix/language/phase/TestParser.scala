@@ -1068,4 +1068,38 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  test("Nested.Mod.Eff") {
+    val input =
+      """
+        |eff E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Instance") {
+    val input =
+      """
+        |instance E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Trait") {
+    val input =
+      """
+        |trait E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }

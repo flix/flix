@@ -283,7 +283,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
@@ -308,7 +308,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
@@ -379,7 +379,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
 
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
