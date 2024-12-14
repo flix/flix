@@ -651,7 +651,7 @@ object Parser2 {
   /**
     *   - `KIND` is consumed and produces [[TreeKind.Ident]]
     *   - `KIND.KIND.KIND` is consumed and produces [[TreeKind.QName]]([[TreeKind.Ident]]..)
-    *   - `KIND.KIND.ANY` is consumed and produces
+    *   - `KIND.KIND.` is consumed and produces
     *     [[TreeKind.QName]]([[TreeKind.Ident]].., [[TreeKind.ErrorTree]])
     *   - `KIND. KIND.KIND` is consumed and produces
     *     [[TreeKind.QName]]([[TreeKind.Ident]].., [[TreeKind.ErrorTree]], [[TreeKind.Ident]]..)
@@ -668,7 +668,7 @@ object Parser2 {
   /**
     *   - `KIND` is consumed and produces [[TreeKind.Ident]]
     *   - `KIND.KIND.KIND` is consumed and produces [[TreeKind.QName]]([[TreeKind.Ident]]..)
-    *   - `KIND.KIND.ANY` is consumed and produces
+    *   - `KIND.KIND.` is consumed and produces
     *     [[TreeKind.QName]]([[TreeKind.Ident]].., [[TreeKind.ErrorTree]])
     *   - `KIND. KIND.KIND` is consumed and produces
     *     [[TreeKind.QName]]([[TreeKind.Ident]].., [[TreeKind.ErrorTree]], [[TreeKind.Ident]]..)
