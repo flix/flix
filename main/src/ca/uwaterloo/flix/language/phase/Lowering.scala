@@ -587,6 +587,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Cast(e, dt, declaredEff, t, eff, loc)
 
+    case TypedAst.Expr.Unsafe(exp, _, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expr.Cast(e, None, Some(eff), tpe, eff, loc)
+
     case TypedAst.Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
