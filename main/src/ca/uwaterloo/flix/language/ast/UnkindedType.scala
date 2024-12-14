@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, Denotation, Scope, VarText}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -280,9 +280,9 @@ object UnkindedType {
   /**
     * A fully resolved type alias.
     */
-  case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class Alias(cst: AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
+      case Alias(AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
       case _ => false
     }
 
