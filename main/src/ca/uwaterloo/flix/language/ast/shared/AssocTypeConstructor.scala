@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 /**
-  * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+  * A constructor for an associated type. (Not a valid type by itself).
   */
-case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)

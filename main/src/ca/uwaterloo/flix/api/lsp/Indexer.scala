@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, Derivation, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AliasConstructor, Derivation, EqualityConstraint, TraitConstraint}
 
 object Indexer {
 
@@ -595,7 +595,7 @@ object Indexer {
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ visitType(arg)
+    case Type.AssocType(AssocTypeConstructor(sym, loc), arg, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ visitType(arg)
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Index.empty
@@ -628,8 +628,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Index = cst match {
-    case Ast.AssocTypeConstructor(sym, loc) => Index.useOf(sym, loc)
+  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Index = cst match {
+    case AssocTypeConstructor(sym, loc) => Index.useOf(sym, loc)
   }
 
 }

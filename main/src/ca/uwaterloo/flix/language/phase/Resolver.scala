@@ -2055,7 +2055,7 @@ object Resolver {
 
       mapN(assocVal, t1Val, t2Val) {
         case (assoc, t1, t2) =>
-          val head = Ast.AssocTypeConstructor(assoc.sym, qname.loc)
+          val head = AssocTypeConstructor(assoc.sym, qname.loc)
           ResolvedAst.EqualityConstraint(head, t1, t2, loc)
       }
   }
@@ -2601,7 +2601,7 @@ object Resolver {
             val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
             flatMapN(targHeadVal, targTailVal) {
               case (targHd: UnkindedType.Var, targTl) =>
-                val cst = Ast.AssocTypeConstructor(sym, loc)
+                val cst = AssocTypeConstructor(sym, loc)
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 Validation.Success(UnkindedType.mkApply(assoc, targTl, tpe0.loc))
               case _ =>
