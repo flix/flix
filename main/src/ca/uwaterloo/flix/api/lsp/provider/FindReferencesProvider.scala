@@ -16,12 +16,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
-import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Input, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -232,7 +232,7 @@ object FindReferencesProvider {
     case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     // Type Alias
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
-    case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+    case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -436,7 +436,7 @@ object FindReferencesProvider {
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(Ast.AliasConstructor(sym, loc), _, _, _) => consider(sym, loc)
+        case Type.Alias(AliasConstructor(sym, loc), _, _, _) => consider(sym, loc)
         case _ => ()
       }
     }

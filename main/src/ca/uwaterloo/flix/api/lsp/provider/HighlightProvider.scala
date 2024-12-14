@@ -16,12 +16,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -301,7 +301,7 @@ object HighlightProvider {
       case TraitConstraint.Head(sym, _) => Some(highlightTraitSym(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(highlightTypeAliasSym(sym))
-      case Type.Alias(Ast.AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
+      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
       // Type Variables
       case TypedAst.TypeParam(_, sym, _) => Some(highlightTypeVarSym(sym))
       case Type.Var(sym, _) => Some(highlightTypeVarSym(sym))
@@ -481,7 +481,7 @@ object HighlightProvider {
     object TypeAliasSymConsumer extends Consumer {
       override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(Ast.AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
+        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
         case _ => ()
       }
     }
