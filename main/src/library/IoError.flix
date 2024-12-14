@@ -28,7 +28,7 @@ mod IoError {
 
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
-        case PermissionDenied,
+        case ConnectionFailed,
         case Interrupted,
         case InvalidPath,
         case InvalidInput,
@@ -36,9 +36,9 @@ mod IoError {
         case NotFound,
         case NotFile,
         case NotDirectory,
+        case PermissionDenied,
         case UnexpectedEof,
         case Unsupported,
-        case ConnectionFailed,
         case Other
     }
 
