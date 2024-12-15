@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 
 /**
-  * A collection of AST nodes that are shared across multiple ASTs.
+  * A use of a Flix symbol or import of a Java class.
   */
-object Ast {}
+sealed trait UseOrImport
+
+object UseOrImport {
+
+  /**
+    * A use of a Flix declaration symbol.
+    */
+  case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+
+  /**
+    * An import of a Java class.
+    */
+  case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+  
+}

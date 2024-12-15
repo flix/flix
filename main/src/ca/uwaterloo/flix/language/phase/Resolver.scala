@@ -3347,14 +3347,14 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
+  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
-        Validation.Success(Ast.UseOrImport.Use(getSym(d), alias, loc))
+        Validation.Success(UseOrImport.Use(getSym(d), alias, loc))
       // Case 3: Impossible. Crash.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
@@ -3362,26 +3362,26 @@ object Resolver {
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
       val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
       mapN(clazzVal) {
-        case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
+        case clazz => UseOrImport.Import(clazz, alias, loc)
       }
   }
 
   /**
     * Adds the given use or import to the use environment.
     */
-  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
-    case Ast.UseOrImport.Use(sym, alias, _) =>
+  private def appendUseEnv(env: LocalScope, useOrImport: UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
+    case UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
         case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
       }
-    case Ast.UseOrImport.Import(clazz, alias, _) => env + (alias.name -> Resolution.JavaClass(clazz))
+    case UseOrImport.Import(clazz, alias, _) => env + (alias.name -> Resolution.JavaClass(clazz))
   }
 
   /**
     * Adds the given uses and imports to the use environment.
     */
-  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root): LocalScope = {
+  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[UseOrImport], root: NamedAst.Root): LocalScope = {
     usesAndImports.foldLeft(env)(appendUseEnv(_, _, root))
   }
 

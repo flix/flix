@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api
 
-package ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 
 /**
-  * A collection of AST nodes that are shared across multiple ASTs.
+  * A common super-type for Flix events.
   */
-object Ast {}
+sealed trait FlixEvent
+
+object FlixEvent {
+
+  /**
+    * An event that is fired when new type constraints are collected for the given def symbol `sym`.
+    */
+  case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
+
+}

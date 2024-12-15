@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api
 
-package ca.uwaterloo.flix.language.ast
+trait FlixListener {
 
-/**
-  * A collection of AST nodes that are shared across multiple ASTs.
-  */
-object Ast {}
+  /**
+    * Invoked to notify the listener of the given Flix event.
+    */
+  def notify(e: FlixEvent): Unit
+
+}
