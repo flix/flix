@@ -1,7 +1,8 @@
 # Changelog
 
-Version 0.54.0:
+Version 0.55.0:
 
+Version 0.54.0:
 - Compiler: Improved auto-completion suggestions (thanks Chenhao!)
 - Compiler: Added `AutoImportCompleter` (thanks Chenhao!)
 - Compiler: Added `AutoUseCompleter` (thanks Chenhao!)
