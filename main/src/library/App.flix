@@ -18,14 +18,14 @@ mod App {
     ///
     /// Runs the given function `f` handling all effects specified in the signature.
     ///
-    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, FileReadWithResult, FileWriteWithResult, Http, Logger}) + {IO, Net} =
+    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, FileReadWithResult, FileWriteWithResult, HttpWithResult, Logger}) + {IO, Net} =
         let r = f |>
             Clock.handle |>
             Console.handle |>
             FileReadWithResult.handle |>
             FileWriteWithResult.handle |>
             Logger.handle |>
-            Http.handle;
+            HttpWithResult.handle;
         r()
 
     ///
