@@ -29,7 +29,7 @@ mod TestFileReadWithResultWithResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Bool \ IO = {
+    def exists01(): Bool \ {Sys, IO} = {
         Result.flatten(
             FileWrite.handle(() -> {
                 let dir = FileWrite.mkTempDir("flix");

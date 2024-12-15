@@ -16,12 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Derivation, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -566,7 +565,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+    case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
 
@@ -815,8 +814,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case Ast.AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
+    case AssocTypeConstructor(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

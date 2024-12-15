@@ -17,7 +17,7 @@
 ///
 /// An effect used to read from the file system.
 ///
-/// All operations on this effect are infalliable.
+/// All operations on this effect are infallible.
 /// If an operation fails the handler must deal with it.
 ///
 pub eff FileRead {
@@ -123,7 +123,7 @@ mod FileRead {
     /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileRead) + IO = x ->
-        try {
+        run {
             Ok(f(x))
         } with FileRead {
             def exists(f, k) = {

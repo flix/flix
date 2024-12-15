@@ -20,4 +20,4 @@ import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type}
 /**
   * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
   */
-case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)

@@ -107,7 +107,7 @@ mod FileWriteWithResult {
     /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + IO = x ->
-        try {
+        run {
             f(x)
         } with FileWriteWithResult {
             def write(data, f, k) = {

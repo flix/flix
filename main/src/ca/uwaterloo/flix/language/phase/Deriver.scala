@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -180,8 +179,8 @@ object Deriver {
         mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),
@@ -311,7 +310,7 @@ object Deriver {
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamVarSym, Modifiers.Empty, lambdaParamVarSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
         allowSubeffecting = false,
         loc
@@ -374,8 +373,8 @@ object Deriver {
         mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),
@@ -542,7 +541,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
@@ -679,7 +678,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
@@ -866,7 +865,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),

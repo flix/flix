@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{Scope, Source}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope, Source, VarText}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -32,6 +31,7 @@ object Symbol {
   /**
     * The primitive effects defined in the Prelude.
     */
+  val Chan: EffectSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
   val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
@@ -45,13 +45,14 @@ object Symbol {
     * The set of all primitive effects defined in the Prelude.
     */
   val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
-    Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
+    Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
   ))
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
     */
   def isPrimitiveEff(sym: EffectSym): Boolean = sym match {
+    case Chan => true
     case Env => true
     case Exec => true
     case FsRead => true
@@ -69,6 +70,7 @@ object Symbol {
     * The String must be a valid name of a primitive effect.
     */
   def parsePrimitiveEff(s: String): Symbol.EffectSym = s match {
+    case "Chan" => Chan
     case "Env" => Env
     case "Exec" => Exec
     case "FsRead" => FsRead
@@ -120,14 +122,14 @@ object Symbol {
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): KindedTypeVarSym = {
+  def freshKindedTypeVarSym(text: VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): KindedTypeVarSym = {
     new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isRegion, scope, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: Ast.VarText, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): UnkindedTypeVarSym = {
+  def freshUnkindedTypeVarSym(text: VarText, isRegion: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): UnkindedTypeVarSym = {
     new UnkindedTypeVarSym(flix.genSym.freshId(), text, isRegion, scope, loc)
   }
 
@@ -373,7 +375,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
+  final class KindedTypeVarSym(val id: Int, val text: VarText, val kind: Kind, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Returns `true` if `this` variable is non-synthetic.
@@ -385,7 +387,7 @@ object Symbol {
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, scope, loc)
 
-    def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
+    def withText(newText: VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, scope, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id
 
@@ -419,7 +421,7 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
+  final class UnkindedTypeVarSym(val id: Int, val text: VarText, val isRegion: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.

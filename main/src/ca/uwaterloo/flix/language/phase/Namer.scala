@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Modifiers, Scope, Source}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
@@ -640,7 +639,7 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
 
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(sym.text), isRegion = true, loc)
 
       // Visit the body in the inner scope
       val e = visitExp(exp, ns0)(scope.enter(regionVar.withKind(Kind.Eff)), sctx, flix)
@@ -754,6 +753,11 @@ object Namer {
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
+    case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
+      val e = visitExp(exp, ns0)
+      val eff = visitType(eff0)
+      NamedAst.Expr.Unsafe(e, eff, loc)
+
     case DesugaredAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Without(e, eff, loc)
@@ -791,10 +795,9 @@ object Namer {
       val name = s"Anon$$${flix.genSym.freshId()}"
       NamedAst.Expr.NewObject(name, t, ms, loc)
 
-    case DesugaredAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.NewChannel(e1, e2, loc)
+    case DesugaredAst.Expr.NewChannel(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.NewChannel(e, loc)
 
     case DesugaredAst.Expr.GetChannel(exp, loc) =>
       val e = visitExp(exp, ns0)
@@ -1422,7 +1425,7 @@ object Namer {
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
     // We use the top scope since this function is only used for creating top-level stuff.
-    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)(Scope.Top, flix)
+    Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)(Scope.Top, flix)
   }
 
   /**

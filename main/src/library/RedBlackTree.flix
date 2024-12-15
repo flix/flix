@@ -94,6 +94,8 @@ instance Iterable[RedBlackTree[k, v]] {
 
 mod RedBlackTree {
 
+    import java.lang.Runtime
+
     ///
     /// The color of a red-black tree node.
     ///
@@ -112,10 +114,16 @@ mod RedBlackTree {
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the RedBlackTree module.
+    ///
+    def threads(): Int32 = unsafe {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -376,21 +384,26 @@ mod RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
-        if (n <= 1)
-            seqExists(f, t)
-        else
-            match t {
-                case Node(_, a, k, v, b) =>
-                    if (f(k, v))
-                        true
-                    else
-                        par (
-                            l <- parExists((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                            r <- parExists((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
-                        ) yield l or r                         // that we distribute over the two spanned threads.
-                case _ => false
-            }
+    pub def parExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = {
+        def visitSubtree(n, st) = {
+            if (n <= 1)
+                seqExists(f, st)
+            else
+                match st {
+                    case Node(_, a, k, v, b) =>
+                        if (f(k, v))
+                            true
+                        else
+                            par (
+                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                                r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
+                            ) yield l or r                         // that we distribute over the two spanned threads.
+                    case _ => false
+                }
+        };
+        visitSubtree(threads() - 1, t)
+    }
+
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
@@ -427,21 +440,25 @@ mod RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
-        if (n <= 1)
-            seqForAll(f, t)
-        else
-            match t {
-                case Node(_, a, k, v, b) =>
-                    if (not f(k, v))
-                        false
-                    else
-                        par (
-                            l <- parForAll((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                            r <- parForAll((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
-                        ) yield l and r                        // that we distribute over the two spanned threads.
-                case _ => false
+    pub def parForAll(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = {
+        def visitSubtree(n, st) = {
+            if (n <= 1)
+                seqForAll(f, st)
+            else
+                match st {
+                    case Node(_, a, k, v, b) =>
+                        if (not f(k, v))
+                            false
+                        else
+                            par (
+                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                                r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
+                            ) yield l and r                        // that we distribute over the two spanned threads.
+                    case _ => false
             }
+        };
+        visitSubtree(threads() - 1, t)
+    }
 
     ///
     /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
@@ -632,7 +649,7 @@ mod RedBlackTree {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(t))
-                    parMapWithKey(threads() - 1, g, t)
+                    parMapWithKey(g, t)
                 else
                     seqMapWithKey(f, t)
             case Purity2.Impure(_) => seqMapWithKey(f, t)
@@ -641,25 +658,28 @@ mod RedBlackTree {
     ///
     /// Maps `f` over the tree `t` in parallel.
     ///
-    /// The implementation spawns `n` threads each applying `f` sequentially
+    /// The implementation spawns a number of threads each applying `f` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = {
-        if (n <= 1)
-            parSeqMapWithKey(f, t)
-        else
-            match t {
-                case Leaf                   => Leaf
-                case DoubleBlackLeaf        => DoubleBlackLeaf
-                case Node(c, a, k, v, b)    =>
-                    par (
-                        l  <- parMapWithKey((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                        r  <- parMapWithKey((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                        v1 <- f(k, v)                           // that we distribute over the two spanned threads.
-                    ) yield Node(c, l, k, v1, r)
-            }
+    def parMapWithKey(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = {
+        def visitSubtree(n, st) = {
+            if (n <= 1)
+                parSeqMapWithKey(f, st)
+            else
+                match st {
+                    case Leaf                   => Leaf
+                    case DoubleBlackLeaf        => DoubleBlackLeaf
+                    case Node(c, a, k, v, b)    =>
+                        par (
+                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                            v1 <- f(k, v)                           // that we distribute over the two spanned threads.
+                        ) yield Node(c, l, k, v1, r)
+                }
+        };
+        visitSubtree(threads() - 1, t)
     }
 
     ///
@@ -697,25 +717,29 @@ mod RedBlackTree {
     /// Applies `f` over the tree `t` in parallel and returns the number of elements
     /// that satisfy the predicate `f`.
     ///
-    /// The implementation spawns `n` threads each applying `f` sequentially
+    /// The implementation spawns a number of threads each applying `f` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
-        if (n <= 1)
-            seqCount(f, t)
-        else
-            match t {
-                case Leaf                   => 0
-                case DoubleBlackLeaf        => 0
-                case Node(_, a, k, v, b)    =>
-                    par (
-                        l  <- parCount((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                        r  <- parCount((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                        v1 <- if (f(k, v)) 1 else 0        // that we distribute over the two spanned threads.
-                    ) yield l + v1 + r
-            }
+    pub def parCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = {
+        def visitSubtree(n, st) = {
+            if (n <= 1)
+                seqCount(f, st)
+            else
+                match st {
+                    case Leaf                   => 0
+                    case DoubleBlackLeaf        => 0
+                    case Node(_, a, k, v, b)    =>
+                        par (
+                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                            v1 <- if (f(k, v)) 1 else 0         // that we distribute over the two spanned threads.
+                        ) yield l + v1 + r
+                }
+        };
+        visitSubtree(threads() - 1, t)
+    }
 
     ///
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
@@ -761,25 +785,30 @@ mod RedBlackTree {
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///
-    /// The implementation spawns `n` threads each applying `f` sequentially
+    /// The implementation spawns a number of threads each applying `f` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
-        if (n <= 1)
-            seqSumWith(f, t)
-        else
-            match t {
-                case Leaf                   => 0
-                case DoubleBlackLeaf        => 0
-                case Node(_, a, k, v, b)    =>
-                    par (
-                        l  <- parSumWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                        r  <- parSumWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                        v1 <- f(k, v)                        // that we distribute over the two spanned threads.
-                    ) yield l + v1 + r
-            }
+    pub def parSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = {
+        def visitSubtree(n, st) = {
+            if (n <= 1)
+                seqSumWith(f, st)
+            else
+                match st {
+                    case Leaf                   => 0
+                    case DoubleBlackLeaf        => 0
+                    case Node(_, a, k, v, b)    =>
+                        par (
+                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                            v1 <- f(k, v)                       // that we distribute over the two spanned threads.
+                        ) yield l + v1 + r
+                }
+        };
+        visitSubtree(threads() - 1, t)
+    }
+
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
@@ -837,25 +866,25 @@ mod RedBlackTree {
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// The implementation spawns a number of threads each applying `cmp` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
-        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), t)
+    pub def parMinimumBy(cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
+        parLimitBy((kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the largest
     /// element according to `cmp`.
     ///
-    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// The implementation spawns a number of threads each applying `cmp` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
-        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), t)
+    pub def parMaximumBy(cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
+        parLimitBy((kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Helper function for `minimumBy` & `maximumBy`.
@@ -863,31 +892,35 @@ mod RedBlackTree {
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the min/max (decided by `decider`)
     /// element according to `cmp`.
     ///
-    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// The implementation spawns a number of threads each applying `cmp` sequentially
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] =
-        if (n <= 0)
-            seqLimitBy(cmp, t)
-        else
-            match t {
-                case Leaf                => None
-                case DoubleBlackLeaf     => None
-                case Node(_, a, k, v, b) =>
-                    par (
-                        l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
-                        r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
-                    ) yield match (l, r) {                // that we distribute over the two spanned threads.
-                        case (None, None)                     => Some((k, v))
-                        case (None, Some((kr, vr)))           => Some(cmp(k, v, kr, vr))
-                        case (Some((kl, vl)), None)           => Some(cmp(kl, vl, k, v))
-                        case (Some((kl, vl)), Some((kr, vr))) =>
-                            let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
-                            Some(cmp(km, vm, kr, vr))
-                    }
-            }
+    def parLimitBy(cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] = {
+        def visitSubtree(n, st) = {
+            if (n <= 0)
+                seqLimitBy(cmp, st)
+            else
+                match st {
+                    case Leaf                => None
+                    case DoubleBlackLeaf     => None
+                    case Node(_, a, k, v, b) =>
+                        par (
+                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
+                        ) yield match (l, r) {                 // that we distribute over the two spanned threads.
+                            case (None, None)                     => Some((k, v))
+                            case (None, Some((kr, vr)))           => Some(cmp(k, v, kr, vr))
+                            case (Some((kl, vl)), None)           => Some(cmp(kl, vl, k, v))
+                            case (Some((kl, vl)), Some((kr, vr))) =>
+                                let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
+                                Some(cmp(km, vm, kr, vr))
+                        }
+                }
+        };
+        visitSubtree(threads() - 1, t)
+    }
 
     ///
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest

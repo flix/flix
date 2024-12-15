@@ -83,11 +83,10 @@ object MagicMatchCompleter {
     val sb = new StringBuilder
     var index = 1
     for ((sym, cas) <- cases.toList.sortBy(_._1.loc)) {
-      val oldIndex = index
-      val (lhs, newZ) = createCase(sym, cas, index)
-      val paddedLhs = padLhs(lhs, maxCaseLength, oldIndex, newZ)
-      sb.append(s"    case $paddedLhs => $${$index:???}\n")
-      index = newZ + 1
+      val (lhs, newIndex) = createCase(sym, cas, index)
+      val paddedLhs = padLhs(lhs, maxCaseLength, index, newIndex)
+      sb.append(s"    case $paddedLhs => $${$newIndex:???}\n")
+      index = newIndex + 1
     }
     sb.toString()
   }
@@ -167,10 +166,10 @@ object MagicMatchCompleter {
     * Pads the middle of a tuple case string to the specified maximum length,
     * accounting for the extra padding length required by invisible placeholders in the case string.
     * For example, "${13:???}" will be displayed as "???", so the extra padding length is 4 plus the length of "13".
-    * We use the input oldZ and newZ to track all the placeholders in the case string.
+    * We use the input oldIndex and newIndex to track all the placeholders in the case string.
     */
-  private def padLhs(lhs: String, maxLength: Int, oldZ: Int, newZ: Int): String = {
-    val extraPaddingLength = List.range(oldZ, newZ).map(4 + getIntLength(_)).sum
+  private def padLhs(lhs: String, maxLength: Int, oldIndex: Int, newIndex: Int): String = {
+    val extraPaddingLength = List.range(oldIndex, newIndex).map(4 + getIntLength(_)).sum
     lhs.padTo(maxLength + extraPaddingLength, ' ')
   }
 
@@ -195,16 +194,16 @@ object MagicMatchCompleter {
   /**
     * Creates a case string and its corresponding right-hand side string.
     */
-  private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, z: Int): (String, Int) = {
+  private def createCase(sym: Symbol.CaseSym, cas: TypedAst.Case, index: Int): (String, Int) = {
     cas.tpes match {
       case Nil =>
-        (s"$sym", z)
+        (s"$sym", index)
       case List(_) =>
-        (s"$sym($${${z}:_elem})", z + 1)
+        (s"$sym($${${index}:_elem})", index + 1)
       case other =>
         val arity = other.length
-        val elements = List.range(0, arity).map(i => s"$${${i + z}:_elem$i}").mkString(", ")
-        (s"$sym($elements)",  z + arity)
+        val elements = List.range(0, arity).map(i => s"$${${i + index}:_elem$i}").mkString(", ")
+        (s"$sym($elements)",  index + arity)
     }
   }
 

@@ -230,7 +230,7 @@ object TypedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class GetChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -355,7 +355,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 

@@ -179,6 +179,8 @@ object ResolvedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[UnkindedType], declaredEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
+    case class Unsafe(exp: Expr, eff: UnkindedType, loc: SourceLocation) extends Expr
+
     case class Without(exp: Expr, eff: EffectSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
@@ -205,7 +207,7 @@ object ResolvedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[?], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
     case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -356,7 +358,7 @@ object ResolvedAst {
 
   case class TraitConstraint(head: shared.TraitConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
-  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
+  case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 

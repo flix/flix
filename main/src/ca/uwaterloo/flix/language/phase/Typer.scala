@@ -433,7 +433,7 @@ object Typer {
 
         // check that they are all covered by the type constraints
         tpes.flatMap(getAssocTypes).foreach {
-          case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+          case Type.AssocType(AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
             val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
               case TraitConstraint(TraitConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
