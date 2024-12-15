@@ -16,78 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.errors.ResolutionError
-
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
-object Ast {
-
-  /**
-    * A common super-type for syntactic contexts.
-    *
-    * A syntactic context is an estimate of the syntactic construct a specific source position is inside.
-    */
-  sealed trait SyntacticContext
-
-  object SyntacticContext {
-
-    sealed trait Decl extends SyntacticContext
-
-    object Decl {
-      case object Enum extends Decl
-
-      case object Instance extends Decl
-
-      case object Module extends Decl
-
-      case object Struct extends Decl
-
-      case object Trait extends Decl
-
-      case object Type extends Decl
-    }
-
-    sealed trait Expr extends SyntacticContext
-
-    object Expr {
-      case object Constraint extends Expr
-
-      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
-
-      case object New extends Expr
-
-      case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
-
-      case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
-
-      case object OtherExpr extends Expr
-    }
-
-    case object Import extends SyntacticContext
-
-    sealed trait Pat extends SyntacticContext
-
-    object Pat {
-      case object OtherPat extends Pat
-    }
-
-    sealed trait Type extends SyntacticContext
-
-    object Type {
-      case object Eff extends Type
-
-      case object OtherType extends Type
-    }
-
-    case object Use extends SyntacticContext
-
-    case object WithClause extends SyntacticContext
-
-    case object WithHandler extends SyntacticContext
-
-    case object Unknown extends SyntacticContext
-
-  }
-
-}
+object Ast {}
