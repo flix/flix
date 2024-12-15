@@ -1,5 +1,5 @@
 /// Construct colorful messages.
-def main(): Unit \ IO =
+def main(): Unit \ {Sys, IO} = Environment.handle(() -> {
   let s1 = "You can print message with " + Chalk.red("colored text");
   let s2 = " or " + Chalk.bgBlue("background") + ".";
   println(s1+s2);
@@ -18,3 +18,4 @@ def main(): Unit \ IO =
   let s6 = Chalk.bold("This message is bold.");
   let s7 = Chalk.hex("#b891eb", " And this is a custom hex color.");
   println(s6 + s7)
+})()
