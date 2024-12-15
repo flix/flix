@@ -24,24 +24,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object Ast {
 
   /**
-    * A use of a Flix symbol or import of a Java class.
-    */
-  sealed trait UseOrImport
-
-  object UseOrImport {
-
-    /**
-      * A use of a Flix declaration symbol.
-      */
-    case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
-
-    /**
-      * An import of a Java class.
-      */
-    case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
-  }
-
-  /**
     * A common super-type for syntactic contexts.
     *
     * A syntactic context is an estimate of the syntactic construct a specific source position is inside.

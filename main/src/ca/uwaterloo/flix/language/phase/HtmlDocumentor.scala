@@ -1537,7 +1537,7 @@ object HtmlDocumentor {
     */
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
-                            uses: List[Ast.UseOrImport],
+                            uses: List[UseOrImport],
                             submodules: List[Module],
                             traits: List[Trait],
                             effects: List[Effect],
