@@ -61,6 +61,8 @@ instance Iterable[DelayMap[k, v]] {
 
 mod DelayMap {
 
+    import java.lang.Runtime
+
     ///
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
@@ -72,10 +74,16 @@ mod DelayMap {
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 \ Environment =
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the DelayMap module.
+    ///
+    def threads(): Int32 = unsafe {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -473,8 +481,7 @@ mod DelayMap {
         };
         let DMap(t) = m;
         if (useParallelEvaluation(m))
-            let threads = unchecked_cast(Environment.handle(threads)() as _ \ {});
-            parLoop(threads - 1, t)
+            parLoop(threads() - 1, t)
         else
             seqLoop(t)
 
