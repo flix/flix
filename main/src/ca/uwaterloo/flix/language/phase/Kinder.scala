@@ -595,6 +595,11 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
 
+    case ResolvedAst.Expr.Unsafe(exp0, eff0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val eff = visitType(eff0, Kind.Eff, kenv0, taenv, root)
+      KindedAst.Expr.Unsafe(exp, eff, loc)
+
     case ResolvedAst.Expr.Without(exp0, eff, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Without(exp, eff, loc)
@@ -1237,8 +1242,8 @@ object Kinder {
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.FormalParam = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
       val (t, src) = tpe0 match {
-        case None => (sym.tvar, Ast.TypeSource.Inferred)
-        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, taenv, root), Ast.TypeSource.Ascribed)
+        case None => (sym.tvar, TypeSource.Inferred)
+        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, taenv, root), TypeSource.Ascribed)
       }
       KindedAst.FormalParam(sym, mod, t, src, loc)
   }

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFormatType extends AnyFunSuite with TestUtils {
@@ -71,7 +71,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val name = Name.mkQName("MyEmptyRecordRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, alias, loc)
 
@@ -85,7 +85,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val name = Name.mkQName("MyEmptyRecordRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val tpe = Type.mkRecord(alias, loc)
 
@@ -205,7 +205,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val name = Name.mkQName("MyEmptySchemaRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
 
@@ -222,7 +222,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
-    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, latticeType1, loc)
+    val alias = Type.Alias(AliasConstructor(sym, loc), Nil, latticeType1, loc)
 
 
     val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), alias, Type.SchemaRowEmpty, loc)
@@ -441,7 +441,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val name = Name.mkQName("MyType")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val tpe = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.Int32, loc)
+    val tpe = Type.Alias(AliasConstructor(sym, loc), Nil, Type.Int32, loc)
 
     val expected = "MyType"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)

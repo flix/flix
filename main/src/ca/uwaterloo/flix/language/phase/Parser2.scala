@@ -1240,8 +1240,8 @@ object Parser2 {
             case at =>
               val errMark = open()
               val loc = currentSourceLocation()
-              // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              // Skip ahead until we hit another declaration or any CurlyR or EOF.
+              while (!nth(0).isFirstEff && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
@@ -1627,6 +1627,7 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
+        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
@@ -2410,6 +2411,25 @@ object Parser2 {
       close(mark, TreeKind.Expr.UnsafeOld)
     }
 
+    /**
+      * `unsafely TTYPE run EXPRESSION`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.UnsafelyRun
+      *     - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
+    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUnsafely))
+      val mark = open()
+      expect(TokenKind.KeywordUnsafely, SyntacticContext.Expr.OtherExpr)
+      Type.ttype()
+      expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Unsafe)
+    }
+
     private def runExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordRun))
       val mark = open()
@@ -2947,7 +2967,8 @@ object Parser2 {
     }
 
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
+      if (left == TokenKind.ArrowThinR) return typeAndEffect()
+      var lhs = typeDelimited()
       // handle Type argument application
       while (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)

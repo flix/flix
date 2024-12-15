@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 
 object WithHandlerCompleter {
   def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
@@ -31,7 +30,7 @@ object WithHandlerCompleter {
   }
 
   private def fmtOp(op: TypedAst.Op): String = {
-    val fparamsString = (op.spec.fparams.map(p => p.bnd.sym.text) :+ "k").mkString(", ")
+    val fparamsString = (op.spec.fparams.collect{ case p if p.tpe != Type.Unit => p.bnd.sym.text} :+ "k").mkString(", ")
     s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }

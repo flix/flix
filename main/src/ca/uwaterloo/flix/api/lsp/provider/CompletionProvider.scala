@@ -43,7 +43,7 @@ import org.json4s.JsonDSL.*
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): JObject = {
     getCompletionContext(source, uri, pos, currentErrors) match {
       case None =>
         // We were not able to compute the completion context. Return no suggestions.
@@ -52,7 +52,7 @@ object CompletionProvider {
       case Some(ctx) =>
         // We were able to compute the completion context. Compute suggestions.
         val sctx = getSyntacticContext(uri, pos, currentErrors)
-        val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, index, root)
+        val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, root)
         val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(root)
         val completions = syntacticCompletions ++ semanticCompletions
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
@@ -60,7 +60,7 @@ object CompletionProvider {
     }
   }
 
-  private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
     sctx match {
       //
       // Expressions.
@@ -84,8 +84,7 @@ object CompletionProvider {
       //
       // Types.
       //
-      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions()
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx) ++ EffSymCompleter.getCompletions()
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
 
       //
       // Patterns.
@@ -114,7 +113,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Unknown =>
         // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-        HoleCompletion.getHoleCompletion(ctx, index, root)
+        HoleCompletion.getHoleCompletion(ctx, root)
 
       case _ => Nil
     }
@@ -128,7 +127,8 @@ object CompletionProvider {
       //
       case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
       case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedType =>
+        AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
 
       case _ => Nil

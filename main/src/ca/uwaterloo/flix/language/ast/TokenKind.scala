@@ -135,6 +135,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
+      case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -284,6 +285,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
+    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
@@ -427,6 +429,17 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an effect.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstEff: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef => true
+    case _ => false
+  })
+
+  /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
     * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
     */
@@ -503,6 +516,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordTypeMatch
          | TokenKind.KeywordUncheckedCast
          | TokenKind.KeywordUnsafe
+         | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
@@ -1001,6 +1015,8 @@ object TokenKind {
   case object KeywordUniv extends TokenKind
 
   case object KeywordUnsafe extends TokenKind
+
+  case object KeywordUnsafely extends TokenKind
 
   case object KeywordUse extends TokenKind
 
