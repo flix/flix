@@ -693,7 +693,12 @@ object Desugar {
       val eff = declaredEff.map(visitType)
       Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.Unsafe(exp, loc) =>
+    case WeededAst.Expr.Unsafe(exp, eff0, loc) =>
+      val e = visitExp(exp)
+      val eff = visitType(eff0)
+      Expr.Unsafe(e, eff, loc)
+
+    case WeededAst.Expr.UnsafeOld(exp, loc) =>
       // We desugar an unsafe expression to an unchecked cast to pure.
       val e = visitExp(exp)
       val declaredType = None
@@ -743,10 +748,9 @@ object Desugar {
       val tpe = Type.mkRegion(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
-    case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.NewChannel(e1, e2, loc)
+    case WeededAst.Expr.NewChannel(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewChannel(e, loc)
 
     case WeededAst.Expr.GetChannel(exp, loc) =>
       val e = visitExp(exp)

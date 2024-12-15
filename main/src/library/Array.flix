@@ -77,20 +77,8 @@ mod Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.empty(rc2);
-        let first = Ref.fresh(rc2, true);
-
-        StringBuilder.appendString("Array#{", sb);
-
-        let f = x -> {
-            if (not Ref.get(first)) StringBuilder.appendString(", ", sb) else Ref.put(false, first);
-            StringBuilder.appendString("${x}", sb)
-        };
-        forEach(f, a);
-
-        StringBuilder.appendString("}", sb);
-        StringBuilder.toString(sb)
+    pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc {
+        "Array#{" + (Array.iterator(rc, a) |> Iterator.join(", ")) + "}"
     }
 
     ///
@@ -1455,19 +1443,16 @@ mod Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a, r]): String \ r with ToString[a] =
-        joinWith(ToString.toString, sep, a)
+    pub def join(sep: String, a: Array[a, r]): String \ r with ToString[a] = region rc {
+        Array.iterator(rc, a) |> Iterator.join(sep)
+    }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc1 {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc1);
-        forEach(x -> { append(f(x), sb); append(sep, sb) }, a);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc {
+        Array.iterator(rc, a) |> Iterator.joinWith(f, sep)
     }
 
     ///

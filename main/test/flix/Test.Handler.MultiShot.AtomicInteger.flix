@@ -15,7 +15,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     @Test
     def testLinear01(): Bool =
         def f1() = Ask.ask(newAtomicInteger(42));
-        let result = try {
+        let result = run {
             f1()
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -26,7 +26,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testLinear02(): Bool =
         def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
-        let result = try {
+        let result = run {
             f2()
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -38,7 +38,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def f1() = Ask.ask(newAtomicInteger(42));
         def f2() = f1();
         def f3() = f2();
-        let result = try {
+        let result = run {
             f3()
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -49,7 +49,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testRecursiveLetRec01(): Bool =
         def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(0)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -60,7 +60,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testRecursiveLetRec02(): Bool =
         def f() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(1)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -71,7 +71,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testRecursiveLetRec03(): Bool =
         def f1() = Ask.ask(newAtomicInteger(42));
         def r(x) = if (x == 0) f1() else r(x - 1);
-        let result = try {
+        let result = run {
             r(10)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -80,7 +80,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testMutualRecursive01(): Bool =
-        let result = try {
+        let result = run {
             mutual1(0)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -89,7 +89,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testMutualRecursive02(): Bool =
-        let result = try {
+        let result = run {
             mutual1(1)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -98,7 +98,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testMutualRecursive03(): Bool =
-        let result = try {
+        let result = run {
             mutual1(2)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -107,7 +107,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testMutualRecursive04(): Bool =
-        let result = try {
+        let result = run {
             mutual1(3)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
@@ -116,7 +116,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
 
     @Test
     def testMutualRecursive05(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))

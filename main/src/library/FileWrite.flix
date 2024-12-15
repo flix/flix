@@ -17,7 +17,7 @@
 ///
 /// An effect used to write to the file system.
 ///
-/// All operations on this effect are infalliable.
+/// All operations on this effect are infallible.
 /// If an operation fails the handler must deal with it.
 ///
 pub eff FileWrite {
@@ -103,7 +103,7 @@ mod FileWrite {
     /// In other words, re-interprets the `FileWrite` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileWrite) + IO = x ->
-        try {
+        run {
             Ok(f(x))
         } with FileWrite {
             def write(data, f, k) = {

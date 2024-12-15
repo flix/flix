@@ -1,4 +1,4 @@
-mod Test.Exp.TryWith {
+mod Test.Exp.RunWith {
     eff Print {
         def doIt(): Unit
     }
@@ -16,22 +16,22 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith01(): Unit = {
-        try {
-            Test.Exp.TryWith.Print.doIt()
+    def testRunWith01(): Unit = {
+        run {
+            Test.Exp.RunWith.Print.doIt()
         } with Print {
             def doIt(_cont) = ()
         }
     }
 
     @Test
-    def testTryWith02(): Unit = {
-        try {
-            Test.Exp.TryWith.Print.doIt()
+    def testRunWith02(): Unit = {
+        run {
+            Test.Exp.RunWith.Print.doIt()
         } with Print {
             def doIt(_cont) = {
-                try {
-                    Test.Exp.TryWith.Print2.doIt2()
+                run {
+                    Test.Exp.RunWith.Print2.doIt2()
                 } with Print2 {
                     def doIt2(_cont) = ()
                 }
@@ -40,9 +40,9 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith03(): Unit = {
-        let letsDoIt = () -> Test.Exp.TryWith.Print.doIt();
-        try {
+    def testRunWith03(): Unit = {
+        let letsDoIt = () -> Test.Exp.RunWith.Print.doIt();
+        run {
             letsDoIt()
         } with Print {
             def doIt(_cont) = ()
@@ -50,22 +50,22 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith04(): Unit = {
-        try {
-            Test.Exp.TryWith.Greet.greet("Alice")
+    def testRunWith04(): Unit = {
+        run {
+            Test.Exp.RunWith.Greet.greet("Alice")
         } with Greet {
             def greet(_, _cont) = ()
         }
     }
 
     @Test
-    def testTryWith05(): Unit = {
-        try {
-            Test.Exp.TryWith.Greet.greet("Duchess")
+    def testRunWith05(): Unit = {
+        run {
+            Test.Exp.RunWith.Greet.greet("Duchess")
         } with Greet {
             def greet(name, _cont) = {
-                try {
-                    Test.Exp.TryWith.Greet2.greet2(name)
+                run {
+                    Test.Exp.RunWith.Greet2.greet2(name)
                 } with Greet2 {
                     def greet2(_, _cont) = ()
                 }
@@ -74,16 +74,16 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith06(): Unit = {
+    def testRunWith06(): Unit = {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
             case hd :: tl => {
-                Test.Exp.TryWith.Greet.greet(hd);
+                Test.Exp.RunWith.Greet.greet(hd);
                 greetAll(tl)
             }
         };
 
-        try {
+        run {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
         } with Greet {
             def greet(_, _cont) = ()
@@ -91,9 +91,9 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith07(): Unit = {
-        try {
-            Test.Exp.TryWith.Print.doIt()
+    def testRunWith07(): Unit = {
+        run {
+            Test.Exp.RunWith.Print.doIt()
         } with Print {
             def doIt(_cont) = ()
         } with Print {
@@ -102,13 +102,13 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith08(): Unit = {
-        try {
-            Test.Exp.TryWith.Print.doIt()
+    def testRunWith08(): Unit = {
+        run {
+            Test.Exp.RunWith.Print.doIt()
         } with Print {
             def doIt(_cont) = {
-                try {
-                    Test.Exp.TryWith.Print2.doIt2()
+                run {
+                    Test.Exp.RunWith.Print2.doIt2()
                 } with Print2 {
                     def doIt2(_cont) = ()
                 } with Print2 {
@@ -121,9 +121,9 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith09(): Unit = {
-        let f = () -> Test.Exp.TryWith.Print.doIt();
-        try {
+    def testRunWith09(): Unit = {
+        let f = () -> Test.Exp.RunWith.Print.doIt();
+        run {
             f()
         } with Print {
             def doIt(_cont) = ()
@@ -133,9 +133,9 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith10(): Unit = {
-        try {
-            Test.Exp.TryWith.Greet.greet("Alice")
+    def testRunWith10(): Unit = {
+        run {
+            Test.Exp.RunWith.Greet.greet("Alice")
         } with Greet {
             def greet(_, _cont) = ()
         } with Greet {
@@ -144,13 +144,13 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith11(): Unit = {
-        try {
-            Test.Exp.TryWith.Greet.greet("Duchess")
+    def testRunWith11(): Unit = {
+        run {
+            Test.Exp.RunWith.Greet.greet("Duchess")
         } with Greet {
             def greet(name, _cont) = {
-                try {
-                    Test.Exp.TryWith.Greet2.greet2(name)
+                run {
+                    Test.Exp.RunWith.Greet2.greet2(name)
                 } with Greet2 {
                     def greet2(_, _cont) = ()
                 }
@@ -161,16 +161,16 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith12(): Unit = {
+    def testRunWith12(): Unit = {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
             case hd :: tl => {
-                Test.Exp.TryWith.Greet.greet(hd);
+                Test.Exp.RunWith.Greet.greet(hd);
                 greetAll(tl)
             }
         };
 
-        try {
+        run {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
         } with Greet {
             def greet(_, _cont) = ()

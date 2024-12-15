@@ -653,11 +653,11 @@ object Lowering {
       LoweredAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
 
     // New channel expressions are rewritten as follows:
-    //     chan Int32 10
+    //     $CHANNEL_NEW$(m)
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expr.NewChannel(_, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       mkNewChannelTuple(e, t, eff, loc)
@@ -896,17 +896,15 @@ object Lowering {
       case _ => tpe0 // Performance: Reuse tpe0.
     }
 
-    // Rewrite Sender[t, r] to Concurrent.Channel.Mpmc[t, r]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe1, _), tpe2, _) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      mkChannelTpe(t1, t2, loc)
+    // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
+      val t = visitType(tpe)
+      mkChannelTpe(t, loc)
 
-    // Rewrite Receiver[t, r] to Concurrent.Channel.Mpmc[t, r]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe1, _), tpe2, _) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      mkChannelTpe(t1, t2, loc)
+    // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
+      val t = visitType(tpe)
+      mkChannelTpe(t, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -1286,7 +1284,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", List(lambdaExp), Types.BodyPredicate, loc)
@@ -1304,7 +1302,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1351,7 +1349,7 @@ object Lowering {
     val lambdaExp = inVars.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1382,7 +1380,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", List(lambdaExp), Types.HeadTerm, loc)
@@ -1400,7 +1398,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1683,7 +1681,7 @@ object Lowering {
   }
 
   /**
-    * Returns a full `par exp` expression.
+    * Returns a full `par yield` expression.
     */
   private def mkParChannels(exp: LoweredAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, LoweredAst.Expr)]): LoweredAst.Expr = {
     // Make spawn expressions `spawn ch <- exp`.
@@ -1753,11 +1751,9 @@ object Lowering {
     * Returns a desugared [[TypedAst.Expr.ParYield]] expression as a nested match-expression.
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): LoweredAst.Expr = {
-    // Partition fragments into complex and simple (vars or csts) exps.
-    val (complex, varOrCsts) = frags.partition(f => isSpawnable(f.exp))
-
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val (fs, lastComplex) = complex.splitAt(complex.length - 1)
+    val fs = frags.init
+    val last = frags.last
 
     // Generate symbols for each channel.
     val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
@@ -1765,8 +1761,8 @@ object Lowering {
     // Make `GetChannel` exps for the spawnable exps.
     val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
 
-    // Make expression that evaluates simple exps and the last fragment before proceeding to wait for channels.
-    val desugaredYieldExp = mkParYieldCurrentThread(varOrCsts ::: lastComplex, waitExps)
+    // Evaluate the last expression in the current thread (so just make let-binding)
+    val desugaredYieldExp = mkLetMatch(last.pat, last.exp, waitExps)
 
     // Generate channels and spawn exps.
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
@@ -1774,29 +1770,6 @@ object Lowering {
 
     // Wrap everything in a purity cast,
     LoweredAst.Expr.Cast(blockExp, None, Some(Type.Pure), tpe, eff, loc.asSynthetic)
-  }
-
-  /**
-    * Returns the expression of a `ParYield` expression that should be evaluated in the current thread.
-    */
-  private def mkParYieldCurrentThread(exps: List[LoweredAst.ParYieldFragment], waitExps: LoweredAst.Expr): LoweredAst.Expr = {
-    exps.foldRight(waitExps) {
-      case (exp, acc) => mkLetMatch(exp.pat, exp.exp, acc)
-    }
-  }
-
-  /**
-    * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isVarOrCst`.
-    */
-  private def isSpawnable(exp: LoweredAst.Expr): Boolean = !isVarOrCst(exp)
-
-  /**
-    * Returns `true` if `exp0` is either a literal or a variable.
-    */
-  private def isVarOrCst(exp0: LoweredAst.Expr): Boolean = exp0 match {
-    case LoweredAst.Expr.Var(_, _, _) => true
-    case LoweredAst.Expr.Cst(_: Constant, _, _) => true
-    case _ => false
   }
 
   /**

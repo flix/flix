@@ -143,7 +143,7 @@ mod Test.Exp.Indexable {
         }
 
     def handler(f: Unit -> Bool \ ef): Bool \ ef - OutOfBounds - KeyNotFound = {
-        try {
+        run {
             f()
         } with OutOfBounds {
             def outOfBounds(_, _) = false

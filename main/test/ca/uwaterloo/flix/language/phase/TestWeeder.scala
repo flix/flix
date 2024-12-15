@@ -587,7 +587,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(x: String) = "hello"
         |    }
         |""".stripMargin
@@ -599,7 +599,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(x: a) = "hello"
         |    }
         |""".stripMargin
@@ -611,7 +611,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(_: Int32) = "hello"
         |    }
         |""".stripMargin
@@ -1287,6 +1287,24 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUse](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.01") {
+    val input =
+      """
+        |def F(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.02") {
+    val input =
+      """
+        |def Map(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
   }
 
   test("UnqualifiedUse.01") {
