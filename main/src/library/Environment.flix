@@ -112,7 +112,7 @@ mod Environment {
     /// In other words, re-interprets the `Environment` effect using the `Sys` and `IO` effects.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Sys, IO} = x ->
-        try {
+        run {
             f(x)
         } with Environment {
             def getArgs(k) =
