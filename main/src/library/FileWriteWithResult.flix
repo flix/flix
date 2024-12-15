@@ -77,17 +77,18 @@ pub eff FileWriteWithResult {
     def mkDirs(d: String): Result[IoError, Unit]
 
     ///
-    /// Creates the directory `d` inside the system's temporary directory, if it does not exist already.
+    /// Creates a new temporary directory with the given prefix.
     ///
     /// Returns the path to the directory.
     ///
-    def mkTempDir(d: String): Result[IoError, String]
+    def mkTempDir(prefix: String): Result[IoError, String]
 
 }
 
 mod FileWriteWithResult {
 
     import java.io.IOException
+    import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.FileAttribute
@@ -104,9 +105,9 @@ mod FileWriteWithResult {
     ///
     /// Handles the `FileWriteWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `FileWriteWithResult` effect using the `Sys` and `IO` effects.
+    /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + {Sys, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + IO = x ->
         run {
             f(x)
         } with FileWriteWithResult {
@@ -245,25 +246,12 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def mkTempDir(d, k) = region rc {
+            def mkTempDir(prefix, k) = {
                 let res = try {
-                    let tempdir = match Environment.handle(Environment.getTemporaryDirectory)() {
-                        case Some(dir)  => Ok(dir)
-                        case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
-                    };
-                    Result.flatMap(root ->  {
-                        let arr = List.toArray(rc, d :: Nil);
-                        let path = Paths.get(root, arr).normalize();
-                        try {
-                            Files.createDirectory(path, (...{}: Vector[FileAttribute]));
-                            ()
-                        } catch {
-                            case _: FileAlreadyExistsException => ()
-                        };
-                        Ok(path.toString())
-                    }, tempdir)
+                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+                    Ok(path.toString())
                 } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
