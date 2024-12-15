@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -183,6 +183,8 @@ object Typer {
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
+
+    flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
 
     // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
     val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
