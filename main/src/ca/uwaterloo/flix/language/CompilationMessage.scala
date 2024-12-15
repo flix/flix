@@ -28,7 +28,7 @@ trait CompilationMessage {
   /**
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
-  def kind: String
+  def kind: CompilationMessageKind
 
   /**
     * Returns the input source of the error message.
@@ -61,7 +61,7 @@ trait CompilationMessage {
     * Returns the error message formatted with source location.
     */
   def messageWithLoc(formatter: Formatter): String = {
-    formatter.line(kind, source.name) + System.lineSeparator() + message(formatter)
+    formatter.line(kind.toString, source.name) + System.lineSeparator() + message(formatter)
   }
 
   /**

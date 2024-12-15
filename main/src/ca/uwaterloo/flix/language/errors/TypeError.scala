@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   * A common super-type for type errors.
   */
 sealed trait TypeError extends CompilationMessage {
-  val kind: String = "Type Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.TypeError
 }
 
 object TypeError {
