@@ -1,6 +1,8 @@
 # Changelog
 
 Version 0.55.0:
+- Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
+- Compiler: Improved performance of LSP API (thanks Alexander!)
 
 Version 0.54.0:
 - Compiler: Improved auto-completion suggestions (thanks Chenhao!)
