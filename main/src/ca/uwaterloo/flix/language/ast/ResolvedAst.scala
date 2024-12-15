@@ -358,7 +358,7 @@ object ResolvedAst {
 
   case class TraitConstraint(head: shared.TraitConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
-  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
+  case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
