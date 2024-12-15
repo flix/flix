@@ -296,6 +296,11 @@ class Flix {
   private val progressBar: ProgressBar = new ProgressBar
 
   /**
+    * The currently registered event listeners.
+    */
+  private val listeners: ListBuffer[FlixListener] = ListBuffer.empty
+
+  /**
     * The default assumed charset.
     */
   val defaultCharset: Charset = Charset.forName("UTF-8")
@@ -741,6 +746,20 @@ class Flix {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
     }
+  }
+
+  /**
+    * Registers the given Flix event listener `l`.
+    */
+  def addListener(l: FlixListener): Unit = {
+    listeners.addOne(l)
+  }
+
+  /**
+    * Emits the given Flix event to all registered listeners.
+    */
+  def emitEvent(e: FlixEvent): Unit = {
+    listeners.foreach(_.notify(e))
   }
 
   /**
