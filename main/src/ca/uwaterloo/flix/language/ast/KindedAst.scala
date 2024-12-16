@@ -35,7 +35,7 @@ object KindedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
+                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   availableClasses: AvailableClasses)
@@ -161,6 +161,8 @@ object KindedAst {
     case class CheckedCast(cast: CheckedCastType, exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tvar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, eff: EffectSymUse, loc: SourceLocation) extends Expr
 

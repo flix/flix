@@ -94,6 +94,8 @@ instance Iterable[RedBlackTree[k, v]] {
 
 mod RedBlackTree {
 
+    import java.lang.Runtime
+
     ///
     /// The color of a red-black tree node.
     ///
@@ -112,10 +114,16 @@ mod RedBlackTree {
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the RedBlackTree module.
+    ///
+    def threads(): Int32 = unsafe {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Determines whether to use parallel evaluation.

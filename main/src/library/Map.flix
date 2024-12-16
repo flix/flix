@@ -124,9 +124,9 @@ instance ToJava[Map[k, v]] with Order[k] {
     pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
 }
 
-instance FromJava[Map[k, v]] with Order[k] {
+instance ToFlix[Map[k, v]] with Order[k] {
     type In = JMap
-    pub def fromJava(m: JMap): Map[k, v] = Adaptor.fromMap(m)
+    pub def toFlix(m: JMap): Map[k, v] = Adaptor.fromMap(m)
 }
 
 mod Map {

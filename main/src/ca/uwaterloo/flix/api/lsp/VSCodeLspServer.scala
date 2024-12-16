@@ -87,17 +87,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private var root: Root = TypedAst.empty
 
   /**
-    * The current reverse index. The index is empty until the source code is compiled.
-    *
-    * Note: The index is updated *asynchronously* by a different thread, hence:
-    *
-    * - The field must volatile because it is modified by a different thread.
-    * - The index may not always reflect the very latest version of the program.
-    */
-  @volatile
-  private var index: Index = Index.empty
-
-  /**
     * A thread pool, with a single thread, which we use to execute indexing operations.
     */
   private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
@@ -283,7 +272,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
@@ -308,7 +297,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
@@ -369,9 +358,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     this.root = root
     this.currentErrors = errors.toList
 
-    // Asynchronously compute the reverse index.
-    asynchronouslyUpdateIndex(root)
-
     // Compute elapsed time.
     val e = System.nanoTime() - t0
 
@@ -379,22 +365,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
 
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-  }
-
-  /**
-    * Asynchronously compute the reverse index using the thread pool.
-    */
-  private def asynchronouslyUpdateIndex(root: Root): Unit = {
-    this.indexingFuture = indexingPool.submit(new Runnable {
-      override def run(): Unit = {
-        VSCodeLspServer.this.index = Indexer.visitRoot(root)
-      }
-    })
   }
 
   /**
