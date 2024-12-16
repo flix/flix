@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 /**
   * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
