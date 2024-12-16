@@ -1685,6 +1685,7 @@ object Parser2 {
              | TokenKind.KeywordDebugBangBang => debugExpr()
         case t =>
           val mark = open()
+          advance()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
           closeWithError(mark, error)
       }

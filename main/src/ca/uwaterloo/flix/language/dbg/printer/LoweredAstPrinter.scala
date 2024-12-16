@@ -89,7 +89,7 @@ object LoweredAstPrinter {
     case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, loc) => DocAst.Expr.ArrayLength(print(exp))
-    case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
+    case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expr.Cast(print(exp), TypePrinter.print(t))
@@ -139,11 +139,11 @@ object LoweredAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.Ascription = {
+  private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val LoweredAst.FormalParam(sym, _, tpe, _, _) = fp
-    DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
   /**
