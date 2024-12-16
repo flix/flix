@@ -29,11 +29,14 @@ mod TestFileRead {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Bool \ {Sys, IO} = {
-        (
-            makeTempPath("flix-tmpfile-68976") >>= path ->
-            FileWrite.handle(() -> FileWrite.write({ str = "content" }, path))() >>= _ ->
-            FileRead.handle(() -> FileRead.exists(path))()
+    def exists01(): Bool \ IO = {
+        Result.flatten(
+            FileWrite.handle(() -> {
+                let dir = FileWrite.mkTempDir("flix");
+                let path = "${dir}/flix-tmpfile-68975";
+                FileWrite.write({ str = "content" }, path);
+                FileRead.handle(() -> FileRead.exists(path))()
+            })()
         ) == Ok(true)
     }
 
@@ -47,28 +50,6 @@ mod TestFileRead {
         match FileRead.handle(() -> FileRead.exists("Some\\Invalid:{\u0000Path}/"))() {
             case Ok(_) => false
             case Err(IoError(kind, _)) => kind == ErrorKind.InvalidPath
-        }
-    }
-
-
-    ///
-    /// Helper - make a filepath within the temp directory.
-    /// Use `java.nio.file.Path` functions for platform independence.
-    ///
-    def makeTempPath(fileName: String): Result[IoError, String] \ {Sys, IO} = region rc {
-        let tempdir = match Environment.handle(Environment.getTemporaryDirectory)() {
-            case Some(dir)  => Ok(dir)
-            case None       => Err(IoError(ErrorKind.Other, "No temporary directory"))
-        };
-        try {
-            Result.flatMap(root ->  {
-                let arr = List.toArray(rc, fileName :: Nil);
-                let path = unsafe Path.of(root, arr).normalize().toString();
-                Ok(path)
-            }, tempdir)
-        } catch {
-            case ex: IOException =>
-                unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
     }
 
