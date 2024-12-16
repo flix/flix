@@ -229,7 +229,7 @@ mod FileRead {
 
             def readLines(f, k) = {
                 try {
-                    k(FromJava.fromJava(Files.readAllLines(Paths.get(f))))
+                    k(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))

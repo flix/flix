@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet

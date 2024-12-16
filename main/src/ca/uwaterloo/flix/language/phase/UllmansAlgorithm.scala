@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Stratification
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 

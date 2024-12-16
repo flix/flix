@@ -278,7 +278,7 @@ class Flix {
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
-    "FromJava.flix" -> LocalResource.get("/src/library/FromJava.flix"),
+    "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
   )
 
   /**
@@ -295,6 +295,11 @@ class Flix {
     * The progress bar.
     */
   private val progressBar: ProgressBar = new ProgressBar
+
+  /**
+    * The currently registered event listeners.
+    */
+  private val listeners: ListBuffer[FlixListener] = ListBuffer.empty
 
   /**
     * The default assumed charset.
@@ -742,6 +747,20 @@ class Flix {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
     }
+  }
+
+  /**
+    * Registers the given Flix event listener `l`.
+    */
+  def addListener(l: FlixListener): Unit = {
+    listeners.addOne(l)
+  }
+
+  /**
+    * Emits the given Flix event to all registered listeners.
+    */
+  def emitEvent(e: FlixEvent): Unit = {
+    listeners.foreach(_.notify(e))
   }
 
   /**
