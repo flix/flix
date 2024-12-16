@@ -426,7 +426,7 @@ object TypeReconstruction {
     case KindedAst.Expr.RunWith(exp, handler, tvar, evar, loc) =>
       val e = visitExp(exp)
       val h = visitExp(handler)
-      TypedAst.Expr.RunWith(e, h, subst(tvar), Type.mkUnion(e.eff, subst(evar), loc), loc)
+      TypedAst.Expr.RunWith(e, h, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))

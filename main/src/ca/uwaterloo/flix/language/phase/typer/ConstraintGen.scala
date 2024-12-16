@@ -774,10 +774,11 @@ object ConstraintGen {
         val (handlerTpe, handlerExpEff) = visitExp(handler)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
         val handlerRes = tvar
-        val handlerEff = evar
+        val handlerEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
         c.unifyType(Type.mkArrowWithEffect(handlerArg, handlerEff, handlerRes, loc.asSynthetic), handlerTpe, loc)
+        val evar = Type.mkUnion(handlerEff, handlerExpEff, loc.asSynthetic)
         val resultTpe = tvar
-        val resultEff = Type.mkUnion(eff, handlerExpEff, loc.asSynthetic)
+        val resultEff = evar
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
