@@ -87,17 +87,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private var root: Root = TypedAst.empty
 
   /**
-    * The current reverse index. The index is empty until the source code is compiled.
-    *
-    * Note: The index is updated *asynchronously* by a different thread, hence:
-    *
-    * - The field must volatile because it is modified by a different thread.
-    * - The index may not always reflect the very latest version of the program.
-    */
-  @volatile
-  private var index: Index = Index.empty
-
-  /**
     * A thread pool, with a single thread, which we use to execute indexing operations.
     */
   private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
@@ -369,9 +358,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     this.root = root
     this.currentErrors = errors.toList
 
-    // Asynchronously compute the reverse index.
-    asynchronouslyUpdateIndex(root)
-
     // Compute elapsed time.
     val e = System.nanoTime() - t0
 
@@ -384,17 +370,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-  }
-
-  /**
-    * Asynchronously compute the reverse index using the thread pool.
-    */
-  private def asynchronouslyUpdateIndex(root: Root): Unit = {
-    this.indexingFuture = indexingPool.submit(new Runnable {
-      override def run(): Unit = {
-        VSCodeLspServer.this.index = Indexer.visitRoot(root)
-      }
-    })
   }
 
   /**

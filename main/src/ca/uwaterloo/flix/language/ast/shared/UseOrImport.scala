@@ -15,9 +15,23 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 
 /**
-  * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+  * A use of a Flix symbol or import of a Java class.
   */
-case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+sealed trait UseOrImport
+
+object UseOrImport {
+
+  /**
+    * A use of a Flix declaration symbol.
+    */
+  case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+
+  /**
+    * An import of a Java class.
+    */
+  case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+  
+}

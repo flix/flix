@@ -126,9 +126,9 @@ instance ToJava[Vector[a]] {
 }
 
 
-instance FromJava[Vector[a]] {
+instance ToFlix[Vector[a]] {
     type In = JList
-    pub def fromJava(l: JList): Vector[a] = region rc {
+    pub def toFlix(l: JList): Vector[a] = region rc {
         let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }

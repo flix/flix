@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, FileAcceptor}
-import ca.uwaterloo.flix.api.lsp.{Consumer, Index, Visitor}
+import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}

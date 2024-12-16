@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, Constant, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -593,7 +593,7 @@ object Type {
   /**
     * An associated type.
     */
-  case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
+  case class AssocType(cst: AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
 
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.

@@ -595,6 +595,11 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
 
+    case ResolvedAst.Expr.Unsafe(exp0, eff0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val eff = visitType(eff0, Kind.Eff, kenv0, taenv, root)
+      KindedAst.Expr.Unsafe(exp, eff, loc)
+
     case ResolvedAst.Expr.Without(exp0, eff, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       KindedAst.Expr.Without(exp, eff, loc)
@@ -1310,7 +1315,7 @@ object Kinder {
     * Infers a kind environment from the given equality constraint.
     */
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext): KindEnv = econstr match {
-    case ResolvedAst.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
+    case ResolvedAst.EqualityConstraint(AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
       val trt = root.traits(sym.trt)
       val kind1 = getTraitKind(trt)
       val kind2 = trt.assocs.find(_.sym == sym).get.kind

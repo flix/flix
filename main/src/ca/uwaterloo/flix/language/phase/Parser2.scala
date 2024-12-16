@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
@@ -1627,6 +1626,7 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
+        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
@@ -2408,6 +2408,25 @@ object Parser2 {
       expect(TokenKind.KeywordUnsafe, SyntacticContext.Expr.OtherExpr)
       expression()
       close(mark, TreeKind.Expr.UnsafeOld)
+    }
+
+    /**
+      * `unsafely TTYPE run EXPRESSION`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.UnsafelyRun
+      *     - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
+    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUnsafely))
+      val mark = open()
+      expect(TokenKind.KeywordUnsafely, SyntacticContext.Expr.OtherExpr)
+      Type.ttype()
+      expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Unsafe)
     }
 
     private def runExpr()(implicit s: State): Mark.Closed = {

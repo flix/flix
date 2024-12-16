@@ -123,8 +123,8 @@ mod Http {
                let client = HttpClient.newHttpClient();
                let response = client.send(request, BodyHandlers.ofString());
 
-               let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
-               let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
+               let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
+               let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
 
                k(Http.Response.Response({
                    status = response.statusCode(),

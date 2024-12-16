@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseOpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 

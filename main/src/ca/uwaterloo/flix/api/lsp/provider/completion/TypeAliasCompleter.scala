@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
+import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object TypeAliasCompleter {

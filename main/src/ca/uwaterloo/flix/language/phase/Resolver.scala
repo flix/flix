@@ -1251,6 +1251,13 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
+    case NamedAst.Expr.Unsafe(exp, eff0, loc) =>
+      val eVal = resolveExp(exp, env0)
+      val effVal = resolveType(eff0, Wildness.ForbidWild, env0, taenv, ns0, root)
+      mapN(eVal, effVal) {
+        case (e, eff) => ResolvedAst.Expr.Unsafe(e, eff, loc)
+      }
+
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body) =>
@@ -2055,7 +2062,7 @@ object Resolver {
 
       mapN(assocVal, t1Val, t2Val) {
         case (assoc, t1, t2) =>
-          val head = Ast.AssocTypeConstructor(assoc.sym, qname.loc)
+          val head = AssocTypeConstructor(assoc.sym, qname.loc)
           ResolvedAst.EqualityConstraint(head, t1, t2, loc)
       }
   }
@@ -2601,7 +2608,7 @@ object Resolver {
             val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
             flatMapN(targHeadVal, targTailVal) {
               case (targHd: UnkindedType.Var, targTl) =>
-                val cst = Ast.AssocTypeConstructor(sym, loc)
+                val cst = AssocTypeConstructor(sym, loc)
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 Validation.Success(UnkindedType.mkApply(assoc, targTl, tpe0.loc))
               case _ =>
@@ -3340,14 +3347,14 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
+  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
-        Validation.Success(Ast.UseOrImport.Use(getSym(d), alias, loc))
+        Validation.Success(UseOrImport.Use(getSym(d), alias, loc))
       // Case 3: Impossible. Crash.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
@@ -3355,26 +3362,26 @@ object Resolver {
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
       val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
       mapN(clazzVal) {
-        case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
+        case clazz => UseOrImport.Import(clazz, alias, loc)
       }
   }
 
   /**
     * Adds the given use or import to the use environment.
     */
-  private def appendUseEnv(env: LocalScope, useOrImport: Ast.UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
-    case Ast.UseOrImport.Use(sym, alias, _) =>
+  private def appendUseEnv(env: LocalScope, useOrImport: UseOrImport, root: NamedAst.Root): LocalScope = useOrImport match {
+    case UseOrImport.Use(sym, alias, _) =>
       val decls = infallableLookupSym(sym, root)
       decls.foldLeft(env) {
         case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
       }
-    case Ast.UseOrImport.Import(clazz, alias, _) => env + (alias.name -> Resolution.JavaClass(clazz))
+    case UseOrImport.Import(clazz, alias, _) => env + (alias.name -> Resolution.JavaClass(clazz))
   }
 
   /**
     * Adds the given uses and imports to the use environment.
     */
-  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root): LocalScope = {
+  private def appendAllUseEnv(env: LocalScope, usesAndImports: List[UseOrImport], root: NamedAst.Root): LocalScope = {
     usesAndImports.foldLeft(env)(appendUseEnv(_, _, root))
   }
 
