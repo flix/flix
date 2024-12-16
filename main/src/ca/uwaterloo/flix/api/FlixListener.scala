@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Holger Dal Mogensen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast.shared
+package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+trait FlixListener {
 
-/**
-  * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
-  */
-case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+  /**
+    * Invoked to notify the listener of the given Flix event.
+    */
+  def notify(e: FlixEvent): Unit
+
+}

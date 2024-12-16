@@ -17,11 +17,11 @@
 ///
 /// The effect used to interact with the HTTP protocol.
 ///
-eff Http {
-    def request(method: String, url: String, headers: Map[String, List[String]], body: Option[String]): Http.Response
+eff HttpWithResult {
+    def request(method: String, url: String, headers: Map[String, List[String]], body: Option[String]): Result[IoError, Http.Response]
 }
 
-mod Http {
+mod HttpWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError
@@ -39,81 +39,64 @@ mod Http {
     import java.util.{List => JList}
 
     ///
-    /// A response from an HTTP request.
-    ///
-    pub enum Response({status = Int32, headers = Map[String, List[String]], body = String})
-
-    mod Response {
-        pub def status(r: Response): Int32 = match r {
-            case Response(x) => x#status
-        }
-        pub def headers(r: Response): Map[String, List[String]] = match r {
-            case Response(x) => x#headers
-        }
-        pub def body(r: Response): String = match r {
-            case Response(x) => x#body
-        }
-    }
-
-    ///
     /// Send a `GET` request to the given `url` with the given `headers` and wait for the response.
     ///
-    pub def get(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
-        Http.request("GET", url, headers, None)
+    pub def get(url: String, headers: Map[String, List[String]]): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("GET", url, headers, None)
 
     ///
     /// Send a `HEAD` request to the given `url` with the given `headers` and wait for the response.
     ///
     /// A `HEAD` request is identical to a `GET` request except that the server should not return a message-body in the response.
     ///
-    pub def head(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
-        Http.request("HEAD", url, headers, None)
+    pub def head(url: String, headers: Map[String, List[String]]): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("HEAD", url, headers, None)
 
     ///
     /// Send a `DELETE` request to the given `url` with the given `headers` and wait for the response.
     ///
-    pub def delete(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
-        Http.request("DELETE", url, headers, None)
+    pub def delete(url: String, headers: Map[String, List[String]]): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("DELETE", url, headers, None)
 
     ///
     /// Send an `OPTIONS` request to the given `url` with the given `headers` and wait for the response.
     ///
-    pub def options(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
-        Http.request("OPTIONS", url, headers, None)
+    pub def options(url: String, headers: Map[String, List[String]]): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("OPTIONS", url, headers, None)
 
     ///
     /// Send a `TRACE` request to the given `url` with the given `headers` and wait for the response.
     ///
-    pub def trace(url: String, headers: Map[String, List[String]]): Http.Response \ Http =
-        Http.request("TRACE", url, headers, None)
+    pub def trace(url: String, headers: Map[String, List[String]]): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("TRACE", url, headers, None)
 
     ///
     /// Send a `POST` request to the given `url` with the given `headers` and `body` and wait for the response.
     ///
-    pub def post(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
-        Http.request("POST", url, headers, Some(body))
+    pub def post(url: String, headers: Map[String, List[String]], body: String): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("POST", url, headers, Some(body))
 
     ///
     /// Send a `PUT` request to the given `url` with the given `headers` and `body` and wait for the response.
     ///
-    pub def put(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
-        Http.request("PUT", url, headers, Some(body))
+    pub def put(url: String, headers: Map[String, List[String]], body: String): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("PUT", url, headers, Some(body))
 
     ///
     /// Send a `PATCH` request to the given `url` with the given `headers` and `body` and wait for the response.
     ///
-    pub def patch(url: String, headers: Map[String, List[String]], body: String): Http.Response \ Http =
-        Http.request("PATCH", url, headers, Some(body))
+    pub def patch(url: String, headers: Map[String, List[String]], body: String): Result[IoError, Http.Response] \ HttpWithResult =
+        HttpWithResult.request("PATCH", url, headers, Some(body))
 
     ///
-    /// Handles the `Http` effect of the given function `f`.
+    /// Handles the `HttpWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `HttpWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, IO} = x ->
         run {
-            Ok(f(x))
-        } with Http {
+            f(x)
+        } with HttpWithResult {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
@@ -135,17 +118,17 @@ mod Http {
                     let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
                     let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
 
-                    k(Http.Response.Response({
+                    k(Ok(Http.Response.Response({
                        status = response.statusCode(),
                        headers = responseHeaders,
                        body = response.body().toString() // Body already is a string but has type Object
-                    }))
+                    })))
                 } catch {
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
-                    case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-                    case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case _: ConnectException          => k(Err(IoError(ErrorKind.ConnectionFailed, "Connection failed")))
+                    case ex: InterruptedException     => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
+                    case ex: UncheckedIOException     => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
         }
 

@@ -76,11 +76,19 @@ pub eff FileWriteWithResult {
     ///
     def mkDirs(d: String): Result[IoError, Unit]
 
+    ///
+    /// Creates a new temporary directory with the given prefix.
+    ///
+    /// Returns the path to the directory.
+    ///
+    def mkTempDir(prefix: String): Result[IoError, String]
+
 }
 
 mod FileWriteWithResult {
 
     import java.io.IOException
+    import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.FileAttribute
@@ -233,6 +241,18 @@ mod FileWriteWithResult {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def mkTempDir(prefix, k) = {
+                let res = try {
+                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+                    Ok(path.toString())
+                } catch {
+                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
                 k(res)
