@@ -105,9 +105,9 @@ instance ToJava[Set[a]] with Order[a] {
     pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
 }
 
-instance FromJava[Set[a]] with Order[a] {
+instance ToFlix[Set[a]] with Order[a] {
     type In = JSet
-    pub def fromJava(s: JSet): Set[a] = Adaptor.fromSet(s)
+    pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
 }
 
 mod Set {
@@ -118,14 +118,6 @@ mod Set {
     pub def toString(s: Set[a]): String with ToString[a] = region rc {
         "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
     }
-
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -229,7 +221,7 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let o = RedBlackTree.parMinimumBy(h, t);
                     Option.map(fst, o)
                 else
                     min()
@@ -260,7 +252,7 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let o = RedBlackTree.parMaximumBy(h, t);
                     Option.map(fst, o)
                 else
                     max()
@@ -365,7 +357,7 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
-                    RedBlackTree.parCount(threads() - 1, h, t)
+                    RedBlackTree.parCount(h, t)
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
             case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
@@ -389,7 +381,7 @@ mod Set {
         match purityOf(f) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t)
+                    RedBlackTree.parSumWith((k, _) -> g(k), t)
                 else
                     sw()
             case Purity.Impure(_) => sw()

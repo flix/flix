@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -123,6 +123,8 @@ object DocAst {
     case class Assign(d1: Expr, d2: Expr) extends Composite
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
+
+    case class Unsafe(d: Expr, tpe: Type) extends Composite
 
     case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 

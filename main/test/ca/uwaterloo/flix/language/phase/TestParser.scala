@@ -805,6 +805,16 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
   }
+
+  test("BadArrowEffectApplication.01") {
+    val input =
+      """
+        |type alias T[_a] = Unit
+        |pub def seqCheck(f: a -> a \ l: T[a]): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
 }
 
 /**
@@ -1058,6 +1068,39 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("Nested.Mod.Eff") {
+    val input =
+      """
+        |eff E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Instance") {
+    val input =
+      """
+        |instance E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Trait") {
+    val input =
+      """
+        |trait E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("BadTupleEnd.01") {
     val input =
       """
@@ -1066,4 +1109,5 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
 }

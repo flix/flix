@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{Ast, ResolvedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 
@@ -86,6 +86,7 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
+    case Expr.Unsafe(exp, _, _) => DocAst.Expr.Unsafe(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))

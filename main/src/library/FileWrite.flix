@@ -17,7 +17,7 @@
 ///
 /// An effect used to write to the file system.
 ///
-/// All operations on this effect are infalliable.
+/// All operations on this effect are infallible.
 /// If an operation fails the handler must deal with it.
 ///
 pub eff FileWrite {
@@ -79,11 +79,19 @@ pub eff FileWrite {
     ///
     def mkDirs(d: String): Unit
 
+    ///
+    /// Creates a new temporary directory with the given prefix.
+    ///
+    /// Returns the path to the directory.
+    ///
+    def mkTempDir(prefix: String): String
+
 }
 
 mod FileWrite {
 
     import java.io.IOException
+    import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.FileAttribute
@@ -228,6 +236,17 @@ mod FileWrite {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+            }
+
+            def mkTempDir(prefix, k) = {
+                try {
+                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+                    k(path.toString())
+                } catch {
+                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }

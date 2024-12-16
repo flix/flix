@@ -37,7 +37,7 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
+                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Option[Set[Symbol.DefnSym]],
                   sources: Map[Source, SourceLocation],
@@ -355,7 +355,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 

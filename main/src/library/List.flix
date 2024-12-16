@@ -134,9 +134,9 @@ instance ToJava[List[a]] {
     pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
 }
 
-instance FromJava[List[a]] {
+instance ToFlix[List[a]] {
     type In = JList
-    pub def fromJava(l: JList): List[a] = Adaptor.fromList(l)
+    pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
 
 mod List {

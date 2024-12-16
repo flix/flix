@@ -124,9 +124,9 @@ instance ToJava[Map[k, v]] with Order[k] {
     pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
 }
 
-instance FromJava[Map[k, v]] with Order[k] {
+instance ToFlix[Map[k, v]] with Order[k] {
     type In = JMap
-    pub def fromJava(m: JMap): Map[k, v] = Adaptor.fromMap(m)
+    pub def toFlix(m: JMap): Map[k, v] = Adaptor.fromMap(m)
 }
 
 mod Map {
@@ -137,14 +137,6 @@ mod Map {
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
         "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
-
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -236,7 +228,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
+                    RedBlackTree.parMinimumBy(h, t)
                 else
                     min()
             case Purity2.Impure(_) => min()
@@ -266,7 +258,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
+                    RedBlackTree.parMinimumBy(h, t)
                 else
                     min()
             case Purity2.Impure(_) => min()
@@ -296,7 +288,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
+                    RedBlackTree.parMaximumBy(h, t)
                 else
                     max()
             case Purity2.Impure(_) => max()
@@ -326,7 +318,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
+                    RedBlackTree.parMaximumBy(h, t)
                 else
                     max()
             case Purity2.Impure(_) => max()
@@ -607,7 +599,7 @@ mod Map {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
-                    RedBlackTree.parCount(threads() - 1, g, t)
+                    RedBlackTree.parCount(g, t)
                 else
                     c()
             case Purity2.Impure(_) => c()
@@ -637,7 +629,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parSumWith(threads() - 1, g, t)
+                    RedBlackTree.parSumWith(g, t)
                 else
                     sw()
             case Purity2.Impure(_) => sw()
@@ -657,7 +649,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, g, t)
+                    RedBlackTree.parExists(g, t)
                 else
                     e()
             case Purity2.Impure(_) => e()
@@ -677,7 +669,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForAll(threads() - 1, g, t)
+                    RedBlackTree.parForAll(g, t)
                 else
                     fa()
             case Purity2.Impure(_) => fa()
