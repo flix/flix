@@ -37,7 +37,7 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
+                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Option[Set[Symbol.DefnSym]],
                   sources: Map[Source, SourceLocation],

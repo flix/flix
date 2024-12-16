@@ -238,7 +238,7 @@ mod FileReadWithResult {
 
             def readLines(f, k) = {
                 let res = try {
-                    Ok(FromJava.fromJava(Files.readAllLines(Paths.get(f))))
+                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
