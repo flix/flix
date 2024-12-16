@@ -32,7 +32,6 @@ object BenchmarkInliner {
       |# $ pip install pandas matplotlib
       |
       |import json
-      |import matplotlib
       |import matplotlib.pyplot as plt
       |import numpy as np
       |
