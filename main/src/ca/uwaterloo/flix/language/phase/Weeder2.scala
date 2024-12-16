@@ -1793,11 +1793,19 @@ object Weeder2 {
       }
     }
 
-    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[WithHandler, CompilationMessage] = {
+    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Handler, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithBodyExpr)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
-        (eff, handlers) => WithHandler(eff, handlers)
+      tryPick(TreeKind.Expr.Expr, tree) match {
+        case Some(exp) =>
+          val e0 = visitExpr(exp)
+          mapN(e0) {
+            case e => RunHandler(e)
+          }
+        case None =>
+          val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
+          mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+            (eff, handlers) => WithHandler(eff, handlers)
+          }
       }
     }
 

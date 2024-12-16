@@ -212,6 +212,8 @@ object TypedAst {
 
     case class TryWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class RunWith(exp: Expr, handler: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Do(op: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr

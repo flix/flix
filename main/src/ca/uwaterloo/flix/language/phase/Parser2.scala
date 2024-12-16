@@ -2435,7 +2435,8 @@ object Parser2 {
       expect(TokenKind.KeywordRun, SyntacticContext.Expr.OtherExpr)
       expression()
       while (at(TokenKind.KeywordWith)) {
-        withBody()
+        if (nth(1) == TokenKind.KeywordFun) withFunBody()
+        else withBody()
       }
       close(mark, TreeKind.Expr.Run)
     }
@@ -2513,6 +2514,16 @@ object Parser2 {
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       expression()
       close(mark, TreeKind.Expr.TryWithRuleFragment)
+    }
+
+    private def withFunBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      assert(nth(1) == TokenKind.KeywordFun)
+      val mark = open()
+      expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.KeywordFun, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.RunWithBodyExpr)
     }
 
     private def throwExpr()(implicit s: State): Mark.Closed = {

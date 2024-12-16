@@ -721,9 +721,12 @@ object Desugar {
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
       handlers.foldLeft(e) {
-        case (acc, handler) =>
-          val rs = handler.rules.map(visitHandlerRule)
-          Expr.TryWith(acc, handler.eff, rs, loc)
+        case (acc, WeededAst.WithHandler(eff, rules)) =>
+          val rs = rules.map(visitHandlerRule)
+          Expr.TryWith(acc, eff, rs, loc)
+        case (acc, WeededAst.RunHandler(handler)) =>
+          val h = visitExp(handler)
+          Expr.RunWith(acc, h, loc)
       }
 
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>

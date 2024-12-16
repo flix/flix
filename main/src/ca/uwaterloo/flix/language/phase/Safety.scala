@@ -245,6 +245,8 @@ object Safety {
       }
       effectErrors ++ visitExp(exp) ++ rules.flatMap(rule => visitExp(rule.exp))
 
+    case Expr.RunWith(exp, handler, tpe, eff, loc) =>
+      visitExp(exp) ++ visitExp(handler)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)

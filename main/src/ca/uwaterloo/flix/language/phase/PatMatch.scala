@@ -207,6 +207,9 @@ object PatMatch {
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
 
+      case Expr.RunWith(exp, handler, _, _, _) =>
+        List(exp, handler).flatMap(visitExp)
+
       case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)
       case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp)
