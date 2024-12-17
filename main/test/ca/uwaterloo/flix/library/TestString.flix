@@ -43,22 +43,22 @@ def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def index01(): Bool = "Hello World!"[0] == 'H'
+def index01(): Bool = OutOfBounds.asRes(() -> "Hello World!"[0])() == Ok('H')
 
 @test
-def index02(): Bool = "Hello World!"[1] == 'e'
+def index02(): Bool = OutOfBounds.asRes(() -> "Hello World!"[1]) == Ok('e')
 
 @test
-def index03(): Bool = "Hello World!"[2] == 'l'
+def index03(): Bool = OutOfBounds.asRes(() -> "Hello World!"[2]) == Ok('l')
 
 @test
-def index04(): Bool = "Hello World!"[3] == 'l'
+def index04(): Bool = OutOfBounds.asRes(() -> "Hello World!"[3]) == Ok('l')
 
 @test
-def index05(): Bool = "Hello World!"[4] == 'o'
+def index05(): Bool = OutOfBounds.asRes(() -> "Hello World!"[4]) == Ok('o')
 
 @test
-def index06(): Bool = "Hello World!"[5] == ' '
+def index06(): Bool = OutOfBounds.asRes(() -> "Hello World!"[5]) == Ok(' ')
 
 /////////////////////////////////////////////////////////////////////////////
 // nth                                                                     //
