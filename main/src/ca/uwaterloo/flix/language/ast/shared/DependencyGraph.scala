@@ -15,19 +15,18 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
   * Represents a dependency graph.
   */
-case class DependencyGraph(deps: MultiMap[SourceLocation, SourceLocation]) {
+case class DependencyGraph(deps: MultiMap[Input, Input]) {
 
   override def toString: String = {
     val sb = new StringBuilder()
     for ((src, dsts) <- deps.m) {
       for (dst <- dsts) {
-        sb.append(f"${src.format} -> ${dst.format}\n")
+        sb.append(f"${src} -> ${dst}\n")
       }
     }
 
