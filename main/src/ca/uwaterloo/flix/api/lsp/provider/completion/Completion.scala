@@ -95,6 +95,14 @@ sealed trait Completion {
         kind             = CompletionItemKind.Keyword
       )
 
+    case Completion.KindCompletion(kind) =>
+      CompletionItem(
+        label    = kind,
+        sortText = Priority.toSortText(Priority.Highest, kind),
+        textEdit = TextEdit(context.range, kind),
+        kind     = CompletionItemKind.TypeParameter
+      )
+
     case Completion.LabelCompletion(label, prefix) =>
       val name = s"$prefix#${label.name}"
       CompletionItem(
@@ -536,6 +544,13 @@ object Completion {
     * @param priority  the priority of the keyword.
     */
   case class KeywordLiteralCompletion(literal: String, priority: Priority) extends Completion
+
+  /**
+    * Represents a completion for a kind.
+    *
+    * @param kind the name of the kind.
+    */
+  case class KindCompletion(kind: String) extends Completion
 
   /**
     * Represents a label completion.

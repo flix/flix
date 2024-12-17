@@ -130,6 +130,7 @@ object CompletionProvider {
       case err: ResolutionError.UndefinedType =>
         AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
 
       case _ => Nil
     })
