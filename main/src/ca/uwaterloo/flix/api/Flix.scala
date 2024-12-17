@@ -583,7 +583,7 @@ class Flix {
             val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
             errors ++= safetyErrors
 
-            val _ = Dependencies.run(afterSafety)
+            val afterDependencies = Dependencies.run(afterSafety)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
@@ -592,10 +592,10 @@ class Flix {
               this.cachedDesugarAst = afterDesugar
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
-              this.cachedTyperAst = afterTyper
+              this.cachedTyperAst = afterDependencies
             }
 
-            Some(afterSafety)
+            Some(afterDependencies)
         }
     }
     // Shutdown fork-join thread pool.

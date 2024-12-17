@@ -18,7 +18,19 @@ package ca.uwaterloo.flix.language.ast.shared
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
+  * Companion object for [[DependencyGraph]].
+  */
+object DependencyGraph {
+  /**
+    * The empty dependency graph.
+    */
+  val empty: DependencyGraph = DependencyGraph(MultiMap.empty)
+}
+
+/**
   * Represents a dependency graph.
+  *
+  * If the graph contains an edge `src -> dst` that means that if `src` changes then `dst` must be recomputed.
   */
 case class DependencyGraph(deps: MultiMap[Input, Input]) {
 
@@ -26,7 +38,7 @@ case class DependencyGraph(deps: MultiMap[Input, Input]) {
     val sb = new StringBuilder()
     for ((src, dsts) <- deps.m) {
       for (dst <- dsts) {
-        sb.append(f"${src} -> ${dst}\n")
+        sb.append(f"$src -> $dst\n")
       }
     }
 
