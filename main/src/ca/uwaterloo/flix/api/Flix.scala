@@ -396,11 +396,11 @@ class Flix {
   /**
     * Removes the given path `p` as a Flix source file.
     */
-  def remFlix(p: Path): Flix = {
+  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
+    remInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
