@@ -360,16 +360,3 @@ object TypeSimplifier {
   }
 
 }
-
-
-(
-  (Chan + Env + Exec + FsRead + FsWrite + IO + Net + NonDet + Sys)
-  & e0
-  & e1
-) + (
-  (Chan + Env + Exec + FsRead + FsWrite + IO + Net + NonDet + Sys)
-  - (e0 + e1)
-) + (
-  (Chan + Env + Exec + FsRead + FsWrite + IO + Net + NonDet + Sys)
-  - e1
-)
