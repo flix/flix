@@ -21,33 +21,13 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 /**
   * Represents a dependency graph.
   */
-case class DependencyGraph(defs: MultiMap[Symbol.DefnSym, SourceLocation]
-                          ) {
-
-  def toInputMap: MultiMap[Input.Text, Input.Text] = {
-    val m = scala.collection.mutable.Map.empty[Input.Text, Set[Input.Text]]
-
-    for ((sym, loc) <- defs.m) {
-      sym.loc.sp1.source.input match {
-        case src: Input.Text =>
-          val dsts = loc.map(_.sp1.source.input).collect({ case dst: Input.Text => dst })
-          val s = m.getOrElse(src, Set.empty)
-          m.put(src, s ++ dsts)
-
-        case _ => // nop
-      }
-    }
-
-    MultiMap(m.toMap)
-  }
+case class DependencyGraph(deps: MultiMap[SourceLocation, SourceLocation]) {
 
   override def toString: String = {
     val sb = new StringBuilder()
-    val m = toInputMap
-
-    for ((src, dsts) <- m.m) {
+    for ((src, dsts) <- deps.m) {
       for (dst <- dsts) {
-        sb.append(f"${src.name} --> ${dst.name}\n")
+        sb.append(f"${src.format} -> ${dst.format}\n")
       }
     }
 
