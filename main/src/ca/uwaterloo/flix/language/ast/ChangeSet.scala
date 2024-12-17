@@ -37,7 +37,7 @@ sealed trait ChangeSet {
     * A stale key is one that must be re-compiled.
     * A key that is neither fresh nor stale can be deleted.
     *
-    * An entry is fresh if it is in `oldMap` and has a stable source location.
+    * An entry is fresh if it is in `oldMap` and it is not dirty (i.e. has not changed).
     * An entry is stale if it is not fresh and it is in `newMap`.
     *
     * Note that the union of stale and fresh does not have to equal `newMap` or `oldMap`.
@@ -48,10 +48,8 @@ sealed trait ChangeSet {
     case ChangeSet.Everything =>
       (newMap, Map.empty)
 
-    case ChangeSet.Dirty(_) =>
-      // Note: At the moment we don't use the change set.
-      // We simply consider whether a source is stable.
-      val fresh = oldMap.filter(_._1.src.input.isStable).filter(kv => newMap.contains(kv._1))
+    case ChangeSet.Dirty(dirty) =>
+      val fresh = oldMap.filter(kv => !dirty.contains(kv._1.src.input)).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)

@@ -22,6 +22,10 @@ object Dependencies {
         deps += (src.sp1.source.input, dst.sp1.source.input)
       }
 
+      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = {
+        addDependency(symUse.sym.loc, symUse.loc)
+      }
+
       override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = {
         addDependency(symUse.sym.loc, symUse.loc)
       }
@@ -66,6 +70,8 @@ object Dependencies {
 
         case _ => // nop
       }
+
+
     }
 
     Visitor.visitRoot(root, consumer, AllAcceptor)
