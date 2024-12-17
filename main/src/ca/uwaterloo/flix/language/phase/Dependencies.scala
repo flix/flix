@@ -1,16 +1,18 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.api.lsp.acceptors.AllAcceptor
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input, SymUse}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Dependencies {
 
   /** Checks the safety and well-formedness of `root`. */
-  def run(root: Root): Root = {
+  def run(root: Root)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
 
     // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
     // Moreover, we should traverse the AST in parallel and using changeSet.
@@ -80,7 +82,7 @@ object Dependencies {
     Visitor.visitRoot(root, consumer, AllAcceptor)
 
     val dg = DependencyGraph(consumer.deps)
-    root.copy(dependencyGraph = dg)
+    (root.copy(dependencyGraph = dg), ())
   }
 
 }
