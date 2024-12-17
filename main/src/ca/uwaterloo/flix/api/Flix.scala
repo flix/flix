@@ -583,6 +583,8 @@ class Flix {
             val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
             errors ++= safetyErrors
 
+            val _ = Dependencies.run(afterSafety)
+
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
               this.cachedParserCst = afterParser
