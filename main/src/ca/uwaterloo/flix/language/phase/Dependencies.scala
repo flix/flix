@@ -71,7 +71,6 @@ object Dependencies {
     Visitor.visitRoot(root, consumer, AllAcceptor)
 
     val dg = DependencyGraph(consumer.deps)
-    println(dg)
     root.copy(dependencyGraph = dg)
   }
 

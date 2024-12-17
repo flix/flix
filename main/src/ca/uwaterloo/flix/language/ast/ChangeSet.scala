@@ -24,7 +24,10 @@ sealed trait ChangeSet {
     */
   def markChanged(i: Input, dg: DependencyGraph): ChangeSet = this match {
     case ChangeSet.Everything => ChangeSet.Dirty(Set(i))
-    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(i))
+    case ChangeSet.Dirty(s) =>
+      val newDirt = dg.dirty(i)
+      println(s"Newly dirty: ${newDirt.mkString(", ")}")
+      ChangeSet.Dirty(s ++ newDirt)
   }
 
   /**
