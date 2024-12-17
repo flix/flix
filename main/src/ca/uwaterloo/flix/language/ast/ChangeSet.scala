@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Input
+import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 
 sealed trait ChangeSet {
 
   /**
     * Returns a new change set with `i` marked as changed.
     */
-  def markChanged(i: Input): ChangeSet = this match {
-    case ChangeSet.Everything => ChangeSet.Changes(Set(i))
-    case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
+  def markChanged(i: Input, dg: DependencyGraph): ChangeSet = this match {
+    case ChangeSet.Everything => ChangeSet.Dirty(Set(i))
+    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(i))
   }
 
   /**
@@ -45,7 +45,7 @@ sealed trait ChangeSet {
     case ChangeSet.Everything =>
       (newMap, Map.empty)
 
-    case ChangeSet.Changes(_) =>
+    case ChangeSet.Dirty(_) =>
       // Note: At the moment we don't use the change set.
       // We simply consider whether a source is stable.
       val fresh = oldMap.filter(_._1.src.input.isStable).filter(kv => newMap.contains(kv._1))
@@ -59,14 +59,14 @@ sealed trait ChangeSet {
 object ChangeSet {
 
   /**
-    * Represents a change set where everything is changed (used for a complete re-compilation).
+    * Represents a change set where everything is dirty (used for a complete re-compilation).
     */
   case object Everything extends ChangeSet
 
   /**
-    * Represents the set `s` of changed sources.
+    * Represents a change set where everything in `s` is dirty (must be recompiled).
     */
-  case class Changes(s: Set[Input]) extends ChangeSet
+  case class Dirty(s: Set[Input]) extends ChangeSet
 
 }
 

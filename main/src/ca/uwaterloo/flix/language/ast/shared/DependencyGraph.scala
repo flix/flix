@@ -34,6 +34,11 @@ object DependencyGraph {
   */
 case class DependencyGraph(deps: MultiMap[Input, Input]) {
 
+  /**
+    * Returns all inputs that are dirty (i.e. depends on `i`).
+    */
+  def dirty(i: Input): Set[Input] = deps(i)
+
   override def toString: String = {
     val sb = new StringBuilder()
     for ((src, dsts) <- deps.m) {
@@ -41,7 +46,6 @@ case class DependencyGraph(deps: MultiMap[Input, Input]) {
         sb.append(f"$src -> $dst\n")
       }
     }
-
     sb.toString()
   }
 

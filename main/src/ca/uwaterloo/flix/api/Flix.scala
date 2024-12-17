@@ -429,7 +429,7 @@ class Flix {
     case None =>
       inputs += name -> input
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
       inputs += name -> input
   }
 
@@ -441,7 +441,7 @@ class Flix {
   private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None => // nop
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
       inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
