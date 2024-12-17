@@ -1,11 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Symbol.TypeAliasSym
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, Scope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.CofiniteEffSet
 
-import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 
@@ -15,31 +12,6 @@ import scala.collection.mutable
   */
 object TypeSimplifier {
 
-  def main(args: Array[String]): Unit = {
-    val loc = SourceLocation.Unknown
-    val IO = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.NName(Nil, loc), Name.Ident("IO", loc))), loc)
-    val NonDet = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.NName(Nil, loc), Name.Ident("NonDet", loc))), loc)
-    val Chan = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.NName(Nil, loc), Name.Ident("Chan", loc))), loc)
-    val varA = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("A"), Kind.Eff, isRegion = false, Scope.Top, loc), loc)
-    val varB = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("B"), Kind.Eff, isRegion = false, Scope.Top, loc), loc)
-    val varC = Type.Var(new Symbol.KindedTypeVarSym(3, VarText.SourceText("C"), Kind.Eff, isRegion = false, Scope.Top, loc), loc)
-    val trash = Type.Apply(Type.Alias(AliasConstructor(new TypeAliasSym(Nil, "Alias", loc), loc), Nil, IO, loc), Type.Unit, loc)
-    def run(tpe: Type): Unit = {
-      println("\n -------- ")
-      val res = simplify(tpe)
-      println(" -- ")
-      println(tpe)
-      println(res)
-    }
-//    run(Type.mkIntersection(IO, IO, loc))
-//    run(Type.mkUnion(IO, IO, loc))
-//    run(Type.mkDifference(Type.mkUnion(IO, varA, loc), IO, loc))
-//    run(Type.mkSymmetricDiff(Type.mkUnion(varA, NonDet, loc), Type.mkUnion(varA, IO, loc), loc))
-//    run(Type.mkSymmetricDiff(Type.mkUnion(Chan, NonDet, loc), Type.mkUnion(NonDet, IO, loc), loc))
-    run(Type.mkUnion(trash, Type.mkComplement(trash, loc), loc))
-//    run(Type.mkSymmetricDiff(Type.mkUnion(varA, varB, loc), Type.mkUnion(varB, varC, loc), loc))
-  }
-
   /**
     * Simplifies types and especially effects to a user friendly format.
     *
@@ -47,7 +19,7 @@ object TypeSimplifier {
     */
   def simplify(tpe: Type): Type = {
     if (tpe.kind == Kind.Eff) {
-      return toFormulaPrint(tpe)(new Counter(0)).toType(tpe.loc)
+      return toFormula(tpe)(new Counter(0)).toType(tpe.loc)
     }
     val (base0, args0) = tpe.fullApply
     base0 match {
@@ -86,13 +58,6 @@ object TypeSimplifier {
     }
   }
 
-  private def toFormulaPrint(tpe: Type)(implicit c: Counter): Union = {
-    val res = toFormula(tpe)
-    println(s"(toFor) from: ${tpe}")
-    println(s"          to: ${res}")
-    res
-  }
-
   /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[Chunk]]. */
   private def toFormula(tpe: Type)(implicit c: Counter): Union = {
     val (base0, args0) = tpe.fullApply
@@ -101,11 +66,11 @@ object TypeSimplifier {
       case (Type.Cst(TypeConstructor.Pure, _), Nil) => Empty
       case (Type.Cst(TypeConstructor.Univ, _), Nil) => Univ
       case (Type.Cst(TypeConstructor.Effect(sym), _), Nil) => Union(List(Intersection(List(Eff(CofiniteEffSet.mkSet(sym))))))
-      case (Type.Cst(TypeConstructor.Complement, _), List(x)) => compl(toFormulaPrint(x))
-      case (Type.Cst(TypeConstructor.Union, _), List(x, y)) => union(List(toFormulaPrint(x), toFormulaPrint(y)))
-      case (Type.Cst(TypeConstructor.Intersection, _), List(x, y)) => intersection(List(toFormulaPrint(x), toFormulaPrint(y)))
-      case (Type.Cst(TypeConstructor.Difference, _), List(x, y)) => difference(toFormulaPrint(x), toFormulaPrint(y))
-      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(x, y)) => symmetricDifference(toFormulaPrint(x), toFormulaPrint(y))
+      case (Type.Cst(TypeConstructor.Complement, _), List(x)) => compl(toFormula(x))
+      case (Type.Cst(TypeConstructor.Union, _), List(x, y)) => union(List(toFormula(x), toFormula(y)))
+      case (Type.Cst(TypeConstructor.Intersection, _), List(x, y)) => intersection(List(toFormula(x), toFormula(y)))
+      case (Type.Cst(TypeConstructor.Difference, _), List(x, y)) => difference(toFormula(x), toFormula(y))
+      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(x, y)) => symmetricDifference(toFormula(x), toFormula(y))
       case (v@Type.Var(_, _), _) =>
         val base = v
         val args = args0.map(simplify)
@@ -146,14 +111,7 @@ object TypeSimplifier {
   }
 
   private sealed trait Formula {
-    def toType(loc: SourceLocation): Type = {
-      val t = this.toTypeAux(loc)
-      println(s"       from: ${this}")
-      println(s"         to: ${t}")
-      t
-    }
-
-    def toTypeAux(loc: SourceLocation): Type = this match {
+    def toType(loc: SourceLocation): Type = this match {
       case Var(sym, true) => Type.mkComplement(Type.Var(sym, loc), loc)
       case Var(sym, false) => Type.Var(sym, loc)
       case Eff(s) => TypeSimplifier.toType(s, loc)
@@ -224,6 +182,7 @@ object TypeSimplifier {
   /** An empty union is equivalent to the empty set. */
   private case class Union(fs: List[Intersection]) extends Formula {
     assert(fs.nonEmpty)
+
     override def toString: String = {
       if (fs.isEmpty) "Univ"
       else fs.mkString(" ∪ ")
@@ -233,10 +192,11 @@ object TypeSimplifier {
   /** An empty intersection is equivalent to the universe set. */
   private case class Intersection(fs: List[Atom]) extends Formula {
     assert(fs.nonEmpty)
+
     def split(): (CofiniteEffSet, List[Unknown]) = {
       var ces = CofiniteEffSet.universe
       val us = mutable.Set[Unknown]()
-      fs.foreach{
+      fs.foreach {
         case Var(sym, isCompl) if us.contains(Var(sym, !isCompl)) => return (CofiniteEffSet.empty, Nil)
         case v@Var(_, _) => us.add(v)
         case Chunk(tpe, id, isCompl) if us.contains(Chunk(tpe, id, !isCompl)) => return (CofiniteEffSet.empty, Nil)
@@ -269,34 +229,12 @@ object TypeSimplifier {
     case Intersection(fs) => Union(fs.map(f => Intersection(List(compl(f)))))
   }
 
-  private def complPrint(f: Union): Union = {
-    val res = compl(f)
-    println(s"(compl) from: ${f}")
-    println(s"          to: ${res}")
-    res
-  }
-
   private def compl(f: Union): Union = f match {
-    case Union(fs) => intersectionPrint(fs.map(compl))
-  }
-
-  private def unionPrint(fs: List[Union]): Union = {
-    val res = union(fs)
-    println(s"(union) from: ${fs.mkString(", ")}")
-    println(s"          to: ${res}")
-    res
+    case Union(fs) => intersection(fs.map(compl))
   }
 
   private def union(fs: List[Union]): Union = {
     unionIntersections(fs.iterator.flatMap(_.fs))
-  }
-
-  private def unionIntersectionsPrint(fs0: IterableOnce[Intersection]): Union = {
-    val fs = fs0.iterator.toList
-    val res = unionIntersections(fs)
-    println(s"(unioI) from: ${fs.mkString(", ")}")
-    println(s"          to: ${res}")
-    res
   }
 
   private def unionIntersections(fs: IterableOnce[Intersection]): Union = {
@@ -312,29 +250,14 @@ object TypeSimplifier {
     else Union(inters.filter(i => i.fs.nonEmpty))
   }
 
-  private def intersectionPrint(fs: List[Union]): Union = {
-    val res = intersection(fs)
-    println(s"(inter) from: ${fs.mkString(", ")}")
-    println(s"          to: ${res}")
-    res
-  }
-
   private def intersection(fs: List[Union]): Union = {
-    fs.foldLeft(Univ){
-      case (acc, u) => unionPrint(acc.fs.map(f => intersectionPrint(f, u)))
+    fs.foldLeft(Univ) {
+      case (acc, u) => union(acc.fs.map(f => intersection(f, u)))
     }
   }
 
-  private def intersectionPrint(i: Intersection, u: Union): Union = {
-    val res = intersection(i, u)
-    println(s"(inteR) from: ${i}, ${u}")
-    println(s"          to: ${res}")
-    res
-  }
-
-  // i ∩ (u1 ∪ u2 .. ∪ un) == (u1 ∩ i) ∪ (u2 ∩ i) ∪ .. ∪ (un ∩ i)
   private def intersection(i: Intersection, u: Union): Union = {
-    unionIntersectionsPrint(u.fs.map(f => intersection(List(f, i))))
+    unionIntersections(u.fs.map(f => intersection(List(f, i))))
   }
 
   private def intersection(fs: List[Intersection]): Intersection = {
@@ -343,8 +266,7 @@ object TypeSimplifier {
   }
 
   private def difference(f1: Union, f2: Union): Union =
-    intersectionPrint(List(f1, complPrint(f2)))
-
+    intersection(List(f1, compl(f2)))
 
   private def symmetricDifference(f1: Union, f2: Union): Union = {
     val v1 = difference(f1, f2)
