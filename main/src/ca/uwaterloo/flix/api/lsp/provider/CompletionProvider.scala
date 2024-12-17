@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
-import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter, SemanticCompletionProvider}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -53,7 +53,7 @@ object CompletionProvider {
         // We were able to compute the completion context. Compute suggestions.
         val sctx = getSyntacticContext(uri, pos, currentErrors)
         val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, root)
-        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(root)
+        val semanticCompletions = SemanticCompletionProvider.getCompletions(ctx, currentErrors)(root)
         val completions = syntacticCompletions ++ semanticCompletions
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
         ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
@@ -117,23 +117,6 @@ object CompletionProvider {
 
       case _ => Nil
     }
-  }
-
-  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
-    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
-
-      //
-      // Imports.
-      //
-      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType =>
-        AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
-      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
-
-      case _ => Nil
-    })
   }
 
   /**
