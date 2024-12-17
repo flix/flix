@@ -12,6 +12,9 @@ object Dependencies {
   /** Checks the safety and well-formedness of `root`. */
   def run(root: Root): Root = {
 
+    // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
+    // Moreover, we should traverse the AST in parallel and using changeSet.
+
     object consumer extends Consumer {
       var deps: MultiMap[Input, Input] = MultiMap.empty
 
