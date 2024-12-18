@@ -38,14 +38,29 @@ object UseCompleter {
     * Returns a List of Completion from qualified name and uri.
     */
   private def getCompletions(qn: QName, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val moduleSym = Symbol.mkModuleSym(qn.namespace.idents.map(_.name))
+    val namespace = qn.namespace.idents.map(_.name) ++ {
+      if (followedByDot(qn.loc)) List(qn.ident.name) else Nil
+    }
+    val ident = if(followedByDot(qn.loc)) "" else qn.ident.name
+    val moduleSym = Symbol.mkModuleSym(namespace)
     root.modules.getOrElse(moduleSym, Nil).collect{
-      case mod:  Symbol.ModuleSym if fuzzyMatch(qn.ident.name, mod.ns.last) => ModCompletion(mod)
-      case enum: Symbol.EnumSym   if fuzzyMatch(qn.ident.name, enum.name)   => UseEnumCompletion(enum.toString)
-      case eff:  Symbol.EffectSym if fuzzyMatch(qn.ident.name, eff.name)    => UseEffCompletion(eff.toString)
-      case defn: Symbol.DefnSym   if fuzzyMatch(qn.ident.name, defn.name)   => UseDefCompletion(defn.toString)
-      case trt:  Symbol.TraitSym  if fuzzyMatch(qn.ident.name, trt.name)    => UseTrtCompletion(trt.toString)
+      case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => ModCompletion(mod)
+      case enum: Symbol.EnumSym   if fuzzyMatch(ident, enum.name)   => UseEnumCompletion(enum.toString)
+      case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)    => UseEffCompletion(eff.toString)
+      case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name)   => UseDefCompletion(defn.toString)
+      case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)    => UseTrtCompletion(trt.toString)
     } ++ getSigCompletions(qn, uri) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
+  }
+
+  /**
+    * Returns true if the character immediately following the location is a dot.
+    * Note:
+    *   - loc.endCol will point to the next character after QName.
+    *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
+    */
+  private def followedByDot(loc: SourceLocation): Boolean = {
+    val line = loc.lineAt(loc.endLine)
+    loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
   }
 
   /**
