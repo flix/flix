@@ -93,6 +93,11 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
+    * A cache of error messages for incremental compilation.
+    */
+  private var cachedErrors: List[CompilationMessage] = Nil
+
+  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     *
     * The core library *must* be present for any program to compile.
@@ -515,6 +520,9 @@ class Flix {
     // The global collection of errors
     val errors = mutable.ListBuffer.empty[CompilationMessage]
 
+    // We add cached errors that are not stale (outdated)
+    errors ++= changeSet.freshErrors(cachedErrors)
+
     val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
     errors ++= readerErrors
 
@@ -593,6 +601,9 @@ class Flix {
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
+
+              // We save all the current errors.
+              this.cachedErrors = errors.toList
 
               // We mark the change set as empty because compilation was successful.
               changeSet = ChangeSet.Dirty(Set.empty)

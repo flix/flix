@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 
 sealed trait ChangeSet {
@@ -52,6 +53,23 @@ sealed trait ChangeSet {
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)
+  }
+
+  /**
+    * Returns the subset of `errors` that are in unchanged (i.e. fresh) source locations.
+    *
+    * For example, if:
+    * - The file `A.flix` contains a NameError.
+    * - The file `B.flix` contains a TypeError.
+    *
+    * and `B` is changed then we return only the NameError (since it is still fresh).
+    */
+  def freshErrors(errors: List[CompilationMessage]): List[CompilationMessage] = this match {
+    case ChangeSet.Everything => Nil
+    case ChangeSet.Dirty(s) =>
+      def isFresh(loc: SourceLocation): Boolean = !s.contains(loc.sp1.source.input)
+
+      errors.filter(e => isFresh(e.loc))
   }
 
 }
