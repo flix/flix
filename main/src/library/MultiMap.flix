@@ -23,7 +23,7 @@
 ///
 /// The key and value types must implement the Eq and Order traits.
 ///
-pub enum MultiMap[k, v] with Sendable {
+pub enum MultiMap[k, v] {
     case MultiMap(Map[k, Set[v]])
 }
 
