@@ -378,7 +378,7 @@ sealed trait Completion {
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
         documentation = None,
-        kind          = CompletionItemKind.Method
+        kind          = CompletionItemKind.Function
       )
 
     case Completion.UseTrtCompletion(name) =>
@@ -397,7 +397,7 @@ sealed trait Completion {
         sortText      = Priority.toSortText(Priority.Lower, name),
         textEdit      = TextEdit(context.range, name),
         documentation = None,
-        kind          = CompletionItemKind.Method
+        kind          = CompletionItemKind.EnumMember
       )
 
     case Completion.UseOpCompletion(name) =>
