@@ -25,7 +25,7 @@ import scala.annotation.tailrec
 case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
-    case Input.Text(name, _, _, _) => name
+    case Input.Text(name, _, _) => name
     case Input.TxtFile(path, _) => path.toString
     case Input.PkgFile(path, _) => path.toString
     case Input.FileInPackage(_, virtualPath, _, _) => virtualPath
