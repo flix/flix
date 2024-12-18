@@ -58,6 +58,8 @@ object Input {
       case that: Text => this.name == that.name
       case _ => false
     }
+
+    override def toString: String = name
   }
 
   /**

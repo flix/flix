@@ -396,11 +396,11 @@ class Flix {
   /**
     * Removes the given path `p` as a Flix source file.
     */
-  def remFlix(p: Path): Flix = {
+  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
+    remInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
@@ -429,7 +429,7 @@ class Flix {
     case None =>
       inputs += name -> input
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
       inputs += name -> input
   }
 
@@ -441,7 +441,7 @@ class Flix {
   private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None => // nop
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
       inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
@@ -583,6 +583,8 @@ class Flix {
             val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
             errors ++= safetyErrors
 
+            val (afterDependencies, _) = Dependencies.run(afterSafety)
+
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
               this.cachedParserCst = afterParser
@@ -590,10 +592,13 @@ class Flix {
               this.cachedDesugarAst = afterDesugar
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
-              this.cachedTyperAst = afterTyper
+              this.cachedTyperAst = afterDependencies
+
+              // We mark the change set as empty because compilation was successful.
+              changeSet = ChangeSet.Dirty(Set.empty)
             }
 
-            Some(afterSafety)
+            Some(afterDependencies)
         }
     }
     // Shutdown fork-join thread pool.
