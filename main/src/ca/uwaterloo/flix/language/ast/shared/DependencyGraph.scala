@@ -50,7 +50,6 @@ case class DependencyGraph(deps: MultiMap[Input, Input]) {
         changed = true
       }
     }
-    println(current)
     current
   }
 
