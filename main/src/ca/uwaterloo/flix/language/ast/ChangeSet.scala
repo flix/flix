@@ -25,15 +25,8 @@ sealed trait ChangeSet {
     * Note: The input `i` is always marked as dirty itself.
     */
   def markChanged(i: Input, dg: DependencyGraph): ChangeSet = this match {
-    case ChangeSet.Everything =>
-      val newDirt = dg.dirty(i)
-      println(s"Newly dirty: ${newDirt.mkString(", ")}")
-      ChangeSet.Dirty(newDirt + i)
-
-    case ChangeSet.Dirty(s) =>
-      val newDirt = dg.dirty(i)
-      println(s"Newly dirty: ${newDirt.mkString(", ")}")
-      ChangeSet.Dirty(s ++ newDirt + i)
+    case ChangeSet.Everything => ChangeSet.Dirty(dg.dirty(i))
+    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(i))
   }
 
   /**

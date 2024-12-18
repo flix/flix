@@ -35,9 +35,24 @@ object DependencyGraph {
 case class DependencyGraph(deps: MultiMap[Input, Input]) {
 
   /**
-    * Returns all inputs that are dirty (i.e. depends on `i`).
+    * Returns all inputs that are transitively dirty (including `i`).
+    *
+    * We compute a fixpoint such that if `x` is dirty, `x -> {y}` and `y -> {z}` then `{x, y, z}` are dirty.
     */
-  def dirty(i: Input): Set[Input] = deps(i)
+  def dirty(i: Input): Set[Input] = {
+    var current = deps(i) + i
+    var changed = true
+    while (changed) {
+      changed = false
+      val next = current.flatMap(i => deps(i))
+      if (!next.subsetOf(current)) {
+        current = current ++ next
+        changed = true
+      }
+    }
+    println(current)
+    current
+  }
 
   override def toString: String = {
     val sb = new StringBuilder()
