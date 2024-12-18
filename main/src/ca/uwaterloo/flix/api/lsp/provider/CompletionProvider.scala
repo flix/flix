@@ -51,13 +51,30 @@ object CompletionProvider {
 
       case Some(ctx) =>
         // We were able to compute the completion context. Compute suggestions.
-        val sctx = getSyntacticContext(uri, pos, currentErrors)
-        val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, root)
-        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(root)
-        val completions = syntacticCompletions ++ semanticCompletions
+        val completions = getCompletionsFromErrors(ctx, currentErrors)
         val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
         ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
     }
+  }
+
+  private def getCompletionsFromErrors(ctx: CompletionContext, errors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): List[Completion] = {
+    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
+      case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
+      case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+      case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
+      case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ ExprCompleter.getCompletions(ctx)
+      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
+      case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
+      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
+      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+      case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
+      case err: ParseError => getSyntacticCompletions(err.sctx, ctx)
+
+      case _ => HoleCompletion.getHoleCompletion(ctx, root)
+    })
   }
 
   private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
@@ -119,23 +136,6 @@ object CompletionProvider {
     }
   }
 
-  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
-    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
-
-      //
-      // Imports.
-      //
-      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType =>
-        AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
-      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
-
-      case _ => Nil
-    })
-  }
-
   /**
     * Find context from the source, and cursor position within it.
     */
@@ -160,7 +160,6 @@ object CompletionProvider {
       }
       // Remember positions are one-indexed.
       val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
-      val sctx = getSyntacticContext(uri, pos, errors)
       CompletionContext(uri, pos, range, word, previousWord, prefix)
     }
   }
@@ -201,33 +200,6 @@ object CompletionProvider {
   private def getSecondLastWord(s: String): String = {
     s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
-
-  /**
-    * Optionally returns the syntactic context from the given list of errors.
-    *
-    * We have to check that the syntax error occurs after the position of the completion.
-    */
-  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
-    errorsAt(uri, pos, errors).map({
-      // We can have multiple errors, so we rank them, and pick the highest priority.
-      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedUse(_, _, _, _) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedName(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedNameUnrecoverable(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedType(_, _, _, _) => (1, SyntacticContext.Type.OtherType)
-      case ResolutionError.UndefinedTag(_, _,  _, _) => (1, SyntacticContext.Pat.OtherPat)
-      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
-      case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
-      case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
-      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
-      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
-      case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
-      case err: ParseError => (5, err.sctx)
-      case _ => (999, SyntacticContext.Unknown)
-    }).minByOption(_._1) match {
-      case None => SyntacticContext.Unknown
-      case Some((_, sctx)) => sctx
-    }
 
   /**
     * Filters the list of errors to only those that occur at the given position.
