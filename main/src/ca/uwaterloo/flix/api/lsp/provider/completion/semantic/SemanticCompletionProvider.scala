@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
 import ca.uwaterloo.flix.api.lsp.Position
-import ca.uwaterloo.flix.api.lsp.provider.completion.{AutoImportCompleter, AutoUseCompleter, Completion, CompletionContext, EffSymCompleter, ImportCompleter, LocalScopeCompleter, MagicMatchCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KindCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.{AutoImportCompleter, AutoUseCompleter, Completion, CompletionContext, EffSymCompleter, ImportCompleter, KindCompleter, LocalScopeCompleter, MagicMatchCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
@@ -31,6 +32,7 @@ object SemanticCompletionProvider {
       case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
       case err: ResolutionError.UndefinedType =>
         AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
+      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
       case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
 
       case _ => Nil
