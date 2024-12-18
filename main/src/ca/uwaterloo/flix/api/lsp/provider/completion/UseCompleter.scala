@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ModCompletion, UseDefCompletion, UseEffCompletion, UseEnumCompletion, UseEnumTagCompletion, UseOpCompletion, UseSignatureCompletion}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ModCompletion, UseDefCompletion, UseEffCompletion, UseEnumCompletion, UseEnumTagCompletion, UseOpCompletion, UseSignatureCompletion, UseTrtCompletion}
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
@@ -44,6 +44,7 @@ object UseCompleter {
       case enum: Symbol.EnumSym   if fuzzyMatch(qn.ident.name, enum.name)   => UseEnumCompletion(enum.toString)
       case eff:  Symbol.EffectSym if fuzzyMatch(qn.ident.name, eff.name)    => UseEffCompletion(eff.toString)
       case defn: Symbol.DefnSym   if fuzzyMatch(qn.ident.name, defn.name)   => UseDefCompletion(defn.toString)
+      case trt:  Symbol.TraitSym  if fuzzyMatch(qn.ident.name, trt.name)    => UseTrtCompletion(trt.toString)
     } ++ getSigCompletions(qn, uri) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
   }
 

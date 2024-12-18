@@ -459,6 +459,15 @@ sealed trait Completion {
         kind          = CompletionItemKind.Method
       )
 
+    case Completion.UseTrtCompletion(name) =>
+      CompletionItem(
+        label         = name,
+        sortText      = name,
+        textEdit      = TextEdit(context.range, name),
+        documentation = None,
+        kind          = CompletionItemKind.Interface
+      )
+
     case Completion.UseEnumTagCompletion(sym, caze) =>
       val name = s"${sym.toString}.${caze.sym.name}"
       CompletionItem(
@@ -862,6 +871,13 @@ object Completion {
     * @param name the name of the use def completion.
     */
   case class UseDefCompletion(name: String) extends Completion
+
+  /**
+    * Represents a Use Trait completion.
+    *
+    * @param name the name of the use enum tag completion.
+    */
+  case class UseTrtCompletion(name: String) extends Completion
 
   /**
     * Represents a Use Enum Tag completion
