@@ -593,6 +593,9 @@ class Flix {
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
+
+              // We mark the change set as empty because compilation was successful.
+              changeSet = ChangeSet.Dirty(Set.empty)
             }
 
             Some(afterDependencies)
