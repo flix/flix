@@ -74,24 +74,24 @@ object CompilerPerf {
       |
       |    plt.savefig('speedupWithPar.json.png')
       |
-      |with open('speedupWithInc.json', 'r') as file:
+      |with open('incrementalism.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
-      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['ratio'], data['results']))
       |
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Incremental Speedup ({threads} threads)')
-      |    ax.set_ylabel('Speedup')
+      |    ax.set_title(f'Incrementalism (1.0x is best) ({threads} threads)')
+      |    ax.set_ylabel('Incremental Ratio')
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(0.0, 1.1)
       |
-      |    plt.savefig('speedupWithInc.json.png')
+      |    plt.savefig('incrementalism.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -278,17 +278,19 @@ object CompilerPerf {
         })
     writeFile("speedupWithPar.json", speedupPar)
 
-    // Note: Baseline is withPar.
-    val speedupInc =
+    //
+    // Incrementalism
+    //
+    val incrementalism =
       ("timestamp" -> timestamp) ~
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
+            ("phase" -> phase) ~ ("ratio" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
-    writeFile("speedupWithInc.json", speedupInc)
+    writeFile("incrementalism.json", incrementalism)
 
     //
     // Throughput
