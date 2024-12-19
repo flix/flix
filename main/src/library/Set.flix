@@ -105,9 +105,9 @@ instance ToJava[Set[a]] with Order[a] {
     pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
 }
 
-instance FromJava[Set[a]] with Order[a] {
+instance ToFlix[Set[a]] with Order[a] {
     type In = JSet
-    pub def fromJava(s: JSet): Set[a] = Adaptor.fromSet(s)
+    pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
 }
 
 mod Set {

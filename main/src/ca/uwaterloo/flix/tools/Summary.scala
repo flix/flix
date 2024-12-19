@@ -152,7 +152,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -302,7 +302,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.Text("generated", "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
+    Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
   private val unknownPosition =
     SourcePosition(unknownSource, 0, 0)

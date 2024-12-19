@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, Scope}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -46,7 +46,7 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => tpe
 
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), tpe, _, _) =>
+    case Type.AssocType(AssocTypeConstructor(sym, _), tpe, _, _) =>
 
       // Get all the associated types from the context
       val assocs = eqenv(sym)

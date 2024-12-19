@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
@@ -1649,6 +1648,7 @@ object Parser2 {
              | TokenKind.KeywordDebugBangBang => debugExpr()
         case t =>
           val mark = open()
+          advance()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
           closeWithError(mark, error)
       }

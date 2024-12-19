@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -41,7 +41,7 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    private val assocType: Type = Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
+    private val assocType: Type = Type.AssocType(AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
 
     def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
 

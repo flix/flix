@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -846,7 +846,7 @@ object Monomorpher {
   }
 
   /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
+  private def infallibleReduceAssocType(cst: AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
     EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
       case Ok(t) => t
       case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)

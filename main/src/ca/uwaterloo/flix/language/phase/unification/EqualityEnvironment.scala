@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, BroadEqualityConstraint, EqualityConstraint, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -85,7 +85,7 @@ object EqualityEnvironment {
     */
   private def toSubst(econstrs: List[EqualityConstraint]): AssocTypeSubstitution = {
     econstrs.foldLeft(AssocTypeSubstitution.empty) {
-      case (acc, EqualityConstraint(Ast.AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
+      case (acc, EqualityConstraint(AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
         acc ++ AssocTypeSubstitution.singleton(sym, tvar, tpe2)
       case (_, EqualityConstraint(cst, tpe1, tpe2, loc)) => throw InternalCompilerException("unexpected econstr", loc) // TODO ASSOC-TYPES
     }
@@ -96,7 +96,7 @@ object EqualityEnvironment {
     *
     * Only performs one reduction step. The result may itself contain associated types.
     */
-  def reduceAssocTypeStep(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocTypeStep(cst: AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     val renv = arg.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
@@ -113,7 +113,7 @@ object EqualityEnvironment {
   /**
     * Fully reduces the given associated type.
     */
-  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocType(cst: AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     for {
       tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
       res <- reduceType(tpe, eqEnv)

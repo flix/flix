@@ -23,6 +23,14 @@ eff Http {
 
 mod Http {
 
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.io.IOException
+    import java.io.UncheckedIOException
+    import java.lang.IllegalArgumentException
+    import java.lang.InterruptedException
+    import java.net.ConnectException
     import java.net.http.HttpClient
     import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.net.http.HttpRequest
@@ -102,36 +110,43 @@ mod Http {
     ///
     /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
         run {
-            f(x)
+            Ok(f(x))
         } with Http {
-            def request(method, url, headers, body, k) = {
-               let bodyPublisher = match body {
-                   case Some(b) => BodyPublishers.ofString(b)
-                   case None    => BodyPublishers.noBody()
-               };
-               let builder =
-                   HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
-                       |> builder -> Map.foldLeftWithKey(
-                           (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
-                           builder,
-                           headers
-                       );
-               let request = builder.build();
+            def request(method, url, headers, body, k) =
+                try {
+                    let bodyPublisher = match body {
+                       case Some(b) => BodyPublishers.ofString(b)
+                       case None    => BodyPublishers.noBody()
+                    };
+                    let builder =
+                       HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
+                           |> builder -> Map.foldLeftWithKey(
+                               (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
+                               builder,
+                               headers
+                           );
+                    let request = builder.build();
 
-               let client = HttpClient.newHttpClient();
-               let response = client.send(request, BodyHandlers.ofString());
+                    let client = HttpClient.newHttpClient();
+                    let response = client.send(request, BodyHandlers.ofString());
 
-               let responseHeadersJlist: Map[String, JList] = FromJava.fromJava(response.headers().map());
-               let responseHeaders: Map[String, List[String]] = Map.map(FromJava.fromJava, responseHeadersJlist);
+                    let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
+                    let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
 
-               k(Http.Response.Response({
-                   status = response.statusCode(),
-                   headers = responseHeaders,
-                   body = response.body().toString() // Body already is a string but has type Object
-               }))
-           }
+                    k(Http.Response.Response({
+                       status = response.statusCode(),
+                       headers = responseHeaders,
+                       body = response.body().toString() // Body already is a string but has type Object
+                    }))
+                } catch {
+                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
+                    case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+                    case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
         }
 
 }
