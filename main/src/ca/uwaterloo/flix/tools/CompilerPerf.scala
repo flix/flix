@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
@@ -75,24 +74,24 @@ object CompilerPerf {
       |
       |    plt.savefig('speedupWithPar.json.png')
       |
-      |with open('speedupWithInc.json', 'r') as file:
+      |with open('incrementalism.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
-      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['ratio'], data['results']))
       |
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Incremental Speedup ({threads} threads)')
-      |    ax.set_ylabel('Speedup')
+      |    ax.set_title(f'Incrementalism (1.0x is best) ({threads} threads)')
+      |    ax.set_ylabel('Incremental Ratio')
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(bottom=0.30)
-      |    plt.ylim(1, 10)
+      |    plt.ylim(0.0, 1.1)
       |
-      |    plt.savefig('speedupWithInc.json.png')
+      |    plt.savefig('incrementalism.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -279,17 +278,19 @@ object CompilerPerf {
         })
     writeFile("speedupWithPar.json", speedupPar)
 
-    // Note: Baseline is withPar.
-    val speedupInc =
+    //
+    // Incrementalism
+    //
+    val incrementalism =
       ("timestamp" -> timestamp) ~
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            ("phase" -> phase) ~ ("ratio" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
-    writeFile("speedupWithInc.json", speedupInc)
+    writeFile("incrementalism.json", incrementalism)
 
     //
     // Throughput
@@ -419,11 +420,18 @@ object CompilerPerf {
     * Runs Flix with n threads and incrementally.
     */
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
-    // Note: The Flix object is created _once_.
+    // We create on single Flix object.
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
+
+    // We add all inputs.
+    addInputs(flix)
+
+    // We compile once.
+    runSingle(flix)
+
+    // And then we perform N incremental compilations with no changes to the input.
     (0 until N).map { _ =>
-      addInputs(flix)
       runSingle(flix)
     }
   }
