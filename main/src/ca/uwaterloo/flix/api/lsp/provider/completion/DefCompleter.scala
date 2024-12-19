@@ -24,8 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object DefCompleter {
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    val qn = updateQNameBasedOnDot(err.qn, err.loc)
+  def getCompletions(err: ResolutionError.UndefinedName, qn: QName)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (qn.namespace.idents.nonEmpty)
       root.defs.values.collect{
         case decl if matchesDef(decl, qn, err.loc.source.name, qualified = true)
