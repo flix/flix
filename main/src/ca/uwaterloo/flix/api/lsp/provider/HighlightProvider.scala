@@ -360,32 +360,7 @@ object HighlightProvider {
 
   private case class EffectConsumer(consider: Expr => Unit) extends Consumer {
     override def consumeExpr(exp: Expr): Unit = exp match {
-      case Expr.ApplyClo(_, _, _, _, _) => consider(exp)
-      case Expr.ApplyDef(_, _, _, _, _, _) => consider(exp)
-      case Expr.ApplyLocalDef(_, _, _, _, _, _) => consider(exp)
-      case Expr.ApplySig(_, _, _, _, _, _) => consider(exp)
-      case Expr.ArrayLit(_, _, _, _, _) => consider(exp)
-      case Expr.ArrayNew(_, _, _, _, _, _) => consider(exp)
-      case Expr.ArrayLoad(_, _, _, _, _) => consider(exp)
-      case Expr.ArrayStore(_, _, _, _, _) => consider(exp)
-      case Expr.StructNew(_, _, _, _, _, _) => consider(exp)
-      case Expr.StructGet(_, _, _, _, _) => consider(exp)
-      case Expr.StructPut(_, _, _, _, _, _) => consider(exp)
-      case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => consider(exp)
-      case Expr.UncheckedCast(_, _, _, _, _, _) => consider(exp)
       case Expr.Do(_, _, _, _, _) => consider(exp)
-      case Expr.InvokeConstructor(_, _, _, _, _) => consider(exp)
-      case Expr.InvokeMethod(_, _, _, _, _, _) => consider(exp)
-      case Expr.InvokeStaticMethod(_, _, _, _, _) => consider(exp)
-      case Expr.GetField(_, _, _, _, _) => consider(exp)
-      case Expr.PutField(_, _, _, _, _, _) => consider(exp)
-      case Expr.GetStaticField(_, _, _, _) => consider(exp)
-      case Expr.PutStaticField(_, _, _, _, _) => consider(exp)
-      case Expr.NewObject(_, _, _, _, _, _) => consider(exp)
-      case Expr.NewChannel(_, _, _, _) => consider(exp)
-      case Expr.GetChannel(_, _, _, _) => consider(exp)
-      case Expr.PutChannel(_, _, _, _, _) => consider(exp)
-      case Expr.SelectChannel(_, _, _, _, _) => consider(exp)
       case _ => ()
     }
   }
