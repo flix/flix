@@ -50,7 +50,11 @@ object CompletionProvider {
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
-        case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ ExprCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++
+          LocalScopeCompleter.getCompletions(err) ++
+          AutoUseCompleter.getCompletions(err) ++
+          ExprCompleter.getCompletions(ctx) ++
+          DefCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)

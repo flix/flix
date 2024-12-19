@@ -211,27 +211,6 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
-    case Completion.AutoUseDefCompletion(decl, ap) =>
-      val qualifiedName = decl.sym.toString
-      val name = decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val useTextEdit = Completion.mkTextEdit(ap, s"use $qualifiedName")
-      val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
-        Some(s" use $qualifiedName"))
-      CompletionItem(
-        label               = name,
-        labelDetails        = Some(labelDetails),
-        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
-        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
-        textEdit            = TextEdit(context.range, snippet),
-        detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-        documentation       = Some(decl.spec.doc.text),
-        insertTextFormat    = InsertTextFormat.Snippet,
-        kind                = CompletionItemKind.Function,
-        additionalTextEdits = List(useTextEdit)
-      )
-
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(
         label            = name,
@@ -286,23 +265,26 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl, qualified) =>
+    case Completion.DefCompletion(decl, ap, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(qualifiedName, decl.spec.fparams)(context)
-      val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
-        None)
+      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)(context)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       CompletionItem(
-        label            = label,
-        labelDetails     = Some(labelDetails),
-        sortText         = Priority.toSortText(Priority.Lower, qualifiedName),
-        filterText       = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
-        textEdit         = TextEdit(context.range, snippet),
-        detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-        documentation    = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Function
+        label               = label,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
+        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation       = Some(decl.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = additionalTextEdit
       )
 
     case Completion.SigCompletion(decl) =>
@@ -662,14 +644,6 @@ object Completion {
   /**
    * Represents an auto-import completion.
    *
-   * @param decl          the definition of the function to complete and use.
-   * @param ap            the anchor position for the use statement.
-   */
-  case class AutoUseDefCompletion(decl: TypedAst.Def, ap: AnchorPosition) extends Completion
-
-  /**
-   * Represents an auto-import completion.
-   *
    * @param eff           the effect to complete and use.
    * @param doc           the documentation associated with the effect.
    * @param ap            the anchor position for the use statement.
@@ -734,12 +708,14 @@ object Completion {
   case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
 
   /**
-    * Represents a Def completion
-    *
-    * @param decl       the def decl.
-    * @param qualified  indicate whether to use a qualified label
-    */
-  case class DefCompletion(decl: TypedAst.Def, qualified: Boolean) extends Completion
+   * Represents a Def completion
+   *
+   * @param decl      the def decl.
+   * @param ap        the anchor position for the use statement.
+   * @param qualified indicate whether to use a qualified label.
+   * @param inScope   indicate whether to the def is inScope.
+   */
+  case class DefCompletion(decl: TypedAst.Def, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion

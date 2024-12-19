@@ -16,36 +16,43 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object DefCompleter {
-  /**
-    * Returns a List of Completion for defs.
-    */
-  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[DefCompletion] = {
-    val word = context.word
-    val uri = context.uri
-
-    root.defs.values.filter(matchesDef(_, word, uri))
-      .flatMap(decl =>
-        if (CompletionUtils.canApplySnippet(decl.spec.fparams)(context))
-          Some(Completion.DefCompletion(decl, qualified = true))
-        else
-          None
-      )
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
+    if (err.qn.namespace.idents.nonEmpty)
+      root.defs.values.collect{
+        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = true)
+        => DefCompletion(decl, err.ap, qualified = true, inScope = true)
+      }
+    else
+      root.defs.values.collect{
+        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = false)
+        => DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
+      }
   }
 
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
-  private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
+  private def inScope(decl: TypedAst.Def, scope: LocalScope): Boolean = {
+    val thisName = decl.sym.toString
+    val isResolved = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    val isRoot = decl.sym.namespace.isEmpty
+    isRoot || isResolved
+  }
 
-    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
+  private def matchesDef(decl: TypedAst.Def, qn: QName, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = decl.sym.toString.startsWith(word)
-
-    isNamespace && isMatch && (isPublic || isInFile)
+    val isMatch = if (qualified)
+      decl.sym.toString.startsWith(qn.toString)
+    else
+      decl.sym.name.startsWith(qn.ident.name)
+    isMatch && (isPublic || isInFile)
   }
 }
