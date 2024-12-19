@@ -388,11 +388,11 @@ object HighlightProvider {
         case Expr.GetStaticField(field, tpe, eff, loc) => consider(exp)
         case Expr.PutStaticField(field, exp, tpe, eff, loc) => consider(exp)
         case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => consider(exp)
-        case Expr.NewChannel(exp, tpe, eff, loc) => () // TODO
-        case Expr.GetChannel(exp, tpe, eff, loc) => () // TODO
-        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => () // TODO
-        case Expr.SelectChannel(rules, default, tpe, eff, loc) => () // TODO
-        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => () // TODO
+        case Expr.NewChannel(exp, tpe, eff, loc) => consider(exp)
+        case Expr.GetChannel(exp, tpe, eff, loc) => consider(exp)
+        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => consider(exp)
+        case Expr.SelectChannel(rules, default, tpe, eff, loc) => consider(exp)
+        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ()
         case Expr.ParYield(frags, exp, tpe, eff, loc) => () // TODO
         case Expr.Lazy(exp, tpe, loc) => ()
         case Expr.Force(exp, tpe, eff, loc) => ()
