@@ -44,37 +44,26 @@ import org.json4s.JsonDSL.*
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): JObject = {
-    getCompletionContext(source, uri, pos, currentErrors) match {
-      case None =>
-        // We were not able to compute the completion context. Return no suggestions.
-        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, Nil).toJSON)
+    val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
+      errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
+        case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
+        case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+        case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
+        case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ ExprCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
+        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
+        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+        case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
+        case err: ParseError => getSyntacticCompletions(err.sctx, ctx)
 
-      case Some(ctx) =>
-        // We were able to compute the completion context. Compute suggestions.
-        val completions = getCompletionsFromErrors(ctx, currentErrors)
-        val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
-        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
-    }
-  }
-
-  private def getCompletionsFromErrors(ctx: CompletionContext, errors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): List[Completion] = {
-    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
-      case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
-      case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-      case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
-      case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ ExprCompleter.getCompletions(ctx)
-      case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
-      case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
-      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
-      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
-      case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
-      case err: ParseError => getSyntacticCompletions(err.sctx, ctx)
-
-      case _ => HoleCompletion.getHoleCompletion(ctx, root)
-    })
+        case _ => HoleCompletion.getHoleCompletion(ctx, root)
+      }).map(comp => comp.toCompletionItem(ctx))
+    }.getOrElse(Nil)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
   }
 
   private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
