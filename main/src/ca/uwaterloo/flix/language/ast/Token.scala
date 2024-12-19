@@ -30,9 +30,9 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   * @param kind  The kind of token this instance represents.
   * @param src   A pointer to the source that this lexeme stems from.
   * @param start The absolute character offset into `src` of the beginning of the lexeme. Must be zero-indexed.
-  * @param end   The absolute character offset into `src` of the end of the lexeme. Must be zero-indexed.
+  * @param end   The absolute character offset into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
   * @param sp1   The source position that the lexeme __starts__ on. Must be one-indexed.
-  * @param sp2   The source position that the lexeme __ends__ on. Must be one-indexed.
+  * @param sp2   The source position that the lexeme __ends__ on (exclusive). Must be one-indexed.
   */
 case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
   /**
