@@ -406,7 +406,7 @@ object HighlightProvider {
       case Expr.InstanceOf(_, _, _) => ()
       case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => consider(exp)
       case Expr.CheckedCast(CheckedCastType.TypeCast, _, _, _, _) => ()
-      case Expr.UncheckedCast(_, _, _, _, _, _) => ()
+      case Expr.UncheckedCast(_, _, _, _, _, _) => consider(exp)
       case Expr.Without(_, _, _, _, _) => ()
       case Expr.TryCatch(_, _, _, _, _) => ()
       case Expr.Throw(_, _, _, _) => ()
