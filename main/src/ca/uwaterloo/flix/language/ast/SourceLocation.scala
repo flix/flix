@@ -55,6 +55,18 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   def beginCol: Int = sp1.col
 
   /**
+    * Returns `true` if `this` [[SourceLocation]] completely contains `that`, otherwise `false`.
+    *
+    * What is meant by "contained" is that `this` begins before or at the same position as `that`
+    * and `this` ends after `that` or at the same position. Returns `false` otherwise.
+    */
+  def contains(that: SourceLocation): Boolean = {
+    val thatBeginsLater = SourcePosition.PartialOrder.lteq(this.sp1, that.sp1)
+    val thatEndsBefore = SourcePosition.PartialOrder.lteq(that.sp2, this.sp2)
+    thatBeginsLater && thatEndsBefore
+  }
+
+  /**
     * Returns the line where the entity ends.
     */
   def endLine: Int = sp2.line
