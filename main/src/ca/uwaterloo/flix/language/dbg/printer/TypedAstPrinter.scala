@@ -76,6 +76,7 @@ object TypedAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.TryWith(exp, _Use, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), _Use.sym, rules.map(printHandlerRule))
+    case Expr.RunWith(exp, handler, _, _, _) => DocAst.Expr.RunWith(print(exp), print(handler))
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))

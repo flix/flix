@@ -769,6 +769,18 @@ object ConstraintGen {
         val resultEff = continuationEffect
         (resultTpe, resultEff)
 
+      case Expr.RunWith(exp, handler, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val (handlerTpe, handlerExpEff) = visitExp(handler)
+        val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
+        val handlerRes = tvar
+        val handlerEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        c.unifyType(Type.mkArrowWithEffect(handlerArg, handlerEff, handlerRes, loc.asSynthetic), handlerTpe, loc)
+        val evar = Type.mkUnion(handlerEff, handlerExpEff, loc.asSynthetic)
+        val resultTpe = tvar
+        val resultEff = evar
+        (resultTpe, resultEff)
+
       case Expr.Do(opUse, exps, tvar, loc) =>
         val op = lookupOp(opUse.sym, opUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)

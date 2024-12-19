@@ -189,6 +189,8 @@ object ResolvedAst {
 
     case class TryWith(exp: Expr, eff: EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
+    case class RunWith(exp: Expr, handler: Expr, loc: SourceLocation) extends Expr
+
     case class Do(op: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr

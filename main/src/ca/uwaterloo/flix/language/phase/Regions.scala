@@ -212,6 +212,9 @@ object Regions {
       }
       rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.RunWith(exp, handler, _, _, _) =>
+      visitExp(exp) ++ visitExp(handler)
+
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 

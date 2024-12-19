@@ -171,6 +171,8 @@ object DesugaredAst {
 
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
+    case class RunWith(exp: Expr, handler: Expr, loc: SourceLocation) extends Expr
+
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
