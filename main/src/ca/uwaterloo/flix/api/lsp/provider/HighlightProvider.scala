@@ -380,7 +380,7 @@ object HighlightProvider {
       case Expr.Scope(_, _, _, _, _, _) => ()
       case Expr.IfThenElse(_, _, _, _, _, _) => ()
       case Expr.Stm(_, _, _, _, _) => ()
-      case Expr.Discard(_, _, _) => () // TODO
+      case Expr.Discard(_, _, _) => ()
       case Expr.Match(_, _, _, _, _) => ()
       case Expr.TypeMatch(_, _, _, _, _) => ()
       case Expr.RestrictableChoose(_, _, _, _, _, _) => ()
@@ -425,7 +425,7 @@ object HighlightProvider {
       case Expr.PutChannel(_, _, _, _, _) => consider(exp)
       case Expr.SelectChannel(_, _, _, _, _) => consider(exp)
       case Expr.Spawn(_, _, _, _, _) => ()
-      case Expr.ParYield(_, _, _, _, _) => () // TODO
+      case Expr.ParYield(_, _, _, _, _) => ()
       case Expr.Lazy(_, _, _) => ()
       case Expr.Force(_, _, _, _) => ()
       case Expr.FixpointConstraintSet(_, _, _) => ()
