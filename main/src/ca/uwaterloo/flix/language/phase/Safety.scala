@@ -32,22 +32,9 @@ object Safety {
     val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ checkSendableInstances(root)
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs
 
     (root, errors.toList)
-  }
-
-  /** Checks that no type parameters for types that implement `Sendable` are of kind [[Kind.Eff]]. */
-  private def checkSendableInstances(root: Root): List[SafetyError] = {
-    val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-
-    root.instances.getOrElse(sendableClass, Nil).flatMap {
-      case TypedAst.Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.IllegalSendableInstance(tpe, loc))
-        else
-          Nil
-    }
   }
 
   /** Checks the safety and well-formedness of `sig`. */

@@ -1218,7 +1218,7 @@ object HtmlDocumentor {
 
   /**
     * Documents the given `Derivations`s, `derives`.
-    * E.g. "with Sendable".
+    * E.g. "with ToString".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *

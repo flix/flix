@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum DelayMap[k, v] with Sendable {
+pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 

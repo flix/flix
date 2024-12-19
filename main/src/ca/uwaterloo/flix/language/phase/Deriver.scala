@@ -42,10 +42,9 @@ object Deriver {
   private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
   private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
+  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, CoerceSym)
 
   def run(root: KindedAst.Root)(implicit flix: Flix): (KindedAst.Root, List[DerivationError]) = flix.phaseNew("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
@@ -81,9 +80,6 @@ object Deriver {
 
         case Derivation(sym, loc) if sym == HashSym =>
           Some(mkHashInstance(enum0, loc, root))
-
-        case Derivation(sym, loc) if sym == SendableSym =>
-          Some(mkSendableInstance(enum0, loc, root))
 
         case Derivation(sym, loc) if sym == CoerceSym =>
           mkCoerceInstance(enum0, loc, root)
@@ -731,45 +727,6 @@ object Deriver {
       }
 
       KindedAst.MatchRule(pat, None, exp)
-  }
-
-  /**
-    * Creates an Sendable instance for the given enum.
-    *
-    * {{{
-    * enum E[a] with Sendable {
-    *   case C1
-    *   case C2(a)
-    *   case C3(a, Int32)
-    * }
-    * }}}
-    *
-    * yields
-    *
-    * {{{
-    * instance Sendable[E[a]] with Sendable[a]
-    * }}}
-    *
-    * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
-    */
-  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): KindedAst.Instance = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val sendableTraitSym = PredefinedTraits.lookupTraitSym("Sendable", root)
-
-      val tconstrs = getTraitConstraintsForTypeParams(tparams, sendableTraitSym, loc)
-
-      KindedAst.Instance(
-        doc = Doc(Nil, loc),
-        ann = Annotations.Empty,
-        mod = Modifiers.Empty,
-        trt = TraitSymUse(sendableTraitSym, loc),
-        tpe = tpe,
-        tconstrs = tconstrs,
-        defs = Nil,
-        assocs = Nil,
-        ns = Name.RootNS,
-        loc = loc
-      )
   }
 
   /**
