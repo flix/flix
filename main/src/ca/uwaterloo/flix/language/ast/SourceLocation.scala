@@ -54,6 +54,12 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
     */
   def beginCol: Int = sp1.col
 
+  def contains(that: SourceLocation): Boolean = {
+    val thatBeginsLater = SourcePosition.PartialOrder.lteq(this.sp1, that.sp1)
+    val thatEndsBefore = SourcePosition.PartialOrder.lteq(that.sp2, this.sp2)
+    thatBeginsLater && thatEndsBefore
+  }
+
   /**
     * Returns the line where the entity ends.
     */
