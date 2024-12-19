@@ -364,8 +364,6 @@ object HighlightProvider {
       case Expr.ApplyDef(_, _, _, _, _, _) => consider(exp)
       case Expr.ApplyLocalDef(_, _, _, _, _, _) => consider(exp)
       case Expr.ApplySig(_, _, _, _, _, _) => consider(exp)
-      case Expr.Unary(_, _, _, _, _) => consider(exp)
-      case Expr.Binary(_, _, _, _, _, _) => consider(exp)
       case Expr.ArrayLit(_, _, _, _, _) => consider(exp)
       case Expr.ArrayNew(_, _, _, _, _, _) => consider(exp)
       case Expr.ArrayLoad(_, _, _, _, _) => consider(exp)
