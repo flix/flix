@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -98,8 +98,9 @@ object Lexer {
 
     /** Restore a previously saved checkpoint. No tokens must have been produced since the checkpoint was created. */
     def restore(c: Checkpoint): Unit = {
-      if (tokens.length != c.tokensLength) ???
-      if (start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset) ???
+      if (tokens.length != c.tokensLength) throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
+      if (start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset)
+        throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
       this.current.line = c.current.line
       this.current.column = c.current.column
       this.current.offset = c.current.offset
