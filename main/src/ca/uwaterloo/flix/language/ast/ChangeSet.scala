@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 
 sealed trait ChangeSet {
@@ -54,6 +53,7 @@ sealed trait ChangeSet {
 
       (stale, fresh)
   }
+
 }
 
 object ChangeSet {
