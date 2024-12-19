@@ -374,7 +374,7 @@ object HighlightProvider {
       case Expr.Unary(_, _, _, _, _) => consider(exp)
       case Expr.Binary(_, _, _, _, _, _) => consider(exp)
       case Expr.Let(_, _, _, _, _, _) => ()
-      case Expr.LocalDef(_, _, _, _, _, _, _) => consider(exp)
+      case Expr.LocalDef(_, _, _, _, _, _, _) => ()
       case Expr.Region(_, _) => ()
       case Expr.Scope(_, _, _, _, _, _) => ()
       case Expr.IfThenElse(_, _, _, _, _, _) => ()
