@@ -21,7 +21,7 @@ import java.util.{Map => JMap}
 ///
 /// A map is currently represented internally as a red-black tree.
 ///
-pub enum Map[k, v] with Sendable {
+pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 

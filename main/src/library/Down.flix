@@ -17,7 +17,7 @@
 ///
 /// The `Down` type allows you to reverse the sort order of `a` conveniently.
 ///
-pub enum Down[a] with Sendable {
+pub enum Down[a] {
     case Down(a)
 }
 

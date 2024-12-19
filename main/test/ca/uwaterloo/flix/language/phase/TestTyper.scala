@@ -367,34 +367,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("MissingSendable.01") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a](a) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
-  test("MissingSendable.02") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a, b](a, b) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
   test("MissingOrder.01") {
     val input =
       """

@@ -26,7 +26,7 @@ import java.util.{List => JList}
 ///
 /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
 ///
-pub enum Chain[t] with Sendable {
+pub enum Chain[t] {
     case Empty
     case One(t)
     case Chain(Chain[t], Chain[t])

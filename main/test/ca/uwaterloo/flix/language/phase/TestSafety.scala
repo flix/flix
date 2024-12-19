@@ -511,24 +511,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.PrimitiveEffectInTryWith](result)
   }
 
-  test("UnableToDeriveSendable.01") {
-    val input =
-      """
-        |enum Enum1[r: Region](Array[Int32, r]) with Sendable
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IllegalSendableInstance](result)
-  }
-
-  test("UnableToDeriveSendable.02") {
-    val input =
-      """
-        |instance Sendable[Array[a, r]]
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IllegalSendableInstance](result)
-  }
-
   test("ImpossibleCast.01") {
     val input =
       """

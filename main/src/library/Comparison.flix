@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum Comparison with Eq, ToString, Sendable {
+pub enum Comparison with Eq, ToString {
     case LessThan
     case EqualTo
     case GreaterThan
