@@ -360,11 +360,11 @@ object HighlightProvider {
         case Expr.RecordSelect(exp, label, tpe, eff, loc) => ()
         case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ()
         case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ()
-        case Expr.ArrayLit(exps, exp, tpe, eff, loc) => () // TODO
-        case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => () // TODO
-        case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => () // TODO
-        case Expr.ArrayLength(exp, eff, loc) => ()
-        case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => () // TODO
+        case Expr.ArrayLit(_, _, _, _, _) => consider(exp)
+        case Expr.ArrayNew(_, _, _, _, _, _) => consider(exp)
+        case Expr.ArrayLoad(_, _, _, _, _) => consider(exp)
+        case Expr.ArrayLength(_, _, _) => ()
+        case Expr.ArrayStore(_, _, _, _, _) => consider(exp)
         case Expr.StructNew(sym, fields, region, tpe, eff, loc) => consider(exp)
         case Expr.StructGet(_, _, _, _, _) => consider(exp)
         case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => consider(exp)
