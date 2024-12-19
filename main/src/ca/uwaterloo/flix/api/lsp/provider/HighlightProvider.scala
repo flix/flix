@@ -276,6 +276,7 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
+      case (eff @ Type.Var(_, _)) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffect(body.loc, eff))
       case (eff @ Type.Cst(TypeConstructor.Effect(_), _)) :: TypedAst.Def(_, _, _, loc) :: _ => Some(highlightEffect(loc, eff))
       //case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
       case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
@@ -364,20 +365,20 @@ object HighlightProvider {
         case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => () // TODO
         case Expr.ArrayLength(exp, eff, loc) => ()
         case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => () // TODO
-        case Expr.StructNew(sym, fields, region, tpe, eff, loc) => () // TODO
-        case Expr.StructGet(exp, sym, tpe, eff, loc) => () // TODO
-        case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => () // TODO
+        case Expr.StructNew(sym, fields, region, tpe, eff, loc) => consider(exp)
+        case Expr.StructGet(_, _, _, _, _) => consider(exp)
+        case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => consider(exp)
         case Expr.VectorLit(exps, tpe, eff, loc) => ()
         case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ()
         case Expr.VectorLength(exp, loc) => ()
-        case Expr.Ascribe(exp, tpe, eff, loc) => () // TODO
+        case Expr.Ascribe(exp, tpe, eff, loc) => ()
         case Expr.InstanceOf(exp, clazz, loc) => ()
         case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
         case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
         case Expr.Without(exp, effUse, tpe, eff, loc) => () // TODO
         case Expr.TryCatch(exp, rules, tpe, eff, loc) => () // TODO
         case Expr.Throw(exp, tpe, eff, loc) => () // TODO
-        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => () // TODO
+        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ()
         case Expr.Do(op, exps, tpe, eff, loc) => consider(exp)
         case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => consider(exp)
         case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => consider(exp)
