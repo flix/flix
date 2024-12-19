@@ -278,7 +278,7 @@ object HighlightProvider {
       case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
       case (tvar @ Type.Var(_, loc)) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffectTVars(body.loc, tvar, loc))
       case Type.Cst(TypeConstructor.Effect(sym), loc) :: TypedAst.Def(_, _, _, scope) :: _ => Some(highlightEffectConcrete(scope, sym, loc))
-      //case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
       case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) :: _ => Some(highlightEnumSym(sym))
