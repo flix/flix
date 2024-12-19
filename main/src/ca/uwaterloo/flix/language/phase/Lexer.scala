@@ -103,7 +103,6 @@ object Lexer {
       Checkpoint(
         start = new Position(this.start.line, this.start.column, this.start.offset),
         current = new Position(this.current.line, this.current.column, this.current.offset),
-        end = new Position(this.end.line, this.end.column, this.end.offset),
         tokensLength = tokens.length,
         interpolationNestingLevel = this.interpolationNestingLevel
       )
@@ -117,14 +116,11 @@ object Lexer {
       this.current.line = c.current.line
       this.current.column = c.current.column
       this.current.offset = c.current.offset
-      this.end.line = c.end.line
-      this.end.column = c.end.column
-      this.end.offset = c.end.offset
       this.interpolationNestingLevel = c.interpolationNestingLevel
     }
   }
 
-  private case class Checkpoint(start: Position, current: Position, end: Position, tokensLength: Int, interpolationNestingLevel: Int)
+  private case class Checkpoint(start: Position, current: Position, tokensLength: Int, interpolationNestingLevel: Int)
 
   /**
     * A source position keeping track of both line, column as well as absolute character offset.
