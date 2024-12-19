@@ -194,6 +194,9 @@ object Regions {
     case Expr.UncheckedCast(exp, _, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+      checkType(runEff, loc) ++ visitExp(exp)
+
     case Expr.Without(exp, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
