@@ -24,19 +24,28 @@ import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object DefCompleter {
+  /**
+    * Returns a List of Completion for definitions.
+    * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
+    * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
+    */
   def getCompletions(err: ResolutionError.UndefinedName, qn: QName)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (qn.namespace.idents.nonEmpty)
       root.defs.values.collect{
-        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = true)
-        => DefCompletion(decl, err.ap, qualified = true, inScope = true)
+        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = true) =>
+          DefCompletion(decl, err.ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
-        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = false)
-        => DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
+        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = false) =>
+          DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
       }
   }
 
+  /**
+    * Checks if the definition is in scope.
+    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    */
   private def inScope(decl: TypedAst.Def, scope: LocalScope): Boolean = {
     val thisName = decl.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
@@ -47,6 +56,10 @@ object DefCompleter {
     isRoot || isResolved
   }
 
+  /**
+    * Checks if the definition matches the QName.
+    * Names should match and the definition should be available.
+    */
   private def matchesDef(decl: TypedAst.Def, qn: QName, uri: String, qualified: Boolean): Boolean = {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
