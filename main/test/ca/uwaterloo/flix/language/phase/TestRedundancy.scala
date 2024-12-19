@@ -1634,6 +1634,26 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
+  test("UselessUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely {} run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessUnsafe](result)
+  }
+
+  test("RedundantUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely IO run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUnsafe](result)
+  }
+
   test("RedundantTraitConstraint.Trait.01") {
     val input =
       """
