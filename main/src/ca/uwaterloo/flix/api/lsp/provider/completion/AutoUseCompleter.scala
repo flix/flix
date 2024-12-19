@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoUseDefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{filterDefsByScope, fuzzyMatch, shouldComplete}
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, shouldComplete}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Enum}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
@@ -50,7 +49,7 @@ object AutoUseCompleter {
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (!shouldComplete(err.qn.ident.name)) return Nil
     if (err.qn.namespace.idents.nonEmpty) return Nil
-    mkDefCompletions(err.qn.ident.name, err.env, err.ap)
+    Nil
   }
 
   /**
@@ -99,13 +98,5 @@ object AutoUseCompleter {
       case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thisName != thatName.toString
       case _ => true
     })
-  }
-
-  /**
-    * Returns a List of Completion for defs.
-    */
-  private def mkDefCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[AutoUseDefCompletion] = {
-    filterDefsByScope(word, root, env, whetherInScope = false)
-      .map(Completion.AutoUseDefCompletion(_, ap))
   }
 }
