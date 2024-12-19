@@ -514,14 +514,18 @@ class Flix {
       AstPrinter.resetPhaseFile()
     }
 
+    // We mark all inputs that contains compilation errors as dirty.
+    // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
+    for (e <- cachedErrors) {
+      val i = e.loc.sp1.source.input
+      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
+    }
+
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
     // The global collection of errors
     val errors = mutable.ListBuffer.empty[CompilationMessage]
-
-    // We add cached errors that are not stale (outdated)
-    errors ++= changeSet.freshErrors(cachedErrors)
 
     val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
     errors ++= readerErrors
@@ -604,9 +608,6 @@ class Flix {
 
               // We save all the current errors.
               this.cachedErrors = errors.toList
-
-              // We mark the change set as empty because compilation was successful.
-              changeSet = ChangeSet.Dirty(Set.empty)
             }
 
             Some(afterDependencies)
