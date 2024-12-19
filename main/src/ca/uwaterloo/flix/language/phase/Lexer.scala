@@ -69,20 +69,33 @@ object Lexer {
     */
   private def isDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-  /**
-    * The internal state of the lexer as it tokenizes a single source.
-    * At any point execution `start` represents the start of the token currently being considered.
-    * Likewise `end` represents the end of the token currently being considered,
-    * while `current` is the current read head of the lexer.
-    * Note that both start and current are `Position`s since they are not necessarily on the same line.
-    * `current` will always be on the same character as or past `start`.
-    * As tokens are produced they are placed in `tokens`.
-    */
+  /** The internal state of the lexer as it tokenizes a single source. */
   private class State(val src: Source) {
+
+    /** `start` is the first position of the token that is currently being lexed. */
     var start: Position = new Position(0, 0, 0)
+
+    /**
+      * The current head of the reader, not yet lexed.
+      *
+      * This is always equal to `start` or ahead of `start`.
+      */
     val current: Position = new Position(0, 0, 0)
-    var end: Position = new Position(0, 0, 0)
+
+    /**
+      * The width of the previous line. This allows computing `current`s previous position.
+      *
+      * See [[addToken]].
+      */
+    var prevWidth: Int = -1
+
+    /** The building list of tokens produced. */
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+
+    /** The current interpolation nesting level.
+      *
+      * This is compared to [[InterpolatedStringMaxNestingLevel]].
+      */
     var interpolationNestingLevel: Int = 0
   }
 
@@ -130,6 +143,7 @@ object Lexer {
     }
 
     // Add a virtual eof token at the last position.
+    s.start = new Position(s.current.line, s.current.column, s.current.offset)
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
@@ -152,15 +166,13 @@ object Lexer {
 
     val c = s.src.data(s.current.offset)
     if (c == '\n') {
-      s.end = new Position(s.current.line, s.current.column, s.current.offset)
-      s.current.offset += 1
+      s.prevWidth = s.current.column
       s.current.line += 1
       s.current.column = 0
     } else {
-      s.end = new Position(s.current.line, (s.current.column + 1).toShort, s.current.offset)
-      s.current.offset += 1
       s.current.column += 1
     }
+    s.current.offset += 1
     c
   }
 
@@ -175,13 +187,36 @@ object Lexer {
     val c = s.src.data(s.current.offset)
     if (c == '\n') {
       s.current.line -= 1
-      s.current.column = 0
-      s.end.line -= 1
-      s.end.column = 0
+      s.current.column = s.prevWidth
+      recomputePrevWidth()
     } else {
       s.current.column -= 1
-      s.end.column -= 1
     }
+  }
+
+  /**
+    * Assuming that `s.current` is on the end of a line (i.e. on `\n`), recomputes the length of
+    * the previous line.
+    */
+  private def recomputePrevWidth()(implicit s: State): Unit = {
+    // Find the previous '\n' - the start of this current line.
+    var i = s.current.offset - 1
+    while (i >= 0 && s.src.data(i) != '\n') {
+      i -= 1
+    }
+    if (i == -1) {
+      // We are on the first line so there is not previous line.
+      s.prevWidth = -1
+    } else {
+      // Count the line width, avoiding out-of-bounds.
+      var width = 0
+      while (i >= 0 && s.src.data(i) != '\n') {
+        width += 1
+        i -= 1
+      }
+      s.prevWidth = width
+    }
+
   }
 
   /**
@@ -300,7 +335,15 @@ object Lexer {
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
     val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
-    val e = SourcePosition(s.src, s.end.line + 1, (s.end.column + 1).toShort)
+    // If we are currently at the start of a line, create a non-existent position and the
+    // end of the previous line as the exclusive end position.
+    // This should not happen for zero-width tokens at the start of lines.
+    val end = if (s.current.column == 0 && s.start.offset != s.current.offset) {
+      new Position(s.current.line - 1, s.prevWidth + 1, s.current.offset)
+    } else {
+      new Position(s.current.line, s.current.column, s.current.offset)
+    }
+    val e = SourcePosition(s.src, end.line + 1, (end.column + 1).toShort)
     s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
