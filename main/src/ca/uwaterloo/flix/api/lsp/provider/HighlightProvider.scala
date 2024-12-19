@@ -276,8 +276,8 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
-      //case Type.Var(sym, _) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffect(body.loc, eff))
-      case Type.Cst(TypeConstructor.Effect(sym), loc) :: TypedAst.Def(_, _, _, scope) :: _ => Some(highlightEffect(scope, sym, loc))
+      case (tvar @ Type.Var(_, loc)) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffectTVars(body.loc, tvar, loc))
+      case Type.Cst(TypeConstructor.Effect(sym), loc) :: TypedAst.Def(_, _, _, scope) :: _ => Some(highlightEffectConcrete(scope, sym, loc))
       //case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
       case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
@@ -318,7 +318,27 @@ object HighlightProvider {
     }
   }
 
-  private def highlightEffect(scope: SourceLocation, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
+  private def highlightEffectTVars(scope: SourceLocation, tvar: Type.Var, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
+    var exps: List[SourceLocation] = Nil
+
+    def consider(exp: Expr): Unit = {
+      if (!exp.eff.typeVars.contains(tvar)) { return }
+      exps = exp.loc :: exps
+    }
+
+    val consumer = EffectConsumer(consider)
+
+    Visitor.visitRoot(root, consumer, acceptor)
+
+    val retEffHighlight = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+    val highlights = retEffHighlight :: expHighlights
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+
+  }
+
+  private def highlightEffectConcrete(scope: SourceLocation, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
     println("AAAAAAAAAAAAAAAAAAAAA")
     var exps: List[SourceLocation] = Nil
 
@@ -328,92 +348,94 @@ object HighlightProvider {
       exps = exp.loc :: exps
     }
 
-    object EffectConsumer extends Consumer {
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Cst(cst, tpe, loc) => ()
-        case Expr.Var(sym, tpe, loc) => ()
-        case Expr.Hole(sym, tpe, eff, loc) => ()
-        case Expr.HoleWithExp(exp, tpe, eff, loc) => ()
-        case Expr.OpenAs(symUse, exp, tpe, loc) => ()
-        case Expr.Use(sym, alias, exp, loc) => ()
-        case Expr.Lambda(fparam, exp, tpe, loc) => ()
-        case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
-        case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => consider(exp)
-        case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
-        case Expr.Unary(sop, exp, tpe, eff, loc) => consider(exp)
-        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) => ()
-        case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.Region(tpe, loc) => ()
-        case Expr.Scope(bnd, regionVar, exp, tpe, eff, loc) => ()
-        case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ()
-        case Expr.Stm(exp1, exp2, tpe, eff, loc) => ()
-        case Expr.Discard(exp, eff, loc) => () // TODO
-        case Expr.Match(exp, rules, tpe, eff, loc) => ()
-        case Expr.TypeMatch(exp, rules, tpe, eff, loc) => ()
-        case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ()
-        case Expr.Tag(sym, exps, tpe, eff, loc) => ()
-        case Expr.RestrictableTag(sym, exps, tpe, eff, loc) => ()
-        case Expr.Tuple(exps, tpe, eff, loc) => ()
-        case Expr.RecordEmpty(tpe, loc) => ()
-        case Expr.RecordSelect(exp, label, tpe, eff, loc) => ()
-        case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ()
-        case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ()
-        case Expr.ArrayLit(_, _, _, _, _) => consider(exp)
-        case Expr.ArrayNew(_, _, _, _, _, _) => consider(exp)
-        case Expr.ArrayLoad(_, _, _, _, _) => consider(exp)
-        case Expr.ArrayLength(_, _, _) => ()
-        case Expr.ArrayStore(_, _, _, _, _) => consider(exp)
-        case Expr.StructNew(sym, fields, region, tpe, eff, loc) => consider(exp)
-        case Expr.StructGet(_, _, _, _, _) => consider(exp)
-        case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.VectorLit(exps, tpe, eff, loc) => ()
-        case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ()
-        case Expr.VectorLength(exp, loc) => ()
-        case Expr.Ascribe(exp, tpe, eff, loc) => ()
-        case Expr.InstanceOf(exp, clazz, loc) => ()
-        case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
-        case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
-        case Expr.Without(exp, effUse, tpe, eff, loc) => ()
-        case Expr.TryCatch(exp, rules, tpe, eff, loc) => ()
-        case Expr.Throw(exp, tpe, eff, loc) => ()
-        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ()
-        case Expr.Do(op, exps, tpe, eff, loc) => consider(exp)
-        case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => consider(exp)
-        case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => consider(exp)
-        case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => consider(exp)
-        case Expr.GetField(field, exp, tpe, eff, loc) => consider(exp)
-        case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.GetStaticField(field, tpe, eff, loc) => consider(exp)
-        case Expr.PutStaticField(field, exp, tpe, eff, loc) => consider(exp)
-        case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => consider(exp)
-        case Expr.NewChannel(exp, tpe, eff, loc) => consider(exp)
-        case Expr.GetChannel(exp, tpe, eff, loc) => consider(exp)
-        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => consider(exp)
-        case Expr.SelectChannel(rules, default, tpe, eff, loc) => consider(exp)
-        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ()
-        case Expr.ParYield(frags, exp, tpe, eff, loc) => () // TODO
-        case Expr.Lazy(exp, tpe, loc) => ()
-        case Expr.Force(exp, tpe, eff, loc) => ()
-        case Expr.FixpointConstraintSet(cs, tpe, loc) => ()
-        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ()
-        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ()
-        case Expr.FixpointSolve(exp, tpe, eff, loc) => ()
-        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ()
-        case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ()
-        case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ()
-        case Expr.Error(m, tpe, eff) => ()
-      }
-    }
+    val consumer = EffectConsumer(consider)
 
-    Visitor.visitRoot(root, EffectConsumer, acceptor)
+    Visitor.visitRoot(root, consumer, acceptor)
 
     val retEffHighlight = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
     val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
     val highlights = retEffHighlight :: expHighlights
 
     ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+  }
+
+  private case class EffectConsumer(consider: Expr => Unit) extends Consumer {
+    override def consumeExpr(exp: Expr): Unit = exp match {
+      case Expr.Cst(cst, tpe, loc) => ()
+      case Expr.Var(sym, tpe, loc) => ()
+      case Expr.Hole(sym, tpe, eff, loc) => ()
+      case Expr.HoleWithExp(exp, tpe, eff, loc) => ()
+      case Expr.OpenAs(symUse, exp, tpe, loc) => ()
+      case Expr.Use(sym, alias, exp, loc) => ()
+      case Expr.Lambda(fparam, exp, tpe, loc) => ()
+      case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
+      case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => consider(exp)
+      case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
+      case Expr.Unary(sop, exp, tpe, eff, loc) => consider(exp)
+      case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) => ()
+      case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.Region(tpe, loc) => ()
+      case Expr.Scope(bnd, regionVar, exp, tpe, eff, loc) => ()
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ()
+      case Expr.Stm(exp1, exp2, tpe, eff, loc) => ()
+      case Expr.Discard(exp, eff, loc) => () // TODO
+      case Expr.Match(exp, rules, tpe, eff, loc) => ()
+      case Expr.TypeMatch(exp, rules, tpe, eff, loc) => ()
+      case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ()
+      case Expr.Tag(sym, exps, tpe, eff, loc) => ()
+      case Expr.RestrictableTag(sym, exps, tpe, eff, loc) => ()
+      case Expr.Tuple(exps, tpe, eff, loc) => ()
+      case Expr.RecordEmpty(tpe, loc) => ()
+      case Expr.RecordSelect(exp, label, tpe, eff, loc) => ()
+      case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ()
+      case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ()
+      case Expr.ArrayLit(_, _, _, _, _) => consider(exp)
+      case Expr.ArrayNew(_, _, _, _, _, _) => consider(exp)
+      case Expr.ArrayLoad(_, _, _, _, _) => consider(exp)
+      case Expr.ArrayLength(_, _, _) => ()
+      case Expr.ArrayStore(_, _, _, _, _) => consider(exp)
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => consider(exp)
+      case Expr.StructGet(_, _, _, _, _) => consider(exp)
+      case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.VectorLit(exps, tpe, eff, loc) => ()
+      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ()
+      case Expr.VectorLength(exp, loc) => ()
+      case Expr.Ascribe(exp, tpe, eff, loc) => ()
+      case Expr.InstanceOf(exp, clazz, loc) => ()
+      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
+      case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
+      case Expr.Without(exp, effUse, tpe, eff, loc) => ()
+      case Expr.TryCatch(exp, rules, tpe, eff, loc) => ()
+      case Expr.Throw(exp, tpe, eff, loc) => ()
+      case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ()
+      case Expr.Do(op, exps, tpe, eff, loc) => consider(exp)
+      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => consider(exp)
+      case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => consider(exp)
+      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => consider(exp)
+      case Expr.GetField(field, exp, tpe, eff, loc) => consider(exp)
+      case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.GetStaticField(field, tpe, eff, loc) => consider(exp)
+      case Expr.PutStaticField(field, exp, tpe, eff, loc) => consider(exp)
+      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => consider(exp)
+      case Expr.NewChannel(exp, tpe, eff, loc) => consider(exp)
+      case Expr.GetChannel(exp, tpe, eff, loc) => consider(exp)
+      case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => consider(exp)
+      case Expr.SelectChannel(rules, default, tpe, eff, loc) => consider(exp)
+      case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ()
+      case Expr.ParYield(frags, exp, tpe, eff, loc) => () // TODO
+      case Expr.Lazy(exp, tpe, loc) => ()
+      case Expr.Force(exp, tpe, eff, loc) => ()
+      case Expr.FixpointConstraintSet(cs, tpe, loc) => ()
+      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ()
+      case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ()
+      case Expr.FixpointSolve(exp, tpe, eff, loc) => ()
+      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ()
+      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ()
+      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ()
+      case Expr.Error(m, tpe, eff) => ()
+    }
   }
 
   private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Acceptor): JObject = {
