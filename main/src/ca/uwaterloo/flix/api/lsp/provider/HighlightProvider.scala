@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, CheckedCastType, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -404,8 +404,9 @@ object HighlightProvider {
       case Expr.VectorLength(_, _) => ()
       case Expr.Ascribe(_, _, _, _) => ()
       case Expr.InstanceOf(_, _, _) => ()
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
-      case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
+      case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => consider(exp)
+      case Expr.CheckedCast(CheckedCastType.TypeCast, _, _, _, _) => ()
+      case Expr.UncheckedCast(_, _, _, _, _, _) => ()
       case Expr.Without(_, _, _, _, _) => ()
       case Expr.TryCatch(_, _, _, _, _) => ()
       case Expr.Throw(_, _, _, _) => ()
