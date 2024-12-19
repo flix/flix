@@ -98,7 +98,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(!SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives true for lines 2 and 4 and col 3 and 2") {
+  test("p1 lteq p2 gives true when p1's line is earlier line and col is later") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 2, 3)
     val p2 = SourcePosition(source, 4, 2)
@@ -106,7 +106,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives true for lines 2 and 4 and col 2 and 3") {
+  test("p1 lteq p2 gives true true when p1's line is earlier and col is earlier") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 2, 2)
     val p2 = SourcePosition(source, 4, 3)
@@ -114,7 +114,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives false for lines 6 and 3 and col 3 and 2") {
+  test("p1 lteq p2 gives false when p1's line and col is later") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 6, 3)
     val p2 = SourcePosition(source, 3, 2)
@@ -122,7 +122,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(!SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives false for lines 6 and 3 and col 2 and 3") {
+  test("p1 lteq p2 gives false when p1's line is later and col is earlier") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 6, 2)
     val p2 = SourcePosition(source, 3, 3)
@@ -130,7 +130,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(!SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives true for same lines and col 5 and 23") {
+  test("p1 lteq p2 gives true when they have same line and p1's col is earlier") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 6, 5)
     val p2 = SourcePosition(source, 6, 23)
@@ -138,7 +138,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives false for same lines and col 10 and 9") {
+  test("p1 lteq p2 gives false for they have same line and p1's col is later") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 6, 10)
     val p2 = SourcePosition(source, 6, 9)
@@ -146,7 +146,7 @@ class SourcePositionSuite extends AnyFunSuite {
     assert(!SourcePosition.PartialOrder.lteq(p1, p2))
   }
 
-  test("lteq gives true for same lines and same col") {
+  test("p1 lteq p2 gives true for same lines and same col") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val p1 = SourcePosition(source, 6, 9)
     val p2 = SourcePosition(source, 6, 9)
