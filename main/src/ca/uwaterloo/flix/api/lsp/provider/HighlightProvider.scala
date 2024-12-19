@@ -375,9 +375,9 @@ object HighlightProvider {
         case Expr.InstanceOf(exp, clazz, loc) => ()
         case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
         case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
-        case Expr.Without(exp, effUse, tpe, eff, loc) => () // TODO
-        case Expr.TryCatch(exp, rules, tpe, eff, loc) => () // TODO
-        case Expr.Throw(exp, tpe, eff, loc) => () // TODO
+        case Expr.Without(exp, effUse, tpe, eff, loc) => ()
+        case Expr.TryCatch(exp, rules, tpe, eff, loc) => ()
+        case Expr.Throw(exp, tpe, eff, loc) => ()
         case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ()
         case Expr.Do(op, exps, tpe, eff, loc) => consider(exp)
         case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => consider(exp)
@@ -394,8 +394,8 @@ object HighlightProvider {
         case Expr.SelectChannel(rules, default, tpe, eff, loc) => () // TODO
         case Expr.Spawn(exp1, exp2, tpe, eff, loc) => () // TODO
         case Expr.ParYield(frags, exp, tpe, eff, loc) => () // TODO
-        case Expr.Lazy(exp, tpe, loc) => () // TODO
-        case Expr.Force(exp, tpe, eff, loc) => () // TODO
+        case Expr.Lazy(exp, tpe, loc) => ()
+        case Expr.Force(exp, tpe, eff, loc) => ()
         case Expr.FixpointConstraintSet(cs, tpe, loc) => ()
         case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ()
         case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ()
