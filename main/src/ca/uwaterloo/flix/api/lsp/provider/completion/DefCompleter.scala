@@ -16,9 +16,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -52,7 +53,7 @@ object DefCompleter {
     val isMatch = if (qualified)
       decl.sym.toString.startsWith(qn.toString)
     else
-      decl.sym.name.startsWith(qn.ident.name)
+      fuzzyMatch(qn.ident.name, decl.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }
