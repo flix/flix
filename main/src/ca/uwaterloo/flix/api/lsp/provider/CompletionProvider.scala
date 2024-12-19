@@ -58,68 +58,48 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
-        case err: ParseError => getSyntacticCompletions(err.sctx, ctx)
+        case err: ParseError => err.sctx match {
+          // Expressions.
+          case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
+          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
+
+          // Declarations.
+          case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+          case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
+          case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+          case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+          case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
+          case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+
+          // Types.
+          case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
+
+          // Patterns.
+          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+
+          // Uses.
+          case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+
+          // With.
+          case SyntacticContext.WithClause =>
+            // A with context could also be just a type context.
+            TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
+
+          // Try-with handler.
+          case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
+
+          // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
+          case SyntacticContext.Unknown =>
+            // Special case: A program with a hole is correct, but we should offer some completion suggestions.
+            HoleCompletion.getHoleCompletion(ctx, root)
+
+          case _ => Nil
+        }
 
         case _ => HoleCompletion.getHoleCompletion(ctx, root)
       }).map(comp => comp.toCompletionItem(ctx))
     }.getOrElse(Nil)
     ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
-  }
-
-  private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
-    sctx match {
-      //
-      // Expressions.
-      //
-      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
-
-      //
-      // Declarations.
-      //
-      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
-      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-      //
-      // Types.
-      //
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
-
-      //
-      // Patterns.
-      //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
-
-      //
-      // Uses.
-      //
-      case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
-
-      //
-      // With.
-      //
-      case SyntacticContext.WithClause =>
-        // A with context could also be just a type context.
-        TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
-
-      //
-      // Try-with handler.
-      //
-      case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
-
-      //
-      // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
-      //
-      case SyntacticContext.Unknown =>
-        // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-        HoleCompletion.getHoleCompletion(ctx, root)
-
-      case _ => Nil
-    }
   }
 
   /**
