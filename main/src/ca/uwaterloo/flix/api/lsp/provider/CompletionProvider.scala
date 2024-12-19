@@ -78,7 +78,7 @@ object CompletionProvider {
           case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
           // Uses.
-          case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
           case SyntacticContext.WithClause =>
