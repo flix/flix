@@ -339,7 +339,6 @@ object HighlightProvider {
   }
 
   private def highlightEffectConcrete(scope: SourceLocation, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
-    println("AAAAAAAAAAAAAAAAAAAAA")
     var exps: List[SourceLocation] = Nil
 
     def consider(exp: Expr): Unit = {
