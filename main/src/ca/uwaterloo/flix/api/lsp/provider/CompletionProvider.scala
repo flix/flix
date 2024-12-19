@@ -101,7 +101,7 @@ object CompletionProvider {
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
           // Uses.
-          case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
           case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
