@@ -16,11 +16,12 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.language.ast.Symbol
+
 import scala.annotation.tailrec
 
 object CompletionUtils {
@@ -227,5 +228,34 @@ object CompletionUtils {
     */
   private def splitByCamelCase(input: String): List[String] = {
     input.split("(?=[A-Z])").toList
+  }
+
+  /**
+    * Updates the given `qn` based on the character immediately following the location.
+    * If the character is a dot, we move the ident to the namespace.
+    * Otherwise, we will keep the `qn` as it is.
+    *
+    * Example:
+    *   - Source "AA.BB", QName(["AA"], "BB") -> QName(["AA"], "BB")
+    *   - Source "AA.BB.", QName(["AA"], "BB") -> QName(["AA", "BB"], "")
+    */
+  def updateQNameBasedOnDot(qn: QName, loc: SourceLocation): QName = {
+    val ident = if (followedByDot(loc)) "" else qn.ident.name
+    val namespace = qn.namespace.idents.map(_.name) ++ {
+      if (followedByDot(loc)) List(qn.ident.name)
+      else Nil
+    }
+    Name.mkQName(namespace, ident, SourceLocation.Unknown)
+  }
+
+  /**
+    * Returns true if the character immediately following the location is a dot.
+    * Note:
+    *   - loc.endCol will point to the next character after QName.
+    *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
+    */
+  private def followedByDot(loc: SourceLocation): Boolean = {
+    val line = loc.lineAt(loc.endLine)
+    loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
   }
 }

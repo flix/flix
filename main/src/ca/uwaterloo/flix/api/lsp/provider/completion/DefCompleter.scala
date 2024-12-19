@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, updateQNameBasedOnDot}
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -25,14 +25,15 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object DefCompleter {
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    if (err.qn.namespace.idents.nonEmpty)
+    val qn = updateQNameBasedOnDot(err.qn, err.loc)
+    if (qn.namespace.idents.nonEmpty)
       root.defs.values.collect{
-        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = true)
+        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = true)
         => DefCompletion(decl, err.ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
-        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = false)
+        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = false)
         => DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
       }
   }
@@ -51,7 +52,7 @@ object DefCompleter {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      decl.sym.toString.startsWith(qn.toString)
+      fuzzyMatch(qn.toString, decl.sym.toString)
     else
       fuzzyMatch(qn.ident.name, decl.sym.name)
     isMatch && (isPublic || isInFile)
