@@ -36,7 +36,7 @@ class SourceLocationSuite extends AnyFunSuite {
     assert(l1.contains(l2))
   }
 
-  test("l1 contains l2 when it starts on earlier line and later col and ends on same line and later col") {
+  test("l1 contains l2 when l1 starts on earlier line and later col and ends on same line and later col") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
@@ -52,7 +52,7 @@ class SourceLocationSuite extends AnyFunSuite {
     assert(l1.contains(l2))
   }
 
-  test("l1 contains l2 when they start and end on same line and starts on earlier col and ends on later col") {
+  test("l1 contains l2 when they start and end on same line and l1 starts on earlier col and ends on later col") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
@@ -68,7 +68,7 @@ class SourceLocationSuite extends AnyFunSuite {
     assert(l1.contains(l2))
   }
 
-  test("l1 contains l2 when they start and end on same line and starts on earlier col and ends on same col") {
+  test("l1 contains l2 when they start and end on same line and l1 starts on earlier col and ends on same col") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
@@ -84,7 +84,7 @@ class SourceLocationSuite extends AnyFunSuite {
     assert(l1.contains(l2))
   }
 
-  test("l1 contains l2 when they start and end on same line and starts on same col and ends on later col") {
+  test("l1 contains l2 when they start and end on same line and l1 starts on same col and ends on later col") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
