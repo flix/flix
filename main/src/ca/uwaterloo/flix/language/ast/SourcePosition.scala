@@ -7,6 +7,22 @@ object SourcePosition {
     * Represents an unknown source position.
     */
   val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray), 0, 0)
+
+  implicit object PartialOrder extends PartialOrdering[SourcePosition] {
+    override def tryCompare(x: SourcePosition, y: SourcePosition): Option[Int] = {
+      if (x.source != y.source) { return None }
+      if (x.line != y.line) { return Some(x.line - y.line) }
+      if (x.col != y.col) { return Some(x.col - y.col) }
+      Some(0)
+    }
+
+    override def lteq(x: SourcePosition, y: SourcePosition): Boolean = {
+      tryCompare(x, y) match {
+        case None => false
+        case Some(value) => value <= 0
+      }
+    }
+  }
 }
 
 /**
