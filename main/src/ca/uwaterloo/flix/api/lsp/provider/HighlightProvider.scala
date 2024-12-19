@@ -276,8 +276,8 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
-      case (eff @ Type.Var(_, _)) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffect(body.loc, eff))
-      case (eff @ Type.Cst(TypeConstructor.Effect(_), _)) :: TypedAst.Def(_, _, _, loc) :: _ => Some(highlightEffect(loc, eff))
+      //case Type.Var(sym, _) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffect(body.loc, eff))
+      case Type.Cst(TypeConstructor.Effect(sym), loc) :: TypedAst.Def(_, _, _, scope) :: _ => Some(highlightEffect(scope, sym, loc))
       //case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
       case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
@@ -318,12 +318,12 @@ object HighlightProvider {
     }
   }
 
-  private def highlightEffect(scope: SourceLocation, eff: Type)(implicit root: Root, acceptor: Acceptor): JObject = {
+  private def highlightEffect(scope: SourceLocation, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
     println("AAAAAAAAAAAAAAAAAAAAA")
     var exps: List[SourceLocation] = Nil
 
     def consider(exp: Expr): Unit = {
-      if (exp.eff != eff) { return }
+      if (!exp.eff.effects.contains(sym)) { return }
       // TODO also filter out anything not in `scope`
       exps = exp.loc :: exps
     }
@@ -409,7 +409,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, EffectConsumer, acceptor)
 
-    val retEffHighlight = DocumentHighlight(Range.from(eff.loc), DocumentHighlightKind.Write)
+    val retEffHighlight = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
     val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
     val highlights = retEffHighlight :: expHighlights
 
