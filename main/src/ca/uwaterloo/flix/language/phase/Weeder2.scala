@@ -94,7 +94,7 @@ object Weeder2 {
       val isNotImportedByUse = maybeUseMany.isEmpty
       val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
       if (isUnqualifiedUse) {
-        val error = UnqualifiedUse(qname.loc)
+        val error = UnqualifiedUse(qname, qname.loc)
         sctx.errors.add(error)
         List.empty
       } else {
