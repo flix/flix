@@ -63,8 +63,8 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
-    val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
-    val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
+    val highlightRight = highlightAny(searchRightOfCursor(uri, pos), uri)
+    val highlightLeft = highlightAny(searchLeftOfCursor(uri, pos), uri)
 
     highlightRight
       .orElse(highlightLeft)
@@ -93,11 +93,11 @@ object HighlightProvider {
     * @return     the most precise AST node under the [[Position]] immediately left
     *             of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
+  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = pos match {
       case Position(line, character) if character >= 2 =>
         val leftOfCursor = Position(line, character - 1)
         search(uri, leftOfCursor)
-      case _ => None
+      case _ => Nil
     }
 
   /**
@@ -120,7 +120,7 @@ object HighlightProvider {
     * @return     the most precise AST node under the [[Position]] immediately right
     *             of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     search(uri, pos)
   }
 
@@ -150,19 +150,22 @@ object HighlightProvider {
     * @param root the [[Root]] AST node of the Flix project.
     * @return     the most precise AST under the cursor if there is one. Otherwise, returns `None`.
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, InsideAcceptor(uri, pos))
-    stackConsumer
-      .getStack
-      .filter(isNotEmptyRecord)
-      .filter(ifDefThenInSym(uri, pos))
-      .filter(ifSigThenInSym(uri, pos))
-      .filter(ifOpThenInSym(uri, pos))
-      .filter(ifTraitThenInSym(uri, pos))
-      .filter(ifEnumThenInSym(uri, pos))
-      .filter(isReal)
-      .headOption
+    println(stackConsumer.getStack.take(4).reverse.mkString("\n\n===\n\n","\n\n","\n\n===\n\n"))
+
+    val topFiltered = stackConsumer.getStack match {
+      case head :: tail if !ifDefThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifSigThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifOpThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifTraitThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifEnumThenInSym(uri, pos)(head) => tail
+      case head :: tail if !isNotEmptyRecord(head) => tail
+      case stack => stack
+    }
+
+    topFiltered.filter(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
@@ -261,56 +264,155 @@ object HighlightProvider {
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  private def highlightAny(x: AnyRef, uri: String)(implicit root: Root): Option[JObject] = {
+  private def highlightAny(x: List[AnyRef], uri: String)(implicit root: Root): Option[JObject] = {
     implicit val acceptor: Acceptor = FileAcceptor(uri)
     x match {
       // Assoc Types
-      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(highlightAssocTypeSym(sym))
-      case SymUse.AssocTypeSymUse(sym, _) => Some(highlightAssocTypeSym(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(highlightAssocTypeSym(sym))
+      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) :: _ => Some(highlightAssocTypeSym(sym))
+      case SymUse.AssocTypeSymUse(sym, _) :: _ => Some(highlightAssocTypeSym(sym))
+      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) :: _ => Some(highlightAssocTypeSym(sym))
       // Defs
-      case TypedAst.Def(sym, _, _, _) => Some(highlightDefnSym(sym))
-      case SymUse.DefSymUse(sym, _) => Some(highlightDefnSym(sym))
+      case TypedAst.Def(sym, _, _, _) :: _ => Some(highlightDefnSym(sym))
+      case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
-      case TypedAst.Effect(_, _, _, sym, _, _) => Some(highlightEffectSym(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(highlightEffectSym(sym))
-      case SymUse.EffectSymUse(sym, _) => Some(highlightEffectSym(sym))
+      case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
+      case (eff @ Type.Cst(TypeConstructor.Effect(_), _)) :: TypedAst.Def(_, _, _, loc) :: _ => Some(highlightEffect(loc, eff))
+      //case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
+      case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
-      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(highlightEnumSym(sym))
-      case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(highlightEnumSym(sym))
-      case TypedAst.Case(sym, _, _, _) => Some(highlightCaseSym(sym))
-      case SymUse.CaseSymUse(sym, _) => Some(highlightCaseSym(sym))
+      case TypedAst.Enum(_, _, _, sym, _, _, _, _) :: _ => Some(highlightEnumSym(sym))
+      case Type.Cst(TypeConstructor.Enum(sym, _), _) :: _ => Some(highlightEnumSym(sym))
+      case TypedAst.Case(sym, _, _, _) :: _ => Some(highlightCaseSym(sym))
+      case SymUse.CaseSymUse(sym, _) :: _ => Some(highlightCaseSym(sym))
       // Ops
-      case TypedAst.Op(sym, _, _) => Some(highlightOpSym(sym))
-      case SymUse.OpSymUse(sym, _) => Some(highlightOpSym(sym))
+      case TypedAst.Op(sym, _, _) :: _ => Some(highlightOpSym(sym))
+      case SymUse.OpSymUse(sym, _) :: _ => Some(highlightOpSym(sym))
       // Records
-      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) :: _ => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) :: _ => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordSelect(_, label, _, _, _) :: _ => Some(highlightLabel(label))
       // Signatures
-      case TypedAst.Sig(sym, _, _, _) => Some(highlightSigSym(sym))
-      case SymUse.SigSymUse(sym, _) => Some(highlightSigSym(sym))
+      case TypedAst.Sig(sym, _, _, _) :: _ => Some(highlightSigSym(sym))
+      case SymUse.SigSymUse(sym, _) :: _ => Some(highlightSigSym(sym))
       // Structs
-      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(highlightStructSym(sym))
-      case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(highlightStructSym(sym))
-      case TypedAst.StructField(sym, _, _) => Some(highlightStructFieldSym(sym))
-      case SymUse.StructFieldSymUse(sym, _) => Some(highlightStructFieldSym(sym))
+      case TypedAst.Struct(_, _, _, sym, _, _, _, _) :: _ => Some(highlightStructSym(sym))
+      case Type.Cst(TypeConstructor.Struct(sym, _), _) :: _ => Some(highlightStructSym(sym))
+      case TypedAst.StructField(sym, _, _) :: _ => Some(highlightStructFieldSym(sym))
+      case SymUse.StructFieldSymUse(sym, _) :: _ => Some(highlightStructFieldSym(sym))
       // Traits
-      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(highlightTraitSym(sym))
-      case SymUse.TraitSymUse(sym, _) => Some(highlightTraitSym(sym))
-      case TraitConstraint.Head(sym, _) => Some(highlightTraitSym(sym))
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) :: _ => Some(highlightTraitSym(sym))
+      case SymUse.TraitSymUse(sym, _) :: _ => Some(highlightTraitSym(sym))
+      case TraitConstraint.Head(sym, _) :: _ => Some(highlightTraitSym(sym))
       // Type Aliases
-      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(highlightTypeAliasSym(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
+      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) :: _ => Some(highlightTypeAliasSym(sym))
+      case Type.Alias(AliasConstructor(sym, _), _, _, _) :: _ => Some(highlightTypeAliasSym(sym))
       // Type Variables
-      case TypedAst.TypeParam(_, sym, _) => Some(highlightTypeVarSym(sym))
-      case Type.Var(sym, _) => Some(highlightTypeVarSym(sym))
+      case TypedAst.TypeParam(_, sym, _) :: _ => Some(highlightTypeVarSym(sym))
+      case Type.Var(sym, _) :: _ => Some(highlightTypeVarSym(sym))
       // Variables
-      case Binder(sym, _) => Some(highlightVarSym(sym))
-      case TypedAst.Expr.Var(varSym, _, _) => Some(highlightVarSym(varSym))
+      case Binder(sym, _) :: _ => Some(highlightVarSym(sym))
+      case TypedAst.Expr.Var(varSym, _, _) :: _ => Some(highlightVarSym(varSym))
 
       case _ => None
     }
+  }
+
+  private def highlightEffect(scope: SourceLocation, eff: Type)(implicit root: Root, acceptor: Acceptor): JObject = {
+    println("AAAAAAAAAAAAAAAAAAAAA")
+    var exps: List[SourceLocation] = Nil
+
+    def consider(exp: Expr): Unit = {
+      if (exp.eff != eff) { return }
+      // TODO also filter out anything not in `scope`
+      exps = exp.loc :: exps
+    }
+
+    object EffectConsumer extends Consumer {
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Cst(cst, tpe, loc) => ()
+        case Expr.Var(sym, tpe, loc) => ()
+        case Expr.Hole(sym, tpe, eff, loc) => ()
+        case Expr.HoleWithExp(exp, tpe, eff, loc) => ()
+        case Expr.OpenAs(symUse, exp, tpe, loc) => ()
+        case Expr.Use(sym, alias, exp, loc) => ()
+        case Expr.Lambda(fparam, exp, tpe, loc) => ()
+        case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => consider(exp)
+        case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
+        case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => consider(exp)
+        case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) => consider(exp)
+        case Expr.Unary(sop, exp, tpe, eff, loc) => consider(exp)
+        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => consider(exp)
+        case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) => ()
+        case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) => consider(exp)
+        case Expr.Region(tpe, loc) => ()
+        case Expr.Scope(bnd, regionVar, exp, tpe, eff, loc) => ()
+        case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ()
+        case Expr.Stm(exp1, exp2, tpe, eff, loc) => ()
+        case Expr.Discard(exp, eff, loc) => () // TODO
+        case Expr.Match(exp, rules, tpe, eff, loc) => ()
+        case Expr.TypeMatch(exp, rules, tpe, eff, loc) => ()
+        case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ()
+        case Expr.Tag(sym, exps, tpe, eff, loc) => ()
+        case Expr.RestrictableTag(sym, exps, tpe, eff, loc) => ()
+        case Expr.Tuple(exps, tpe, eff, loc) => ()
+        case Expr.RecordEmpty(tpe, loc) => ()
+        case Expr.RecordSelect(exp, label, tpe, eff, loc) => ()
+        case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ()
+        case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ()
+        case Expr.ArrayLit(exps, exp, tpe, eff, loc) => () // TODO
+        case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => () // TODO
+        case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => () // TODO
+        case Expr.ArrayLength(exp, eff, loc) => ()
+        case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => () // TODO
+        case Expr.StructNew(sym, fields, region, tpe, eff, loc) => () // TODO
+        case Expr.StructGet(exp, sym, tpe, eff, loc) => () // TODO
+        case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => () // TODO
+        case Expr.VectorLit(exps, tpe, eff, loc) => ()
+        case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ()
+        case Expr.VectorLength(exp, loc) => ()
+        case Expr.Ascribe(exp, tpe, eff, loc) => () // TODO
+        case Expr.InstanceOf(exp, clazz, loc) => ()
+        case Expr.CheckedCast(cast, exp, tpe, eff, loc) => () // TODO
+        case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => () // TODO
+        case Expr.Without(exp, effUse, tpe, eff, loc) => () // TODO
+        case Expr.TryCatch(exp, rules, tpe, eff, loc) => () // TODO
+        case Expr.Throw(exp, tpe, eff, loc) => () // TODO
+        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => () // TODO
+        case Expr.Do(op, exps, tpe, eff, loc) => consider(exp)
+        case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => consider(exp)
+        case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => consider(exp)
+        case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => consider(exp)
+        case Expr.GetField(field, exp, tpe, eff, loc) => consider(exp)
+        case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => consider(exp)
+        case Expr.GetStaticField(field, tpe, eff, loc) => consider(exp)
+        case Expr.PutStaticField(field, exp, tpe, eff, loc) => consider(exp)
+        case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => consider(exp)
+        case Expr.NewChannel(exp, tpe, eff, loc) => () // TODO
+        case Expr.GetChannel(exp, tpe, eff, loc) => () // TODO
+        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => () // TODO
+        case Expr.SelectChannel(rules, default, tpe, eff, loc) => () // TODO
+        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => () // TODO
+        case Expr.ParYield(frags, exp, tpe, eff, loc) => () // TODO
+        case Expr.Lazy(exp, tpe, loc) => () // TODO
+        case Expr.Force(exp, tpe, eff, loc) => () // TODO
+        case Expr.FixpointConstraintSet(cs, tpe, loc) => ()
+        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ()
+        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ()
+        case Expr.FixpointSolve(exp, tpe, eff, loc) => ()
+        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ()
+        case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ()
+        case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ()
+        case Expr.Error(m, tpe, eff) => ()
+      }
+    }
+
+    Visitor.visitRoot(root, EffectConsumer, acceptor)
+
+    val retEffHighlight = DocumentHighlight(Range.from(eff.loc), DocumentHighlightKind.Write)
+    val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+    val highlights = retEffHighlight :: expHighlights
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Acceptor): JObject = {
