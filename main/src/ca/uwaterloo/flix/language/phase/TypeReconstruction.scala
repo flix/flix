@@ -384,7 +384,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
       val eff = Type.mkDifference(e.eff, eff0, loc)
-      TypedAst.Expr.UncheckedCast(e, None, Some(eff), e.tpe, eff, loc)
+      TypedAst.Expr.Unsafe(e, eff0, e.tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
