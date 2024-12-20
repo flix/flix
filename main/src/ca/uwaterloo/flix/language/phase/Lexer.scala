@@ -351,7 +351,7 @@ object Lexer {
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
       case '\\' => TokenKind.Backslash
-      case _ if isMatch(".{") => TokenKind.DotCurlyL
+      case _ if isMatchPrev(".{") => TokenKind.DotCurlyL
       case '.' =>
         if (peek() == '.' && peekPeek().contains('.')) {
           advance()
@@ -376,15 +376,15 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("#{") => TokenKind.HashCurlyL
-      case _ if isMatch("#(") => TokenKind.HashParenL
+      case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
+      case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("//") => acceptLineOrDocComment()
-      case _ if isMatch("/*") => acceptBlockComment()
+      case _ if isMatchPrev("//") => acceptLineOrDocComment()
+      case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if peek().isLetter => acceptAnnotation()
       case '@' => TokenKind.At
-      case _ if isMatch("???") => TokenKind.HoleAnonymous
+      case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
       case _ if isOperator("::") => TokenKind.ColonColon
@@ -503,7 +503,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isMatch("regex\"") => acceptRegex()
+      case _ if isMatchPrev("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
@@ -564,10 +564,10 @@ object Lexer {
   }
 
   /**
-    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
+    * Checks whether the previous char and the following substring matches a keyword.
+    * Will advance the current position past the keyword if there is a match.
     */
-  private def isMatch(keyword: String)(implicit s: State): Boolean = {
+  private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
     if (s.current.offset + keyword.length - 1 > s.src.data.length) {
       return false
@@ -595,12 +595,43 @@ object Lexer {
   }
 
   /**
+    * Checks whether the following substring matches a keyword.
+    * Will advance the current position past the keyword if there is a match.
+    */
+  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean = {
+    // Check if the keyword can appear before eof.
+    if (s.current.offset + keyword.length > s.src.data.length) {
+      return false
+    }
+
+    // Check if the next n characters in source matches those of keyword one at a time.
+    val start = s.current.offset
+    var matches = true
+    var offset = 0
+    while (matches && offset < keyword.length) {
+      if (s.src.data(start + offset) != keyword(offset)) {
+        matches = false
+      } else {
+        offset += 1
+      }
+    }
+
+    if (matches) {
+      for (_ <- 1 until keyword.length) {
+        advance()
+      }
+    }
+
+    matches
+  }
+
+  /**
     * Checks whether the following substring matches a operator.
     * Note that __comparison includes current__.
     * Also note that this will advance the current position past the keyword if there is a match.
     */
   private def isOperator(op: String)(implicit s: State): Boolean = {
-    isSeparatedOperator(op) && isMatch(op)
+    isSeparatedOperator(op) && isMatchPrev(op)
   }
 
   /**
@@ -614,7 +645,7 @@ object Lexer {
     // This is because a symbol like 'not' can be imported from Java in a qualified path.
     // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be read as a name here.
     // We are assuming no literal keyword needs to be imported. So no importing something called 'true' from java.
-    isSeparated(keyword, allowDot = true) && isMatch(keyword)
+    isSeparated(keyword, allowDot = true) && isMatchPrev(keyword)
   }
 
   /**
@@ -623,7 +654,7 @@ object Lexer {
     * Also note that this will advance the current position past the keyword if there is a match.
     */
   private def isKeyword(keyword: String)(implicit s: State): Boolean = {
-    isSeparated(keyword) && isMatch(keyword)
+    isSeparated(keyword) && isMatchPrev(keyword)
   }
 
   /**
@@ -976,19 +1007,17 @@ object Lexer {
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
         // If this is reached an explicit number type might occur next
         case _ =>
-          val checkpoint = s.save()
-          return advance() match {
+          return peek() match {
             case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-            case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-            case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-            case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
-            case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
-            case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
-            case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
-            case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-            case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
+            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
+            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
+            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
+            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
             case _ =>
-              s.restore(checkpoint)
               if (isDecimal) {
                 error.getOrElse(TokenKind.LiteralFloat64)
               } else {
@@ -1039,19 +1068,17 @@ object Lexer {
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
         case _ =>
-          val checkpoint = s.save()
-          return advance() match {
+          return peek() match {
           case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
-          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
-          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
-          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
-          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+          case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
           case _ =>
-            s.restore(checkpoint)
             error.getOrElse(TokenKind.LiteralInt32)
         }
       }
