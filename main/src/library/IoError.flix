@@ -22,7 +22,7 @@
 ///
 /// The second element is a string that describes the error, meant to be used for debugging purposes.
 ///
-pub enum IoError(IoError.ErrorKind, String) with Eq
+pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
 
 mod IoError {
 
