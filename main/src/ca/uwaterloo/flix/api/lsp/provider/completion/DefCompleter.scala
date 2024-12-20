@@ -28,7 +28,7 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: String, ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (namespace.nonEmpty)
       root.defs.values.collect{
         case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = true) =>
@@ -59,7 +59,7 @@ object DefCompleter {
     * Checks if the definition matches the QName.
     * Names should match and the definition should be available.
     */
-  private def matchesDef(decl: TypedAst.Def, namespace: String, ident: String, uri: String, qualified: Boolean): Boolean = {
+  private def matchesDef(decl: TypedAst.Def, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
@@ -76,8 +76,9 @@ object DefCompleter {
     * Example:
     *   matchesQualifiedDef("A.B.fooBar", "A.B", "fB") => true
     */
-  private def matchesQualifiedDef(decl: TypedAst.Def, namespace: String, ident: String): Boolean = {
+  private def matchesQualifiedDef(decl: TypedAst.Def, namespace: List[String], ident: String): Boolean = {
     val qualifiedDef = decl.sym.toString
-    qualifiedDef.startsWith(namespace) && fuzzyMatch(ident, qualifiedDef.substring(namespace.length + 1))
+    val nsString = namespace.mkString(".")
+    qualifiedDef.startsWith(nsString) && fuzzyMatch(ident, qualifiedDef.substring(nsString.length + 1))
   }
 }

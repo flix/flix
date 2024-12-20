@@ -239,13 +239,13 @@ object CompletionUtils {
     *   - Source "A.B.C", QName(["A", "B"], "C") -> ("A.B", "C")
     *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
     */
-  def getNamespaceAndIdentFromQName(qn: QName, loc: SourceLocation): (String, String) = {
+  def getNamespaceAndIdentFromQName(qn: QName, loc: SourceLocation): (List[String], String) = {
     val ident = if (followedByDot(loc)) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
       if (followedByDot(loc)) List(qn.ident.name)
       else Nil
     }
-    (namespace.mkString("."), ident)
+    (namespace, ident)
   }
 
   /**
