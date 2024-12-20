@@ -17,31 +17,13 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ModCompletion, UseDefCompletion, UseEffCompletion, UseEnumCompletion, UseEnumTagCompletion, UseOpCompletion, UseSignatureCompletion, UseTrtCompletion}
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
-import ca.uwaterloo.flix.language.ast.Name.QName
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ResolutionError, WeederError}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object UseCompleter {
   /**
-    * Returns a List of Completions from UndefinedUse.
+    * Returns a List of Completions for use clause.
     */
-  def getCompletions(err: ResolutionError.UndefinedUse, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
-    getCompletions(err.qn, uri)
-
-  /**
-    * Returns a List of Completion from UnqualifiedUse.
-    */
-  def getCompletions(err: WeederError.UnqualifiedUse, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
-    getCompletions(err.qn, uri)
-
-  /**
-    * Returns a List of Completion from qualified name and uri.
-    */
-  private def getCompletions(qn: QName, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val namespace = qn.namespace.idents.map(_.name) ++ {
-      if (followedByDot(qn.loc)) List(qn.ident.name) else Nil
-    }
-    val ident = if(followedByDot(qn.loc)) "" else qn.ident.name
+  def getCompletions(uri: String, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
     val moduleSym = Symbol.mkModuleSym(namespace)
     root.modules.getOrElse(moduleSym, Nil).collect{
       case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => ModCompletion(mod)
@@ -49,72 +31,37 @@ object UseCompleter {
       case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)    => UseEffCompletion(eff.toString)
       case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name)   => UseDefCompletion(defn.toString)
       case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)    => UseTrtCompletion(trt.toString)
-    } ++ getSigCompletions(qn, uri) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
-  }
-
-  /**
-    * Returns true if the character immediately following the location is a dot.
-    * Note:
-    *   - loc.endCol will point to the next character after QName.
-    *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
-    */
-  private def followedByDot(loc: SourceLocation): Boolean = {
-    val line = loc.lineAt(loc.endLine)
-    loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
+    } ++ getSigCompletions(uri, namespace, ident) ++ getOpCompletions(namespace, ident) ++ getTagCompletions(namespace, ident)
   }
 
   /**
     * Returns a List of Completion for signatures.
     */
-  private def getSigCompletions(name: QName, uri: String)(implicit root: TypedAst.Root): Iterable[Completion] =
-    root.sigs.values.collect{
-      case sig if fuzzyMatch(name.ident.name, sig.sym.name) && (sig.spec.mod.isPublic || sig.sym.loc.source.name == uri) =>
+  private def getSigCompletions(uri: String, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val traitSym = Symbol.mkTraitSym(namespace.mkString("."))
+    root.traits.get(traitSym).map(_.sigs.collect {
+      case sig if fuzzyMatch(ident, sig.sym.name) && (sig.spec.mod.isPublic || sig.sym.loc.source.name == uri) =>
         UseSignatureCompletion(sig.sym.toString)
-    }
+    }).getOrElse(Nil)
+  }
 
   /**
     * Returns a List of Completion for ops.
     */
-  private def getOpCompletions(name: QName)(implicit root: TypedAst.Root): Iterable[Completion] =
-    root.effects.values.flatMap(_.ops).collect{
-      case op if fuzzyMatch(name.ident.name, op.sym.name) =>
-        UseOpCompletion(op.sym.toString)
-    }
+  private def getOpCompletions(namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val effectSym = Symbol.mkEffectSym(namespace.mkString("."))
+    root.effects.get(effectSym).map(_.ops.collect {
+      case op if fuzzyMatch(ident, op.sym.name) => UseOpCompletion(op.sym.toString)
+    }).getOrElse(Nil)
+  }
 
   /**
     * Returns a List of Completion for tags.
     */
-  private def getTagCompletions(qn: QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val enums = mkEnumSymNoTag(qn) ++ mkEnumSymWithTag(qn)
-    enums.flatMap(enum => enum.cases.collect{
-      case (_, c) => UseEnumTagCompletion(enum.sym, c)
-    })
-  }
-
-  /**
-    * Returns a List of Enum from qualified name, assuming no trailing tag.
-    *
-    * Example:
-    *   - qn = "Foo.Bar.Baz" => EnumSym([Foo, Bar], Baz, Unknown)
-    *   - qn = "Foo" => EnumSym([], Foo, Unknown)
-    */
-  private def mkEnumSymNoTag(qn: QName)(implicit root: TypedAst.Root): List[TypedAst.Enum] = {
-    val enumSym = new Symbol.EnumSym(qn.namespace.idents.map(_.name), qn.ident.name, SourceLocation.Unknown)
-    root.enums.get(enumSym).toList
-  }
-
-  /**
-    * Returns a List of Enum from qualified name, assuming a trailing tag.
-    * We will assume qn.ident is the tag, and create an EnumSym from only qn.namespace. Thus, qn.namespace should not be empty.
-    *
-    * Example:
-    *   - qn = "Foo.Bar.Ba" => EnumSym([Foo], Bar, Unknown)
-    *   - qn = "Foo.B" => EnumSym([], Foo, Unknown)
-    */
-  private def mkEnumSymWithTag(qn: QName)(implicit root: TypedAst.Root): List[TypedAst.Enum] = {
-    if (qn.namespace.idents.isEmpty)
-      return Nil
-    val enumSym = new Symbol.EnumSym(qn.namespace.idents.dropRight(1).map(_.name), qn.namespace.idents.last.name, SourceLocation.Unknown)
-    root.enums.get(enumSym).toList
+  private def getTagCompletions(namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val enumSym = Symbol.mkEnumSym(namespace.mkString("."))
+    root.enums.get(enumSym).map(_.cases.values.collect {
+      case tag if fuzzyMatch(ident, tag.sym.name) => UseEnumTagCompletion(tag.sym.toString)
+    }).getOrElse(Nil)
   }
 }
