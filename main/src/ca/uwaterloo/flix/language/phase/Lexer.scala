@@ -17,10 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -97,7 +97,30 @@ object Lexer {
       * This is compared to [[InterpolatedStringMaxNestingLevel]].
       */
     var interpolationNestingLevel: Int = 0
+
+    /** Save a checkpoint to revert to. */
+    def save(): Checkpoint = {
+      Checkpoint(
+        start = new Position(this.start.line, this.start.column, this.start.offset),
+        current = new Position(this.current.line, this.current.column, this.current.offset),
+        tokensLength = tokens.length,
+        interpolationNestingLevel = this.interpolationNestingLevel
+      )
+    }
+
+    /** Restore a previously saved checkpoint. No tokens must have been produced since the checkpoint was created. */
+    def restore(c: Checkpoint): Unit = {
+      if (tokens.length != c.tokensLength) throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
+      if (start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset)
+        throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
+      this.current.line = c.current.line
+      this.current.column = c.current.column
+      this.current.offset = c.current.offset
+      this.interpolationNestingLevel = c.interpolationNestingLevel
+    }
   }
+
+  private case class Checkpoint(start: Position, current: Position, tokensLength: Int, interpolationNestingLevel: Int)
 
   /**
     * A source position keeping track of both line, column as well as absolute character offset.
@@ -174,49 +197,6 @@ object Lexer {
     }
     s.current.offset += 1
     c
-  }
-
-  /**
-    * Retreats current position one char backwards while keeping track of line and column numbers too.
-    */
-  private def retreat()(implicit s: State): Unit = {
-    if (s.current.offset == 0) {
-      return
-    }
-    s.current.offset -= 1
-    val c = s.src.data(s.current.offset)
-    if (c == '\n') {
-      s.current.line -= 1
-      s.current.column = s.prevWidth
-      recomputePrevWidth()
-    } else {
-      s.current.column -= 1
-    }
-  }
-
-  /**
-    * Assuming that `s.current` is on the end of a line (i.e. on `\n`), recomputes the length of
-    * the previous line.
-    */
-  private def recomputePrevWidth()(implicit s: State): Unit = {
-    // Find the previous '\n' - the start of this current line.
-    var i = s.current.offset - 1
-    while (i >= 0 && s.src.data(i) != '\n') {
-      i -= 1
-    }
-    if (i == -1) {
-      // We are on the first line so there is not previous line.
-      s.prevWidth = -1
-    } else {
-      // Count the line width, avoiding out-of-bounds.
-      var width = 0
-      while (i >= 0 && s.src.data(i) != '\n') {
-        width += 1
-        i -= 1
-      }
-      s.prevWidth = width
-    }
-
   }
 
   /**
@@ -655,7 +635,8 @@ object Lexer {
     * and then the lexer needs to be retreated to just after "$".
     */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    var advances = 0
+    val checkpoint = s.save()
+    var advanced = false
     while (!eof()) {
       val p = peek()
 
@@ -668,9 +649,7 @@ object Lexer {
       if (p.isLower) {
         // This means that the opening '$' was a separator.
         // we need to rewind the lexer to just after '$'.
-        for (_ <- 0 until advances) {
-          retreat()
-        }
+        if (advanced) s.restore(checkpoint)
         return TokenKind.Dollar
       }
 
@@ -682,7 +661,7 @@ object Lexer {
       }
 
       advance()
-      advances += 1
+      advanced = true
     }
     TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
@@ -996,24 +975,26 @@ object Lexer {
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
         // If this is reached an explicit number type might occur next
-        case _ => return advance() match {
-          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
-          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
-          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
-          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
-          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
-          case _ =>
-            retreat()
-            if (isDecimal) {
-              error.getOrElse(TokenKind.LiteralFloat64)
-            } else {
-              error.getOrElse(TokenKind.LiteralInt32)
-            }
-        }
+        case _ =>
+          val checkpoint = s.save()
+          return advance() match {
+            case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+            case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+            case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+            case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+            case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+            case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+            case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+            case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+            case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+            case _ =>
+              s.restore(checkpoint)
+              if (isDecimal) {
+                error.getOrElse(TokenKind.LiteralFloat64)
+              } else {
+                error.getOrElse(TokenKind.LiteralInt32)
+              }
+          }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
@@ -1057,7 +1038,9 @@ object Lexer {
           advance()
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
-        case _ => return advance() match {
+        case _ =>
+          val checkpoint = s.save()
+          return advance() match {
           case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
           case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
           case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
@@ -1068,7 +1051,7 @@ object Lexer {
           case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
           case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
           case _ =>
-            retreat()
+            s.restore(checkpoint)
             error.getOrElse(TokenKind.LiteralInt32)
         }
       }
