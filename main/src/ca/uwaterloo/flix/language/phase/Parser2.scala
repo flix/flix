@@ -638,7 +638,7 @@ object Parser2 {
   private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
   /**
-    * Consumes a token if kind is in `kinds`.
+    * Consumes a token if kind is in `kinds` and wraps it in a [[TreeKind.Ident]].
     */
   private def nameUnqualified(kinds: Set[TokenKind], context: SyntacticContext)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
@@ -646,7 +646,7 @@ object Parser2 {
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
     if (current.isKeyword) {
-      // If the keyword is leads a declaration it's best to leave it be.
+      // If the keyword can start a declaration it's best to leave it be.
       if (!current.isFirstDecl) {
         advance()
       }
@@ -674,7 +674,7 @@ object Parser2 {
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
     if (current.isKeyword) {
-      // If the keyword is leads a declaration it's best to leave it be.
+      // If the keyword can start a declaration it's best to leave it be.
       if (!current.isFirstDecl) {
         advance()
       }
