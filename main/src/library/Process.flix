@@ -1,3 +1,4 @@
+
 /*
  *  Copyright 2024 Magnus Madsen
  *
@@ -15,21 +16,72 @@
  */
 
 ///
+/// Handles the created Process
+///
+enum ProcessHandle({stop = Unit -> Unit \ {Exec, IO}}, {exitValue = Unit -> Int32 \ {Exec, IO}}, 
+    {isAlive = Unit -> Bool \ {Exec, IO}})
+
+mod ProcessHandle {
+
+    ///
+    /// Stops the process
+    ///
+    pub def stop(ph: ProcessHandle) : Unit \ {IO, Exec} = match ph {
+        case ProcessHandle.ProcessHandle({stop}, _, _) => stop()
+    }
+
+    ///
+    /// Returns the exit value of the process
+    ///
+    pub def exitValue(ph: ProcessHandle) : Int32 \ {IO, Exec} = match ph {
+        case ProcessHandle.ProcessHandle(_, {exitValue}, _) => exitValue()
+    }
+
+    ///
+    ///  Returns status of the process, if it alive or not
+    ///
+    pub def isAlive(ph: ProcessHandle) : Bool \ {IO, Exec} = match ph {
+        case ProcessHandle.ProcessHandle(_, _, {isAlive}) => isAlive()
+    }
+}
+
+///
 /// An effect used to start a process outside the JVM.
 ///
 eff Process {
 
     ///
-    /// Immediately executes the command `cmd` passing the arguments `args`.
+    /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`
     ///
-    def exec(cmd: String, args: List[String]): Unit
-
+    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: String, env: Map[String, String]): ProcessHandle
 }
+
+
 
 mod Process {
 
     import java.lang.ProcessBuilder
     import java.lang.Runtime
+    import java.io.{File => JFile}
+
+
+    ///
+    /// Executes the command `cmd` with the arguments `args`
+    ///
+    pub def exec(cmd: String, args: List[String]): ProcessHandle \ Process =
+        Process.execWithCwdAndEnv(cmd, args, "", Map.empty())
+
+    ///
+    /// Executes the command `cmd` with the arguments `args`, by the path `cwd`
+    ///
+    pub def execWithCwd(cmd: String, args: List[String], cwd: String): ProcessHandle \ Process =
+        Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
+
+    ///
+    /// Executes the command `cmd` with the arguments `args` and with the environmental `env`
+    ///
+    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandle \ Process =
+        Process.execWithCwdAndEnv(cmd, args, "", env)
 
     ///
     /// Handles the `Process` effect of the given function `f`.
@@ -40,11 +92,17 @@ mod Process {
         run {
             f(x)
         } with Process {
-            def exec(cmd, args, k) = region rc {
+            def execWithCwdAndEnv(cmd, args, cwd, env, handler) = region rc {
                 let arr = List.toArray(rc, cmd :: args);
                 let pb = new ProcessBuilder(arr);
-                pb.start();
-                k()
+                pb.directory(new JFile(cwd));
+                foreach(e <- Map.toList(env)) {
+                    pb.environment().put(fst(e),snd(e));
+                    ()
+                };
+                let process = pb.start();
+                handler(ProcessHandle.ProcessHandle(stop = () -> process.destroy(),exitValue = () -> process.exitValue(),  
+                    isAlive = () -> process.isAlive()))
             }
         }
 
