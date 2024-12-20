@@ -47,9 +47,13 @@ object CompletionProvider {
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
-        case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(err, ctx.uri)
+        case err: WeederError.UnqualifiedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
-        case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(err, ctx.uri)
+        case err: ResolutionError.UndefinedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case err: ResolutionError.UndefinedTag =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           EnumCompleter.getCompletions(err, namespace, ident) ++
