@@ -1005,9 +1005,10 @@ object Lexer {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
+        // underscore in tail position
         case '_' =>
           advance()
-          TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
         case c =>
           return c match {
