@@ -664,6 +664,13 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
+    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+      (runEff, exp.eff) match {
+        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
+        case _ => visitExp(exp, env0, rc)
+      }
+
     case Expr.Without(exp, effUse, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
       visitExp(exp, env0, rc)
