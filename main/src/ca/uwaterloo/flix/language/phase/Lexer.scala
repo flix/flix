@@ -617,7 +617,7 @@ object Lexer {
     }
 
     if (matches) {
-      for (_ <- 1 until keyword.length) {
+      for (_ <- 0 until keyword.length) {
         advance()
       }
     }
@@ -1005,12 +1005,12 @@ object Lexer {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
+        case '_' =>
+          advance()
+          TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
-        case _ =>
-          return peek() match {
-            case '_' =>
-              advance()
-              TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+        case c =>
+          return c match {
             case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
             case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
             case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
@@ -1069,21 +1069,18 @@ object Lexer {
           advance()
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
-        case _ =>
-          return peek() match {
-          case '_' =>
-            advance()
-            TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-          case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-          case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-          case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
-          case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
-          case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
-          case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
-          case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-          case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
-          case _ =>
-            error.getOrElse(TokenKind.LiteralInt32)
+        case c =>
+          return c match {
+            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
+            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
+            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
+            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
+            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+            case _ =>
+              error.getOrElse(TokenKind.LiteralInt32)
         }
       }
     }
