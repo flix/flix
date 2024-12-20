@@ -231,21 +231,21 @@ object CompletionUtils {
   }
 
   /**
-    * Updates the given `qn` based on the character immediately following the location.
+    * Parse given `qn` based on the character immediately following the location.
     * If the character is a dot, we move the ident to the namespace.
-    * Otherwise, we will keep the `qn` as it is.
+    * Otherwise, we will just take namespace and ident out of qn.
     *
     * Example:
-    *   - Source "AA.BB", QName(["AA"], "BB") -> QName(["AA"], "BB")
-    *   - Source "AA.BB.", QName(["AA"], "BB") -> QName(["AA", "BB"], "")
+    *   - Source "A.B.C", QName(["A", "B"], "C") -> ("A.B", "C")
+    *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
     */
-  def updateQNameBasedOnDot(qn: QName, loc: SourceLocation): (List[String], String) = {
+  def getNamespaceAndIdentFromQName(qn: QName, loc: SourceLocation): (String, String) = {
     val ident = if (followedByDot(loc)) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
       if (followedByDot(loc)) List(qn.ident.name)
       else Nil
     }
-    (namespace, ident)
+    (namespace.mkString("."), ident)
   }
 
   /**

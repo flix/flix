@@ -28,7 +28,7 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: String, ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (namespace.nonEmpty)
       root.defs.values.collect{
         case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = true) =>
@@ -59,13 +59,25 @@ object DefCompleter {
     * Checks if the definition matches the QName.
     * Names should match and the definition should be available.
     */
-  private def matchesDef(decl: TypedAst.Def, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+  private def matchesDef(decl: TypedAst.Def, namespace: String, ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      fuzzyMatch(namespace.mkString(".") + "." + ident, decl.sym.toString)
+      matchesQualifiedDef(decl, namespace, ident)
     else
       fuzzyMatch(ident, decl.sym.name)
     isMatch && (isPublic || isInFile)
+  }
+
+  /**
+    * Checks if the namespace and ident from the error matches the qualified def.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    *   matchesQualifiedDef("A.B.fooBar", "A.B", "fB") => true
+    */
+  private def matchesQualifiedDef(decl: TypedAst.Def, namespace: String, ident: String): Boolean = {
+    val qualifiedDef = decl.sym.toString
+    qualifiedDef.startsWith(namespace) && fuzzyMatch(ident, qualifiedDef.substring(namespace.length + 1))
   }
 }

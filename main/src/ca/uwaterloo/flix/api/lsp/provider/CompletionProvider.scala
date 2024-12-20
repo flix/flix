@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.updateQNameBasedOnDot
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.getNamespaceAndIdentFromQName
 import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -52,7 +52,7 @@ object CompletionProvider {
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedName =>
-          val (namespace, ident) = updateQNameBasedOnDot(err.qn, err.loc)
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
             AutoUseCompleter.getCompletions(err) ++
