@@ -1008,7 +1008,9 @@ object Lexer {
         // If this is reached an explicit number type might occur next
         case _ =>
           return peek() match {
-            case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+            case '_' =>
+              advance()
+              TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
             case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
             case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
             case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
@@ -1069,7 +1071,9 @@ object Lexer {
         // If this is reached an explicit number type might occur next
         case _ =>
           return peek() match {
-          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case '_' =>
+            advance()
+            TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
           case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
           case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
           case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
