@@ -22,7 +22,7 @@
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
 @MustUse
-pub enum Result[e, t] with Eq, Order, ToString, Sendable {
+pub enum Result[e, t] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
 }

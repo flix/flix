@@ -21,7 +21,7 @@ import java.util.{Set => JSet}
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-pub enum Set[t] with Sendable {
+pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 

@@ -393,39 +393,6 @@ object TypeError {
   }
 
   /**
-    * Missing `Sendable` instance.
-    *
-    * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MissingInstanceSendable(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Sendable is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Sendable.
-         |
-         |${code(loc, s"missing Sendable instance")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To mark '${formatType(tpe, Some(renv))}' as sendable, either:
-         |
-         |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
-         |
-         |  enum Color with Sendable {
-         |    case Red, Green, Blue
-         |  }
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * Missing `ToString` instance.
     *
     * @param tpe  the type of the instance.

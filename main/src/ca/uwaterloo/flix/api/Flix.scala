@@ -93,6 +93,11 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
+    * A cache of error messages for incremental compilation.
+    */
+  private var cachedErrors: List[CompilationMessage] = Nil
+
+  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     *
     * The core library *must* be present for any program to compile.
@@ -123,7 +128,6 @@ class Flix {
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
-    "Sendable.flix" -> LocalResource.get("/src/library/Sendable.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
@@ -341,7 +345,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false, sctx))
+    addInput(name, Input.Text(name, text, sctx))
     this
   }
 
@@ -351,7 +355,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions))
+    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -396,11 +400,11 @@ class Flix {
   /**
     * Removes the given path `p` as a Flix source file.
     */
-  def remFlix(p: Path): Flix = {
+  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
+    remInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
@@ -429,7 +433,7 @@ class Flix {
     case None =>
       inputs += name -> input
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
       inputs += name -> input
   }
 
@@ -441,8 +445,8 @@ class Flix {
   private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None => // nop
     case Some(_) =>
-      changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
+      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
+      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.NoPermissions)
   }
 
   /**
@@ -507,6 +511,13 @@ class Flix {
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
       AstPrinter.resetPhaseFile()
+    }
+
+    // We mark all inputs that contains compilation errors as dirty.
+    // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
+    for (e <- cachedErrors) {
+      val i = e.loc.sp1.source.input
+      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
     }
 
     // The default entry point
@@ -583,6 +594,8 @@ class Flix {
             val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
             errors ++= safetyErrors
 
+            val (afterDependencies, _) = Dependencies.run(afterSafety)
+
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
               this.cachedParserCst = afterParser
@@ -590,10 +603,13 @@ class Flix {
               this.cachedDesugarAst = afterDesugar
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
-              this.cachedTyperAst = afterTyper
+              this.cachedTyperAst = afterDependencies
+
+              // We save all the current errors.
+              this.cachedErrors = errors.toList
             }
 
-            Some(afterSafety)
+            Some(afterDependencies)
         }
     }
     // Shutdown fork-join thread pool.
@@ -779,7 +795,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
   }
 
   /**
