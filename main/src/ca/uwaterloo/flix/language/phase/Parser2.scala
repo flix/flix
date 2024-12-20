@@ -738,7 +738,6 @@ object Parser2 {
     close(openBefore(first), TreeKind.QName)
   }
 
-
   /**
     * Consumes subsequent comments.
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
