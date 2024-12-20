@@ -27,7 +27,6 @@ eff Process {
 
 mod Process {
 
-    import java.lang.IllegalArgumentException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
