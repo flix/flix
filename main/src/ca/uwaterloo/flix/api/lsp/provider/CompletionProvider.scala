@@ -52,12 +52,12 @@ object CompletionProvider {
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedName =>
-          val qn = updateQNameBasedOnDot(err.qn, err.loc)
+          val (namespace, ident) = updateQNameBasedOnDot(err.qn, err.loc)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
             AutoUseCompleter.getCompletions(err) ++
             ExprCompleter.getCompletions(ctx) ++
-            DefCompleter.getCompletions(err, qn)
+            DefCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)

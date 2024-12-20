@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
-import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
@@ -29,15 +28,15 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, qn: QName)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    if (qn.namespace.idents.nonEmpty)
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
+    if (namespace.nonEmpty)
       root.defs.values.collect{
-        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = true) =>
+        case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = true) =>
           DefCompletion(decl, err.ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
-        case decl if matchesDef(decl, qn, err.loc.source.name, qualified = false) =>
+        case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = false) =>
           DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
       }
   }
@@ -60,13 +59,13 @@ object DefCompleter {
     * Checks if the definition matches the QName.
     * Names should match and the definition should be available.
     */
-  private def matchesDef(decl: TypedAst.Def, qn: QName, uri: String, qualified: Boolean): Boolean = {
+  private def matchesDef(decl: TypedAst.Def, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      fuzzyMatch(qn.toString, decl.sym.toString)
+      fuzzyMatch(namespace.mkString(".") + "." + ident, decl.sym.toString)
     else
-      fuzzyMatch(qn.ident.name, decl.sym.name)
+      fuzzyMatch(ident, decl.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

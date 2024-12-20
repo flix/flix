@@ -239,13 +239,13 @@ object CompletionUtils {
     *   - Source "AA.BB", QName(["AA"], "BB") -> QName(["AA"], "BB")
     *   - Source "AA.BB.", QName(["AA"], "BB") -> QName(["AA", "BB"], "")
     */
-  def updateQNameBasedOnDot(qn: QName, loc: SourceLocation): QName = {
+  def updateQNameBasedOnDot(qn: QName, loc: SourceLocation): (List[String], String) = {
     val ident = if (followedByDot(loc)) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
       if (followedByDot(loc)) List(qn.ident.name)
       else Nil
     }
-    Name.mkQName(namespace, ident, SourceLocation.Unknown)
+    (namespace, ident)
   }
 
   /**
