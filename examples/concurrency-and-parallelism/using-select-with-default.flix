@@ -1,6 +1,4 @@
-def sendMessage(s: Sender[String]): Unit \ {Chan, IO} =
-    use Time.Duration.fromMilliSeconds;
-    Thread.sleep(fromMilliSeconds(5));
+def sendMessage(s: Sender[String]): Unit \ Chan =
     Channel.send("Hello World", s)
 
 def recvMessage(rx: Receiver[String]): Unit \ {Chan, NonDet, IO} =
@@ -12,6 +10,6 @@ def recvMessage(rx: Receiver[String]): Unit \ {Chan, NonDet, IO} =
 def main(): Unit \ {Chan, NonDet, IO} =
     region rc {
         let (s, r) = Channel.buffered(1);
-        spawn sendMessage(s) @ rc;
-        spawn recvMessage(r) @ rc
+        spawn recvMessage(r) @ rc;
+        spawn sendMessage(s) @ rc
     }
