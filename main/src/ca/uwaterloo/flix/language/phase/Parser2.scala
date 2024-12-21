@@ -351,7 +351,15 @@ object Parser2 {
     * found token if possible.
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
-    val token = nth(0)
+    nthAnyOpt(0, kinds)
+  }
+
+  /**
+    * Checks if the parser is at a token of kind in `kinds` with `lookahead` and returns the
+    * found token if possible.
+    */
+  private def nthAnyOpt(lookahead: Int, kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
+    val token = nth(lookahead)
     Some(token).filter(kinds.contains)
   }
 
@@ -736,6 +744,51 @@ object Parser2 {
     }
 
     close(openBefore(first), TreeKind.QName)
+  }
+
+  /**
+    * Returns true if the next token is (close to) a sequence of dot-separated `kind` tokens followed by an open curly.
+    *
+    * @param tail if any kind found is in `tail` then no further dot separated tokens will be consume
+    */
+  private def atNameAndCurly(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
+    // Check if we are at a keyword.
+    val current = nth(0)
+    if (current.isKeyword) return true
+
+    val foundToken = nthAnyOpt(0, kinds) match {
+      case Some(v) => v
+      case None => return false
+    }
+
+    var isTail: Boolean = tail.contains(foundToken)
+    var continue = true
+    var i = 1 // 0 is already read
+    while (continue && !isTail) {
+      nth(i) match {
+        case TokenKind.Dot =>
+          if (!kinds.contains(nth(i + 1))) {
+            // Trailing dot, invalid qualified name.
+            // if the next is a '{' then it is close to a name and curly
+            if (nth(i + 1) == TokenKind.CurlyL) return true
+            else return false
+          } else {
+            val found = nthAnyOpt(i + 1, kinds) match {
+              case Some(v) => v
+              case None => return false
+            }
+            isTail = tail.contains(found)
+            i += 2 // go past the dot and found
+          }
+        case TokenKind.DotWhiteSpace if kinds.contains(nth(i + 1)) =>
+          // SomeName. otherName is almost a name, so continue
+          i += 2 // go past the dot and found
+        case _ => continue = false
+      }
+    }
+    // if the next token is curly, then true
+    if (nth(i) == TokenKind.CurlyL) true
+    else false
   }
 
   /**
@@ -2509,22 +2562,28 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
-      if (at(TokenKind.CurlyL)) {
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.WithRule,
-          getItem = withRule,
-          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
-          breakWhen = _.isRecoverExpr,
-          separation = Separation.Optional(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
-          context = SyntacticContext.Expr.OtherExpr
-        )
-        close(mark, TreeKind.Expr.RunWithBodyExpr)
+      if (atNameAndCurly(NAME_EFFECT)) {
+        nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
+        if (at(TokenKind.CurlyL)) {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.WithRule,
+            getItem = withRule,
+            checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+            breakWhen = _.isRecoverExpr,
+            separation = Separation.Optional(TokenKind.Comma),
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR,
+            context = SyntacticContext.Expr.OtherExpr
+          )
+          close(mark, TreeKind.Expr.RunWithBodyExpr)
+        } else {
+          val token = nth(0)
+          closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+        }
       } else {
-        val token = nth(0)
-        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+        val mark = open()
+        expression()
+        close(mark, TreeKind.Expr.RunWithBodyExpr)
       }
     }
 

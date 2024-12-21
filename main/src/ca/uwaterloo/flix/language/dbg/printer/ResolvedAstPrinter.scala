@@ -103,6 +103,7 @@ object ResolvedAstPrinter {
     case Expr.TryWith(exp, eff, rules, _) => DocAst.Expr.TryWith(print(exp), eff.sym, rules.map {
       case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
     })
+    case Expr.RunWith(exp, handler, _) => DocAst.Expr.RunWith(print(exp), print(handler))
     case Expr.Do(op, exps, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown

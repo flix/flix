@@ -290,6 +290,11 @@ object EffectVerifier {
       rules.foreach { r => visitExp(r.exp) }
       // TODO effect stuff
       ()
+    case Expr.RunWith(exp, handler, tpe, eff, loc) =>
+      visitExp(exp)
+      visitExp(handler)
+      // TODO effect stuff
+      ()
     case Expr.Do(op, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO effect stuff
