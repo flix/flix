@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.getNamespaceAndIdentFromQName
 import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -46,9 +47,13 @@ object CompletionProvider {
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): JObject = {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
-        case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
+        case err: WeederError.UnqualifiedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-        case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ ExprCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
@@ -78,7 +83,7 @@ object CompletionProvider {
           case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
 
           // Uses.
-          case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
           case SyntacticContext.WithClause =>
