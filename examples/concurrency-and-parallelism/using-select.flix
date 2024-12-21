@@ -17,7 +17,7 @@ def main(): Unit \ {Chan, NonDet, IO} =
         spawn mooo(s1, 0) @ rc;
         spawn meow(s2, 3) @ rc;
         select {
-            case m <- recv(r1) => m |> println
-            case m <- recv(r2) => m |> println
+            case m <- recv(r1) => println(m)
+            case m <- recv(r2) => println(m)
         }
     }
