@@ -25,21 +25,21 @@ mod ProcessHandle {
     ///
     /// Returns the exit value of the process
     ///
-    pub def exitValue(ph: ProcessHandle) : Int32 \ {IO, Exec} = match ph {
+    pub def exitValue(ph: ProcessHandle): Int32 \ {IO, Exec} = match ph {
         case ProcessHandle.ProcessHandle(methods) => methods#exitValue()
     }
 
     ///
     ///  Returns status of the process, if it alive or not
     ///
-    pub def isAlive(ph: ProcessHandle) : Bool \ {IO, Exec} = match ph {
+    pub def isAlive(ph: ProcessHandle): Bool \ {IO, Exec} = match ph {
         case ProcessHandle.ProcessHandle(methods) => methods#isAlive()
     }
 
     ///
     /// Stops the process
     ///
-    pub def stop(ph: ProcessHandle) : Unit \ {IO, Exec} = match ph {
+    pub def stop(ph: ProcessHandle): Unit \ {IO, Exec} = match ph {
         case ProcessHandle.ProcessHandle(methods) => methods#stop()
     }
 }

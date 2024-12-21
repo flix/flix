@@ -27,6 +27,12 @@ eff Process {
 
 mod Process {
 
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.lang.IllegalArgumentException
+    import java.lang.SecurityException
+    import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
@@ -54,26 +60,31 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Process) + {Exec, IO, Abort} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError,b] \ (ef - Process) + {Exec, IO} = x ->
         run {
-            f(x)
+            Ok(f(x))
         } with Process {
             def execWithCwdAndEnv(cmd, args, cwd, env, handler) = region rc {
-                let arr = List.toArray(rc, cmd :: args);
-                let pb = new ProcessBuilder(arr);
-                match cwd {
-                    case Some("") => Abort.abort("given an empty directory as an argument")
-                    case Some(cwd) => pb.directory(new JFile(cwd)); ()
-                    case None => ()
-                };
-                foreach(e <- Map.toList(env)) {
-                    pb.environment().put(fst(e), snd(e));
-                    ()
-                };
-                let process = pb.start();
-                handler(ProcessHandle.ProcessHandle({stop = () -> process.destroy(), exitValue = () -> process.exitValue(),  
-                    isAlive = () -> process.isAlive()})
-                    )
+                try {
+                    let arr = List.toArray(rc, cmd :: args);
+                    let pb = new ProcessBuilder(arr);
+                    foreach(e <- Map.toList(env)) {
+                        pb.environment().put(fst(e), snd(e));
+                        ()
+                    };
+                    match cwd {
+                        case Some("") => throw new IllegalArgumentException("given an empty directory as an argument")
+                        case Some(cwd) => pb.directory(new JFile(cwd)); ()
+                        case None => ()
+                    };
+                    let process = pb.start();
+                    handler(ProcessHandle.ProcessHandle({stop = () -> process.destroy(),
+                        exitValue = () -> process.exitValue(), isAlive = () -> process.isAlive()}))
+                } catch {
+                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             }
         }
 
@@ -82,7 +93,7 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError,a] \ (ef - Process) + {Exec, IO} = handle(f)()
 
 }
 
