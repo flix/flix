@@ -318,7 +318,6 @@ object HighlightProvider {
           case Some(defn) => Some(highlightEffectTVars(defn.exp.loc, tvar))
           case None => Some(highlightTypeVarSym(tvar.sym))
         }
-      case Type.Var(sym, _) :: _ => Some(highlightTypeVarSym(sym))
       // Variables
       case Binder(sym, _) :: _ => Some(highlightVarSym(sym))
       case TypedAst.Expr.Var(varSym, _, _) :: _ => Some(highlightVarSym(varSym))
