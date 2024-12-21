@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeC
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
 
+import scala.annotation.tailrec
+
 /**
   * Provides the means to handle an LSP highlight request.
   */
@@ -153,7 +155,7 @@ object HighlightProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, InsideAcceptor(uri, pos))
-    println(stackConsumer.getStack.take(4).reverse.mkString("\n\n===\n\n","\n\n","\n\n===\n\n"))
+    println(stackConsumer.getStack.take(10).reverse.mkString("\n\n===\n\n","\n\n","\n\n===\n\n"))
 
     val topFiltered = stackConsumer.getStack match {
       case head :: tail if !ifDefThenInSym(uri, pos)(head) => tail
@@ -276,9 +278,11 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
-      case (tvar @ Type.Var(_, loc)) :: TypedAst.Def(_, _, body, _) :: _ => Some(highlightEffectTVars(body.loc, tvar, loc))
-      case Type.Cst(TypeConstructor.Effect(sym), loc) :: TypedAst.Def(_, _, _, scope) :: _ => Some(highlightEffectConcrete(scope, sym, loc))
-      case Type.Cst(TypeConstructor.Effect(sym), _) :: _ => Some(highlightEffectSym(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), loc) :: tail =>
+        getDefAncestorOfEff(tail) match {
+          case Some(defn) => Some(highlightEffectConcrete(defn.exp.loc, sym, loc))
+          case None => Some(highlightEffectSym(sym))
+        }
       case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) :: _ => Some(highlightEnumSym(sym))
@@ -309,6 +313,11 @@ object HighlightProvider {
       case Type.Alias(AliasConstructor(sym, _), _, _, _) :: _ => Some(highlightTypeAliasSym(sym))
       // Type Variables
       case TypedAst.TypeParam(_, sym, _) :: _ => Some(highlightTypeVarSym(sym))
+      case (tvar: Type.Var) :: tail =>
+        getDefAncestorOfEff(tail) match {
+          case Some(defn) => Some(highlightEffectTVars(defn.exp.loc, tvar))
+          case None => Some(highlightTypeVarSym(tvar.sym))
+        }
       case Type.Var(sym, _) :: _ => Some(highlightTypeVarSym(sym))
       // Variables
       case Binder(sym, _) :: _ => Some(highlightVarSym(sym))
@@ -318,7 +327,14 @@ object HighlightProvider {
     }
   }
 
-  private def highlightEffectTVars(scope: SourceLocation, tvar: Type.Var, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
+  @tailrec
+  private def getDefAncestorOfEff(stack: List[AnyRef]): Option[TypedAst.Def] = stack match {
+    case (_: Type) :: tail => getDefAncestorOfEff(tail)
+    case (defn: TypedAst.Def) :: _ => Some(defn)
+    case _ => None
+  }
+
+  private def highlightEffectTVars(scope: SourceLocation, tvar: Type.Var)(implicit root: Root, acceptor: Acceptor): JObject = {
     var exps: List[SourceLocation] = Nil
 
     def consider(exp: Expr): Unit = {
@@ -330,7 +346,7 @@ object HighlightProvider {
 
     Visitor.visitRoot(root, consumer, acceptor)
 
-    val retEffHighlight = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val retEffHighlight = DocumentHighlight(Range.from(tvar.loc), DocumentHighlightKind.Write)
     val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
     val highlights = retEffHighlight :: expHighlights
 
