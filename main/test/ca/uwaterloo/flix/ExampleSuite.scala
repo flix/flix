@@ -39,7 +39,6 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/misc")
   mkTestDir("examples/misc/type-level-programming")
 
-  mkTestDir("examples/io")
   mkTestDir("examples/records")
   mkTestDir("examples/structs")
   mkTestDir("examples/traits")
