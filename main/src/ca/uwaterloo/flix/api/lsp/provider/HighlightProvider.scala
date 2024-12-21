@@ -337,6 +337,7 @@ object HighlightProvider {
     var exps: List[SourceLocation] = Nil
 
     def consider(exp: Expr): Unit = {
+      if (!scope.contains(exp.loc)) { return }
       if (!exp.eff.typeVars.contains(tvar)) { return }
       exps = exp.loc :: exps
     }
@@ -357,8 +358,8 @@ object HighlightProvider {
     var exps: List[SourceLocation] = Nil
 
     def consider(exp: Expr): Unit = {
+      if (!scope.contains(exp.loc)) { return }
       if (!exp.eff.effects.contains(sym)) { return }
-      // TODO also filter out anything not in `scope`
       exps = exp.loc :: exps
     }
 
