@@ -1,10 +1,10 @@
+use Time.Duration.fromMilliSeconds;
+
 def sendMessage(s: Sender[String]): Unit \ {Chan, IO} =
-    use Time.Duration.fromMilliSeconds;
     Thread.sleep(fromMilliSeconds(5));
     Channel.send("Hello World", s)
 
 def recvMessage(c: Receiver[String]): String \ {Chan, NonDet, IO} =
-    use Time.Duration.fromMilliSeconds;
     let t = Channel.timeout(fromMilliSeconds(1));
     select {
         case m <- recv(c) => m
