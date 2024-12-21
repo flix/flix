@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 object SymUse {
@@ -37,7 +38,7 @@ object SymUse {
   /**
     * Represents a use of an effect sym.
     */
-  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
+  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName, loc: SourceLocation)
 
   /**
     * Represents a use of a LocalDef sym.
