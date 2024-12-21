@@ -21,8 +21,8 @@ class ExampleSuite extends FlixSuite(incremental = true) {
 
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDir("examples/algebraic-effects")
   mkTestDir("examples/concurrency-and-parallelism")
+  mkTestDir("examples/effects-and-handlers")
   mkTestDir("examples/fixpoints")
   mkTestDir("examples/functional-style")
   mkTestDir("examples/imperative-style")
