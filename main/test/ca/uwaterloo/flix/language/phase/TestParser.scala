@@ -1110,4 +1110,35 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("MinusCase.NoBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.YesBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.Capital.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -ABC
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }

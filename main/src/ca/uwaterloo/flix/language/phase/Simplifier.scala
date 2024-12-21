@@ -638,6 +638,13 @@ object Simplifier {
         val op = AtomicOp.InvokeMethod(method)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
+      case (MonoType.BigInt, _) =>
+        val bigIntClass = Class.forName("java.math.BigInteger")
+        val objClass = Class.forName("java.lang.Object")
+        val method = bigIntClass.getMethod("equals", objClass)
+        val op = AtomicOp.InvokeMethod(method)
+        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
+
       case _ => // fallthrough
     }
 

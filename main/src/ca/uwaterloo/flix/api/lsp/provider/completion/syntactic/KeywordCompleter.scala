@@ -62,6 +62,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("@Test"            , Priority.Low),
       Completion.KeywordCompletion("trait"            , Priority.High),
       Completion.KeywordCompletion("type"             , Priority.Higher),
+      // U
+      Completion.KeywordCompletion("use"              , Priority.Default),
       // W
       Completion.KeywordCompletion("with"             , Priority.Default),
     )
