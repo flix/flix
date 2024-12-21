@@ -204,7 +204,7 @@ object HighlightProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, _, loc) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -274,7 +274,7 @@ object HighlightProvider {
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) => Some(highlightEffectSym(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => Some(highlightEffectSym(sym))
-      case SymUse.EffectSymUse(sym, _) => Some(highlightEffectSym(sym))
+      case SymUse.EffectSymUse(sym, _, _) => Some(highlightEffectSym(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(highlightEnumSym(sym))
       case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(highlightEnumSym(sym))

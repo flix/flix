@@ -1284,7 +1284,7 @@ object Resolver {
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
           checkEffectIsAccessible(decl, ns0, eff.loc)
-          val effUse = EffectSymUse(decl.sym, eff.loc)
+          val effUse = EffectSymUse(decl.sym, eff, eff.loc)
           val expVal = resolveExp(exp, env0)
           mapN(expVal) {
             case e => ResolvedAst.Expr.Without(e, effUse, loc)
@@ -1732,7 +1732,7 @@ object Resolver {
     lookupEffect(eff, env0, ns, root) match {
       case Result.Ok(decl) =>
         checkEffectIsAccessible(decl, ns, eff.loc)
-        val effUse = EffectSymUse(decl.sym, eff.loc)
+        val effUse = EffectSymUse(decl.sym, eff, eff.loc)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body) =>
             val opVal = findOpInEffect(ident, decl)
