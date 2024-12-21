@@ -111,7 +111,7 @@ object GotoProvider {
     // Defs
     case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
     // Effects
-    case SymUse.EffectSymUse(sym, _, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
+    case symUse: SymUse.EffectSymUse => Some(mkGoto(LocationLink.fromEffectSym(symUse.sym, symUse.loc)))
     case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
     case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
     // Enums
@@ -170,7 +170,7 @@ object GotoProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, _, loc) => loc.isReal
+    case symUse: SymUse.EffectSymUse => symUse.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal

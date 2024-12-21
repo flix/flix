@@ -38,7 +38,9 @@ object SymUse {
   /**
     * Represents a use of an effect sym.
     */
-  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName, loc: SourceLocation)
+  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName) {
+    def loc: SourceLocation = qname.loc
+  }
 
   /**
     * Represents a use of a LocalDef sym.

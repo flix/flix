@@ -167,7 +167,7 @@ object FindReferencesProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, _, loc) => loc.isReal
+    case symUse: SymUse.EffectSymUse => symUse.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -208,7 +208,7 @@ object FindReferencesProvider {
     case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
     // Effects
     case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-    case SymUse.EffectSymUse(sym, _, _) => Some(getEffectSymOccurs(sym))
+    case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
     case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
     // Enums
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
