@@ -490,14 +490,11 @@ object ConstraintSolver {
   def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")
-    val sendableSym = Symbol.mkTraitSym("Sendable")
     val toStringSym = Symbol.mkTraitSym("ToString")
     if (sym == eqSym) {
       TypeError.MissingInstanceEq(tpe, renv, loc)
     } else if (sym == orderSym) {
       TypeError.MissingInstanceOrder(tpe, renv, loc)
-    } else if (sym == sendableSym) {
-      TypeError.MissingInstanceSendable(tpe, renv, loc)
     } else if (sym == toStringSym) {
       TypeError.MissingInstanceToString(tpe, renv, loc)
     } else {
