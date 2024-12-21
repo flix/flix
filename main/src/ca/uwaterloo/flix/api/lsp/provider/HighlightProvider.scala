@@ -21,10 +21,12 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, CheckedCastType, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
+
+import scala.annotation.tailrec
 
 /**
   * Provides the means to handle an LSP highlight request.
@@ -63,8 +65,8 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
-    val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
-    val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
+    val highlightRight = highlightAny(searchRightOfCursor(uri, pos), uri)
+    val highlightLeft = highlightAny(searchLeftOfCursor(uri, pos), uri)
 
     highlightRight
       .orElse(highlightLeft)
@@ -93,11 +95,11 @@ object HighlightProvider {
     * @return     the most precise AST node under the [[Position]] immediately left
     *             of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
+  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = pos match {
       case Position(line, character) if character >= 2 =>
         val leftOfCursor = Position(line, character - 1)
         search(uri, leftOfCursor)
-      case _ => None
+      case _ => Nil
     }
 
   /**
@@ -120,7 +122,7 @@ object HighlightProvider {
     * @return     the most precise AST node under the [[Position]] immediately right
     *             of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     search(uri, pos)
   }
 
@@ -150,19 +152,22 @@ object HighlightProvider {
     * @param root the [[Root]] AST node of the Flix project.
     * @return     the most precise AST under the cursor if there is one. Otherwise, returns `None`.
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     val stackConsumer = StackConsumer()
     Visitor.visitRoot(root, stackConsumer, InsideAcceptor(uri, pos))
-    stackConsumer
-      .getStack
-      .filter(isNotEmptyRecord)
-      .filter(ifDefThenInSym(uri, pos))
-      .filter(ifSigThenInSym(uri, pos))
-      .filter(ifOpThenInSym(uri, pos))
-      .filter(ifTraitThenInSym(uri, pos))
-      .filter(ifEnumThenInSym(uri, pos))
-      .filter(isReal)
-      .headOption
+    println(stackConsumer.getStack.take(10).reverse.mkString("\n\n===\n\n","\n\n","\n\n===\n\n"))
+
+    val topFiltered = stackConsumer.getStack match {
+      case head :: tail if !ifDefThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifSigThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifOpThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifTraitThenInSym(uri, pos)(head) => tail
+      case head :: tail if !ifEnumThenInSym(uri, pos)(head) => tail
+      case head :: tail if !isNotEmptyRecord(head) => tail
+      case stack => stack
+    }
+
+    topFiltered.filter(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
@@ -261,55 +266,118 @@ object HighlightProvider {
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  private def highlightAny(x: AnyRef, uri: String)(implicit root: Root): Option[JObject] = {
+  private def highlightAny(x: List[AnyRef], uri: String)(implicit root: Root): Option[JObject] = {
     implicit val acceptor: Acceptor = FileAcceptor(uri)
     x match {
       // Assoc Types
-      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(highlightAssocTypeSym(sym))
-      case SymUse.AssocTypeSymUse(sym, _) => Some(highlightAssocTypeSym(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(highlightAssocTypeSym(sym))
+      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) :: _ => Some(highlightAssocTypeSym(sym))
+      case SymUse.AssocTypeSymUse(sym, _) :: _ => Some(highlightAssocTypeSym(sym))
+      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) :: _ => Some(highlightAssocTypeSym(sym))
       // Defs
-      case TypedAst.Def(sym, _, _, _) => Some(highlightDefnSym(sym))
-      case SymUse.DefSymUse(sym, _) => Some(highlightDefnSym(sym))
+      case TypedAst.Def(sym, _, _, _) :: _ => Some(highlightDefnSym(sym))
+      case SymUse.DefSymUse(sym, _) :: _ => Some(highlightDefnSym(sym))
       // Effects
-      case TypedAst.Effect(_, _, _, sym, _, _) => Some(highlightEffectSym(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(highlightEffectSym(sym))
-      case SymUse.EffectSymUse(sym, _) => Some(highlightEffectSym(sym))
+      case TypedAst.Effect(_, _, _, sym, _, _) :: _ => Some(highlightEffectSym(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), loc) :: tail =>
+        getDefAncestorOfEff(tail) match {
+          case Some(defn) => Some(highlightEffectConcrete(defn.exp.loc, sym, loc))
+          case None => Some(highlightEffectSym(sym))
+        }
+      case SymUse.EffectSymUse(sym, _) :: _ => Some(highlightEffectSym(sym))
       // Enums & Cases
-      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(highlightEnumSym(sym))
-      case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(highlightEnumSym(sym))
-      case TypedAst.Case(sym, _, _, _) => Some(highlightCaseSym(sym))
-      case SymUse.CaseSymUse(sym, _) => Some(highlightCaseSym(sym))
+      case TypedAst.Enum(_, _, _, sym, _, _, _, _) :: _ => Some(highlightEnumSym(sym))
+      case Type.Cst(TypeConstructor.Enum(sym, _), _) :: _ => Some(highlightEnumSym(sym))
+      case TypedAst.Case(sym, _, _, _) :: _ => Some(highlightCaseSym(sym))
+      case SymUse.CaseSymUse(sym, _) :: _ => Some(highlightCaseSym(sym))
       // Ops
-      case TypedAst.Op(sym, _, _) => Some(highlightOpSym(sym))
-      case SymUse.OpSymUse(sym, _) => Some(highlightOpSym(sym))
+      case TypedAst.Op(sym, _, _) :: _ => Some(highlightOpSym(sym))
+      case SymUse.OpSymUse(sym, _) :: _ => Some(highlightOpSym(sym))
       // Records
-      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) :: _ => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) :: _ => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordSelect(_, label, _, _, _) :: _ => Some(highlightLabel(label))
       // Signatures
-      case TypedAst.Sig(sym, _, _, _) => Some(highlightSigSym(sym))
-      case SymUse.SigSymUse(sym, _) => Some(highlightSigSym(sym))
+      case TypedAst.Sig(sym, _, _, _) :: _ => Some(highlightSigSym(sym))
+      case SymUse.SigSymUse(sym, _) :: _ => Some(highlightSigSym(sym))
       // Structs
-      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(highlightStructSym(sym))
-      case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(highlightStructSym(sym))
-      case TypedAst.StructField(sym, _, _) => Some(highlightStructFieldSym(sym))
-      case SymUse.StructFieldSymUse(sym, _) => Some(highlightStructFieldSym(sym))
+      case TypedAst.Struct(_, _, _, sym, _, _, _, _) :: _ => Some(highlightStructSym(sym))
+      case Type.Cst(TypeConstructor.Struct(sym, _), _) :: _ => Some(highlightStructSym(sym))
+      case TypedAst.StructField(sym, _, _) :: _ => Some(highlightStructFieldSym(sym))
+      case SymUse.StructFieldSymUse(sym, _) :: _ => Some(highlightStructFieldSym(sym))
       // Traits
-      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(highlightTraitSym(sym))
-      case SymUse.TraitSymUse(sym, _) => Some(highlightTraitSym(sym))
-      case TraitConstraint.Head(sym, _) => Some(highlightTraitSym(sym))
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) :: _ => Some(highlightTraitSym(sym))
+      case SymUse.TraitSymUse(sym, _) :: _ => Some(highlightTraitSym(sym))
+      case TraitConstraint.Head(sym, _) :: _ => Some(highlightTraitSym(sym))
       // Type Aliases
-      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(highlightTypeAliasSym(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
+      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) :: _ => Some(highlightTypeAliasSym(sym))
+      case Type.Alias(AliasConstructor(sym, _), _, _, _) :: _ => Some(highlightTypeAliasSym(sym))
       // Type Variables
-      case TypedAst.TypeParam(_, sym, _) => Some(highlightTypeVarSym(sym))
-      case Type.Var(sym, _) => Some(highlightTypeVarSym(sym))
+      case TypedAst.TypeParam(_, sym, _) :: _ => Some(highlightTypeVarSym(sym))
+      case (tvar: Type.Var) :: tail =>
+        getDefAncestorOfEff(tail) match {
+          case Some(defn) => Some(highlightEffectTVars(defn.exp.loc, tvar))
+          case None => Some(highlightTypeVarSym(tvar.sym))
+        }
       // Variables
-      case Binder(sym, _) => Some(highlightVarSym(sym))
-      case TypedAst.Expr.Var(varSym, _, _) => Some(highlightVarSym(varSym))
+      case Binder(sym, _) :: _ => Some(highlightVarSym(sym))
+      case TypedAst.Expr.Var(varSym, _, _) :: _ => Some(highlightVarSym(varSym))
 
       case _ => None
+    }
+  }
+
+  @tailrec
+  private def getDefAncestorOfEff(stack: List[AnyRef]): Option[TypedAst.Def] = stack match {
+    case (_: Type) :: tail => getDefAncestorOfEff(tail)
+    case (defn: TypedAst.Def) :: _ => Some(defn)
+    case _ => None
+  }
+
+  private def highlightEffectTVars(scope: SourceLocation, tvar: Type.Var)(implicit root: Root, acceptor: Acceptor): JObject = {
+    var exps: List[SourceLocation] = Nil
+
+    def consider(exp: Expr): Unit = {
+      if (!scope.contains(exp.loc)) { return }
+      if (!exp.eff.typeVars.contains(tvar)) { return }
+      exps = exp.loc :: exps
+    }
+
+    val consumer = EffectConsumer(consider)
+
+    Visitor.visitRoot(root, consumer, acceptor)
+
+    val retEffHighlight = DocumentHighlight(Range.from(tvar.loc), DocumentHighlightKind.Write)
+    val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+    val highlights = retEffHighlight :: expHighlights
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+
+  }
+
+  private def highlightEffectConcrete(scope: SourceLocation, sym: Symbol.EffectSym, loc: SourceLocation)(implicit root: Root, acceptor: Acceptor): JObject = {
+    var exps: List[SourceLocation] = Nil
+
+    def consider(exp: Expr): Unit = {
+      if (!scope.contains(exp.loc)) { return }
+      if (!exp.eff.effects.contains(sym)) { return }
+      exps = exp.loc :: exps
+    }
+
+    val consumer = EffectConsumer(consider)
+
+    Visitor.visitRoot(root, consumer, acceptor)
+
+    val retEffHighlight = DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write)
+    val expHighlights = exps.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+    val highlights = retEffHighlight :: expHighlights
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+  }
+
+  private case class EffectConsumer(consider: Expr => Unit) extends Consumer {
+    override def consumeExpr(exp: Expr): Unit = exp match {
+      case Expr.Do(_, _, _, _, _) => consider(exp)
+      case _ => ()
     }
   }
 
