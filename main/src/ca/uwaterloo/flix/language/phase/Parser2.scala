@@ -2581,7 +2581,6 @@ object Parser2 {
           closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
         }
       } else {
-        throw new RuntimeException(s"${currentSourceLocation()}")
         val mark = open()
         expression()
         close(mark, TreeKind.Expr.RunWithBodyExpr)
