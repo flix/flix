@@ -752,18 +752,18 @@ object Parser2 {
     * @param tail if any kind found is in `tail` then no further dot separated tokens will be consume
     */
   private def atNameAndCurly(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
-    // Check if we are at a keyword and emit nice error if so.
+    // Check if we are at a keyword.
     val current = nth(0)
-    if (current.isKeyword) return false
+    if (current.isKeyword) return true
 
-    val foundToken = nthAnyOpt(1, kinds) match {
+    val foundToken = nthAnyOpt(0, kinds) match {
       case Some(v) => v
       case None => return false
     }
 
     var isTail: Boolean = tail.contains(foundToken)
     var continue = true
-    var i = 2 // 0 and 1 is already read
+    var i = 1 // 0 is already read
     while (continue && !isTail) {
       nth(i) match {
         case TokenKind.Dot =>
@@ -786,8 +786,8 @@ object Parser2 {
         case _ => continue = false
       }
     }
-    // if there was some kind of name, and the next token is curly, then true
-    if (i > 2 && nth(i) == TokenKind.CurlyL) true
+    // if the next token is curly, then true
+    if (nth(i) == TokenKind.CurlyL) true
     else false
   }
 
@@ -2581,6 +2581,7 @@ object Parser2 {
           closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
         }
       } else {
+        throw new RuntimeException(s"${currentSourceLocation()}")
         val mark = open()
         expression()
         close(mark, TreeKind.Expr.RunWithBodyExpr)
