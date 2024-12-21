@@ -764,7 +764,7 @@ object Parser2 {
     var isTail: Boolean = tail.contains(foundToken)
     var continue = true
     var i = 2 // 0 and 1 is already read
-    while (continue && !isTail && !eof()) {
+    while (continue && !isTail) {
       nth(i) match {
         case TokenKind.Dot =>
           if (!kinds.contains(nth(i + 1))) {
@@ -786,7 +786,8 @@ object Parser2 {
         case _ => continue = false
       }
     }
-    if (nth(i) == TokenKind.CurlyL) true
+    // if there was some kind of name, and the next token is curly, then true
+    if (i > 2 && nth(i) == TokenKind.CurlyL) true
     else false
   }
 

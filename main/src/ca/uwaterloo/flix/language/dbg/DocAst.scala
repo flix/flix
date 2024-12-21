@@ -242,7 +242,7 @@ object DocAst {
     }
 
     def RunWith(d1: Expr, d2: Expr): Expr =
-      DoubleKeyword("run", d1, "with fun", Left(d2))
+      DoubleKeyword("run", d1, "with", Left(d2))
 
     def Spawn(d1: Expr, d2: Expr): Expr =
       InRegion(Keyword("spawn", d1), d2)
