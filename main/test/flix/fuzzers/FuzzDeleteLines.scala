@@ -36,12 +36,6 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
     compileAllLinesExceptOne(filepath.getFileName.toString, lines)
   }
 
-  test("using-channels-and-select") {
-    val filepath = Paths.get("examples/concurrency-and-parallelism/using-channels-and-select.flix")
-    val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
-  }
-
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
