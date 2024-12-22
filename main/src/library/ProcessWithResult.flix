@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Magnus Madsen, Maksim Gusev
+ *  Copyright 2024 Maksim Gusev
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,15 @@
 ///
 /// An effect used to start a process outside the JVM.
 ///
-/// All operations on this effect are infallible.
-/// If an operation fails the handler must deal with it.
-///
-eff Process {
+eff ProcessWithResult {
 
     ///
     /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`
     ///
-    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandle
+    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): Result[IoError, ProcessHandle]
 }
 
-mod Process {
+mod ProcessWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError
@@ -43,32 +40,32 @@ mod Process {
     ///
     /// Executes the command `cmd` with the arguments `args`
     ///
-    pub def exec(cmd: String, args: List[String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
+    pub def exec(cmd: String, args: List[String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
+        ProcessWithResult.execWithCwdAndEnv(cmd, args, None, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args`, by the path `cwd`
     ///
-    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
+    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
+        ProcessWithResult.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args` and with the environmental `env`
     ///
-    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, None, env)
+    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
+        ProcessWithResult.execWithCwdAndEnv(cmd, args, None, env)
 
     ///
-    /// Handles the `Process` effect of the given function `f`.
+    /// Handles the `ProcessWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `ProcessWithResult` effect using the `Exec` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + {Exec, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - ProcessWithResult) + {Exec, IO} = x ->
         run {
-            Ok(f(x))
-        } with Process {
+            f(x)
+        } with ProcessWithResult {
             def execWithCwdAndEnv(cmd, args, cwd, env, handler) = region rc {
-                try {
+                let res = try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
                     foreach(e <- Map.toList(env)) {
@@ -81,13 +78,15 @@ mod Process {
                         case None => ()
                     };
                     let process = pb.start();
-                    handler(ProcessHandle.ProcessHandle({stop = () -> process.destroy(),
-                        exitValue = () -> process.exitValue(), isAlive = () -> process.isAlive()}))
+                    Ok(ProcessHandle.ProcessHandle({stop = () -> process.destroy(),exitValue = () -> process.exitValue(),  
+                        isAlive = () -> process.isAlive()}))
+                        
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+                };
+                handler(res)
             }
         }
 
@@ -96,7 +95,6 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + {Exec, IO} = handle(f)()
 
 }
-
