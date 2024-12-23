@@ -747,11 +747,11 @@ object Parser2 {
   }
 
   /**
-    * Returns true if the next token is (close to) a sequence of dot-separated `kind` tokens followed by an open curly.
+    * Returns true if the next token is (close to) a sequence of dot-separated `kind` tokens.
     *
     * @param tail if any kind found is in `tail` then no further dot separated tokens will be consume
     */
-  private def atNameAndCurly(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
+  private def atNameAllowQualified(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
     // Check if we are at a keyword.
     val current = nth(0)
     if (current.isKeyword) return true
@@ -786,9 +786,7 @@ object Parser2 {
         case _ => continue = false
       }
     }
-    // if the next token is curly, then true
-    if (nth(i) == TokenKind.CurlyL) true
-    else false
+    true
   }
 
   /**
@@ -2562,7 +2560,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      if (atNameAndCurly(NAME_EFFECT)) {
+      if (atNameAllowQualified(NAME_EFFECT)) {
         nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
         if (at(TokenKind.CurlyL)) {
           zeroOrMore(
