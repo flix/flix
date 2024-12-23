@@ -747,46 +747,40 @@ object Parser2 {
   }
 
   /**
-    * Returns true if the next token is (close to) a sequence of dot-separated `kind` tokens.
+    * Returns true if the next tokens are (close to) a sequence of dot-separated `kind` tokens.
     *
-    * @param tail if any kind found is in `tail` then no further dot separated tokens will be consume
+    * Returns false if the next tokens are expression-like.
+    *
+    * @param tail if any kind found is in `tail` then no further dot separated tokens will be read
     */
-  private def atNameAllowQualified(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
-    // Check if we are at a keyword.
-    val current = nth(0)
-    if (current.isKeyword) return true
+  private def runWithLookahead(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
+    // This function is based on nameAllowQualified.
+    // Some errors are returned as false (if it could be a valid expression).
+    // Some errors are returned as true (if it cannot be a valid expression).
 
     val foundToken = nthAnyOpt(0, kinds) match {
       case Some(v) => v
-      case None => return false
+      case None => return false // Could be a valid expression.
     }
 
     var isTail: Boolean = tail.contains(foundToken)
-    var continue = true
     var i = 1 // 0 is already read
-    while (continue && !isTail) {
+    while (!isTail) {
       nth(i) match {
         case TokenKind.Dot =>
-          if (!kinds.contains(nth(i + 1))) {
-            // Trailing dot, invalid qualified name.
-            // if the next is a '{' then it is close to a name and curly
-            if (nth(i + 1) == TokenKind.CurlyL) return true
-            else return false
-          } else {
-            val found = nthAnyOpt(i + 1, kinds) match {
-              case Some(v) => v
-              case None => return false
-            }
-            isTail = tail.contains(found)
-            i += 2 // go past the dot and found
+          val found = nthAnyOpt(i + 1, kinds) match {
+            case Some(v) => v
+            case None => return false // Could be a valid expression.
           }
+          isTail = tail.contains(found)
+          i += 2 // Go past the dot and name.
         case TokenKind.DotWhiteSpace if kinds.contains(nth(i + 1)) =>
-          // SomeName. otherName is almost a name, so continue
-          i += 2 // go past the dot and found
-        case _ => continue = false
+          // `SomeName. otherName` is almost a name and cannot be a valid expression, so continue.
+          i += 2 // Go past the dot and name.
+        case _ =>
+          return true
       }
     }
-    true
   }
 
   /**
@@ -2559,7 +2553,7 @@ object Parser2 {
     private def withBody()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWith))
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      if (atNameAllowQualified(NAME_EFFECT)) {
+      if (runWithLookahead(NAME_EFFECT)) {
         val mark = open()
         nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
         if (at(TokenKind.CurlyL)) {
