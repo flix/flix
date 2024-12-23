@@ -340,20 +340,39 @@ object HighlightProvider {
   }
 
   private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): JObject = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
     val builder = new HighlightBuilder(sym)
 
     object EffectSymConsumer extends Consumer {
-      override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.loc)
+      override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case _ => ()
+      }
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Do(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, EffectSymConsumer, acceptor)
 
-    builder.build
+    val writeHighlights = writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
+    val readHighlights = reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
+
+    val highlights = writeHighlights ++ readHighlights
+
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
   }
 
   private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Acceptor): JObject = {
