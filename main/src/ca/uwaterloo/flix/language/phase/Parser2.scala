@@ -2558,9 +2558,9 @@ object Parser2 {
 
     private def withBody()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWith))
-      val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
       if (atNameAllowQualified(NAME_EFFECT)) {
+        val mark = open()
         nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
         if (at(TokenKind.CurlyL)) {
           zeroOrMore(
