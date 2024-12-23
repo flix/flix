@@ -9,16 +9,16 @@ mod Test.Handler.Gen.AtomicInteger {
         unsafe n.intValue()
 
     eff Gen {
-        pub def gen(): AtomicInteger
+        def gen(): AtomicInteger
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {
             let counter = Ref.fresh(rc, newAtomicInteger(0));
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

@@ -22,7 +22,7 @@
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
 @MustUse
-pub enum Result[e, t] with Eq, Order, ToString, Sendable {
+pub enum Result[e, t] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
 }
@@ -193,7 +193,7 @@ mod Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, constant(z))
+        case Ok(v)  => f(v, _ -> checked_ecast(z))
         case Err(_) => z
     }
 

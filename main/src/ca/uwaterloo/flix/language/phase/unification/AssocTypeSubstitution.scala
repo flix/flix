@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
 
 /**
   * Companion object for the [[AssocTypeSubstitution]] class.
@@ -32,7 +33,7 @@ object AssocTypeSubstitution {
   def singleton(assoc: Symbol.AssocTypeSym, tvar: Symbol.KindedTypeVarSym, tpe: Type): AssocTypeSubstitution = {
     tpe match {
       // avoid x -> x mappings
-      case Type.AssocType(Ast.AssocTypeConstructor(assoc1, _), Type.Var(tvar1, _), _, _) if assoc == assoc1 && tvar == tvar1 => AssocTypeSubstitution.empty
+      case Type.AssocType(AssocTypeConstructor(assoc1, _), Type.Var(tvar1, _), _, _) if assoc == assoc1 && tvar == tvar1 => AssocTypeSubstitution.empty
       case _ => AssocTypeSubstitution(Map((assoc, tvar) -> tpe))
     }
   }
@@ -65,6 +66,8 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
             case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _) => Type.mkDifference(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _) => Type.mkSymmetricDiff(x, y, loc)
 
             // Simplify set expressions
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
@@ -78,7 +81,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
-        case Type.AssocType(Ast.AssocTypeConstructor(assoc, _), Type.Var(tvar, _), _, _) =>
+        case Type.AssocType(AssocTypeConstructor(assoc, _), Type.Var(tvar, _), _, _) =>
           m.getOrElse((assoc, tvar), t)
         case Type.AssocType(cst, args0, kind, loc) =>
           val args = args0.map(visit)
@@ -86,6 +89,9 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
         case Type.JvmToType(tpe0, loc) =>
           val tpe = visit(tpe0)
           Type.JvmToType(tpe, loc)
+        case Type.JvmToEff(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToEff(tpe, loc)
         case Type.UnresolvedJvmType(member0, loc) =>
           val member = member0.map(visit)
           Type.UnresolvedJvmType(member, loc)
@@ -104,7 +110,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given type constraint `tc`.
     */
-  def apply(tc: Ast.TraitConstraint): Ast.TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+  def apply(tc: TraitConstraint): TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Applies `this` substitution to the given type scheme `sc`.
@@ -119,15 +125,15 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given pair of types `ts`.
     */
-  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
+    case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
 
   /**
     * Applies `this` substitution to the given pair of types `ts`.
     */
-  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
+  def apply(ec: BroadEqualityConstraint): BroadEqualityConstraint = if (isEmpty) ec else ec match {
+    case BroadEqualityConstraint(t1, t2) => BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
   /**

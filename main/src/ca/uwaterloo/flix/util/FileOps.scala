@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path}
+import java.nio.file.{Files, LinkOption, Path, Paths, StandardOpenOption}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 object FileOps {
 
@@ -38,8 +39,10 @@ object FileOps {
    * Writes the given string `s` to the given file path `p`.
    *
    * Creates the parent directory of `p` if needed.
+   *
+   * @param append if set to true, the content will be appended to the file
    */
-  def writeString(p: Path, s: String): Unit = {
+  def writeString(p: Path, s: String, append: Boolean = false): Unit = {
     Files.createDirectories(p.getParent)
 
     // Check if the file already exists.
@@ -55,7 +58,11 @@ object FileOps {
       }
     }
 
-    Files.write(p, s.getBytes)
+    if (append) {
+      Files.write(p, s.getBytes, StandardOpenOption.APPEND)
+    } else {
+      Files.write(p, s.getBytes)
+    }
   }
 
   /**
@@ -67,4 +74,27 @@ object FileOps {
     FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
   }
 
+  /**
+    * Returns all files ending with `.flix` in `path`.
+    *
+    * The search is limited at `depth - 1` levels of subdirectories.
+    *
+    * E.g., if `depth = 1` then given the directory structure below,
+    * `Subfile.flix` will not be included.
+    *
+    * {{{
+    * path
+    * ├── Main.flix
+    * └── subdir
+    *     └── Subfile.flix
+    * }}}
+    *
+    *
+    */
+  def getFlixFilesIn(path: String, depth: Int): List[Path] = {
+    Files.walk(Paths.get(path), depth)
+      .iterator().asScala
+      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .toList.sorted
+  }
 }

@@ -16,24 +16,24 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 
 object FormatEqualityConstraint {
 
   /**
     * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
     */
-  def formatEqualityConstraint(econstr: Ast.BroadEqualityConstraint)(implicit flix: Flix): String = {
+  def formatEqualityConstraint(econstr: BroadEqualityConstraint)(implicit flix: Flix): String = {
     formatEqualityConstraintWithOptions(econstr, flix.getFormatOptions)
   }
 
   /**
     * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
     */
-  def formatEqualityConstraintWithOptions(tconstr: Ast.BroadEqualityConstraint, fmt: FormatOptions): String = tconstr match {
-    case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
+  def formatEqualityConstraintWithOptions(tconstr: BroadEqualityConstraint, fmt: FormatOptions): String = tconstr match {
+    case BroadEqualityConstraint(tpe1, tpe2) =>
       val tpe1String = FormatType.formatTypeWithOptions(tpe1, fmt)
       val tpe2String = FormatType.formatTypeWithOptions(tpe2, fmt)
-      s"${tpe1String} ~ ${tpe2String}"
+      s"$tpe1String ~ $tpe2String"
   }
 }

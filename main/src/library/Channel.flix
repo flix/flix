@@ -20,45 +20,35 @@ mod Channel {
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
-    pub def buffered(rc: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ r =
+    pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ Chan =
         let m = if (n < 0) 0 else n;
-        $CHANNEL_NEW$(rc, m)
+        $CHANNEL_NEW$(m)
 
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
-    pub def unbuffered(rc: Region[r]): (Sender[t, r], Receiver[t, r]) \ r = buffered(rc, 0)
+    pub def unbuffered(): (Sender[t], Receiver[t]) \ Chan = buffered(0)
 
     ///
     /// Receives a message from the given channel `r`.
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(receiver: Receiver[t, r]): t \ r = $CHANNEL_GET$(receiver)
+    pub def recv(receiver: Receiver[t]): t \ {Chan, NonDet} = $CHANNEL_GET$(receiver)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t, r]): Unit \ r with Sendable[t] = $CHANNEL_PUT$(sender, m)
-
-    ///
-    /// Sends the message `m` on the given channel `s`.
-    ///
-    /// Blocks until the message is enqueued.
-    ///
-    /// Identical to `send` but doesn't require `Sendable`.
-    /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
-    ///
-    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ r = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t]): Unit \ Chan = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(rc: Region[r], d: Duration): Receiver[Unit, r] \ { r, IO } =
-        let (tx, rx) = Channel.unbuffered(rc);
-        spawn { Thread.sleep(d); send((), tx) } @ rc;
+    pub def timeout(d: Duration): Receiver[Unit] \ {Chan, IO} =
+        let (tx, rx) = Channel.buffered(1);
+        spawn { Thread.sleep(d); send((), tx) } @ Static;
         rx
 
 }

@@ -15,7 +15,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
     import java.util.{Locale$Builder => Builder}
 
     @test
-    def testInvokeConstructor01(): Boolean \ IO =
+    def testInvokeConstructor01(): Boolean =
         new Boolean(true)
 
     @test
@@ -64,7 +64,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Builder()
 
     @test
-    def testInvokeConstructorWithArrayParam(): URLClassLoader \ IO = region rc {
+    def testInvokeConstructorWithArrayParam(): URLClassLoader \ {Sys, Net, IO} = region rc {
         let arr : Array[URL, rc] = Array#{} @ rc;
         new URLClassLoader(arr)
     }

@@ -16,56 +16,35 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
-import java.lang.reflect.{Constructor, Executable, Method}
+import scala.annotation.tailrec
 
 object CompletionUtils {
 
-  /**
-    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest an alias for the function if applicable.
-    */
-  def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String], context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = exec match {
-      case method: Method => method.getReturnType
-      case _ => exec.getDeclaringClass
-    }
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.toSortText(Priority.Highest, s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
-  }
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
-    arity match {
-      case 0 => name
-      case 1 => s"$name(${FormatType.formatType(cas.tpe)})"
-      case _ => s"$name${FormatType.formatType(cas.tpe)}"
+  def getParamsLabelForEnumTags(cas: TypedAst.Case)(implicit flix: Flix): String = {
+    cas.tpes.length match {
+      case 0 => ""
+      case _ => s"(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
     }
   }
 
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _, _) =>
+  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = name + getLabelForSpec(spec)
+
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else
         fparams.map {
-          fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
         }
 
       val retTpe = FormatType.formatType(retTpe0)
@@ -75,7 +54,7 @@ object CompletionUtils {
         case p => raw" \ " + FormatType.formatType(p)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$eff"
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
@@ -87,7 +66,7 @@ object CompletionUtils {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
     if (functionIsUnit)
       s"$name()"
@@ -138,60 +117,6 @@ object CompletionUtils {
     s"$name("
   }
 
-  /**
-    * Returns a class object if the string is a class or removing the last "part" makes it a class
-    */
-  def classFromDotSeperatedString(clazz: String): Option[(Class[_], String)] = {
-    // If the last charachter is . then this drops that
-    // I.e if we have java.lang.String. this converts to java.lang.String
-    // while if it does not end with . it is unchanged
-    val clazz1 = clazz.split('.').mkString(".")
-    // If we are typing the method/field to import we drop that
-    val clazz2 = clazz.split('.').dropRight(1).mkString(".")
-    classFromString(clazz1).orElse(classFromString(clazz2))
-  }
-
-  /**
-    * Return a class object if the class exists
-    */
-  def classFromString(clazz: String): Option[(Class[_], String)] = {
-    try {
-      Some((java.lang.Class.forName(clazz), clazz))
-    }
-    catch {
-      case _: ClassNotFoundException => None
-    }
-  }
-
-  /**
-    * Converts a Java Class Object into a string representing the type in flix syntax.
-    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
-    */
-  def convertJavaClassToFlixType(clazz: Class[_]): String = {
-    if (clazz.isArray()) {
-      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
-    }
-    else {
-      clazz.getName() match {
-        case "byte" => "Int8"
-        case "short" => "Int16"
-        case "int" => "Int32"
-        case "long" => "Int64"
-        case "float" => "Float32"
-        case "double" => "Float64"
-        case "boolean" => "Bool"
-        case "char" => "Char"
-        case "java.lang.String" => "String"
-        case "java.math.BigInteger" => "BigInt"
-        case "java.math.BigDecimal" => "BigDecimal"
-        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
-        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
-        case "void" => "Unit"
-        case other => s"##$other"
-      }
-    }
-  }
-
   def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
     ModuleSymFragment.parseModuleSym(word) match {
       case ModuleSymFragment.Complete(modSym) =>
@@ -221,4 +146,86 @@ object CompletionUtils {
     }
   }
 
+  /**
+    * Filters the definitions in the given `root` by the given `word` and `env`.
+    * If `whetherInScope` is `true`, we return the matched defs in the root module or in the scope
+    * If `whetherInScope` is `false`, we return the matched defs not in the root module and not in the scope
+    */
+  def filterDefsByScope(word: String, root: TypedAst.Root, env: LocalScope, whetherInScope: Boolean): Iterable[TypedAst.Def] = {
+    val matchedDefs = root.defs.filter{case (_, decl) => matchesDef(decl, word)}
+    val rootModuleMatches = matchedDefs.collect{
+        case (sym, decl) if whetherInScope && sym.namespace.isEmpty => decl
+    }
+    val scopeMatches = matchedDefs.collect{
+      case (sym, decl) if sym.namespace.nonEmpty && checkScope(decl, env, whetherInScope) => decl
+    }
+    rootModuleMatches ++ scopeMatches
+  }
+
+  /**
+    * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
+    * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
+    */
+  private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
+    val thisName = decl.sym.toString
+    val inScope = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    if (whetherInScope) inScope else !inScope
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` should be included in the suggestions.
+    */
+  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
+    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
+
+    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
+    val isMatch = fuzzyMatch(word, decl.sym.text)
+
+    isMatch && isPublic
+  }
+
+  /**
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
+  def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the query is a fuzzy match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
+    *
+    * Example:
+    *   - fuzzyMatch("fBT",  "fooBarTest") = true
+    *   - fuzzyMatch("fBrT", "fooBarTest") = false
+    *   - fuzzyMatch("fTB",  "fooBarTest") = false
+    *
+    * @param query  The query string, usually from the user input.
+    * @param key    The key string, usually from the completion item.
+    */
+  def fuzzyMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
+  }
+
+  /**
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
+    */
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?=[A-Z])").toList
+  }
 }

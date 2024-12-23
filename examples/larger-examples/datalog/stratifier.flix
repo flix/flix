@@ -3,7 +3,7 @@ mod Stratifier {
     use List.{map, flatMap, partition}
 
     enum Program(List[Constraint])
-    enum Constraint((HeadAtom, List[BodyAtom]))
+    enum Constraint(HeadAtom, List[BodyAtom])
     enum Atom(PredicateSymbol)
     enum HeadAtom(Atom)
     enum BodyAtom {

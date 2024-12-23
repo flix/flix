@@ -34,7 +34,8 @@ object SymbolProvider {
     val traits = root.traits.values.collect { case t if t.sym.name.startsWith(query) => mkTraitSymbolInformation(t) }
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigSymbolInformation(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectSymbolInformation)
-    (traits ++ defs ++ enums ++ sigs ++ effs).toList
+    val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructSymbolInformation)
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList
   }
 
   /**
@@ -45,7 +46,8 @@ object SymbolProvider {
     val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
     val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
-    (traits ++ defs ++ enums ++ effs).toList
+    val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
+    (traits ++ defs ++ enums ++ effs ++ structs).toList
   }
 
   /**
@@ -86,7 +88,7 @@ object SymbolProvider {
     * Returns a Method DocumentSymbol from a Sig node.
     */
   private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
-    case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
+    case TypedAst.Sig(sym, spec, _, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
@@ -95,8 +97,39 @@ object SymbolProvider {
     * Returns a Method SymbolInformation from a Sig node.
     */
   private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
-    case TypedAst.Sig(sym, _, _) => SymbolInformation(
+    case TypedAst.Sig(sym, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+    )
+  }
+
+  /**
+   * Returns a Method SymbolInformation from a Struct node.
+   */
+  private def mkStructSymbolInformation(s: TypedAst.Struct): List[SymbolInformation] = s match {
+    case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
+      fields.values.map(mkFieldSymbolInformation).toList :+ SymbolInformation(
+      sym.name, SymbolKind.Struct, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+    )
+  }
+
+  private def mkFieldSymbolInformation(f: TypedAst.StructField): SymbolInformation = f match {
+    case TypedAst.StructField(sym, _, loc) => SymbolInformation(
+      sym.name, SymbolKind.Field, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
+    )
+  }
+
+  /**
+   * Returns a Function DocumentSymbol from a Struct node.
+   */
+  private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
+    case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
+      sym.name, Some(doc.text), SymbolKind.Struct, Range.from(sym.loc), Range.from(sym.loc), Nil, fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol),
+    )
+  }
+
+  private def mkFieldDocumentSymbol(f: TypedAst.StructField): DocumentSymbol = f match {
+    case TypedAst.StructField(sym, _, loc) => DocumentSymbol(
+      sym.name, None, SymbolKind.Field, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
 
@@ -104,7 +137,7 @@ object SymbolProvider {
     * Returns a Function DocumentSymbol from a Def node.
     */
   private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
-    case TypedAst.Def(sym, spec, _) => DocumentSymbol(
+    case TypedAst.Def(sym, spec, _, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
@@ -113,7 +146,7 @@ object SymbolProvider {
     * Returns a Function SymbolInformation from a Def node.
     */
   private def mkDefSymbolInformation(d: TypedAst.Def): SymbolInformation = d match {
-    case TypedAst.Def(sym, _, _) => SymbolInformation(
+    case TypedAst.Def(sym, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
@@ -123,7 +156,7 @@ object SymbolProvider {
     * It navigates the AST and adds Cases of enum as children DocumentSymbols.
     */
   private def mkEnumDocumentSymbol(enum0: TypedAst.Enum): DocumentSymbol = enum0 match {
-    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, _, loc) => DocumentSymbol(
+    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, loc) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Enum,
@@ -148,7 +181,7 @@ object SymbolProvider {
     * It navigates the AST and returns also the Cases of the enum to the returned List.
     */
   private def mkEnumSymbolInformation(enum0: TypedAst.Enum): List[SymbolInformation] = enum0 match {
-    case TypedAst.Enum(_, _, _, sym, _, _, cases, _, loc) =>
+    case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
       cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
         sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
       )
@@ -191,7 +224,7 @@ object SymbolProvider {
     * Returns an Function SymbolInformation from an Op node.
     */
   private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
-    case TypedAst.Op(sym, _) =>
+    case TypedAst.Op(sym, _, _) =>
       SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
   }
 
@@ -199,7 +232,7 @@ object SymbolProvider {
     * Returns a Method DocumentSymbol from an Op node.
     */
   private def mkOpDocumentSymbol(s: TypedAst.Op): DocumentSymbol = s match {
-    case TypedAst.Op(sym, spec) => DocumentSymbol(
+    case TypedAst.Op(sym, spec, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }

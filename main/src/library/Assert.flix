@@ -20,17 +20,17 @@ mod Assert {
     ///
     /// Aborts execution if the two values are un-equal.
     ///
-    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = masked_cast({
+    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = unchecked_cast({
         if (expected == actual)
             true
         else {
-            use Console.{green, red};
+            use Chalk.{green, red};
             println("Assertion Error");
             println("  Expected: ${green(expected)}");
             println("  Actual:   ${red(actual)}");
             println("");
             ?assertEq
         }
-    })
+    } as _ \ {})
 
 }

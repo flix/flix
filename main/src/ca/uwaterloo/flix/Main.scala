@@ -16,13 +16,14 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
+import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
 import java.net.BindException
@@ -94,11 +95,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xbddthreshold = cmdOpts.xbddthreshold,
-      xnoboolcache = cmdOpts.xnoboolcache,
-      xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnoboolunif = cmdOpts.xnoboolunif,
-      xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -108,6 +104,7 @@ object Main {
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xiterations = cmdOpts.xiterations,
     )
@@ -137,7 +134,7 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd).toHardResult match {
+          Bootstrap.init(cwd).toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -151,7 +148,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -165,7 +162,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -176,7 +173,7 @@ object Main {
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -187,7 +184,7 @@ object Main {
         case Command.BuildFatJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildFatJar()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -198,7 +195,7 @@ object Main {
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildPkg()
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -212,7 +209,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -230,21 +227,7 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          }.toHardResult match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
-              System.exit(1)
-          }
-
-        case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.benchmark(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -258,7 +241,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -271,7 +254,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken).toHardResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken).toResult match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -281,10 +264,14 @@ object Main {
               System.exit(1)
           }
 
-        case Command.Lsp(port) =>
+        case PlainLsp =>
+          LspServer.run(options)
+          System.exit(0)
+
+        case Command.VSCodeLsp(port) =>
           val o = options.copy(progress = false)
           try {
-            val languageServer = new LanguageServer(port, o)
+            val languageServer = new VSCodeLspServer(port, o)
             languageServer.run()
           } catch {
             case ex: BindException =>
@@ -298,7 +285,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -312,7 +299,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.outdated(flix)(System.err)
-          }.toHardResult match {
+          }.toResult match {
             case Result.Ok(false) =>
               // Up to date
               System.exit(0)
@@ -360,21 +347,17 @@ object Main {
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
-                     xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
-                     xnoboolcache: Boolean = false,
-                     xnoboolspecialcases: Boolean = false,
-                     xnoboolunif: Boolean = false,
-                     xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
+                     xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     XPerfPar: Boolean = false,
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
@@ -403,13 +386,13 @@ object Main {
 
     case object Run extends Command
 
-    case object Benchmark extends Command
-
     case object Test extends Command
 
     case object Repl extends Command
 
-    case class Lsp(port: Int) extends Command
+    case object PlainLsp extends Command
+
+    case class VSCodeLsp(port: Int) extends Command
 
     case object Release extends Command
 
@@ -434,12 +417,11 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
-    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
-      case "nothing" => SubEffectLevel.Nothing
-      case "lambdas" => SubEffectLevel.Lambdas
-      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
-      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
+      case "mod-defs" => Subeffecting.ModDefs
+      case "ins-defs" => Subeffecting.InsDefs
+      case "lambdas" => Subeffecting.Lambdas
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -464,15 +446,22 @@ object Main {
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
-      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
-
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
+      cmd("lsp-plain").text("  starts the Plain-LSP server.")
+        .action((_, c) => c.copy(command = Command.PlainLsp))
+
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
-          arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
+          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
+            .required()
+        )
+
+      cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
+        .children(
+          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
             .required()
         )
 
@@ -486,6 +475,9 @@ object Main {
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
           .text("benchmark only frontend"),
+        opt[Unit]("par")
+          .action((_, c) => c.copy(XPerfPar = true))
+          .text("benchmark only parallel evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
@@ -572,26 +564,6 @@ object Main {
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
 
-      // Xbdd-threshold
-      opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
-        text("[experimental] sets the threshold for when to use BDDs.")
-
-      // Xno-bool-cache
-      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
-        text("[experimental] disables Boolean caches.")
-
-      // Xno-bool-specialcases
-      opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
-        text("[experimental] disables hardcoded Boolean unification special cases.")
-
-      // Xno-bool-unif
-      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
-        text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-qmc
-      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
-        text("[experimental] disables Quine McCluskey when using BDDs.")
-
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
@@ -609,7 +581,7 @@ object Main {
         text("[experimental] verifies consistency of effects after typechecking")
 
       // Xsubeffecting
-      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
 
       // Xiterations

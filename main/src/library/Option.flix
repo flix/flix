@@ -21,7 +21,7 @@
 /// The constructor `None` represents an absent value,
 /// whereas the constructor `Some(v)` represents the value `v`.
 ///
-pub enum Option[t] with Eq, Order, ToString, Sendable {
+pub enum Option[t] with Eq, Order, ToString {
     case None,
     case Some(t)
 }
@@ -324,7 +324,7 @@ mod Option {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
-        case Some(v) => f(v, constant(z))
+        case Some(v) => f(v, _ -> checked_ecast(z))
     }
 
     ///

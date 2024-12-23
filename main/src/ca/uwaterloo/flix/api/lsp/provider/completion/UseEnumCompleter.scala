@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumCompletion
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -25,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
 object UseEnumCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
       case regex(word) =>

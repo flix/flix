@@ -2322,27 +2322,27 @@ def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
 
 @test
 def unfold01(): Bool =
-    List.unfold(s -> if (true) None else Some(s + 48, s + 1), 0) == Nil
+    List.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0) == Nil
 
 @test
 def unfold02(): Bool =
-    List.unfold(s -> if (s > 0) None else Some(s + 48, s + 1), 0) == 48 :: Nil
+    List.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0) == 48 :: Nil
 
 @test
 def unfold03(): Bool =
-    List.unfold(s -> if (s > 1) None else Some(s + 48, s + 1), 0) == 48 :: 49 :: Nil
+    List.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: Nil
 
 @test
 def unfold04(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 0) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
 
 @test
 def unfold05(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 5) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
 
 @test
 def unfold06(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(s + 48, s + 2), 0) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
+    List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //
@@ -2895,30 +2895,30 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let l1: List[Int32] = Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 0 and List.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let l1 = 1 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 1 and List.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 3 and List.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

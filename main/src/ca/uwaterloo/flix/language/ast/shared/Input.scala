@@ -23,21 +23,10 @@ import java.nio.file.Path
 sealed trait Input {
 
   /**
-    * Returns `true` if the input is stable (i.e. cannot be changed once loaded).
-    */
-  def isStable: Boolean = this match {
-    case Input.Text(_, _, stable, _) => stable
-    case Input.TxtFile(_, _) => false
-    case Input.PkgFile(_, _) => false
-    case Input.FileInPackage(_, _, _, _) => false
-    case Input.Unknown => false
-  }
-
-  /**
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
-    case Input.Text(_, _, _, sctx) => sctx
+    case Input.Text(_, _, sctx) => sctx
     case Input.TxtFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
@@ -51,13 +40,15 @@ object Input {
   /**
     * Represents an input that originates from a virtual path.
     */
-  case class Text(name: String, text: String, stable: Boolean, sctx: SecurityContext) extends Input {
+  case class Text(name: String, text: String, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = name.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
       case that: Text => this.name == that.name
       case _ => false
     }
+
+    override def toString: String = name
   }
 
   /**

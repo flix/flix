@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolUnificationException
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.annotation.nowarn

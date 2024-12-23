@@ -40,18 +40,8 @@ mod MutQueue {
     ///
     /// Returns a String representation of the mutable priority queue `mq`.
     ///
-    pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
-        let sb = StringBuilder.empty(reg);
-        StringBuilder.appendString!("MutQueue {", sb);
-        Array.forEachWithIndex((i, x) -> {
-            if (i < mq->size) {
-                if (i == 0) StringBuilder.appendString!("${x}", sb)
-                else        StringBuilder.appendString!(", ${x}", sb)
-            }
-            else ()
-        }, mq->values);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+    pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region rc {
+        "MutQueue {" + (MutQueue.iterator(rc, mq) |> Iterator.join(", ")) + "}"
     }
 
     ///

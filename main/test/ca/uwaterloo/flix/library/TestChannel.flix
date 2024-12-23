@@ -29,7 +29,7 @@
     def testNew01(): Mpmc[Int32, Static] \ IO = newChannel(0)
 
     @test
-    def testNew02(): Mpmc[Result[String, a], Static] \ IO = newChannel(32)
+    def testNew02(): Mpmc[Result[String, Int32], Static] \ IO = newChannel(32)
 
     @test
     def testGetPut01(): Bool \ IO =

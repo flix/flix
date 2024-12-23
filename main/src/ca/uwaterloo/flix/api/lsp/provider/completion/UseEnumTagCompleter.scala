@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -27,13 +26,12 @@ object UseEnumTagCompleter {
   /**
    * Returns an Iterable of Completions for enum tag usages.
    */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     //Need to return completion possibilities regardless of whether a tag was provided.
     stripWord(context) match {
-      case Some(word) => {
+      case Some(word) =>
         val segments = word.split('.').toList
         getUseEnumTagCompletionsWithTag(segments) ++ getUseEnumTagCompletionsNoTag(segments)
-      }
       case None => Nil
     }
   }

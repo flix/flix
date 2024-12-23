@@ -1602,29 +1602,29 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  ignore("RedundantPurityCast.01") {
+  test("RedundantPurityCast.01") {
     val input =
       """
-        |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ {})
         |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  ignore("RedundantPurityCast.02") {
+  test("RedundantPurityCast.02") {
     val input =
       raw"""
            |pub def f(): Array[Int32, Static] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
-           |  unchecked_cast(x as _ \ Pure)
+           |  unchecked_cast(x as _ \ {})
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  ignore("RedundantUncheckedEffectCast.01") {
+  test("RedundantUncheckedEffectCast.01") {
     val input =
       raw"""
            |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(g(123) as _ \ ef)
@@ -1632,6 +1632,26 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
+  }
+
+  test("UselessUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely {} run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessUnsafe](result)
+  }
+
+  test("RedundantUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely IO run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUnsafe](result)
   }
 
   test("RedundantTraitConstraint.Trait.01") {
@@ -1959,27 +1979,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.05") {
-    val input =
-      """
-        |import java.lang.Object
-        |import java.lang.StringBuilder
-        |
-        |def f(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(): StringBuilder \ IO as newStringBuilder;
-        |    import java_new java.lang.Object(): Object \ IO as newObject;
-        |    let _ =
-        |        if (true)
-        |            checked_cast((newObject(), newObject()))
-        |        else
-        |            (newObject(), newObject());
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
-  }
-
   test("RedundantCheckedTypeCast.06") {
     val input =
       """
@@ -2047,24 +2046,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |            checked_ecast((1, "a"))
         |        else
         |            (1, "a");
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedEffectCast](result)
-  }
-
-  ignore("RedundantCheckedEffectCast.04") {
-    val input =
-      """
-        |def f(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
-        |    let _ =
-        |        if (true)
-        |            checked_cast((newObject(), newObject()))
-        |        else
-        |            (newObject(), newObject());
         |    ()
         |""".stripMargin
 
@@ -2202,4 +2183,28 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedVariable.LocalDef.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |   def g() = { def g() = 1; g() };
+        |   g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("VariableInLongListLiteral.01") {
+    val input =
+      """
+        |def f(): List[Int32] = {
+        |    let xs = 25 :: 26 :: 27 :: Nil;
+        |    let l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: 10 :: 11 :: 12 :: 13
+        |              :: 14 :: 15 :: 16 :: 17 :: 18 :: 19 :: 20 :: 21 :: 22 :: 23 :: 24 :: xs;
+        |    l
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectSuccess(result)
+  }
 }

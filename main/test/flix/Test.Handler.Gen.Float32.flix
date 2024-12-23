@@ -1,16 +1,16 @@
 mod Test.Handler.Gen.Float32 {
 
     eff Gen {
-        pub def gen(): Float32
+        def gen(): Float32
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Float32): List[Float32] =
         region rc {
             let counter = Ref.fresh(rc, 0.0f32);
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

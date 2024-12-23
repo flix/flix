@@ -37,7 +37,7 @@ mod Fixpoint.Solver {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def run(d: Datalog[v]): Datalog[v] with Order[v] =
+    pub def runSolver(d: Datalog[v]): Datalog[v] with Order[v] =
         Fixpoint.Phase.Stratifier.stratify(d) |> runWithStratification(d)
 
     ///
@@ -54,7 +54,7 @@ mod Fixpoint.Solver {
             Fixpoint.Phase.IndexSelection.queryStmt |>
             Fixpoint.Phase.VarsToIndices.lowerStmt;
         let model = match d {
-            case Datalog(_) => region rc {
+            case Datalog(_, _) => region rc {
                 compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel
             }
             case Model(_) => d
@@ -498,8 +498,8 @@ mod Fixpoint.Solver {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(rc), db);
-                MutMap.put!(List.toVector(vs), Reflect.default(), rel)
+                let rel = MutMap.getOrElsePut(ramSym, MutMap.empty(rc), db);
+                MutMap.put(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }
@@ -702,7 +702,7 @@ mod Fixpoint.Solver {
                 case Constraint(HeadAtom(headPred, _, terms), body) =>
                     if (headPred == p and Vector.isEmpty(body))
                         let vs = Vector.map(headTermValue, terms);
-                        MutList.push!(f(Vector.toList(vs)), pFacts)
+                        MutList.push(f(Vector.toList(vs)), pFacts)
                     else ()
                 case _ => ()
             }, cs);
@@ -720,8 +720,8 @@ mod Fixpoint.Solver {
             };
             Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
-                case Denotation.Latticenal(_) =>
+                    Map.forEach((tuple, _) -> MutList.push(f(Vector.toList(tuple)), pFacts), rel)
+                case Denotation.Latticenal(_, _, _, _) =>
                     Map.forEach((tuple, lat) -> {
                         let it = Iterator.range(rc, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
@@ -730,7 +730,7 @@ mod Fixpoint.Solver {
                             else
                                 lat
                         }) |> Iterator.toList;
-                        MutList.push!(f(vs), pFacts)
+                        MutList.push(f(vs), pFacts)
                     }, rel)
             }, db);
             pFacts |> MutList.toVector

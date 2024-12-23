@@ -1,14 +1,14 @@
 mod Test.Handler.Ask.String {
 
     eff Ask {
-        pub def ask(x: String): Unit
+        def ask(x: String): Unit
     }
 
     def generator(x: String): Unit \ Ask =
-        do Ask.ask(x); generator(next(x))
+        Ask.ask(x); generator(next(x))
 
     def sample(limit: String): List[String] =
-        try {
+        run {
             generator("a"); Nil
         } with Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()

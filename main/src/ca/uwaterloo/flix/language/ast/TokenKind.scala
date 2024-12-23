@@ -52,6 +52,7 @@ sealed trait TokenKind {
       case TokenKind.CurlyR => "'}'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
+      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
@@ -69,12 +70,11 @@ sealed trait TokenKind {
       case TokenKind.KeywordCheckedECast => "'checked_ecast'"
       case TokenKind.KeywordChoose => "'choose'"
       case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDebug => "'debug'"
-      case TokenKind.KeywordDebugBang => "'debug!'"
-      case TokenKind.KeywordDebugBangBang => "'debug!'"
+      case TokenKind.KeywordDebug => "'dbg'"
+      case TokenKind.KeywordDebugBang => "'dbg!'"
+      case TokenKind.KeywordDebugBangBang => "'dbg!!'"
       case TokenKind.KeywordDef => "'def'"
       case TokenKind.KeywordDiscard => "'discard'"
-      case TokenKind.KeywordDo => "'do'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
       case TokenKind.KeywordEnum => "'enum'"
@@ -93,14 +93,10 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordJavaGetField => "'java_get_field'"
-      case TokenKind.KeywordJavaNew => "'java_new'"
-      case TokenKind.KeywordJavaSetField => "'java_set_field'"
       case TokenKind.KeywordLaw => "'law'"
       case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
       case TokenKind.KeywordLet => "'let'"
-      case TokenKind.KeywordMaskedCast => "'masked_cast'"
       case TokenKind.KeywordMatch => "'match'"
       case TokenKind.KeywordMod => "'mod'"
       case TokenKind.KeywordMut => "'mut'"
@@ -118,6 +114,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
+      case TokenKind.KeywordRun => "'run'"
       case TokenKind.KeywordRvadd => "'rvadd'"
       case TokenKind.KeywordRvand => "'rvand'"
       case TokenKind.KeywordRvnot => "'rvnot'"
@@ -138,6 +135,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
+      case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -230,7 +228,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordDiscard => true
-    case TokenKind.KeywordDo => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
     case TokenKind.KeywordEnum => true
@@ -249,14 +246,10 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
-    case TokenKind.KeywordJavaGetField => true
-    case TokenKind.KeywordJavaNew => true
-    case TokenKind.KeywordJavaSetField => true
     case TokenKind.KeywordLaw => true
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
     case TokenKind.KeywordLet => true
-    case TokenKind.KeywordMaskedCast => true
     case TokenKind.KeywordMatch => true
     case TokenKind.KeywordMod => true
     case TokenKind.KeywordNew => true
@@ -272,6 +265,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordQuery => true
     case TokenKind.KeywordRegion => true
     case TokenKind.KeywordRestrictable => true
+    case TokenKind.KeywordRun => true
     case TokenKind.KeywordRvadd => true
     case TokenKind.KeywordRvand => true
     case TokenKind.KeywordRvnot => true
@@ -282,6 +276,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
@@ -290,13 +285,105 @@ sealed trait TokenKind {
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
+    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
-    case _ => false
+    case TokenKind.Ampersand
+         | TokenKind.AngleL
+         | TokenKind.AngleLEqual
+         | TokenKind.AngleR
+         | TokenKind.AngleREqual
+         | TokenKind.AngledEqual
+         | TokenKind.AngledPlus
+         | TokenKind.Annotation
+         | TokenKind.ArrayHash
+         | TokenKind.ArrowThickR
+         | TokenKind.ArrowThinL
+         | TokenKind.ArrowThinR
+         | TokenKind.At
+         | TokenKind.Backslash
+         | TokenKind.Bang
+         | TokenKind.BangEqual
+         | TokenKind.Bar
+         | TokenKind.BracketL
+         | TokenKind.BracketR
+         | TokenKind.BuiltIn
+         | TokenKind.Caret
+         | TokenKind.Colon
+         | TokenKind.ColonColon
+         | TokenKind.ColonEqual
+         | TokenKind.ColonMinus
+         | TokenKind.Comma
+         | TokenKind.CommentBlock
+         | TokenKind.CommentDoc
+         | TokenKind.CommentLine
+         | TokenKind.CurlyL
+         | TokenKind.CurlyR
+         | TokenKind.Dollar
+         | TokenKind.Dot
+         | TokenKind.DotCurlyL
+         | TokenKind.DotDotDot
+         | TokenKind.DotWhiteSpace
+         | TokenKind.Eof
+         | TokenKind.Equal
+         | TokenKind.EqualEqual
+         | TokenKind.Err(_)
+         | TokenKind.Hash
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
+         | TokenKind.HoleAnonymous
+         | TokenKind.HoleNamed
+         | TokenKind.HoleVariable
+         | TokenKind.InfixFunction
+         | TokenKind.KeywordMut
+         | TokenKind.KeywordRedef
+         | TokenKind.KeywordStaticUppercase
+         | TokenKind.ListHash
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralBigInt
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralDebugStringL
+         | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralRegex
+         | TokenKind.LiteralString
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralStringInterpolationR
+         | TokenKind.MapHash
+         | TokenKind.Minus
+         | TokenKind.NameGreek
+         | TokenKind.NameLowerCase
+         | TokenKind.NameMath
+         | TokenKind.NameUpperCase
+         | TokenKind.ParenL
+         | TokenKind.ParenR
+         | TokenKind.Plus
+         | TokenKind.Semi
+         | TokenKind.SetHash
+         | TokenKind.Slash
+         | TokenKind.Star
+         | TokenKind.StarStar
+         | TokenKind.StructArrow
+         | TokenKind.Tilde
+         | TokenKind.TripleAmpersand
+         | TokenKind.TripleAngleL
+         | TokenKind.TripleAngleR
+         | TokenKind.TripleBar
+         | TokenKind.TripleCaret
+         | TokenKind.TripleColon
+         | TokenKind.TripleTilde
+         | TokenKind.Underscore
+         | TokenKind.UserDefinedOperator
+         | TokenKind.VectorHash => false
   }
 
   /**
@@ -342,6 +429,17 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an effect.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstEff: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef => true
+    case _ => false
+  })
+
+  /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
     * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
     */
@@ -370,82 +468,177 @@ sealed trait TokenKind {
     * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression.
     */
   def isFirstExpr: Boolean = this match {
-    case TokenKind.KeywordOpenVariant
-         | TokenKind.KeywordOpenVariantAs
-         | TokenKind.HoleNamed
+    case TokenKind.Annotation
+         | TokenKind.ArrayHash
+         | TokenKind.BuiltIn
+         | TokenKind.CurlyL
+         | TokenKind.DotDotDot
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
+         | TokenKind.HoleNamed
          | TokenKind.HoleVariable
+         | TokenKind.KeywordCheckedCast
+         | TokenKind.KeywordCheckedECast
+         | TokenKind.KeywordChoose
+         | TokenKind.KeywordChooseStar
+         | TokenKind.KeywordDebug
+         | TokenKind.KeywordDebugBang
+         | TokenKind.KeywordDebugBangBang
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordDiscard
+         | TokenKind.KeywordFalse
+         | TokenKind.KeywordForA
+         | TokenKind.KeywordForM
+         | TokenKind.KeywordForce
+         | TokenKind.KeywordForeach
+         | TokenKind.KeywordIf
+         | TokenKind.KeywordImport
+         | TokenKind.KeywordInject
+         | TokenKind.KeywordLazy
+         | TokenKind.KeywordLet
+         | TokenKind.KeywordMatch
+         | TokenKind.KeywordNew
+         | TokenKind.KeywordNot
+         | TokenKind.KeywordNull
+         | TokenKind.KeywordOpenVariant
+         | TokenKind.KeywordOpenVariantAs
+         | TokenKind.KeywordPar
+         | TokenKind.KeywordQuery
+         | TokenKind.KeywordRegion
+         | TokenKind.KeywordRun
+         | TokenKind.KeywordSelect
+         | TokenKind.KeywordSolve
+         | TokenKind.KeywordSpawn
+         | TokenKind.KeywordStaticUppercase
+         | TokenKind.KeywordTrue
+         | TokenKind.KeywordTry
+         | TokenKind.KeywordTypeMatch
+         | TokenKind.KeywordUncheckedCast
+         | TokenKind.KeywordUnsafe
+         | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
-         | TokenKind.LiteralString
+         | TokenKind.ListHash
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
+         | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
-         | TokenKind.LiteralBigDecimal
-         | TokenKind.LiteralInt8
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
          | TokenKind.LiteralInt64
-         | TokenKind.LiteralBigInt
-         | TokenKind.KeywordTrue
-         | TokenKind.KeywordFalse
-         | TokenKind.KeywordNull
+         | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
-         | TokenKind.ParenL
-         | TokenKind.Underscore
-         | TokenKind.NameLowerCase
-         | TokenKind.NameUpperCase
-         | TokenKind.NameMath
-         | TokenKind.NameGreek
-         | TokenKind.Minus
-         | TokenKind.KeywordNot
-         | TokenKind.Plus
-         | TokenKind.TripleTilde
-         | TokenKind.KeywordLazy
-         | TokenKind.KeywordForce
-         | TokenKind.KeywordDiscard
-         | TokenKind.KeywordIf
-         | TokenKind.KeywordLet
-         | TokenKind.Annotation
-         | TokenKind.KeywordDef
-         | TokenKind.KeywordImport
-         | TokenKind.KeywordRegion
-         | TokenKind.KeywordMatch
-         | TokenKind.KeywordTypeMatch
-         | TokenKind.KeywordChoose
-         | TokenKind.KeywordChooseStar
-         | TokenKind.KeywordForA
-         | TokenKind.KeywordForeach
-         | TokenKind.KeywordForM
-         | TokenKind.CurlyL
-         | TokenKind.ArrayHash
-         | TokenKind.VectorHash
-         | TokenKind.ListHash
-         | TokenKind.SetHash
-         | TokenKind.MapHash
-         | TokenKind.KeywordCheckedCast
-         | TokenKind.KeywordCheckedECast
-         | TokenKind.KeywordUncheckedCast
-         | TokenKind.KeywordUnsafe
-         | TokenKind.KeywordMaskedCast
-         | TokenKind.KeywordTry
-         | TokenKind.KeywordDo
-         | TokenKind.KeywordNew
-         | TokenKind.KeywordStaticUppercase
-         | TokenKind.KeywordSelect
-         | TokenKind.KeywordSpawn
-         | TokenKind.KeywordPar
-         | TokenKind.HashCurlyL
-         | TokenKind.HashParenL
-         | TokenKind.KeywordSolve
-         | TokenKind.KeywordInject
-         | TokenKind.KeywordQuery
-         | TokenKind.BuiltIn
+         | TokenKind.LiteralString
          | TokenKind.LiteralStringInterpolationL
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.KeywordDebug
-         | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang => true
-    case _ => false
+         | TokenKind.MapHash
+         | TokenKind.Minus
+         | TokenKind.NameGreek
+         | TokenKind.NameLowerCase
+         | TokenKind.NameMath
+         | TokenKind.NameUpperCase
+         | TokenKind.ParenL
+         | TokenKind.Plus
+         | TokenKind.SetHash
+         | TokenKind.TripleTilde
+         | TokenKind.Underscore
+         | TokenKind.VectorHash => true
+    case TokenKind.Ampersand
+         | TokenKind.AngleL
+         | TokenKind.AngleLEqual
+         | TokenKind.AngleR
+         | TokenKind.AngleREqual
+         | TokenKind.AngledEqual
+         | TokenKind.AngledPlus
+         | TokenKind.ArrowThickR
+         | TokenKind.ArrowThinL
+         | TokenKind.ArrowThinR
+         | TokenKind.At
+         | TokenKind.Backslash
+         | TokenKind.Bang
+         | TokenKind.BangEqual
+         | TokenKind.Bar
+         | TokenKind.BracketL
+         | TokenKind.BracketR
+         | TokenKind.Caret
+         | TokenKind.Colon
+         | TokenKind.ColonColon
+         | TokenKind.ColonEqual
+         | TokenKind.ColonMinus
+         | TokenKind.Comma
+         | TokenKind.CommentBlock
+         | TokenKind.CommentDoc
+         | TokenKind.CommentLine
+         | TokenKind.CurlyR
+         | TokenKind.Dollar
+         | TokenKind.Dot
+         | TokenKind.DotCurlyL
+         | TokenKind.DotWhiteSpace
+         | TokenKind.Eof
+         | TokenKind.Equal
+         | TokenKind.EqualEqual
+         | TokenKind.Err(_)
+         | TokenKind.Hash
+         | TokenKind.InfixFunction
+         | TokenKind.KeywordAlias
+         | TokenKind.KeywordAnd
+         | TokenKind.KeywordAs
+         | TokenKind.KeywordCase
+         | TokenKind.KeywordCatch
+         | TokenKind.KeywordEff
+         | TokenKind.KeywordElse
+         | TokenKind.KeywordEnum
+         | TokenKind.KeywordFix
+         | TokenKind.KeywordForall
+         | TokenKind.KeywordFrom
+         | TokenKind.KeywordInline
+         | TokenKind.KeywordInstance
+         | TokenKind.KeywordInstanceOf
+         | TokenKind.KeywordInto
+         | TokenKind.KeywordLaw
+         | TokenKind.KeywordLawful
+         | TokenKind.KeywordMod
+         | TokenKind.KeywordMut
+         | TokenKind.KeywordOpenVariant
+         | TokenKind.KeywordOr
+         | TokenKind.KeywordOverride
+         | TokenKind.KeywordProject
+         | TokenKind.KeywordPub
+         | TokenKind.KeywordRedef
+         | TokenKind.KeywordRestrictable
+         | TokenKind.KeywordRvadd
+         | TokenKind.KeywordRvand
+         | TokenKind.KeywordRvnot
+         | TokenKind.KeywordRvsub
+         | TokenKind.KeywordSealed
+         | TokenKind.KeywordStatic
+         | TokenKind.KeywordStruct
+         | TokenKind.KeywordThrow
+         | TokenKind.KeywordTrait
+         | TokenKind.KeywordType
+         | TokenKind.KeywordUniv
+         | TokenKind.KeywordWhere
+         | TokenKind.KeywordWith
+         | TokenKind.KeywordWithout
+         | TokenKind.KeywordXor
+         | TokenKind.KeywordYield
+         | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralStringInterpolationR
+         | TokenKind.ParenR
+         | TokenKind.Semi
+         | TokenKind.Slash
+         | TokenKind.Star
+         | TokenKind.StarStar
+         | TokenKind.StructArrow
+         | TokenKind.Tilde
+         | TokenKind.TripleAmpersand
+         | TokenKind.TripleAngleL
+         | TokenKind.TripleAngleR
+         | TokenKind.TripleBar
+         | TokenKind.TripleCaret
+         | TokenKind.TripleColon
+         | TokenKind.UserDefinedOperator => false
   }
 
   /**
@@ -651,6 +844,8 @@ object TokenKind {
 
   case object Dot extends TokenKind
 
+  case object DotDotDot extends TokenKind
+
   case object DotWhiteSpace extends TokenKind
 
   case object DotCurlyL extends TokenKind
@@ -701,8 +896,6 @@ object TokenKind {
 
   case object KeywordDiscard extends TokenKind
 
-  case object KeywordDo extends TokenKind
-
   case object KeywordEff extends TokenKind
 
   case object KeywordElse extends TokenKind
@@ -739,12 +932,6 @@ object TokenKind {
 
   case object KeywordInto extends TokenKind
 
-  case object KeywordJavaGetField extends TokenKind
-
-  case object KeywordJavaNew extends TokenKind
-
-  case object KeywordJavaSetField extends TokenKind
-
   case object KeywordLaw extends TokenKind
 
   case object KeywordLawful extends TokenKind
@@ -752,8 +939,6 @@ object TokenKind {
   case object KeywordLazy extends TokenKind
 
   case object KeywordLet extends TokenKind
-
-  case object KeywordMaskedCast extends TokenKind
 
   case object KeywordMatch extends TokenKind
 
@@ -788,6 +973,8 @@ object TokenKind {
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
+
+  case object KeywordRun extends TokenKind
 
   case object KeywordRvadd extends TokenKind
 
@@ -828,6 +1015,8 @@ object TokenKind {
   case object KeywordUniv extends TokenKind
 
   case object KeywordUnsafe extends TokenKind
+
+  case object KeywordUnsafely extends TokenKind
 
   case object KeywordUse extends TokenKind
 

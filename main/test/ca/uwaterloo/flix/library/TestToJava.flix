@@ -188,17 +188,17 @@ mod TestToJava {
     @test
     def chainToJava01(): Bool \ IO =
         let l: JList = ToJava.toJava((Chain.empty() : Chain[String]));
-        unsafe JList.of().equals(l)
+        JList.of().equals(l)
 
     @test
     def chainToJava02(): Bool \ IO =
         let l: JList = ToJava.toJava(Chain.singleton("one"));
-        unsafe JList.of("one").equals(l)
+        JList.of("one").equals(l)
 
     @test
     def chainToJava03(): Bool \ IO =
         let l: JList = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
-        unsafe JList.of("one", "two").equals(l)
+        JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                     //
@@ -207,17 +207,17 @@ mod TestToJava {
     @test
     def listToJava01(): Bool \ IO =
         let l: JList = ToJava.toJava((Nil : List[String]));
-        unsafe JList.of().equals(l)
+        JList.of().equals(l)
 
     @test
     def listToJava02(): Bool \ IO =
         let l: JList = ToJava.toJava(List#{"one"});
-        unsafe JList.of("one").equals(l)
+        JList.of("one").equals(l)
 
     @test
     def listToJava03(): Bool \ IO =
         let l: JList = ToJava.toJava(List#{"one", "two"});
-        unsafe JList.of("one", "two").equals(l)
+        JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Map                                                                     //
@@ -226,17 +226,17 @@ mod TestToJava {
     @test
     def mapToJava01(): Bool \ IO =
         let m: JMap = ToJava.toJava((Map#{} : Map[String, String]));
-        unsafe JMap.of().equals(m)
+        JMap.of().equals(m)
 
     @test
     def mapToJava02(): Bool \ IO =
         let m: JMap = ToJava.toJava(Map#{"a" => "one"});
-        unsafe JMap.of("a", "one").equals(m)
+        JMap.of("a", "one").equals(m)
 
     @test
     def mapToJava03(): Bool \ IO =
         let m: JMap = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
-        unsafe JMap.of("a", "one", "b", "two").equals(m)
+        JMap.of("a", "one", "b", "two").equals(m)
 
     /////////////////////////////////////////////////////////////////////////////
     // Nec                                                                     //
@@ -245,12 +245,12 @@ mod TestToJava {
     @test
     def necToJava01(): Bool \ IO =
         let l: JList = ToJava.toJava(Nec.singleton("one"));
-        unsafe JList.of("one").equals(l)
+        JList.of("one").equals(l)
 
     @test
     def necToJava02(): Bool \ IO =
         let l: JList = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
-        unsafe JList.of("one", "two").equals(l)
+        JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Nel                                                                     //
@@ -259,12 +259,12 @@ mod TestToJava {
     @test
     def nelToJava01(): Bool \ IO =
         let l: JList = ToJava.toJava(Nel.singleton("one"));
-        unsafe JList.of("one").equals(l)
+        JList.of("one").equals(l)
 
     @test
     def nelToJava02(): Bool \ IO =
         let l: JList = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
-        unsafe JList.of("one", "two").equals(l)
+        JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Set                                                                     //
@@ -273,17 +273,17 @@ mod TestToJava {
     @test
     def setToJava01(): Bool \ IO =
         let s: JSet = ToJava.toJava((Set#{} : Set[String]));
-        unsafe JSet.of().equals(s)
+        JSet.of().equals(s)
 
     @test
     def setToJava02(): Bool \ IO =
         let s: JSet = ToJava.toJava(Set#{"one"});
-        unsafe JSet.of("one").equals(s)
+        JSet.of("one").equals(s)
 
     @test
     def setToJava03(): Bool \ IO =
         let s: JSet = ToJava.toJava(Set#{"one", "two"});
-        unsafe JSet.of("one", "two").equals(s)
+        JSet.of("one", "two").equals(s)
 
     /////////////////////////////////////////////////////////////////////////////
     // Vector                                                                  //
@@ -292,16 +292,16 @@ mod TestToJava {
     @test
     def vectorToJava01(): Bool \ IO =
         let v: JList = ToJava.toJava((Vector#{} : Vector[String]));
-        unsafe JList.of().equals(v)
+        JList.of().equals(v)
 
     @test
     def vectorToJava02(): Bool \ IO =
         let v: JList = ToJava.toJava(Vector#{"one"});
-        unsafe JList.of("one").equals(v)
+        JList.of("one").equals(v)
 
     @test
     def vectorToJava03(): Bool \ IO =
         let v: JList = ToJava.toJava(Vector#{"one", "two"});
-        unsafe JList.of("one", "two").equals(v)
+        JList.of("one", "two").equals(v)
 
 }

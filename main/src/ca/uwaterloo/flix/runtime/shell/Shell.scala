@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.collection.Chain
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -290,7 +291,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
 
         // And try to compile!
-        compile(progress = false).toHardResult match {
+        compile(progress = false).toResult match {
           case Result.Ok(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -307,10 +308,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // The name of the generated main function.
         val main = Symbol.mkDefnSym("shell1")
 
-        // Cast the println to allow escaping effects
+        val effString = Symbol.PrimitiveEffs.map(_.toString).mkString(" + ")
+        // Cast to allow any subset of the primitive effects
         val src =
-          s"""def ${main.name}(): Unit \\ IO =
-             |unchecked_cast(println($s) as _ \\ IO)
+          s"""def ${main.name}(): Unit \\ $effString =
+             |checked_ecast(
+             |  println($s)
+             |)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
         run(main)
@@ -335,8 +339,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
-    f.errors.map(_.message(formatter)).foreach(out.println)
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = f match {
+    case Validation.Success(_) => ()
+    case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
   }
 
   /**
@@ -363,23 +368,30 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
-    val checkResult = flix.check().toHardFailure
-    checkResult.toHardResult match {
-      case Result.Ok(root) => this.root = Some(root)
-      case Result.Err(_) => // no-op
-    }
-
-    val result = Validation.flatMapN(checkResult)(flix.codeGen)
-    result.toHardResult match {
-      case Result.Ok(_) => // Compilation successful, no-op
-      case Result.Err(errors) =>
-        for (msg <- flix.mkMessages(errors)) {
-          terminal.writer().print(msg)
+    flix.check() match {
+      case (Some(root), Nil) =>
+        this.root = Some(root)
+        val result = flix.codeGen(root)
+        result.toResult match {
+          case Result.Ok(_) => result
+          case Result.Err(errors) =>
+            printErrors(errors.toList)
+            result
         }
-        terminal.writer().println()
+      case (_, errors) =>
+        printErrors(errors)
+        Validation.Failure(Chain.from(errors))
     }
+  }
 
-    result
+  /**
+    * Prints the list of errors using the `flix` instance to the implicit terminal.
+    */
+  private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
+    for (msg <- flix.mkMessages(errors)) {
+      terminal.writer().print(msg)
+    }
+    terminal.writer().println()
   }
 
   /**
@@ -387,7 +399,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toHardResult match {
+    compile(entryPoint = Some(main), progress = false).toResult match {
       case Result.Ok(result) =>
         result.getMain match {
           case Some(m) =>

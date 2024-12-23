@@ -16,16 +16,17 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.language.errors.RedundancyError.*
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
@@ -50,7 +51,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -66,22 +67,19 @@ object Redundancy {
     }, _ ++ _).errors.toList
 
     // Check for unused symbols.
-    val errors = {
-      errorsFromDefs ++
-        errorsFromInst ++
-        errorsFromSigs ++
-        checkUnusedDefs()(sctx, root) ++
-        checkUnusedEffects()(sctx, root) ++
-        checkUnusedEnumsAndTags()(sctx, root) ++
-        checkUnusedTypeParamsEnums()(root) ++
-        checkUnusedStructsAndFields()(sctx, root) ++
-        checkUnusedTypeParamsStructs()(root) ++
-        checkRedundantTraitConstraints()(root, flix)
-    }
+    val errors = errorsFromDefs ++
+      errorsFromInst ++
+      errorsFromSigs ++
+      checkUnusedDefs()(sctx, root) ++
+      checkUnusedEffects()(sctx, root) ++
+      checkUnusedEnumsAndTags()(sctx, root) ++
+      checkUnusedTypeParamsEnums()(root) ++
+      checkUnusedStructsAndFields()(sctx, root) ++
+      checkUnusedTypeParamsStructs()(root) ++
+      checkRedundantTraitConstraints()(root, flix)
 
-    // Determine whether to return success or soft failure.
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }(DebugValidation())
+    (root, errors)
+  }
 
   /**
     * Checks for unused definition symbols.
@@ -135,7 +133,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
+        case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
@@ -162,13 +160,13 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in structs.
-   */
+    * Checks for unused type parameters in structs.
+    */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, (name, field)) =>
+        case (acc, (_, field)) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
@@ -196,12 +194,12 @@ object Redundancy {
   /**
     * Finds redundant trait constraints in `tconstrs`.
     */
-  private def redundantTraitConstraints(tconstrs: List[Ast.TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
@@ -213,7 +211,7 @@ object Redundancy {
     implicit val lctx: LocalContext = LocalContext.mk()
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.bnd.sym), RecursionContext.ofDef(defn.sym))
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
@@ -242,7 +240,7 @@ object Redundancy {
     val usedExp = sig.exp match {
       case None => Used.empty
       case Some(exp) =>
-        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.bnd.sym), RecursionContext.ofSig(sig.sym))
     }
 
     // Check for unused parameters and remove all variable symbols.
@@ -266,7 +264,7 @@ object Redundancy {
     */
   private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
     fparams.collect {
-      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+      case fparam if deadVarSym(fparam.bnd.sym, used) => UnusedFormalParam(fparam.bnd.sym)
     }
   }
 
@@ -274,7 +272,7 @@ object Redundancy {
     * Finds unused type parameters.
     */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
@@ -300,23 +298,7 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Def(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.defSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
-    case Expr.Sig(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.sig.contains(sym)) {
-        sctx.sigSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
-    case Expr.Hole(sym, _, _) =>
+    case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
@@ -341,24 +323,45 @@ object Redundancy {
 
     case Expr.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
-      val env1 = env0 + fparam.sym
+      val env1 = env0 + fparam.bnd.sym
 
       // Visit the expression with the extended environment.
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check if the formal parameter is shadowing.
-      val shadowedVar = shadowing(fparam.sym.text, fparam.sym.loc, env0)
+      val shadowedVar = shadowing(fparam.bnd.sym.text, fparam.bnd.sym.loc, env0)
 
       // Check if the lambda parameter symbol is dead.
-      if (deadVarSym(fparam.sym, innerUsed))
-        innerUsed ++ shadowedVar - fparam.sym + UnusedFormalParam(fparam.sym)
+      if (deadVarSym(fparam.bnd.sym, innerUsed))
+        innerUsed ++ shadowedVar - fparam.bnd.sym + UnusedFormalParam(fparam.bnd.sym)
       else
-        innerUsed ++ shadowedVar - fparam.sym
+        innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.Apply(exp, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
+
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.defSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
+
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) =>
+      if (rc.vars.contains(sym)) {
+        visitExps(exps, env0, rc)
+      } else {
+        Used.of(sym) ++ visitExps(exps, env0, rc)
+      }
+
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.sigSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -368,7 +371,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(Binder(sym, _), exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -385,29 +388,38 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
       // Visit the two expressions under the extended environment.
+      // Also add fparams to env1 in the first expression.
       // Add the variable to the recursion context only in the first expression.
-      val innerUsed1 = visitExp(exp1, env1, rc.withVar(sym))
+      val innerUsed1 = visitExp(exp1, env1 ++ fparams.map(_.bnd.sym), rc.withVar(sym))
       val innerUsed2 = visitExp(exp2, env1, rc)
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
+      // Check if the LocalDef variable symbol is dead in exp1 + exp2.
       val shadowedVar = shadowing(sym.text, sym.loc, env0)
-
-      // Check if the let-bound variable symbol is dead in exp1 + exp2.
-      if (deadVarSym(sym, used))
+      val res1 = if (deadVarSym(sym, used))
         (used ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
         (used ++ shadowedVar) - sym
 
+      // Check if the fparams are dead in exp1
+      val fparamVars = fparams.map(_.bnd.sym)
+      val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
+
+      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+        case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
+        case (acc, (s, shadow)) => (acc ++ shadow) - s
+      }
+
     case Expr.Region(_, _) =>
       Used.empty
 
-    case Expr.Scope(sym, _, exp, _, _, _) =>
+    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -492,9 +504,9 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case TypeMatchRule(sym, _, body) =>
+        case TypeMatchRule(bnd, _, body) =>
           // Get the free var from the sym
-          val fvs = Set(sym)
+          val fvs = Set(bnd.sym)
 
           // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
@@ -545,14 +557,14 @@ object Redundancy {
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
 
-    case Expr.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _) =>
-      val us = visitExp(exp, env0, rc)
+    case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
+      val us = visitExps(exps, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       us
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -596,7 +608,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (_, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
@@ -631,7 +643,7 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.eff == eff)
+          if (exp.eff == eff && flix.options.xsubeffecting.isEmpty)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)
@@ -652,8 +664,12 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+      (runEff, exp.eff) match {
+        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
+        case _ => visitExp(exp, env0, rc)
+      }
 
     case Expr.Without(exp, effUse, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
@@ -662,10 +678,10 @@ object Redundancy {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, CatchRule(sym, _, body)) =>
+        case (acc, CatchRule(bnd, _, body)) =>
           val usedBody = visitExp(body, env0, rc)
-          if (deadVarSym(sym, usedBody))
-            acc ++ usedBody + UnusedVarSym(sym)
+          if (deadVarSym(bnd.sym, usedBody))
+            acc ++ usedBody + UnusedVarSym(bnd.sym)
           else
             acc ++ usedBody
       }
@@ -680,7 +696,7 @@ object Redundancy {
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
           val usedBody = visitExp(body, env0, rc)
-          val syms = fparams.map(_.sym)
+          val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
@@ -715,16 +731,14 @@ object Redundancy {
       methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
-          val env1 = env0 ++ fparams.map(_.sym)
+          val env1 = env0 ++ fparams.map(_.bnd.sym)
           val used = visitExp(exp, env1, rc)
           val unusedFParams = findUnusedFormalParameters(fparams, used)
           acc ++ used ++ unusedFParams
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -741,7 +755,7 @@ object Redundancy {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(sym, chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 
@@ -874,7 +888,7 @@ object Redundancy {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
     case Pattern.Cst(_, _, _) => Used.empty
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) =>
+    case Pattern.Tag(CaseSymUse(sym, _), _, _, _) =>
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       Used.empty
@@ -902,7 +916,7 @@ object Redundancy {
     }
     val total = head ++ body
 
-    total -- c0.cparams.map(_.sym)
+    total -- c0.cparams.map(_.bnd.sym)
   }
 
   /**
@@ -922,9 +936,9 @@ object Redundancy {
         case (acc, term) => acc ++ Used.of(freeVars(term))
       }
 
-    case Body.Functional(outVars, exp, _) =>
-      outVars.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
-        case (acc, varSym) => acc ++ Used.of(varSym)
+    case Body.Functional(outBnds, exp, _) =>
+      outBnds.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
+        case (acc, bnd) => acc ++ Used.of(bnd.sym)
       }
 
     case Body.Guard(exp, _) =>
@@ -977,13 +991,13 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isPure(exp)
 
   /**
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isMustUseType(exp.tpe)
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
@@ -998,7 +1012,7 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _) => true
+    case Expr.Hole(_, _, _, _) => true
     case Expr.HoleWithExp(_, _, _, _) => true
     case _ => false
   }
@@ -1008,9 +1022,11 @@ object Redundancy {
     */
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
-    case Pattern.Var(sym, _, _) => Set(sym)
+    case Pattern.Var(Binder(sym, _), _, _) => Set(sym)
     case Pattern.Cst(_, _, _) => Set.empty
-    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
+    }
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
@@ -1029,6 +1045,7 @@ object Redundancy {
     */
   private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
   /**
@@ -1036,7 +1053,8 @@ object Redundancy {
     */
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
-    case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
+    case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
+    case RestrictableChoosePattern.Error(_, _) => None
   }
 
   /**
@@ -1067,10 +1085,10 @@ object Redundancy {
       !sctx.defSyms.containsKey(decl.sym)
 
   /**
-    * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
+    * Returns `true` if the given symbol `sym` is the entry point.
     */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    sym.toString == "main" || root.entryPoint.contains(sym)
+    root.mainEntryPoint.contains(sym)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.

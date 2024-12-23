@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -36,11 +36,11 @@ object DerivationError {
     * @param legalSyms the list of class symbols of legal derivations.
     * @param loc       the location where the error occurred.
     */
-  case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Illegal derivation '${red(sym.name)}'.
          |
          |${code(loc, "Illegal derivation.")}
@@ -48,7 +48,7 @@ object DerivationError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
   }
@@ -60,11 +60,11 @@ object DerivationError {
     * @param classSym the class symbol of what is being derived.
     * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError {
     def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
@@ -80,11 +80,11 @@ object DerivationError {
     * @param sym the enum symbol
     * @param loc the source location where the error occurred.
     */
-  case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError with Recoverable {
+  case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError {
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}

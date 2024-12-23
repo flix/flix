@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for parser errors.
@@ -78,14 +78,6 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<for-generator>")
     }
 
-    case object JavaImport extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<java-import>")
-    }
-
-    case object JvmOp extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<jvm-op>")
-    }
-
     case object KeyValuePair extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("`key -> value`")
     }
@@ -140,7 +132,7 @@ object ParseError {
     * @param hint          Optional hint with more details about the error.
     * @param loc           The source location.
     */
-  case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+  case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
@@ -160,13 +152,13 @@ object ParseError {
     * @param sctx The syntactic context.
     * @param loc  The source location.
     */
-  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Misplaced comment(s)."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Misplaced comment(s).
          |
          |${code(loc, s"Here")}
@@ -181,13 +173,13 @@ object ParseError {
     * @param sctx The syntactic context.
     * @param loc  The source location.
     */
-  case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+  case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Misplaced doc-comment(s)."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Misplaced doc-comment(s).
          |
          |${code(loc, s"Here")}
@@ -203,13 +195,13 @@ object ParseError {
     * @param sctx  The syntactic context.
     * @param loc   The source location.
     */
-  case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+  case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Expected scope on ${token.display}."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected ${red("scope")} on ${cyan(token.display)}.
          |
          |${code(loc, s"Here")}
@@ -226,7 +218,7 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
@@ -247,13 +239,13 @@ object ParseError {
     * @param sctx      The syntactic context.
     * @param loc       The source location.
     */
-  case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+  case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Trailing ${separator.display}."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
          |${code(loc, s"Here")}
@@ -270,7 +262,7 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind = s"Parse Error ($sctx)"
 
     def summary: String = {
@@ -298,24 +290,6 @@ object ParseError {
     case i1 :: i2 :: Nil => s"$i1 or $i2"
     case i1 :: Nil => s"$i1"
     case i :: tail => s"$i, ${prettyJoin(tail)}"
-  }
-
-  /**
-    * A __legacy__ error used to support the previous parser.
-    * TODO: Remove this with the previous parser.
-    */
-  case class Legacy(message: String, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
-
-    def summary: String = message
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> $message
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
-    }
   }
 }
 

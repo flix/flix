@@ -6,6 +6,11 @@ import java.lang.System
 pub type alias Static = IO
 
 ///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {
@@ -13,15 +18,23 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The uninterpretable `Clock` effect.
+/// The uninterpretable Chan effect.
 ///
-/// The `Clock` effect represents the actions required to access the system clock.
+/// The `Chan` effect represents the global region of channels.
 ///
-/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
 ///
-/// The `Clock` effect is uninterpretable which means that it cannot be handled.
+pub eff Chan
+
 ///
-pub eff Clock
+/// The uninterpretable `Env` effect.
+///
+/// The `Env` effect represents actions that read from the environment (e.g. information
+/// about the shell, operating system, or hardware)
+///
+/// The `Env` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Env
 
 ///
 /// The uninterpretable `Exec` effect.
@@ -35,38 +48,27 @@ pub eff Clock
 pub eff Exec
 
 ///
-/// The uninterpretable `Exit` effect.
+/// The uninterpretable `FsRead` effect.
 ///
-/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
+/// The `FsRead` effect represents the actions to required to read from the file system.
 ///
-/// This includes calls to `System.exit` and `Runtime.exit`.
+/// The `FsRead` effect is uninterpretable which means that it cannot be handled.
 ///
-/// The `Exit` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Exit
+pub eff FsRead
 
 ///
-/// The uninterpretable `FileRead` effect.
+/// The uninterpretable `FsWrite` effect.
 ///
-/// The `FileRead` effect represents the actions to required to read from the file system.
+/// The `FsWrite` effect represents the actions to required to write to the file system.
 ///
-/// The `FileRead` effect is uninterpretable which means that it cannot be handled.
+/// The `FsWrite` effect is uninterpretable which means that it cannot be handled.
 ///
-pub eff FileRead
-
-///
-/// The uninterpretable `FileWrite` effect.
-///
-/// The `FileWrite` effect represents the actions to required to write to the file system.
-///
-/// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff FileWrite
+pub eff FsWrite
 
 ///
 /// A type alias for the `FileRead` and `FileWrite` effects.
 ///
-type alias FileIO = {FileRead, FileWrite}
+type alias FileIO = {FsRead, FsWrite}
 
 ///
 /// The uninterpretable IO effect.
@@ -204,7 +206,7 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = masked_cast({
+pub def bug!(m: String): a = unchecked_cast({
     System.err.println("*".repeat(80));
     System.err.println("**") ;
     System.err.println("**  BUG: ${m}") ;
@@ -212,23 +214,12 @@ pub def bug!(m: String): a = masked_cast({
     System.err.println("*".repeat(80));
     System.err.println("");
     ?panic
-})
+} as _ \ {})
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
-
-///
-/// Prints the argument unless it is ().
-///
-@Internal
-pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    typematch x {
-        case _: Unit => ()
-        case _: _    => println(x)
-    }
-}
 
 pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)

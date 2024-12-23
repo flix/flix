@@ -28,89 +28,83 @@ mod StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        StringBuilder(checked_ecast(unsafe new JStringBuilder()))
+        StringBuilder(unchecked_cast ((new JStringBuilder(): _ \ IO) as _ \ r))
 
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(x: a, sb: StringBuilder[r]): Unit \ r with ToString[a] =
+    pub def append(x: a, sb: StringBuilder[r]): Unit \ r with ToString[a] =
         let s = ToString.toString(x);
-        s `appendString!` sb;
+        s `appendString` sb;
         ()
 
     ///
     /// Append the String `s` to the StringBuilder `sb`.
     ///
-    pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
+    pub def appendString(s: String, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.append(s)) as _ \ r);
+        unchecked_cast((msb.append(s): _ \ IO) as _ \ r);
         ()
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
-    pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
+    pub def appendCodePoint(cp: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.appendCodePoint(cp)) as _ \ r);
+        unchecked_cast((msb.appendCodePoint(cp): _ \ IO) as _ \ r);
         ()
 
     ///
     /// Append the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLineSeparator!(sb: StringBuilder[r]): Unit \ r =
-        String.lineSeparator() `appendString!` sb
+    pub def appendLineSeparator(sb: StringBuilder[r]): Unit \ r =
+        String.lineSeparator() `appendString` sb
 
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLine!(s: String, sb: StringBuilder[r]): Unit \ r =
-        s `appendString!` sb;
-        appendLineSeparator!(sb)
+    pub def appendLine(s: String, sb: StringBuilder[r]): Unit \ r =
+        s `appendString` sb;
+        appendLineSeparator(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
-    pub def appendLineWith!(f: a -> String \ ef, x: a, sb: StringBuilder[r]): Unit \ { ef, r } =
-        f(x) `appendString!` sb;
-        appendLineSeparator!(sb)
+    pub def appendLineWith(f: a -> String \ ef, x: a, sb: StringBuilder[r]): Unit \ { ef, r } =
+        f(x) `appendString` sb;
+        appendLineSeparator(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
-        Array.forEach(x -> appendLine!(x, sb), a)
+    pub def appendLines(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
+        Array.forEach(x -> appendLine(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
     pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ (ef + r + Foldable.Aef[t]) with Foldable[t] =
-        Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
-
-    ///
-    /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
-    ///
-    pub def appendLinesWith!(f: a -> String \ ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, r1, r2 } =
-        Array.forEach(x -> appendLineWith!(f, x, sb), a)
+        Foldable.forEach(x -> appendLineWith(f, x, sb), t)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    pub def intercalate!(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
-        let append1! = (i, s) ->
+    pub def intercalate(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
+        let append1 = (i, s) ->
             if (i > 0) {
-                appendString!(sep, sb);
-                appendString!(s, sb)
+                appendString(sep, sb);
+                appendString(s, sb)
             } else {
-                appendString!(s, sb)
+                appendString(s, sb)
             };
-       Array.forEachWithIndex(append1!, a)
+       Array.forEachWithIndex(append1, a)
 
     ///
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
         let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((unsafe msb.charAt(i)) as _ \ r2))
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((msb.charAt(i): _ \ IO) as _ \ r2))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
@@ -123,7 +117,7 @@ mod StringBuilder {
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.length()) as _ \ r)
+        unchecked_cast((msb.length(): _ \ IO) as _ \ r)
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
@@ -133,15 +127,15 @@ mod StringBuilder {
     ///
     /// Sets the length of the StringBuilder `sb`.
     ///
-    pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
+    pub def setLength(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder.StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.setLength(newLength)) as _ \ r)
+        unchecked_cast((msb.setLength(newLength): _ \ IO) as _ \ r)
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast(unsafe msb.toString() as _ \ r)
+        unchecked_cast((msb.toString(): _ \ IO) as _ \ r)
 
 }

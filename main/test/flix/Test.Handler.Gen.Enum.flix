@@ -1,16 +1,16 @@
 mod Test.Handler.Gen.Enum {
 
     eff Gen {
-        pub def gen(): Option[Int32]
+        def gen(): Option[Int32]
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[Option[Int32]] =
         region rc {
             let counter = Ref.fresh(rc, Some(0));
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

@@ -80,8 +80,8 @@ pub trait Reducible[t: Type -> Type] {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, t: t[a]): b \ ef =
-        let f1 = (a, b) -> f(a, constant(b));
-        Reducible.reduceRightTo(f1, a -> f(a, constant(z)), t)
+        let f1 = (a, b) -> f(a, _ -> checked_ecast(b));
+        Reducible.reduceRightTo(f1, a -> f(a, _ -> checked_ecast(z)), t)
 
     ///
     /// Alias for `reduce`.
@@ -248,7 +248,7 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ r =
         let v = MutList.empty(rc);
-        Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
+        Reducible.foldLeft((_, a) -> MutList.push(a, v), (), t);
         MutList.toArray(rc, v)
 
     ///
@@ -256,7 +256,7 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def toVector(t: t[a]): Vector[a] = region rc {
         let l = MutList.empty(rc);
-        Reducible.foldLeft((_, a) -> MutList.push!(a, l), (), t);
+        Reducible.foldLeft((_, a) -> MutList.push(a, l), (), t);
         MutList.toVector(l)
     }
 

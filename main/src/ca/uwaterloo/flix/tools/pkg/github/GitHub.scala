@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.tools.pkg.github
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
@@ -239,19 +239,6 @@ object GitHub {
   def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
     case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty => Ok(Project(owner, repo))
     case _ => Err(PackageError.InvalidProjectName(string))
-  }
-
-  /**
-    * Gets the project release with the highest semantic version.
-    */
-  def getLatestRelease(project: Project, apiKey: Option[String]): Result[Release, PackageError] = {
-    getReleases(project, apiKey).flatMap {
-      releases =>
-        releases.maxByOption(_.version) match {
-          case None => Err(PackageError.NoReleasesFound(project))
-          case Some(latest) => Ok(latest)
-        }
-    }
   }
 
   /**

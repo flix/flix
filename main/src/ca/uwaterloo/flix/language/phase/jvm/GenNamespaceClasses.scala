@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 
 /**
   * Generates bytecode for the namespace classes.
@@ -53,7 +53,7 @@ object GenNamespaceClasses {
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
-    for ((sym, defn) <- ns.defs if root.reachable.contains(sym)) {
+    for ((sym, defn) <- ns.defs if root.entryPoints.contains(sym)) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }

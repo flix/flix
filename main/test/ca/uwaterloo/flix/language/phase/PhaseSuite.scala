@@ -23,7 +23,7 @@ class PhaseSuite extends Suites(
   // phases
   new TestLexer,
   new TestDeriver,
-  new TestEntryPoint,
+  new TestEntryPoints,
   new TestInstances,
   new TestKinder,
   new TestNamer,

@@ -131,7 +131,7 @@ mod TestDebug {
     }
 
     @test
-    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card((Hearts(()), N(5)))"
+    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card(Hearts, N(5))"
 
 
     pub enum Poly[a, b] {
@@ -142,7 +142,7 @@ mod TestDebug {
     }
 
     @test
-    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem(())"
+    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
 
     @test
     def testPolyStringify02(): Bool = stringify(Poly.This(123)) == "This(123)"
@@ -151,7 +151,7 @@ mod TestDebug {
     def testPolyStringify03(): Bool = stringify(Poly.That("Hello World!")) == "That(Hello World!)"
 
     @test
-    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both((123, Hello World!))"
+    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both(123, Hello World!)"
 
     @test
     def testRecordStringify01(): Bool = stringify({label = (1, 2)}) == "{label = (1, 2)}"
@@ -232,4 +232,71 @@ mod TestDebug {
         let s = stringify({label = (checked_cast(null): String)});
         s == "{label = null}"
     }
+
+    @test
+    def testDebug01(): Bool =
+        dbg(1) == 1
+
+    @test
+    def testDebug02(): Bool =
+        dbg("hey") == "hey"
+
+    @test
+    def testDebug03(): Bool =
+        dbg('a') == 'a'
+
+    @test
+    def testDebug04(): Bool =
+        dbg(x -> x + 1)(1) == 2
+
+    @test
+    def testDebug05(): Bool =
+        match dbg(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
+        }
+
+    @test
+    def testDebugBang01(): Bool =
+        dbg!(1) == 1
+
+    @test
+    def testDebugBang02(): Bool =
+        dbg!("hey") == "hey"
+
+    @test
+    def testDebugBang03(): Bool =
+        dbg!('a') == 'a'
+
+    @test
+    def testDebugBang04(): Bool =
+        dbg!(x -> x + 1)(1) == 2
+
+    @test
+    def testDebugBang05(): Bool =
+        match dbg!(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
+        }
+
+    @test
+    def testDebugBangBang01(): Bool =
+        dbg!!(1) == 1
+
+    @test
+    def testDebugBangBang02(): Bool =
+        dbg!!("hey") == "hey"
+
+    @test
+    def testDebugBangBang03(): Bool =
+        dbg!!('a') == 'a'
+
+    @test
+    def testDebugBangBang04(): Bool =
+        dbg!!(x -> x + 1)(1) == 2
+
+    @test
+    def testDebugBangBang05(): Bool =
+        match dbg!!(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
+        }
+
 }

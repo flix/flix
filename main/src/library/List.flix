@@ -22,7 +22,7 @@ import java.util.{List => JList}
 /// A list is either the empty list represented by `Nil`, or
 /// an element `v` followed by a list `vs` represented by `v :: vs`.
 ///
-pub enum List[t] with Sendable {
+pub enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }
@@ -134,9 +134,9 @@ instance ToJava[List[a]] {
     pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
 }
 
-instance FromJava[List[a]] {
+instance ToFlix[List[a]] {
     type In = JList
-    pub def fromJava(l: JList): List[a] = Adaptor.fromList(l)
+    pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
 
 mod List {
@@ -145,11 +145,10 @@ mod List {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        foreach (x <- l)
-            StringBuilder.appendString!("${x} :: ", sb);
-        StringBuilder.appendString!("Nil", sb);
-        StringBuilder.toString(sb)
+        List.iterator(rc, l)
+            |> Iterator.map(ToString.toString)
+            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+            |> Iterator.join(" :: ")
     }
 
     ///
@@ -285,7 +284,7 @@ mod List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -344,7 +343,7 @@ mod List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -352,14 +351,11 @@ mod List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => {
-                let y = f(x);
-                loop(xs, ys -> k(y :: ys))
-            }
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x) :: acc)
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Return the singleton list with element `x`.
@@ -669,7 +665,7 @@ mod List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -709,7 +705,7 @@ mod List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -970,7 +966,7 @@ mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, eidentity)
+        loop(xs, ys, x -> checked_ecast(x))
 
 
 
@@ -1048,7 +1044,7 @@ mod List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), eidentity)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), x -> checked_ecast(x))
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -1216,7 +1212,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region rc {
-        toArray(rc, l) !> Array.sort! |> Array.toList
+        toArray(rc, l) !> Array.sort |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1227,7 +1223,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
-        toArray(rc, l) !> Array.sortBy!(f) |> Array.toList
+        toArray(rc, l) !> Array.sortBy(f) |> Array.toList
     }
 
     ///
@@ -1238,7 +1234,7 @@ mod List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
-        toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList
+        toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
     }
 
     ///
@@ -1251,7 +1247,7 @@ mod List {
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
         def loop(sst, k) = match f(sst) {
             case None         => k(Nil)
-            case Some(a, st1) => loop(st1, ks -> k(a :: ks))
+            case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
         };
         loop(st, identity)
 
@@ -1416,8 +1412,8 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: List[a]): List[a] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toList
+    pub def shuffle(l: List[a]): List[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toList
     }
 
     ///

@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.*
 
 /**
   * A class representing the result of a compilation.
@@ -36,15 +36,6 @@ class CompilationResult(root: Root,
     * Optionally returns the main function.
     */
   def getMain: Option[Array[String] => Unit] = main
-
-  /**
-    * Returns all the benchmark functions in the program.
-    */
-  def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
-    defs filter {
-      case (sym, _) => root.defs(sym).ann.isBenchmark
-    }
-  }
 
   /**
     * Returns all the test functions in the program.

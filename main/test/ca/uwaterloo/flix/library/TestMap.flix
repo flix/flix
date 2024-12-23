@@ -742,7 +742,7 @@ def mapWithKey06(): Bool = region rc {
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = MutList.empty(rc);
-    discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+    discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); v }, m);
     MutList.toList(a) == range
 }
 
@@ -978,7 +978,7 @@ def count08(): Bool = region rc {
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = MutList.empty(rc);
-    discard Map.count((k, _) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+    discard Map.count((k, _) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); true }, m);
     MutList.toList(a) == range
 }
 
@@ -1099,7 +1099,7 @@ def count08(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.sumWith((k, _) -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Map.sumWith((k, _) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -1909,27 +1909,27 @@ def forEachWithIndex02(): Bool = region rc {
 
 @test
 def unfold01(): Bool =
-    Map.unfold(s -> if (true) None else Some(s, s + 48, s + 1), 0) == Map#{}
+    Map.unfold(s -> if (true) None else Some((s, s + 48, s + 1)), 0) == Map#{}
 
 @test
 def unfold02(): Bool =
-    Map.unfold(s -> if (s > 0) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48}
+    Map.unfold(s -> if (s > 0) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48}
 
 @test
 def unfold03(): Bool =
-    Map.unfold(s -> if (s > 1) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48, 1 => 49}
+    Map.unfold(s -> if (s > 1) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48, 1 => 49}
 
 @test
 def unfold04(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+    Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 
 @test
 def unfold05(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 5) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+    Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 5) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 
 @test
 def unfold06(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 2), 0) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
+    Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 2)), 0) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //
@@ -1945,7 +1945,7 @@ def unfoldWithIter01(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 1, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{}
 }
@@ -1960,7 +1960,7 @@ def unfoldWithIter02(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 1, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{0 => 48}
 }
@@ -1975,7 +1975,7 @@ def unfoldWithIter03(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 1, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
 }
@@ -1990,7 +1990,7 @@ def unfoldWithIter04(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 1, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 }
@@ -2005,7 +2005,7 @@ def unfoldWithIter05(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 1, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 }
@@ -2020,7 +2020,7 @@ def unfoldWithIter06(): Bool = region rc {
             let k = Ref.get(x);
             let v = k + 48;
             Ref.put(Ref.get(x) + 2, x);
-            Some(k, v)
+            Some((k, v))
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
 }
@@ -2069,12 +2069,12 @@ def rangeQuery04(): Bool =
 
 @test
 def rangeQuery05(): Bool =
-    let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
+    let m = Map.unfold(s -> if (s > 10) None else Some((s, s, s + 1)), 5);
     Map.rangeQuery(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
 
 @test
 def rangeQuery06(): Bool =
-    let m = Map.unfold(s -> if (s > 75) None else Some(s, Some(s + 48), s + 1), 25);
+    let m = Map.unfold(s -> if (s > 75) None else Some((s, Some(s + 48), s + 1)), 25);
     Map.rangeQuery(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
 
 @test
@@ -2245,7 +2245,7 @@ def rangeQuery18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.minimumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 
@@ -2297,7 +2297,7 @@ def rangeQuery18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.minimumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
     }
 
@@ -2340,7 +2340,7 @@ def rangeQuery18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.maximumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 
@@ -2383,7 +2383,7 @@ def rangeQuery18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
-        discard Map.maximumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

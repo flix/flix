@@ -42,7 +42,7 @@ mod Test.Exp.Let.Match {
 
     @test
     def testLetMatch09(): Bool =
-        let Box.Box((x, y), (z, w)) = Box.Box(((1, 2), (3, 4)));
+        let Box.Box(((x, y), (z, w))) = Box.Box(((1, 2), (3, 4)));
             x + y + z + w == 1 + 2 + 3 + 4
 
     @test

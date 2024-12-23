@@ -1,42 +1,42 @@
 mod Test.Exp.Jvm.Overload.Arity {
 
    @test
-   def testInvokeMethod2_01(): Bool \ IO =
+   def testInvokeMethod_01(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.indexOf("O") == 4
 
    @test
-   def testInvokeMethod2_02(): Bool \ IO =
+   def testInvokeMethod_02(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.indexOf("Z") == -1
 
    @test
-   def testInvokeMethod2_03(): Bool \ IO =
+   def testInvokeMethod_03(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.indexOf("W", 5) == 6
 
    @test
-   def testInvokeMethod2_04(): Bool \ IO =
+   def testInvokeMethod_04(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.indexOf("W", 7) == -1
 
    @test
-   def testInvokeMethod2_05(): Bool \ IO =
+   def testInvokeMethod_05(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.lastIndexOf("O") == 7
 
    @test
-   def testInvokeMethod2_06(): Bool \ IO =
+   def testInvokeMethod_06(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.lastIndexOf("Z") == -1
 
    @test
-   def testInvokeMethod2_07(): Bool \ IO =
+   def testInvokeMethod_07(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.lastIndexOf("L", 10) == 9
 
    @test
-   def testInvokeMethod2_08(): Bool \ IO =
+   def testInvokeMethod_08(): Bool \ IO =
       let obj = "HELLO WORLD";
       obj.lastIndexOf("W", 3) == -1
 

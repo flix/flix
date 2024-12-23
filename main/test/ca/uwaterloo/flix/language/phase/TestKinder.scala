@@ -702,6 +702,177 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.LocalDef.Effect.01") {
+    val input =
+      """
+        |def g(): Unit =
+        |    def f(): Unit \ Unit = ???;
+        |    f()
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Type.01") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(x: Int32[Int32]): Int32 = ???;
+        |    f(???)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Type.02") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(x: Int32 -> Int32 \ Int32): Int32 = ???;
+        |    f(x -> x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Type.03") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(x: {} -> Int32 \ Int32): Int32 = ???;
+        |    f(_ -> 1)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Type.04") {
+    val input =
+      """
+        |enum E[a]
+        |
+        |def g(): Int32 =
+        |    def f(x: E[Int32, Int32]): Int32 = ???;
+        |    f(???)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Type.05") {
+    val input =
+      """
+        |struct S[a, r]
+        |
+        |def g(): Int32 =
+        |    def f(x: S[Int32, Int32, Region]): Int32 = ???;
+        |    f(???)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Parameter.01") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(x: {}): Int32 = ???;
+        |    f({})
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Parameter.02") {
+    val input =
+      """
+        |enum E[a]
+        |
+        |def g(): Int32 =
+        |    def f(x: E): Int32 = ???;
+        |    f(???)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Parameter.03") {
+    val input =
+      """
+        |struct S[a, r]
+        |
+        |def g(): Int32 =
+        |    def f(x: S): Int32 = ???;
+        |    f(???)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Return.01") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(): {} = ???;
+        |    let _ = f();
+        |    1
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Return.02") {
+    val input =
+      """
+        |enum E[a]
+        |
+        |def g(): Int32 =
+        |    def f(): E = ???;
+        |    let _ = f();
+        |    1
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Return.03") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(): Int32[Int32] = ???;
+        |    let _ = f();
+        |    1
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Return.04") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(): () = ???;
+        |    let _ = f();
+        |    1
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.LocalDef.Return.05") {
+    val input =
+      """
+        |struct S[a, r] {}
+        |
+        |def g(): Int32 =
+        |    def f(): S = ???;
+        |    let _ = f();
+        |    1
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Def.Type.01") {
     val input =
       """
@@ -753,15 +924,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |enum E[a]
         |
         |def f(x: E[Int32, Int32]): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
-  test("KindError.Def.Type.07") {
-    val input =
-      """
-        |def f(x: Int32[Int32]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)

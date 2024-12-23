@@ -152,15 +152,16 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
-    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: Stream): Iterator[a, r, r] =
-        let iter = unsafe (checked_cast(strm): BaseStream).iterator();
+    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: Stream): Iterator[a, r, r] \ r =
+        let baseStream: BaseStream = checked_cast(strm);
+        let iter = unchecked_cast ((baseStream.iterator(): _ \ IO) as _ \ r);
         Adaptor.fromIterator(rc, proxy, iter)
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Collection.
     ///
-    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: Collection): Iterator[a, r, r] =
-        let iter = unsafe col.iterator();
+    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: Collection): Iterator[a, r, r] \ r =
+        let iter = unchecked_cast ((col.iterator(): _ \ IO) as _ \ r);
         Adaptor.fromIterator(rc, proxy, iter)
 
     ///

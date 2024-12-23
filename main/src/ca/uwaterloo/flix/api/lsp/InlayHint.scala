@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.JValue
 
 /**

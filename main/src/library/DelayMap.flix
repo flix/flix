@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum DelayMap[k, v] with Sendable {
+pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
@@ -38,7 +38,7 @@ instance Indexable[DelayMap[k, v]] with Order[k] {
     type Aef = KeyNotFound
     pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
         case Some(v) => v
-        case None    => do KeyNotFound.keyNotFound("key not found")
+        case None    => KeyNotFound.keyNotFound("key not found")
     }
 }
 
@@ -61,31 +61,29 @@ instance Iterable[DelayMap[k, v]] {
 
 mod DelayMap {
 
+    import java.lang.Runtime
+
     ///
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let _ = parallelForce(m);
-        StringBuilder.appendString!("DelayMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the DelayMap module.
+    ///
+    def threads(): Int32 = unsafe {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -176,7 +174,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t)
+                    RedBlackTree.parCount(h, t)
                 else
                     c()
             case Purity2.Impure(_) => c()
@@ -200,7 +198,7 @@ mod DelayMap {
         let DMap(t) = m;
         match RedBlackTree.minimumKey(t) {
             case None       => None
-            case Some(k, v) => Some(k, force v)
+            case Some((k, v)) => Some((k, force v))
         }
 
     ///
@@ -218,10 +216,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     min()
@@ -251,10 +249,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     min()
@@ -271,7 +269,7 @@ mod DelayMap {
         let DMap(t) = m;
         match RedBlackTree.maximumKey(t) {
             case None       => None
-            case Some(k, v) => Some(k, force v)
+            case Some((k, v)) => Some((k, force v))
         }
 
     ///
@@ -289,10 +287,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     max()
@@ -323,10 +321,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
                         case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     max()
@@ -863,7 +861,7 @@ mod DelayMap {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
-                    RedBlackTree.parSumWith(threads() - 1, h, t)
+                    RedBlackTree.parSumWith(h, t)
                 else
                     sw()
             case Purity2.Impure(_) => sw()

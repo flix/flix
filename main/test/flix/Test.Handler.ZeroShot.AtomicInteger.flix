@@ -9,13 +9,13 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         unsafe n.intValue()
 
     eff Exc {
-        pub def raise(): AtomicInteger
+        def raise(): AtomicInteger
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Exc.raise();
-        let result = try {
+        def f1() = Exc.raise();
+        let result = run {
             f1()
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -24,9 +24,9 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Exc.raise();
+        def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
-        let result = try {
+        let result = run {
             f2()
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -35,10 +35,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Exc.raise();
+        def f1() = Exc.raise();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
-        let result = try {
+        let result = run {
             f3()
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -47,9 +47,9 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(0)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -58,9 +58,9 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(1)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -69,9 +69,9 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Exc.raise();
+        def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        let result = try {
+        let result = run {
             r(10)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -80,7 +80,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive01(): Bool =
-        let result = try {
+        let result = run {
             mutual1(0)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -89,7 +89,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive02(): Bool =
-        let result = try {
+        let result = run {
             mutual1(1)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -98,7 +98,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive03(): Bool =
-        let result = try {
+        let result = run {
             mutual1(2)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -107,7 +107,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive04(): Bool =
-        let result = try {
+        let result = run {
             mutual1(3)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -116,7 +116,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive05(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with Exc {
             def raise(_k) = newAtomicInteger(42)
@@ -125,7 +125,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive06(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with Exc {
             def raise(_k) = newAtomicInteger(40)
@@ -133,7 +133,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         Assert.eq(toInt(newAtomicInteger(40)), toInt(result))
 
     def f(): AtomicInteger \ Exc =
-         do Exc.raise();
+         Exc.raise();
          unreachable!()
 
     def mutual1(x: Int32): AtomicInteger \ Exc =

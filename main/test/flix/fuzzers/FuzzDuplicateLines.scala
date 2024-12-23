@@ -21,29 +21,23 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
   /**
     * Number of variants to make of each file. Each variant has a single line duplicated.
     */
-  private val N = 10
+  private val N = 30
 
   test("simple-card-game") {
-    val filepath = Paths.get("examples/simple-card-game.flix")
-    val lines = Files.lines(filepath)
-    compileWithDuplicateLine(filepath.getFileName.toString, lines)
-  }
-
-  test("using-channels-and-select") {
-    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val lines = Files.lines(filepath)
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }

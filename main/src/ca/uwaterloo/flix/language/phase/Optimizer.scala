@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expr
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
@@ -36,7 +36,7 @@ object Optimizer {
       var result = root
       for (_ <- 1 to 2) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
-        val afterInliner = Inliner.run(afterOccurrenceAnalyzer.unsafeGet)
+        val afterInliner = Inliner.run(afterOccurrenceAnalyzer)
         result = afterInliner.unsafeGet
       }
       result
@@ -52,7 +52,7 @@ object Optimizer {
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   def isTrivialExp(exp0: Expr): Boolean = exp0 match {
-    case Expr.Constant(_, _, _) => true
+    case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
     case _ => false
   }

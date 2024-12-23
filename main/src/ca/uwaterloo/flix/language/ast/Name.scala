@@ -63,6 +63,16 @@ object Name {
   }
 
   /**
+    * Builds an unlocated name from the given namespace parts.
+    *
+    * The source location of each part is Unknown, but the source location of the entire NName is known.
+    */
+  def mkUnlocatedNNameWithLoc(parts: List[String], loc: SourceLocation): NName = {
+    val idents = parts.map(Ident(_, SourceLocation.Unknown))
+    NName(idents, loc)
+  }
+
+  /**
     * Returns true if the given string represents a wildcard name.
     */
   def isWild(name: String): Boolean = name.startsWith("_")
@@ -82,7 +92,7 @@ object Name {
     /**
       * Returns `true` if `this` identifier is uppercase.
       */
-    def isUpper: Boolean = name.charAt(0).isUpper
+    def isUpper: Boolean = name.nonEmpty && name.charAt(0).isUpper
 
     /**
       * Returns `true` if `this` identifier is lowercase.

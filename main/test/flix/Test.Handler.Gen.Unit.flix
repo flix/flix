@@ -1,16 +1,16 @@
 mod Test.Handler.Gen.Unit {
 
     eff Gen {
-        pub def gen(): Unit
+        def gen(): Unit
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        Gen.gen(); generator()
 
     def sample(limit: Int32): List[Unit] =
         region rc {
             let counter = Ref.fresh(rc, 0);
-            try {
+            run {
                 generator(); Nil
             } with Gen {
                 def gen(k) =

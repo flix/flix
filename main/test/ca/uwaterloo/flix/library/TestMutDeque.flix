@@ -1223,37 +1223,37 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO = region rc {
+    def shuffle01(): Bool \ NonDet = region rc {
         let l: List[Int32] = Nil;
         let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, Random.fresh(), d1);
+        let d2 = MutDeque.shuffle(rc, d1);
 
         MutDeque.size(d2) == 0 and d2 |> MutDeque.toList |> List.toSet == Set#{}
     }
 
     @test
-    def shuffle02(): Bool \ IO = region rc {
+    def shuffle02(): Bool \ NonDet = region rc {
         let l = 1 :: Nil;
         let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, Random.fresh(), d1);
+        let d2 = MutDeque.shuffle(rc, d1);
 
         MutDeque.size(d2) == 1 and d2 |> MutDeque.toList |> List.toSet == Set#{1}
     }
 
     @test
-    def shuffle03(): Bool \ IO = region rc {
+    def shuffle03(): Bool \ NonDet = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, Random.fresh(), d1);
+        let d2 = MutDeque.shuffle(rc, d1);
 
         MutDeque.size(d2) == 3 and d2 |> MutDeque.toList |> List.toSet == Set#{1, 2, 3}
     }
 
     @test
-    def shuffle04(): Bool \ IO = region rc {
+    def shuffle04(): Bool \ NonDet = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, Random.fresh(), d1);
+        let d2 = MutDeque.shuffle(rc, d1);
 
         MutDeque.size(d2) == 10 and
             d2 |> MutDeque.toList |> List.toSet == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}

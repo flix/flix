@@ -16,27 +16,37 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit index: Index, flix: Flix): Iterable[PredicateCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
+
     //
     // Find all predicates together with their type and source location.
     //
-    val predsWithTypeAndLoc = index.predTypes
+    var predsWithTypeAndLoc: Set[(Name.Pred, Type)] = Set.empty
+
+    object PredConsumer extends Consumer {
+      override def consumePredicate(p: TypedAst.Predicate): Unit = p match {
+        case TypedAst.Predicate.Head.Atom(name, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
+        case TypedAst.Predicate.Body.Atom(name, _, _, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
+        case _ => ()
+      }
+    }
 
     //
     // Select all predicate symbols that occur in the same file.
     //
-    for (
-      (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
-      (tpe, loc) <- arityAndLocs;
-      if loc.source.name == ctx.uri
-    ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
+    Visitor.visitRoot(root, PredConsumer, FileAcceptor(ctx.uri))
+
+    predsWithTypeAndLoc.map{case (predName, tpe) => Completion.PredicateCompletion(predName.name, arityOf(tpe), FormatType.formatType(tpe))}
   }
 
   /**

@@ -1,13 +1,13 @@
 mod Test.Handler.MultiShot.Unit {
 
     eff AskTell {
-        pub def askTell(x: Unit): Unit
+        def askTell(x: Unit): Unit
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do AskTell.askTell(());
-        let result = try {
+        def f1() = AskTell.askTell(());
+        let result = run {
             f1()
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -16,9 +16,9 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do AskTell.askTell(());
+        def f1() = AskTell.askTell(());
         def f2() = f1();
-        let result = try {
+        let result = run {
             f2()
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -27,10 +27,10 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do AskTell.askTell(());
+        def f1() = AskTell.askTell(());
         def f2() = f1();
         def f3() = f2();
-        let result = try {
+        let result = run {
             f3()
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -39,9 +39,9 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do AskTell.askTell(());
+        def f() = AskTell.askTell(());
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(0)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -50,9 +50,9 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do AskTell.askTell(());
+        def f() = AskTell.askTell(());
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(1)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -61,9 +61,9 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f1() = do AskTell.askTell(());
+        def f1() = AskTell.askTell(());
         def r(x) = if (x == 0) f1() else r(x - 1);
-        let result = try {
+        let result = run {
             r(10)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -72,7 +72,7 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testMutualRecursive01(): Bool =
-        let result = try {
+        let result = run {
             mutual1(0)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -81,7 +81,7 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testMutualRecursive02(): Bool =
-        let result = try {
+        let result = run {
             mutual1(1)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -90,7 +90,7 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testMutualRecursive03(): Bool =
-        let result = try {
+        let result = run {
             mutual1(2)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -99,7 +99,7 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testMutualRecursive04(): Bool =
-        let result = try {
+        let result = run {
             mutual1(3)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
@@ -108,14 +108,14 @@ mod Test.Handler.MultiShot.Unit {
 
     @Test
     def testMutualRecursive05(): Bool =
-        let result = try {
+        let result = run {
             mutual1(10)
         } with AskTell {
             def askTell(x, k) = if (k(x) == () and k(x) == ()) () else unreachable!()
         };
         Assert.eq((), result)
 
-    def f(): Unit \ AskTell = do AskTell.askTell(())
+    def f(): Unit \ AskTell = AskTell.askTell(())
 
     def mutual1(x: Int32): Unit \ AskTell =
         if (x == 0) f() else mutual2(x - 1)

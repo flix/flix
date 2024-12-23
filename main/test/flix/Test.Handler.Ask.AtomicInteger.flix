@@ -9,14 +9,14 @@ mod Test.Handler.Ask.AtomicInteger {
         unsafe n.intValue()
 
     eff Ask {
-        pub def ask(x: AtomicInteger): Unit
+        def ask(x: AtomicInteger): Unit
     }
 
     def generator(x: AtomicInteger): Unit \ Ask =
-        do Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
+        Ask.ask(x); generator(newAtomicInteger(toInt(x) + 1))
 
     def sample(limit: Int32): List[AtomicInteger] =
-        try {
+        run {
             generator(newAtomicInteger(0)); Nil
         } with Ask {
             def ask(x, k) = if (toInt(x) == limit) Nil else x :: k()

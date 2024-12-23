@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -194,10 +194,10 @@ class TypeContext {
   /**
     * Adds the given trait constraints to the context.
     */
-  def addClassConstraints(tconstrs0: List[Ast.TraitConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case Ast.TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
+      case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }
@@ -207,30 +207,6 @@ class TypeContext {
     */
   def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
     renv = renv.markRigid(sym)
-  }
-
-  /**
-    * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
-    *
-    * Note: Does not work for polymorphic effects. This should conceptually work
-    * like exiting a region or instead use set subtraction.
-    */
-  // TODO ASSOC-TYPES remove this once we introduce set effects
-  def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
-    def visit(t: Type): Type = t match {
-      case Type.Var(_, _) => t
-      case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Effect(sym2) if sym == sym2 => Type.Pure
-        case _ => t
-      }
-      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
-      case Type.Alias(_, _, tpe, _) => visit(tpe)
-      case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
-      case Type.JvmToType(tpe, loc) => Type.JvmToType(visit(tpe), loc)
-      case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(visit), loc)
-    }
-
-    visit(eff)
   }
 
   /**

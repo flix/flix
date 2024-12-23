@@ -53,7 +53,7 @@ mod Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = constant(Done);
+        let f = _ ->  checked_ecast(Done);
         Iterator(rc, f)
 
     ///
@@ -134,7 +134,7 @@ mod Iterator {
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
         let m = MutList.empty(rc1);
-        forEach(a -> MutList.push!(a, m), iter);
+        forEach(a -> MutList.push(a, m), iter);
         MutList.toArray(rc, m)
     }
 
@@ -145,7 +145,7 @@ mod Iterator {
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
         let m = MutList.empty(rc);
-        forEach(a -> MutList.push!(a, m), iter);
+        forEach(a -> MutList.push(a, m), iter);
         MutList.toVector(m)
     }
 
@@ -426,7 +426,7 @@ mod Iterator {
             case Done   => k(s)
 
         };
-        loop(eidentity)
+        loop(x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -616,7 +616,7 @@ mod Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = constant(Done);
+        let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
 
@@ -695,8 +695,8 @@ mod Iterator {
         let sb = StringBuilder.empty(rc);
         match next(iter) {
             case Some(a) => {
-                StringBuilder.append!(f(a), sb);
-                forEach(x -> {StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb)}, iter)
+                StringBuilder.append(f(a), sb);
+                forEach(x -> {StringBuilder.append(sep, sb); StringBuilder.append(f(x), sb)}, iter)
             }
             case None    => ()
         };

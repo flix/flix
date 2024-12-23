@@ -1,5 +1,31 @@
 # Changelog
 
+Version 0.55.0:
+- Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
+- Compiler: Improved performance of LSP API (thanks Alexander!)
+
+Version 0.54.0:
+- Compiler: Improved auto-completion suggestions (thanks Chenhao!)
+- Compiler: Added `AutoImportCompleter` (thanks Chenhao!)
+- Compiler: Added `AutoUseCompleter` (thanks Chenhao!)
+- Compiler: Added `LocalScopeCompleter` (thanks Chenhao!)
+- Compiler: Reworked compilation of enums (thanks Jonathan!)
+
+Version 0.53.0:
+- Language: Added support for algebraic effects (thanks everyone!)
+- Library: Added algebraic effects: Console, FileRead, FileWrite, Http, ... (thanks Holger and Magnus!)
+- Compiler: Reworked and extended the HoverProvider (thanks Alexander!)
+- Compiler: Reworked and extended the HighlightProvider (thanks Alexander!)
+- Compiler: Added magic match completions (thanks Chenhao!)
+
+Version 0.52.0:
+- Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
+
+Version 0.51.0:
+- Language: Added support for mutable structs (thanks Joseph!)
+- Language: Added support for `Indexable` and `IndexableMut` (thanks Jonathan!)
+- Compiler: Improved keyword completion (thanks Alexander!)
+
 Version 0.50.0:
 - Language: Introduced `redef` as a short-hand to redefine functions in trait instances (thanks Jakob!)
 - Compiler: Significantly improved performance of auto-complete (thanks Magnus!)
@@ -25,7 +51,7 @@ Version 0.46.0:
 - Compiler: Reduced memory usage of types and source locations (thanks Magnus!)
 
 Version 0.45.0:
-- Compiler: Added support for the `build-fatjar` command (thanks Chanattan Sok!)
+- Compiler: Added support for the `build-fatjar` command (thanks Chanattan!)
 - Compiler: Added support for the `outdated` command (thanks Holger!)
 - Library: Added `Coerce` type class (thanks Magnus!)
 - Library: Added `purityOf` functions (thanks Jakob!)

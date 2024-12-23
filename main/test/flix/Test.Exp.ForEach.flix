@@ -343,7 +343,7 @@ mod Test.Exp.Foreach {
     def testForeach41(): Bool = region rc {
         let l = MutList.empty(rc);
         foreach (i <- List.range(0, 10)) {
-            MutList.push!(i, l)
+            MutList.push(i, l)
         };
         let y = Ref.fresh(rc, 0);
         foreach (x <- MutList.toList(l))
@@ -355,7 +355,7 @@ mod Test.Exp.Foreach {
     def testForeach42(): Bool = region rc {
         let l = MutList.empty(rc);
         foreach (i <- List.range(0, 10)) {
-            MutList.push!(i, l)
+            MutList.push(i, l)
         };
         let y = Ref.fresh(rc, 0);
         foreach (x <- MutList.toList(l);

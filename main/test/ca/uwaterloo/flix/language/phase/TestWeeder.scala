@@ -45,19 +45,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
-  test("DuplicateAnnotation.03") {
-    val input =
-      """
-        |def f(): Int32 = {
-        | @Benchmark @Benchmark
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
-
   test("DuplicateFormalParam.01") {
     val input = "def f(x: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
@@ -308,9 +295,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @benchmark @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
+        |  @test @Tailrec
+        |  def g(i) = if (i <= 0) 0 else g(i - 1);
+        |  g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -340,7 +327,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEnum](result)
   }
-
 
   test("IllegalEqualityConstraint.01") {
     val input =
@@ -601,7 +587,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(x: String) = "hello"
         |    }
         |""".stripMargin
@@ -613,7 +599,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(x: a) = "hello"
         |    }
         |""".stripMargin
@@ -625,7 +611,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with Fail {
+        |    run ??? with Fail {
         |        def fail(_: Int32) = "hello"
         |    }
         |""".stripMargin
@@ -816,6 +802,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalSelectChannelRuleFunctionCall.01") {
+    val input =
+      """
+        |def f(): Int32 = select {
+        |    case x <- NotChannel.NotRecv(a) => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedSelectChannelRuleFunction](result)
   }
 
   test("IllegalTraitConstraintParameter.01") {
@@ -1290,6 +1287,24 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUse](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.01") {
+    val input =
+      """
+        |def F(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
+  }
+
+  test("UnexpectedNonLowerCaseName.02") {
+    val input =
+      """
+        |def Map(): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedNonLowerCaseName](result)
   }
 
   test("UnqualifiedUse.01") {

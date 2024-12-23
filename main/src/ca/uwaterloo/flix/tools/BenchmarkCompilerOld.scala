@@ -2,10 +2,10 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 /**
@@ -152,13 +152,17 @@ object BenchmarkCompilerOld {
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
-        val root = flix.check().toHardFailure.unsafeGet
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+        }
+        val root = optRoot.get
         val totalLines = root.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.unsafeGet
+        val compilationResult = flix.compile().unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }
@@ -228,22 +232,16 @@ object BenchmarkCompilerOld {
     * Returns a Flix object configured with the benchmark program.
     */
   private def newFlix(o: Options): Flix = {
+    // Clear caches
+    ZhegalkinCache.clearCaches()
+
     val flix = new Flix()
-    flushCaches()
 
     flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
 
     addInputs(flix)
 
     flix
-  }
-
-  /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
   }
 
   /**

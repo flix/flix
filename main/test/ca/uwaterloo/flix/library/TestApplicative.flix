@@ -33,7 +33,7 @@ mod TestApplicative {
 
     @test
     def product03(): Bool =
-        product(Some(1), Some(2)) == Some(1, 2)
+        product(Some(1), Some(2)) == Some((1, 2))
 
     @test
     def product04(): Bool =

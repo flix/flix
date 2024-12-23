@@ -1,18 +1,15 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Purity
-import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.dbg.DocAst.Eff
+import ca.uwaterloo.flix.language.dbg.DocAst.Type
 
 object PurityPrinter {
 
-  /**
-    * Returns the [[DocAst.Eff]] representation of `purity`.
-    */
-  def print(purity: Purity): Eff = purity match {
-    case Purity.Pure => Eff.Pure
-    case Purity.Impure => Eff.Impure
-    case Purity.ControlImpure => Eff.ControlImpure
+  /** Returns the [[Type]] representation of `purity`. */
+  def print(purity: Purity): Type = purity match {
+    case Purity.Pure => Type.Pure
+    case Purity.Impure => Type.Impure
+    case Purity.ControlImpure => Type.ControlImpure
   }
 
 }

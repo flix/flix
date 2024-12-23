@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum DelayList[a] with Sendable {
+pub enum DelayList[a] {
     case ENil,
     case ECons(a, DelayList[a]),
     case LCons(a, Lazy[DelayList[a]]),
@@ -133,16 +133,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("DelayList(", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-            }, l);
-        StringBuilder.appendString!(")", sb);
-        StringBuilder.toString(sb)
+        "DelayList(" + (DelayList.iterator(rc, l) |> Iterator.join(", ")) + ")"
     }
 
     ///
@@ -626,7 +617,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, eidentity)
+        loop(l, x -> checked_ecast(x))
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -712,7 +703,7 @@ mod DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, eidentity))
+        if (isEmpty(l)) None else Some(loop(l, x -> checked_ecast(x)))
 
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
@@ -844,7 +835,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, constant(None))
+        loop(l, _ -> checked_ecast(None))
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
@@ -1348,8 +1339,8 @@ mod DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toDelayList
     }
 
 }

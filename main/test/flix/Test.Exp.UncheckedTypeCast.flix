@@ -36,13 +36,15 @@ mod Test.Exp.UncheckedTypeCast {
     @test
     def testUncheckedTypeCast05(): Serializable = region rc {
         let _ = rc;
-        unchecked_cast(unsafe new StringBuilder() as Serializable)
+        let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
+        unchecked_cast(sb as Serializable)
     }
 
     @test
     def testUncheckedTypeCast06(): Object = region rc {
         let _ = rc;
-        unchecked_cast(unsafe new StringBuilder() as Object)
+        let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
+        unchecked_cast(sb as Object)
     }
 
 }

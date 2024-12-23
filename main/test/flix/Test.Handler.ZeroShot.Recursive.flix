@@ -1,13 +1,13 @@
 mod Test.Handler.ZeroShot.Recursive {
 
     eff Exc {
-        pub def raise(): Unit
+        def raise(): Unit
     }
 
     @Test
     def testRecursiveTryWith01(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Exc.raise(); unreachable!() }
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
         } with Exc {
             def raise(_k) = 42
         };
@@ -15,8 +15,8 @@ mod Test.Handler.ZeroShot.Recursive {
 
     @Test
     def testRecursiveTryWith02(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Exc.raise(); unreachable!() }
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
         } with Exc {
             def raise(_k) = 42
         };
@@ -24,8 +24,8 @@ mod Test.Handler.ZeroShot.Recursive {
 
     @Test
     def testRecursiveTryWith03(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Exc.raise(); unreachable!() }
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
         } with Exc {
             def raise(_k) = 42
         };
@@ -33,8 +33,8 @@ mod Test.Handler.ZeroShot.Recursive {
 
     @Test
     def testRecursiveTryWith04(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Exc.raise(); unreachable!() }
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
         } with Exc {
             def raise(_k) = 42
         };
@@ -42,8 +42,8 @@ mod Test.Handler.ZeroShot.Recursive {
 
     @Test
     def testRecursiveTryWith05(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Exc.raise(); unreachable!() }
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
         } with Exc {
             def raise(_k) = 42
         };

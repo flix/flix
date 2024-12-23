@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +17,29 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, TypedAst}
-import org.json4s.JsonDSL._
-import org.json4s._
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[LocationLink]]
   */
 object LocationLink {
+  /**
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.AssocTypeSym]] `sym`.
+    *
+    * @param sym        target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
+    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    */
+  def fromAssocTypeSym(sym: Symbol.AssocTypeSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
 
   /**
     * Returns a location link to the given symbol `sym`.
@@ -122,9 +138,24 @@ object LocationLink {
   }
 
   /**
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.TraitSym]] `sym`.
+    *
+    * @param sym        target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
+    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    */
+  def fromTraitSym(sym: Symbol.TraitSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
     * Returns a reference to the instance node `instance`.
     */
-  def fromInstanceTraitSymUse(trt: Ast.TraitSymUse, originLoc: SourceLocation): LocationLink = {
+  def fromInstanceTraitSymUse(trt: TraitSymUse, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = trt.loc.source.name
     val targetRange = Range.from(trt.loc)

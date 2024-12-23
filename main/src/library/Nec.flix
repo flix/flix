@@ -25,7 +25,7 @@ import java.util.{List => JList}
 ///
 /// Note - the constructors `NecOne` and `Nec` should not be used directly.
 ///
-pub enum Nec[t] with Sendable {
+pub enum Nec[t] {
     case NecOne(t)
     case Nec(Nec[t], Nec[t])
 }
@@ -125,16 +125,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Nec#{", sb);
-        Nec.forEachWithIndex((i, x) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-        }, c);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
     }
 }
 
@@ -381,7 +372,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
@@ -393,7 +384,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, eidentity)
+        loop(c, 0, x -> checked_ecast(x))
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -405,7 +396,7 @@ mod Nec {
             case ViewLeft.OneLeft(f2)      => k(map(f2, c))
             case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, eidentity)
+        loop(f, x -> checked_ecast(x))
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
@@ -415,7 +406,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
     ///
     /// Returns the reverse of `c`.
@@ -551,7 +542,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
-        loop(c, eidentity)
+        loop(c, x -> checked_ecast(x))
 
 
 
@@ -593,7 +584,7 @@ mod Nec {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, constant(z))
+        case ViewLeft.OneLeft(x)      => f(x, _ -> checked_ecast(z))
         case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
@@ -663,7 +654,7 @@ mod Nec {
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
         };
-        loop(c1, c2, eidentity)
+        loop(c1, c2, x -> checked_ecast(x))
 
     ///
     /// Returns a pair of Necs, the first containing all first components in `c`
@@ -682,7 +673,7 @@ mod Nec {
     ///
     pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =
         def loop(c1, k, i) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => k(NecOne(i, x))
+            case ViewLeft.OneLeft(x)      => k(NecOne((i, x)))
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((i, x), ks)), i + 1)
         };
         loop(c, k -> k, 0)
@@ -697,7 +688,7 @@ mod Nec {
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
         };
-        loop(viewLeft(xs), viewLeft(ys), eidentity)
+        loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -862,7 +853,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Nec[a]): Nec[a] with Order[a] = region rc {
-        let ans = toArray(rc, c) !> Array.sort! |> fromArray;
+        let ans = toArray(rc, c) !> Array.sort |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -878,7 +869,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region rc {
-        let ans = toArray(rc, c) !> Array.sortBy!(f) |> fromArray;
+        let ans = toArray(rc, c) !> Array.sortBy(f) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -893,7 +884,7 @@ mod Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region rc {
-        let ans = toArray(rc, c) !> Array.sortWith!(cmp) |> fromArray;
+        let ans = toArray(rc, c) !> Array.sortWith(cmp) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -1036,8 +1027,8 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ IO = region rc {
-        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toNec
+    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle |> Array.toNec
     }
 
 }

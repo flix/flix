@@ -1,14 +1,14 @@
 mod Test.Handler.Ask.Unit {
 
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+        Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Unit] =
-        try {
+        run {
             generator(0); Nil
         } with Ask {
             def ask(x, k) = if (x == limit) Nil else () :: k()

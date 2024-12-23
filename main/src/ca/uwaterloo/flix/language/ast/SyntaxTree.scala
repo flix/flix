@@ -192,15 +192,13 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
-      case object Do extends Expr
-
       case object Index extends Expr
 
       case object IndexMut extends Expr
 
-      case object InvokeConstructor2 extends Expr
+      case object InvokeConstructor extends Expr
 
-      case object InvokeMethod2 extends Expr
+      case object InvokeMethod extends Expr
 
       case object Debug extends Expr
 
@@ -236,7 +234,7 @@ object SyntaxTree {
 
       case object ForFragmentLet extends Expr
 
-      case object GetField2 extends Expr
+      case object GetField extends Expr
 
       case object Hole extends Expr
 
@@ -254,11 +252,7 @@ object SyntaxTree {
 
       case object LambdaMatch extends Expr
 
-      case object LetImport extends Expr
-
       case object LetMatch extends Expr
-
-      case object LetRecDef extends Expr
 
       case object Literal extends Expr
 
@@ -279,6 +273,8 @@ object SyntaxTree {
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
+
+      case object LocalDef extends Expr
 
       case object Match extends Expr
 
@@ -318,6 +314,8 @@ object SyntaxTree {
 
       case object RestrictableChooseStar extends Expr
 
+      case object Run extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
@@ -344,7 +342,7 @@ object SyntaxTree {
 
       case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBodyFragment extends Expr
+      case object RunWithBodyExpr extends Expr
 
       case object TryWithRuleFragment extends Expr
 
@@ -358,9 +356,9 @@ object SyntaxTree {
 
       case object UncheckedCast extends Expr
 
-      case object UncheckedMaskingCast extends Expr
-
       case object Unsafe extends Expr
+
+      case object UnsafeOld extends Expr
 
       case object Use extends Expr
 
@@ -498,35 +496,6 @@ object SyntaxTree {
       case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    /// JVM_OP                                                                              //
-    //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait JvmOp extends TreeKind
-
-    object JvmOp {
-
-      case object Ascription extends JvmOp
-
-      case object Constructor extends JvmOp
-
-      case object GetField extends JvmOp
-
-      case object JvmOp extends JvmOp
-
-      case object Method extends JvmOp
-
-      case object PutField extends JvmOp
-
-      case object Sig extends JvmOp
-
-      case object StaticGetField extends JvmOp
-
-      case object StaticMethod extends JvmOp
-
-      case object StaticPutField extends JvmOp
 
     }
 

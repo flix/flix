@@ -26,7 +26,7 @@ class TestParser extends Suites(
   *   - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
   *
   * Note that these tests use [[check]] rather than [[compile]].
-  * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
+  * That's because a compile converts any check failure into a [[ca.uwaterloo.flix.util.Validation.Failure]] before running, codegen so the result we would like to expect is lost.
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
@@ -443,7 +443,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectMain(result)
   }
 
   test("BadUnary.01") {
@@ -745,7 +744,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Bool =
-        |    let result = try {
+        |    let result = run {
         |        mutual1(10)
         |    } with AskTell ;
         |    Assert.eq(Some(84), result)
@@ -761,6 +760,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingRunBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    run { true }
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -793,6 +804,16 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
+  }
+
+  test("BadArrowEffectApplication.01") {
+    val input =
+      """
+        |type alias T[_a] = Unit
+        |pub def seqCheck(f: a -> a \ l: T[a]): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
   }
 }
 
@@ -977,82 +998,6 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("Regression.#7820") {
-    val input =
-      """
-        | def main(): Unit \ IO = tests()
-        |
-        |def tests(): Unit \ IO =
-        |    let start_time1 = Time.Epoch.milliseconds();
-        |    let _pipeline1 = cat(List#{"./test/clientList.txt"}) |> cut(List#{1});
-        |    let end_time1 = Time.Epoch.milliseconds();
-        |    let elapsed_time1 = (end_time1 - start_time1);
-        |    println("Pipeline 1: ${elapsed_time1}");
-        |
-        |    let start_time2 = Time.Epoch.milliseconds();
-        |    let _pipeline2 = cat(List#{"./test/clientList.txt"}) |> transDelete(",") |> transToLowerCase |> tee("pipeline2.txt", "./results");
-        |    let end_time2 = Time.Epoch.milliseconds();
-        |    let elapsed_time2 = (end_time2 - start_time2);
-        |    println("Pipeline 2: ${elapsed_time2}");
-        |
-        |    let start_time3 = Time.Epoch.milliseconds();
-        |    let _pipeline3 = ls("./test") |> sort |> uniq |> tee("pipeline3.txt", "./results") |> grep("client") |> wc;
-        |    let end_time3 = Time.Epoch.milliseconds();
-        |    let elapsed_time3 = (end_time3 - start_time3);
-        |    println("Pipeline 3: ${elapsed_time3}");
-        |
-        |    let start_time4 = Time.Epoch.milliseconds();
-        |    let _pipeline4 = findName("./test", "client") |> catMiddle |> grep("Zeta") |> cut(List#{4}) |> uniq |> sort |> tee("pipeline4.txt", "./results") |> wc;
-        |    let end_time4 = Time.Epoch.milliseconds();
-        |    let elapsed_time4 = (end_time4 - start_time4);
-        |    println("Pipeline 4: ${elapsed_time4}");
-        |
-        |    let start_time5 = Time.Epoch.milliseconds();
-        |    let _pipeline5 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> uniq |> sort;
-        |    let end_time5 = Time.Epoch.milliseconds();
-        |    let elapsed_time5 = (end_time5 - start_time5);
-        |    println("Pipeline 5: ${elapsed_time5}");
-        |
-        |    let start_time7 = Time.Epoch.milliseconds();
-        |    let _pipeline7 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> grep("Zeta") |> uniq |> sort;
-        |    let end_time7 = Time.Epoch.milliseconds();
-        |    let elapsed_time7 = (end_time7 - start_time7);
-        |    println("Pipeline 7: ${elapsed_time7}");
-        |
-        |    let start_time8 = Time.Epoch.milliseconds();
-        |    let _pipeline8 = cat(List#{"./test/clientList.txt"}) |> sort |> sortReverse |> sort |> sort;
-        |    let end_time8 = Time.Epoch.milliseconds();
-        |    let elapsed_time8 = (end_time8 - start_time8);
-        |    println("Pipeline 8: ${elapsed_time8}")
-        |
-        |def cat(_files: List[String]): (List[String], List[String]) = (List#{}, List#{})
-        |def matchedLines(_r: Result[IOError, String]): (String, String) = ("", "")
-        |def catMiddle(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
-        |def catNew(_files: List[String], _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
-        |def cut(_n: List[Int32], _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def echo(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
-        |def findName(_directory: String, _name: String): (List[String], List[String])  = (List#{}, List#{})
-        |def grep(_pattern: String, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def head(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def ls(_path: String): (List[String], List[String])  = (List#{}, List#{})
-        |def shift(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def sort(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def sortReverse(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def tail(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def tee(_file_name: String, _directory: String, _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
-        |def exists(_filePath: String): Bool  = false
-        |def transDelete(_chars: String, _l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
-        |def transToLowerCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
-        |def transToUpperCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
-        |def uniq(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
-        |def wc(_l: (List[String], List[String])): (Int32, List[String]) = (0, List#{})
-        |def index(_index: Int32, _l: List[String]): String = ""
-        |def indices(_n: List[Int32], _l: List[String]): String = ""
-        |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectSuccess(result)
-  }
-
   test("IllegalModule.01") {
     val input =
       """
@@ -1122,4 +1067,78 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  test("Nested.Mod.Eff") {
+    val input =
+      """
+        |eff E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Instance") {
+    val input =
+      """
+        |instance E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Trait") {
+    val input =
+      """
+        |trait E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("BadTupleEnd.01") {
+    val input =
+      """
+        |def foo(x: Int32): (Int32, Int32) = (x, |)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.NoBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.YesBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.Capital.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -ABC
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }

@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -34,26 +34,29 @@ import scala.collection.immutable.SortedSet
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
-    val errors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
-
-    // TODO: Instances
-    Validation.toSuccessOrSoftFailure((), errors)
-  }(DebugValidation()(DebugNoOp()))
+  def run(root: Root)(implicit flix: Flix): (Root, List[TypeError]) = flix.phaseNew("Regions") {
+    val defErrors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
+    val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
+    val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
+    val errors = defErrors ++ sigErrors ++ instanceErrors
+    (root, errors.toList)
+  }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
+
+  private def visitSig(sig: Sig)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
+    sig.exp.map(visitExp(_)(Nil, flix)).getOrElse(Nil)
+
+  private def visitInstance(ins: Instance)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
+    ins.defs.flatMap(visitDef)
 
   private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expr.Def(_, _, _) => Nil
-
-    case Expr.Sig(_, _, _) => Nil
-
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -66,8 +69,17 @@ object Regions {
     case Expr.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.ApplyClo(exp1, exp2, tpe, _, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+
+    case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
+    case Expr.ApplyLocalDef(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
+    case Expr.ApplySig(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -75,10 +87,10 @@ object Regions {
     case Expr.Binary(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.Let(_, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.Let(_, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.LocalDef(_, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.Region(_, _) =>
@@ -116,11 +128,11 @@ object Regions {
       }
       expErrors ++ rulesErrors ++ checkType(tpe, loc)
 
-    case Expr.Tag(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Tag(_, exps, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.RestrictableTag(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.RestrictableTag(_, exps, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Tuple(elms, tpe, _, loc) =>
       elms.flatMap(visitExp) ++ checkType(tpe, loc)
@@ -153,7 +165,7 @@ object Regions {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
 
     case Expr.StructGet(e, _, tpe, _, loc) =>
       visitExp(e) ++ checkType(tpe, loc)
@@ -182,8 +194,8 @@ object Regions {
     case Expr.UncheckedCast(exp, _, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.UncheckedMaskingCast(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+      checkType(runEff, loc) ++ visitExp(exp)
 
     case Expr.Without(exp, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -230,8 +242,8 @@ object Regions {
     case Expr.NewObject(_, _, tpe, _, methods, loc) =>
       methods.flatMap(visitJvmMethod) ++ checkType(tpe, loc)
 
-    case Expr.NewChannel(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+    case Expr.NewChannel(exp, tpe, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.GetChannel(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -348,6 +360,7 @@ object Regions {
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
     case Type.JvmToType(tpe, _) => boolTypesOf(tpe)
+    case Type.JvmToEff(tpe, _) => boolTypesOf(tpe)
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(boolTypesOf)
 
     // TODO CONSTR-SOLVER-2 Hack! We should visit the argument, but since we don't reduce, we get false positives here.

@@ -13,6 +13,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+eff Environment {
+
+    ///
+    /// Returns the arguments passed to the program via the command line.
+    ///
+    def getArgs(): List[String]
+
+    ///
+    /// Returns an map of the current system environment.
+    ///
+    def getEnv(): Map[String, String]
+
+    ///
+    /// Returns the value of the specified environment variable.
+    ///
+    def getVar(name: String): Option[String]
+
+    ///
+    /// Returns the system property by name.
+    ///
+    def getProp(name: String): Option[String]
+
+    ///
+    /// Returns the operating system name
+    ///
+    def getOsName(): Option[String]
+
+    ///
+    ///  Returns the operating system architecture
+    ///
+    def getOsArch(): Option[String]
+
+    ///
+    ///  Returns the operating system version
+    ///
+    def getOsVersion(): Option[String]
+
+    ///
+    ///  Returns the file separator
+    ///
+    def getFileSeparator(): String
+
+    ///
+    /// Returns the path separator
+    ///
+    def getPathSeparator(): String
+
+    ///
+    /// Returns the system line separator
+    ///
+    def getLineSeparator(): String
+
+    ///
+    /// Returns the user's current working directory
+    ///
+    def getCurrentWorkingDirectory(): Option[String]
+
+    ///
+    /// Returns the default temp file path
+    ///
+    def getTemporaryDirectory(): Option[String]
+
+    ///
+    /// Returns the user's account name
+    ///
+    def getUserName(): Option[String]
+
+    ///
+    /// Returns the user's home directory
+    ///
+    def getUserHomeDirectory(): Option[String]
+
+    ///
+    /// Returns the number of virtual processors available to the JVM.
+    ///
+    /// The returned value is never less than one.
+    ///
+    def getVirtualProcessors(): Int32
+
+}
+
 mod Environment {
 
     import dev.flix.runtime.Global
@@ -26,102 +107,67 @@ mod Environment {
     import java.util.{Map$Entry => Entry}
 
     ///
-    /// Returns the arguments passed to the program via the command line.
+    /// Handles the `Environment` effect of the given function `f`.
     ///
-    pub def getArgs(): List[String] =
-        unsafe Array.toList(unsafe Global.getArgs())
+    /// In other words, re-interprets the `Environment` effect using the `Sys` and `IO` effects.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Sys, IO} = x ->
+        run {
+            f(x)
+        } with Environment {
+            def getArgs(k) =
+                k(unsafe Array.toList(Global.getArgs()))
 
-    ///
-    /// Returns an map of the current system environment.
-    ///
-    pub def getEnv(): Map[String, String] =
-        try {
-            let iter = unsafe System.getenv().entrySet().iterator();
-            getEnvHelper(iter, Map.empty())
-        } catch {
-            case _: Exception => Map.empty()
+            def getEnv(k) = region rc {
+                try {
+                    let _ = rc;
+                    let iter = unchecked_cast ((System.getenv().entrySet().iterator()) as _ \ rc);
+                    k(getEnvHelper(iter, Map.empty()))
+                } catch {
+                    case _: Exception => k(Map.empty())
+                }
+            }
+
+            def getVar(name, k) =
+                try {
+                    let result = unsafe System.getenv(name);
+                    k(Object.toOption(result))
+                } catch {
+                    case _: Exception => k(None)
+                }
+
+            def getProp(name, k) = k(getPropHelper(name))
+
+            def getOsName(k) = k(getPropHelper("os.name"))
+
+            def getOsArch(k) = k(getPropHelper("os.arch"))
+
+            def getOsVersion(k) = k(getPropHelper("os.version"))
+
+            def getFileSeparator(k) = k(unsafe JFile.separator)
+
+            def getPathSeparator(k) = k(unsafe JFile.pathSeparator)
+
+            def getLineSeparator(k) = k(unsafe System.lineSeparator())
+
+            def getCurrentWorkingDirectory(k) = k(getPropHelper("user.dir"))
+
+            def getTemporaryDirectory(k) = k(getPropHelper("java.io.tmpdir"))
+
+            def getUserName(k) = k(getPropHelper("user.name"))
+
+            def getUserHomeDirectory(k) = k(getPropHelper("user.home"))
+
+            def getVirtualProcessors(k) = k(unsafe Runtime.getRuntime().availableProcessors())
         }
 
-    ///
-    /// Returns the value of the specified environment variable.
-    ///
-    pub def getVar(name: String): Option[String] =
-        try {
-            let result = unsafe System.getenv(name);
-            Object.toOption(result)
-        } catch {
-            case _: Exception => None
-        }
-
-    ///
-    /// Returns the system property by name.
-    ///
-    pub def getProp(name: String): Option[String] =
-        try {
-            let result = unsafe System.getProperty(name);
-            Object.toOption(result)
-        } catch {
-            case _: Exception => None
-        }
-
-    ///
-    /// Returns the operating system name
-    ///
-    pub def getOsName(): Option[String] = getProp("os.name")
-
-    ///
-    ///  Returns the operating system architecture
-    ///
-    pub def getOsArch(): Option[String] = getProp("os.arch")
-
-    ///
-    ///  Returns the operating system version
-    ///
-    pub def getOsVersion(): Option[String] = getProp("os.version")
-
-    ///
-    ///  Returns the file separator
-    ///
-    pub def getFileSeparator(): String = unsafe JFile.separator
-
-    ///
-    /// Returns the path separator
-    ///
-    pub def getPathSeparator(): String = unsafe JFile.pathSeparator
-
-    ///
-    /// Returns the system line separator
-    ///
-    pub def getLineSeparator(): String =
-        unsafe System.lineSeparator()
-
-    ///
-    /// Returns the user's current working directory
-    ///
-    pub def getCurrentWorkingDirectory(): Option[String] = getProp("user.dir")
-
-    ///
-    /// Returns the default temp file path
-    ///
-    pub def getTemporaryDirectory(): Option[String] = getProp("java.io.tmpdir")
-
-    ///
-    /// Returns the user's account name
-    ///
-    pub def getUserName(): Option[String] = getProp("user.name")
-
-    ///
-    /// Returns the user's home directory
-    ///
-    pub def getUserHomeDirectory(): Option[String] = getProp("user.home")
-
-    ///
-    /// Returns the number of virtual processors available to the JVM.
-    ///
-    /// The returned value is never less than one.
-    ///
-    pub def getVirtualProcessors(): Int32 =
-        unsafe Runtime.getRuntime().availableProcessors()
+    def getPropHelper(name: String): Option[String] \ {Sys, IO} =
+            try {
+                let result = System.getProperty(name);
+                Object.toOption(result)
+            } catch {
+                case _: Exception => None
+            }
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         if (unsafe iter.hasNext())
