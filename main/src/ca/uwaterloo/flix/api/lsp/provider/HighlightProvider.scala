@@ -251,18 +251,14 @@ object HighlightProvider {
   private case class Occurs(writes: Set[SourceLocation], reads: Set[SourceLocation])
 
   /**
-    * Constructs the LSP highlight response for when the cursor is on an arbitrary [[AnyRef]] `x`.
-    *
-    * If `x` is a [[Symbol]] or [[Name.Label]], finds all occurrences of it in the file at `uri`, makes a
-    * [[DocumentHighlight]] for each, collecting them all in a successful LSP highlight response.
-    *
-    * If `x` is __not__ a [[Symbol]] or [[Name.Label]], returns a failure LSP highlight response.
+    * Returns all occurrences of [[AnyRef]] `x`, if it's either a [[Symbol]] or [[Name.Label]].
+    * Otherwise, returns [[None]]:
     *
     * @param x    the object under the cursor.
     * @param uri  the URI of the file in question.
     * @param root the [[Root]] AST node of the Flix project.
-    * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
-    *             for each occurrence of the symbol under the cursor.
+    * @return     [[Occurs]] containing all write and read occurrences of `x`, if it's a [[Symbol]] or [[Name.Label]].
+    *             Otherwise, [[None]]
     */
   private def getOccurs(x: AnyRef, uri: String)(implicit root: Root): Option[Occurs] = {
     implicit val acceptor: Acceptor = FileAcceptor(uri)
@@ -661,6 +657,16 @@ object HighlightProvider {
     ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
   }
 
+  /**
+    * Creates an LSP highlight response from `occurs`.
+    *
+    * The resulting LSP highlight response contains a [[DocumentHighlight]] for each occurrence in `occurs`.
+    * The [[DocumentHighlight]] created from `occurs.writes` have [[DocumentHighlightKind.Write]] and
+    * those created from `occurs.reads` have [[DocumentHighlightKind.Read]]
+    *
+    * @param occurs The [[Occurs]] to be highlighted.
+    * @return       LSP highlight response containing [[DocumentHighlight]] for every occurrence in `occurs`.
+    */
   private def mkHighlights(occurs: Occurs): JObject = {
     val writeHighlights = occurs.writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
     val readHighlights = occurs.reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
