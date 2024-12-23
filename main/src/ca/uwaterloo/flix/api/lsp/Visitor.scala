@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
@@ -598,7 +599,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(effUse.loc)) { return }
+    val EffectSymUse(_, QName(_, _, loc)) = effUse
+    if (!a.accept(loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }

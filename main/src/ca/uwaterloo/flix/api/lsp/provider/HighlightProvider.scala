@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
@@ -204,7 +205,7 @@ object HighlightProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case symUse: SymUse.EffectSymUse => symUse.loc.isReal
+    case SymUse.EffectSymUse(_, QName(_, _, loc)) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -344,7 +345,7 @@ object HighlightProvider {
 
     object EffectSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.qname.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
         case _ => ()

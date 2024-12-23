@@ -513,7 +513,7 @@ object Verifier {
       }
 
       val effect = root.effects.getOrElse(effUse.sym,
-        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.loc))
+        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.qname.loc))
       val ops = effect.ops.map(op => op.sym -> op).toMap
 
       for (rule <- rules) {

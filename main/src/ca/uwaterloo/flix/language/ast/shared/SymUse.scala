@@ -46,15 +46,7 @@ object SymUse {
     * @param sym    The [[Symbol]] being used.
     * @param qname  The qualified name ([[QName]]) of the use of `sym`:
     */
-  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName) {
-    /**
-      * Returns the [[SourceLocation]] of this [[EffectSymUse]]. Note that this is
-      * the same [[SourceLocation]] as that of the [[EffectSymUse]]s `qname`.
-      *
-      * @return The [[SourceLocation]] of the [[EffectSymUse]].
-      */
-    def loc: SourceLocation = qname.loc
-  }
+  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName)
 
   /**
     * Represents a use of a LocalDef sym.

@@ -40,7 +40,7 @@ object Dependencies {
       }
 
       override def consumeEffectSymUse(symUse: SymUse.EffectSymUse): Unit = {
-        addDependency(symUse.sym.loc, symUse.loc)
+        addDependency(symUse.sym.loc, symUse.qname.loc)
       }
 
       override def consumeInstance(ins: TypedAst.Instance): Unit = {

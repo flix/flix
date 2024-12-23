@@ -418,9 +418,9 @@ object TypeReconstruction {
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
-      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.loc) :: rs.map(_.exp.eff), loc)
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.qname.loc) :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>

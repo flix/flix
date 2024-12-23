@@ -507,7 +507,7 @@ object SemanticTokensProvider {
       visitType(runEff) ++ visitExp(exp)
 
     case Expr.Without(exp, eff, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -521,7 +521,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.TryWith(exp, eff, rules, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(visitExp(exp)) {
         case (acc, HandlerRule(op, fparams, exp)) =>
