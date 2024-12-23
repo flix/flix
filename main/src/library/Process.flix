@@ -23,7 +23,7 @@
 eff Process {
 
     ///
-    /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`
+    /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
     ///
     def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandle
 }
@@ -34,6 +34,7 @@ mod Process {
     use IoError.IoError
 
     import java.lang.IllegalArgumentException
+    import java.lang.NullPointerException
     import java.lang.SecurityException
     import java.io.IOException
     import java.lang.ProcessBuilder
@@ -41,19 +42,19 @@ mod Process {
     import java.io.{File => JFile}
 
     ///
-    /// Executes the command `cmd` with the arguments `args`
+    /// Executes the command `cmd` with the arguments `args`.
     ///
     pub def exec(cmd: String, args: List[String]): ProcessHandle \ Process =
         Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
 
     ///
-    /// Executes the command `cmd` with the arguments `args`, by the path `cwd`
+    /// Executes the command `cmd` with the arguments `args`, by the path `cwd`.
     ///
     pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): ProcessHandle \ Process =
         Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
 
     ///
-    /// Executes the command `cmd` with the arguments `args` and with the environmental `env`
+    /// Executes the command `cmd` with the arguments `args` and with the environmental `env`.
     ///
     pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandle \ Process =
         Process.execWithCwdAndEnv(cmd, args, None, env)
@@ -76,15 +77,19 @@ mod Process {
                         ()
                     };
                     match cwd {
-                        case Some("") => throw new IllegalArgumentException("given an empty directory as an argument")
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
                         case None => ()
                     };
                     let process = pb.start();
-                    handler(ProcessHandle.ProcessHandle({stop = () -> process.destroy(),
-                        exitValue = () -> process.exitValue(), isAlive = () -> process.isAlive()}))
+                    handler(
+                        ProcessHandle.ProcessHandle(
+                            {stop = () -> process.destroy(), exitValue = () -> process.exitValue(), 
+                                isAlive = () -> process.isAlive()}
+                             )
+                        )
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
