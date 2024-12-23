@@ -149,4 +149,11 @@ mod Http {
                 }
         }
 
+    ///
+    /// Runs the `Http` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Http` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Http) + {Net, IO} = handle(f)()
+
 }
