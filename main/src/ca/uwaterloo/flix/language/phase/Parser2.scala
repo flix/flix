@@ -765,7 +765,8 @@ object Parser2 {
 
     var isTail: Boolean = tail.contains(foundToken)
     var i = 1 // 0 is already read
-    while (!isTail) {
+    var continue = true
+    while (continue && !isTail) {
       nth(i) match {
         case TokenKind.Dot =>
           val found = nthAnyOpt(i + 1, kinds) match {
@@ -778,9 +779,10 @@ object Parser2 {
           // `SomeName. otherName` is almost a name and cannot be a valid expression, so continue.
           i += 2 // Go past the dot and name.
         case _ =>
-          return true
+          continue = false
       }
     }
+    true
   }
 
   /**
