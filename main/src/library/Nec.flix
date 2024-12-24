@@ -25,7 +25,7 @@ import java.util.{List => JList}
 ///
 /// Note - the constructors `NecOne` and `Nec` should not be used directly.
 ///
-pub enum Nec[t] with Sendable {
+pub enum Nec[t] {
     case NecOne(t)
     case Nec(Nec[t], Nec[t])
 }
