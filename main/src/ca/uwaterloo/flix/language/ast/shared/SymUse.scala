@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.Name.{Ident, QName}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 object SymUse {
@@ -48,6 +48,13 @@ object SymUse {
 
   /**
     * Represents a use of an effect operation sym.
+    *
+    * For an occurrence of the form `Xxx.Yyy.Zzz`, `sym` is the [[Symbol]] of the accessed element `Zzz`
+    * and `qname` represents the qualified name `Xxx.Yyy.Zzz` in its entirety, where [[QName.namespace]]
+    * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `Zzz`.
+    *
+    * @param sym    The [[Symbol]] being used.
+    * @param qname  The qualified name ([[QName]]) of the use of `sym`:
     */
   case class OpSymUse(sym: Symbol.OpSym, qname: QName)
 
