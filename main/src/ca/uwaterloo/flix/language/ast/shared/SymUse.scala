@@ -49,9 +49,9 @@ object SymUse {
   /**
     * Represents a use of an effect operation sym.
     *
-    * For an occurrence of the form `Xxx.Yyy.Zzz`, `sym` is the [[Symbol]] of the accessed element `Zzz`
-    * and `qname` represents the qualified name `Xxx.Yyy.Zzz` in its entirety, where [[QName.namespace]]
-    * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `Zzz`.
+    * For an occurrence of the form `Xxx.Yyy.zzz`, `sym` is the [[Symbol]] of the accessed element `zzz`
+    * and `qname` represents the qualified name `Xxx.Yyy.zzz` in its entirety, where [[QName.namespace]]
+    * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `zzz`.
     *
     * @param sym    The [[Symbol]] being used.
     * @param qname  The qualified name ([[QName]]) of the use of `sym`:
