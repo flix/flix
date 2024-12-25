@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
@@ -648,7 +649,7 @@ object Visitor {
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val HandlerRule(op, fparams, exp) = rule
     // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since HandlerRules don't have locations
-    val insideRule = a.accept(op.loc) || fparams.map(_.loc).exists(a.accept) || a.accept(exp.loc)
+    val insideRule = a.accept(op.qname.loc) || fparams.map(_.loc).exists(a.accept) || a.accept(exp.loc)
     if (!insideRule) { return }
 
     c.consumeHandlerRule(rule)
@@ -659,7 +660,7 @@ object Visitor {
   }
 
   private def visitOpSymUse(symUse: OpSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val OpSymUse(_, loc) = symUse
+    val OpSymUse(_, QName(_, _, loc)) = symUse
     if (!a.accept(loc)) { return }
 
     c.consumeOpSymUse(symUse)

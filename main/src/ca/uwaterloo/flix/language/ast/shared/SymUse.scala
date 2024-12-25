@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Holger Dal Mogensen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 object SymUse {
@@ -47,7 +49,7 @@ object SymUse {
   /**
     * Represents a use of an effect operation sym.
     */
-  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
+  case class OpSymUse(sym: Symbol.OpSym, qname: QName)
 
   /**
     * Represents a use of a restrictable enum case sym.

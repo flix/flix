@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -113,7 +114,7 @@ object GotoProvider {
     // Effects
     case SymUse.EffectSymUse(sym, loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
     case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
-    case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
+    case SymUse.OpSymUse(sym, QName(_, _, loc)) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
     case SymUse.CaseSymUse(sym, loc) => Some(mkGoto(LocationLink.fromCaseSym(sym, loc)))
@@ -172,7 +173,7 @@ object GotoProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, loc) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, QName(_, _, loc)) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal

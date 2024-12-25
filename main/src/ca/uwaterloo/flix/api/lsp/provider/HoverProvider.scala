@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
@@ -46,7 +47,7 @@ object HoverProvider {
     case Binder(sym, tpe) => hoverType(tpe, sym.loc)
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
-    case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
+    case OpSymUse(symUse, QName(_, _, loc)) => hoverOp(symUse, loc)
     case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
     case _ => mkNotFound(uri, pos)
   }

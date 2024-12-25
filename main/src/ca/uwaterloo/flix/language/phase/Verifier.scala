@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -519,7 +520,7 @@ object Verifier {
       for (rule <- rules) {
         val ruletype = visitExpr(rule.exp)
         val op = ops.getOrElse(rule.op.sym,
-          throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
+          throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.qname.loc))
 
         val params = op.fparams.map(_.tpe)
         val resumptionType = MonoType.Arrow(List(op.tpe), exptype)
@@ -533,9 +534,9 @@ object Verifier {
     case Expr.Do(opUse, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
       val eff = root.effects.getOrElse(opUse.sym.eff,
-        throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))
+        throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.qname.loc))
       val op = eff.ops.find(_.sym == opUse.sym)
-        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", opUse.loc))
+        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", opUse.qname.loc))
 
       val oprestype = op.tpe match {
         case MonoType.Void => tpe // should match any return type

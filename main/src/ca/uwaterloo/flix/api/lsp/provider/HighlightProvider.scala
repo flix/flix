@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
@@ -206,7 +207,7 @@ object HighlightProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, loc) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, QName(_, _, loc)) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal
@@ -390,7 +391,7 @@ object HighlightProvider {
 
     object OpSymConsumer extends Consumer {
       override def consumeOp(op: TypedAst.Op): Unit = builder.considerWrite(op.sym, op.sym.loc)
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = builder.considerRead(sym.sym, sym.qname.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, acceptor)

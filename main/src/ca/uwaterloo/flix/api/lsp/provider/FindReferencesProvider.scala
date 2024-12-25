@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -169,7 +170,7 @@ object FindReferencesProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, loc) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, QName(_, _, loc)) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal
@@ -342,7 +343,7 @@ object FindReferencesProvider {
     }
 
     object OpSymConsumer extends Consumer {
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.qname.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -770,7 +771,7 @@ object ConstraintGen {
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
-        val op = lookupOp(opUse.sym, opUse.loc)
+        val op = lookupOp(opUse.sym, opUse.qname.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
         // length check done in Resolver

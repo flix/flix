@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jacob Harris Cryer Kragh, Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -525,7 +526,7 @@ object SemanticTokensProvider {
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(visitExp(exp)) {
         case (acc, HandlerRule(op, fparams, exp)) =>
-          val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
+          val st = SemanticToken(SemanticTokenType.Type, Nil, op.qname.loc)
           val t1 = Iterator(st)
           val t2 = visitFormalParams(fparams)
           acc ++ t1 ++ t2 ++ visitExp(exp)
@@ -533,7 +534,7 @@ object SemanticTokensProvider {
       st1 ++ st2
 
     case Expr.Do(op, exps, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
+      val t = SemanticToken(SemanticTokenType.Function, Nil, op.qname.loc)
       Iterator(t) ++ visitExps(exps)
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
