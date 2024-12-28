@@ -29,40 +29,189 @@ object BenchmarkInliner {
 
   private val Python: String =
     """
-      |# $ pip install pandas matplotlib
+      |# $ pip install matplotlib
       |
       |import json
       |import matplotlib.pyplot as plt
-      |import numpy as np
+      |
+      |def get_normalized_data(metric: str, inliner_type: str, data):
+      |    xs = []
+      |    ys = []
+      |    for obj in data['programs']:
+      |        norm = None # Should crash if we do not find the norm first
+      |        for run in obj['results']:
+      |            if run['inlinerType'] == 'NoInliner':
+      |                norm = run[metric]
+      |        for run in obj['results']:
+      |            if run['inlinerType'].lower() == inliner_type.lower():
+      |                xs.append(run['inliningRounds'])
+      |                ys.append(run[metric] / norm)
+      |    return [xs, ys]
+      |
+      |def get_normalized_data_with_program(metric: str, inliner_type: str, data):
+      |    \"\"\"
+      |    Returns the data for a given metric and inliner type sampled from all runs in the shape
+      |    of a list of 3-tuples.
+      |    For an entry `[pr, xs, ys]`, `pr` is the name of the program, `xs` is the number of inlining rounds
+      |    and `ys` is the metric normalized by the same metric when no inlining was made.
+      |    \"\"\"
+      |    ps = []
+      |    for obj in data['programs']:
+      |        pr = obj['programName']
+      |        xs = []
+      |        ys = []
+      |        norm = None # Should crash if we do not find the norm first
+      |        for run in obj['results']:
+      |            if run['inlinerType'] == 'NoInliner':
+      |                norm = run[metric]
+      |        for run in obj['results']:
+      |            if run['inlinerType'].lower() == inliner_type.lower():
+      |                xs.append(run['inliningRounds'])
+      |                ys.append(run[metric] / norm)
+      |        ps.append([pr, xs, ys])
+      |    return ps
+      |
+      |def gen_colors(n):
+      |    \"\"\"
+      |    Returns n distinct colors, up to 11.
+      |    \"\"\"
+      |    if n > 11:
+      |        raise Exception(f"parameter n was {n} but can at most be 11")
+      |    colors = list(map(lambda i: 'C' + str(i), range(n)))
+      |    colors[-1] = 'purple'
+      |    return colors
+      |
+      |def get_color_map(progs):
+      |    colors = gen_colors(len(progs))
+      |    result = {}
+      |    for p, c in zip(progs, colors):
+      |        result[p] = c
+      |    return result
+      |
+      |def get_summary_data(benchmark: str, metric: str, data):
+      |    keys = []
+      |    values = []
+      |    for obj in data['programs']:
+      |        keys.append(obj['programName'])
+      |        values.append(obj['summary'][benchmark][metric])
+      |    return [keys, values]
+      |
+      |def nanos_to_milis(n):
+      |    return n / 1_000_000
       |
       |with open("programsBenchmark.json") as file:
       |    data = json.load(file)
-      |
-      |    programs = data['programs']
-      |    summaries = {}
-      |    for obj in programs:
-      |        name = obj['programName']
-      |        summary = obj['summary']
-      |        summaries[name] = summary
-      |
-      |    # Plot layout stuff
-      |    x = np.arange(len(summaries))
-      |    width = 0.25
-      |    multiplier = 0
-      |
-      |    fix, ax = plt.subplots(layout='constrained')
-      |
-      |    for program, summary in summaries.items():
-      |        offset = width * multiplier
-      |        rects = ax.bar(x + offset, summary['worst'], width, label=program)
-      |        ax.bar_label(rects, padding=3)
-      |        multiplier += 1
+      |    COLOR_MAP = get_color_map(list(map(lambda obj: obj['programName'], data['programs'])))
       |
       |
+      |    #################################################################
+      |    ####### WORST RUNNING TIMES PER PROGRAM #########################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots()
+      |    keys, values = get_summary_data('runningTime', 'worst', data)
+      |    times = list(map(nanos_to_milis, values))
+      |    colors = list(map(lambda k: COLOR_MAP[k], keys))
+      |    bar_container = ax.bar(keys, times, label=keys, color=colors)
+      |    ax.bar_label(bar_container, fmt='{:,.1f}')
+      |    ax.set_xticks(ax.get_xticks(), labels=[]) # Remove program names from x-axis
+      |    ax.set_xlabel('Programs')
       |    ax.set_ylabel('Running time (ms)')
-      |    ax.set_title('Running times of Flix benchmark programs')
-      |    ax.set_xticks(x + width, list(map(lambda obj: obj['programName'], programs)))
-      |    plt.savefig('benchmarkProgramsRunningTimes.png')
+      |    ax.set_yscale('linear')
+      |    ax.set_ylim(top=750)
+      |    ax.set_title('Slowest running times')
+      |    ax.legend(title='Program', loc='upper left', ncols=3, fontsize=7)
+      |    plt.savefig('worstRunningTimes.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### BEST RUNNING TIMES PER PROGRAM ##########################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots()
+      |    keys, values = get_summary_data('runningTime', 'best', data)
+      |    times = list(map(nanos_to_milis, values))
+      |    colors = list(map(lambda k: COLOR_MAP[k], keys))
+      |    bar_container = ax.bar(keys, times, label=keys, color=colors)
+      |    ax.bar_label(bar_container, fmt='{:,.1f}')
+      |    ax.set_xticks(ax.get_xticks(), labels=[]) # Remove program names from x-axis
+      |    ax.set_xlabel('Programs')
+      |    ax.set_ylabel('Running time (ms)')
+      |    ax.set_yscale('linear')
+      |    ax.set_ylim(top=750)
+      |    ax.set_title('Fastest running times')
+      |    ax.legend(title='Program', loc='upper left', ncols=3, fontsize=7)
+      |    plt.savefig('bestRunningTimes.png', dpi=300)
+      |    ax.set_ylim(top=120)
+      |    ax.set_title('Fastest running times (scaled to fit)')
+      |    plt.savefig('bestRunningTimesZoomed.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### CODE SIZE PER INLINING ROUND AND TYPE ###################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots()
+      |    old_data = get_normalized_data_with_program('codeSize', 'Old', data)
+      |    new_data = get_normalized_data_with_program('codeSize', 'New', data)
+      |
+      |    for pr, xs, ys in old_data:
+      |        ax.plot(xs, ys, 'o', color=COLOR_MAP[pr])
+      |
+      |    for pr, xs, ys in new_data:
+      |        ax.plot(xs, ys, 'x', color=COLOR_MAP[pr])
+      |
+      |    ax.set_title('Code size (normalized by code size without inlining)')
+      |    ax.set_xlabel('Inlining Rounds')
+      |    ax.set_ylabel('Factor')
+      |    ax.set_ylim(top=0.95)
+      |    ax.grid(visible=True, which='both')
+      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    plt.savefig('codeSizePerRounds.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### RUNNING TIME PER INLINING ROUND AND TYPE ################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots()
+      |    old_data = get_normalized_data_with_program('runningTime', 'Old', data)
+      |    new_data = get_normalized_data_with_program('runningTime', 'New', data)
+      |
+      |    for pr, xs, ys in old_data:
+      |        ax.plot(xs, ys, 'o', color=COLOR_MAP[pr])
+      |
+      |    for pr, xs, ys in new_data:
+      |        ax.plot(xs, ys, 'x', color=COLOR_MAP[pr])
+      |
+      |    ax.set_title('Running Time (normalized by running time without inlining)')
+      |    ax.set_xlabel('Inlining Rounds')
+      |    ax.set_ylabel('Factor')
+      |    ax.grid(visible=True, which='both')
+      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    plt.savefig('runningTimePerRounds.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### COMPILATION TIME PER INLINING ROUND AND TYPE ############
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots()
+      |    old_data = get_normalized_data_with_program('compilationTime', 'Old', data)
+      |    new_data = get_normalized_data_with_program('compilationTime', 'New', data)
+      |
+      |    for pr, xs, ys in old_data:
+      |        ax.plot(xs, ys, 'o', color=COLOR_MAP[pr])
+      |
+      |    for pr, xs, ys in new_data:
+      |        ax.plot(xs, ys, 'x', color=COLOR_MAP[pr])
+      |
+      |    ax.set_title('Compilation Time (normalized by compilation time without inlining)')
+      |    ax.set_xlabel('Inlining Rounds')
+      |    ax.set_ylabel('Factor')
+      |    ax.grid(visible=True, which='both')
+      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    plt.savefig('compilationTimePerRounds.png', dpi=300)
       |
       |""".stripMargin
 
