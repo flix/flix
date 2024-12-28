@@ -231,19 +231,6 @@ object BenchmarkInliner {
     val seconds = tDelta.toDouble / 1000
     println(s"Took $seconds seconds")
 
-    // Experiments:
-    // 1. Compiler throughput and code size
-    //    (a) without inlining
-    //    (b) with old inliner
-    //    (c) with new inliner
-
-    // 2. Flix program speedup (sample programs, datalog engine, parser library)
-    //    (a) without inlining
-    //    (b) with old inliner
-    //    (c) with new inliner
-    // TODO: Vary thresholds for new inliner
-
-
   }
 
   private object BenchmarkPrograms {
