@@ -266,7 +266,7 @@ object BenchmarkInliner {
       * @param lines           The number of lines of source code in the program
       * @param inlinerType     Which inliner was used (if any)
       * @param inliningRounds  The number of rounds of inlining
-      * @param runningTime     The running time of the program
+      * @param runningTime     The median running time of the program
       * @param compilationTime The median time taken to compile the program
       * @param phases          The median running time of each compilation phase
       * @param codeSize        The number of bytes of the compiled program
