@@ -575,7 +575,7 @@ object Main {
         text("[experimental] disables compiler optimizations.")
 
       // Xno-optimizer
-      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer1 = true)).
+      opt[Unit]("Xno-optimizer1").action((_, c) => c.copy(xnooptimizer1 = true)).
         text("[experimental] disables new compiler optimizations.")
 
       // Xprint-phase
