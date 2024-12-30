@@ -30,9 +30,9 @@ object BenchmarkInliner {
   /**
     * Set this to `true` for additional details during benchmarking.
     */
-  private val Verbose: Boolean = false
+  private val Verbose: Boolean = true
 
-  private val NumberOfRuns = 100
+  private val NumberOfRuns = 10_000
 
   private val NumberOfSamples = 1000
 
@@ -339,7 +339,7 @@ object BenchmarkInliner {
 
     val tDelta = System.currentTimeMillis() - t0
     val seconds = tDelta.toDouble / 1000
-    debug(s"Took $seconds seconds")
+    debug(s"Took $seconds seconds total")
 
   }
 
@@ -495,6 +495,8 @@ object BenchmarkInliner {
         }
 
         debug("Benchmarking running time")
+        val t0Debug = System.currentTimeMillis()
+
         val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
         val flix = new Flix().setOptions(o)
         // Clear caches.
@@ -514,6 +516,10 @@ object BenchmarkInliner {
             }
           case None => throw new RuntimeException(s"undefined main method for program '$name'")
         }
+
+        val tDebugDelta = System.currentTimeMillis() - t0Debug
+        val debugTime = tDebugDelta.toDouble / 1000
+        debug(s"Took $debugTime seconds")
 
         val lines = result.getTotalLines
         val inlinerType = InlinerType.from(o)
