@@ -461,14 +461,8 @@ object Main {
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
-      cmd("lsp-plain").text("  starts the Plain-LSP server.")
+      cmd("lsp").text("  starts the Plain-LSP server.")
         .action((_, c) => c.copy(command = Command.PlainLsp))
-
-      cmd("lsp").text("  starts the LSP server and listens on the given port.")
-        .children(
-          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
-            .required()
-        )
 
       cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
         .children(
