@@ -343,6 +343,21 @@ object BenchmarkInliner {
 
   }
 
+  /**
+    * Writes the given `json` to the given `file`.
+    */
+  private def writeFile(file: String, json: JValue): Unit = {
+    val directory = Path.of("./build/").resolve("perf/")
+    val filePath = directory.resolve(s"$file")
+    FileOps.writeJSON(filePath, json)
+  }
+
+  private def debug(s: String): Unit = {
+    if (Verbose) {
+      println(s)
+    }
+  }
+
   private object BenchmarkPrograms {
 
     private sealed trait InlinerType
@@ -408,6 +423,7 @@ object BenchmarkInliner {
       "List.reverse" -> listReverse,
       "List.filterMap" -> listFilterMap,
       "FordFulkerson" -> fordFulkerson,
+      "parsers" -> parsers
     )
 
     def run(opts: Options): JsonAST.JObject = {
@@ -986,34 +1002,317 @@ object BenchmarkInliner {
         |""".stripMargin
     }
 
-    /**
-      * Returns the given time `l` in milliseconds.
-      */
-    private def milliseconds(l: Long): Double = l / 1_000_000.0
-
-    /**
-      * Returns the cartesian product of `xs` and `ys`.
-      */
-    private def cartesian[A, B](xs: Seq[A], ys: Seq[B]): Seq[(A, B)] = {
-      xs.flatMap {
-        x => ys.map(y => (x, y))
-      }
+    private def parsers: String = {
+      """
+        |pub def main(): Unit \ IO = {
+        |    ArithParser.parse("1+((2/3+4*(5*(6/7)))+41)")
+        |    |> Option.map(eval)
+        |    |> blackhole
+        |}
+        |
+        |enum Exp with Eq, ToString {
+        |    case Num(Int32),
+        |    case Add(Exp, Exp),
+        |    case Sub(Exp, Exp),
+        |    case Mul(Exp, Exp),
+        |    case Div(Exp, Exp)
+        |}
+        |
+        |def eval(exp0: Exp): Int32 = match exp0 {
+        |    case Exp.Num(n)          => n
+        |    case Exp.Add(exp1, exp2) => eval(exp1) + eval(exp2)
+        |    case Exp.Sub(exp1, exp2) => eval(exp1) - eval(exp2)
+        |    case Exp.Mul(exp1, exp2) => eval(exp1) * eval(exp2)
+        |    case Exp.Div(exp1, exp2) => eval(exp1) / eval(exp2)
+        |}
+        |
+        |mod ArithParser {
+        |    use Parser.{nibble, number, literal, using, otherwise, then, thenIgnoringLeft, thenIgnoringRight};
+        |
+        |    pub def parse(s: String): Option[Exp] =
+        |        let prog = Parser.fromString(s) |> exp;
+        |        prog |> DelayList.head |> Option.map(fst)
+        |
+        |    // Each production rule ends with ... `using` func, where func is a function
+        |    // that produces the corresponding AST node.
+        |
+        |    def exp(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+        |        ((term `thenIgnoringRight` literal('+') `then` term) `using` plus)  `otherwise`
+        |        ((term `thenIgnoringRight` literal('-') `then` term) `using` minus) `otherwise`
+        |        term
+        |    )
+        |
+        |    def term(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+        |        ((factor `thenIgnoringRight` literal('*') `then` factor) `using` times)  `otherwise`
+        |        ((factor `thenIgnoringRight` literal('/') `then` factor) `using` divide) `otherwise`
+        |        factor
+        |    )
+        |
+        |    def factor(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+        |        (nibble(number) `using` value) `otherwise`
+        |        (nibble(literal('(')) `thenIgnoringLeft` exp `thenIgnoringRight` nibble(literal(')')))
+        |    )
+        |
+        |    def value(nums: Input[Char]): Exp =
+        |        let optInt = Parser.stringify(nums) |> Int32.fromString;
+        |        match optInt {
+        |            case Some(n) => Exp.Num(n)
+        |            case None    => unreachable!()
+        |        }
+        |
+        |    def plus(exp: (Exp, Exp)): Exp = match exp {
+        |        case (left, right) => Exp.Add(left, right)
+        |    }
+        |
+        |    def minus(exp: (Exp, Exp)): Exp = match exp {
+        |        case (left, right) => Exp.Sub(left, right)
+        |    }
+        |
+        |    def times(exp: (Exp, Exp)): Exp = match exp {
+        |        case (left, right) => Exp.Mul(left, right)
+        |    }
+        |
+        |    def divide(exp: (Exp, Exp)): Exp = match exp {
+        |        case (left, right) => Exp.Div(left, right)
+        |    }
+        |}
+        |
+        |def blackhole(t: a): Unit \ IO =
+        |    Ref.fresh(Static, t); ()
+        |
+        |
+        |pub type alias Input[a] = DelayList[a]
+        |
+        |pub type alias ParseResult[a, b] = DelayList[(a, Input[b])]
+        |
+        |pub type alias Parser[a, b] = Input[b] -> ParseResult[a, b]
+        |
+        |mod Parser {
+        |
+        |    use DelayList.{ENil, ECons, LCons, LList};
+        |
+        |    ///
+        |    /// Returns a parser that always succeeds with value `b`
+        |    /// regardless of input.
+        |    ///
+        |    pub def succeed(a: a): Parser[a, b] =
+        |        inp -> ECons((a, inp), ENil)
+        |
+        |    ///
+        |    /// Returns a parser that always fails regardless of input.
+        |    ///
+        |    /// Equivalent to the empty string ϵ.
+        |    ///
+        |    pub def fail(_: Input[b]): ParseResult[a, b] =
+        |        ENil
+        |
+        |    ///
+        |    /// Returns a parser that succeeds with value `x`
+        |    /// if the input is non-empty and the first
+        |    /// element `x` of the input satisfies
+        |    /// the predicate `p(x)`.
+        |    ///
+        |    /// The parser fails otherwise.
+        |    ///
+        |    pub def satisfy(p: a -> Bool): Parser[a, a] =
+        |        inp -> match inp {
+        |            case ENil                 => fail(inp)
+        |            case ECons(x, xs) if p(x) => succeed(x,       xs)
+        |            case LCons(x, xs) if p(x) => succeed(x, force xs)
+        |            case LList(xs)            => LList(lazy satisfy(p, force xs))
+        |            case _                    => fail(inp)
+        |        }
+        |
+        |    ///
+        |    /// Returns a parser that succeeds with value `a`
+        |    /// if the first element of the input is equal to `a`.
+        |    ///
+        |    /// The parser fails otherwise.
+        |    ///
+        |    pub def literal(a: a): Parser[a, a] with Eq[a] =
+        |        satisfy(Eq.eq(a))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the alternation
+        |    /// of `p1` and `p2` (i.e. it recognizes both `p1` and `p2`).
+        |    ///
+        |    /// Equivalent to `p1` | `p2`.
+        |    ///
+        |    pub def otherwise(p1: Parser[a, b], p2: Parser[a, b]): Parser[a, b] =
+        |        inp -> DelayList.append(p1(inp), p2(inp))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the concatenation of
+        |    /// `p1` and `p2`.
+        |    ///
+        |    /// Equivalent to `p1p2`.
+        |    ///
+        |    pub def then(p1: Parser[a, b], p2: Parser[c, b]): Parser[(a, c), b] =
+        |        inp ->
+        |            forM (
+        |                (x1, rest1) <- p1(inp);
+        |                (x2, rest2) <- p2(rest1)
+        |            ) yield ((x1, x2), rest2)
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the concatenation of
+        |    /// `p1` and `p2` but discards the result of `p1`.
+        |    ///
+        |    pub def thenIgnoringLeft(p1: Parser[a, b], p2: Parser[c, b]): Parser[c, b] =
+        |        (p1 `then` p2) `using` snd
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the concatenation of
+        |    /// `p1` and `p2` but discards the result of `p2`.
+        |    ///
+        |    pub def thenIgnoringRight(p1: Parser[a, b], p2: Parser[c, b]): Parser[a, b] =
+        |        (p1 `then` p2) `using` fst
+        |
+        |    ///
+        |    /// Returns a parser that applies `f` to all recognized
+        |    /// values of `p`.
+        |    ///
+        |    /// Useful for producing AST nodes.
+        |    ///
+        |    pub def using(p: Parser[a, b], f: a -> c): Parser[c, b] =
+        |        inp ->
+        |            forM (
+        |                (x, rest) <- p(inp)
+        |            ) yield (f(x), rest)
+        |
+        |    ///
+        |    /// Returns a parser that recognizes zero or more repetitions
+        |    /// of `p`.
+        |    ///
+        |    /// Note that it always succeeds, so the result will always
+        |    /// be non-empty, but the rest of the inp may be empty as well as
+        |    /// the result.
+        |    /// I.e. both the recognized value of may be empty (but still exist) and
+        |    /// the unconsumed may be empty (but still exist).
+        |    ///
+        |    /// Equivalent to `p*`.
+        |    ///
+        |    pub def many(p: Parser[a, b]): Parser[DelayList[a], b] =
+        |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
+        |            |> (((p `then` many(p)) `using` cons) `otherwise` succeed(ENil))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes one or more repetitions
+        |    /// of `p`.
+        |    ///
+        |    /// Note that unlike `many`, this parser may fail, i.e.
+        |    /// not recognize anything.
+        |    ///
+        |    /// Equivalent to `p+`.
+        |    ///
+        |    pub def some(p: Parser[a, b]): Parser[DelayList[a], b] =
+        |        (p `then` many(p)) `using` cons
+        |
+        |    ///
+        |    /// Returns a parser that recognizes numbers (consecutive integer characters).
+        |    ///
+        |    /// All possible parses of the number will be recognized.
+        |    ///
+        |    /// E.g. `123` is recognized as `123, 12, 1`.
+        |    ///
+        |    /// The longest match will be the first result.
+        |    ///
+        |    pub def number(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+        |        let digit = c -> '0' <= c and c <= '9';
+        |        inp |> some(satisfy(digit))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes words
+        |    /// (consecutive non-integer, non-whitespace characters).
+        |    ///
+        |    /// All possible parses of the word will be recognized.
+        |    ///
+        |    /// E.g. `hello` is recognized as `hello, hell, hel, he, h`.
+        |    ///
+        |    /// The longest match will be the first result.
+        |    ///
+        |    pub def word(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+        |        let lowercase = c -> 'a' <= c and c <= 'z';
+        |        let uppercase = c -> 'A' <= c and c <= 'Z';
+        |        let letter = c -> lowercase(c) or uppercase(c);
+        |        inp |> some(satisfy(letter))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the sequence `lit`.
+        |    ///
+        |    /// This is generalization of `literal`.
+        |    ///
+        |    pub def literalSequence(lit: m[a]): Parser[DelayList[a], a] \ Foldable.Aef[m] with Eq[a], Foldable[m] =
+        |        literalSequenceHelper(Foldable.toList(lit))
+        |
+        |    ///
+        |    /// Helper for `literalSequence` which does not have the foldable associated effect.
+        |    ///
+        |    def literalSequenceHelper(lit: List[a]): Parser[DelayList[a], a] with Eq[a] =
+        |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
+        |            |> match lit {
+        |                case Nil     => succeed(ENil)
+        |                case x :: xs => (literal(x) `then` (literalSequenceHelper(xs))) `using` cons
+        |            }
+        |
+        |    ///
+        |    /// Returns parser that returns the the value `c` if `p` is succesful.
+        |    ///
+        |    pub def return(p: Parser[a, b], c: c): Parser[c, b] =
+        |        p `using` constant(c)
+        |
+        |    ///
+        |    /// Returns a parser that recognizes the string `s`.
+        |    ///
+        |    pub def string(s: String): Parser[DelayList[Char], Char] =
+        |        s |> (String.toList >> literalSequence)
+        |
+        |    ///
+        |    /// Returns a parser that ignores whitespace on both
+        |    /// sides of `p`.
+        |    ///
+        |    pub def nibble(p: Parser[a, Char]): Parser[a, Char] =
+        |        whitespace `thenIgnoringLeft` p `thenIgnoringRight` whitespace
+        |
+        |    ///
+        |    /// Returns a parser that recognizes whitespace.
+        |    ///
+        |    pub def whitespace(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+        |        let chars = String.toList(" \t\n");
+        |        inp |> (many(any(literal, chars)))
+        |
+        |    ///
+        |    /// Returns a parser that recognizes any of the elements in `syms`.
+        |    ///
+        |    pub def any(f: a -> Parser[b, c], syms: m[a]): Parser[b, c] \ Foldable.Aef[m] with Foldable[m] =
+        |        Foldable.foldRight(f >> otherwise, fail, syms)
+        |
+        |    ///
+        |    /// Returns the string `s` as an `Input` type.
+        |    ///
+        |    pub def fromString(s: String): Input[Char] =
+        |        String.toList(s) |> List.toDelayList
+        |
+        |    ///
+        |    /// Returns `chars` as a string.
+        |    ///
+        |    pub def stringify(chars: m[Char]): String \ Foldable.Aef[m] with Foldable[m] = region r {
+        |        let sb = StringBuilder.empty(r);
+        |        let ap = sb |> flip(StringBuilder.append);
+        |        Foldable.forEach(ap, chars);
+        |        StringBuilder.toString(sb)
+        |    }
+        |
+        |    ///
+        |    /// Returns the tuple as a list, i.e.
+        |    /// `(x, xs)` is returned as `x :: xs`.
+        |    ///
+        |    def cons(xs: (a, DelayList[a])): DelayList[a] =
+        |        ECons(fst(xs), snd(xs))
+        |
+        |}
+        |
+        |""".stripMargin
     }
   }
-
-  /**
-    * Writes the given `json` to the given `file`.
-    */
-  private def writeFile(file: String, json: JValue): Unit = {
-    val directory = Path.of("./build/").resolve("perf/")
-    val filePath = directory.resolve(s"$file")
-    FileOps.writeJSON(filePath, json)
-  }
-
-  private def debug(s: String): Unit = {
-    if (Verbose) {
-      println(s)
-    }
-  }
-
 }
