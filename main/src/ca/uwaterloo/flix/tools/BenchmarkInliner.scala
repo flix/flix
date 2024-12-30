@@ -468,8 +468,6 @@ object BenchmarkInliner {
       for ((o, name, prog) <- runConfigs) {
         debug(s"Benchmarking $name")
         debug("Benchmarking compiler")
-
-        debug("Benchmarking running time")
         val t0DebugCompiler = System.currentTimeMillis()
 
         val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
