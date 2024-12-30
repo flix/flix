@@ -255,9 +255,9 @@ object BenchmarkInliner {
       }
     }
 
-    private val NumberOfRuns = 1000
+    private val NumberOfRuns = 100_000
 
-    private val NumberOfSamples = 100
+    private val NumberOfSamples = 1000
 
     /**
       * Represents a run of a single program.
