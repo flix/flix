@@ -32,6 +32,12 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = true
 
+  private val NumberOfRuns = 100
+
+  private val NumberOfSamples = 1000
+
+  private val MaxInliningRounds = 5
+
   private val Python: String =
     """
       |# $ pip install matplotlib numpy
@@ -358,12 +364,6 @@ object BenchmarkInliner {
           New
       }
     }
-
-    private val NumberOfRuns = 100
-
-    private val NumberOfSamples = 1000
-
-    private val MaxInliningRounds = 5
 
     /**
       * Represents a run of a single program.
