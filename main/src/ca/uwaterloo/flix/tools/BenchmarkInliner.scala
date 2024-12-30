@@ -30,7 +30,7 @@ object BenchmarkInliner {
   /**
     * Set this to `true` for additional details during benchmarking.
     */
-  private val Verbose: Boolean = true
+  private val Verbose: Boolean = false
 
   private val NumberOfRuns = 100
 
