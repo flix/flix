@@ -30,13 +30,13 @@ object BenchmarkInliner {
   /**
     * Set this to `true` for additional details during benchmarking.
     */
-  private val Verbose: Boolean = true
+  private val Verbose: Boolean = false
 
-  private val NumberOfRuns = 10_000
+  private val NumberOfRuns: Int = 10_000
 
-  private val NumberOfSamples = 1000
+  private val NumberOfSamples: Int = 1000
 
-  private val MaxInliningRounds = 5
+  private val MaxInliningRounds: Int = 5
 
   private val Python: String =
     """
