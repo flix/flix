@@ -527,234 +527,234 @@ object BenchmarkInliner {
     private def listFilter: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listFoldLeft: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listFoldRight: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listMap: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listLength: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.length |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.length |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listReverse: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.reverse |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.reverse |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def listFilterMap: String = {
       """
         |def main(): Unit \ IO = {
-         |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
-         |}
-         |
+        |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def map10KLength: String = {
       """
          def main(): Unit \ IO = {
-         |    let l1 = range(0, 10_000);
-         |    let l2 = map(x -> x + 1, l1);
-         |    let l3 = length(l2);
-         |    blackhole(l3)
-         |}
-         |
-         |pub def map(f: a -> b, l: List[a]) : List[b] = {
-         |    def mp(xs, acc) = match xs {
-         |        case Nil     => acc
-         |        case z :: zs => mp(zs, f(z) :: acc)
-         |    };
-         |    rev(mp(l, Nil))
-         |}
-         |
-         |pub def rev(l: List[a]): List[a] = {
-         |    def rv(xs, acc) = match xs {
-         |        case Nil     => acc
-         |        case z :: zs => rv(zs, z :: acc)
-         |    };
-         |    rv(l, Nil)
-         |}
-         |
-         |pub def range(bot: Int32, top: Int32): List[Int32] = {
-         |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
-         |    rng(top - 1, Nil)
-         |}
-         |
-         |pub def length(l: List[a]): Int32 = {
-         |    def len(xs, acc) = match xs {
-         |        case Nil     => acc
-         |        case _ :: zs => len(zs, acc + 1)
-         |    };
-         |    len(l, 0)
-         |}
-         |
-         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    let l1 = range(0, 10_000);
+        |    let l2 = map(x -> x + 1, l1);
+        |    let l3 = length(l2);
+        |    blackhole(l3)
+        |}
+        |
+        |pub def map(f: a -> b, l: List[a]) : List[b] = {
+        |    def mp(xs, acc) = match xs {
+        |        case Nil     => acc
+        |        case z :: zs => mp(zs, f(z) :: acc)
+        |    };
+        |    rev(mp(l, Nil))
+        |}
+        |
+        |pub def rev(l: List[a]): List[a] = {
+        |    def rv(xs, acc) = match xs {
+        |        case Nil     => acc
+        |        case z :: zs => rv(zs, z :: acc)
+        |    };
+        |    rv(l, Nil)
+        |}
+        |
+        |pub def range(bot: Int32, top: Int32): List[Int32] = {
+        |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+        |    rng(top - 1, Nil)
+        |}
+        |
+        |pub def length(l: List[a]): Int32 = {
+        |    def len(xs, acc) = match xs {
+        |        case Nil     => acc
+        |        case _ :: zs => len(zs, acc + 1)
+        |    };
+        |    len(l, 0)
+        |}
+        |
+        |def blackhole(t: a): Unit \ IO =
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def map10KLengthOptimized: String = {
       """
         |def main(): Unit \ IO = {
-         |    let top = 10_000 - 1;
-         |    let l1 = rng(top, Nil);
-         |    let l2 = mp(l1, Nil);
-         |    let l3 = rv(l2, Nil);
-         |    let l4 = ln(l3, 0);
-         |    blackhole(l4)
-         |}
-         |
-         |pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
-         |    case Nil     => acc
-         |    case z :: zs => mp(zs, z + 1 :: acc)
-         |}
-         |
-         |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
-         |    case Nil     => acc
-         |    case z :: zs => rv(zs, z :: acc)
-         |}
-         |
-         |pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
-         |    case Nil     => acc
-         |    case _ :: zs => ln(zs, acc + 1)
-         |}
-         |
-         |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
-         |
+        |    let top = 10_000 - 1;
+        |    let l1 = rng(top, Nil);
+        |    let l2 = mp(l1, Nil);
+        |    let l3 = rv(l2, Nil);
+        |    let l4 = ln(l3, 0);
+        |    blackhole(l4)
+        |}
+        |
+        |pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
+        |    case Nil     => acc
+        |    case z :: zs => mp(zs, z + 1 :: acc)
+        |}
+        |
+        |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+        |    case Nil     => acc
+        |    case z :: zs => rv(zs, z :: acc)
+        |}
+        |
+        |pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
+        |    case Nil     => acc
+        |    case _ :: zs => ln(zs, acc + 1)
+        |}
+        |
+        |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def filterMap10K: String = {
       """
         |def main(): Unit \ IO = {
-         |    let l1 = range(0, 10_000);
-         |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
-         |    blackhole(l2)
-         |}
-         |
+        |    let l1 = range(0, 10_000);
+        |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
+        |    blackhole(l2)
+        |}
+        |
         |pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef = {
-         |    def fmp(ll, acc) = match ll {
-         |        case Nil     => acc
-         |        case x :: xs => match f(x) {
-         |            case None    => fmp(xs, acc)
-         |            case Some(y) => fmp(xs, y :: acc)
-         |        }
-         |    };
-         |    rev(fmp(l, Nil))
-         |}
-         |
-         |pub def rev(l: List[a]): List[a] = {
-         |    def rv(xs, acc) = match xs {
-         |        case Nil     => acc
-         |        case z :: zs => rv(zs, z :: acc)
-         |    };
-         |    rv(l, Nil)
-         |}
-         |
-         |pub def range(bot: Int32, top: Int32): List[Int32] = {
-         |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
-         |    rng(top - 1, Nil)
-         |}
-         |
+        |    def fmp(ll, acc) = match ll {
+        |        case Nil     => acc
+        |        case x :: xs => match f(x) {
+        |            case None    => fmp(xs, acc)
+        |            case Some(y) => fmp(xs, y :: acc)
+        |        }
+        |    };
+        |    rev(fmp(l, Nil))
+        |}
+        |
+        |pub def rev(l: List[a]): List[a] = {
+        |    def rv(xs, acc) = match xs {
+        |        case Nil     => acc
+        |        case z :: zs => rv(zs, z :: acc)
+        |    };
+        |    rv(l, Nil)
+        |}
+        |
+        |pub def range(bot: Int32, top: Int32): List[Int32] = {
+        |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+        |    rng(top - 1, Nil)
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
 
     }
 
     private def filterMap10KOptimized: String = {
       """
         |def main(): Unit \ IO = {
-         |    let top = 10_000 - 1;
-         |    let l1 = rng(top, Nil);
-         |    let l2 = fmp(l1, Nil);
-         |    let l3 = rv(l2, Nil);
-         |    blackhole(l3)
-         |}
-         |
-         |pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
-         |    case Nil     => acc
-         |    case x :: xs =>
-         |        if (Int32.remainder(x, 2) == 0)
-         |            fmp(xs, acc)
-         |        else
-         |            fmp(xs, x :: acc)
-         |}
-         |
-         |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
-         |    case Nil     => acc
-         |    case z :: zs => rv(zs, z :: acc)
-         |}
-         |
-         |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
-         |
+        |    let top = 10_000 - 1;
+        |    let l1 = rng(top, Nil);
+        |    let l2 = fmp(l1, Nil);
+        |    let l3 = rv(l2, Nil);
+        |    blackhole(l3)
+        |}
+        |
+        |pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
+        |    case Nil     => acc
+        |    case x :: xs =>
+        |        if (Int32.remainder(x, 2) == 0)
+        |            fmp(xs, acc)
+        |        else
+        |            fmp(xs, x :: acc)
+        |}
+        |
+        |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+        |    case Nil     => acc
+        |    case z :: zs => rv(zs, z :: acc)
+        |}
+        |
+        |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
+        |
         |def blackhole(t: a): Unit \ IO =
-         |    Ref.fresh(Static, t); ()
-         |
-         |""".stripMargin
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     private def fordFulkerson: String = {
