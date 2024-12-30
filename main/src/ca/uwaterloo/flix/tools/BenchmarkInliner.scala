@@ -303,7 +303,7 @@ object BenchmarkInliner {
       "List.filterMap" -> listFilterMap
     )
 
-    private val MaxInliningRounds = 50
+    private val MaxInliningRounds = 5
 
     def run(opts: Options): JsonAST.JObject = {
 
