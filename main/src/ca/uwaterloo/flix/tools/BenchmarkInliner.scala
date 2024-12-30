@@ -34,10 +34,12 @@ object BenchmarkInliner {
 
   private val Python: String =
     """
-      |# $ pip install matplotlib
+      |# $ pip install matplotlib numpy
       |
       |import json
       |import matplotlib.pyplot as plt
+      |import matplotlib.lines as mlines
+      |import numpy as np
       |
       |def get_normalized_data(metric: str, inliner_type: str, data):
       |    xs = []
@@ -75,6 +77,16 @@ object BenchmarkInliner {
       |                ys.append(run[metric] / norm)
       |        ps.append([pr, xs, ys])
       |    return ps
+      |
+      |def get_data_for(metric: str, inliner_type: str, inliner_rounds: int, data):
+      |    result = []
+      |    for benchmark in data['programs']:
+      |        for run in benchmark['results']:
+      |            it = run['inlinerType'].lower()
+      |            ir = run['inliningRounds']
+      |            if it == inliner_type.lower() and ir == inliner_rounds:
+      |                result.append([benchmark['programName'], run[metric]])
+      |    return result
       |
       |def gen_colors(n):
       |    \"\"\"
@@ -156,6 +168,9 @@ object BenchmarkInliner {
       |    ####### CODE SIZE PER INLINING ROUND AND TYPE ###################
       |    #################################################################
       |
+      |    cross_figure = mlines.Line2D([], [], color='gray', marker='x', markersize=8, linestyle='', label='New Inliner')
+      |    circle_figure = mlines.Line2D([], [], color='gray', marker='o', markersize=8, linestyle='', label='Old Inliner')
+      |
       |    fig, ax = plt.subplots()
       |    old_data = get_normalized_data_with_program('codeSize', 'Old', data)
       |    new_data = get_normalized_data_with_program('codeSize', 'New', data)
@@ -171,7 +186,7 @@ object BenchmarkInliner {
       |    ax.set_ylabel('Factor')
       |    ax.set_ylim(top=0.95)
       |    ax.grid(visible=True, which='both')
-      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    ax.legend(handles=[cross_figure, circle_figure], title='Inliner Used', loc='upper right')
       |    plt.savefig('codeSizePerRounds.png', dpi=300)
       |
       |
@@ -193,7 +208,7 @@ object BenchmarkInliner {
       |    ax.set_xlabel('Inlining Rounds')
       |    ax.set_ylabel('Factor')
       |    ax.grid(visible=True, which='both')
-      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    ax.legend(handles=[cross_figure, circle_figure], title='Inliner Used', loc='upper right')
       |    plt.savefig('runningTimePerRounds.png', dpi=300)
       |
       |
@@ -215,8 +230,92 @@ object BenchmarkInliner {
       |    ax.set_xlabel('Inlining Rounds')
       |    ax.set_ylabel('Factor')
       |    ax.grid(visible=True, which='both')
-      |    ax.legend(['Old Inliner', 'New Inliner'], title='Inliner Used', loc='upper right')
+      |    ax.legend(handles=[cross_figure, circle_figure], title='Inliner Used', loc='upper right')
       |    plt.savefig('compilationTimePerRounds.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### SPEEDUP PER PROGRAM VS NO INLINING ######################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots(layout='constrained')
+      |    old_data = get_data_for(metric='runningTime', inliner_type='NoInliner', inliner_rounds=0, data=data)
+      |    new_data = get_data_for(metric='runningTime', inliner_type='New', inliner_rounds=3, data=data)
+      |
+      |    progs = []
+      |    tmp = []
+      |    for p0, r0 in old_data:
+      |        progs.append(p0)
+      |        for p1, r1 in new_data:
+      |            if p0 == p1:
+      |                tmp.append(r0 / r1)
+      |
+      |    print(progs)
+      |
+      |    speedups = {}
+      |    speedups['baseline'] = np.repeat(1, 11)
+      |    speedups['speedup'] = np.array(tmp)
+      |
+      |    x = np.arange(len(old_data))
+      |    width = 0.4
+      |    multiplier = 0
+      |
+      |    for attr, val in speedups.items():
+      |        offset = width * multiplier
+      |        rects = ax.bar(x + offset, val, width, label=attr)
+      |        ax.bar_label(rects, padding=3, fmt='{:,.1f}x' if attr == 'speedup' else '')
+      |        multiplier += 1
+      |
+      |    ax.set_ylabel('Speedup')
+      |    ax.set_title('Median Running Time Speedup')
+      |    ax.set_xticks(x + (width / 2), np.arange(len(old_data)) + 1)
+      |    ylim_top = 10
+      |    ax.set_ylim(top=ylim_top)
+      |    ax.set_yticks(range(ylim_top + 1), labels=list(map(lambda x: f"{x}x" if x != 0 else '', range(ylim_top + 1))))
+      |
+      |    plt.savefig('runningTimeSpeedup.png', dpi=300)
+      |
+      |
+      |    #################################################################
+      |    ####### SPEEDUP PER PROGRAM VS OLD INLINER ######################
+      |    #################################################################
+      |
+      |    fig, ax = plt.subplots(layout='constrained')
+      |    old_data = get_data_for(metric='runningTime', inliner_type='Old', inliner_rounds=3, data=data)
+      |    new_data = get_data_for(metric='runningTime', inliner_type='New', inliner_rounds=3, data=data)
+      |
+      |    progs = []
+      |    tmp = []
+      |    for p0, r0 in old_data:
+      |        progs.append(p0)
+      |        for p1, r1 in new_data:
+      |            if p0 == p1:
+      |                tmp.append(r0 / r1)
+      |
+      |    print(progs)
+      |
+      |    speedups = {}
+      |    speedups['baseline'] = np.repeat(1, 11)
+      |    speedups['speedup'] = np.array(tmp)
+      |
+      |    x = np.arange(len(old_data))
+      |    width = 0.4
+      |    multiplier = 0
+      |
+      |    for attr, val in speedups.items():
+      |        offset = width * multiplier
+      |        rects = ax.bar(x + offset, val, width, label=attr)
+      |        ax.bar_label(rects, padding=3, fmt='{:,.1f}x' if attr == 'speedup' else '')
+      |        multiplier += 1
+      |
+      |    ax.set_ylabel('Speedup')
+      |    ax.set_title('Median Running Time Speedup vs. Old Inliner')
+      |    ax.set_xticks(x + (width / 2), np.arange(len(old_data)) + 1)
+      |    ylim_top = 2
+      |    ax.set_ylim(top=ylim_top)
+      |    ax.set_yticks(range(ylim_top + 1), labels=list(map(lambda x: f"{x}x" if x != 0 else '', range(ylim_top + 1))))
+      |
+      |    plt.savefig('runningTimeSpeedupOldInliner.png', dpi=300)
       |
       |""".stripMargin
 
