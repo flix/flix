@@ -34,7 +34,7 @@ object BenchmarkInliner {
 
   private val NumberOfRuns: Int = 10_000
 
-  private val NumberOfCompilations: Int = 10
+  private val NumberOfCompilations: Int = 2000
 
   private val NumberOfSamples: Int = 1000
 
