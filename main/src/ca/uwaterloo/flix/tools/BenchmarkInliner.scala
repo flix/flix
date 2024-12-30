@@ -30,7 +30,7 @@ object BenchmarkInliner {
   /**
     * Set this to `true` for additional details during benchmarking.
     */
-  private val Verbose: Boolean = false
+  private val Verbose: Boolean = true
 
   private val Python: String =
     """
@@ -410,7 +410,7 @@ object BenchmarkInliner {
     )
 
     def run(opts: Options): JsonAST.JObject = {
-      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns of each program")
+      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
       val programExperiments = benchmark(opts)
 
       val runningTimeStats = programExperiments.map {
