@@ -771,6 +771,7 @@ object Simplifier {
         */
       case (Nil, Nil) =>
         val g = visitExp(guard)
+        // Only produce IfThenElse if g is non-trivial
         g match {
           case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
           case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
