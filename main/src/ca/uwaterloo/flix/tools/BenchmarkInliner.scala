@@ -47,20 +47,6 @@ object BenchmarkInliner {
       |import matplotlib.lines as mlines
       |import numpy as np
       |
-      |def get_normalized_data(metric: str, inliner_type: str, data):
-      |    xs = []
-      |    ys = []
-      |    for obj in data['programs']:
-      |        norm = None # Should crash if we do not find the norm first
-      |        for run in obj['results']:
-      |            if run['inlinerType'] == 'NoInliner':
-      |                norm = run[metric]
-      |        for run in obj['results']:
-      |            if run['inlinerType'].lower() == inliner_type.lower():
-      |                xs.append(run['inliningRounds'])
-      |                ys.append(run[metric] / norm)
-      |    return [xs, ys]
-      |
       |def get_normalized_data_with_program(metric: str, inliner_type: str, data):
       |    \"\"\"
       |    Returns the data for a given metric and inliner type sampled from all runs in the shape
@@ -96,12 +82,18 @@ object BenchmarkInliner {
       |
       |def gen_colors(n):
       |    \"\"\"
-      |    Returns n distinct colors, up to 11.
+      |    Returns n distinct colors, up to 13.
       |    \"\"\"
-      |    if n > 11:
-      |        raise Exception(f"parameter n was {n} but can at most be 11")
+      |    lim = 13
+      |    if n > lim:
+      |        raise Exception(f"parameter n was {n} but can at most be {lim}")
       |    colors = list(map(lambda i: 'C' + str(i), range(n)))
-      |    colors[-1] = 'purple'
+      |    if n > 10:
+      |        colors[-1] = 'purple'
+      |    if n > 11:
+      |        colors[-2] = '#764B00'
+      |    if n > 12:
+      |        colors[-3] = 'yellow'
       |    return colors
       |
       |def get_color_map(progs):
@@ -141,7 +133,7 @@ object BenchmarkInliner {
       |    ax.set_xlabel('Programs')
       |    ax.set_ylabel('Running time (ms)')
       |    ax.set_yscale('linear')
-      |    ax.set_ylim(top=750)
+      |    ax.set_ylim(top=round(max(times))+250)
       |    ax.set_title('Slowest running times')
       |    ax.legend(title='Program', loc='upper left', ncols=3, fontsize=7)
       |    plt.savefig('worstRunningTimes.png', dpi=300)
@@ -161,13 +153,10 @@ object BenchmarkInliner {
       |    ax.set_xlabel('Programs')
       |    ax.set_ylabel('Running time (ms)')
       |    ax.set_yscale('linear')
-      |    ax.set_ylim(top=750)
+      |    ax.set_ylim(top=round(max(times))+250)
       |    ax.set_title('Fastest running times')
       |    ax.legend(title='Program', loc='upper left', ncols=3, fontsize=7)
       |    plt.savefig('bestRunningTimes.png', dpi=300)
-      |    ax.set_ylim(top=120)
-      |    ax.set_title('Fastest running times (scaled to fit)')
-      |    plt.savefig('bestRunningTimesZoomed.png', dpi=300)
       |
       |
       |    #################################################################
@@ -190,7 +179,6 @@ object BenchmarkInliner {
       |    ax.set_title('Code size (normalized by code size without inlining)')
       |    ax.set_xlabel('Inlining Rounds')
       |    ax.set_ylabel('Factor')
-      |    ax.set_ylim(top=0.95)
       |    ax.grid(visible=True, which='both')
       |    ax.legend(handles=[cross_figure, circle_figure], title='Inliner Used', loc='upper right')
       |    plt.savefig('codeSizePerRounds.png', dpi=300)
@@ -256,10 +244,8 @@ object BenchmarkInliner {
       |            if p0 == p1:
       |                tmp.append(r0 / r1)
       |
-      |    print(progs)
-      |
       |    speedups = {}
-      |    speedups['baseline'] = np.repeat(1, 11)
+      |    speedups['baseline'] = np.repeat(1, len(progs))
       |    speedups['speedup'] = np.array(tmp)
       |
       |    x = np.arange(len(old_data))
@@ -275,7 +261,7 @@ object BenchmarkInliner {
       |    ax.set_ylabel('Speedup')
       |    ax.set_title('Median Running Time Speedup')
       |    ax.set_xticks(x + (width / 2), np.arange(len(old_data)) + 1)
-      |    ylim_top = 10
+      |    ylim_top = round(max(tmp)) + 2
       |    ax.set_ylim(top=ylim_top)
       |    ax.set_yticks(range(ylim_top + 1), labels=list(map(lambda x: f"{x}x" if x != 0 else '', range(ylim_top + 1))))
       |
@@ -298,10 +284,8 @@ object BenchmarkInliner {
       |            if p0 == p1:
       |                tmp.append(r0 / r1)
       |
-      |    print(progs)
-      |
       |    speedups = {}
-      |    speedups['baseline'] = np.repeat(1, 11)
+      |    speedups['baseline'] = np.repeat(1, len(progs))
       |    speedups['speedup'] = np.array(tmp)
       |
       |    x = np.arange(len(old_data))
@@ -317,11 +301,13 @@ object BenchmarkInliner {
       |    ax.set_ylabel('Speedup')
       |    ax.set_title('Median Running Time Speedup vs. Old Inliner')
       |    ax.set_xticks(x + (width / 2), np.arange(len(old_data)) + 1)
-      |    ylim_top = 2
+      |    ylim_top = round(max(tmp)) + 1
       |    ax.set_ylim(top=ylim_top)
       |    ax.set_yticks(range(ylim_top + 1), labels=list(map(lambda x: f"{x}x" if x != 0 else '', range(ylim_top + 1))))
       |
       |    plt.savefig('runningTimeSpeedupOldInliner.png', dpi=300)
+      |
+      |    print(list(zip(range(1, len(progs) + 1), progs)))
       |
       |""".stripMargin
 
