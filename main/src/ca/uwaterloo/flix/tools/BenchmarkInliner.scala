@@ -359,7 +359,7 @@ object BenchmarkInliner {
       }
     }
 
-    private val NumberOfRuns = 100_000
+    private val NumberOfRuns = 100
 
     private val NumberOfSamples = 1000
 
@@ -406,7 +406,8 @@ object BenchmarkInliner {
       "List.map" -> listMap,
       "List.length" -> listLength,
       "List.reverse" -> listReverse,
-      "List.filterMap" -> listFilterMap
+      "List.filterMap" -> listFilterMap,
+      "FordFulkerson" -> fordFulkerson,
     )
 
     def run(opts: Options): JsonAST.JObject = {
@@ -524,92 +525,92 @@ object BenchmarkInliner {
     }
 
     private def listFilter: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listFoldLeft: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listFoldRight: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listMap: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listLength: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.length |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listReverse: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.reverse |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def listFilterMap: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def map10KLength: String = {
-      s"""
-         def main(): Unit \\ IO = {
+      """
+         def main(): Unit \ IO = {
          |    let l1 = range(0, 10_000);
          |    let l2 = map(x -> x + 1, l1);
          |    let l3 = length(l2);
@@ -645,15 +646,15 @@ object BenchmarkInliner {
          |    len(l, 0)
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+         |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def map10KLengthOptimized: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    let top = 10_000 - 1;
          |    let l1 = rng(top, Nil);
          |    let l2 = mp(l1, Nil);
@@ -679,21 +680,21 @@ object BenchmarkInliner {
          |
          |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
     }
 
     private def filterMap10K: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    let l1 = range(0, 10_000);
          |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
          |    blackhole(l2)
          |}
          |
-         |pub def filterMap(f: a -> Option[b] \\ ef, l: List[a]): List[b] \\ ef = {
+        |pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef = {
          |    def fmp(ll, acc) = match ll {
          |        case Nil     => acc
          |        case x :: xs => match f(x) {
@@ -717,7 +718,7 @@ object BenchmarkInliner {
          |    rng(top - 1, Nil)
          |}
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
@@ -725,8 +726,8 @@ object BenchmarkInliner {
     }
 
     private def filterMap10KOptimized: String = {
-      s"""
-         |def main(): Unit \\ IO = {
+      """
+        |def main(): Unit \ IO = {
          |    let top = 10_000 - 1;
          |    let l1 = rng(top, Nil);
          |    let l2 = fmp(l1, Nil);
@@ -750,10 +751,239 @@ object BenchmarkInliner {
          |
          |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
          |
-         |def blackhole(t: a): Unit \\ IO =
+        |def blackhole(t: a): Unit \ IO =
          |    Ref.fresh(Static, t); ()
          |
          |""".stripMargin
+    }
+
+    private def fordFulkerson: String = {
+      """
+        |///
+        |/// The Ford-Fulkerson algorithm finds the maximum flow of a flow network.
+        |/// Here it is implemented using a combination of functional programming
+        |/// and datalog.
+        |///
+        |pub def main(): Unit \ IO =
+        |    FordFulkerson.exampleGraph01() |> FordFulkerson.maxFlow(0, 5) |> blackhole
+        |
+        |mod FordFulkerson {
+        |
+        |    use Path.{Path, Bot};
+        |
+        |    ///
+        |    /// Returns the maximum flow from `src` to `dst` in the flow network `g`.
+        |    /// N.B.: `g` is a directed graph with upper bounds / capacity on the edges.
+        |    /// No pre-assigned flow is allowed.
+        |    ///
+        |    /// The following assumptions also apply:
+        |    /// - `src` and `dst` is connected in `g`
+        |    /// - `g` contains no negative cycles
+        |    /// - `g` is labeled in ascending order from `src` to `sink`
+        |    /// - The label of `src` has the lowest value in the graph
+        |    /// - The label of `dst` has the highest value in the graph
+        |    ///
+        |    pub def maxFlow(src: t, dst: t, g: m[(t, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
+        |            case None       => getMaxFlow(dst, flowNetwork)
+        |            case Some(path) =>
+        |                let incr = minCapacity(path, flowNetwork);
+        |                let updatedNetwork = increaseFlow(path, incr, flowNetwork);
+        |                fordFulkerson(updatedNetwork)
+        |        };
+        |        // Init with 0 flow
+        |        fordFulkerson(zeroFlow(g))
+        |
+        |    ///
+        |    /// Returns a flow network with zero flow.
+        |    ///
+        |    def zeroFlow(g: m[(t, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, 0, z))
+        |
+        |    ///
+        |    /// Returns the sum of the flows on all directly ingoing edges to `dst`.
+        |    ///
+        |    def getMaxFlow(dst: t, g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        g
+        |        |> Foldable.toVector
+        |        |> Vector.filterMap(match (_, _, f, d) -> if (d == dst) Some(f) else None)
+        |        |> Vector.sum
+        |
+        |    ///
+        |    /// Returns an augmenting path if one exists.
+        |    ///
+        |    /// An edge is in an augmenting path if its flow can be increased, i.e., the flow is strictly less than the capacity,
+        |    /// or if it has non-zero flow.
+        |    ///
+        |    def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        let edges = inject g into Edge;
+        |        let rules = #{
+        |            Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if (u - f) > 0. // Forward edge
+        |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if (u - f) > 0. // Forward edge
+        |            Reach(x, y; init(y, x)) :- Edge(y, u, f, x),                 if f > 0.       // Back edge
+        |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if f > 0.       // Back edge
+        |        };
+        |        let result = query edges, rules select fn from Reach(src, dst; fn);
+        |        Vector.head(result)
+        |
+        |    ///
+        |    /// Returns the most constraining capacity of `g` on the `Path` `p`.
+        |    ///
+        |    def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        let onPath = (s, d) -> isForwardEdge(s, d, p) or isBackEdge(s, d, p);
+        |        let optMin = g |> Foldable.filter(match (s, _, _, d) -> onPath(s, d))
+        |            |> List.map(match (_, u, f, _) -> u - f)
+        |            |> List.minimum;
+        |        match optMin {
+        |            case Some(u) => u
+        |            case None    => unreachable!() // This function is only called by `maxFlow` if an augmenting path was found
+        |        }
+        |
+        |    ///
+        |    /// Returns a new flow network where the edges in `g` on the `Path` `p` has been adjusted by `incr`.
+        |    ///
+        |    def increaseFlow(p: Path[t], incr: Int32, g: m[(t, Int32, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+        |        g
+        |        |> Foldable.toVector
+        |        |> Vector.map(match (s, u, f, d) ->
+        |            if (isForwardEdge(s, d, p))
+        |                (s, u, f + incr, d)
+        |            else if (isBackEdge(s, d, p))
+        |                (s, u, f - incr, d)
+        |            else
+        |                (s, u, f, d)
+        |        )
+        |
+        |    ///
+        |    /// Returns true if `src` is an edge pointing to `dst` on the `Path` `p`.
+        |    ///
+        |    def isForwardEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
+        |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
+        |            case (Some(si), Some(di)) if di + 1 == si => true
+        |            case _ => false
+        |        }
+        |
+        |    ///
+        |    /// Returns true if `dst` is an edge pointing to `src` on the `Path` `p`.
+        |    ///
+        |    def isBackEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
+        |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
+        |            case (Some(si), Some(di)) if si + 1 == di => true
+        |            case _ => false
+        |        }
+        |
+        |    pub enum Path[a] with ToString {
+        |        case Path(List[a])
+        |        case Bot // Infinitely long path
+        |    }
+        |
+        |    instance Eq[Path[a]] {
+        |        pub def eq(x: Path[a], y: Path[a]): Bool = match (x, y) {
+        |            case (Bot, Bot)           => true
+        |            case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
+        |            case _                    => false
+        |        }
+        |    }
+        |
+        |    instance Order[Path[a]] {
+        |        pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
+        |            case (Bot, Bot)           => Comparison.EqualTo
+        |            case (Bot, _)             => Comparison.LessThan
+        |            case (_, Bot)             => Comparison.GreaterThan
+        |            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+        |        }
+        |    }
+        |
+        |    instance LowerBound[Path[a]] {
+        |        // The longest list
+        |        pub def minValue(): Path[a] = Bot
+        |    }
+        |
+        |    instance PartialOrder[Path[a]] {
+        |        pub def lessEqual(x: Path[a], y: Path[a]): Bool = match (x, y) {
+        |            case (Bot, _)             => true
+        |            case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
+        |            case _                    => false
+        |        }
+        |    }
+        |
+        |    instance JoinLattice[Path[a]] {
+        |        pub def leastUpperBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
+        |            case (Bot, p)             => p
+        |            case (p, Bot)             => p
+        |            case (Path(xs), Path(ys)) => if (List.length(xs) <= List.length(ys)) x else y
+        |        }
+        |    }
+        |
+        |    instance MeetLattice[Path[a]] {
+        |        pub def greatestLowerBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
+        |            case (Bot, _)             => Bot
+        |            case (_, Bot)             => Bot
+        |            case (Path(xs), Path(ys)) => if (List.length(xs) > List.length(ys)) x else y
+        |        }
+        |    }
+        |
+        |    ///
+        |    /// Returns a `Path` from `x` to `y`.
+        |    ///
+        |    pub def init(y: a, x: a): Path[a] =
+        |        Path(y :: x :: Nil)
+        |
+        |    ///
+        |    /// Extends the `Path` `p` with `z`.
+        |    ///
+        |    pub def cons(z: a, p: Path[a]): Path[a] = match p {
+        |        case Bot      => Bot
+        |        case Path(xs) => Path(z :: xs)
+        |    }
+        |
+        |    ///
+        |    /// Returns the index of `a` in the `Path` `p`.
+        |    /// Note that a `Path` is sorted in descending order.
+        |    ///
+        |    pub def indexOf(x: a, p: Path[a]): Option[Int32] with Eq[a] = match p {
+        |        case Bot      => None
+        |        case Path(xs) => List.indexOf(x, xs)
+        |    }
+        |
+        |    //////////////////////////////////////////
+        |    // Tests                                //
+        |    //////////////////////////////////////////
+        |
+        |    ///
+        |    /// Returns the following graph:
+        |    ///
+        |    /// ```
+        |    ///      1---2
+        |    ///     /|\  |\
+        |    ///    0 | \ | 5
+        |    ///     \|  \|/
+        |    ///      3---4
+        |    /// ```
+        |    ///
+        |    /// The edges are directed as follows (ordered from left to right, top to bottom):
+        |    ///
+        |    /// ```
+        |    /// 0 -> 1, capacity 10
+        |    /// 0 -> 3, capacity 10
+        |    /// 1 -> 3, capacity 2
+        |    /// 1 -> 2, capacity 4
+        |    /// 1 -> 4, capacity 8
+        |    /// 3 -> 4, capacity 9
+        |    /// 4 -> 2, capacity 6
+        |    /// 2 -> 5, capacity 10
+        |    /// 4 -> 5, capacity 10
+        |    /// ```
+        |    ///
+        |    /// The maximum flow is `19`.
+        |    ///
+        |    pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
+        |        Set#{ (0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5) }
+        |
+        |def blackhole(t: a): Unit \ IO =
+        |    Ref.fresh(Static, t); ()
+        |
+        |""".stripMargin
     }
 
     /**
