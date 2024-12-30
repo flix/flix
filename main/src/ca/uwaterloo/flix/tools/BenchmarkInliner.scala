@@ -30,9 +30,11 @@ object BenchmarkInliner {
   /**
     * Set this to `true` for additional details during benchmarking.
     */
-  private val Verbose: Boolean = true
+  private val Verbose: Boolean = false
 
-  private val NumberOfRuns: Int = 1000
+  private val NumberOfRuns: Int = 5000
+
+  private val NumberOfCompilations: Int = 10
 
   private val NumberOfSamples: Int = 1000
 
@@ -472,7 +474,7 @@ object BenchmarkInliner {
 
         val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
-        for (_ <- 1 to 10) {
+        for (_ <- 1 to NumberOfCompilations) {
           val flix = new Flix().setOptions(o)
           // Clear caches.
           ZhegalkinCache.clearCaches()
