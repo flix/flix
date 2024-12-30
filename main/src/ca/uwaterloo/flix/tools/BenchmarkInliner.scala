@@ -317,44 +317,6 @@ object BenchmarkInliner {
         case (name, runs) => name -> stats(runs.map(_.compilationTime))
       }
 
-      val cartesianRuns = programExperiments.map {
-        case (name, runs) => name -> cartesian(runs, runs)
-      }
-
-      val relativeRunningTimes = cartesianRuns.map {
-        case (name, runsXRuns) => name -> runsXRuns.map {
-          case (run1, run2) => (run1.inlinerType, run2.inlinerType,
-            run1.inliningRounds, run2.inliningRounds,
-            run1.runningTime.toDouble / run2.runningTime.toDouble)
-        }
-      }
-
-      val relativeRunningTimeStats = relativeRunningTimes.map {
-        case (name, runs) => name -> {
-          val relativeTimings = runs.map {
-            case (_, _, _, _, timing) => timing
-          }
-          stats(relativeTimings)
-        }
-      }
-
-
-      val relativeCompilationTimes = cartesianRuns.map {
-        case (name, runsXRuns) => name -> runsXRuns.map {
-          case (run1, run2) => (run1.inlinerType, run2.inlinerType,
-            run1.inliningRounds, run2.inliningRounds,
-            run1.compilationTime.toDouble / run2.compilationTime.toDouble)
-        }
-      }
-      val relativeCompilationTimeStats = relativeCompilationTimes.map {
-        case (name, runs) => name -> {
-          val relativeTimings = runs.map {
-            case (_, _, _, _, timing) => timing
-          }
-          stats(relativeTimings)
-        }
-      }
-
       // Timestamp (in seconds) when the experiment was run.
       val timestamp = System.currentTimeMillis() / 1000
 
@@ -371,57 +333,13 @@ object BenchmarkInliner {
                       ("average" -> stats.average) ~
                       ("median" -> stats.median)
                   }) ~
-                    ("relativeRunningTime" -> {
-                      val relativeTimings = relativeRunningTimes.apply(name)
-                      val stats = relativeRunningTimeStats.apply(name)
-                      val best = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.max }.map {
-                        case (type1, type2, rounds1, rounds2, timing) =>
-                          ("inlinerType1" -> type1.toString) ~
-                            ("inlinerType2" -> type2.toString) ~
-                            ("inlinerRounds1" -> rounds1.toString) ~
-                            ("inlinerRounds2" -> rounds2.toString) ~
-                            ("speedup" -> timing)
-                      }
-                      val worst = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.min }.map {
-                        case (type1, type2, rounds1, rounds2, timing) =>
-                          ("inlinerType1" -> type1.toString) ~
-                            ("inlinerType2" -> type2.toString) ~
-                            ("inlinerRounds1" -> rounds1.toString) ~
-                            ("inlinerRounds2" -> rounds2.toString) ~
-                            ("speedup" -> timing)
-                      }
-                      ("best" -> best) ~
-                        ("worst" -> worst)
-                    }) ~
                     ("compilationTime" -> {
                       val stats = compilationTimeStats.apply(name)
                       ("best" -> stats.min) ~
                         ("worst" -> stats.max) ~
                         ("average" -> stats.average) ~
                         ("median" -> stats.median)
-                    }) ~
-                  ("relativeCompilationTime" -> {
-                    val relativeTimings = relativeCompilationTimes.apply(name)
-                    val stats = relativeCompilationTimeStats.apply(name)
-                    val best = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.max }.map {
-                      case (type1, type2, rounds1, rounds2, timing) =>
-                        ("inlinerType1" -> type1.toString) ~
-                          ("inlinerType2" -> type2.toString) ~
-                          ("inlinerRounds1" -> rounds1.toString) ~
-                          ("inlinerRounds2" -> rounds2.toString) ~
-                          ("speedup" -> timing)
-                    }
-                    val worst = relativeTimings.filter { case (_, _, _, _, timing) => timing == stats.min }.map {
-                      case (type1, type2, rounds1, rounds2, timing) =>
-                        ("inlinerType1" -> type1.toString) ~
-                          ("inlinerType2" -> type2.toString) ~
-                          ("inlinerRounds1" -> rounds1.toString) ~
-                          ("inlinerRounds2" -> rounds2.toString) ~
-                          ("speedup" -> timing)
-                    }
-                    ("best" -> best) ~
-                      ("worst" -> worst)
-                  })
+                    })
                 }) ~
                   ("results" -> runs.map(_.toJson))
               }
