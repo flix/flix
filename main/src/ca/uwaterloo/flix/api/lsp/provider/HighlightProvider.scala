@@ -64,11 +64,12 @@ object HighlightProvider {
     *             for each occurrence of the symbol under the cursor.
     */
   def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
-    val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
-    val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => highlightAny(x, uri))
+    val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
+    val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
 
     highlightRight
       .orElse(highlightLeft)
+      .map(mkHighlights)
       .getOrElse(mkNotFound(uri, pos))
   }
 
@@ -248,281 +249,406 @@ object HighlightProvider {
     case _ => true
   }
 
+  private case class Occurs(writes: Set[SourceLocation], reads: Set[SourceLocation])
+
   /**
-    * Constructs the LSP highlight response for when the cursor is on an arbitrary [[AnyRef]] `x`.
-    *
-    * If `x` is a [[Symbol]] or [[Name.Label]], finds all occurrences of it in the file at `uri`, makes a
-    * [[DocumentHighlight]] for each, collecting them all in a successful LSP highlight response.
-    *
-    * If `x` is __not__ a [[Symbol]] or [[Name.Label]], returns a failure LSP highlight response.
+    * Returns all occurrences of [[AnyRef]] `x`, if it's either a [[Symbol]] or [[Name.Label]].
+    * Otherwise, returns [[None]]:
     *
     * @param x    the object under the cursor.
     * @param uri  the URI of the file in question.
     * @param root the [[Root]] AST node of the Flix project.
-    * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
-    *             for each occurrence of the symbol under the cursor.
+    * @return     [[Occurs]] containing all write and read occurrences of `x`, if it's a [[Symbol]] or [[Name.Label]].
+    *             Otherwise, [[None]]
     */
-  private def highlightAny(x: AnyRef, uri: String)(implicit root: Root): Option[JObject] = {
+  private def getOccurs(x: AnyRef, uri: String)(implicit root: Root): Option[Occurs] = {
     implicit val acceptor: Acceptor = FileAcceptor(uri)
     x match {
       // Assoc Types
-      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(highlightAssocTypeSym(sym))
-      case SymUse.AssocTypeSymUse(sym, _) => Some(highlightAssocTypeSym(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(highlightAssocTypeSym(sym))
+      case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
+      case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
+      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
       // Defs
-      case TypedAst.Def(sym, _, _, _) => Some(highlightDefnSym(sym))
-      case SymUse.DefSymUse(sym, _) => Some(highlightDefnSym(sym))
+      case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
+      case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
       // Effects
-      case TypedAst.Effect(_, _, _, sym, _, _) => Some(highlightEffectSym(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(highlightEffectSym(sym))
-      case SymUse.EffectSymUse(sym, _) => Some(highlightEffectSym(sym))
+      case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+      case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
       // Enums & Cases
-      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(highlightEnumSym(sym))
-      case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(highlightEnumSym(sym))
-      case TypedAst.Case(sym, _, _, _) => Some(highlightCaseSym(sym))
-      case SymUse.CaseSymUse(sym, _) => Some(highlightCaseSym(sym))
+      case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
+      case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
+      case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
       // Ops
-      case TypedAst.Op(sym, _, _) => Some(highlightOpSym(sym))
-      case SymUse.OpSymUse(sym, _) => Some(highlightOpSym(sym))
+      case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
+      case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
       // Records
-      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(highlightLabel(label))
-      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(highlightLabel(label))
+      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(getLabelOccurs(label))
+      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(getLabelOccurs(label))
+      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(getLabelOccurs(label))
       // Signatures
-      case TypedAst.Sig(sym, _, _, _) => Some(highlightSigSym(sym))
-      case SymUse.SigSymUse(sym, _) => Some(highlightSigSym(sym))
+      case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
+      case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
       // Structs
-      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(highlightStructSym(sym))
-      case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(highlightStructSym(sym))
-      case TypedAst.StructField(sym, _, _) => Some(highlightStructFieldSym(sym))
-      case SymUse.StructFieldSymUse(sym, _) => Some(highlightStructFieldSym(sym))
+      case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
+      case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
+      case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
       // Traits
-      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(highlightTraitSym(sym))
-      case SymUse.TraitSymUse(sym, _) => Some(highlightTraitSym(sym))
-      case TraitConstraint.Head(sym, _) => Some(highlightTraitSym(sym))
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+      case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
+      case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
-      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(highlightTypeAliasSym(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(highlightTypeAliasSym(sym))
+      case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
+      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
       // Type Variables
-      case TypedAst.TypeParam(_, sym, _) => Some(highlightTypeVarSym(sym))
-      case Type.Var(sym, _) => Some(highlightTypeVarSym(sym))
+      case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
+      case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
       // Variables
-      case Binder(sym, _) => Some(highlightVarSym(sym))
-      case TypedAst.Expr.Var(varSym, _, _) => Some(highlightVarSym(varSym))
+      case Binder(sym, _) => Some(getVarSymOccurs(sym))
+      case TypedAst.Expr.Var(varSym, _, _) => Some(getVarSymOccurs(varSym))
 
       case _ => None
     }
   }
 
-  private def highlightAssocTypeSym(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+
+  private def getAssocTypeSymOccurs(sym: Symbol.AssocTypeSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.AssocTypeSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+    def considerRead(s: Symbol.AssocTypeSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object AssocTypeSymConsumer extends Consumer {
-      override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = builder.considerWrite(tsig.sym, tsig.sym.loc)
-      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeAssocTypeSig(tsig: TypedAst.AssocTypeSig): Unit = considerWrite(tsig.sym, tsig.sym.loc)
+      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = considerRead(symUse.sym, symUse.loc)
+      // TODO missing type case?
     }
 
     Visitor.visitRoot(root, AssocTypeSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightDefnSym(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getDefnSymOccurs(sym: Symbol.DefnSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object DefnSymConsumer extends Consumer {
-      override def consumeDef(defn: TypedAst.Def): Unit = builder.considerWrite(defn.sym, defn.sym.loc)
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+      override def consumeDef(defn: TypedAst.Def): Unit = considerWrite(defn.sym, defn.sym.loc)
+      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = considerRead(sym.sym, sym.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightEffectSym(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object EffectSymConsumer extends Consumer {
-      override def consumeEff(eff: TypedAst.Effect): Unit = builder.considerWrite(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = builder.considerRead(effUse.sym, effUse.qname.loc)
+      override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => builder.considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, EffectSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightEnumSym(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getEnumSymOccurs(sym: Symbol.EnumSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object EnumSymConsumer extends Consumer {
-      override def consumeEnum(enm: TypedAst.Enum): Unit = builder.considerWrite(enm.sym, enm.sym.loc)
+      override def consumeEnum(enm: TypedAst.Enum): Unit = considerWrite(enm.sym, enm.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => builder.considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, EnumSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightCaseSym(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getCaseSymOccurs(sym: Symbol.CaseSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object CaseSymConsumer extends Consumer {
-      override def consumeCase(cse: TypedAst.Case): Unit = builder.considerWrite(cse.sym, cse.sym.loc)
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+      override def consumeCase(cse: TypedAst.Case): Unit = considerWrite(cse.sym, cse.sym.loc)
+      override def consumeCaseSymUse(sym: CaseSymUse): Unit = considerRead(sym.sym, sym.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightOpSym(sym: Symbol.OpSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getOpSymOccurs(sym: Symbol.OpSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.OpSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.OpSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object OpSymConsumer extends Consumer {
-      override def consumeOp(op: TypedAst.Op): Unit = builder.considerWrite(op.sym, op.sym.loc)
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = builder.considerRead(sym.sym, sym.loc)
+      override def consumeOp(op: TypedAst.Op): Unit = considerWrite(op.sym, op.sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = considerRead(sym.sym, sym.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightLabel(label: Name.Label)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(label)
+  private def getLabelOccurs(label: Name.Label)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(l: Name.Label, loc: SourceLocation): Unit = {
+      if (l == label) { writes += loc }
+    }
+
+    def considerRead(l: Name.Label, loc: SourceLocation): Unit = {
+      if (l == label) { reads += loc }
+    }
 
     object LabelConsumer extends Consumer {
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.RecordExtend(l, _, _, _, _, _) => builder.considerWrite(l, l.loc)
-        case Expr.RecordSelect(_, l, _, _, _) => builder.considerRead(l, l.loc)
-        case Expr.RecordRestrict(l, _, _, _, _) => builder.considerWrite(l, l.loc)
+        case Expr.RecordExtend(l, _, _, _, _, _) => considerWrite(l, l.loc)
+        case Expr.RecordSelect(_, l, _, _, _) => considerRead(l, l.loc)
+        case Expr.RecordRestrict(l, _, _, _, _) => considerWrite(l, l.loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, LabelConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightSigSym(sym: Symbol.SigSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getSigSymOccurs(sym: Symbol.SigSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.SigSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.SigSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object SigSymConsumer extends Consumer {
-      override def consumeSig(sig: TypedAst.Sig): Unit = builder.considerWrite(sig.sym, sig.sym.loc)
-      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeSig(sig: TypedAst.Sig): Unit = considerWrite(sig.sym, sig.sym.loc)
+      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, SigSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightStructSym(sym: Symbol.StructSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getStructSymOccurs(sym: Symbol.StructSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.StructSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.StructSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object StructSymConsumer extends Consumer {
-      override def consumeStruct(struct: TypedAst.Struct): Unit = builder.considerWrite(struct.sym, struct.sym.loc)
+      override def consumeStruct(struct: TypedAst.Struct): Unit = considerWrite(struct.sym, struct.sym.loc)
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.StructNew(sym, _, _, _, _, loc) => builder.considerRead(sym, loc)
+        case Expr.StructNew(sym, _, _, _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => builder.considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, StructSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightStructFieldSym(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getStructFieldSymOccurs(sym: Symbol.StructFieldSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object StructFieldSymConsumer extends Consumer {
-      override def consumeStructField(field: TypedAst.StructField): Unit = builder.considerWrite(field.sym, field.sym.loc)
-      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeStructField(field: TypedAst.StructField): Unit = considerWrite(field.sym, field.sym.loc)
+      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, StructFieldSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightTraitSym(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getTraitSymOccurs(sym: Symbol.TraitSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.TraitSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.TraitSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object TraitSymConsumer extends Consumer {
-      override def consumeTrait(traitt: TypedAst.Trait): Unit = builder.considerWrite(traitt.sym, traitt.sym.loc)
-      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = builder.considerRead(tcHead.sym, tcHead.loc)
+      override def consumeTrait(traitt: TypedAst.Trait): Unit = considerWrite(traitt.sym, traitt.sym.loc)
+      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = considerRead(symUse.sym, symUse.loc)
+      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = considerRead(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightTypeAliasSym(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getTypeAliasSymOccurs(sym: Symbol.TypeAliasSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object TypeAliasSymConsumer extends Consumer {
-      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = builder.considerWrite(alias.sym, alias.sym.loc)
+      override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = considerWrite(alias.sym, alias.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => builder.considerRead(sym, loc)
+        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, TypeAliasSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object TypeVarSymConsumer extends Consumer {
-      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = builder.considerWrite(tparam.sym, tparam.sym.loc)
+      override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = considerWrite(tparam.sym, tparam.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => builder.considerRead(sym, loc)
+        case Type.Var(sym, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, TypeVarSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
-  private def highlightVarSym(sym: Symbol.VarSym)(implicit root: Root, acceptor: Acceptor): JObject = {
-    val builder = new HighlightBuilder(sym)
+  private def getVarSymOccurs(sym: Symbol.VarSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+    var writes: Set[SourceLocation] = Set.empty
+    var reads: Set[SourceLocation] = Set.empty
+
+    def considerWrite(s: Symbol.VarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { writes += loc }
+    }
+
+    def considerRead(s: Symbol.VarSym, loc: SourceLocation): Unit = {
+      if (s == sym) { reads += loc }
+    }
 
     object VarSymConsumer extends Consumer {
-      override def consumeBinder(bnd: TypedAst.Binder): Unit = builder.considerWrite(bnd.sym, bnd.sym.loc)
-      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = builder.considerRead(symUse.sym, symUse.loc)
+      override def consumeBinder(bnd: TypedAst.Binder): Unit = considerWrite(bnd.sym, bnd.sym.loc)
+      override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = considerRead(symUse.sym, symUse.loc)
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Var(sym, _, loc) => builder.considerRead(sym, loc)
+        case Expr.Var(sym, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
 
     Visitor.visitRoot(root, VarSymConsumer, acceptor)
 
-    builder.build
+    Occurs(writes, reads)
   }
 
   /**
@@ -533,61 +659,21 @@ object HighlightProvider {
   }
 
   /**
-    * A builder for creating an LSP highlight response containing a [[DocumentHighlight]] for each recorded
-    * occurrence of a given token [[tok]].
+    * Creates an LSP highlight response from `occurs`.
     *
-    * An occurrence of a token of type [[T]] is "considered" by invoking [[considerRead]] or [[considerWrite]] for resp.
-    * "read" and "write" occurrences. By a "write" occurrence, we mean an occurrence where the token is being
-    * defined or otherwise bound to something. By "read" we mean an occurrence where the token is merely read.
-    * When we say "consider", we mean first checking if the occurrence is an occurrence of [[tok]] specifically.
-    * If so, it's added to our list of either "read" or "write" occurrences, depending on the type.
+    * The resulting LSP highlight response contains a [[DocumentHighlight]] for each occurrence in `occurs`.
+    * The [[DocumentHighlight]] created from `occurs.writes` have [[DocumentHighlightKind.Write]] and
+    * those created from `occurs.reads` have [[DocumentHighlightKind.Read]]
     *
-    * When we're done considering tokens, we can construct the LSP response by calling [[build]]
-    *
-    * @param tok  the token we're finding occurrences of.
-    * @tparam T   the type of token that [[tok]] is.
+    * @param occurs The [[Occurs]] to be highlighted.
+    * @return       LSP highlight response containing [[DocumentHighlight]] for every occurrence in `occurs`.
     */
-  private class HighlightBuilder[T](tok: T) {
-    private var reads: List[SourceLocation] = Nil
-    private var writes: List[SourceLocation] = Nil
+  private def mkHighlights(occurs: Occurs): JObject = {
+    val writeHighlights = occurs.writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
+    val readHighlights = occurs.reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
 
-    /**
-      * If `x` is an occurrence of [[tok]], adds it to our list of "read" occurrences.
-      *
-      * @param x    the token we're considering.
-      * @param loc  the [[SourceLocation]] of the occurrence.
-      */
-    def considerRead(x: T, loc: SourceLocation): Unit = {
-      if (x == tok) {
-        reads = loc :: reads
-      }
-    }
+    val highlights = writeHighlights ++ readHighlights
 
-    /**
-      * If `x` is an occurrence of [[tok]], adds it to our list of "write" occurrences.
-      *
-      * @param x    the token we're considering.
-      * @param loc  the [[SourceLocation]] of the occurrence.
-      */
-    def considerWrite(x: T, loc: SourceLocation): Unit = {
-      if (x == tok) {
-        writes = loc :: writes
-      }
-    }
-
-    /**
-      * Builds a [[JObject]] representing a successful LSP highlight response containing a [[DocumentHighlight]] for each read and write
-      * occurrence of [[tok]] recorded.
-      *
-      * @return A [[JObject]] representing a successful LSP highlight response containing a highlight of each recorded occurrence of [[tok]]
-      */
-    def build: JObject = {
-      val writeHighlights = writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
-      val readHighlights = reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
-
-      val highlights = writeHighlights ++ readHighlights
-
-      ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
-    }
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
   }
 }
