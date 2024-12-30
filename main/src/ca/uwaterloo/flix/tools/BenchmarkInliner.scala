@@ -259,6 +259,8 @@ object BenchmarkInliner {
 
     private val NumberOfSamples = 1000
 
+    private val MaxInliningRounds = 5
+
     /**
       * Represents a run of a single program.
       *
@@ -302,8 +304,6 @@ object BenchmarkInliner {
       "List.reverse" -> listReverse,
       "List.filterMap" -> listFilterMap
     )
-
-    private val MaxInliningRounds = 5
 
     def run(opts: Options): JsonAST.JObject = {
 
