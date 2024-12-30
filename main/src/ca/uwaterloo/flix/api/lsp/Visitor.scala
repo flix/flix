@@ -660,8 +660,8 @@ object Visitor {
   }
 
   private def visitOpSymUse(symUse: OpSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val OpSymUse(_, QName(_, _, loc)) = symUse
-    if (!a.accept(loc)) { return }
+    val OpSymUse(_, qname) = symUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeOpSymUse(symUse)
   }

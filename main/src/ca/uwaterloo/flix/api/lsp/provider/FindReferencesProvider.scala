@@ -170,7 +170,7 @@ object FindReferencesProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, loc) => loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, QName(_, _, loc)) => loc.isReal
+    case SymUse.OpSymUse(_, qname) => qname.loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal
