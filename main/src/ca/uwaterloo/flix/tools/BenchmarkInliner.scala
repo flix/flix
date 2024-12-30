@@ -435,9 +435,9 @@ object BenchmarkInliner {
 
     private def benchmark(opts: Options): Map[String, List[Run]] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, inlinerRounds = 0, inliner1Rounds = 0)
-      val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false)
-      val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false)
+      val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
+      val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
+      val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
       val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
       val runConfigs = allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
 
