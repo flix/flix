@@ -307,10 +307,6 @@ object BenchmarkInliner {
 
     def run(opts: Options): JsonAST.JObject = {
 
-      // TODO: Best performance increase
-      // TODO: Worst performance increase
-      // TODO: Avg and median performance increase.
-
       val programExperiments = benchmark(opts)
 
       val runningTimeStats = programExperiments.map {
