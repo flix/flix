@@ -27,6 +27,11 @@ import java.nio.file.Path
 
 object BenchmarkInliner {
 
+  /**
+    * Set this to `true` for additional details during benchmarking.
+    */
+  private val Verbose: Boolean = true
+
   private val Python: String =
     """
       |# $ pip install matplotlib
@@ -229,7 +234,7 @@ object BenchmarkInliner {
 
     val tDelta = System.currentTimeMillis() - t0
     val seconds = tDelta.toDouble / 1000
-    println(s"Took $seconds seconds")
+    debug(s"Took $seconds seconds")
 
   }
 
@@ -306,7 +311,7 @@ object BenchmarkInliner {
     )
 
     def run(opts: Options): JsonAST.JObject = {
-
+      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns of each program")
       val programExperiments = benchmark(opts)
 
       val runningTimeStats = programExperiments.map {
@@ -357,6 +362,9 @@ object BenchmarkInliner {
 
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((o, name, prog) <- runConfigs) {
+        debug(s"Benchmarking $name")
+        debug("Benchmarking compiler")
+
         val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
         for (_ <- 1 to 10) {
@@ -370,6 +378,7 @@ object BenchmarkInliner {
           compilationTimings += timing
         }
 
+        debug("Benchmarking running time")
         val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
         val flix = new Flix().setOptions(o)
         // Clear caches.
@@ -404,6 +413,7 @@ object BenchmarkInliner {
         val codeSize = result.codeSize
 
         runs += Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
+        debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
       }
 
       runs.foldLeft(Map.empty[String, List[Run]]) {
@@ -669,6 +679,12 @@ object BenchmarkInliner {
     val directory = Path.of("./build/").resolve("perf/")
     val filePath = directory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
+  }
+
+  private def debug(s: String): Unit = {
+    if (Verbose) {
+      println(s)
+    }
   }
 
 }
