@@ -771,7 +771,11 @@ object Simplifier {
         */
       case (Nil, Nil) =>
         val g = visitExp(guard)
-        SimplifiedAst.Expr.IfThenElse(g, succ, fail, succ.tpe, g.purity, g.loc)
+        g match {
+          case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
+          case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
+          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+        }
 
       /**
         * Matching a wildcard is guaranteed to succeed.
