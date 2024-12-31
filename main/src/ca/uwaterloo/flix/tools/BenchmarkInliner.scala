@@ -995,6 +995,8 @@ object BenchmarkInliner {
         |    pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
         |        Set#{ (0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5) }
         |
+        |}
+        |
         |def blackhole(t: a): Unit \ IO =
         |    Ref.fresh(Static, t); ()
         |
