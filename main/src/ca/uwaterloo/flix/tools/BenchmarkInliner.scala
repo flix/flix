@@ -32,7 +32,7 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = false
 
-  private val NumberOfRuns: Int = 10_000
+  private val NumberOfRuns: Int = 1000
 
   private val NumberOfCompilations: Int = 2000
 
