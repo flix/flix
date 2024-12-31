@@ -1078,10 +1078,6 @@ object BenchmarkInliner {
         |    }
         |}
         |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |
         |pub type alias Input[a] = DelayList[a]
         |
         |pub type alias ParseResult[a, b] = DelayList[(a, Input[b])]
@@ -1312,6 +1308,9 @@ object BenchmarkInliner {
         |        ECons(fst(xs), snd(xs))
         |
         |}
+        |
+        |def blackhole(t: a): Unit \ IO =
+        |    Ref.fresh(Static, t); ()
         |
         |""".stripMargin
     }
