@@ -346,8 +346,6 @@ object BenchmarkInliner {
 
     private type Config = (Options, String, String)
 
-    private val NumberOfSamples: Int = 1000
-
     private sealed trait InlinerType
 
     private object InlinerType {
@@ -392,7 +390,7 @@ object BenchmarkInliner {
       }
     }
 
-    private case class RunParams(compilations: Int, samples: Int, runs: Int)
+    private case class RunParams(compilations: Long, samples: Long, runs: Long)
 
     private case class Stats[T](min: T, max: T, average: Double, median: Double)
 
@@ -417,10 +415,16 @@ object BenchmarkInliner {
     )
 
     def run(opts: Options): JsonAST.JObject = {
-      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples")
+      debug("Generating configurations...")
       val configs = mkConfigs(opts)
-      val runParams = RunParams(20, 1000, 100)
+
+      debug("Estimating time allotment")
+      val runParams = estimateParams(configs)
+
+      val t0Spent = System.currentTimeMillis()
+      debug(s"Benchmarking with parameters: ${runParams.compilations} compilation rounds, ${runParams.samples} samples, ${runParams.samples} consecutive runs")
       val programExperiments = benchmark(configs, runParams)
+      val tDeltaSpent = ((System.currentTimeMillis() - t0Spent) / 1000) / 60
 
       val runningTimeStats = programExperiments.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -434,6 +438,13 @@ object BenchmarkInliner {
       val timestamp = System.currentTimeMillis() / 1000
 
       ("timestamp" -> timestamp) ~
+        ("budget" -> {
+          ("maxTime" -> MaxTime) ~
+            ("usedTime" -> tDeltaSpent) ~
+            ("compilationRounds" -> runParams.compilations) ~
+            ("samples" -> runParams.samples) ~
+            ("runs" -> runParams.runs)
+        }) ~
         ("programs" -> {
           programExperiments.map {
             case (name, runs) =>
@@ -458,6 +469,48 @@ object BenchmarkInliner {
               }
           }
         })
+    }
+
+    private def estimateParams(configs: List[Config]): RunParams = {
+      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+      val runs = scala.collection.mutable.ListBuffer.empty[(Long, Long)]
+      for (case (o, name, prog) <- configs) {
+        val isBaseLine = o.xnooptimizer && o.xnooptimizer1
+        if (isBaseLine) {
+          val flix = new Flix().setOptions(o)
+          ZhegalkinCache.clearCaches()
+          flix.addSourceCode(s"$name.flix", prog)
+          val result = flix.compile().unsafeGet
+          val mainFunc = result.getMain.get
+          val t0 = System.nanoTime()
+          for (_ <- 1 to 5) {
+            mainFunc(Array.empty)
+          }
+          val tDelta = System.nanoTime() - t0
+          runs += (result.totalTime, tDelta)
+        }
+      }
+      val totalTime = minutesToNanos(MaxTime)
+      val (compTimes, runTimes) = runs.unzip
+      val compTimes1 = compTimes.sum
+      val runTimes1 = runTimes.map(_ / 5).sum
+      val estimatedTime = compTimes1 + runTimes1
+      if (estimatedTime < totalTime) {
+        val totalRounds = totalTime / estimatedTime
+        val actualSplitRounds = totalRounds / 2
+        val actualRunTimes = oneIfZero(actualSplitRounds / 2)
+        RunParams(oneIfZero(actualSplitRounds), actualRunTimes, actualRunTimes)
+      } else {
+        RunParams(1, 1, 1)
+      }
+    }
+
+    private def oneIfZero(n: Long): Long = {
+      if (n < 1) 1 else n
+    }
+
+    private def minutesToNanos(minute: Int): Long = {
+      minute * 60_000_000_000L
     }
 
     private def benchmark(configs: List[Config], rp: RunParams): Map[String, List[Run]] = {
