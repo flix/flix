@@ -102,7 +102,7 @@ class Flix {
     *
     * The core library *must* be present for any program to compile.
     */
-  private val coreLibrary = List(
+  val coreLibrary = List(
     // Prelude
     "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
 
@@ -156,7 +156,7 @@ class Flix {
     *
     * The standard library is not required to be present for at least some programs to compile.
     */
-  private val standardLibrary = List(
+  val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),

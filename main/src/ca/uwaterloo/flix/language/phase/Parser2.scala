@@ -49,6 +49,7 @@ import scala.collection.mutable.ArrayBuffer
   * [[https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html]]
   */
 object Parser2 {
+  var stdlib:Set[String] = Set()
 
   private sealed trait Event
 
@@ -120,6 +121,8 @@ object Parser2 {
   }
 
   def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
+    val stdliblist = flix.coreLibrary.map(_._1) ++ flix.standardLibrary.map(_._1)
+    stdlib = stdlib ++ stdliblist
     flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
@@ -1379,7 +1382,8 @@ object Parser2 {
             arguments()
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          case TokenKind.Dot if (nth(1) == TokenKind.NameLowerCase && !s.src.name.contains("test.flix")) => // invoke method but not in test.flix
+          case TokenKind.Dot if (nth(1) == TokenKind.NameLowerCase &&
+            stdlib.contains(s.src.name)) => // invoke method only in stdlib
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
