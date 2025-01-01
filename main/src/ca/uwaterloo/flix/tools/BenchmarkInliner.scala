@@ -498,8 +498,9 @@ object BenchmarkInliner {
       if (estimatedTime < totalTime) {
         val totalRounds = totalTime / estimatedTime
         val actualSplitRounds = totalRounds / 2
-        val actualRunTimes = oneIfZero(actualSplitRounds / 2)
-        RunParams(oneIfZero(actualSplitRounds), actualRunTimes, actualRunTimes)
+        val actualRunTimes = oneIfZero(actualSplitRounds / 3)
+        val actualSamples = oneIfZero(actualRunTimes * 2)
+        RunParams(oneIfZero(actualSplitRounds), actualSamples, actualRunTimes)
       } else {
         RunParams(1, 1, 1)
       }
