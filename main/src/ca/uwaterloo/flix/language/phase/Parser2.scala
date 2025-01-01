@@ -1379,7 +1379,7 @@ object Parser2 {
             arguments()
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          case TokenKind.Dot if nth(1) == TokenKind.NameLowerCase => // invoke method
+          case TokenKind.Dot if (nth(1) == TokenKind.NameLowerCase && !s.src.name.contains("test.flix")) => // invoke method but not in test.flix
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
@@ -1400,6 +1400,21 @@ object Parser2 {
           case TokenKind.StructArrow if nth(1) == TokenKind.NameLowerCase => // struct get / put
             val mark = openBefore(lhs)
             eat(TokenKind.StructArrow)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // struct put
+              eat(TokenKind.Equal)
+              val mark2 = open()
+              expression()
+              close(mark2, TreeKind.Expr.StructPutRHS)
+              lhs = close(mark, TreeKind.Expr.StructPut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // struct get
+              lhs = close(mark, TreeKind.Expr.StructGet)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
+          case TokenKind.Dot if nth(1) == TokenKind.NameLowerCase => // struct get / put
+            val mark = openBefore(lhs)
+            eat(TokenKind.Dot)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
               eat(TokenKind.Equal)
