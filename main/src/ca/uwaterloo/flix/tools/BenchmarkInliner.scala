@@ -32,11 +32,7 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = true
 
-  private val NumberOfRuns: Int = 100
-
-  private val NumberOfCompilations: Int = 10
-
-  private val NumberOfSamples: Int = 1000
+  private val MaxTime: Int = 5 // Minutes
 
   private val MaxInliningRounds: Int = 5
 
@@ -348,6 +344,10 @@ object BenchmarkInliner {
 
   private object BenchmarkPrograms {
 
+    private type Config = (Options, String, String)
+
+    private val NumberOfSamples: Int = 1000
+
     private sealed trait InlinerType
 
     private object InlinerType {
@@ -392,6 +392,8 @@ object BenchmarkInliner {
       }
     }
 
+    private case class RunParams(compilations: Int, samples: Int, runs: Int)
+
     private case class Stats[T](min: T, max: T, average: Double, median: Double)
 
     private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
@@ -415,8 +417,10 @@ object BenchmarkInliner {
     )
 
     def run(opts: Options): JsonAST.JObject = {
-      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
-      val programExperiments = benchmark(opts)
+      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples")
+      val configs = mkConfigs(opts)
+      val runParams = RunParams(20, 1000, 100)
+      val programExperiments = benchmark(configs, runParams)
 
       val runningTimeStats = programExperiments.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -456,23 +460,17 @@ object BenchmarkInliner {
         })
     }
 
-    private def benchmark(opts: Options): Map[String, List[Run]] = {
+    private def benchmark(configs: List[Config], rp: RunParams): Map[String, List[Run]] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
-      val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
-      val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
-      val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
-      val runConfigs = allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
-
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
-      for ((o, name, prog) <- runConfigs) {
+      for (case (o, name, prog) <- configs) {
         debug(s"Benchmarking $name")
         debug("Benchmarking compiler")
         val t0DebugCompiler = System.currentTimeMillis()
 
         val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
-        for (_ <- 1 to NumberOfCompilations) {
+        for (_ <- 1 to rp.compilations) {
           val flix = new Flix().setOptions(o)
           // Clear caches.
           ZhegalkinCache.clearCaches()
@@ -498,10 +496,10 @@ object BenchmarkInliner {
         val result = flix.compile().unsafeGet
         result.getMain match {
           case Some(mainFunc) =>
-            for (_ <- 1 to NumberOfSamples) {
+            for (_ <- 1 to rp.samples) {
               val t0 = System.nanoTime()
               // Iterate the program NumberOfRuns time
-              for (_ <- 1 to NumberOfRuns) {
+              for (_ <- 1 to rp.runs) {
                 mainFunc(Array.empty)
               }
               val tDelta = System.nanoTime() - t0
@@ -537,6 +535,14 @@ object BenchmarkInliner {
           case None => acc + (run.name -> List(run))
         }
       }
+    }
+
+    private def mkConfigs(opts: Options): List[Config] = {
+      val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
+      val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
+      val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
+      val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+      allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
     }
 
     private def listFilter: String = {
