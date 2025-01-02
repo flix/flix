@@ -26,6 +26,10 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.language.errors.{NonExhaustiveMatchError, PatMatchError, UselessPatternError}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+
+import scala.collection.mutable
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -80,10 +84,12 @@ object PatMatch {
 
   private case class NonExhaustive(pat: List[TyCon]) extends Exhaustiveness
 
+  private case class Useless(pat: Pattern) extends Exhaustiveness
+
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
+  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[PatMatchError]) =
     flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
 
@@ -106,7 +112,7 @@ object PatMatch {
     * @param tast The expression to check
     * @param root The AST root
     */
-  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = {
     tast match {
       case Expr.Var(_, _, _) => Nil
       case Expr.Hole(_, _, _, _) => Nil
@@ -224,18 +230,18 @@ object PatMatch {
   /**
     * Performs exhaustive checking on the given constraint `c`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
       val headErrs = visitHeadPred(head0)
       val bodyErrs = body0.flatMap(visitBodyPred)
       headErrs ::: bodyErrs
   }
 
-  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = h0 match {
+  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = h0 match {
     case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp)
   }
 
-  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = b0 match {
+  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
@@ -249,11 +255,12 @@ object PatMatch {
     * @param loc   the source location of the ParYield expression.
     * @return
     */
-  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
+  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[PatMatchError] = {
     // Call findNonMatchingPat for each pattern individually
     frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
       case Exhaustive => Nil
       case NonExhaustive(ctors) => NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
+      case Useless(pat) => UselessPatternError(pat.loc) :: Nil
     })
   }
 
@@ -265,13 +272,14 @@ object PatMatch {
     * @param rules The rules to check
     * @return
     */
-  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
+  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[PatMatchError] = {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
     findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => Nil
       case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
+      case Useless(pat) => UselessPatternError(pat.loc) :: Nil
     }
   }
 
@@ -294,46 +302,61 @@ object PatMatch {
 
     val sigma = rootCtors(rules)
     val missing = missingFromSig(sigma, root)
-    if (missing.isEmpty && sigma.nonEmpty) {
-      /* If the constructors are complete, then we check that the arguments to the constructors and the remaining
-       * patterns are complete
-       *
-       * e.g. If we have
-       * enum Option[a] {
-       *    case Some(a),
-       *    case None
-       *  }
-       *
-       * case Some True =>
-       * case Some False =>
-       * case None =>
-       *
-       * {Some, None} is a complete signature, but the "Some" case is exhaustive only if the {True, False} case is
-       *
-       * exhaustive. So we create a "Specialized" matrix for "Some" with {True, False} as rows and check that.
-       */
-      val checkAll: List[Exhaustiveness] = sigma.map(c => {
-        val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, root)
-        res match {
-          case Exhaustive => Exhaustive
-          case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
-        }
-      })
-      mergeAllExhaustive(checkAll)
+    val useless = uselessInSig(rules, root)
 
-    } else {
-      /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
-       * check for non matching patterns in the wild/default matrix.
-       */
-      findNonMatchingPat(defaultMatrix(rules), n - 1, root) match {
-        case Exhaustive => Exhaustive
-        case NonExhaustive(ctors) => sigma match {
-          // If sigma is not empty, pick one of the missing constructors and return it
-          case _ :: _ => NonExhaustive(rebuildPattern(missing.head, ctors))
-          // Else, prepend a wildcard
-          case Nil => NonExhaustive(rebuildPattern(TyCon.Wild, ctors))
+    val complete = missing.isEmpty && sigma.nonEmpty
+
+    (complete, useless.isEmpty) match {
+      // Complete signature
+      case (true, true) =>
+        /* If the constructors are complete, then we check that the arguments to the constructors and the remaining
+         * patterns are complete
+         *
+         * e.g. If we have
+         * enum Option[a] {
+         *    case Some(a),
+         *    case None
+         *  }
+         *
+         * case Some True =>
+         * case Some False =>
+         * case None =>
+         *
+         * {Some, None} is a complete signature, but the "Some" case is exhaustive only if the {True, False} case is
+         *
+         * exhaustive. So we create a "Specialized" matrix for "Some" with {True, False} as rows and check that.
+         */
+        val checkAll: List[Exhaustiveness] = sigma.map(c => {
+          val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, root)
+          res match {
+            case Exhaustive => Exhaustive
+            case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
+            case Useless(pat) => Useless(pat)
+          }
+        })
+        mergeAllExhaustive(checkAll)
+
+      // Missing pattern
+      case (false, _) =>
+        /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
+         * check for non matching patterns in the wild/default matrix.
+         */
+        findNonMatchingPat(defaultMatrix(rules), n - 1, root) match {
+          case Exhaustive => Exhaustive
+          case NonExhaustive(ctors) => sigma match {
+            // If sigma is not empty, pick one of the missing constructors and return it
+            case _ :: _ => NonExhaustive(rebuildPattern(missing.head, ctors))
+            // Else, prepend a wildcard
+            case Nil => NonExhaustive(rebuildPattern(TyCon.Wild, ctors))
+          }
+          case Useless(pat) => Useless(pat)
         }
-      }
+
+      // Useless pattern
+      case (true, false) =>
+        // Just point out the first useless pattern
+        Useless(useless.head)
+
     }
   }
 
@@ -480,6 +503,34 @@ object PatMatch {
   }
 
   /**
+    * Returns the list of type constructors of the same type as the given tycon.
+    */
+  private def getAllCtors(tycon: TyCon, root: Root): List[TyCon] = tycon match {
+    // Structural types have just one constructor
+    case a: TyCon.Tuple => List(a)
+    case a: TyCon.Record => List(a)
+
+    // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
+    // other cases
+    case TyCon.Enum(sym, _) => {
+      root.enums(sym.enumSym).cases.map {
+        case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
+      }
+    }.toList
+
+    // For Unit and Bool constants are enumerable
+    case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
+    case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
+
+    /* For numeric types, we consider them as "infinite" types union
+     * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
+     * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
+     * having a case for [0 255], but we'll ignore that case for now
+     */
+    case _ => List(TyCon.Wild)
+  }
+
+  /**
     * True if ctors is a complete signature for exp. A complete signature is when all constructors of a type are
     * present. E.g. for
     *
@@ -500,39 +551,36 @@ object PatMatch {
     * @return
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
-    // Enumerate all the constructors that we need to cover
-    def getAllCtors(x: TyCon): List[TyCon] = x match {
-      // Structural types have just one constructor
-      case a: TyCon.Tuple => List(a)
-      case a: TyCon.Record => List(a)
 
-      // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
-      // other cases
-      case TyCon.Enum(sym, _) => {
-        root.enums(sym.enumSym).cases.map {
-          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
-        }
-      }.toList
-
-      // For Unit and Bool constants are enumerable
-      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
-      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
-
-      /* For numeric types, we consider them as "infinite" types union
-       * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
-       * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
-       * having a case for [0 255], but we'll ignore that case for now
-       */
-      case _ => List(TyCon.Wild)
-    }
-
-    val expCtors = ctors.flatMap(getAllCtors)
+    val expCtors = ctors.flatMap(getAllCtors(_, root))
     /* We cover the needed constructors if there is a wild card in the
      * root constructor set, or if we match every constructor for the
      * expression
      */
     expCtors.filterNot {
       ctor => ctors.exists(y => sameCtor(ctor, y))
+    }
+  }
+
+  /**
+    * Returns the list of useless constructors.
+    *
+    * MATT more doc
+    */
+  private def uselessInSig(rules: List[List[TypedAst.Pattern]], root: TypedAst.Root): List[TypedAst.Pattern] = {
+    val sigma = rootCtors(rules)
+    val expCtors = sigma.flatMap(getAllCtors(_, root))
+
+    val unseen = expCtors.to(mutable.Set)
+
+    // The useless constructors are the ones that are previously seen
+    sigma.zip(rules).filterNot {
+      case (ctor, rule) =>
+        // remove a constructor when we see it
+        // and filter it out of the list
+        unseen.remove(ctor)
+    }.map {
+      case (ctor, rule) => rule.head // MATT dangerous head?
     }
   }
 
@@ -654,12 +702,19 @@ object PatMatch {
     * @param acc The Exhaustiveness accumulated so far
     * @return The merged result
     */
-  private def mergeExhaustive(x: Exhaustiveness, acc: Exhaustiveness): Exhaustiveness =
-    (x, acc) match {
-      case (Exhaustive, Exhaustive) => Exhaustive
-      case (a: NonExhaustive, _) => a
-      case (_, a: NonExhaustive) => a
+  private def mergeExhaustive(x: Exhaustiveness, acc: Exhaustiveness): Exhaustiveness = {
+    def index(x: Exhaustiveness): Int = x match {
+      case Useless(_) => 0
+      case Exhaustive => 1
+      case NonExhaustive(_) => 2
     }
+
+    if (index(x) >= index(acc)) {
+      x
+    } else {
+      acc
+    }
+  }
 
   /**
     * Merges all the exhaustivenesses in the list. Accumulates failures if they are there.
