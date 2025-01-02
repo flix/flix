@@ -11,6 +11,7 @@
     "java.lang.System::currentTimeMillis": "IO",
     "java.lang.System::getenv": "Env, IO",
     "java.lang.System::nanoTime": "IO",
+
     "java.math.BigInteger::probablePrime": "NonDet, IO",
 
     "java.net.http.HttpClient::send": "Net, IO",
