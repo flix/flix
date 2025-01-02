@@ -32,7 +32,7 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = true
 
-  private val MaxTime: Int = 5 // Minutes
+  private val MaxTime: Int = 20 // Minutes
 
   private val MaxInliningRounds: Int = 5
 
@@ -420,6 +420,7 @@ object BenchmarkInliner {
 
       debug("Estimating time allotment")
       val runParams = estimateParams(configs)
+      // val runParams = RunParams(compilations = 300, samples = 1000, runs = 50)
 
       val t0Spent = System.currentTimeMillis()
       debug(s"Benchmarking with parameters: ${runParams.compilations} compilation rounds, ${runParams.samples} samples, ${runParams.samples} consecutive runs")
@@ -473,7 +474,8 @@ object BenchmarkInliner {
 
     private def estimateParams(configs: List[Config]): RunParams = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runs = scala.collection.mutable.ListBuffer.empty[(Long, Long)]
+      val runs = scala.collection.mutable.ListBuffer.empty[Long]
+      val mainRuns = 10
       for (case (o, name, prog) <- configs) {
         val isBaseLine = o.xnooptimizer && o.xnooptimizer1
         if (isBaseLine) {
@@ -483,26 +485,23 @@ object BenchmarkInliner {
           val result = flix.compile().unsafeGet
           val mainFunc = result.getMain.get
           val t0 = System.nanoTime()
-          for (_ <- 1 to 5) {
+          for (_ <- 1 to mainRuns) {
             mainFunc(Array.empty)
           }
           val tDelta = System.nanoTime() - t0
-          val entry = (result.totalTime, tDelta)
-          runs += entry
+          runs += tDelta
         }
       }
       val totalTime = minutesToNanos(MaxTime)
-      val (compTimes, runTimes) = runs.unzip
-      val compTimes1 = compTimes.sum
-      val runTimes1 = runTimes.map(_ / 5).sum
-      val estimatedTime = compTimes1 + runTimes1
+      val estimatedTime = runs.map(_ / mainRuns).sum
       if (estimatedTime < totalTime) {
         val totalRounds = totalTime / estimatedTime
         val actualSplitRounds = totalRounds / 2
-        val actualRunTimes = oneIfZero(actualSplitRounds / 3)
-        val actualSamples = oneIfZero(actualRunTimes * 2)
+        val actualSamples = oneIfZero((actualSplitRounds * 3) / 4)
+        val actualRunTimes = oneIfZero(actualSplitRounds / 4)
         RunParams(oneIfZero(actualSplitRounds), actualSamples, actualRunTimes)
       } else {
+        debug(s"Not enough time given ($MaxTime minutes). It was (over-)estimated to run for ${nanosToMinutes(estimatedTime)} minutes.")
         RunParams(1, 1, 1)
       }
     }
@@ -518,6 +517,10 @@ object BenchmarkInliner {
 
     private def minutesToNanos(minute: Int): Long = {
       minute * 60_000_000_000L
+    }
+
+    private def nanosToMinutes(nano: Long): Double = {
+      nano / 60_000_000_000.0
     }
 
     private def benchmark(configs: List[Config], rp: RunParams): Map[String, List[Run]] = {
