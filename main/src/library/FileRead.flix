@@ -258,16 +258,23 @@ mod FileRead {
             }
         }
 
-        ///
-        /// Returns the attributes of the given file `f`.
-        /// May throw `IOException` and `SecurityException`.
-        ///
-        def fileAttributes(path: Path): BasicFileAttributes \ IO =
-            Files.readAttributes(
-                path,
-                // "[...] invoking this method with a type parameter of BasicFileAttributes.class will not throw UnsupportedOperationException."
-                Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-                (...{}: Vector[LinkOption])
-            )
+    ///
+    /// Runs the `FileRead` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - FileRead) + {IO} = handle(f)()
+
+    ///
+    /// Returns the attributes of the given file `f`.
+    /// May throw `IOException` and `SecurityException`.
+    ///
+    def fileAttributes(path: Path): BasicFileAttributes \ IO =
+        Files.readAttributes(
+            path,
+            // "[...] invoking this method with a type parameter of BasicFileAttributes.class will not throw UnsupportedOperationException."
+            Class.forName("java.nio.file.attribute.BasicFileAttributes"),
+            (...{}: Vector[LinkOption])
+        )
 
 }
