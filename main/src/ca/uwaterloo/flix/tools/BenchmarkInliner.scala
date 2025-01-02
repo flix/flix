@@ -493,7 +493,7 @@ object BenchmarkInliner {
         }
       }
       val totalTime = minutesToNanos(MaxTime)
-      val estimatedTime = runs.map(_ / mainRuns).sum
+      val estimatedTime = runs.map(_ / mainRuns).sum * 5
       if (estimatedTime < totalTime) {
         val totalRounds = totalTime / estimatedTime
         val actualSplitRounds = totalRounds / 2
