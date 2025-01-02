@@ -574,7 +574,7 @@ object PatMatch {
     val unseen = expCtors.to(mutable.Set)
 
     // The useless constructors are the ones that are previously seen
-    sigma.zip(rules).filterNot {
+    sigma.zip(rules).filterNot { // TODO THIS ZIP IS NO GOOD because rootCtors is LOSSY
       case (ctor, rule) =>
         // remove a constructor when we see it
         // and filter it out of the list
