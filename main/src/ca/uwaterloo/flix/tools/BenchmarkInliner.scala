@@ -390,7 +390,7 @@ object BenchmarkInliner {
       }
     }
 
-    private case class RunParams(compilations: Int, samples: Int, runs: Int)
+    private case class RunParams(compilations: Long, samples: Long, runs: Long)
 
     private case class Stats[T](min: T, max: T, average: Double, median: Double)
 
@@ -487,8 +487,7 @@ object BenchmarkInliner {
             mainFunc(Array.empty)
           }
           val tDelta = System.nanoTime() - t0
-          val entry = (result.totalTime, tDelta)
-          runs += entry
+          runs += (result.totalTime, tDelta)
         }
       }
       val totalTime = minutesToNanos(MaxTime)
@@ -507,13 +506,8 @@ object BenchmarkInliner {
       }
     }
 
-    private def oneIfZero(n: Long): Int = {
-      if (n >= Int.MaxValue) {
-        Int.MaxValue
-      } else {
-        val m = n.toInt
-        if (m < 1) 1 else m
-      }
+    private def oneIfZero(n: Long): Long = {
+      if (n < 1) 1 else n
     }
 
     private def minutesToNanos(minute: Int): Long = {
