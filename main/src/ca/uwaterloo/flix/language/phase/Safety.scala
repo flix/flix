@@ -231,7 +231,7 @@ object Safety {
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val effectErrors = {
-        if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.loc))
+        if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
         else Nil
       }
       effectErrors ++ visitExp(exp) ++ rules.flatMap(rule => visitExp(rule.exp))

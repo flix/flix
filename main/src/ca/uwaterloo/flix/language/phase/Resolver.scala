@@ -1,5 +1,6 @@
 /*
  *  Copyright 2017 Magnus Madsen
+ *  Copyright 2024 Alexander Dybdahl Troelsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1284,7 +1285,7 @@ object Resolver {
       lookupEffect(eff, env0, ns0, root) match {
         case Result.Ok(decl) =>
           checkEffectIsAccessible(decl, ns0, eff.loc)
-          val effUse = EffectSymUse(decl.sym, eff.loc)
+          val effUse = EffectSymUse(decl.sym, eff)
           val expVal = resolveExp(exp, env0)
           mapN(expVal) {
             case e => ResolvedAst.Expr.Without(e, effUse, loc)
@@ -1732,7 +1733,7 @@ object Resolver {
     lookupEffect(eff, env0, ns, root) match {
       case Result.Ok(decl) =>
         checkEffectIsAccessible(decl, ns, eff.loc)
-        val effUse = EffectSymUse(decl.sym, eff.loc)
+        val effUse = EffectSymUse(decl.sym, eff)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body) =>
             val opVal = findOpInEffect(ident, decl)
