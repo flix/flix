@@ -598,8 +598,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, loc) = effUse
-    if (!a.accept(loc)) { return }
+    val EffectSymUse(_, qname) = effUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }
