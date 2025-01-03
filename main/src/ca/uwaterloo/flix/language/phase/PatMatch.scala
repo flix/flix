@@ -435,7 +435,7 @@ object PatMatch {
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
-          Some(p :: pat.tail)
+          Some(pat.tail)
         } else None
     }
 
