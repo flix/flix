@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
-import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
