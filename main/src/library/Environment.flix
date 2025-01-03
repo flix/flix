@@ -161,6 +161,13 @@ mod Environment {
             def getVirtualProcessors(k) = k(unsafe Runtime.getRuntime().availableProcessors())
         }
 
+    ///
+    /// Runs the `Environment` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Environment` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Environment) + {Sys, IO} = handle(f)()
+
     def getPropHelper(name: String): Option[String] \ {Sys, IO} =
             try {
                 let result = System.getProperty(name);

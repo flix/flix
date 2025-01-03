@@ -132,4 +132,11 @@ mod HttpWithResult {
                 }
         }
 
+    ///
+    /// Runs the `HttpWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `HttpWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - HttpWithResult) + {Net, IO} = handle(f)()
+
 }
