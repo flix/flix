@@ -64,8 +64,8 @@ mod ProcessWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - ProcessWithResult) + {Exec, IO} = x ->
         run {
             f(x)
-        } with ProcessWithResult {
-            def execWithCwdAndEnv(cmd, args, cwd, env, handler) = region rc {
+        } with handler ProcessWithResult {
+            def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
                 let res = try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
@@ -80,18 +80,18 @@ mod ProcessWithResult {
                     let process = pb.start();
                     Ok(
                         ProcessHandle.ProcessHandle(
-                            {stop = () -> process.destroy(),exitValue = () -> process.exitValue(),  
+                            {stop = () -> process.destroy(),exitValue = () -> process.exitValue(),
                                 isAlive = () -> process.isAlive()}
                             )
                         )
-                        
+
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
-                handler(res)
+                k(res)
             }
         }
 

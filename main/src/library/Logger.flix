@@ -61,7 +61,7 @@ mod Logger {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Logger) + IO = x ->
         run {
             f(x)
-        } with Logger {
+        } with handler Logger {
             def log(s, m, k) = { println("[${s}] ${m}"); k() }
         }
 

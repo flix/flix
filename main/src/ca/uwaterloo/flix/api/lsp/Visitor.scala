@@ -474,10 +474,13 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-        visitExpr(exp)
+      case Expr.Handler(effUse, rules, _, _, _, _, _) =>
         visitEffectSymUse(effUse)
         rules.foreach(visitHandlerRule)
+
+      case Expr.RunWith(exp, handler, _, _, _) =>
+        visitExpr(exp)
+        visitExpr(handler)
 
       case Expr.Do(op, exps, _, _, _) =>
         visitOpSymUse(op)

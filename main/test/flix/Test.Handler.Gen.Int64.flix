@@ -12,7 +12,7 @@ mod Test.Handler.Gen.Int64 {
             let counter = Ref.fresh(rc, 0i64);
             run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (i == limit) Nil else i :: k(i)

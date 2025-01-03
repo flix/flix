@@ -20,7 +20,7 @@ mod Test.Handler.Gen.AtomicInteger {
             let counter = Ref.fresh(rc, newAtomicInteger(0));
             run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (toInt(i) == limit) Nil else i :: k(i)

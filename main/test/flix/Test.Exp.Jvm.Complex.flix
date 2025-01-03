@@ -11,10 +11,10 @@ mod Test.Exp.Jvm.Complex {
 
     pub def start(): Unit \ {Net, IO} =
         let server = HttpServer.create(new InetSocketAddress(3000), 0);
-        server.createContext("/", handler());
+        server.createContext("/", httpHandler());
         ()
 
-    def handler(): HttpHandler \ IO = new HttpHandler {
+    def httpHandler(): HttpHandler \ IO = new HttpHandler {
         def handle(_this:HttpHandler, t:HttpExchange): Unit \ IO =
           let response = "Hello world!";
           t.sendResponseHeaders(200, Int32.toInt64(response.length()));

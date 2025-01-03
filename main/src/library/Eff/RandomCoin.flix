@@ -40,7 +40,7 @@ mod Eff {
             let rnd = new JRandom();
             x -> run {
                 f(x)
-            } with RandomCoin {
+            } with handler RandomCoin {
                 def flip(k) = k(rnd.nextBoolean())
             }
 

@@ -248,10 +248,13 @@ object PredDeps {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryWith(exp, _, rules, _, _, _) =>
-      rules.foldLeft(visitExp(exp)) {
+    case Expr.Handler(_, rules, _, _, _, _, _) =>
+      rules.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, HandlerRule(_, _, e)) => acc + visitExp(e)
       }
+
+    case Expr.RunWith(exp, handler, _, _, _) =>
+      visitExp(exp) + visitExp(handler)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {

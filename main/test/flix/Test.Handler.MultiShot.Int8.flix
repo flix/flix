@@ -9,7 +9,7 @@ mod Test.Handler.MultiShot.Int8 {
         def f1() = AskTell.askTell(42i8);
         let result = run {
             f1()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -20,7 +20,7 @@ mod Test.Handler.MultiShot.Int8 {
         def f2() = f1();
         let result = run {
             f2()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -32,7 +32,7 @@ mod Test.Handler.MultiShot.Int8 {
         def f3() = f2();
         let result = run {
             f3()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -43,7 +43,7 @@ mod Test.Handler.MultiShot.Int8 {
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
             r(0)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -54,7 +54,7 @@ mod Test.Handler.MultiShot.Int8 {
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
             r(1)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -65,7 +65,7 @@ mod Test.Handler.MultiShot.Int8 {
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = run {
             r(10)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -74,7 +74,7 @@ mod Test.Handler.MultiShot.Int8 {
     def testMutualRecursive01(): Bool =
         let result = run {
             mutual1(0)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -83,7 +83,7 @@ mod Test.Handler.MultiShot.Int8 {
     def testMutualRecursive02(): Bool =
         let result = run {
             mutual1(1)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -92,7 +92,7 @@ mod Test.Handler.MultiShot.Int8 {
     def testMutualRecursive03(): Bool =
         let result = run {
             mutual1(2)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -101,7 +101,7 @@ mod Test.Handler.MultiShot.Int8 {
     def testMutualRecursive04(): Bool =
         let result = run {
             mutual1(3)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)
@@ -110,7 +110,7 @@ mod Test.Handler.MultiShot.Int8 {
     def testMutualRecursive05(): Bool =
         let result = run {
             mutual1(10)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
         Assert.eq(84i8, result)

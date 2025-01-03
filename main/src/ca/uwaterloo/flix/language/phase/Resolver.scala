@@ -1294,15 +1294,21 @@ object Resolver {
           Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-      val expVal = resolveExp(exp, env0)
+    case NamedAst.Expr.Handler(eff, rules, loc) =>
       val handlerVal = visitHandler(eff, rules, env0)
-      mapN(expVal, handlerVal) {
-        case (e, Result.Ok((effUse, rs))) =>
-          ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-        case (_, Result.Err(error)) =>
+      mapN(handlerVal) {
+        case Result.Ok((effUse, rs)) =>
+          ResolvedAst.Expr.Handler(effUse, rs, loc)
+        case Result.Err(error) =>
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
+      }
+
+    case NamedAst.Expr.RunWith(exp, handler, loc) =>
+      val expVal = resolveExp(exp, env0)
+      val handlerVal = resolveExp(handler, env0)
+      mapN(expVal, handlerVal) {
+        case (e, h) => ResolvedAst.Expr.RunWith(e, h, loc)
       }
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>

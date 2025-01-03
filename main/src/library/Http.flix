@@ -113,7 +113,7 @@ mod Http {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
         run {
             Ok(f(x))
-        } with Http {
+        } with handler Http {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {

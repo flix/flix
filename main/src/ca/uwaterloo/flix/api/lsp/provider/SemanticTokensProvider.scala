@@ -520,10 +520,10 @@ object SemanticTokensProvider {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryWith(exp, eff, rules, _, _, _) =>
+    case Expr.Handler(eff, rules, _, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
       val st1 = Iterator(t)
-      val st2 = rules.foldLeft(visitExp(exp)) {
+      val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp)) =>
           val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
           val t1 = Iterator(st)
@@ -531,6 +531,9 @@ object SemanticTokensProvider {
           acc ++ t1 ++ t2 ++ visitExp(exp)
       }
       st1 ++ st2
+
+    case Expr.RunWith(exp, handler, _, _, _) =>
+      visitExp(exp) ++ visitExp(handler)
 
     case Expr.Do(op, exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)

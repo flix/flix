@@ -67,8 +67,8 @@ mod Process {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + {Exec, IO} = x ->
         run {
             Ok(f(x))
-        } with Process {
-            def execWithCwdAndEnv(cmd, args, cwd, env, handler) = region rc {
+        } with handler Process {
+            def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
                 try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
@@ -81,9 +81,9 @@ mod Process {
                         case None => ()
                     };
                     let process = pb.start();
-                    handler(
+                    k(
                         ProcessHandle.ProcessHandle(
-                            {stop = () -> process.destroy(), exitValue = () -> process.exitValue(), 
+                            {stop = () -> process.destroy(), exitValue = () -> process.exitValue(),
                                 isAlive = () -> process.isAlive()}
                              )
                         )

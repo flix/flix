@@ -12,7 +12,7 @@ mod Test.Handler.Gen.Enum {
             let counter = Ref.fresh(rc, Some(0));
             run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (i == limit) Nil else Some(i) :: k(Some(i))

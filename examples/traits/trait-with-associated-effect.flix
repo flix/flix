@@ -19,6 +19,6 @@ instance Dividable[Int32] {
 
 def main(): Unit \ IO =
     let x = Dividable.div(42.0, 0.0);
-    let y = run { Dividable.div(42, 0) } with DivByZero { def raise(_) = -1 };
+    let y = run { Dividable.div(42, 0) } with handler DivByZero { def raise(_) = -1 };
     println("x = ${x}");
     println("x = ${y}")

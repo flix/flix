@@ -96,7 +96,7 @@ mod HttpWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, IO} = x ->
         run {
             f(x)
-        } with HttpWithResult {
+        } with handler HttpWithResult {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
