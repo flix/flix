@@ -285,8 +285,7 @@ object EffectVerifier {
     case Expr.Throw(exp, eff, _, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.Handler(effUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
       // TODO effect stuff
       ()

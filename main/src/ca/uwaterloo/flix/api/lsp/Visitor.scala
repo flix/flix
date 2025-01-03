@@ -474,8 +474,7 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-        visitExpr(exp)
+      case Expr.Handler(effUse, rules, _, _, _, _, _) =>
         visitEffectSymUse(effUse)
         rules.foreach(visitHandlerRule)
 

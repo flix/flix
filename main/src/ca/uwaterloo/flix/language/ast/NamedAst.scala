@@ -180,7 +180,7 @@ object NamedAst {
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class RunWith(exp: Expr, handler: Expr, loc: SourceLocation) extends Expr
 

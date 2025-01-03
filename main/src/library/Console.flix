@@ -58,7 +58,7 @@ mod Console {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
         run {
             f(x)
-        } with Console {
+        } with handler Console {
             def readln(k)      = { k(System.console().readLine()) }
             def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
             def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }

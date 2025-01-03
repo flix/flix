@@ -104,9 +104,9 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+    case class Handler(eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
-    case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
 
@@ -243,6 +243,9 @@ object DocAst {
 
     def RunWith(d1: Expr, d2: Expr): Expr =
       DoubleKeyword("run", d1, "with", Left(d2))
+
+    def RunWithHandler(d: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]): Expr =
+      RunWith(d, Handler(eff, rules))
 
     def Spawn(d1: Expr, d2: Expr): Expr =
       InRegion(Keyword("spawn", d1), d2)

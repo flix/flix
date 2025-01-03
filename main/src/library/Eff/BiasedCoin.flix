@@ -40,7 +40,7 @@ mod Eff {
             let rnd = new JRandom();
             x -> run {
                 f(x)
-            } with BiasedCoin {
+            } with handler BiasedCoin {
                 def flip(p, k) = k(rnd.nextDouble() <= p)
             }
 

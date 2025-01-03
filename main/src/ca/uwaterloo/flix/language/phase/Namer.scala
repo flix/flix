@@ -771,10 +771,9 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Throw(e, loc)
 
-    case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
-      val e = visitExp(exp, ns0)
+    case DesugaredAst.Expr.Handler(eff, rules, loc) =>
       val rs = rules.map(visitTryWithRule(_, ns0))
-      NamedAst.Expr.TryWith(e, eff, rs, loc)
+      NamedAst.Expr.Handler(eff, rs, loc)
 
     case DesugaredAst.Expr.RunWith(exp, handler, loc) =>
       val e = visitExp(exp, ns0)

@@ -690,17 +690,15 @@ object Redundancy {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+    case Expr.Handler(effUse, rules, _, _, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
-      val usedExp = visitExp(exp, env0, rc)
-      val usedRules = rules.foldLeft(Used.empty) {
+      rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
-      usedExp ++ usedRules
 
     case Expr.RunWith(exp, handler, tpe, eff, loc) =>
       visitExp(exp, env0, rc) ++ visitExp(handler, env0, rc)

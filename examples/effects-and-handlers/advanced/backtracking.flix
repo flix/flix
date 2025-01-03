@@ -28,7 +28,7 @@ def search(k: Int32): Int32 \ Rewind + IO = {
 
 pub def main(): Int32 \ IO = region rc {
     let checkpoints = MutMap.empty(rc);
-    run search(10) with Rewind {
+    run search(10) with handler Rewind {
         def save(label, k) = {
             MutMap.put(label, k, checkpoints);
             k()

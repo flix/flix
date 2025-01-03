@@ -604,11 +604,17 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
-    case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expr.Handler(effUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+      val bodySym = Symbol.freshVarSym("_handler", BoundBy.FormalParam, loc.asSynthetic)
       val rs = rules.map(visitHandlerRule)
+      val bt = visitType(bodyTpe)
       val t = visitType(tpe)
-      LoweredAst.Expr.TryWith(e, sym, rs, t, eff, loc)
+      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
+      val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
+      val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
+      val tryWith = LoweredAst.Expr.TryWith(body, effUse, rs, bt, handledEff, loc)
+      val param = LoweredAst.FormalParam(bodySym, Modifiers.Empty, bodyThunkType, TypeSource.Inferred, loc.asSynthetic)
+      LoweredAst.Expr.Lambda(param, tryWith, t, loc)
 
     case TypedAst.Expr.RunWith(exp, handler, tpe, eff, loc) =>
       val thunk = LoweredAst.Expr.Lambda(LoweredAst.FormalParam(Symbol.freshVarSym("_runwith", BoundBy.FormalParam, loc.asSynthetic), Modifiers.Empty, Type.Unit, TypeSource.Inferred, loc.asSynthetic), visitExp(exp), Type.mkArrowWithEffect(Type.Unit, exp.eff, exp.tpe, loc.asSynthetic), loc.asSynthetic)

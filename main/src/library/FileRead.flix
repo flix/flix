@@ -125,7 +125,7 @@ mod FileRead {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileRead) + IO = x ->
         run {
             Ok(f(x))
-        } with FileRead {
+        } with handler FileRead {
             def exists(f, k) = {
                 try {
                     k(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))

@@ -122,7 +122,7 @@ mod FileReadWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileReadWithResult) + IO = x ->
         run {
             f(x)
-        } with FileReadWithResult {
+        } with handler FileReadWithResult {
             def exists(f, k) = {
                 let res = try {
                     Ok(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))

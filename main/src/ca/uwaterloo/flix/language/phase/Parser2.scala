@@ -747,45 +747,6 @@ object Parser2 {
   }
 
   /**
-    * Returns true if the next tokens are (close to) a sequence of dot-separated `kind` tokens.
-    *
-    * Returns false if the next tokens are expression-like.
-    *
-    * @param tail if any kind found is in `tail` then no further dot separated tokens will be read
-    */
-  private def runWithLookahead(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit s: State): Boolean = {
-    // This function is based on nameAllowQualified.
-    // Some errors are returned as false (if it could be a valid expression).
-    // Some errors are returned as true (if it cannot be a valid expression).
-
-    val foundToken = nthAnyOpt(0, kinds) match {
-      case Some(v) => v
-      case None => return false // Could be a valid expression.
-    }
-
-    var isTail: Boolean = tail.contains(foundToken)
-    var i = 1 // 0 is already read
-    var continue = true
-    while (continue && !isTail) {
-      nth(i) match {
-        case TokenKind.Dot =>
-          val found = nthAnyOpt(i + 1, kinds) match {
-            case Some(v) => v
-            case None => return false // Could be a valid expression.
-          }
-          isTail = tail.contains(found)
-          i += 2 // Go past the dot and name.
-        case TokenKind.DotWhiteSpace if kinds.contains(nth(i + 1)) =>
-          // `SomeName. otherName` is almost a name and cannot be a valid expression, so continue.
-          i += 2 // Go past the dot and name.
-        case _ =>
-          continue = false
-      }
-    }
-    true
-  }
-
-  /**
     * Consumes subsequent comments.
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
     * This is achieved by passing `canStartOnDoc = true`.
@@ -1698,6 +1659,7 @@ object Parser2 {
         case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
+        case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
@@ -2511,6 +2473,29 @@ object Parser2 {
       close(mark, TreeKind.Expr.Run)
     }
 
+    private def handlerExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordHandler))
+      val mark = open()
+      expect(TokenKind.KeywordHandler, SyntacticContext.Expr.OtherExpr)
+      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
+      if (at(TokenKind.CurlyL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.WithRule,
+          getItem = withRule,
+          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+          breakWhen = _.isRecoverExpr,
+          separation = Separation.Optional(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.Handler)
+      } else {
+        val token = nth(0)
+        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+      }
+    }
+
     private def tryExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordTry))
       val mark = open()
@@ -2554,31 +2539,10 @@ object Parser2 {
 
     private def withBody()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWith))
+      val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      if (runWithLookahead(NAME_EFFECT)) {
-        val mark = open()
-        nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
-        if (at(TokenKind.CurlyL)) {
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.WithRule,
-            getItem = withRule,
-            checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
-            breakWhen = _.isRecoverExpr,
-            separation = Separation.Optional(TokenKind.Comma),
-            delimiterL = TokenKind.CurlyL,
-            delimiterR = TokenKind.CurlyR,
-            context = SyntacticContext.Expr.OtherExpr
-          )
-          close(mark, TreeKind.Expr.RunWithBodyExpr)
-        } else {
-          val token = nth(0)
-          closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
-        }
-      } else {
-        val mark = open()
-        expression()
-        close(mark, TreeKind.Expr.RunWithBodyExpr)
-      }
+      expression()
+      close(mark, TreeKind.Expr.RunWithBodyExpr)
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {

@@ -229,12 +229,12 @@ object Safety {
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp) ++ checkThrow(exp)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+    case Expr.Handler(effUse, rules, _, _, _, _, _) =>
       val effectErrors = {
         if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.loc))
         else Nil
       }
-      effectErrors ++ visitExp(exp) ++ rules.flatMap(rule => visitExp(rule.exp))
+      effectErrors ++ rules.flatMap(rule => visitExp(rule.exp))
 
     case Expr.RunWith(exp, handler, tpe, eff, loc) =>
       visitExp(exp) ++ visitExp(handler)

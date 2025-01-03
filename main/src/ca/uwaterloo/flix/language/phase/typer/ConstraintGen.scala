@@ -737,17 +737,16 @@ object ConstraintGen {
         val resultEff = evar
         (resultTpe, resultEff)
 
-      case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
+      case Expr.Handler(effUse, rules, tvar, evar1, evar2, loc) =>
         //
-        //     Γ ⊢ e: e_t \ e_ef
-        // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
-        //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
+        // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
+        //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
         // ---------------------------------------------------------------------
-        // Γ ⊢ try e with Eff {
+        // Γ ⊢ handler Eff {
         //   def op1(op1x1, .., k1) = e1
         //   def op2(op2x1, .., k2) = e2
         //   ..
-        // }: e_t \ k_ef
+        // }: (Unit -> t \ ef) -> t \ k_ef
         //
         // where:
         // eff Eff {
@@ -756,29 +755,24 @@ object ConstraintGen {
         //  ..
         // }
         //
-        val (tpe, eff) = visitExp(exp)
-        val continuationEffectVar = Type.freshVar(Kind.Eff, loc)
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
-        c.unifyAllTypes(tpe :: tvar :: tpes, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
+        c.unifyAllTypes(tvar :: tpes, loc)
 
         val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
-        c.unifyType(continuationEffectVar, continuationEffect, loc)
-        val resultTpe = tpe
-        val resultEff = continuationEffect
+        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        c.unifyType(evar2, continuationEffect, loc)
+        val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
+        val resultEff = Type.Pure
         (resultTpe, resultEff)
 
       case Expr.RunWith(exp, handler, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (handlerTpe, handlerExpEff) = visitExp(handler)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
-        val handlerRes = tvar
-        val handlerEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
-        c.unifyType(Type.mkArrowWithEffect(handlerArg, handlerEff, handlerRes, loc.asSynthetic), handlerTpe, loc)
-        val evar = Type.mkUnion(handlerEff, handlerExpEff, loc.asSynthetic)
+        c.unifyType(Type.mkArrowWithEffect(handlerArg, evar, tvar, loc.asSynthetic), handlerTpe, loc)
         val resultTpe = tvar
-        val resultEff = evar
+        val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>

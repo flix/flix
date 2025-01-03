@@ -19,7 +19,7 @@ mod Test.Exp.RunWith {
     def testRunWith01(): Unit = {
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
@@ -28,11 +28,11 @@ mod Test.Exp.RunWith {
     def testRunWith02(): Unit = {
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = {
                 run {
                     Test.Exp.RunWith.Print2.doIt2()
-                } with Print2 {
+                } with handler Print2 {
                     def doIt2(_cont) = ()
                 }
             }
@@ -44,7 +44,7 @@ mod Test.Exp.RunWith {
         let letsDoIt = () -> Test.Exp.RunWith.Print.doIt();
         run {
             letsDoIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
@@ -53,7 +53,7 @@ mod Test.Exp.RunWith {
     def testRunWith04(): Unit = {
         run {
             Test.Exp.RunWith.Greet.greet("Alice")
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         }
     }
@@ -62,11 +62,11 @@ mod Test.Exp.RunWith {
     def testRunWith05(): Unit = {
         run {
             Test.Exp.RunWith.Greet.greet("Duchess")
-        } with Greet {
+        } with handler Greet {
             def greet(name, _cont) = {
                 run {
                     Test.Exp.RunWith.Greet2.greet2(name)
-                } with Greet2 {
+                } with handler Greet2 {
                     def greet2(_, _cont) = ()
                 }
             }
@@ -85,7 +85,7 @@ mod Test.Exp.RunWith {
 
         run {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         }
     }
@@ -94,9 +94,9 @@ mod Test.Exp.RunWith {
     def testRunWith07(): Unit = {
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
@@ -105,17 +105,17 @@ mod Test.Exp.RunWith {
     def testRunWith08(): Unit = {
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = {
                 run {
                     Test.Exp.RunWith.Print2.doIt2()
-                } with Print2 {
+                } with handler Print2 {
                     def doIt2(_cont) = ()
-                } with Print2 {
+                } with handler Print2 {
                     def doIt2(_cont) = ()
                 }
             }
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
@@ -125,9 +125,9 @@ mod Test.Exp.RunWith {
         let f = () -> Test.Exp.RunWith.Print.doIt();
         run {
             f()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
@@ -136,9 +136,9 @@ mod Test.Exp.RunWith {
     def testRunWith10(): Unit = {
         run {
             Test.Exp.RunWith.Greet.greet("Alice")
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         }
     }
@@ -147,15 +147,15 @@ mod Test.Exp.RunWith {
     def testRunWith11(): Unit = {
         run {
             Test.Exp.RunWith.Greet.greet("Duchess")
-        } with Greet {
+        } with handler Greet {
             def greet(name, _cont) = {
                 run {
                     Test.Exp.RunWith.Greet2.greet2(name)
-                } with Greet2 {
+                } with handler Greet2 {
                     def greet2(_, _cont) = ()
                 }
             }
-        } with Print { // Irrelevant effect but here to test the syntax
+        } with handler Print { // Irrelevant effect but here to test the syntax
             def doIt(_) = ()
         }
     }
@@ -172,70 +172,64 @@ mod Test.Exp.RunWith {
 
         run {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         }
     }
 
     @Test
     def testRunWith13(): Unit = {
-        let handler = f -> run {
-            f()
-        } with Print {
+        let handle = handler Print {
             def doIt(_cont) = ()
         };
-        run Test.Exp.RunWith.Print.doIt() with handler
+        run Test.Exp.RunWith.Print.doIt() with handle
     }
 
     @Test
     def testRunWith14(): Unit = {
-        let handler = f -> run {
-            f()
-        } with Print {
+        let handle = handler Print {
             def doIt(_cont) = {
                 run Test.Exp.RunWith.Print2.doIt2() with g -> run {
                     g()
-                } with Print2 {
+                } with handler Print2 {
                     def doIt2(_cont) = ()
                 }
             }
         };
-        run Test.Exp.RunWith.Print.doIt() with handler
+        run Test.Exp.RunWith.Print.doIt() with handle
     }
 
     @Test
     def testRunWith15(): Unit = {
         let letsDoIt = () -> Test.Exp.RunWith.Print.doIt();
-        let handler = f -> run {
-            f()
-        } with Print {
+        let handle = handler Print {
             def doIt(_cont) = ()
         };
-        run letsDoIt() with handler
+        run letsDoIt() with handle
     }
 
     @Test
     def testRunWith16(): Unit = {
-        def handler(x, f) = run {
+        def handle(x, f) = run {
             f(x)
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         };
-        run Test.Exp.RunWith.Greet.greet("Alice") with handler(())
+        run Test.Exp.RunWith.Greet.greet("Alice") with handle(())
     }
 
     @Test
     def testRunWith17(): Unit = {
         let handler2 = f -> run {
             f()
-        } with Greet2 {
+        } with handler Greet2 {
             def greet2(_, _cont) = ()
         };
         def handler1(g, f) = run {
             f()
-        } with Greet {
+        } with handler Greet {
             def greet(name, _cont) = {
                 run Test.Exp.RunWith.Greet2.greet2(name) with g
             }
@@ -252,44 +246,44 @@ mod Test.Exp.RunWith {
                 greetAll(tl)
             }
         };
-        def handler(f) = run {
+        def handle(f) = run {
             f()
-        } with Greet {
+        } with handler Greet {
             def greet(_, _cont) = ()
         };
 
         run {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
-        } with handler
+        } with handle
     }
 
     @Test
     def testRunWith19(): Unit = {
-        let handler = f -> run f() with Print {
+        let handle = f -> run f() with handler Print {
             def doIt(_cont) = ()
         };
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with handler
-        with Print {
+        } with handle
+        with handler Print {
             def doIt(_cont) = ()
         }
     }
 
     @Test
     def testRunWith20(): Unit = {
-        let handler = f -> run f() with Print {
+        let handle = f -> run f() with handler Print {
             def doIt(_cont) = ()
         };
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
-        } with handler
+        } with handle
     }
 
     def handler21(f: Unit -> Unit \ ef): Unit \ ef - Print =
-        run f() with Print { def doIt(_cont) = () }
+        run f() with handler Print { def doIt(_cont) = () }
 
     @Test
     def testRunWith21(): Unit = {
@@ -301,26 +295,26 @@ mod Test.Exp.RunWith {
     }
 
     def handler22(f: Unit -> Unit \ ef): Unit \ ef - Print2 =
-        run f() with Print2 { def doIt2(_cont) = () }
+        run f() with handler Print2 { def doIt2(_cont) = () }
 
     @Test
     def testRunWith22(): Unit = {
         // handler22 is pulled out since it needs to be generalized over effects.
         run {
             Test.Exp.RunWith.Print.doIt()
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = {
                 run {
                     Test.Exp.RunWith.Print2.doIt2()
                 } with handler22 with handler22
             }
-        } with Print {
+        } with handler Print {
             def doIt(_cont) = ()
         }
     }
 
     def handler23(x: t, f: Unit -> t \ ef): t \ ef - Print =
-        run f() with Print { def doIt(_cont) = x }
+        run f() with handler Print { def doIt(_cont) = x }
 
     @Test
     def testRunWith23(): Unit = {
@@ -332,7 +326,7 @@ mod Test.Exp.RunWith {
     }
 
     def handler24(x: String -> t \ ef1, f: Unit -> t \ ef2): t \ ef1 + (ef2 - Greet) =
-        run f() with Greet { def greet(msg, _cont) = x(msg) }
+        run f() with handler Greet { def greet(msg, _cont) = x(msg) }
 
     @Test
     def testRunWith24(): Unit = {
@@ -344,22 +338,22 @@ mod Test.Exp.RunWith {
 
     @Test
     def testRunWith25(): Unit = {
-        let handler = f -> run f() with Print { def doIt(_) = () };
+        let handle = handler Print { def doIt(_) = () };
         run {
             Test.Exp.RunWith.Greet.greet("Duchess")
-        } with Greet {
+        } with handler Greet {
             def greet(name, _cont) = {
                 run {
                     Test.Exp.RunWith.Greet2.greet2(name)
-                } with Greet2 {
+                } with handler Greet2 {
                     def greet2(_, _cont) = ()
                 }
             }
-        } with handler // Irrelevant effect but here to test the syntax
+        } with handle // Irrelevant effect but here to test the syntax
     }
 
     def handler26(f: Unit -> Unit \ ef): Unit \ ef - Greet =
-        run f() with Greet { def greet(_, _cont) = () }
+        run f() with handler Greet { def greet(_, _cont) = () }
 
     @Test
     def testRunWith26(): Unit = {

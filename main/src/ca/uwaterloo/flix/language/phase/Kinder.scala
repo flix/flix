@@ -615,18 +615,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc)
       KindedAst.Expr.Throw(exp, tvar, evar, loc)
 
-    case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
-      // create a fresh type variable for the handling block (same as resume result)
-      // and for the operation result (same as resume argument)
-      // and set the handled env
+    case ResolvedAst.Expr.Handler(eff, rules0, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc)
-
-      // use the old henv for the handled expression
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-
-      // use the new henv for the handler
+      val evar1 = Type.freshVar(Kind.Eff, loc)
+      val evar2 = Type.freshVar(Kind.Eff, loc)
       val rules = rules0.map(visitHandlerRule(_, kenv0, taenv, tvar, root))
-      KindedAst.Expr.TryWith(exp, eff, rules, tvar, loc)
+      KindedAst.Expr.Handler(eff, rules, tvar, evar1, evar2, loc)
 
     case ResolvedAst.Expr.RunWith(exp0, handler0, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc)

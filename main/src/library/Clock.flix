@@ -46,7 +46,7 @@ mod Clock {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Clock) + IO = x ->
         run {
             f(x)
-        } with Clock {
+        } with handler Clock {
             def currentTime(u, k) = {
                 let time = System.currentTimeMillis();
                 let ns = JTimeUnit.MILLISECONDS;
