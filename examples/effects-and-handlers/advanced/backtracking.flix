@@ -13,7 +13,7 @@ eff Rewind {
 /// 3. not divisible by 2 (so not 0, 2, 4, 6, 8, ...)
 /// 4. not divisible by 3 (so not 0, 3, 6, 9, ...)
 /// And we will this by guessing and retrying
-def search(k: Int32): Int32 \ Rewind + IO = {
+def search(k: Int32): Int32 \ Rewind + IO + NonDet = {
     let rnd = new Random();
     println("Beginning to search!");
     Rewind.save("start");
@@ -26,7 +26,7 @@ def search(k: Int32): Int32 \ Rewind + IO = {
     else guess
 }
 
-pub def main(): Int32 \ IO = region rc {
+pub def main(): Int32 \ IO + NonDet = region rc {
     let checkpoints = MutMap.empty(rc);
     run search(10) with Rewind {
         def save(label, k) = {
