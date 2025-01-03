@@ -259,4 +259,11 @@ mod FileWriteWithResult {
             }
         }
 
+    ///
+    /// Runs the `FileWriteWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileWriteWithResult) + {IO} = handle(f)()
+
 }

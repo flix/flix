@@ -348,7 +348,7 @@ object PatMatch {
           case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
         }
       })
-      checkAll.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
+      mergeAllExhaustive(checkAll)
 
     } else {
       /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
@@ -398,32 +398,32 @@ object PatMatch {
     // First figure out how many arguments are needed by the ctor
     val numArgs = countCtorArgs(ctor)
 
-    def specializeRow(pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) = pat.head match {
+    def specializeRow(pat: List[TypedAst.Pattern]): Option[List[Pattern]] = pat.head match {
       // A wild constructor is the same as the constructor
       // with all its arguments as wild
       case a: TypedAst.Pattern.Wild =>
-        (List.fill(numArgs)(a) ::: pat.tail) :: acc
+        Some(List.fill(numArgs)(a) ::: pat.tail)
       case a: TypedAst.Pattern.Var =>
-        (List.fill(numArgs)(a) ::: pat.tail) :: acc
+        Some(List.fill(numArgs)(a) ::: pat.tail)
 
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exps, _, _) =>
+      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), pats, _, _) =>
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
-              (exps ::: pat.tail) :: acc
+              Some(pats ::: pat.tail)
             } else {
-              acc
+              None
             }
-          case _ => acc
+          case _ => None
         }
-      case TypedAst.Pattern.Tuple(elms, _, _) =>
+      case TypedAst.Pattern.Tuple(pats, _, _) =>
         if (ctor.isInstanceOf[TyCon.Tuple]) {
-          (elms ::: pat.tail) :: acc
+          Some(pats ::: pat.tail)
         } else {
-          acc
+          None
         }
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
@@ -432,17 +432,17 @@ object PatMatch {
             case TypedAst.Pattern.RecordEmpty(_, _) => Nil
             case _ => List(tail)
           }
-          (ps ::: p ::: pat.tail) :: acc
-        case _ => acc
+          Some(ps ::: p ::: pat.tail)
+        case _ => None
       }
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
-          (p :: pat.tail) :: acc
-        } else acc
+          Some(pat.tail)
+        } else None
     }
 
-    rules.foldRight(List.empty[List[TypedAst.Pattern]])(specializeRow)
+    rules.flatMap(specializeRow)
   }
 
   /**
@@ -464,15 +464,18 @@ object PatMatch {
     *
     */
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
-    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.headOption match {
-      // If it's a wild card, we take the rest of the pattern
-      case Some(_: TypedAst.Pattern.Wild) => pat.tail :: acc
-      case Some(_: TypedAst.Pattern.Var) => pat.tail :: acc
+    def defaultRow(pat: List[TypedAst.Pattern]): Option[List[TypedAst.Pattern]] = {
+      pat.headOption.flatMap {
+        // If it's a wild card, we take the rest of the pattern
+        case _: TypedAst.Pattern.Wild => Some(pat.tail)
+        case _: TypedAst.Pattern.Var => Some(pat.tail)
 
-      // If it's a constructor, we don't include a row
-      case _ => acc
+        // If it's a constructor, we don't include a row
+        case _ => None
+      }
     }
-    rules.foldRight(List.empty[List[TypedAst.Pattern]])(defaultRow)
+
+    rules.flatMap(defaultRow)
   }
 
 
@@ -494,14 +497,15 @@ object PatMatch {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.headOption match {
-      case Some(_: Pattern.Wild) => pats
-      case Some(_: Pattern.Var) => pats
-      case Some(p) => p :: pats
-      case None => pats
+    def rootCtor(pat: List[TypedAst.Pattern]): Option[TyCon] = {
+      pat.headOption.flatMap {
+        case _: Pattern.Wild => None
+        case _: Pattern.Var => None
+        case p => Some(patToCtor(p))
+      }
     }
 
-    rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
+    rules.flatMap(rootCtor)
   }
 
   /**
@@ -526,13 +530,13 @@ object PatMatch {
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
-    def getAllCtors(x: TyCon, xs: List[TyCon]) = x match {
+    def getAllCtors(x: TyCon): List[TyCon] = x match {
       // For built in constructors, we can add all the options since we know them a priori
-      case TyCon.Unit => TyCon.Unit :: xs
-      case TyCon.True => TyCon.True :: TyCon.False :: xs
-      case TyCon.False => TyCon.True :: TyCon.False :: xs
-      case a: TyCon.Tuple => a :: xs
-      case a: TyCon.Record => a :: xs
+      case TyCon.Unit => List(TyCon.Unit)
+      case TyCon.True => List(TyCon.True, TyCon.False)
+      case TyCon.False => List(TyCon.True, TyCon.False)
+      case a: TyCon.Tuple => List(a)
+      case a: TyCon.Record => List(a)
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other cases
@@ -540,22 +544,24 @@ object PatMatch {
         root.enums(sym.enumSym).cases.map {
           case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
         }
-      }.toList ::: xs
+      }.toList
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
        * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
        * having a case for [0 255], but we'll ignore that case for now
        */
-      case _ => TyCon.Wild :: xs
+      case _ => List(TyCon.Wild)
     }
 
-    val expCtors = ctors.foldRight(List.empty[TyCon])(getAllCtors)
+    val expCtors = ctors.flatMap(getAllCtors)
     /* We cover the needed constructors if there is a wild card in the
      * root constructor set, or if we match every constructor for the
      * expression
      */
-    expCtors.foldRight(List.empty[TyCon])((x, xs) => if (ctors.exists(y => sameCtor(x, y))) xs else x :: xs)
+    expCtors.filterNot {
+      ctor => ctors.exists(y => sameCtor(ctor, y))
+    }
   }
 
   /**
@@ -613,7 +619,7 @@ object PatMatch {
     case TyCon.Str => "Str"
     case TyCon.Regex => "Regex"
     case TyCon.Wild => "_"
-    case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
+    case TyCon.Tuple(args) => args.map(prettyPrintCtor).mkString("(", ", ", ")")
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
     case TyCon.Enum(sym, args) => if (args.isEmpty) sym.name else sym.name + prettyPrintCtor(TyCon.Tuple(args))
@@ -729,4 +735,10 @@ object PatMatch {
       case (_, a: NonExhaustive) => a
     }
 
+  /**
+    * Merges all the exhaustivenesses in the list. Accumulates failures if they are there.
+    */
+  private def mergeAllExhaustive(l: List[Exhaustiveness]): Exhaustiveness = {
+    l.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
+  }
 }
