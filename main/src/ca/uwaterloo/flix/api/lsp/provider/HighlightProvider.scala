@@ -368,12 +368,16 @@ object HighlightProvider {
     def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
       if (s == sym) { reads += loc }
     }
-
+    
     object EffectSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case _ => ()
+      }
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Do(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }
