@@ -46,4 +46,12 @@ mod Test.Exp.Match.Bool {
         case x     => x == true
     }
 
+    @test
+    def testMatchBoolTuple01(): Bool = match (true, false) {
+        case (false, false) => false
+        case (false, true) => false
+        case (true, false) => true
+        case (true, true) => false
+    }
+
 }
