@@ -302,7 +302,7 @@ object PatMatch {
 
     val sigma = rootCtors(rules)
     val missing = missingFromSig(sigma, root)
-    val useless = uselessInSig(rules, root)
+    val useless = uselessInSig(rules)
 
     val complete = missing.isEmpty && sigma.nonEmpty
 
@@ -568,27 +568,32 @@ object PatMatch {
     *
     * MATT more doc
     */
-  private def uselessInSig(rules: List[List[TypedAst.Pattern]], root: TypedAst.Root): List[TypedAst.Pattern] = {
-    val sigma = rootCtors(rules)
-    val expCtors = sigma.flatMap(getAllCtors(_, root))
+  private def uselessInSig(rules: List[List[TypedAst.Pattern]]): List[TypedAst.Pattern] = {
+    val seen = mutable.Set.empty[TyCon]
+    var wildSeen = false
 
-    val unseen = expCtors.to(mutable.Set)
-
-    // TODO just go over seen constructors instead
-
+    // MATT this isn't enough: we need to check whether the previous stuff is exhaustive
+    // MATT it's probably best if we refactor to use types instead of tycon -> List(tycon) stuff
 
     // The useless constructors are the ones that are previously seen
     val roots = rules.map(rootCtor)
-    roots.zip(rules).filterNot { // TODO THIS ZIP IS NO GOOD because rootCtors is LOSSY
-      // If it's a wildcard, we've seen "everything"
-      case (None, rule) =>
+    roots.zip(rules).filter {
+      // If we've seen a wild already, then everything is unreachable.
+      case _ if wildSeen =>
+        true
 
-      case (ctor, rule) =>
-        // remove a constructor when we see it
-        // and filter it out of the list
-        unseen.remove(ctor)
+      // If it's a wildcard, we've seen "everything"
+      case (None, _) =>
+        wildSeen = true
+        false
+
+      // Otherwise it's a proper constructor. Just check if it's been seen.
+      case (Some(tycon), _) =>
+        val unseen = seen.add(tycon)
+        !unseen
+
     }.map {
-      case (ctor, rule) => rule.head // MATT dangerous head?
+      case (_, rule) => rule.head // MATT dangerous head?
     }
   }
 
