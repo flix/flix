@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -95,7 +94,7 @@ object Lexer {
       *
       * Note: The initial size of the array buffer has been determined by careful profiling.
       */
-    val tokens: mutable.ArrayBuffer[Token] = new ArrayBuffer(initialSize = 256)
+    val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
     /** The current interpolation nesting level.
       *
