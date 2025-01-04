@@ -491,15 +491,16 @@ object PatMatch {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern]): Option[TyCon] = {
-      pat.headOption.flatMap {
-        case _: Pattern.Wild => None
-        case _: Pattern.Var => None
-        case p => Some(patToCtor(p))
-      }
-    }
-
     rules.flatMap(rootCtor)
+  }
+
+  // MATT docs
+  private def rootCtor(pat: List[TypedAst.Pattern]): Option[TyCon] = {
+    pat.headOption.flatMap {
+      case _: Pattern.Wild => None
+      case _: Pattern.Var => None
+      case p => Some(patToCtor(p))
+    }
   }
 
   /**
@@ -573,8 +574,15 @@ object PatMatch {
 
     val unseen = expCtors.to(mutable.Set)
 
+    // TODO just go over seen constructors instead
+
+
     // The useless constructors are the ones that are previously seen
-    sigma.zip(rules).filterNot { // TODO THIS ZIP IS NO GOOD because rootCtors is LOSSY
+    val roots = rules.map(rootCtor)
+    roots.zip(rules).filterNot { // TODO THIS ZIP IS NO GOOD because rootCtors is LOSSY
+      // If it's a wildcard, we've seen "everything"
+      case (None, rule) =>
+
       case (ctor, rule) =>
         // remove a constructor when we see it
         // and filter it out of the list
