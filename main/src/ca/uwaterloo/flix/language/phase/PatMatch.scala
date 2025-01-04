@@ -19,12 +19,13 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.fmt.FormatConstant
+import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -562,7 +563,7 @@ object PatMatch {
     * @return A human readable string of the constructor
     */
   private def prettyPrintCtor(ctor: TyCon): String = ctor match {
-    case TyCon.Cst(cst) => cst.toString // MATT better const to string
+    case TyCon.Cst(cst) => FormatConstant.formatConstant(cst)
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => args.map(prettyPrintCtor).mkString("(", ", ", ")")
     case TyCon.Array => "Array"
