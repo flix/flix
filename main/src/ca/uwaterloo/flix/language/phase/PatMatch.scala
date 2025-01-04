@@ -51,34 +51,7 @@ object PatMatch {
   private sealed trait TyCon
 
   private object TyCon {
-
-    case object Unit extends TyCon
-
-    case object True extends TyCon
-
-    case object False extends TyCon
-
-    case object Char extends TyCon
-
-    case object BigDecimal extends TyCon
-
-    case object BigInt extends TyCon
-
-    case object Int8 extends TyCon
-
-    case object Int16 extends TyCon
-
-    case object Int32 extends TyCon
-
-    case object Int64 extends TyCon
-
-    case object Float32 extends TyCon
-
-    case object Float64 extends TyCon
-
-    case object Str extends TyCon
-
-    case object Regex extends TyCon
+    case class Cst(cst: Constant) extends TyCon
 
     case object Wild extends TyCon
 
@@ -528,10 +501,7 @@ object PatMatch {
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon): List[TyCon] = x match {
-      // For built in constructors, we can add all the options since we know them a priori
-      case TyCon.Unit => List(TyCon.Unit)
-      case TyCon.True => List(TyCon.True, TyCon.False)
-      case TyCon.False => List(TyCon.True, TyCon.False)
+      // Structural types have just one constructor
       case a: TyCon.Tuple => List(a)
       case a: TyCon.Record => List(a)
 
@@ -542,6 +512,10 @@ object PatMatch {
           case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
         }
       }.toList
+
+      // For Unit and Bool constants are enumerable
+      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
+      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -568,20 +542,7 @@ object PatMatch {
     * @return The number of arguments for the constructor
     */
   private def countCtorArgs(ctor: TyCon): Int = ctor match {
-    case TyCon.Unit => 0
-    case TyCon.True => 0
-    case TyCon.False => 0
-    case TyCon.Char => 0
-    case TyCon.BigDecimal => 0
-    case TyCon.BigInt => 0
-    case TyCon.Int8 => 0
-    case TyCon.Int16 => 0
-    case TyCon.Int32 => 0
-    case TyCon.Int64 => 0
-    case TyCon.Float32 => 0
-    case TyCon.Float64 => 0
-    case TyCon.Str => 0
-    case TyCon.Regex => 0
+    case TyCon.Cst(_) => 0
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
@@ -601,20 +562,7 @@ object PatMatch {
     * @return A human readable string of the constructor
     */
   private def prettyPrintCtor(ctor: TyCon): String = ctor match {
-    case TyCon.Unit => "Unit"
-    case TyCon.True => "True"
-    case TyCon.False => "False"
-    case TyCon.Char => "Char"
-    case TyCon.BigDecimal => "BigDecimal"
-    case TyCon.BigInt => "BigInt"
-    case TyCon.Int8 => "Int8"
-    case TyCon.Int16 => "Int16"
-    case TyCon.Int32 => "Int32"
-    case TyCon.Int64 => "Int64"
-    case TyCon.Float32 => "Float32"
-    case TyCon.Float64 => "Float64"
-    case TyCon.Str => "Str"
-    case TyCon.Regex => "Regex"
+    case TyCon.Cst(cst) => cst.toString // MATT better const to string
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => args.map(prettyPrintCtor).mkString("(", ", ", ")")
     case TyCon.Array => "Array"
@@ -658,19 +606,7 @@ object PatMatch {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Cst(Constant.Unit, _, _) => TyCon.Unit
-    case Pattern.Cst(Constant.Bool(true), _, _) => TyCon.True
-    case Pattern.Cst(Constant.Bool(false), _, _) => TyCon.False
-    case Pattern.Cst(Constant.Char(_), _, _) => TyCon.Char
-    case Pattern.Cst(Constant.Float32(_), _, _) => TyCon.Float32
-    case Pattern.Cst(Constant.Float64(_), _, _) => TyCon.Float64
-    case Pattern.Cst(Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
-    case Pattern.Cst(Constant.Int8(_), _, _) => TyCon.Int8
-    case Pattern.Cst(Constant.Int16(_), _, _) => TyCon.Int16
-    case Pattern.Cst(Constant.Int32(_), _, _) => TyCon.Int32
-    case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
-    case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
-    case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(cst, _, _) => TyCon.Cst(cst)
     case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
