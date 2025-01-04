@@ -619,14 +619,6 @@ object PatMatch {
     case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
 
     case Pattern.Error(_, _) => TyCon.Wild
-
-    case Pattern.Cst(Constant.Regex(_), _, _) =>
-      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
-      throw InternalCompilerException("Unexpected Regex pattern", pattern.loc)
-
-    case Pattern.Cst(Constant.Null, _, _) =>
-      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
-      throw InternalCompilerException("Unexpected Null pattern", pattern.loc)
   }
 
   /**
