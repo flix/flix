@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -52,18 +52,20 @@ class TypeContext {
 
     /**
       * The constraints generated for the scope.
+      *
+      * Note: The initial size of the array buffer has been determined by careful profiling.
       */
-    private val constrs: mutable.ListBuffer[TypeConstraint] = mutable.ListBuffer.empty
+    private val constrs: mutable.ArrayBuffer[TypeConstraint] = new mutable.ArrayBuffer(initialSize = 48)
 
     /**
       * Adds the given constraint to the constraint set.
       */
-    def add(constr: TypeConstraint): Unit = this.constrs.addOne(constr)
+    def add(constr: TypeConstraint): Unit = this.constrs.append(constr)
 
     /**
       * Adds all the given constraints to the constraint set.
       */
-    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.addAll(constrs)
+    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.appendAll(constrs)
 
     /**
       * Returns the generated constraints.
