@@ -167,7 +167,7 @@ object FindReferencesProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, qname) => qname.loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -303,7 +303,7 @@ object FindReferencesProvider {
     }
 
     object EffectSymConsumer extends Consumer {
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Effect(sym), loc) => consider(sym, loc)
         case _ => ()

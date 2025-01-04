@@ -715,8 +715,8 @@ object ConstraintGen {
         // e without effSym : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
-        c.unifyType(eff, effWithoutSym, effSymUse.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.qname.loc), effSymUse.qname.loc)
+        c.unifyType(eff, effWithoutSym, effSymUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -762,9 +762,9 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
         c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(continuationEffectVar, continuationEffect, loc)
         val resultTpe = tpe
         val resultEff = continuationEffect

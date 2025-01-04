@@ -38,8 +38,15 @@ object SymUse {
 
   /**
     * Represents a use of an effect sym.
+    *
+    * For an occurrence of the form `Xxx.Yyy.Zzz`, `sym` is the [[Symbol]] of the accessed element `Zzz`
+    * and `qname` represents the qualified name `Xxx.Yyy.Zzz` in its entirety, where [[QName.namespace]]
+    * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `Zzz`.
+    *
+    * @param sym    The [[Symbol]] being used.
+    * @param qname  The qualified name ([[QName]]) of the use of `sym`:
     */
-  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
+  case class EffectSymUse(sym: Symbol.EffectSym, qname: QName)
 
   /**
     * Represents a use of a LocalDef sym.
