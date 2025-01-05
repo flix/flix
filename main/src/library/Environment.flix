@@ -109,9 +109,9 @@ mod Environment {
     ///
     /// Handles the `Environment` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Environment` effect using the `Sys` and `IO` effects.
+    /// In other words, re-interprets the `Environment` effect using the `Env` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Sys, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Env, IO} = x ->
         run {
             f(x)
         } with Environment {
@@ -164,11 +164,11 @@ mod Environment {
     ///
     /// Runs the `Environment` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Environment` effect using the `IO` effect.
+    /// In other words, re-interprets the `Environment` effect using the `Env` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Environment) + {Sys, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Environment) + {Env, IO} = handle(f)()
 
-    def getPropHelper(name: String): Option[String] \ {Sys, IO} =
+    def getPropHelper(name: String): Option[String] \ {Env, IO} =
             try {
                 let result = System.getProperty(name);
                 Object.toOption(result)
