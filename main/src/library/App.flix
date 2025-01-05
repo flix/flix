@@ -18,20 +18,28 @@ mod App {
     ///
     /// Runs the given function `f` handling all effects specified in the signature.
     ///
-    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, FileReadWithResult, FileWriteWithResult, Logger}) + IO =
+    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Environment, FileReadWithResult, FileWriteWithResult, HttpWithResult, Logger}) + {Net, Sys, IO} =
         let r = f |>
             Clock.handle |>
             Console.handle |>
+            Environment.handle |>
             FileReadWithResult.handle |>
             FileWriteWithResult.handle |>
-            Logger.handle;
+            Logger.handle |>
+            HttpWithResult.handle;
         r()
 
     ///
     /// Runs the given function `f` handling all effects specified in the signature where some handlers may return `Result`.
     ///
-    pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, FileRead, FileWrite, Logger}) + IO =
-        let r1 = Clock.handle >> Console.handle >> Logger.handle;
-        let r2 = (FileWrite.handle >> FileRead.handle >> (g -> g >> Result.flatten));
-        (f |> (r1 >> r2))()
+    pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, Environment, FileRead, FileWrite, Http, Logger}) + {Net, Sys, IO} =
+        let r = f |>
+            Clock.handle |>
+            Console.handle |>
+            Environment.handle |>
+            FileRead.handle |>
+            FileWrite.handle |>
+            Logger.handle |>
+            Http.handle;
+        r() |> Result.flatten |> Result.flatten
 }

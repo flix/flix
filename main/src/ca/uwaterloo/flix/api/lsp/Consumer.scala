@@ -15,12 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivations, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Annotation, Derivation, Derivations, EqualityConstraint, TraitConstraint}
 
 /**
   * Defines how each AST node type is handled when it's visited.

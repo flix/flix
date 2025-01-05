@@ -17,14 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 
@@ -640,6 +638,13 @@ object Simplifier {
         val op = AtomicOp.InvokeMethod(method)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
+      case (MonoType.BigInt, _) =>
+        val bigIntClass = Class.forName("java.math.BigInteger")
+        val objClass = Class.forName("java.lang.Object")
+        val method = bigIntClass.getMethod("equals", objClass)
+        val op = AtomicOp.InvokeMethod(method)
+        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
+
       case _ => // fallthrough
     }
 
@@ -766,7 +771,12 @@ object Simplifier {
         */
       case (Nil, Nil) =>
         val g = visitExp(guard)
-        SimplifiedAst.Expr.IfThenElse(g, succ, fail, succ.tpe, g.purity, g.loc)
+        // Only produce IfThenElse if g is non-trivial
+        g match {
+          case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
+          case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
+          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+        }
 
       /**
         * Matching a wildcard is guaranteed to succeed.

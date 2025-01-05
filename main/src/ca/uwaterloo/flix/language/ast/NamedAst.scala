@@ -172,7 +172,7 @@ object NamedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class UncheckedMaskingCast(exp: Expr, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
@@ -190,7 +190,7 @@ object NamedAst {
 
     case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
     case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
 

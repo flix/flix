@@ -293,9 +293,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.UncheckedMaskingCast(e, tpe, eff, loc)
+      Expr.Unsafe(e, runEff, tpe, eff, loc)
 
     case Expr.Without(exp, sym, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -352,10 +352,9 @@ object Stratifier {
       val ms = methods.map(visitJvmMethod)
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.NewChannel(e1, e2, tpe, eff, loc)
+    case Expr.NewChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.NewChannel(e, tpe, eff, loc)
 
     case Expr.GetChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)

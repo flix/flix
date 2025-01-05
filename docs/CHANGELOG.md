@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.55.0:
+- Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
+- Compiler: Improved performance of LSP API (thanks Alexander!)
+
+Version 0.54.0:
+- Compiler: Improved auto-completion suggestions (thanks Chenhao!)
+- Compiler: Added `AutoImportCompleter` (thanks Chenhao!)
+- Compiler: Added `AutoUseCompleter` (thanks Chenhao!)
+- Compiler: Added `LocalScopeCompleter` (thanks Chenhao!)
+- Compiler: Reworked compilation of enums (thanks Jonathan!)
+
 Version 0.53.0:
 - Language: Added support for algebraic effects (thanks everyone!)
 - Library: Added algebraic effects: Console, FileRead, FileWrite, Http, ... (thanks Holger and Magnus!)

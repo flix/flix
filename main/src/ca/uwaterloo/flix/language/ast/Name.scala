@@ -92,7 +92,7 @@ object Name {
     /**
       * Returns `true` if `this` identifier is uppercase.
       */
-    def isUpper: Boolean = name.charAt(0).isUpper
+    def isUpper: Boolean = name.nonEmpty && name.charAt(0).isUpper
 
     /**
       * Returns `true` if `this` identifier is lowercase.

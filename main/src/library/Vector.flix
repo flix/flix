@@ -126,9 +126,9 @@ instance ToJava[Vector[a]] {
 }
 
 
-instance FromJava[Vector[a]] {
+instance ToFlix[Vector[a]] {
     type In = JList
-    pub def fromJava(l: JList): Vector[a] = region rc {
+    pub def toFlix(l: JList): Vector[a] = region rc {
         let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
@@ -1460,19 +1460,16 @@ mod Vector {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: Vector[a]): String with ToString[a] =
-        joinWith(ToString.toString, sep, v)
+    pub def join(sep: String, v: Vector[a]): String with ToString[a] = region rc {
+        Vector.iterator(rc, v) |> Iterator.join(sep)
+    }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc);
-        forEach(x -> { append(f(x), sb); append(sep, sb) }, v);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+        Vector.iterator(rc, v) |> Iterator.joinWith(f, sep)
     }
 
     ///

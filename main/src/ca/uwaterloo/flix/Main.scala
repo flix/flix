@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
+import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -263,10 +264,14 @@ object Main {
               System.exit(1)
           }
 
-        case Command.Lsp(port) =>
+        case PlainLsp =>
+          LspServer.run(options)
+          System.exit(0)
+
+        case Command.VSCodeLsp(port) =>
           val o = options.copy(progress = false)
           try {
-            val languageServer = new LanguageServer(port, o)
+            val languageServer = new VSCodeLspServer(port, o)
             languageServer.run()
           } catch {
             case ex: BindException =>
@@ -385,7 +390,9 @@ object Main {
 
     case object Repl extends Command
 
-    case class Lsp(port: Int) extends Command
+    case object PlainLsp extends Command
+
+    case class VSCodeLsp(port: Int) extends Command
 
     case object Release extends Command
 
@@ -443,9 +450,12 @@ object Main {
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
-      cmd("lsp").text("  starts the LSP server and listens on the given port.")
+      cmd("lsp").text("  starts the Plain-LSP server.")
+        .action((_, c) => c.copy(command = Command.PlainLsp))
+
+      cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
         .children(
-          arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
+          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
             .required()
         )
 

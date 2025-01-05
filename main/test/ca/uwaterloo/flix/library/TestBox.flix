@@ -31,16 +31,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def boolUnbox01(): Bool = unsafe unbox(Boolean.valueOf(true)) == true
+    def boolUnbox01(): Bool = unbox(Boolean.valueOf(true)) == true
 
     @test
-    def boolUnbox02(): Bool = unsafe unbox(Boolean.valueOf(false)) == false
+    def boolUnbox02(): Bool = unbox(Boolean.valueOf(false)) == false
 
     @test
-    def boolBox01(): Bool = unsafe box(true).equals(Boolean.valueOf(true))
+    def boolBox01(): Bool = box(true).equals(Boolean.valueOf(true))
 
     @test
-    def boolBox02(): Bool = unsafe box(false).equals(Boolean.valueOf(false))
+    def boolBox02(): Bool = box(false).equals(Boolean.valueOf(false))
 
     @test
     def boolRoundTrip01(): Bool = unbox(box(true)) == true

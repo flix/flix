@@ -120,7 +120,7 @@ mod FileReadWithResult {
     /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileReadWithResult) + IO = x ->
-        try {
+        run {
             f(x)
         } with FileReadWithResult {
             def exists(f, k) = {
@@ -238,7 +238,7 @@ mod FileReadWithResult {
 
             def readLines(f, k) = {
                 let res = try {
-                    Ok(FromJava.fromJava(Files.readAllLines(Paths.get(f))))
+                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -270,16 +270,23 @@ mod FileReadWithResult {
             }
         }
 
-        ///
-        /// Returns the attributes of the given file `f`.
-        /// May throw `IOException` and `SecurityException`.
-        ///
-        def fileAttributes(path: Path): BasicFileAttributes \ IO =
-            Files.readAttributes(
-                path,
-                // "[...] invoking this method with a type parameter of BasicFileAttributes.class will not throw UnsupportedOperationException."
-                Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-                (...{}: Vector[LinkOption])
-            )
+    ///
+    /// Runs the `FileReadWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileReadWithResult) + {IO} = handle(f)()
+
+    ///
+    /// Returns the attributes of the given file `f`.
+    /// May throw `IOException` and `SecurityException`.
+    ///
+    def fileAttributes(path: Path): BasicFileAttributes \ IO =
+        Files.readAttributes(
+            path,
+            // "[...] invoking this method with a type parameter of BasicFileAttributes.class will not throw UnsupportedOperationException."
+            Class.forName("java.nio.file.attribute.BasicFileAttributes"),
+            (...{}: Vector[LinkOption])
+        )
 
 }

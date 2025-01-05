@@ -22,7 +22,7 @@ import java.util.{List => JList}
 /// A list is either the empty list represented by `Nil`, or
 /// an element `v` followed by a list `vs` represented by `v :: vs`.
 ///
-pub enum List[t] with Sendable {
+pub enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }
@@ -134,9 +134,9 @@ instance ToJava[List[a]] {
     pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
 }
 
-instance FromJava[List[a]] {
+instance ToFlix[List[a]] {
     type In = JList
-    pub def fromJava(l: JList): List[a] = Adaptor.fromList(l)
+    pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
 
 mod List {

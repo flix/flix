@@ -16,11 +16,12 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
-import java.lang.reflect.{Constructor, Executable, Method}
+import scala.annotation.tailrec
 
 object CompletionUtils {
 
@@ -28,14 +29,16 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
+  def getParamsLabelForEnumTags(cas: TypedAst.Case)(implicit flix: Flix): String = {
     cas.tpes.length match {
-      case 0 => name
-      case _ => s"$name(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
+      case 0 => ""
+      case _ => s"(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
     }
   }
 
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = name + getLabelForSpec(spec)
+
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
@@ -51,7 +54,7 @@ object CompletionUtils {
         case p => raw" \ " + FormatType.formatType(p)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$eff"
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
@@ -143,4 +146,86 @@ object CompletionUtils {
     }
   }
 
+  /**
+    * Filters the definitions in the given `root` by the given `word` and `env`.
+    * If `whetherInScope` is `true`, we return the matched defs in the root module or in the scope
+    * If `whetherInScope` is `false`, we return the matched defs not in the root module and not in the scope
+    */
+  def filterDefsByScope(word: String, root: TypedAst.Root, env: LocalScope, whetherInScope: Boolean): Iterable[TypedAst.Def] = {
+    val matchedDefs = root.defs.filter{case (_, decl) => matchesDef(decl, word)}
+    val rootModuleMatches = matchedDefs.collect{
+        case (sym, decl) if whetherInScope && sym.namespace.isEmpty => decl
+    }
+    val scopeMatches = matchedDefs.collect{
+      case (sym, decl) if sym.namespace.nonEmpty && checkScope(decl, env, whetherInScope) => decl
+    }
+    rootModuleMatches ++ scopeMatches
+  }
+
+  /**
+    * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
+    * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
+    */
+  private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
+    val thisName = decl.sym.toString
+    val inScope = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    if (whetherInScope) inScope else !inScope
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` should be included in the suggestions.
+    */
+  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
+    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
+
+    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
+    val isMatch = fuzzyMatch(word, decl.sym.text)
+
+    isMatch && isPublic
+  }
+
+  /**
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
+  def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the query is a fuzzy match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
+    *
+    * Example:
+    *   - fuzzyMatch("fBT",  "fooBarTest") = true
+    *   - fuzzyMatch("fBrT", "fooBarTest") = false
+    *   - fuzzyMatch("fTB",  "fooBarTest") = false
+    *
+    * @param query  The query string, usually from the user input.
+    * @param key    The key string, usually from the completion item.
+    */
+  def fuzzyMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
+  }
+
+  /**
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
+    */
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?=[A-Z])").toList
+  }
 }

@@ -314,6 +314,8 @@ object SyntaxTree {
 
       case object RestrictableChooseStar extends Expr
 
+      case object Run extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
@@ -340,7 +342,7 @@ object SyntaxTree {
 
       case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBodyFragment extends Expr
+      case object RunWithBodyExpr extends Expr
 
       case object TryWithRuleFragment extends Expr
 
@@ -354,9 +356,9 @@ object SyntaxTree {
 
       case object UncheckedCast extends Expr
 
-      case object UncheckedMaskingCast extends Expr
-
       case object Unsafe extends Expr
+
+      case object UnsafeOld extends Expr
 
       case object Use extends Expr
 

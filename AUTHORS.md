@@ -73,3 +73,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Joseph Tan](https://github.com/dghosef)
 - [Alexander Dybdahl Troelsen](https://github.com/LoZander)
 - [Chenhao Gao](https://github.com/stormckey)
+- [Maksim Gusev](https://github.com/emaisty)

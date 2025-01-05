@@ -530,7 +530,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedEffect.01") {
     val input =
       """
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -543,7 +543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |eff E
         |
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -1618,13 +1618,51 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
+        |    run checked_ecast(()) with E {
         |        def op(x, y, cont) = ()
         |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("Test.MismatchedTagPatternArity.01") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(_) => 42
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
+  }
+
+  test("Test.MismatchedTagPatternArity.02") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(x, _xs, _bonus) => x
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
   }
 
   test("ResolutionError.UndefinedStruct.01") {
@@ -1903,7 +1941,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try {
+        |    run {
         |      E.op()
         |    } with E {
         |    }
@@ -1922,7 +1960,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try {
+        |    run {
         |      E.op1()
         |    } with E {
         |      def op1(k): Unit = k()

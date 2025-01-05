@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
@@ -459,7 +458,9 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
+      case Expr.Unsafe(exp, runEff, _, _, _) =>
+        // runEff is first syntactically
+        visitType(runEff)
         visitExpr(exp)
 
       case Expr.Without(exp, effUse, _, _, _) =>
@@ -507,9 +508,8 @@ object Visitor {
       case Expr.NewObject(_, _, _, _, methods, _) =>
         methods.foreach(visitJvmMethod)
 
-      case Expr.NewChannel(exp1, exp2, _, _, _) =>
-        visitExpr(exp1)
-        visitExpr(exp2)
+      case Expr.NewChannel(exp, _, _, _) =>
+        visitExpr(exp)
 
       case Expr.GetChannel(exp, _, _, _) =>
         visitExpr(exp)
@@ -598,8 +598,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, loc) = effUse
-    if (!a.accept(loc)) { return }
+    val EffectSymUse(_, qname) = effUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }

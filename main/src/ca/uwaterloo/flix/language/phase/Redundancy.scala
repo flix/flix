@@ -664,8 +664,12 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+      (runEff, exp.eff) match {
+        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
+        case _ => visitExp(exp, env0, rc)
+      }
 
     case Expr.Without(exp, effUse, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
@@ -733,10 +737,8 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
 
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -989,13 +991,13 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isPure(exp)
 
   /**
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
+    isMustUseType(exp.tpe)
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.

@@ -70,11 +70,11 @@ object ReducedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: ReducedAst.FormalParam): DocAst.Expr.Ascription = {
+  private def printFormalParam(fp: ReducedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val ReducedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expr.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
   /**

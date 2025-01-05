@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -513,7 +513,7 @@ object EntryPoints {
       * }}}
       */
     private def mkEntryPoint(oldEntryPoint: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
-      val argSym = Symbol.freshVarSym("_unit", Ast.BoundBy.FormalParam, SourceLocation.Unknown)
+      val argSym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, SourceLocation.Unknown)
 
       // The new type is `Unit -> Unit \ IO + eff` where `eff` is the effect of the old main.
       val argType = Type.Unit
@@ -530,7 +530,7 @@ object EntryPoints {
           TypedAst.Binder(argSym, argType),
           Modifiers.Empty,
           argType,
-          Ast.TypeSource.Ascribed,
+          TypeSource.Ascribed,
           SourceLocation.Unknown)
         ),
         declaredScheme = Scheme(Nil, Nil, Nil, tpe),

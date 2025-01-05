@@ -19,7 +19,7 @@ import java.util.{List => JList}
 ///
 /// The NonEmptyList type.
 ///
-pub enum Nel[a] with Sendable {
+pub enum Nel[a] {
     case Nel(a, List[a])
 }
 

@@ -4,14 +4,14 @@ mod Test.Exp.Effect {
     // just making it public for redundancy purposes
     // @test
     pub def handleEff01(): Bool = {
-        try true with Fail {
+        run true with Fail {
             def fail(_, _cont) = false
         }
     }
 
     // @test
     pub def handleEff02(): Unit = {
-        try () with Fail {
+        run () with Fail {
             def fail(_, cont) = cont()
         }
     }
@@ -23,7 +23,7 @@ mod Test.Exp.Effect {
 
     // @test
     pub def perform02(): Bool = {
-        try {
+        run {
             Test.Exp.Effect.Console.println("hi");
             Test.Exp.Effect.Console.println("bye");
             true
@@ -34,14 +34,14 @@ mod Test.Exp.Effect {
 
     // @test
     pub def handlePerform01(): Unit = {
-        try Test.Exp.Effect.Fail.fail("rats") with Fail {
+        run Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_, _cont) = ()
         }
     }
 
     // @test
     pub def handlePerform02(): Bool = {
-        try {
+        run {
             let _ = Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {

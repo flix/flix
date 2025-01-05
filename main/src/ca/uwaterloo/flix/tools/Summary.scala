@@ -152,7 +152,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -240,7 +240,7 @@ object Summary {
     case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.UncheckedMaskingCast(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Unsafe(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
@@ -260,7 +260,7 @@ object Summary {
     case Expr.NewObject(_, _, _, _, methods, _) => methods.map {
       case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.NewChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
@@ -302,7 +302,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.Text("generated", "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
+    Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
   private val unknownPosition =
     SourcePosition(unknownSource, 0, 0)

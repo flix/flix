@@ -20,47 +20,90 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 
+import scala.annotation.tailrec
+
 object TypePrinter {
 
-  /**
-    * Returns the [[DocAst.Type]] representation of `tpe`.
-    */
+  /** Returns the [[DocAst.Type]] representation of `tpe`. */
   def print(tpe: Type): DocAst.Type = {
-    // Temporarily use existing type formatting
-    // try to unpack one arrow type for the sake of signatures
-    // try to unpack one tuple type for the sake of enums
-    // try to unpack one unit type for the sake of enums
-    tpe.baseType match {
-      case Type.Cst(TypeConstructor.Arrow(_), _) =>
-        val args = tpe.arrowArgTypes
-        val res = tpe.arrowResultType
-        DocAst.Type.Arrow(args.map(printSimple), printSimple(res))
-      case Type.Cst(TypeConstructor.Tuple(_), _) =>
-        val args = tpe.typeArguments
-        DocAst.Type.Tuple(args.map(printSimple))
-      case Type.Cst(TypeConstructor.Unit, _) =>
-        DocAst.Type.Unit
-      case _ => printSimple(tpe)
+    val (base, args) = collectApp(tpe)
+    // Make the well-kinded types pretty.
+    (base, args) match {
+      case (Type.Var(sym, _), _) => mkApp(DocAst.Type.Var(sym), args.map(print))
+      case (Type.Cst(TypeConstructor.Arrow(arity), _), _) if args.lengthIs == arity + 1 && arity >= 2 =>
+        // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
+        // safe match because of the case guard
+        val (arrowEff :: arrowArgs, List(arrowRes)) = args.splitAt(args.length-1)
+        DocAst.Type.ArrowEff(arrowArgs.map(print), print(arrowRes), print(arrowEff))
+      case (Type.Cst(TypeConstructor.ArrowWithoutEffect(arity), _), _) if args.lengthIs == arity && arity >= 2 =>
+        // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
+        // safe match because of the case guard
+        val (arrowArgs, List(arrowRes)) = args.splitAt(args.length - 1)
+        DocAst.Type.Arrow(arrowArgs.map(print), print(arrowRes))
+      case (Type.Cst(TypeConstructor.RecordRowExtend(label), _), List(arg0, arg1)) =>
+        DocAst.Type.RecordRowExtend(label.toString, print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Record, _), List(arg0)) =>
+        DocAst.Type.RecordOf(print(arg0))
+      case (Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), List(arg0, arg1)) =>
+        DocAst.Type.SchemaRowExtend(pred.toString, print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Schema, _), List(arg0)) =>
+        DocAst.Type.SchemaOf(print(arg0))
+      case (Type.Cst(TypeConstructor.Tuple(l), _), _) if args.lengthIs == l =>
+        DocAst.Type.Tuple(args.map(print))
+      case (Type.Cst(TypeConstructor.Not, _), List(arg0)) =>
+        DocAst.Type.Not(print(arg0))
+      case (Type.Cst(TypeConstructor.And, _), List(arg0, arg1)) =>
+        DocAst.Type.And(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Or, _), List(arg0, arg1)) =>
+        DocAst.Type.Or(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Complement, _), List(arg0)) =>
+        DocAst.Type.Complement(print(arg0))
+      case (Type.Cst(TypeConstructor.Union, _), List(arg0, arg1)) =>
+        DocAst.Type.Union(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Intersection, _), List(arg0, arg1)) =>
+        DocAst.Type.Intersection(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Difference, _), List(arg0, arg1)) =>
+        DocAst.Type.Difference(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(arg0, arg1)) =>
+        DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.CaseComplement(_), _), List(arg0)) =>
+        DocAst.Type.CaseComplement(print(arg0))
+      case (Type.Cst(TypeConstructor.CaseUnion(_), _), List(arg0, arg1)) =>
+        DocAst.Type.CaseUnion(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.CaseIntersection(_), _), List(arg0, arg1)) =>
+        DocAst.Type.CaseIntersection(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.Difference, _), List(arg0, arg1)) =>
+        DocAst.Type.Difference(print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.SymmetricDiff, _), List(arg0, arg1)) =>
+        DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
+      case (Type.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
+      case (Type.Alias(cst, aliasArgs, _, _), _) => mkApp(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
+      case (Type.AssocType(cst, arg, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, print(arg)), args.map(print))
+      case (Type.JvmToType(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(tpe))), args.map(print))
+      case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
+      case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
+      case (Type.Apply(_, _, _), _) =>
+        // `collectApp` does not return Apply as base.
+        DocAst.Type.Meta("bug in TypePrinter")
     }
   }
 
-  /**
-    * Returns the [[DocAst.Eff]] representation of `tpe`.
-    */
-  def printAsEffect(tpe: Type): DocAst.Eff = tpe match {
-    case Type.Cst(TypeConstructor.Pure, _) => DocAst.Eff.Pure
-    case Type.Cst(TypeConstructor.Univ, _) => DocAst.Eff.Univ
-    case _ => DocAst.Eff.AsIs(typeToString(tpe))
+  /** Constructs [[DocAst.Type.App]] unless `args` is empty */
+  private def mkApp(base: DocAst.Type, args: List[DocAst.Type]): DocAst.Type = args match {
+    case Nil => base
+    case other => DocAst.Type.App(base, other)
   }
 
-  /** Print type without formatting as-is */
-  private def printSimple(tpe: Type): DocAst.Type = {
-    DocAst.Type.AsIs(typeToString(tpe))
-  }
+  private def printJvmMember(member: Type.JvmMember): DocAst.Type = DocAst.Type.Meta("JvmMember")
 
-  /** Returns the type as a simple string */
-  private def typeToString(tpe: Type): String = {
-    FormatType.formatTypeWithOptions(tpe, FormatOptions(FormatOptions.VarName.NameBased))
+  /** Returns e.g. `App(App(Tuple, Char), Char)` as `(Tuple, List(Char, Char))`. */
+  private def collectApp(tpe: Type): (Type, List[Type]) = {
+    @tailrec
+    def helper(tpe0: Type, acc: List[Type]): (Type, List[Type]) = tpe0 match {
+      case Type.Apply(tpe1, tpe2, _) => helper(tpe1, tpe2 :: acc)
+      case _ => (tpe0, acc)
+    }
+    helper(tpe, Nil)
   }
 
 }

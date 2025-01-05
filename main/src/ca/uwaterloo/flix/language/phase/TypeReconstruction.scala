@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -381,13 +382,10 @@ object TypeReconstruction {
       val eff = declaredEff0.getOrElse(e.eff)
       TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
-      // Later it is erased and the effect of the subexpression is unmasked
+    case KindedAst.Expr.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = Type.Pure
-      TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
+      val eff = Type.mkDifference(e.eff, eff0, loc)
+      TypedAst.Expr.Unsafe(e, eff0, e.tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
@@ -421,8 +419,9 @@ object TypeReconstruction {
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
+      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(rs.map(_.exp.eff), loc) // TODO temp simplification
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.qname.loc) :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
@@ -508,10 +507,10 @@ object TypeReconstruction {
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), subst(evar), loc)
+    case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
+      val e = visitExp(exp)
+      val eff = Type.mkUnion(e.eff, Type.Chan, loc)
+      TypedAst.Expr.NewChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
@@ -538,7 +537,7 @@ object TypeReconstruction {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.IO
+      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Spawn(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.ParYield(frags, exp, loc) =>

@@ -26,7 +26,7 @@ mod Fixpoint.Debugging {
     /// Note: Returns `d` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPreSolve(d: Datalog[v]): Datalog[v] with Order[v] = masked_cast({
+    pub def notifyPreSolve(d: Datalog[v]): Datalog[v] with Order[v] = unchecked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Datalog Input");
@@ -38,7 +38,7 @@ mod Fixpoint.Debugging {
         } else {
             d
         }
-    })
+    } as _ \ {})
 
     ///
     /// Invoked with the minimal model of the fixpoint computation.
@@ -46,7 +46,7 @@ mod Fixpoint.Debugging {
     /// Note: Returns `d` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPostSolve(d: Datalog[v]): Datalog[v] with Order[v] = masked_cast({
+    pub def notifyPostSolve(d: Datalog[v]): Datalog[v] with Order[v] = unchecked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Minimal Model");
@@ -58,7 +58,7 @@ mod Fixpoint.Debugging {
         } else {
             d
         }
-    })
+    } as _ \ {})
 
     ///
     /// Invoked before the fixpoint computation.
@@ -66,7 +66,7 @@ mod Fixpoint.Debugging {
     /// Note: Returns `s` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPreInterpret(s: RamStmt[v]): RamStmt[v] with Order[v] = masked_cast({
+    pub def notifyPreInterpret(s: RamStmt[v]): RamStmt[v] with Order[v] = unchecked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Relation Algebra Machine AST");
@@ -78,6 +78,6 @@ mod Fixpoint.Debugging {
         } else {
             s
         }
-    })
+    } as _ \ {})
 
 }
