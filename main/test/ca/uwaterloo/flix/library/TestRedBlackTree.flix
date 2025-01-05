@@ -189,7 +189,6 @@ mod TestRedBlackTree {
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
         = List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
-
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
