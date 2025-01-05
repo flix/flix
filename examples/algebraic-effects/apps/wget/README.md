@@ -1,3 +1,3 @@
-# fget
+# wget
 
 A simple `wget` clone.

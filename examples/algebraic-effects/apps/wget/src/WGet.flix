@@ -1,4 +1,4 @@
-mod Fget {
+mod WGet {
 
     type alias Options = { targetFile = String }
 

@@ -19,7 +19,7 @@ def main(): Unit \ IO + Net =
     match List.head(args) {
         case Some(url) =>
             let opts = { targetFile = "index.html" };
-            let prog = () -> Fget.download(opts, url);
+            let prog = () -> WGet.download(opts, url);
             match App.runAllWithResult(prog) {
                 case Ok(()) => ()
                 case Err(IoError.IoError(_, msg)) => println("An error occurred: '${msg}'")
