@@ -21,6 +21,9 @@
     "java.lang.System::clearProperty": "Env, Sys, IO",
     "java.lang.System::getenv": "Env, IO",
     "java.lang.System::exit": "Sys, IO",
+    "java.lang.System::load": "Exec, Sys, IO",
+    "java.lang.System::loadLibrary": "Exec, Sys, IO",
+    "java.lang.System::mapLibraryName": "Env, IO",
 
     "java.math.BigInteger::probablePrime": "NonDet, IO",
 
