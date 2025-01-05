@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -28,7 +28,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
   private case object TestCompilationMessage extends CompilationMessage {
 
-    override def kind: String = "Test Error"
+    override def kind: CompilationMessageKind = CompilationMessageKind.TestError
 
     override def loc: SourceLocation = SourceLocation.Unknown
 
