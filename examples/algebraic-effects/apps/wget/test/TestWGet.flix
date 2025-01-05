@@ -1,11 +1,11 @@
-mod TestFget {
+mod TestWGet {
 
     @Test
     def downloadWritesTheOutputReceivedFromHttp(): Bool = {
         run {
             let opts = { targetFile = "myfile" };
             let url = "flix.dev";
-            Fget.download(opts, url);
+            WGet.download(opts, url);
             false
         } with Http {
             def request(_, url, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
@@ -28,7 +28,7 @@ mod TestFget {
         run {
             let opts = { targetFile = "myfile" };
             let url = "flix.dev";
-            Fget.download(opts, url);
+            WGet.download(opts, url);
             false
         } with Http {
             def request(_, url, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
