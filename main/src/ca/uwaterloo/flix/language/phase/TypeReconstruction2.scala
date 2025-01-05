@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,9 +426,9 @@ object TypeReconstruction2 {
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
-      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.loc) :: rs.map(_.exp.eff), loc)
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.qname.loc) :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
