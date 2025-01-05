@@ -57,9 +57,9 @@ mod Random {
     ///
     /// Handles the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `IO` effect.
+    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
+    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Random) + {NonDet, IO}) \ {NonDet, IO} =
         let rnd = new JRandom(); // Reuse Random instance.
         x -> run {
             f(x)
@@ -75,16 +75,16 @@ mod Random {
     ///
     /// Runs the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `IO` effect.
+    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + {NonDet, IO} = handle(f)()
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
+    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): (a -> b \ (ef - Random) + {NonDet, IO}) \ {NonDet, IO} =
         let rnd = new JRandom(seed); // Reuse Random instance.
         x -> run {
             f(x)
@@ -102,6 +102,6 @@ mod Random {
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ (ef - Random) + IO = handleWithSeed(seed, f)()
+    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ (ef - Random) + {NonDet, IO} = handleWithSeed(seed, f)()
 
 }
