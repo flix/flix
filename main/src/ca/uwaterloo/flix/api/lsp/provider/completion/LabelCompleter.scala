@@ -15,15 +15,18 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, FileAcceptor}
+import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object LabelCompleter {
 
   /**
     * Returns a list of [[LabelCompletion]]s.
     */
-  def getCompletions(context: CompletionContext)(implicit index: Index): Iterable[LabelCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit root: Root): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
@@ -33,12 +36,24 @@ object LabelCompleter {
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
-        index.labelDefs.m.concat(index.labelUses.m)
-          .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
-          .map {
-            case (label, _) =>
-              Completion.LabelCompletion(label, prefix)
+        var labels: Set[Name.Label] = Set.empty
+        object LabelConsumer extends Consumer {
+          override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+            case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => labels += label
+            case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => labels += label
+            case TypedAst.Expr.RecordSelect(_, label, _, _, _) => labels += label
+            case _ => ()
           }
+
+          override def consumeType(tpe: Type): Unit = tpe match {
+            case Type.Cst(TypeConstructor.RecordRowExtend(label), _) => labels += label
+            case _ => ()
+          }
+        }
+
+        Visitor.visitRoot(root, LabelConsumer, FileAcceptor(context.uri))
+
+        labels.map(label => Completion.LabelCompletion(label, prefix))
       case _ => Nil
     }
   }

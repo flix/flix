@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -41,7 +41,7 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    private val assocType: Type = Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
+    private val assocType: Type = Type.AssocType(AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
 
     def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
 
@@ -388,39 +388,6 @@ object TypeError {
          |  }
          |
          |Note: To derive Order you must also derive Eq.
-         |""".stripMargin
-    })
-  }
-
-  /**
-    * Missing `Sendable` instance.
-    *
-    * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MissingInstanceSendable(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Sendable is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Sendable.
-         |
-         |${code(loc, s"missing Sendable instance")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To mark '${formatType(tpe, Some(renv))}' as sendable, either:
-         |
-         |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
-         |
-         |  enum Color with Sendable {
-         |    case Red, Green, Blue
-         |  }
-         |
          |""".stripMargin
     })
   }

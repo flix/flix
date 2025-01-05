@@ -54,10 +54,26 @@ sealed trait Completion {
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
-        sortText            = name,
+        sortText            = Priority.toSortText(Priority.Lower, name),
         textEdit            = TextEdit(context.range, name),
         documentation       = Some(doc),
-        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Enum,
+        additionalTextEdits = additionalTextEdits
+      )
+
+    case Completion.AutoUseEnumCompletion(sym, doc, ap) =>
+      val name = sym.name
+      val qualifiedName = sym.toString
+      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val labelDetails = CompletionItemLabelDetails(
+        None,
+        Some(s" use $qualifiedName"))
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(Priority.Lower, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(doc),
         kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdits
       )
@@ -77,6 +93,14 @@ sealed trait Completion {
         textEdit         = TextEdit(context.range, name),
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Keyword
+      )
+
+    case Completion.KindCompletion(kind) =>
+      CompletionItem(
+        label    = kind,
+        sortText = Priority.toSortText(Priority.Highest, kind),
+        textEdit = TextEdit(context.range, kind),
+        kind     = CompletionItemKind.TypeParameter
       )
 
     case Completion.LabelCompletion(label, prefix) =>
@@ -522,6 +546,13 @@ object Completion {
   case class KeywordLiteralCompletion(literal: String, priority: Priority) extends Completion
 
   /**
+    * Represents a completion for a kind.
+    *
+    * @param kind the name of the kind.
+    */
+  case class KindCompletion(kind: String) extends Completion
+
+  /**
     * Represents a label completion.
     *
     * @param label  the label.
@@ -643,7 +674,16 @@ object Completion {
    * @param doc           the documentation associated with the effect.
    * @param ap            the anchor position for the use statement.
    */
-  case class AutoUseEffCompletion(eff: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
+  case class AutoUseEffCompletion(sym: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
+
+  /**
+   * Represents an auto-import completion.
+   *
+   * @param enum          the enum to complete and use.
+   * @param doc           the documentation associated with the effect.
+   * @param ap            the anchor position for the use statement.
+   */
+  case class AutoUseEnumCompletion(sym: Symbol.EnumSym, doc: String, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion

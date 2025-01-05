@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
@@ -459,6 +458,11 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
+      case Expr.Unsafe(exp, runEff, _, _, _) =>
+        // runEff is first syntactically
+        visitType(runEff)
+        visitExpr(exp)
+
       case Expr.Without(exp, effUse, _, _, _) =>
         visitExpr(exp)
         visitEffectSymUse(effUse)
@@ -594,8 +598,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, loc) = effUse
-    if (!a.accept(loc)) { return }
+    val EffectSymUse(_, qname) = effUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }

@@ -35,12 +35,6 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     compilePrefixes(filepath.getFileName.toString, input)
   }
 
-  test("using-channels-and-select") {
-    val filepath = Paths.get("examples/concurrency-and-parallelism/using-channels-and-select.flix")
-    val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
-  }
-
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val input = Files.readString(filepath)

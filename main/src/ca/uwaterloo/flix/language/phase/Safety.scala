@@ -32,22 +32,9 @@ object Safety {
     val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ checkSendableInstances(root)
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs
 
     (root, errors.toList)
-  }
-
-  /** Checks that no type parameters for types that implement `Sendable` are of kind [[Kind.Eff]]. */
-  private def checkSendableInstances(root: Root): List[SafetyError] = {
-    val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-
-    root.instances.getOrElse(sendableClass, Nil).flatMap {
-      case TypedAst.Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.IllegalSendableInstance(tpe, loc))
-        else
-          Nil
-    }
   }
 
   /** Checks the safety and well-formedness of `sig`. */
@@ -226,6 +213,10 @@ object Safety {
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp) ++ castErrors
 
+    case unsafe@Expr.Unsafe(exp, _, _, _, loc) =>
+      val permissionErrors = checkAllPermissions(loc.security, loc)
+      permissionErrors ++ visitExp(exp)
+
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -240,7 +231,7 @@ object Safety {
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val effectErrors = {
-        if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.loc))
+        if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
         else Nil
       }
       effectErrors ++ visitExp(exp) ++ rules.flatMap(rule => visitExp(rule.exp))

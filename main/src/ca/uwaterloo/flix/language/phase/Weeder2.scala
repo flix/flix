@@ -17,16 +17,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
@@ -888,6 +887,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
+        case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
@@ -1706,6 +1706,13 @@ object Weeder2 {
       }
     }
 
+    private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Unsafe)
+      mapN(Types.pickType(tree), pickExpr(tree)) {
+        (eff, expr) => Expr.Unsafe(expr, eff, tree.loc)
+      }
+    }
+
     private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.UnsafeOld)
       mapN(pickExpr(tree)) {
@@ -2351,8 +2358,8 @@ object Weeder2 {
     private def visitUnaryPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
-      val literalToken = tree.children(1) match {
-        case t@Token(_, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
+      val literalToken = ArrayOps.getOption(tree.children, 1) match {
+        case Some(t@Token(_, _, _, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
       flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
@@ -2364,7 +2371,9 @@ object Weeder2 {
               val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.sp1, lit.sp2)
               val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(syntheticToken), tree.loc.asSynthetic)
               visitLiteralPat(syntheticLiteral)
-            case _ => throw InternalCompilerException(s"No number literal found for unary '-'", tree.loc)
+            case _ =>
+              sctx.errors.add(WeederError.MalformedInt(tree.loc))
+              Validation.Success(Pattern.Error(tree.loc))
           }
         case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
       })
@@ -2905,7 +2914,7 @@ object Weeder2 {
             case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
 
-        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands", tree.loc)
+        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: ${operands}", tree.loc)
       }
     }
 

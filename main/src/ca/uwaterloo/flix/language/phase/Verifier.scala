@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -513,7 +514,7 @@ object Verifier {
       }
 
       val effect = root.effects.getOrElse(effUse.sym,
-        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.loc))
+        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.qname.loc))
       val ops = effect.ops.map(op => op.sym -> op).toMap
 
       for (rule <- rules) {

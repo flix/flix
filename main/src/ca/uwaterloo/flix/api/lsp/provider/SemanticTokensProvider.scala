@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jacob Harris Cryer Kragh, Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +20,8 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Derivation, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -500,11 +501,14 @@ object SemanticTokensProvider {
     case Expr.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedCast(exp, _, _, tpe, _, _) =>
-      visitExp(exp) ++ visitType(tpe)
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
+      visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator())  ++ declaredEff.map(visitType).getOrElse(Iterator())
+
+    case Expr.Unsafe(exp, runEff, _, _, _) =>
+      visitType(runEff) ++ visitExp(exp)
 
     case Expr.Without(exp, eff, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -518,7 +522,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.TryWith(exp, eff, rules, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(visitExp(exp)) {
         case (acc, HandlerRule(op, fparams, exp)) =>
@@ -814,8 +818,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case Ast.AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
+    case AssocTypeConstructor(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
