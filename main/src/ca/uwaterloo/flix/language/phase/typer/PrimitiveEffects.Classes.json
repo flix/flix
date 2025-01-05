@@ -36,8 +36,6 @@
     "java.net.URLConnection": "Net, IO",
     "java.net.URLStreamHandler": "Net, IO",
     "java.net.spi.InetAddressResolverProvider": "Net, IO",
-    "java.net.spi.URLStreamHandlerProvider": "Net, IO",
-
-    "java.util.Random": "NonDet, IO"
+    "java.net.spi.URLStreamHandlerProvider": "Net, IO"
   }
 }
