@@ -25,7 +25,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, Map.empty, Map.empty, ListMap.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, Map.empty, Map.empty, ListMap.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -37,14 +37,15 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
+                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Option[Set[Symbol.DefnSym]],
                   sources: Map[Source, SourceLocation],
                   traitEnv: Map[Symbol.TraitSym, TraitContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
                   availableClasses: AvailableClasses,
-                  precedenceGraph: LabelledPrecedenceGraph)
+                  precedenceGraph: LabelledPrecedenceGraph,
+                  dependencyGraph: DependencyGraph)
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
 
@@ -203,6 +204,8 @@ object TypedAst {
     case class CheckedCast(cast: CheckedCastType, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class Unsafe(exp: Expr, runEff: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, effUse: EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

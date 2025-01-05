@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
 import ca.uwaterloo.flix.util.Formatter
 

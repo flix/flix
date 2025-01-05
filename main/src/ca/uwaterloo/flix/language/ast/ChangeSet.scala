@@ -15,16 +15,18 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Input
+import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 
 sealed trait ChangeSet {
 
   /**
     * Returns a new change set with `i` marked as changed.
+    *
+    * Note: The input `i` is always marked as dirty itself.
     */
-  def markChanged(i: Input): ChangeSet = this match {
-    case ChangeSet.Everything => ChangeSet.Changes(Set(i))
-    case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
+  def markChanged(i: Input, dg: DependencyGraph): ChangeSet = this match {
+    case ChangeSet.Everything => ChangeSet.Dirty(dg.dirty(i))
+    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(i))
   }
 
   /**
@@ -34,7 +36,7 @@ sealed trait ChangeSet {
     * A stale key is one that must be re-compiled.
     * A key that is neither fresh nor stale can be deleted.
     *
-    * An entry is fresh if it is in `oldMap` and has a stable source location.
+    * An entry is fresh if it is in `oldMap` and it is not dirty (i.e. has not changed).
     * An entry is stale if it is not fresh and it is in `newMap`.
     *
     * Note that the union of stale and fresh does not have to equal `newMap` or `oldMap`.
@@ -45,10 +47,8 @@ sealed trait ChangeSet {
     case ChangeSet.Everything =>
       (newMap, Map.empty)
 
-    case ChangeSet.Changes(_) =>
-      // Note: At the moment we don't use the change set.
-      // We simply consider whether a source is stable.
-      val fresh = oldMap.filter(_._1.src.input.isStable).filter(kv => newMap.contains(kv._1))
+    case ChangeSet.Dirty(dirty) =>
+      val fresh = oldMap.filter(kv => !dirty.contains(kv._1.src.input)).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)
@@ -59,14 +59,14 @@ sealed trait ChangeSet {
 object ChangeSet {
 
   /**
-    * Represents a change set where everything is changed (used for a complete re-compilation).
+    * Represents a change set where everything is dirty (used for a complete re-compilation).
     */
   case object Everything extends ChangeSet
 
   /**
-    * Represents the set `s` of changed sources.
+    * Represents a change set where everything in `s` is dirty (must be recompiled).
     */
-  case class Changes(s: Set[Input]) extends ChangeSet
+  case class Dirty(s: Set[Input]) extends ChangeSet
 
 }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import org.json4s.JsonDSL.*
 import org.json4s.*
 

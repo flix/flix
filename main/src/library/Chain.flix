@@ -26,7 +26,7 @@ import java.util.{List => JList}
 ///
 /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
 ///
-pub enum Chain[t] with Sendable {
+pub enum Chain[t] {
     case Empty
     case One(t)
     case Chain(Chain[t], Chain[t])
@@ -120,9 +120,9 @@ instance ToJava[Chain[a]] {
     pub def toJava(c: Chain[a]): JList \ IO = Adaptor.toList(c)
 }
 
-instance FromJava[Chain[a]] {
+instance ToFlix[Chain[a]] {
     type In = JList
-    pub def fromJava(l: JList): Chain[a] = region rc {
+    pub def toFlix(l: JList): Chain[a] = region rc {
         let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
         it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }

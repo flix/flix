@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -701,6 +702,12 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
+      case Expr.Unsafe(exp, eff0, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val resTpe = tpe
+        val resEff = Type.mkDifference(eff, eff0, loc)
+        (resTpe, resEff)
+
       case Expr.Without(exp, effSymUse, _) =>
         //
         // e: tpe \ eff - effSym
@@ -708,8 +715,8 @@ object ConstraintGen {
         // e without effSym : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
-        c.unifyType(eff, effWithoutSym, effSymUse.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.qname.loc), effSymUse.qname.loc)
+        c.unifyType(eff, effWithoutSym, effSymUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -755,9 +762,9 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
         c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(continuationEffectVar, continuationEffect, loc)
         val resultTpe = tpe
         val resultEff = continuationEffect

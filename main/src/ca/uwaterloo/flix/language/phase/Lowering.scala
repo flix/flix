@@ -16,12 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -586,6 +585,10 @@ object Lowering {
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
       LoweredAst.Expr.Cast(e, dt, declaredEff, t, eff, loc)
+
+    case TypedAst.Expr.Unsafe(exp, _, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expr.Cast(e, None, Some(eff), tpe, eff, loc)
 
     case TypedAst.Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)

@@ -21,10 +21,15 @@ class ExampleSuite extends FlixSuite(incremental = true) {
 
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDir("examples/algebraic-effects")
   mkTestDir("examples/concurrency-and-parallelism")
+
+  mkTestDir("examples/effects-and-handlers")
+  mkTestDir("examples/effects-and-handlers/advanced")
+
   mkTestDir("examples/fixpoints")
+
   mkTestDir("examples/functional-style")
+
   mkTestDir("examples/imperative-style")
 
   mkTestDir("examples/interoperability/anonymous-classes")
@@ -33,20 +38,21 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/interoperability/files")
   mkTestDir("examples/interoperability/swing")
 
-  mkTestDir("examples/misc")
-  mkTestDir("examples/misc/type-level-programming")
-
-  mkTestDir("examples/io")
-  mkTestDir("examples/records")
-  mkTestDir("examples/structs")
-  mkTestDir("examples/traits")
-
   mkTestDir("examples/larger-examples")
   mkTestDir("examples/larger-examples/datalog")
   mkTestDir("examples/larger-examples/program-analysis")
   mkTestDir("examples/larger-examples/program-analysis/domains")
   mkTestDir("examples/larger-examples/restrictable-variants")
 
+  mkTestDir("examples/misc")
+  mkTestDir("examples/misc/type-level-programming")
+
   mkTestDir("examples/modules")
+
+  mkTestDir("examples/records")
+
+  mkTestDir("examples/structs")
+
+  mkTestDir("examples/traits")
 
 }

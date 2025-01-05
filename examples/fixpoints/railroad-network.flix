@@ -80,9 +80,10 @@ def exampleGraph(): Set[(String, String)] =
 ///
 /// Test which of the stations are safely and unsafely connected from `bis`.
 ///
-def test(): Unit \ IO =
+def test(): Unit \ {Sys, IO} = Environment.handle(() -> {
     let rec = safeConnects("bis", exampleGraph());
     println("Safe:");
     rec#safe |> Vector.sort |> Vector.map(Chalk.green) |> Vector.forEach(println);
     println("Unsafe:");
     rec#unsafe1 |> Vector.sort |> Vector.map(Chalk.red) |> Vector.forEach(println)
+})()

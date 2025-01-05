@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.CompilationMessageKind.*
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 
 sealed trait CompilationMessageKind extends Ordered[CompilationMessageKind] {
   override def toString: String = this match {

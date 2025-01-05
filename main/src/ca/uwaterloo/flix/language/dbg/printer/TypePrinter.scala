@@ -31,12 +31,12 @@ object TypePrinter {
     (base, args) match {
       case (Type.Var(sym, _), _) => mkApp(DocAst.Type.Var(sym), args.map(print))
       case (Type.Cst(TypeConstructor.Arrow(arity), _), _) if args.lengthIs == arity + 1 && arity >= 2 =>
-        // `(a1, a2, ..) -> b \ ef` is represented as List(ef, a1, a2, .., b)
+        // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
         // safe match because of the case guard
         val (arrowEff :: arrowArgs, List(arrowRes)) = args.splitAt(args.length-1)
         DocAst.Type.ArrowEff(arrowArgs.map(print), print(arrowRes), print(arrowEff))
       case (Type.Cst(TypeConstructor.ArrowWithoutEffect(arity), _), _) if args.lengthIs == arity && arity >= 2 =>
-        // `(a1, a2, ..) -> b \ ef` is represented as List(ef, a1, a2, .., b)
+        // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
         // safe match because of the case guard
         val (arrowArgs, List(arrowRes)) = args.splitAt(args.length - 1)
         DocAst.Type.Arrow(arrowArgs.map(print), print(arrowRes))
@@ -44,11 +44,11 @@ object TypePrinter {
         DocAst.Type.RecordRowExtend(label.toString, print(arg0), print(arg1))
       case (Type.Cst(TypeConstructor.Record, _), List(arg0)) =>
         DocAst.Type.RecordOf(print(arg0))
-      case (Type.Cst(TypeConstructor.SchemaRowExtend(label), _), List(arg0, arg1)) =>
-        DocAst.Type.SchemaRowExtend(label.toString, print(arg0), print(arg1))
+      case (Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), List(arg0, arg1)) =>
+        DocAst.Type.SchemaRowExtend(pred.toString, print(arg0), print(arg1))
       case (Type.Cst(TypeConstructor.Schema, _), List(arg0)) =>
         DocAst.Type.SchemaOf(print(arg0))
-      case (Type.Cst(TypeConstructor.Tuple(arity), _), _) if args.lengthIs == arity =>
+      case (Type.Cst(TypeConstructor.Tuple(l), _), _) if args.lengthIs == l =>
         DocAst.Type.Tuple(args.map(print))
       case (Type.Cst(TypeConstructor.Not, _), List(arg0)) =>
         DocAst.Type.Not(print(arg0))

@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessageKind
 import ca.uwaterloo.flix.language.CompilationMessageKind.*
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestCompilationMessageKind extends AnyFunSuite with TestUtils {

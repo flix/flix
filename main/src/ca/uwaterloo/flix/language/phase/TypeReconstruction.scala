@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -381,6 +382,11 @@ object TypeReconstruction {
       val eff = declaredEff0.getOrElse(e.eff)
       TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
+    case KindedAst.Expr.Unsafe(exp, eff0, loc) =>
+      val e = visitExp(exp)
+      val eff = Type.mkDifference(e.eff, eff0, loc)
+      TypedAst.Expr.Unsafe(e, eff0, e.tpe, eff, loc)
+
     case KindedAst.Expr.Without(exp, effUse, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
@@ -413,8 +419,9 @@ object TypeReconstruction {
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
+      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(rs.map(_.exp.eff), loc) // TODO temp simplification
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.qname.loc) :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
