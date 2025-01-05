@@ -14,9 +14,10 @@
     "java.lang.System::currentTimeMillis": "IO",
     "java.lang.System::getenv": "Env, IO",
     "java.lang.System::getProperties": "Env, IO",
-    "java.lang.System::setProperties": "Env, IO",
     "java.lang.System::setProperty": "Env, Sys, IO",
     "java.lang.System::clearProperty": "Env, Sys, IO",
+    "java.lang.System::lineSeparator": "Env, IO",
+    "java.lang.System::setProperties": "Env, Sys, IO",
     "java.lang.System::nanoTime": "IO",
 
     "java.math.BigInteger::probablePrime": "NonDet, IO",
