@@ -11,7 +11,16 @@ import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Dependencies {
-
+  /**
+    * Updates the dependency graph of the given `root`.
+    * We visit all the definitions, effects, enums, instances, structs, traits, and type aliases to find the dependencies.
+    * Each visit will return a list from the source location to the destination location.
+    *
+    * Most of the time we just recursively visit the sub-nodes, we only add dependencies for three base cases:
+    *   - Type
+    *   - SymUse
+    *   - Instance
+    */
   def run(root: Root)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
     val defDeps = ParOps.parMap(root.defs.values)(visitDef).flatten
     val effDeps = ParOps.parMap(root.effects.values)(visitEff).flatten
@@ -29,6 +38,10 @@ object Dependencies {
     (root.copy(dependencyGraph = dg), ())
   }
 
+  /**
+    * Returns the dependencies of the given type.
+    * One of the base case for the recursive visiting.
+    */
   private def visitType(tpe: Type): List[(SourceLocation, SourceLocation)] = tpe match {
     case Type.Alias(cst, _, _, loc) => List((cst.sym.loc, loc))
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => List((sym.loc, loc))
@@ -36,6 +49,10 @@ object Dependencies {
     case _ => Nil
   }
 
+  /**
+    * Returns the dependencies of the given SymUse.
+    * One of the base case for the recursive visiting.
+    */
   private def visitSymUse(use: SymUse.SymUse): List[(SourceLocation, SourceLocation)] = use match {
     case SymUse.AssocTypeSymUse(sym, loc) => List((sym.loc, loc))
     case SymUse.CaseSymUse(sym, loc) => List((sym.loc, loc))
@@ -314,6 +331,10 @@ object Dependencies {
   private def visitEnum(enm: TypedAst.Enum): List[(SourceLocation, SourceLocation)] =
     enm.cases.values.flatMap(visitCase).toList
 
+  /**
+    * Returns the dependencies of the given instance.
+    * One of the base case for the recursive visiting.
+    */
   private def visitInstances(instances: List[TypedAst.Instance]): List[(SourceLocation, SourceLocation)] =
     instances.map(instance => (instance.trt.sym.loc, instance.loc))
 
