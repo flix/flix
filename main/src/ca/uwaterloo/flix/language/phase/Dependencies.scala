@@ -12,7 +12,6 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Dependencies {
 
-  /** Checks the safety and well-formedness of `root`. */
   def run(root: Root)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
     val defDeps = ParOps.parMap(root.defs.values)(visitDef).flatten
     val effDeps = ParOps.parMap(root.effects.values)(visitEff).flatten
@@ -22,8 +21,6 @@ object Dependencies {
     val traitDeps = ParOps.parMap(root.traits.values)(visitTrait).flatten
     val typeAliasDeps = ParOps.parMap(root.typeAliases.values)(visitTypeAlias).flatten
     val allDeps = defDeps ++ effDeps ++ enumDeps ++ instanceDeps ++ structDeps ++ traitDeps ++ typeAliasDeps
-    // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
-    // Moreover, we should traverse the AST in parallel and using changeSet.
 
     val deps = allDeps.foldLeft(MultiMap.empty[Input, Input]) {
       case (acc, (src, dst)) => acc + (src.sp1.source.input, dst.sp1.source.input)
