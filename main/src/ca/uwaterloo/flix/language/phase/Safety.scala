@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -213,7 +213,7 @@ object Safety {
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp) ++ castErrors
 
-    case unsafe@Expr.Unsafe(exp, _, _, _, loc) =>
+    case Expr.Unsafe(exp, _, _, _, loc) =>
       val permissionErrors = checkAllPermissions(loc.security, loc)
       permissionErrors ++ visitExp(exp)
 
