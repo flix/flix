@@ -61,7 +61,7 @@ object Dependencies {
     case SymUse.AssocTypeSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
     case SymUse.CaseSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
     case SymUse.DefSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
-    case SymUse.EffectSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
+    case SymUse.EffectSymUse(sym, qname) => addToSharedContext(sym.loc, qname.loc)
     case SymUse.OpSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
     case SymUse.SigSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
     case SymUse.StructFieldSymUse(sym, loc) => addToSharedContext(sym.loc, loc)
