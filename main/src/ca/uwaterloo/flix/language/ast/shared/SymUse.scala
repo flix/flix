@@ -1,6 +1,7 @@
 /*
  * Copyright 2024 Holger Dal Mogensen
  * Copyright 2024 Alexander Dybdahl Troelsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +20,9 @@ package ca.uwaterloo.flix.language.ast.shared
 import ca.uwaterloo.flix.language.ast.Name.{Ident, QName}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
+sealed trait SymUse
+
 object SymUse {
-  sealed trait SymUse
   /**
     * Represents a use of an associated type sym.
     */
