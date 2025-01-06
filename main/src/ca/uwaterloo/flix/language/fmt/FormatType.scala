@@ -202,11 +202,13 @@ object FormatType {
       case SimpleType.Tuple(_) => true
       case SimpleType.JvmToType(_) => true
       case SimpleType.JvmToEff(_) => true
-      case SimpleType.FieldType(_) => true
       case SimpleType.JvmUnresolvedConstructor(_, _) => true
       case SimpleType.JvmUnresolvedField(_, _) => true
       case SimpleType.JvmUnresolvedMethod(_, _, _) => true
       case SimpleType.JvmUnresolvedStaticMethod(_, _, _) => true
+      case SimpleType.JvmConstructor(_) => true
+      case SimpleType.JvmField(_) => true
+      case SimpleType.JvmMethod(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
