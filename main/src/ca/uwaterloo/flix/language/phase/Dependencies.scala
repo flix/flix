@@ -16,7 +16,7 @@ object Dependencies {
     * We visit all the definitions, effects, enums, instances, structs, traits, and type aliases to find the dependencies.
     * Each visit will return a list from the source location to the destination location.
     *
-    * Most of the time we just recursively visit the sub-nodes, we only add dependencies for three base cases:
+    * Most of the time we just recursively visit the sub-nodes. We only add dependencies for three base cases:
     *   - Type
     *   - SymUse
     *   - Instance
@@ -64,6 +64,13 @@ object Dependencies {
     case SymUse.TraitSymUse(sym, loc) => List((sym.loc, loc))
     case _ => Nil
   }
+
+  /**
+   * Returns the dependencies of the given instance.
+   * One of the base case for the recursive visiting.
+   */
+  private def visitInstances(instances: List[TypedAst.Instance]): List[(SourceLocation, SourceLocation)] =
+    instances.map(instance => (instance.trt.sym.loc, instance.loc))
 
   private def visitSpec(spec: TypedAst.Spec): List[(SourceLocation, SourceLocation)] = {
     spec.fparams.flatMap(visitFParam) ++ visitType(spec.retTpe) ++ visitScheme(spec.declaredScheme) ++ visitType(spec.eff) ++
@@ -330,13 +337,6 @@ object Dependencies {
 
   private def visitEnum(enm: TypedAst.Enum): List[(SourceLocation, SourceLocation)] =
     enm.cases.values.flatMap(visitCase).toList
-
-  /**
-    * Returns the dependencies of the given instance.
-    * One of the base case for the recursive visiting.
-    */
-  private def visitInstances(instances: List[TypedAst.Instance]): List[(SourceLocation, SourceLocation)] =
-    instances.map(instance => (instance.trt.sym.loc, instance.loc))
 
   private def visitStruct(struct: TypedAst.Struct): List[(SourceLocation, SourceLocation)] =
     visitScheme(struct.sc) ++ struct.fields.values.flatMap(visitStructField)
