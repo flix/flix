@@ -20,6 +20,7 @@ object Dependencies {
     val effDeps = ParOps.parMap(root.effects.values)(visitEff).flatten
     val enumDeps = ParOps.parMap(root.enums.values)(visitEnum).flatten
     val instanceDeps = ParOps.parMap(root.instances.values)(visitInstances).flatten
+    val structDeps = ParOps.parMap(root.structs.values)(visitStruct).flatten
     // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
     // Moreover, we should traverse the AST in parallel and using changeSet.
     //
@@ -209,6 +210,10 @@ object Dependencies {
   private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): List[(SourceLocation, SourceLocation)] =
     visitSymUse(assoc.sym) ++ visitType(assoc.arg) ++ visitType(assoc.tpe)
 
+  private def visitStructField(structField: TypedAst.StructField): List[(SourceLocation, SourceLocation)] =
+    visitType(structField.tpe)
+
+
   private def visitExp(exp: Expr): List[(SourceLocation, SourceLocation)] = exp match {
     case Expr.Cst(_, tpe, _) => visitType(tpe)
 
@@ -370,6 +375,9 @@ object Dependencies {
     instances.flatMap(instance =>
       visitSymUse(instance.trt) ++ visitType(instance.tpe) ++ instance.tconstrs.flatMap(visitTraitConstraint) ++ instance.assocs.flatMap(visitAssocTypeDef) ++ instance.defs.flatMap(visitDef)
     )
+
+  private def visitStruct(struct: TypedAst.Struct): List[(SourceLocation, SourceLocation)] =
+    visitScheme(struct.sc) ++ struct.fields.values.flatMap(visitStructField)
 
   //  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit deps: MultiMap[String, String]): Unit = {
 //    deps += (src.sp1.source.input, dst.sp1.source.input)
