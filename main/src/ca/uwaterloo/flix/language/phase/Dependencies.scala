@@ -1,12 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
-import ca.uwaterloo.flix.api.lsp.acceptors.AllAcceptor
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, Predicate, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
@@ -23,83 +21,33 @@ object Dependencies {
     val structDeps = ParOps.parMap(root.structs.values)(visitStruct).flatten
     val traitDeps = ParOps.parMap(root.traits.values)(visitTrait).flatten
     val typeAliasDeps = ParOps.parMap(root.typeAliases.values)(visitTypeAlias).flatten
+    val allDeps = defDeps ++ effDeps ++ enumDeps ++ instanceDeps ++ structDeps ++ traitDeps ++ typeAliasDeps
     // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
     // Moreover, we should traverse the AST in parallel and using changeSet.
-    //
-    //    object consumer extends Consumer {
-    //
-    //      /**
-    //        * Adds a dependency `src -> dst` signifying that if `src` changes then `dst` must be recomputed.
-    //        */
-    //
-    //      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeEffectSymUse(symUse: SymUse.EffectSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeInstance(ins: TypedAst.Instance): Unit = {
-    //        addDependency(ins.trt.sym.loc, ins.loc)
-    //      }
-    //
-    //      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = {
-    //        addDependency(symUse.sym.loc, symUse.loc)
-    //      }
-    //
-    //      override def consumeType(tpe: Type): Unit = tpe match {
-    //        case Type.Alias(cst, _, _, loc) =>
-    //          addDependency(cst.sym.loc, loc)
-    //
-    //        case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-    //          addDependency(sym.loc, loc)
-    //
-    //        case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
-    //          addDependency(sym.loc, loc)
-    //
-    //        case _ => // nop
-    //      }
-    //
-    //
-    //    }
-    //
-    //    Visitor.visitRoot(root, consumer, AllAcceptor)
-    //
 
-    var deps: MultiMap[Input, Input] = MultiMap.empty
-    defDeps.foreach(dep => deps += (dep._1.sp1.source.input, dep._2.sp1.source.input))
+    val deps = allDeps.foldLeft(MultiMap.empty[Input, Input]) {
+      case (acc, (src, dst)) => acc + (src.sp1.source.input, dst.sp1.source.input)
+    }
     val dg = DependencyGraph(deps)
     (root.copy(dependencyGraph = dg), ())
   }
 
-  private def visitDef(defn: TypedAst.Def): List[(SourceLocation, SourceLocation)] =
-    visitExp(defn.exp) ++ visitSpec(defn.spec)
-
   private def visitType(tpe: Type): List[(SourceLocation, SourceLocation)] = tpe match {
-    case Type.Alias(cst, _, _, loc) => List((cst.loc, loc))
+    case Type.Alias(cst, _, _, loc) => List((cst.sym.loc, loc))
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => List((sym.loc, loc))
     case Type.Cst(TypeConstructor.Struct(sym, _), loc) => List((sym.loc, loc))
+    case _ => Nil
+  }
+
+  private def visitSymUse(use: SymUse.SymUse): List[(SourceLocation, SourceLocation)] = use match {
+    case SymUse.AssocTypeSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.CaseSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.DefSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.EffectSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.OpSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.SigSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.StructFieldSymUse(sym, loc) => List((sym.loc, loc))
+    case SymUse.TraitSymUse(sym, loc) => List((sym.loc, loc))
     case _ => Nil
   }
 
@@ -120,21 +68,8 @@ object Dependencies {
   private def visitBroadEqualityConstraint(ec: BroadEqualityConstraint): List[(SourceLocation, SourceLocation)] =
     visitType(ec.tpe1) ++ visitType(ec.tpe2)
 
-  private def visitSymUse(use: SymUse.SymUse): List[(SourceLocation, SourceLocation)] = use match {
-    case SymUse.AssocTypeSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.CaseSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.DefSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.EffectSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.OpSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.SigSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.StructFieldSymUse(sym, loc) => List((sym.loc, loc))
-    case SymUse.TraitSymUse(sym, loc) => List((sym.loc, loc))
-    case _ => Nil
-  }
-
-  private def visitBnd(bnd: TypedAst.Binder): List[(SourceLocation, SourceLocation)] = bnd match {
-    case TypedAst.Binder(_, tpe) => visitType(tpe)
-  }
+  private def visitBnd(bnd: TypedAst.Binder): List[(SourceLocation, SourceLocation)] =
+    visitType(bnd.tpe)
 
   private def visitFParam(fparam: TypedAst.FormalParam): List[(SourceLocation, SourceLocation)] =
     visitBnd(fparam.bnd) ++ visitType(fparam.tpe)
@@ -143,10 +78,10 @@ object Dependencies {
     visitPattern(matchRule.pat) ++ matchRule.guard.toList.flatMap(visitExp) ++ visitExp(matchRule.exp)
 
   private def visitPattern(pattern: TypedAst.Pattern): List[(SourceLocation, SourceLocation)] = pattern match {
-    case Pattern.Var(bnd, tpe, loc) => visitBnd(bnd) ++ visitType(tpe)
-    case Pattern.Tag(sym, pats, tpe, loc) => visitSymUse(sym) ++ pats.flatMap(visitPattern) ++ visitType(tpe)
-    case Pattern.Tuple(pats, tpe, loc) => pats.flatMap(visitPattern) ++ visitType(tpe)
-    case Pattern.Record(pats, pat, tpe, loc) => pats.flatMap(visitRecordLabelPattern) ++ visitPattern(pat) ++ visitType(tpe)
+    case Pattern.Var(bnd, tpe, _) => visitBnd(bnd) ++ visitType(tpe)
+    case Pattern.Tag(sym, pats, tpe, _) => visitSymUse(sym) ++ pats.flatMap(visitPattern) ++ visitType(tpe)
+    case Pattern.Tuple(pats, tpe, _) => pats.flatMap(visitPattern) ++ visitType(tpe)
+    case Pattern.Record(pats, pat, tpe, _) => pats.flatMap(visitRecordLabelPattern) ++ visitPattern(pat) ++ visitType(tpe)
     case pat => visitType(pat.tpe)
   }
 
@@ -160,14 +95,14 @@ object Dependencies {
     visitExp(rule.exp) ++ visitRestrictableChoosePattern(rule.pat)
 
   private def visitRestrictableChoosePattern(pattern: TypedAst.RestrictableChoosePattern): List[(SourceLocation, SourceLocation)] = pattern match {
-    case RestrictableChoosePattern.Tag(sym, pats, tpe, loc) => pats.flatMap(visitVarOrWild) ++ visitType(tpe)
-    case RestrictableChoosePattern.Error(tpe, loc) => visitType(tpe)
+    case RestrictableChoosePattern.Tag(sym, pats, tpe, _) => visitSymUse(sym) ++ pats.flatMap(visitVarOrWild) ++ visitType(tpe)
+    case RestrictableChoosePattern.Error(tpe, _) => visitType(tpe)
   }
 
   private def visitVarOrWild(pattern: TypedAst.RestrictableChoosePattern.VarOrWild): List[(SourceLocation, SourceLocation)] = pattern match {
-    case RestrictableChoosePattern.Var(bnd, tpe, loc) => visitBnd(bnd) ++ visitType(tpe)
-    case RestrictableChoosePattern.Wild(tpe, loc) => visitType(tpe)
-    case RestrictableChoosePattern.Error(tpe, loc) => visitType(tpe)
+    case RestrictableChoosePattern.Var(bnd, tpe, _) => visitBnd(bnd) ++ visitType(tpe)
+    case RestrictableChoosePattern.Wild(tpe, _) => visitType(tpe)
+    case RestrictableChoosePattern.Error(tpe, _) => visitType(tpe)
   }
 
   private def visitField(field: (SymUse.StructFieldSymUse, Expr)): List[(SourceLocation, SourceLocation)] =
@@ -189,15 +124,19 @@ object Dependencies {
     visitExp(fragment.exp) ++ visitPattern(fragment.pat)
 
   private def visitConstrait(constraint: TypedAst.Constraint): List[(SourceLocation, SourceLocation)] =
-    constraint.cparams.flatMap(visitContraintParam) ++ constraint.body.flatMap(visitConstraintBody)
+    constraint.cparams.flatMap(visitContraintParam) ++ visitHead(constraint.head) ++ constraint.body.flatMap(visitConstraintBody)
+
+  private def visitHead(head: TypedAst.Predicate.Head): List[(SourceLocation, SourceLocation)] = head match {
+    case TypedAst.Predicate.Head.Atom(_, _, terms, tpe, _) => terms.flatMap(visitExp) ++ visitType(tpe)
+  }
 
   private def visitContraintParam(cp: TypedAst.ConstraintParam): List[(SourceLocation, SourceLocation)] =
     visitType(cp.tpe) ++ visitBnd(cp.bnd)
 
   private def visitConstraintBody(cb: Body): List[(SourceLocation, SourceLocation)] = cb match {
-    case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) => terms.flatMap(visitPattern) ++ visitType(tpe)
-    case Body.Functional(outBnds, exp, loc) => outBnds.flatMap(visitBnd) ++ visitExp(exp)
-    case Body.Guard(exp, loc) => visitExp(exp)
+    case Body.Atom(_, _, _, _, terms, tpe, _) => terms.flatMap(visitPattern) ++ visitType(tpe)
+    case Body.Functional(outBnds, exp, _) => outBnds.flatMap(visitBnd) ++ visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
   }
 
   private def visitPParam(pparam: TypedAst.PredicateParam): List[(SourceLocation, SourceLocation)] =
@@ -209,9 +148,6 @@ object Dependencies {
   private def visitCase(cas: TypedAst.Case): List[(SourceLocation, SourceLocation)] =
     cas.tpes.flatMap(visitType) ++ visitScheme(cas.sc)
 
-  private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): List[(SourceLocation, SourceLocation)] =
-    visitSymUse(assoc.sym) ++ visitType(assoc.arg) ++ visitType(assoc.tpe)
-
   private def visitStructField(structField: TypedAst.StructField): List[(SourceLocation, SourceLocation)] =
     visitType(structField.tpe)
 
@@ -220,8 +156,6 @@ object Dependencies {
 
   private def visitSig(sig: TypedAst.Sig): List[(SourceLocation, SourceLocation)] =
     visitSpec(sig.spec) ++ sig.exp.toList.flatMap(visitExp)
-
-
 
   private def visitExp(exp: Expr): List[(SourceLocation, SourceLocation)] = exp match {
     case Expr.Cst(_, tpe, _) => visitType(tpe)
@@ -252,128 +186,131 @@ object Dependencies {
 
     case Expr.Let(bnd, exp1, exp2, tpe, eff, _) => visitBnd(bnd) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) => visitBnd(bnd) ++ fparams.flatMap(visitFParam) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) => visitBnd(bnd) ++ fparams.flatMap(visitFParam) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Region(tpe, loc) => visitType(tpe)
+    case Expr.Region(tpe, _) => visitType(tpe)
 
-    case Expr.Scope(bnd, regionVar, exp, tpe, eff, loc) => visitBnd(bnd) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Scope(bnd, _, exp, tpe, eff, _) => visitBnd(bnd) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Stm(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Discard(exp, eff, loc) => visitExp(exp) ++ visitType(eff)
+    case Expr.Discard(exp, eff, _) => visitExp(exp) ++ visitType(eff)
 
-    case Expr.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ rules.flatMap(visitMatchRule) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Match(exp, rules, tpe, eff, _) => visitExp(exp) ++ rules.flatMap(visitMatchRule) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ rules.flatMap(visitTypeMatchRule) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.TypeMatch(exp, rules, tpe, eff, _) => visitExp(exp) ++ rules.flatMap(visitTypeMatchRule) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => visitExp(exp) ++ rules.flatMap(visitRestrictableChooseRule) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) => visitExp(exp) ++ rules.flatMap(visitRestrictableChooseRule) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Tag(sym, exps, tpe, eff, loc) => visitSymUse(sym) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Tag(sym, exps, tpe, eff, _) => visitSymUse(sym) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.RestrictableTag(sym, exps, tpe, eff, _) => visitSymUse(sym) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Tuple(exps, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Tuple(exps, tpe, eff, _) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.RecordEmpty(tpe, loc) => visitType(tpe)
+    case Expr.RecordEmpty(tpe, _) => visitType(tpe)
 
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.RecordSelect(exp, _, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.RecordExtend(_, exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.RecordRestrict(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.ArrayLit(exps, exp, tpe, eff, _) => exps.flatMap(visitExp) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.ArrayLoad(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.ArrayLength(exp, eff, loc) => visitExp(exp) ++ visitType(eff)
+    case Expr.ArrayLength(exp, eff, _) => visitExp(exp) ++ visitType(eff)
 
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(eff)
+    case Expr.ArrayStore(exp1, exp2, exp3, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(eff)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => fields.flatMap(visitField) ++ visitExp(region) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.StructNew(_, fields, region, tpe, eff, _) => fields.flatMap(visitField) ++ visitExp(region) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.StructGet(exp, sym, tpe, eff, loc) => visitExp(exp) ++ visitSymUse(sym) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.StructGet(exp, sym, tpe, eff, _) => visitExp(exp) ++ visitSymUse(sym) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitSymUse(sym) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.StructPut(exp1, sym, exp2, tpe, eff, _) => visitExp(exp1) ++ visitSymUse(sym) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.VectorLit(exps, tpe, eff, _) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.VectorLength(exp, loc) => visitExp(exp)
+    case Expr.VectorLength(exp, _) => visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Ascribe(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.InstanceOf(exp, clazz, loc) => visitExp(exp)
+    case Expr.InstanceOf(exp, _, _) => visitExp(exp)
 
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.CheckedCast(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) => visitExp(exp) ++ visitType(runEff) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, _) => visitExp(exp) ++ declaredType.toList.flatMap(visitType) ++ declaredEff.toList.flatMap(visitType) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Without(exp, effUse, tpe, eff, loc) => visitExp(exp) ++ visitSymUse(effUse) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Unsafe(exp, runEff, tpe, eff, _) => visitExp(exp) ++ visitType(runEff) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ rules.flatMap(visitCatchRule) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Without(exp, effUse, tpe, eff, _) => visitExp(exp) ++ visitSymUse(effUse) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Throw(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.TryCatch(exp, rules, tpe, eff, _) => visitExp(exp) ++ rules.flatMap(visitCatchRule) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => visitExp(exp) ++ visitSymUse(effUse) ++ rules.flatMap(visitHandlerRule) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Throw(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Do(op, exps, tpe, eff, loc) => visitSymUse(op) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.TryWith(exp, effUse, rules, tpe, eff, _) => visitExp(exp) ++ visitSymUse(effUse) ++ rules.flatMap(visitHandlerRule) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Do(op, exps, tpe, eff, _) => visitSymUse(op) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => visitExp(exp) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.InvokeConstructor(_, exps, tpe, eff, _) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.InvokeMethod(_, exp, exps, tpe, eff, _) => visitExp(exp) ++ exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.GetField(field, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.InvokeStaticMethod(_, exps, tpe, eff, _) => exps.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.GetField(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.GetStaticField(field, tpe, eff, loc) => visitType(tpe) ++ visitType(eff)
+    case Expr.PutField(_, exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.GetStaticField(_, tpe, eff, _) => visitType(tpe) ++ visitType(eff)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => visitType(tpe) ++ visitType(eff) ++ methods.flatMap(visitJvmMethod)
+    case Expr.PutStaticField(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.NewChannel(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.NewObject(_, _, tpe, eff, methods, _) => visitType(tpe) ++ visitType(eff) ++ methods.flatMap(visitJvmMethod)
 
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.NewChannel(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) => rules.flatMap(visitSelectChannelRule) ++ default.toList.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.PutChannel(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.SelectChannel(rules, default, tpe, eff, _) => rules.flatMap(visitSelectChannelRule) ++ default.toList.flatMap(visitExp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.ParYield(frags, exp, tpe, eff, loc) => frags.flatMap(visitParYieldFragment) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Spawn(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Lazy(exp, tpe, loc) => visitExp(exp) ++ visitType(tpe)
+    case Expr.ParYield(frags, exp, tpe, eff, _) => frags.flatMap(visitParYieldFragment) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Force(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Lazy(exp, tpe, _) => visitExp(exp) ++ visitType(tpe)
 
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(visitConstrait) ++ visitType(tpe)
+    case Expr.Force(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => pparams.flatMap(visitPParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointConstraintSet(cs, tpe, _) => cs.flatMap(visitConstrait) ++ visitType(tpe)
 
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointLambda(pparams, exp, tpe, eff, _) => pparams.flatMap(visitPParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointSolve(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointFilter(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointInject(exp, _, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.Error(m, tpe, eff) => visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointProject(_, exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.GetChannel(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.Error(_, tpe, eff) => visitType(tpe) ++ visitType(eff)
 
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => visitExp(exp) ++ declaredType.toList.flatMap(visitType) ++ declaredEff.toList.flatMap(visitType) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.GetChannel(exp, tpe, eff, _) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
+
+  private def visitDef(defn: TypedAst.Def): List[(SourceLocation, SourceLocation)] =
+    visitExp(defn.exp) ++ visitSpec(defn.spec)
 
   private def visitEff(eff: TypedAst.Effect): List[(SourceLocation, SourceLocation)] = eff.ops.flatMap(visitOp)
 
@@ -381,9 +318,7 @@ object Dependencies {
     enm.cases.values.flatMap(visitCase).toList
 
   private def visitInstances(instances: List[TypedAst.Instance]): List[(SourceLocation, SourceLocation)] =
-    instances.flatMap(instance =>
-      visitSymUse(instance.trt) ++ visitType(instance.tpe) ++ instance.tconstrs.flatMap(visitTraitConstraint) ++ instance.assocs.flatMap(visitAssocTypeDef) ++ instance.defs.flatMap(visitDef)
-    )
+    instances.map(instance => (instance.trt.sym.loc, instance.loc))
 
   private def visitStruct(struct: TypedAst.Struct): List[(SourceLocation, SourceLocation)] =
     visitScheme(struct.sc) ++ struct.fields.values.flatMap(visitStructField)
@@ -393,8 +328,4 @@ object Dependencies {
 
   private def visitTypeAlias(typeAlias: TypedAst.TypeAlias): List[(SourceLocation, SourceLocation)] =
     visitType(typeAlias.tpe)
-
-  //  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit deps: MultiMap[String, String]): Unit = {
-//    deps += (src.sp1.source.input, dst.sp1.source.input)
-//  }
 }
