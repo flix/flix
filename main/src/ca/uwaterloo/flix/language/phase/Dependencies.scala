@@ -18,69 +18,71 @@ object Dependencies {
   def run(root: Root)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
     val defDeps = ParOps.parMap(root.defs.values)(visitDef).flatten
     val effDeps = ParOps.parMap(root.effects.values)(visitEff).flatten
+    val enumDeps = ParOps.parMap(root.enums.values)(visitEnum).flatten
+    val instanceDeps = ParOps.parMap(root.instances.values)(visitInstances).flatten
     // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
     // Moreover, we should traverse the AST in parallel and using changeSet.
-//
-//    object consumer extends Consumer {
-//
-//      /**
-//        * Adds a dependency `src -> dst` signifying that if `src` changes then `dst` must be recomputed.
-//        */
-//
-//      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeEffectSymUse(symUse: SymUse.EffectSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeInstance(ins: TypedAst.Instance): Unit = {
-//        addDependency(ins.trt.sym.loc, ins.loc)
-//      }
-//
-//      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = {
-//        addDependency(symUse.sym.loc, symUse.loc)
-//      }
-//
-//      override def consumeType(tpe: Type): Unit = tpe match {
-//        case Type.Alias(cst, _, _, loc) =>
-//          addDependency(cst.sym.loc, loc)
-//
-//        case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-//          addDependency(sym.loc, loc)
-//
-//        case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
-//          addDependency(sym.loc, loc)
-//
-//        case _ => // nop
-//      }
-//
-//
-//    }
-//
-//    Visitor.visitRoot(root, consumer, AllAcceptor)
-//
+    //
+    //    object consumer extends Consumer {
+    //
+    //      /**
+    //        * Adds a dependency `src -> dst` signifying that if `src` changes then `dst` must be recomputed.
+    //        */
+    //
+    //      override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeEffectSymUse(symUse: SymUse.EffectSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeInstance(ins: TypedAst.Instance): Unit = {
+    //        addDependency(ins.trt.sym.loc, ins.loc)
+    //      }
+    //
+    //      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeStructFieldSymUse(symUse: SymUse.StructFieldSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = {
+    //        addDependency(symUse.sym.loc, symUse.loc)
+    //      }
+    //
+    //      override def consumeType(tpe: Type): Unit = tpe match {
+    //        case Type.Alias(cst, _, _, loc) =>
+    //          addDependency(cst.sym.loc, loc)
+    //
+    //        case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
+    //          addDependency(sym.loc, loc)
+    //
+    //        case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
+    //          addDependency(sym.loc, loc)
+    //
+    //        case _ => // nop
+    //      }
+    //
+    //
+    //    }
+    //
+    //    Visitor.visitRoot(root, consumer, AllAcceptor)
+    //
 
     var deps: MultiMap[Input, Input] = MultiMap.empty
     defDeps.foreach(dep => deps += (dep._1.sp1.source.input, dep._2.sp1.source.input))
@@ -112,7 +114,7 @@ object Dependencies {
   private def visitEqualityConstraint(ec: EqualityConstraint): List[(SourceLocation, SourceLocation)] =
     visitType(ec.tpe1) ++ visitType(ec.tpe2)
 
-  private def visitBroadEqualityConstraint(ec:BroadEqualityConstraint): List[(SourceLocation, SourceLocation)] =
+  private def visitBroadEqualityConstraint(ec: BroadEqualityConstraint): List[(SourceLocation, SourceLocation)] =
     visitType(ec.tpe1) ++ visitType(ec.tpe2)
 
   private def visitSymUse(use: SymUse.SymUse): List[(SourceLocation, SourceLocation)] = use match {
@@ -128,7 +130,7 @@ object Dependencies {
   }
 
   private def visitBnd(bnd: TypedAst.Binder): List[(SourceLocation, SourceLocation)] = bnd match {
-    case TypedAst.Binder(_, tpe)=> visitType(tpe)
+    case TypedAst.Binder(_, tpe) => visitType(tpe)
   }
 
   private def visitFParam(fparam: TypedAst.FormalParam): List[(SourceLocation, SourceLocation)] =
@@ -200,6 +202,12 @@ object Dependencies {
 
   private def visitOp(Op: TypedAst.Op): List[(SourceLocation, SourceLocation)] =
     visitSpec(Op.spec)
+
+  private def visitCase(cas: TypedAst.Case): List[(SourceLocation, SourceLocation)] =
+    cas.tpes.flatMap(visitType) ++ visitScheme(cas.sc)
+
+  private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): List[(SourceLocation, SourceLocation)] =
+    visitSymUse(assoc.sym) ++ visitType(assoc.arg) ++ visitType(assoc.tpe)
 
   private def visitExp(exp: Expr): List[(SourceLocation, SourceLocation)] = exp match {
     case Expr.Cst(_, tpe, _) => visitType(tpe)
@@ -310,7 +318,7 @@ object Dependencies {
 
     case Expr.GetField(field, exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>  visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
     case Expr.GetStaticField(field, tpe, eff, loc) => visitType(tpe) ++ visitType(eff)
 
@@ -336,7 +344,7 @@ object Dependencies {
 
     case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => pparams.flatMap(visitPParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
-    case Expr. FixpointMerge(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe) ++ visitType(eff)
 
     case Expr.FixpointSolve(exp, tpe, eff, loc) => visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
 
@@ -355,7 +363,15 @@ object Dependencies {
 
   private def visitEff(eff: TypedAst.Effect): List[(SourceLocation, SourceLocation)] = eff.ops.flatMap(visitOp)
 
-//  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit deps: MultiMap[String, String]): Unit = {
+  private def visitEnum(enm: TypedAst.Enum): List[(SourceLocation, SourceLocation)] =
+    enm.cases.values.flatMap(visitCase).toList
+
+  private def visitInstances(instances: List[TypedAst.Instance]): List[(SourceLocation, SourceLocation)] =
+    instances.flatMap(instance =>
+      visitSymUse(instance.trt) ++ visitType(instance.tpe) ++ instance.tconstrs.flatMap(visitTraitConstraint) ++ instance.assocs.flatMap(visitAssocTypeDef) ++ instance.defs.flatMap(visitDef)
+    )
+
+  //  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit deps: MultiMap[String, String]): Unit = {
 //    deps += (src.sp1.source.input, dst.sp1.source.input)
 //  }
 }
