@@ -22,6 +22,7 @@ object Dependencies {
     val instanceDeps = ParOps.parMap(root.instances.values)(visitInstances).flatten
     val structDeps = ParOps.parMap(root.structs.values)(visitStruct).flatten
     val traitDeps = ParOps.parMap(root.traits.values)(visitTrait).flatten
+    val typeAliasDeps = ParOps.parMap(root.typeAliases.values)(visitTypeAlias).flatten
     // TODO: We should not depend on Consumer from LSP. Instead we should traverse the AST manually.
     // Moreover, we should traverse the AST in parallel and using changeSet.
     //
@@ -390,6 +391,8 @@ object Dependencies {
   private def visitTrait(trt: TypedAst.Trait): List[(SourceLocation, SourceLocation)] =
     trt.superTraits.flatMap(visitTraitConstraint) ++ trt.assocs.flatMap(visitAssocTypeSig) ++ trt.sigs.flatMap(visitSig) ++ trt.laws.flatMap(visitDef)
 
+  private def visitTypeAlias(typeAlias: TypedAst.TypeAlias): List[(SourceLocation, SourceLocation)] =
+    visitType(typeAlias.tpe)
 
   //  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit deps: MultiMap[String, String]): Unit = {
 //    deps += (src.sp1.source.input, dst.sp1.source.input)
