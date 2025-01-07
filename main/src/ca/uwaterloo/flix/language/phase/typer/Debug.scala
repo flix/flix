@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import java.nio.file.{Files, Path}
+import java.util.concurrent.{Executors, TimeUnit, TimeoutException}
 
 /**
   * Debugging utilities for typing constraints.
@@ -129,6 +130,19 @@ object Debug {
         "invisR -> root [style=\"invis\"];" ::
         List("}")
       ).mkString("\n"))
+  }
+
+  /**
+    * Executes the function `f`, timing out after `limitMs` milliseconds.
+    */
+  private def runWithTimeout[A](limitMs: Int)(f: () => A): Option[A] = {
+    val executor = Executors.newSingleThreadExecutor();
+    val future = executor.submit(() => f())
+    try {
+      Some(future.get(limitMs, TimeUnit.MILLISECONDS))
+    } catch {
+      case _: TimeoutException => None
+    }
   }
 
   /**
