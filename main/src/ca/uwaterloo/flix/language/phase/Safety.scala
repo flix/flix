@@ -42,7 +42,7 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Sig = {
     val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.map(visitExp(_)(inTryCatch = false, renv, flix, sctx)).getOrElse(Nil)
+    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, flix, sctx))
     sig
   }
 
@@ -144,14 +144,13 @@ object Safety {
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       // check whether the last case in the type match looks like `..: _`
-      val missingDefault = rules.lastOption match {
+      rules.lastOption match {
         // Use top scope since the rigidity check only cares if it's a syntactically known variable
         case Some(TypeMatchRule(_, Type.Var(sym, _), _)) if renv.isFlexible(sym)(Scope.Top) =>
-          Nil
+          ()
         case Some(_) | None =>
-          List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
+          sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
       }
-      missingDefault.foreach(sctx.errors.add)
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
@@ -249,10 +248,10 @@ object Safety {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
-      val nestedTryCatchError = if (inTryCatch) List(IllegalNestedTryCatch(loc)) else Nil
-      nestedTryCatchError.foreach(sctx.errors.add)
+      if (inTryCatch) sctx.errors.add(IllegalNestedTryCatch(loc))
       visitExp(exp)(inTryCatch = true, renv, flix, sctx)
-      rules.foreach { case CatchRule(bnd, clazz, e) => checkCatchClass(clazz, bnd.sym.loc)
+      rules.foreach { case CatchRule(bnd, clazz, e) =>
+        checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }
 
@@ -262,11 +261,7 @@ object Safety {
       checkThrow(exp)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-      val effectErrors = {
-        if (Symbol.isPrimitiveEff(effUse.sym)) List(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
-        else Nil
-      }
-      effectErrors.foreach(sctx.errors.add)
+      if (Symbol.isPrimitiveEff(effUse.sym)) sctx.errors.add(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
@@ -327,12 +322,7 @@ object Safety {
       default.map(visitExp).getOrElse(Nil)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      val illegalSpawnEffect = {
-        if (hasControlEffects(exp1.eff)) List(IllegalSpawnEffect(exp1.eff, exp1.loc))
-        else Nil
-      }
-
-      illegalSpawnEffect.foreach(sctx.errors.add)
+      if (hasControlEffects(exp1.eff)) sctx.errors.add(IllegalSpawnEffect(exp1.eff, exp1.loc))
       visitExp(exp1)
       visitExp(exp2)
 
