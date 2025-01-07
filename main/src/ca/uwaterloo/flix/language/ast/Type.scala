@@ -477,6 +477,13 @@ object Type {
   val Difference: Type = Type.Cst(TypeConstructor.Difference, SourceLocation.Unknown)
 
   /**
+    * Represents the Symmetric Difference type constructor.
+    *
+    * NB: This type has kind: Eff -> (Eff -> Eff).
+    */
+  val SymmetricDiff: Type = Type.Cst(TypeConstructor.SymmetricDiff, SourceLocation.Unknown)
+
+  /**
     * Represents the True Boolean algebra value.
     */
   val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)

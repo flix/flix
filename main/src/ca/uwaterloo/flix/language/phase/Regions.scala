@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
 
@@ -378,13 +378,16 @@ object Regions {
       * where `trueVars` are the variables ascribed the value TRUE,
       * and all other variables are ascribed the value FALSE.
       */
-    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
-      case Type.Pure => true
-      case Type.Univ => false
-      case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
-      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
-      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
-      case tvar: Type.Var => trueVars.contains(tvar)
+    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): CofiniteEffSet = tpe match {
+      case Type.Pure => CofiniteEffSet.empty
+      case Type.Univ => CofiniteEffSet.universe
+      case Type.Cst(TypeConstructor.Effect(sym), _) => CofiniteEffSet.mkSet(sym)
+      case Type.Apply(Type.Complement, x, _) => CofiniteEffSet.complement(eval(x, trueVars))
+      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => CofiniteEffSet.union(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => CofiniteEffSet.intersection(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.Difference, x1, _), x2, _) => CofiniteEffSet.difference(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.SymmetricDiff, x1, _), x2, _) => CofiniteEffSet.xor(eval(x1, trueVars), eval(x2, trueVars))
+      case tvar: Type.Var => if (trueVars.contains(tvar)) CofiniteEffSet.universe else CofiniteEffSet.empty
       case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
 
