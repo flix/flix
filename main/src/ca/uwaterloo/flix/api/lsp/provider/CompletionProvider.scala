@@ -52,7 +52,7 @@ object CompletionProvider {
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedName =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn, err.loc)
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
             AutoUseCompleter.getCompletions(err) ++

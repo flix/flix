@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn, Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -239,10 +240,10 @@ object CompletionUtils {
     *   - Source "A.B.C", QName(["A", "B"], "C") -> ("A.B", "C")
     *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
     */
-  def getNamespaceAndIdentFromQName(qn: QName, loc: SourceLocation): (List[String], String) = {
-    val ident = if (followedByDot(loc)) "" else qn.ident.name
+  def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
+    val ident = if (followedByDot(qn.loc)) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
-      if (followedByDot(loc)) List(qn.ident.name)
+      if (followedByDot(qn.loc)) List(qn.ident.name)
       else Nil
     }
     (namespace, ident)
@@ -251,7 +252,7 @@ object CompletionUtils {
   /**
     * Returns true if the character immediately following the location is a dot.
     * Note:
-    *   - loc.endCol will point to the next character after QName.
+    *   - loc.endCol will point to the next character after QName. That's exactly what we want to check.
     *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
     */
   private def followedByDot(loc: SourceLocation): Boolean = {
