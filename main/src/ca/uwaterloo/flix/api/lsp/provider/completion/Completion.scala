@@ -274,10 +274,11 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
         label               = label,
         labelDetails        = Some(labelDetails),
-        sortText            = Priority.toSortText(Priority.Lower, qualifiedName),
+        sortText            = Priority.toSortText(priority, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(context.range, snippet),
         detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
