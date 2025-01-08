@@ -607,6 +607,9 @@ class Flix {
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
 
+              // We record that no files are dirty in the change set.
+              this.changeSet = ChangeSet.Dirty(Set.empty)
+
               // We save all the current errors.
               this.cachedErrors = errors.toList
             }
