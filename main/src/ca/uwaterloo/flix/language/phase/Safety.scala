@@ -42,14 +42,14 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Sig = {
     val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, flix, sctx))
+    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, sctx, flix))
     sig
   }
 
   /** Checks the safety and well-formedness of `defn`. */
-  private def visitDef(defn: Def)(implicit flix: Flix, sctx: SharedContext): Def = {
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     val renv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    visitExp(defn.exp)(inTryCatch = false, renv, flix, sctx)
+    visitExp(defn.exp)(inTryCatch = false, renv, sctx, flix)
     defn
   }
 
@@ -65,7 +65,7 @@ object Safety {
     * @param inTryCatch indicates whether `exp` is enclosed in a try-catch. This can be reset if the
     *                   expression will later be extracted to its own function (e.g [[Expr.Lambda]]).
     */
-  private def visitExp(exp0: Expr)(implicit inTryCatch: Boolean, renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
       ()
 
@@ -86,7 +86,7 @@ object Safety {
 
     case Expr.Lambda(_, exp, _, _) =>
       // `exp` will be in its own function, so `inTryCatch` is reset.
-      visitExp(exp)(inTryCatch = false, renv, flix, sctx)
+      visitExp(exp)(inTryCatch = false, renv, sctx, flix)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -114,7 +114,7 @@ object Safety {
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       // `exp1` will be its own function, so `inTryCatch` is reset.
-      visitExp(exp1)(inTryCatch = false, renv, flix, sctx)
+      visitExp(exp1)(inTryCatch = false, renv, sctx, flix)
       visitExp(exp2)
 
     case Expr.Region(_, _) =>
@@ -189,17 +189,17 @@ object Safety {
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.ArrayLoad(base, index, _, _, _) =>
-      visitExp(base)
-      visitExp(index)
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.ArrayLength(base, _, _) =>
       visitExp(base)
 
-    case Expr.ArrayStore(base, index, elm, _, _) =>
-      visitExp(base)
-      visitExp(index)
-      visitExp(elm)
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
       fields.foreach { case (_, exp) => visitExp(exp) }
@@ -208,9 +208,9 @@ object Safety {
     case Expr.StructGet(e, _, _, _, _) =>
       visitExp(e)
 
-    case Expr.StructPut(e1, _, e2, _, _, _) =>
-      visitExp(e1)
-      visitExp(e2)
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.VectorLit(elms, _, _, _) =>
       elms.foreach(visitExp)
@@ -248,8 +248,11 @@ object Safety {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
-      if (inTryCatch) sctx.errors.add(IllegalNestedTryCatch(loc))
-      visitExp(exp)(inTryCatch = true, renv, flix, sctx)
+      // Check for [[IllegalNestedTryCatch]]
+      if (inTryCatch) {
+        sctx.errors.add(IllegalNestedTryCatch(loc))
+      }
+      visitExp(exp)(inTryCatch = true, renv, sctx, flix)
       rules.foreach { case CatchRule(bnd, clazz, e) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
@@ -261,7 +264,10 @@ object Safety {
       checkThrow(exp)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-      if (Symbol.isPrimitiveEff(effUse.sym)) sctx.errors.add(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
+      // Check for [[PrimitiveEffectInTryWith]]
+      if (Symbol.isPrimitiveEff(effUse.sym)) {
+        sctx.errors.add(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
+      }
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
@@ -372,7 +378,7 @@ object Safety {
   }
 
   /** Checks if `cast` is legal. */
-  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit flix: Flix, sctx: SharedContext): Unit = cast match {
+  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
       val from = exp.tpe
       val to = tpe
@@ -437,7 +443,7 @@ object Safety {
     *   - No primitive type can be cast to a reference type and vice-versa.
     *   - No Bool type can be cast to a non-Bool type and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix, sctx: SharedContext): Unit = cast match {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
     case Expr.UncheckedCast(exp, declaredType, _, _, _, loc) =>
       val from = exp.tpe
       val to = declaredType
@@ -478,7 +484,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `c`. */
-  private def checkConstraint(c: Constraint)(implicit inTryCatch: Boolean, renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = {
+  private def checkConstraint(c: Constraint)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
     val posVars = positivelyDefinedVariables(c)
 
@@ -567,9 +573,10 @@ object Safety {
 
   /** Returns a non-positively bound variable error, depending on `sym.isWild`. */
   private def mkIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    val err = if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc)
-    else IllegalNonPositivelyBoundVar(sym, loc)
-    sctx.errors.add(err)
+    if (sym.isWild)
+      sctx.errors.add(IllegalNegativelyBoundWildVar(sym, loc))
+    else
+      sctx.errors.add(IllegalNonPositivelyBoundVar(sym, loc))
   }
 
   /** Returns all the free and positively defined variable symbols in the given constraint `c`. */
@@ -649,7 +656,9 @@ object Safety {
     * @param loc   the location of the catch parameter.
     */
   private def checkCatchClass(clazz: Class[?], loc: SourceLocation )(implicit sctx: SharedContext): Unit =
-    if (!isThrowable(clazz)) sctx.errors.add(IllegalCatchType(loc))
+    if (!isThrowable(clazz)) {
+      sctx.errors.add(IllegalCatchType(loc))
+    }
 
   /** Returns `true` if `clazz` is [[java.lang.Throwable]] or a subclass of it. */
   private def isThrowable(clazz: Class[?]): Boolean =
@@ -683,11 +692,14 @@ object Safety {
     case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz))
+      if (! clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
+      }
 
       // `clazz` must be public.
-      if (!isPublicClass(clazz)) sctx.errors.add(NewObjectNonPublicClass(clazz, loc))
+      if (!isPublicClass(clazz)) {
+        sctx.errors.add(NewObjectNonPublicClass(clazz, loc))
+      }
 
       // `methods` must take the object itself (`this`) as the first argument.
       methods.foreach {
