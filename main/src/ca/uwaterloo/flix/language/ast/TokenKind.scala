@@ -86,8 +86,8 @@ sealed trait TokenKind {
       case TokenKind.KeywordForeach => "'foreach'"
       case TokenKind.KeywordForM => "'forM'"
       case TokenKind.KeywordFrom => "'from'"
-      case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordHandler => "'handler'"
+      case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordImport => "'import'"
       case TokenKind.KeywordInject => "'inject'"
       case TokenKind.KeywordInline => "'inline'"
@@ -240,8 +240,8 @@ sealed trait TokenKind {
     case TokenKind.KeywordForeach => true
     case TokenKind.KeywordForM => true
     case TokenKind.KeywordFrom => true
-    case TokenKind.KeywordIf => true
     case TokenKind.KeywordHandler => true
+    case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
     case TokenKind.KeywordInline => true
@@ -494,8 +494,8 @@ sealed trait TokenKind {
          | TokenKind.KeywordForM
          | TokenKind.KeywordForce
          | TokenKind.KeywordForeach
-         | TokenKind.KeywordIf
          | TokenKind.KeywordHandler
+         | TokenKind.KeywordIf
          | TokenKind.KeywordImport
          | TokenKind.KeywordInject
          | TokenKind.KeywordLazy

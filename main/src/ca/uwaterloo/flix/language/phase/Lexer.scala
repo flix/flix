@@ -446,8 +446,8 @@ object Lexer {
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("handler") => TokenKind.KeywordHandler
+      case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
       case _ if isKeyword("inline") => TokenKind.KeywordInline
