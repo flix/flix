@@ -57,51 +57,58 @@ mod Random {
     ///
     /// Handles the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `IO` effect.
+    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
-        let rnd = new JRandom(); // Reuse Random instance.
-        x -> run {
-            f(x)
-        } with handler Random {
-            def randomBool(k)       = k(rnd.nextBoolean())
-            def randomFloat32(k)    = k(rnd.nextFloat())
-            def randomFloat64(k)    = k(rnd.nextDouble())
-            def randomInt32(k)      = k(rnd.nextInt())
-            def randomInt64(k)      = k(rnd.nextLong())
-            def randomGaussian(k)   = k(rnd.nextGaussian())
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Random) + {NonDet, IO} =
+        x -> {
+            let rnd = new JRandom(); // Reuse Random instance.
+            run {
+                f(x)
+            } with handler Random {
+                def randomBool(k)       = k(rnd.nextBoolean())
+                def randomFloat32(k)    = k(rnd.nextFloat())
+                def randomFloat64(k)    = k(rnd.nextDouble())
+                def randomInt32(k)      = k(rnd.nextInt())
+                def randomInt64(k)      = k(rnd.nextLong())
+                def randomGaussian(k)   = k(rnd.nextGaussian())
+            }
         }
 
     ///
     /// Runs the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `IO` effect.
+    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + {NonDet, IO} = handle(f)()
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): (a -> b \ (ef - Random) + IO) \ IO =
-        let rnd = new JRandom(seed); // Reuse Random instance.
-        x -> run {
-            f(x)
-        } with handler Random {
-            def randomBool(k)       = k(rnd.nextBoolean())
-            def randomFloat32(k)    = k(rnd.nextFloat())
-            def randomFloat64(k)    = k(rnd.nextDouble())
-            def randomInt32(k)      = k(rnd.nextInt())
-            def randomInt64(k)      = k(rnd.nextLong())
-            def randomGaussian(k)   = k(rnd.nextGaussian())
+    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): a -> b \ ef - Random = {
+        // Given a specifc seed, JRandom is just a mutable iterator and therefore we type it as such.
+        x -> region local {
+            let _ = local; // avoid redundancy check
+            let rnd = unchecked_cast (new JRandom(seed) as _ \ local);
+            run {
+                f(x)
+            } with handler Random {
+                def randomBool(k)       = k(unchecked_cast (rnd.nextBoolean() as _ \ local))
+                def randomFloat32(k)    = k(unchecked_cast (rnd.nextFloat() as _ \ local))
+                def randomFloat64(k)    = k(unchecked_cast (rnd.nextDouble() as _ \ local))
+                def randomInt32(k)      = k(unchecked_cast (rnd.nextInt() as _ \ local))
+                def randomInt64(k)      = k(unchecked_cast (rnd.nextLong() as _ \ local))
+                def randomGaussian(k)   = k(unchecked_cast (rnd.nextGaussian() as _ \ local))
+            }
         }
+    }
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ (ef - Random) + IO = handleWithSeed(seed, f)()
+    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ ef - Random = handleWithSeed(seed, f)()
 
 }

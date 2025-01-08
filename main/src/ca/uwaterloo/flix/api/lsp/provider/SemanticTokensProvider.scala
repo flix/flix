@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jacob Harris Cryer Kragh, Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -507,7 +508,7 @@ object SemanticTokensProvider {
       visitType(runEff) ++ visitExp(exp)
 
     case Expr.Without(exp, eff, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -521,7 +522,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.Handler(eff, rules, _, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp)) =>

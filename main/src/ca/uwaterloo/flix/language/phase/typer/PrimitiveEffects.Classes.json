@@ -36,6 +36,7 @@
     "java.net.spi.URLStreamHandlerProvider": "Net, IO",
 
     "java.lang.Runtime": "Sys, IO",
-    "java.lang.System": "Sys, IO"
+    "java.lang.System": "Sys, IO",
+    "java.util.Random": "NonDet, IO"
   }
 }

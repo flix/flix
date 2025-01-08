@@ -89,8 +89,12 @@ object Lexer {
       */
     var prevWidth: Int = -1
 
-    /** The building list of tokens produced. */
-    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+    /**
+      * The sequence of tokens produced by the lexer.
+      *
+      * Note: The initial size of the array buffer has been determined by careful profiling.
+      */
+    val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
     /** The current interpolation nesting level.
       *
@@ -324,7 +328,7 @@ object Lexer {
       new Position(s.current.line, s.current.column, s.current.offset)
     }
     val e = SourcePosition(s.src, end.line + 1, (end.column + 1).toShort)
-    s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
+    s.tokens.append(Token(kind, s.src, s.start.offset, s.current.offset, b, e))
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 

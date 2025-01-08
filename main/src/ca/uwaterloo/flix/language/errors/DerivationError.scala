@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
-  val kind: String = "Derivation Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.DerivationError
 }
 
 object DerivationError {

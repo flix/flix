@@ -36,7 +36,7 @@ object ImportCompleter {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")
       }
-      Completion.ImportCompletion(label)
+      Completion.ImportCompletion(label, isPackage = clazz.head.isLower)
     })
   }
 }

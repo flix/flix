@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -714,8 +715,8 @@ object ConstraintGen {
         // e without effSym : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
-        c.unifyType(eff, effWithoutSym, effSymUse.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.qname.loc), effSymUse.qname.loc)
+        c.unifyType(eff, effWithoutSym, effSymUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -758,9 +759,9 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
+        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, effUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
         val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
         val resultEff = Type.Pure
