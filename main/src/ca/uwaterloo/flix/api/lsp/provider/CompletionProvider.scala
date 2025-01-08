@@ -57,7 +57,8 @@ object CompletionProvider {
             LocalScopeCompleter.getCompletions(err) ++
             AutoUseCompleter.getCompletions(err) ++
             ExprCompleter.getCompletions(ctx) ++
-            DefCompleter.getCompletions(err, namespace, ident)
+            DefCompleter.getCompletions(err, namespace, ident) ++
+            EnumCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err) ++ TypeCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)

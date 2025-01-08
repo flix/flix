@@ -259,4 +259,16 @@ object CompletionUtils {
     val line = loc.lineAt(loc.endLine)
     loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
   }
+
+  /**
+   * Checks if the namespace and ident from the error matches the qualified name.
+   * We require a full match on the namespace and a fuzzy match on the ident.
+   *
+   * Example:
+   *   matchesQualifiedName("A.B.fooBar", "A.B", "fB") => true
+   */
+  def matchesQualifiedName(qualifiedName: String, namespace: List[String], ident: String): Boolean = {
+    val nsString = namespace.mkString(".")
+    qualifiedName.startsWith(nsString) && fuzzyMatch(ident, qualifiedName.substring(nsString.length + 1))
+  }
 }

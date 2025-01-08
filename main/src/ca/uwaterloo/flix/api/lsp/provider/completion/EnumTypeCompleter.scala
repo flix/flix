@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTypeCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
 import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumTypeCompleter {
 
-  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumTypeCompletion] = {
     val enumsInModule = getEnumSymsInModule(ctx)
     getEnumCompletions(enumsInModule, ctx)
   }
@@ -51,14 +51,14 @@ object EnumTypeCompleter {
     sym.name.startsWith(suffix)
   }
 
-  private def getEnumCompletions(enums: List[Symbol.EnumSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+  private def getEnumCompletions(enums: List[Symbol.EnumSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumTypeCompletion] = {
     enums.map(sym => getEnumCompletion(root.enums(sym), ctx))
   }
 
-  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
+  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumTypeCompletion = {
     val sym = decl.sym
     val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.EnumCompletion(sym, formatTParams(decl.tparams), internalPriority,
+    Completion.EnumTypeCompletion(sym, formatTParams(decl.tparams), internalPriority,
       TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
   }
 
