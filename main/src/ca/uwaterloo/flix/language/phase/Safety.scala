@@ -33,16 +33,18 @@ object Safety {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val (staleSigs, freshSigs) = changeSet.partition(root.sigs, oldRoot.sigs)
+    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
     val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
-    val sigs = freshSigs ++ ParOps.parMapValues(staleSigs)(visitSig)
+    val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
     ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
-    ParOps.parMap(root.traits.values.flatMap(_.sigs))(visitSig)
 
-
-    (root.copy(defs = defs, sigs = sigs), sctx.errors.asScala.toList)
+    (root.copy(defs = defs, traits = traits), sctx.errors.asScala.toList)
   }
 
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+    val sigs = trt.sigs.map(visitSig)
+    trt.copy(sigs = sigs)
+  }
 
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Sig = {
