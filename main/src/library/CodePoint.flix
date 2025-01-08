@@ -47,20 +47,20 @@ mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a letter character.
     ///
     pub def isLetter(cp: Int32): Bool =
-        unsafe Character.isLetter(cp)
+        Character.isLetter(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(cp: Int32): Bool =
-        unsafe Character.isDigit(cp)
+        Character.isDigit(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(cp: Int32): Bool =
-        unsafe Character.isLetterOrDigit(cp)
+        Character.isLetterOrDigit(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a character strictly in the
@@ -89,31 +89,31 @@ mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a lowercase letter.
     ///
     pub def isLowerCase(cp: Int32): Bool =
-        unsafe Character.isLowerCase(cp)
+        Character.isLowerCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents an uppercase letter.
     ///
     pub def isUpperCase(cp: Int32): Bool =
-        unsafe Character.isUpperCase(cp)
+        Character.isUpperCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a titlecase letter.
     ///
     pub def isTitleCase(cp: Int32): Bool =
-        unsafe Character.isTitleCase(cp)
+        Character.isTitleCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a white space character.
     ///
     pub def isWhiteSpace(cp: Int32): Bool =
-        unsafe Character.isWhitespace(cp)
+        Character.isWhitespace(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents an alphabetic character.
     ///
     pub def isAlphabetic(cp: Int32): Bool =
-        unsafe Character.isAlphabetic(cp)
+        Character.isAlphabetic(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is within Unicode's Basic Multilingual Plane.
@@ -121,7 +121,7 @@ mod CodePoint {
     /// If the code point is within the BMP it can be represented by Flix's `Char` datatype.
     ///
     pub def isBmpCodePoint(cp: Int32): Bool =
-        unsafe Character.isBmpCodePoint(cp)
+        Character.isBmpCodePoint(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is defined either as a entry in the
@@ -135,31 +135,31 @@ mod CodePoint {
     /// or Vietnamese ideograph.
     ///
     pub def isIdeographic(cp: Int32): Bool =
-        unsafe Character.isIdeographic(cp)
+        Character.isIdeographic(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is an ISO control character.
     ///
     pub def isISOControl(cp: Int32): Bool =
-        unsafe Character.isISOControl(cp)
+        Character.isISOControl(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is mirrored.
     ///
     pub def isMirrored(cp: Int32): Bool =
-        unsafe Character.isMirrored(cp)
+        Character.isMirrored(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is in Unicode's supplementary character range.
     ///
     pub def isSupplementaryCodePoint(cp: Int32): Bool =
-        unsafe Character.isSupplementaryCodePoint(cp)
+        Character.isSupplementaryCodePoint(cp)
 
     ///
     /// Returns `true` if the code point `cp` is between `U+0000` and `U+10FFFF`.
     ///
     pub def isValidCodePoint(cp: Int32): Bool =
-        unsafe Character.isValidCodePoint(cp)
+        Character.isValidCodePoint(cp)
 
     ///
     /// Converts a code point representing a letter to its lowercase version.
@@ -208,7 +208,7 @@ mod CodePoint {
     /// This function handles supplementary characters.
     ///
     pub def getNumericValue(cp: Int32): Option[Int32] =
-        match unsafe Character.getNumericValue(cp) {
+        match Character.getNumericValue(cp) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -219,7 +219,7 @@ mod CodePoint {
     /// The answer is either 2 for a supplementary character or 1 for any other character.
     ///
     pub def charCount(cp: Int32): Int32 =
-        unsafe Character.charCount(cp)
+        Character.charCount(cp)
 
     ///
     /// Optionally returns a vector of Chars representing the code point `cp`.
@@ -289,7 +289,7 @@ mod CodePoint {
     ///
     pub def highSurrogate(cp: Int32): Option[Char] =
         if (isSupplementaryCodePoint(cp))
-            Some(unsafe Character.highSurrogate(cp))
+            Some(Character.highSurrogate(cp))
         else
             None
 
@@ -299,7 +299,7 @@ mod CodePoint {
     ///
     pub def lowSurrogate(cp: Int32): Option[Char] =
         if (isSupplementaryCodePoint(cp))
-            Some(unsafe Character.lowSurrogate(cp))
+            Some(Character.lowSurrogate(cp))
         else
             None
 
