@@ -4,6 +4,10 @@
     "java.lang.Character::toString": "IO",
     "java.lang.Character::codePointAt": "IO",
     "java.lang.Character::codePointBefore": "IO",
+    "java.lang.Character::toChars": "IO",
+    "java.lang.Character::codePointCount": "IO",
+    "java.lang.Character::offsetByCodePoints": "IO",
+    "java.lang.Character::isDefined": "FsRead, IO",
 
     "java.lang.Runtime::availableProcessors": "Env, IO",
     "java.lang.Runtime::freeMemory": "Env, IO",
