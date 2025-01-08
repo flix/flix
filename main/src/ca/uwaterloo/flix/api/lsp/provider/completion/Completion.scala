@@ -140,16 +140,6 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.EnumTypeCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(
-        label            = s"${enumSym.toString}$nameSuffix",
-        sortText         = Priority.toSortText(priority, enumSym.name),
-        textEdit         = textEdit,
-        documentation    = documentation,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
     case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(
         label            = s"${structSym.toString}$nameSuffix",
@@ -591,18 +581,6 @@ object Completion {
     * @param priority  the priority of the type.
     */
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
-
-  /**
-    * Represents a type completion for enum
-    *
-    * @param enumSym       the enum symbol.
-    * @param nameSuffix    the suffix for the name of the Enum.
-    * @param priority      the priority of the Enum.
-    * @param textEdit      the edit which is applied to a document when selecting this completion.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class EnumTypeCompletion(enumSym: EnumSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
-                                documentation: Option[String]) extends Completion
 
   /**
     * Represents a type completion for struct

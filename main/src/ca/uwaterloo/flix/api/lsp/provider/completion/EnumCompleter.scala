@@ -19,28 +19,35 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Enum
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EnumCompleter {
   /**
     * Returns a List of Completion for enums.
-    * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
+    * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
   def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
+  def getCompletions(err: ResolutionError.UndefinedType, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
       root.enums.values.collect{
-        case enum if matchesEff(enum, namespace, ident, err.loc.source.name, qualified = true) =>
-          EnumCompletion(enum, err.ap, qualified = true, inScope = true)
+        case enum if matchesEnum(enum, namespace, ident, uri, qualified = true) =>
+          EnumCompletion(enum, ap, qualified = true, inScope = true)
       }
     else
       root.enums.values.collect({
-        case enum if matchesEff(enum, namespace, ident, err.loc.source.name, qualified = false) =>
-          EnumCompletion(enum, err.ap, qualified = false, inScope = inScope(enum, err.env))
+        case enum if matchesEnum(enum, namespace, ident, uri, qualified = false) =>
+          EnumCompletion(enum, ap, qualified = false, inScope = inScope(enum, env))
       })
   }
-
 
   /**
    * Checks if the definition is in scope.
@@ -60,13 +67,13 @@ object EnumCompleter {
    * Checks if the definition matches the QName.
    * Names should match and the definition should be available.
    */
-  private def matchesEff(eff: TypedAst.Enum, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = eff.mod.isPublic && !eff.ann.isInternal
-    val isInFile = eff.sym.loc.source.name == uri
+  private def matchesEnum(enm: TypedAst.Enum, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = enm.mod.isPublic && !enm.ann.isInternal
+    val isInFile = enm.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      matchesQualifiedName(eff.sym.toString, namespace, ident)
+      matchesQualifiedName(enm.sym.toString, namespace, ident)
     else
-      fuzzyMatch(ident, eff.sym.name)
+      fuzzyMatch(ident, enm.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

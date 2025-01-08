@@ -269,6 +269,6 @@ object CompletionUtils {
    */
   def matchesQualifiedName(qualifiedName: String, namespace: List[String], ident: String): Boolean = {
     val nsString = namespace.mkString(".")
-    qualifiedName.startsWith(nsString) && fuzzyMatch(ident, qualifiedName.substring(nsString.length + 1))
+    qualifiedName.length > nsString.length + 1 && qualifiedName.startsWith(nsString) && fuzzyMatch(ident, qualifiedName.substring(nsString.length + 1))
   }
 }

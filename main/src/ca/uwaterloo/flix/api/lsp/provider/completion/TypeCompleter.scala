@@ -24,7 +24,6 @@ object TypeCompleter {
     */
   def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     ModuleCompleter.getCompletions(context) ++
-      EnumTypeCompleter.getCompletions(context) ++
       StructTypeCompleter.getCompletions(context) ++
       TypeAliasCompleter.getCompletions(context) ++
       TypeBuiltinCompleter.getCompletions
