@@ -1,11 +1,20 @@
 {
   "methods": {
     "java.lang.Boolean::getBoolean": "Env, IO",
-
+    "java.lang.Runtime::getRuntime": "IO",
+    "java.lang.Runtime::exit": "Sys, IO",
+    "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
+    "java.lang.Runtime::removeShutdownHook": "Sys, IO",
+    "java.lang.Runtime::halt": "Sys, IO",
+    "java.lang.Runtime::exec": "Env, Exec, IO",
     "java.lang.Runtime::availableProcessors": "Env, IO",
-    "java.lang.Runtime::freeMemory": "Env, IO",
-    "java.lang.Runtime::totalMemory": "Env, IO",
+    "java.lang.Runtime::freeMemory": "Env, NonDet, IO",
+    "java.lang.Runtime::totalMemory": "Env, NonDet, IO",
     "java.lang.Runtime::maxMemory": "Env, IO",
+    "java.lang.Runtime::gc": "Sys, IO",
+    "java.lang.Runtime::runFinalization": "Sys, IO",
+    "java.lang.Runtime::load": "Exec, Sys, IO",
+    "java.lang.Runtime::loadLibrary": "Exec, Sys, IO",
     "java.lang.Runtime::version": "Env",
     "java.lang.System::console": "IO",
     "java.lang.System::currentTimeMillis": "IO",
