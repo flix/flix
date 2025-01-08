@@ -351,15 +351,7 @@ object Parser2 {
     * found token if possible.
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
-    nthAnyOpt(0, kinds)
-  }
-
-  /**
-    * Checks if the parser is at a token of kind in `kinds` with `lookahead` and returns the
-    * found token if possible.
-    */
-  private def nthAnyOpt(lookahead: Int, kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
-    val token = nth(lookahead)
+    val token = nth(0)
     Some(token).filter(kinds.contains)
   }
 
