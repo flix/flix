@@ -692,7 +692,7 @@ object Safety {
     case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (! clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
+      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
