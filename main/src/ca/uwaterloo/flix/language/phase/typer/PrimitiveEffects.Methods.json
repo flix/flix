@@ -8,6 +8,11 @@
     "java.lang.Character::codePointCount": "IO",
     "java.lang.Character::offsetByCodePoints": "IO",
     "java.lang.Character::isDefined": "FsRead, IO",
+    "java.lang.Character::toLowerCase": "FsRead, IO",
+    "java.lang.Character::toUpperCase": "FsRead, IO",
+    "java.lang.Character::toTitleCase": "FsRead, IO",
+    "java.lang.Character::getName": "IO",
+    "java.lang.Character::codePointOf": "FsRead, IO",
 
     "java.lang.Runtime::availableProcessors": "Env, IO",
     "java.lang.Runtime::freeMemory": "Env, IO",
