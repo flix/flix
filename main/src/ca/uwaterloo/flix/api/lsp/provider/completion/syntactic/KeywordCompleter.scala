@@ -43,6 +43,8 @@ object KeywordCompleter {
       // E
       Completion.KeywordCompletion("eff"              , Priority.Low),
       Completion.KeywordCompletion("enum"             , Priority.High),
+      // H
+      Completion.KeywordCompletion("handler"          , Priority.Default),
       // I
       Completion.KeywordCompletion("import"           , Priority.Low),
       Completion.KeywordCompletion("instance"         , Priority.High),
