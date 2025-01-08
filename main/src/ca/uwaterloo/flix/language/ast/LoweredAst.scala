@@ -158,8 +158,6 @@ object LoweredAst {
 
     case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
-
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, tpe: Type, loc: SourceLocation)
     }

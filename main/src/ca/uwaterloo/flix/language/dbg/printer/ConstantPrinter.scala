@@ -39,6 +39,7 @@ object ConstantPrinter {
     case Constant.BigInt(lit) => Expr.AsIs(s"${lit}ii")
     case Constant.Str(lit) => Expr.AsIs("\"\"\"" + lit + "\"\"\"")
     case Constant.Regex(lit) => Expr.Regex(lit)
+    case Constant.RecordEmpty => Expr.RecordEmpty
   }
 
 }

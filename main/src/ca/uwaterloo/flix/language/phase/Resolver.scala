@@ -1064,9 +1064,6 @@ object Resolver {
         es => ResolvedAst.Expr.Tuple(es, loc)
       }
 
-    case NamedAst.Expr.RecordEmpty(loc) =>
-      Validation.Success(ResolvedAst.Expr.RecordEmpty(loc))
-
     case NamedAst.Expr.RecordSelect(base, label, loc) =>
       val bVal = resolveExp(base, env0)
       mapN(bVal) {
@@ -1818,9 +1815,6 @@ object Resolver {
         val p = visit(pat)
         ResolvedAst.Pattern.Record(ps, p, loc)
 
-      case NamedAst.Pattern.RecordEmpty(loc) =>
-        ResolvedAst.Pattern.RecordEmpty(loc)
-
       case NamedAst.Pattern.Error(loc) =>
         ResolvedAst.Pattern.Error(loc)
     }
@@ -1875,9 +1869,6 @@ object Resolver {
         }
         val p = visit(pat)
         ResolvedAst.Pattern.Record(ps, p, loc)
-
-      case NamedAst.Pattern.RecordEmpty(loc) =>
-        ResolvedAst.Pattern.RecordEmpty(loc)
 
       case NamedAst.Pattern.Error(loc) =>
         ResolvedAst.Pattern.Error(loc)
@@ -3431,7 +3422,6 @@ object Resolver {
     case ResolvedAst.Pattern.Tag(_, pats, _) => mkPatternsEnv(pats)
     case ResolvedAst.Pattern.Tuple(elms, _) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
-    case ResolvedAst.Pattern.RecordEmpty(_) => LocalScope.empty
     case ResolvedAst.Pattern.Error(_) => LocalScope.empty
   }
 
