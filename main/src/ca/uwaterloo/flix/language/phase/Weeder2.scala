@@ -1804,10 +1804,7 @@ object Weeder2 {
 
     private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithBodyExpr)
-      val e0 = pickExpr(tree)
-      mapN(e0) {
-        case e => e
-      }
+      pickExpr(tree)
     }
 
     private def visitTryWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
