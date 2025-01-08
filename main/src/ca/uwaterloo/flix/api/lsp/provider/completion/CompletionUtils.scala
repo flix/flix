@@ -265,10 +265,9 @@ object CompletionUtils {
    * We require a full match on the namespace and a fuzzy match on the ident.
    *
    * Example:
-   *   matchesQualifiedName("A.B.fooBar", "A.B", "fB") => true
+   *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
    */
-  def matchesQualifiedName(qualifiedName: String, namespace: List[String], ident: String): Boolean = {
-    val nsString = namespace.mkString(".")
-    qualifiedName.length > nsString.length + 1 && qualifiedName.startsWith(nsString) && fuzzyMatch(ident, qualifiedName.substring(nsString.length + 1))
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, namespace: List[String], ident: String): Boolean = {
+    targetNamespace == namespace && fuzzyMatch(ident, targetIdent)
   }
 }

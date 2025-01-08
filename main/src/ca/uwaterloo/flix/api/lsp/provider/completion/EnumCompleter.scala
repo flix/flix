@@ -71,7 +71,7 @@ object EnumCompleter {
     val isPublic = enm.mod.isPublic && !enm.ann.isInternal
     val isInFile = enm.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      matchesQualifiedName(enm.sym.toString, namespace, ident)
+      matchesQualifiedName(enm.sym.namespace, enm.sym.name, namespace, ident)
     else
       fuzzyMatch(ident, enm.sym.name)
     isMatch && (isPublic || isInFile)

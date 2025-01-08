@@ -63,7 +63,7 @@ object DefCompleter {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      matchesQualifiedName(decl.sym.toString, namespace, ident)
+      matchesQualifiedName(decl.sym.namespace, decl.sym.name, namespace, ident)
     else
       fuzzyMatch(ident, decl.sym.name)
     isMatch && (isPublic || isInFile)
