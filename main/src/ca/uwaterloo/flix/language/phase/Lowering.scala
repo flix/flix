@@ -617,7 +617,10 @@ object Lowering {
       LoweredAst.Expr.Lambda(param, tryWith, t, loc)
 
     case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
-      val thunk = LoweredAst.Expr.Lambda(LoweredAst.FormalParam(Symbol.freshVarSym("_runwith", BoundBy.FormalParam, loc.asSynthetic), Modifiers.Empty, Type.Unit, TypeSource.Inferred, loc.asSynthetic), visitExp(exp1), Type.mkArrowWithEffect(Type.Unit, exp1.eff, exp1.tpe, loc.asSynthetic), loc.asSynthetic)
+      // run exp1 with exp2 ----> exp2(() -> exp1)
+      val unitParam = LoweredAst.FormalParam(Symbol.freshVarSym("_runwith", BoundBy.FormalParam, loc.asSynthetic), Modifiers.Empty, Type.Unit, TypeSource.Inferred, loc.asSynthetic)
+      val thunkType = Type.mkArrowWithEffect(Type.Unit, exp1.eff, exp1.tpe, loc.asSynthetic)
+      val thunk = LoweredAst.Expr.Lambda(unitParam, visitExp(exp1), thunkType, loc.asSynthetic)
       LoweredAst.Expr.ApplyClo(visitExp(exp2), thunk, tpe, eff, loc)
 
     case TypedAst.Expr.Do(sym, exps, tpe, eff, loc) =>
