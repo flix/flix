@@ -200,7 +200,7 @@ mod CodePoint {
         }
 
     ///
-    /// Returns the integer value representated by the code point `cp` e.g. code point 0x0031
+    /// Returns the integer value represented by the code point `cp` e.g. code point 0x0031
     /// which is the char '1' returns `Some(1)`.
     ///
     /// Returns `None` if `cp` does not represent a number.
