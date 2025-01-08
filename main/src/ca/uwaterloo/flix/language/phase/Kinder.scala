@@ -622,13 +622,13 @@ object Kinder {
       val rules = rules0.map(visitHandlerRule(_, kenv0, taenv, tvar, root))
       KindedAst.Expr.Handler(eff, rules, tvar, evar1, evar2, loc)
 
-    case ResolvedAst.Expr.RunWith(exp0, handler0, loc) =>
+    case ResolvedAst.Expr.RunWith(exp10, exp20, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc)
       val evar = Type.freshVar(Kind.Eff, loc)
 
-      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val handler = visitExp(handler0, kenv0, taenv, henv0, root)
-      KindedAst.Expr.RunWith(exp, handler, tvar, evar, loc)
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.RunWith(exp1, exp2, tvar, evar, loc)
 
     case ResolvedAst.Expr.Do(op, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))

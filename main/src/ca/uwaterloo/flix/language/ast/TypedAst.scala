@@ -217,7 +217,7 @@ object TypedAst {
       override def eff: Type = Type.Pure
     }
 
-    case class RunWith(exp: Expr, handler: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RunWith(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Do(op: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

@@ -1305,11 +1305,11 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
-    case NamedAst.Expr.RunWith(exp, handler, loc) =>
-      val expVal = resolveExp(exp, env0)
-      val handlerVal = resolveExp(handler, env0)
-      mapN(expVal, handlerVal) {
-        case (e, h) => ResolvedAst.Expr.RunWith(e, h, loc)
+    case NamedAst.Expr.RunWith(exp1, exp2, loc) =>
+      val e1Val = resolveExp(exp1, env0)
+      val e2Val = resolveExp(exp2, env0)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) => ResolvedAst.Expr.RunWith(e1, e2, loc)
       }
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>

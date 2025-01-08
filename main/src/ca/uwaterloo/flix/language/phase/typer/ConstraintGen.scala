@@ -767,9 +767,9 @@ object ConstraintGen {
         val resultEff = Type.Pure
         (resultTpe, resultEff)
 
-      case Expr.RunWith(exp, handler, tvar, evar, loc) =>
-        val (tpe, eff) = visitExp(exp)
-        val (handlerTpe, handlerExpEff) = visitExp(handler)
+      case Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp1)
+        val (handlerTpe, handlerExpEff) = visitExp(exp2)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
         c.unifyType(Type.mkArrowWithEffect(handlerArg, evar, tvar, loc.asSynthetic), handlerTpe, loc)
         val resultTpe = tvar

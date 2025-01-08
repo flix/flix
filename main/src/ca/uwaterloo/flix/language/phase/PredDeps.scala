@@ -253,8 +253,8 @@ object PredDeps {
         case (acc, HandlerRule(_, _, e)) => acc + visitExp(e)
       }
 
-    case Expr.RunWith(exp, handler, _, _, _) =>
-      visitExp(exp) + visitExp(handler)
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {

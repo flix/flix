@@ -431,10 +431,10 @@ object TypeReconstruction2 {
       val tpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, bodyEff, bodyTpe, loc.asSynthetic), handledEff, bodyTpe, loc.asSynthetic)
       TypedAst.Expr.Handler(effUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
-    case KindedAst.Expr.RunWith(exp, handler, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      val h = visitExp(handler)
-      TypedAst.Expr.RunWith(e, h, subst(tvar), Type.mkUnion(subst(evar), h.eff, loc.asSynthetic), loc)
+    case KindedAst.Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      TypedAst.Expr.RunWith(e1, e2, subst(tvar), Type.mkUnion(subst(evar), e2.eff, loc.asSynthetic), loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))

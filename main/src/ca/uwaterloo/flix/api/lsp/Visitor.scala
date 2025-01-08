@@ -478,9 +478,9 @@ object Visitor {
         visitEffectSymUse(effUse)
         rules.foreach(visitHandlerRule)
 
-      case Expr.RunWith(exp, handler, _, _, _) =>
-        visitExpr(exp)
-        visitExpr(handler)
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Do(op, exps, _, _, _) =>
         visitOpSymUse(op)

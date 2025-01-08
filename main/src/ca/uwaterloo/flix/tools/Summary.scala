@@ -249,7 +249,7 @@ object Summary {
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
       case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.RunWith(exp, handler, _, _, _) => countCheckedEcasts(exp) + countCheckedEcasts(handler)
+    case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum

@@ -700,8 +700,8 @@ object Redundancy {
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
 
-    case Expr.RunWith(exp, handler, tpe, eff, loc) =>
-      visitExp(exp, env0, rc) ++ visitExp(handler, env0, rc)
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
     case Expr.Do(opUse, exps, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())

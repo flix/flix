@@ -270,9 +270,9 @@ object Safety {
       }
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.RunWith(exp, handler, tpe, eff, loc) =>
-      visitExp(exp)
-      visitExp(handler)
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.foreach(visitExp)

@@ -182,7 +182,7 @@ object NamedAst {
 
     case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Expr, handler: Expr, loc: SourceLocation) extends Expr
+    case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 

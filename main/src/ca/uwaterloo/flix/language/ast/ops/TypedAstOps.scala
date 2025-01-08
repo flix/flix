@@ -89,7 +89,7 @@ object TypedAstOps {
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
-    case Expr.RunWith(exp, handler, _, _, _) => sigSymsOf(exp) ++ sigSymsOf(handler)
+    case Expr.RunWith(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
@@ -307,8 +307,8 @@ object TypedAstOps {
         case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
-    case Expr.RunWith(exp, handler, _, _, _) =>
-    freeVars(exp) ++ freeVars(handler)
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+    freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap

@@ -366,9 +366,9 @@ object Dependencies {
       visitType(handledEff)
       visitType(tpe)
 
-    case Expr.RunWith(exp, handler, tpe, eff, _) =>
-      visitExp(exp)
-      visitExp(handler)
+    case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 

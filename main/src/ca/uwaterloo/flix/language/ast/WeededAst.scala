@@ -191,7 +191,7 @@ object WeededAst {
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Expr, withs: List[Expr], loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
