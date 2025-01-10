@@ -691,7 +691,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -714,6 +714,11 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = trt.namespace :+ trt.name
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Source = loc.source
   }
 
   /**

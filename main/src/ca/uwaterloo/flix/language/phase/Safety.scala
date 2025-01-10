@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -29,14 +29,21 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object Safety {
 
   /** Checks the safety and well-formedness of `root`. */
-  def run(root: Root)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    ParOps.parMap(root.traits.values.flatMap(_.sigs))(visitSig)
-    ParOps.parMap(root.defs.values)(visitDef)
-    ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
-    ParOps.parMap(root.sigs.values)(visitSig)
 
-    (root, sctx.errors.asScala.toList)
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
+    val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
+    val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
+    ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
+
+    (root.copy(defs = defs, traits = traits), sctx.errors.asScala.toList)
+  }
+
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+    val sigs = trt.sigs.map(visitSig)
+    trt.copy(sigs = sigs)
   }
 
   /** Checks the safety and well-formedness of `sig`. */
