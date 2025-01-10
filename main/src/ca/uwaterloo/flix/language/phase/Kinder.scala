@@ -477,9 +477,6 @@ object Kinder {
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       KindedAst.Expr.Tuple(exps, loc)
 
-    case ResolvedAst.Expr.RecordEmpty(loc) =>
-      KindedAst.Expr.RecordEmpty(loc)
-
     case ResolvedAst.Expr.RecordSelect(exp0, label, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -866,9 +863,6 @@ object Kinder {
       val pat = visitPattern(pat0, kenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Pattern.Record(pats, pat, tvar, loc)
-
-    case ResolvedAst.Pattern.RecordEmpty(loc) =>
-      KindedAst.Pattern.RecordEmpty(loc)
 
     case ResolvedAst.Pattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

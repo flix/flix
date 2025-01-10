@@ -592,9 +592,6 @@ object Desugar {
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
 
-    case WeededAst.Expr.RecordEmpty(loc) =>
-      Expr.RecordEmpty(loc)
-
     case WeededAst.Expr.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp)
       Expr.RecordSelect(e, label, loc)
@@ -873,9 +870,6 @@ object Desugar {
       val ps = pats.map(visitRecordLabelPattern)
       val p = visitPattern(pat)
       DesugaredAst.Pattern.Record(ps, p, loc)
-
-    case WeededAst.Pattern.RecordEmpty(loc) =>
-      DesugaredAst.Pattern.RecordEmpty(loc)
 
     case WeededAst.Pattern.Error(loc) =>
       DesugaredAst.Pattern.Error(loc)
