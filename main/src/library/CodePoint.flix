@@ -194,7 +194,7 @@ mod CodePoint {
     ///
     pub def getName(cp: Int32): Option[String] =
         try {
-            unsafe Character.getName(cp) |> Object.toOption
+            Character.getName(cp) |> Object.toOption
         } catch {
             case _: Exception => None
         }
@@ -246,7 +246,7 @@ mod CodePoint {
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let i = unsafe Character.toChars(cp, arr, 0);
+            let i = Character.toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
             else
@@ -263,7 +263,7 @@ mod CodePoint {
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let i = unsafe Character.toChars(cp, arr, 0);
+            let i = Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some((Array.get(0, arr), Array.get(1, arr)))
             else
@@ -278,7 +278,7 @@ mod CodePoint {
     ///
     pub def toString(cp: Int32): String =
         try {
-            unsafe Character.toString(cp)
+            Character.toString(cp)
         } catch {
             case _: Exception => ""
         }
