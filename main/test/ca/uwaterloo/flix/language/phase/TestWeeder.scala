@@ -587,7 +587,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(x: String) = "hello"
         |    }
         |""".stripMargin
@@ -599,7 +599,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(x: a) = "hello"
         |    }
         |""".stripMargin
@@ -611,7 +611,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(_: Int32) = "hello"
         |    }
         |""".stripMargin

@@ -755,9 +755,9 @@ object Namer {
       val eff = visitType(eff0)
       NamedAst.Expr.Unsafe(e, eff, loc)
 
-    case DesugaredAst.Expr.Without(exp, eff, loc) =>
+    case DesugaredAst.Expr.Without(exp, qname, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.Without(e, eff, loc)
+      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
@@ -768,10 +768,14 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Throw(e, loc)
 
-    case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
-      val e = visitExp(exp, ns0)
+    case DesugaredAst.Expr.Handler(qname, rules, loc) =>
       val rs = rules.map(visitTryWithRule(_, ns0))
-      NamedAst.Expr.TryWith(e, eff, rs, loc)
+      NamedAst.Expr.Handler(qname, rs, loc)
+
+    case DesugaredAst.Expr.RunWith(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.RunWith(e1, e2, loc)
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))

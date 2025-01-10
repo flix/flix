@@ -206,11 +206,14 @@ object Regions {
     case Expr.Throw(exp, tpe, eff, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
+    case Expr.Handler(_, rules, _, _, _, tpe, loc) =>
       val rulesErrors = rules.flatMap {
         case HandlerRule(_, _, e) => visitExp(e)
       }
-      rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+      rulesErrors ++ checkType(tpe, loc)
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)

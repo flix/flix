@@ -175,9 +175,12 @@ object PatMatch {
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
-      case Expr.TryWith(exp, _, rules, _, _, _) =>
+      case Expr.Handler(_, rules, _, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).flatMap(visitExp)
+        ruleExps.flatMap(visitExp)
+
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        List(exp1, exp2).flatMap(visitExp)
 
       case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)

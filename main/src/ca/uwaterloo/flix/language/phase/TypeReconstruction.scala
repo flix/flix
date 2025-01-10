@@ -384,11 +384,11 @@ object TypeReconstruction {
       val eff = Type.mkDifference(e.eff, eff0, loc)
       TypedAst.Expr.Unsafe(e, eff0, e.tpe, eff, loc)
 
-    case KindedAst.Expr.Without(exp, effUse, loc) =>
+    case KindedAst.Expr.Without(exp, sym, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
       val eff = e.eff
-      TypedAst.Expr.Without(e, effUse, tpe, eff, loc)
+      TypedAst.Expr.Without(e, sym, tpe, eff, loc)
 
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -408,18 +408,23 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.Throw(e, tpe, eff, loc)
 
-    case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
-      val e = visitExp(exp)
+    case KindedAst.Expr.Handler(sym, rules, tvar, evar1, evar2, loc) =>
       val rs = rules map {
         case KindedAst.HandlerRule(op, fparams, hexp, _) =>
           val fps = fparams.map(visitFormalParam(_, subst))
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
-      val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
-      val tpe = subst(tvar)
-      val eff = Type.mkUnion(Type.mkDifference(e.eff, handledEffect, effUse.qname.loc) :: rs.map(_.exp.eff), loc)
-      TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+      val bodyTpe = subst(tvar)
+      val bodyEff = subst(evar1)
+      val handledEff = subst(evar2)
+      val tpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, bodyEff, bodyTpe, loc.asSynthetic), handledEff, bodyTpe, loc.asSynthetic)
+      TypedAst.Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+
+    case KindedAst.Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      TypedAst.Expr.RunWith(e1, e2, subst(tvar), Type.mkUnion(subst(evar), e2.eff, loc.asSynthetic), loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))

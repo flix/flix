@@ -890,6 +890,7 @@ object Weeder2 {
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
+        case TreeKind.Expr.Handler => visitHandlerExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
@@ -1753,8 +1754,16 @@ object Weeder2 {
             loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        // Case: run expr with eff { handlers... }
-        case (expr, withs) => Validation.Success(Expr.TryWith(expr, withs, tree.loc))
+        // Case: run expr [with expr]...
+        case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
+      }
+    }
+
+    private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Handler)
+      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
+      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+        (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
       }
     }
 
@@ -1793,12 +1802,9 @@ object Weeder2 {
       }
     }
 
-    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[WithHandler, CompilationMessage] = {
+    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithBodyExpr)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
-        (eff, handlers) => WithHandler(eff, handlers)
-      }
+      pickExpr(tree)
     }
 
     private def visitTryWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {

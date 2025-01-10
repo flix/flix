@@ -189,7 +189,9 @@ object WeededAst {
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
+    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+
+    case class RunWith(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -419,8 +421,6 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class WithHandler(eff: Name.QName, rules: List[HandlerRule])
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

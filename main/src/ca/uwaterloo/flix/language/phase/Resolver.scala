@@ -1278,29 +1278,35 @@ object Resolver {
         case e => ResolvedAst.Expr.Throw(e, loc)
       }
 
-    case NamedAst.Expr.Without(exp, eff, loc) =>
-      lookupEffect(eff, env0, ns0, root) match {
+    case NamedAst.Expr.Without(exp, qname, loc) =>
+      lookupEffect(qname, env0, ns0, root) match {
         case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, eff.loc)
-          val effUse = EffectSymUse(decl.sym, eff)
+          checkEffectIsAccessible(decl, ns0, qname.loc)
+          val sym = EffectSymUse(decl.sym, qname)
           val expVal = resolveExp(exp, env0)
           mapN(expVal) {
-            case e => ResolvedAst.Expr.Without(e, effUse, loc)
+            case e => ResolvedAst.Expr.Without(e, sym, loc)
           }
         case Result.Err(error) =>
           sctx.errors.add(error)
           Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-      val expVal = resolveExp(exp, env0)
-      val handlerVal = visitHandler(eff, rules, env0)
-      mapN(expVal, handlerVal) {
-        case (e, Result.Ok((effUse, rs))) =>
-          ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-        case (_, Result.Err(error)) =>
+    case NamedAst.Expr.Handler(qname, rules, loc) =>
+      val handlerVal = visitHandler(qname, rules, env0)
+      mapN(handlerVal) {
+        case Result.Ok((sym, rs)) =>
+          ResolvedAst.Expr.Handler(sym, rs, loc)
+        case Result.Err(error) =>
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
+      }
+
+    case NamedAst.Expr.RunWith(exp1, exp2, loc) =>
+      val e1Val = resolveExp(exp1, env0)
+      val e2Val = resolveExp(exp2, env0)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) => ResolvedAst.Expr.RunWith(e1, e2, loc)
       }
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>

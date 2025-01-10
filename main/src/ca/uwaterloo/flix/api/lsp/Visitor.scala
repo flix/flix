@@ -461,9 +461,9 @@ object Visitor {
         visitType(runEff)
         visitExpr(exp)
 
-      case Expr.Without(exp, effUse, _, _, _) =>
+      case Expr.Without(exp, sym, _, _, _) =>
         visitExpr(exp)
-        visitEffectSymUse(effUse)
+        visitEffectSymUse(sym)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -472,10 +472,13 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-        visitExpr(exp)
-        visitEffectSymUse(effUse)
+      case Expr.Handler(sym, rules, _, _, _, _, _) =>
+        visitEffectSymUse(sym)
         rules.foreach(visitHandlerRule)
+
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Do(op, exps, _, _, _) =>
         visitOpSymUse(op)
