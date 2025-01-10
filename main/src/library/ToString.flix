@@ -44,7 +44,7 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    pub def toString(x: Char): String = unsafe Character.toString(x)
+    pub def toString(x: Char): String = Character.toString(x)
 }
 
 instance ToString[Float32] {
