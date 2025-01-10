@@ -104,9 +104,9 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class Handler(eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
-
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+
+    case class Handler(eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
 
