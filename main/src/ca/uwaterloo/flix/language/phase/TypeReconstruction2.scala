@@ -258,9 +258,6 @@ object TypeReconstruction2 {
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.Tuple(es, tpe, eff, loc)
 
-    case KindedAst.Expr.RecordEmpty(loc) =>
-      TypedAst.Expr.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
-
     case KindedAst.Expr.RecordSelect(exp, field, tvar, loc) =>
       val e = visitExp(exp)
       val eff = e.eff
@@ -681,9 +678,6 @@ object TypeReconstruction2 {
       }
       val p = visitPattern(pat)
       TypedAst.Pattern.Record(ps, p, subst(tvar), loc)
-
-    case KindedAst.Pattern.RecordEmpty(loc) =>
-      TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
     case KindedAst.Pattern.Error(tvar, loc) =>
       TypedAst.Pattern.Error(subst(tvar), loc)

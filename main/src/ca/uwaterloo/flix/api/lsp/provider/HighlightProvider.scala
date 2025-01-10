@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -130,7 +130,7 @@ object HighlightProvider {
     *
     * Certain AST nodes are filtered out. We filter out [[TypedAst.Def]], [[TypedAst.Sig]],
     * [[TypedAst.Op]] and [[TypedAst.Enum]] nodes if the cursor is in them but _not_ in their [[Symbol]].
-    * Additionally, we filter out [[TypedAst.Expr.RecordEmpty]] nodes, since they're uninteresting
+    * Additionally, we filter out [[Constant.RecordEmpty]] nodes, since they're uninteresting
     * for highlighting and their [[SourceLocation]] overshadows [[TypedAst.Expr.RecordExtend]]
     * and [[TypedAst.Expr.RecordRestrict]] nodes. Lastly we filter out AST nodes with synthetic
     * [[SourceLocation]]s as these, like the previous, are uninteresting and might shadow other nodes.
@@ -219,7 +219,7 @@ object HighlightProvider {
   }
 
   private def isNotEmptyRecord(x: AnyRef): Boolean = x match {
-    case TypedAst.Expr.RecordEmpty(_, _) => false
+    case TypedAst.Expr.Cst(Constant.RecordEmpty, _, _) => false
     case _ => true
   }
 
@@ -368,7 +368,7 @@ object HighlightProvider {
     def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
       if (s == sym) { reads += loc }
     }
-    
+
     object EffectSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)

@@ -467,11 +467,6 @@ object ConstraintGen {
         val resEff = Type.mkUnion(elmEffs, loc)
         (resTpe, resEff)
 
-      case Expr.RecordEmpty(loc) =>
-        val resTpe = Type.mkRecord(Type.RecordRowEmpty, loc)
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
       case Expr.RecordSelect(exp, label, tvar, loc) =>
         //
         // r : { label = tpe | row }
@@ -1009,8 +1004,6 @@ object ConstraintGen {
         val resTpe = mkRecordType(patTpes, freshRowVar, loc)
         c.unifyType(resTpe, tvar, loc)
         resTpe
-
-      case KindedAst.Pattern.RecordEmpty(loc) => Type.mkRecord(Type.RecordRowEmpty, loc)
 
       case KindedAst.Pattern.Error(tvar, _) => tvar
 

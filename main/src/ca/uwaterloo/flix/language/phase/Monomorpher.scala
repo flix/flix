@@ -682,7 +682,6 @@ object Monomorpher {
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
-    case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**

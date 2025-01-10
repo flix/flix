@@ -167,7 +167,6 @@ object OpPrinter {
     */
   def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.Region, Nil) => Region
-    case (AtomicOp.RecordEmpty, Nil) => RecordEmpty
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError

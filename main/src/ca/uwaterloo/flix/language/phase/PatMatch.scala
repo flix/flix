@@ -65,8 +65,6 @@ object PatMatch {
     case class Enum(sym: Symbol.CaseSym, args: List[TyCon]) extends TyCon
 
     case class Record(labels: List[(Name.Label, TyCon)], tail: TyCon) extends TyCon
-
-    case object RecordEmpty extends TyCon
   }
 
   /**
@@ -148,7 +146,6 @@ object PatMatch {
       case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
-      case Expr.RecordEmpty(_, _) => Nil
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
       case Expr.RecordExtend(_, value, rest, _, _, _) => List(value, rest).flatMap(visitExp)
       case Expr.RecordRestrict(_, rest, _, _, _) => visitExp(rest)
@@ -400,7 +397,7 @@ object PatMatch {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
           val p = tail match {
-            case TypedAst.Pattern.RecordEmpty(_, _) => Nil
+            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
             case _ => List(tail)
           }
           Some(ps ::: p ::: pat.tail)
@@ -550,10 +547,9 @@ object PatMatch {
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
     case TyCon.Record(labels, tail) => tail match {
-      case TyCon.RecordEmpty => labels.length
+      case TyCon.Cst(Constant.RecordEmpty) => labels.length
       case _ => labels.length + 1
     }
-    case TyCon.RecordEmpty => 0
   }
 
   /**
@@ -574,11 +570,10 @@ object PatMatch {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
       }.mkString(", ")
       val tailStr = tail match {
-        case TyCon.RecordEmpty => ""
+        case TyCon.Cst(Constant.RecordEmpty) => ""
         case r => s" | ${prettyPrintCtor(r)}"
       }
       "{ " + labelStr + tailStr + " }"
-    case TyCon.RecordEmpty => ""
   }
 
 
@@ -617,7 +612,6 @@ object PatMatch {
       }
       val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
-    case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
 
     case Pattern.Error(_, _) => TyCon.Wild
   }
@@ -643,7 +637,7 @@ object PatMatch {
       }.zip(all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
-    case TyCon.RecordEmpty => lst
+    case TyCon.Cst(Constant.RecordEmpty) => lst
     case a => a :: lst
   }
 

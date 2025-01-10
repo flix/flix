@@ -206,9 +206,6 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.Tuple(es, tpe, eff, loc)
 
-    case Expr.RecordEmpty(tpe, loc) =>
-      Expr.RecordEmpty(tpe, loc)
-
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.RecordSelect(e, label, tpe, eff, loc)
