@@ -123,8 +123,6 @@ object DesugaredAst {
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordEmpty(loc: SourceLocation) extends Expr
-
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
     case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -232,8 +230,6 @@ object DesugaredAst {
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
-
-    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     case class Error(loc: SourceLocation) extends Pattern
 
