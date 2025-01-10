@@ -2436,7 +2436,7 @@ object Parser2 {
     }
 
     /**
-      * `unsafely TTYPE run EXPRESSION`
+      * `'unsafely' TTYPE 'run' EXPRESSION`
       *
       * produces
       *
@@ -2454,6 +2454,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Unsafe)
     }
 
+    /**
+      * `'run' EXPRESSION ('with' EXPRESSION)*`
+      *
+      * produces
+      *   - TreeKind.Expr.Run
+      *     - TreeKind.Expr.RunWithBodyExpr
+      *     - TreeKind.Expr.RunWithBodyExpr
+      *     - .. (potentially zero)
+      */
     private def runExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordRun))
       val mark = open()
