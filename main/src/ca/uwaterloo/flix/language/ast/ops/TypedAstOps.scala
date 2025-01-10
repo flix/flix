@@ -304,7 +304,7 @@ object TypedAstOps {
       }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
-    freeVars(exp1) ++ freeVars(exp2)
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
