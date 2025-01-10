@@ -11,7 +11,7 @@
     "java.lang.Runtime::freeMemory": "Env, NonDet, IO",
     "java.lang.Runtime::totalMemory": "Env, NonDet, IO",
     "java.lang.Runtime::maxMemory": "Env, IO",
-    "java.lang.Runtime::gc": "Sys, IO",
+    "java.lang.Runtime::gc": "IO",
     "java.lang.Runtime::runFinalization": "Sys, IO",
     "java.lang.Runtime::load": "Exec, Sys, IO",
     "java.lang.Runtime::loadLibrary": "Exec, Sys, IO",
