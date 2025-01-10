@@ -1754,7 +1754,7 @@ object Weeder2 {
             loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        // Case: run expr with ..
+        // Case: run expr [with expr]...
         case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
       }
     }
