@@ -65,7 +65,6 @@ object LocalScopeCompleter {
   private def mkDeclarationCompletionForType(k: String, v: List[Resolution]): Iterable[Completion] =
     v.collect {
       case Resolution.Declaration(Namespace(_, _, _, _)) |
-           Resolution.Declaration(Enum(_, _, _, _, _, _, _, _)) |
            Resolution.Declaration(Struct(_, _, _, _, _, _, _, _)) |
            Resolution.Declaration(TypeAlias(_, _, _, _, _, _, _)) |
            Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
