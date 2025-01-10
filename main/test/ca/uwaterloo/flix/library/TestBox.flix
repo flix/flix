@@ -75,16 +75,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float32Unbox01(): Bool = unsafe unbox(Float.valueOf(1.23f32)) == 1.23f32
+    def float32Unbox01(): Bool = unbox(Float.valueOf(1.23f32)) == 1.23f32
 
     @test
-    def float32Unbox02(): Bool = unsafe unbox(Float.valueOf(-4.56f32)) == -4.56f32
+    def float32Unbox02(): Bool = unbox(Float.valueOf(-4.56f32)) == -4.56f32
 
     @test
-    def float32Box01(): Bool = unsafe box(1.23f32).equals(Float.valueOf(1.23f32))
+    def float32Box01(): Bool = box(1.23f32).equals(Float.valueOf(1.23f32))
 
     @test
-    def float32Box02(): Bool = unsafe box(-4.56f32).equals(Float.valueOf(-4.56f32))
+    def float32Box02(): Bool = box(-4.56f32).equals(Float.valueOf(-4.56f32))
 
     @test
     def float32RoundTrip01(): Bool = unbox(box(1.23f32)) == 1.23f32
