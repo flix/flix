@@ -270,4 +270,15 @@ object CompletionUtils {
   def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, namespace: List[String], ident: String): Boolean = {
     targetNamespace == namespace && fuzzyMatch(ident, targetIdent)
   }
+
+  /**
+   * Format type params in the right form to be displayed in the list of completions
+   * e.g. "[a, b, c]"
+   */
+  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.map(_.name).mkString("[", ", ", "]")
+    }
+  }
 }
