@@ -31,7 +31,6 @@ object TypedAstOps {
       }
       val patVal = binds(pat)
       patsVal ++ patVal
-    case Pattern.RecordEmpty(_, _) => Map.empty
     case Pattern.Error(_, _) => Map.empty
   }
 
@@ -65,7 +64,6 @@ object TypedAstOps {
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
-    case Expr.RecordEmpty(_, _) => Set.empty
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
     case Expr.RecordRestrict(_, rest, _, _, _) => sigSymsOf(rest)
@@ -228,8 +226,6 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
-
-    case Expr.RecordEmpty(_, _) => Map.empty
 
     case Expr.RecordSelect(exp, _, _, _, _) =>
       freeVars(exp)
@@ -425,7 +421,6 @@ object TypedAstOps {
       val patVal = freeVars(pat)
       patsVal ++ patVal
 
-    case Pattern.RecordEmpty(_, _) => Map.empty
     case Pattern.Error(_, _) => Map.empty
   }
 

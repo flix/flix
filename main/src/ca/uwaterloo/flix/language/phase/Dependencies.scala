@@ -231,9 +231,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RecordEmpty(tpe, _) =>
-      visitType(tpe)
-
     case Expr.RecordSelect(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)

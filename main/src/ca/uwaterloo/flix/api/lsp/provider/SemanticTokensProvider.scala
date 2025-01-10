@@ -440,8 +440,6 @@ object SemanticTokensProvider {
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.RecordEmpty(_, _) => Iterator.empty
-
     case Expr.RecordSelect(exp, label, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
@@ -666,8 +664,6 @@ object SemanticTokensProvider {
       val patVal = visitPat(pat)
       val tVal = visitType(tpe)
       patsVal ++ patVal ++ tVal
-
-    case Pattern.RecordEmpty(_, _) => Iterator.empty
 
     case Pattern.Error(_, _) => Iterator.empty
   }

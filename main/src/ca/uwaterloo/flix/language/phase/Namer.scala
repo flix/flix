@@ -664,9 +664,6 @@ object Namer {
       val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.Tuple(es, loc)
 
-    case DesugaredAst.Expr.RecordEmpty(loc) =>
-      NamedAst.Expr.RecordEmpty(loc)
-
     case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp, ns0)
       NamedAst.Expr.RecordSelect(e, label, loc)
@@ -987,8 +984,6 @@ object Namer {
       val pVal = visitPattern(pat)
       NamedAst.Pattern.Record(psVal, pVal, loc)
 
-    case DesugaredAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
-
     case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
   }
 
@@ -1229,11 +1224,11 @@ object Namer {
     case DesugaredAst.Pattern.Cst(Constant.BigInt(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Str(_), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Regex(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.RecordEmpty, _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
     case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
-    case DesugaredAst.Pattern.RecordEmpty(_) => Nil
     case DesugaredAst.Pattern.Error(_) => Nil
   }
 

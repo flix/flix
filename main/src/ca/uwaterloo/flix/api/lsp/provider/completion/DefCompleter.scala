@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
@@ -63,22 +63,10 @@ object DefCompleter {
     val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
     val isInFile = decl.sym.loc.source.name == uri
     val isMatch = if (qualified)
-      matchesQualifiedDef(decl, namespace, ident)
+      matchesQualifiedName(decl.sym.namespace, decl.sym.name, namespace, ident)
     else
       fuzzyMatch(ident, decl.sym.name)
     isMatch && (isPublic || isInFile)
   }
 
-  /**
-    * Checks if the namespace and ident from the error matches the qualified def.
-    * We require a full match on the namespace and a fuzzy match on the ident.
-    *
-    * Example:
-    *   matchesQualifiedDef("A.B.fooBar", "A.B", "fB") => true
-    */
-  private def matchesQualifiedDef(decl: TypedAst.Def, namespace: List[String], ident: String): Boolean = {
-    val qualifiedDef = decl.sym.toString
-    val nsString = namespace.mkString(".")
-    qualifiedDef.startsWith(nsString) && fuzzyMatch(ident, qualifiedDef.substring(nsString.length + 1))
-  }
 }

@@ -91,7 +91,6 @@ object MonoAstPrinter {
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
-    case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
   }
 
   /**

@@ -1115,7 +1115,7 @@ object Weeder2 {
           // First expression must be a name
           e1 match {
             case Expr.Ambiguous(qname, _) =>
-              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc)
+              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.Cst(Constant.RecordEmpty, tree.loc), tree.loc)
             case _ =>
               val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
               sctx.errors.add(error)
@@ -1569,7 +1569,7 @@ object Weeder2 {
       val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
-          fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
+          fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
             case ((label, expr, loc), acc) =>
               val SourceLocation(isReal, sp1, _) = loc
               val extendLoc = SourceLocation(isReal, sp1, tree.loc.sp2)
@@ -2318,7 +2318,7 @@ object Weeder2 {
 
         // Pattern { ... }
         case (fs, None) =>
-          Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc)
+          Pattern.Record(fs, Pattern.Cst(Constant.RecordEmpty, tree.loc.asSynthetic), tree.loc)
 
         // Pattern { x, ... | r }
         case (x :: xs, Some(Pattern.Var(v, l))) =>

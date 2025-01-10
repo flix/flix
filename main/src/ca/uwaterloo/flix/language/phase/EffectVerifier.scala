@@ -188,7 +188,6 @@ object EffectVerifier {
       val expected = Type.mkUnion(elms.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordEmpty(tpe, loc) => ()
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff

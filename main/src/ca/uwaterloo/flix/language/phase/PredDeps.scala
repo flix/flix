@@ -171,9 +171,6 @@ object PredDeps {
         case (acc, e) => acc + visitExp(e)
       }
 
-    case Expr.RecordEmpty(_, _) =>
-      LabelledPrecedenceGraph.empty
-
     case Expr.RecordSelect(base, _, _, _, _) =>
       visitExp(base)
 

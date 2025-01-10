@@ -73,7 +73,6 @@ object ResolvedAstPrinter {
     case Expr.Tag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
-    case Expr.RecordEmpty(_) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))
     case Expr.RecordRestrict(label, rest, _) => DocAst.Expr.RecordRestrict(label, print(rest))
@@ -139,7 +138,6 @@ object ResolvedAstPrinter {
     case Pattern.Tag(sym, pats, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
-    case Pattern.RecordEmpty(_) => DocAst.Expr.RecordEmpty
     case Pattern.Error(_) => DocAst.Expr.Error
   }
 

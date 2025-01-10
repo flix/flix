@@ -137,9 +137,6 @@ object Regions {
     case Expr.Tuple(elms, tpe, _, loc) =>
       elms.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.RecordEmpty(_, _) =>
-      Nil
-
     case Expr.RecordSelect(exp, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 

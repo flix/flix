@@ -53,7 +53,6 @@ object TypedAstPrinter {
     case Expr.Tag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
-    case Expr.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, exp1, exp2, _, _, _) => DocAst.Expr.RecordExtend(label, print(exp1), print(exp2))
     case Expr.RecordRestrict(label, exp, _, _, _) => DocAst.Expr.RecordRestrict(label, print(exp))
@@ -144,7 +143,6 @@ object TypedAstPrinter {
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
-    case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Pattern.Error(_, _) => DocAst.Expr.Error
   }
 

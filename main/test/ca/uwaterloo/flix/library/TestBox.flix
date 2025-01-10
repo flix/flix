@@ -53,16 +53,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def charUnbox01(): Bool = unsafe unbox(Character.valueOf('a')) == 'a'
+    def charUnbox01(): Bool = unbox(Character.valueOf('a')) == 'a'
 
     @test
-    def charUnbox02(): Bool = unsafe unbox(Character.valueOf('Z')) == 'Z'
+    def charUnbox02(): Bool = unbox(Character.valueOf('Z')) == 'Z'
 
     @test
-    def charBox01(): Bool = unsafe box('a').equals(Character.valueOf('a'))
+    def charBox01(): Bool = box('a').equals(Character.valueOf('a'))
 
     @test
-    def charBox02(): Bool = unsafe box('Z').equals(Character.valueOf('Z'))
+    def charBox02(): Bool = box('Z').equals(Character.valueOf('Z'))
 
     @test
     def charRoundTrip01(): Bool = unbox(box('a')) == 'a'
