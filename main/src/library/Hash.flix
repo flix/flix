@@ -46,7 +46,7 @@ instance Hash[Bool] {
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int32 = unsafe Character.hashCode(x)
+    pub def hash(x: Char): Int32 = Character.hashCode(x)
 }
 
 instance Hash[Float32] {
