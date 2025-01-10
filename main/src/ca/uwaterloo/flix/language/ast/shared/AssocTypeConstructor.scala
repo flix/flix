@@ -20,4 +20,9 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 /**
   * A constructor for an associated type. (Not a valid type by itself).
   */
-case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation) {
+  override def equals(obj: Any): Boolean = obj match {
+    case that: AssocTypeConstructor => this.sym == that.sym
+    case _ => false
+  }
+}
