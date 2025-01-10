@@ -43,8 +43,6 @@ object KeywordCompleter {
       // E
       Completion.KeywordCompletion("eff"              , Priority.Low),
       Completion.KeywordCompletion("enum"             , Priority.High),
-      // H
-      Completion.KeywordCompletion("handler"          , Priority.Default),
       // I
       Completion.KeywordCompletion("import"           , Priority.Low),
       Completion.KeywordCompletion("instance"         , Priority.High),
@@ -100,6 +98,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("force"       , Priority.High),
       Completion.KeywordCompletion("foreach"     , Priority.Lower),
       Completion.KeywordCompletion("from"        , Priority.Highest),
+      // H
+      Completion.KeywordCompletion("handler", Priority.Default),
       // I
       Completion.KeywordCompletion("if"          , Priority.Higher),
       Completion.KeywordCompletion("inject"      , Priority.Low),
