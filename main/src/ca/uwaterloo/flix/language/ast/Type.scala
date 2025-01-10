@@ -1374,6 +1374,7 @@ object Type {
     case Constant.BigInt(_) => Type.BigInt
     case Constant.Str(_) => Type.Str
     case Constant.Regex(_) => Type.Regex
+    case Constant.RecordEmpty => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
   }
 
 }

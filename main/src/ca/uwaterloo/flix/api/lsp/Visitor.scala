@@ -384,8 +384,6 @@ object Visitor {
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.RecordEmpty(_, _) => ()
-
       case Expr.RecordSelect(exp, _, _, _, _) =>
         visitExpr(exp)
 
@@ -794,7 +792,6 @@ object Visitor {
     	case Record(pats, pat, _, _) =>
     	  pats.foreach(visitRecordLabelPattern)
     	  visitPattern(pat)
-    	case RecordEmpty(_, _) =>
     	case Pattern.Error(_, _) =>
     }
   }

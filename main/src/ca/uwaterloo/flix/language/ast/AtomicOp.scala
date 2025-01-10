@@ -42,8 +42,6 @@ object AtomicOp {
 
   case object Tuple extends AtomicOp
 
-  case object RecordEmpty extends AtomicOp
-
   case class RecordSelect(label: Name.Label) extends AtomicOp
 
   case class RecordExtend(label: Name.Label) extends AtomicOp

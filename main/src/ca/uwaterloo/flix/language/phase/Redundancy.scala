@@ -569,9 +569,6 @@ object Redundancy {
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
 
-    case Expr.RecordEmpty(_, _) =>
-      Used.empty
-
     case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -895,7 +892,6 @@ object Redundancy {
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       visitPats(pats.map(_.pat)) ++ visitPat(pat)
-    case Pattern.RecordEmpty(_, _) => Used.empty
     case Pattern.Error(_, _) => Used.empty
   }
 
@@ -1036,7 +1032,6 @@ object Redundancy {
       }
       val patVal = freeVars(pat)
       patsVal ++ patVal
-    case Pattern.RecordEmpty(_, _) => Set.empty
     case Pattern.Error(_, _) => Set.empty
   }
 
