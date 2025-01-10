@@ -59,7 +59,7 @@ object AutoUseCompleter {
   def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (!shouldComplete(err.qn.ident.name)) return Nil
     if (err.qn.namespace.idents.nonEmpty) return Nil
-    mkEffCompletions(err.qn.ident.name, err.env, err.ap) ++ mkEnumCompletions(err.qn.ident.name, err.env, err.ap)
+    mkEffCompletions(err.qn.ident.name, err.env, err.ap)
   }
 
   /**
@@ -77,25 +77,6 @@ object AutoUseCompleter {
     val thisName = eff.sym.toString
     scope.m.values.forall(_.exists {
       case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thisName != thatName.toString
-      case _ => true
-    })
-  }
-
-  /**
-   * Returns a list of completions for enums.
-   */
-  private def mkEnumCompletions(word: String, env: LocalScope, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[Completion] =
-    root.enums.collect{
-      case (sym, enum) if fuzzyMatch(word, sym.name) && checkEnumScope(enum, env) => Completion.AutoUseEnumCompletion(sym, enum.doc.text, ap)
-    }
-
-  /**
-   * Checks if the enum is in the scope.
-   */
-  private def checkEnumScope(eff: TypedAst.Enum, scope: LocalScope): Boolean = {
-    val thisName = eff.sym.toString
-    scope.m.values.forall(_.exists {
-      case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thisName != thatName.toString
       case _ => true
     })
   }

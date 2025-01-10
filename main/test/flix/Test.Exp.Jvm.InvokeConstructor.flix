@@ -19,7 +19,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Boolean(true)
 
     @test
-    def testInvokeConstructor02(): Character \ IO =
+    def testInvokeConstructor02(): Character =
         new Character('a')
 
     @test

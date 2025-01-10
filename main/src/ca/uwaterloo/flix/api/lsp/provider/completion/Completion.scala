@@ -140,16 +140,6 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(
-        label            = s"${enumSym.toString}$nameSuffix",
-        sortText         = Priority.toSortText(priority, enumSym.name),
-        textEdit         = textEdit,
-        documentation    = documentation,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
     case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(
         label            = s"${structSym.toString}$nameSuffix",
@@ -288,6 +278,27 @@ sealed trait Completion {
         documentation       = Some(decl.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
+        additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.EnumCompletion(enm, ap, qualified, inScope) =>
+      val qualifiedName = enm.sym.toString
+      val label = if (qualified) qualifiedName else enm.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = label,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, qualifiedName),
+        filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit            = TextEdit(context.range, label),
+        documentation       = Some(enm.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdit
       )
 
@@ -572,18 +583,6 @@ object Completion {
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
-    * Represents a type completion for enum
-    *
-    * @param enumSym       the enum symbol.
-    * @param nameSuffix    the suffix for the name of the Enum.
-    * @param priority      the priority of the Enum.
-    * @param textEdit      the edit which is applied to a document when selecting this completion.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
-                            documentation: Option[String]) extends Completion
-
-  /**
     * Represents a type completion for struct
     *
     * @param structSym     the struct symbol.
@@ -674,13 +673,13 @@ object Completion {
   case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
 
   /**
-   * Represents a Snippet completion
-   *
-   * @param name          the name of the snippet.
-   * @param range         the range for TextEdit.
-   * @param snippet       the snippet for TextEdit.
-   * @param documentation a human-readable string that represents a doc-comment.
-   */
+    * Represents a Snippet completion
+    *
+    * @param name          the name of the snippet.
+    * @param range         the range for TextEdit.
+    * @param snippet       the snippet for TextEdit.
+    * @param documentation a human-readable string that represents a doc-comment.
+    */
   case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
 
   /**
@@ -691,36 +690,46 @@ object Completion {
   case class LocalVarCompletion(name: String) extends Completion
 
   /**
-   * Represents a Declaration completion
-   *
-   * @param name the name of the declaration to complete.
-   */
+    * Represents a Declaration completion
+    *
+    * @param name the name of the declaration to complete.
+    */
   case class LocalDeclarationCompletion(name: String) extends Completion
 
   /**
-   * Represents a Java Class completion
-   *
-   * @param name the name of the java class to complete.
-   */
+    * Represents a Java Class completion
+    *
+    * @param name the name of the java class to complete.
+    */
   case class LocalJavaClassCompletion(name: String) extends Completion
 
   /**
-   * Represents a local def completion
-   *
-   * @param sym     the symbol of the local function
-   * @param fparams the formal parameters of the local function
-   */
+    * Represents a local def completion
+    *
+    * @param sym     the symbol of the local function
+    * @param fparams the formal parameters of the local function
+    */
   case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
 
   /**
-   * Represents a Def completion
-   *
-   * @param decl      the def decl.
-   * @param ap        the anchor position for the use statement.
-   * @param qualified indicate whether to use a qualified label.
-   * @param inScope   indicate whether to the def is inScope.
-   */
+    * Represents a Def completion
+    *
+    * @param decl      the def decl.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the def is inScope.
+    */
   case class DefCompletion(decl: TypedAst.Def, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a Enum completion
+    *
+    * @param enm      the enum construct.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the enum is inScope.
+    */
+  case class EnumCompletion(enm: TypedAst.Enum, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion

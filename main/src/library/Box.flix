@@ -48,8 +48,8 @@ instance Box[Bool] {
 
 instance Box[Char] {
     type Boxed = Character
-    pub def box(x: Char): Character = unsafe Character.valueOf(x)
-    pub def unbox(x: Character): Char = unsafe x.charValue()
+    pub def box(x: Char): Character = Character.valueOf(x)
+    pub def unbox(x: Character): Char = x.charValue()
 }
 
 instance Box[Float32] {
