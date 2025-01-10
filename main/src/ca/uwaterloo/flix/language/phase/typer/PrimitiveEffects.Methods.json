@@ -24,7 +24,7 @@
     "java.lang.System::exit": "Sys, IO",
     "java.lang.System::gc": "IO",
     "java.lang.System::getenv": "Env, IO",
-    "java.lang.System::getLogger": "Env, Sys, IO",
+    "java.lang.System::getLogger": "Sys, IO",
     "java.lang.System::getProperties": "Env, Sys, IO",
     "java.lang.System::getProperty": "Env, Sys, IO",
     "java.lang.System::setSecurityManager": "Env, Sys, IO",
