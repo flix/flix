@@ -1206,7 +1206,6 @@ object Namer {
   private def freeVars(pat0: DesugaredAst.Pattern): List[Name.Ident] = pat0 match {
     case DesugaredAst.Pattern.Var(ident, _) => List(ident)
     case DesugaredAst.Pattern.Wild(_) => Nil
-    // TODO simplify this pattern
     case DesugaredAst.Pattern.Cst(Constant.Unit, _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Bool(true), _) => Nil
     case DesugaredAst.Pattern.Cst(Constant.Bool(false), _) => Nil
