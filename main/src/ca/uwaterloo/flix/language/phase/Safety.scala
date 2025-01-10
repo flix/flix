@@ -167,9 +167,6 @@ object Safety {
     case Expr.Tuple(elms, _, _, _) =>
       elms.foreach(visitExp)
 
-    case Expr.RecordEmpty(_, _) =>
-      ()
-
     case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -645,7 +642,6 @@ object Safety {
     case Pattern.Record(pats, pat, _, _) =>
       pats.map(_.pat).foreach(visitPat(_, loc))
       visitPat(pat, loc)
-    case Pattern.RecordEmpty(_, _) => ()
     case Pattern.Error(_, _) => ()
   }
 
