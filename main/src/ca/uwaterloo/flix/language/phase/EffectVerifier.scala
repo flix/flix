@@ -270,7 +270,7 @@ object EffectVerifier {
       val expected = Type.mkDifference(exp.eff, runEff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, effUse, tpe, eff, loc) =>
+    case Expr.Without(exp, sym, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
@@ -284,7 +284,7 @@ object EffectVerifier {
     case Expr.Throw(exp, eff, _, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.Handler(effUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
       // TODO effect stuff
       ()

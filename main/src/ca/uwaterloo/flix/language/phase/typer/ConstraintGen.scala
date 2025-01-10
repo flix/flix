@@ -703,15 +703,15 @@ object ConstraintGen {
         val resEff = Type.mkDifference(eff, eff0, loc)
         (resTpe, resEff)
 
-      case Expr.Without(exp, effSymUse, _) =>
+      case Expr.Without(exp, sym, _) =>
         //
-        // e: tpe \ eff - effSym
+        // e: tpe \ eff - sym
         // -------------------------
-        // e without effSym : tpe
+        // e without sym : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.qname.loc), effSymUse.qname.loc)
-        c.unifyType(eff, effWithoutSym, effSymUse.qname.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(sym.sym), sym.qname.loc), sym.qname.loc)
+        c.unifyType(eff, effWithoutSym, sym.qname.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -733,7 +733,7 @@ object ConstraintGen {
         val resultEff = evar
         (resultTpe, resultEff)
 
-      case Expr.Handler(effUse, rules, tvar, evar1, evar2, loc) =>
+      case Expr.Handler(sym, rules, tvar, evar1, evar2, loc) =>
         //
         // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
         //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
@@ -754,9 +754,9 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.qname.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(sym.sym), sym.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, effUse.qname.loc), Type.mkUnion(effs, loc), loc)
+        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, sym.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
         val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
         val resultEff = Type.Pure

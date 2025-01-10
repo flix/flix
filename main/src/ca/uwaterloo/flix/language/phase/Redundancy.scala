@@ -668,8 +668,8 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, effUse, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
+    case Expr.Without(exp, sym, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
       visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -687,8 +687,8 @@ object Redundancy {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Handler(effUse, rules, _, _, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
           val usedBody = visitExp(body, env0, rc)

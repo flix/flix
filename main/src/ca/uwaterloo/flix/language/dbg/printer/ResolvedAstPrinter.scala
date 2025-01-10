@@ -94,12 +94,12 @@ object ResolvedAstPrinter {
     case Expr.CheckedCast(cast, exp, _) => DocAst.Expr.CheckedCast(cast, print(exp))
     case Expr.UncheckedCast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), tpe.map(UnkindedTypePrinter.print), eff.map(UnkindedTypePrinter.print))
     case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
-    case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
+    case Expr.Without(exp, sym, _) => DocAst.Expr.Without(print(exp), sym.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
-    case Expr.Handler(eff, rules, _) => DocAst.Expr.Handler(eff.sym, rules.map {
+    case Expr.Handler(sym, rules, _) => DocAst.Expr.Handler(sym.sym, rules.map {
       case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))

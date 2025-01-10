@@ -260,10 +260,10 @@ object Safety {
       visitExp(exp)
       checkThrow(exp)
 
-    case Expr.Handler(effUse, rules, _, _, _, _, _) =>
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
       // Check for [[PrimitiveEffectInTryWith]]
-      if (Symbol.isPrimitiveEff(effUse.sym)) {
-        sctx.errors.add(PrimitiveEffectInTryWith(effUse.sym, effUse.qname.loc))
+      if (Symbol.isPrimitiveEff(sym.sym)) {
+        sctx.errors.add(PrimitiveEffectInTryWith(sym.sym, sym.qname.loc))
       }
       rules.foreach(rule => visitExp(rule.exp))
 

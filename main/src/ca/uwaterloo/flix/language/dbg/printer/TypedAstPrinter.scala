@@ -75,7 +75,7 @@ object TypedAstPrinter {
     case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
-    case Expr.Handler(eff, rules, _, _, _, _, _) => DocAst.Expr.Handler(eff.sym, rules.map(printHandlerRule))
+    case Expr.Handler(sym, rules, _, _, _, _, _) => DocAst.Expr.Handler(sym.sym, rules.map(printHandlerRule))
     case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
