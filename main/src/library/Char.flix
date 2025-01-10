@@ -103,7 +103,7 @@ mod Char {
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(c: Char): Bool =
-        unsafe Character.isDefined(c)
+        Character.isDefined(c)
 
     ///
     /// Returns `true` if the given char `c` is an ISO control character.
@@ -136,7 +136,7 @@ mod Char {
     /// Returns the original character if it does not have a lowercase version.
     ///
     pub def toLowerCase(c: Char): Char =
-        unsafe Character.toLowerCase(c)
+        Character.toLowerCase(c)
 
     ///
     /// Converts a letter to its uppercase version.
@@ -144,7 +144,7 @@ mod Char {
     /// Returns the original character if it does not have a uppercase version.
     ///
     pub def toUpperCase(c: Char): Char =
-        unsafe Character.toUpperCase(c)
+        Character.toUpperCase(c)
 
     ///
     /// Converts a letter to its titlecase version.
@@ -153,7 +153,7 @@ mod Char {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(c: Char): Char =
-        unsafe Character.toTitleCase(c)
+        Character.toTitleCase(c)
 
     ///
     /// Returns the code point representation of Char `c`.

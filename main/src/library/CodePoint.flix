@@ -128,7 +128,7 @@ mod CodePoint {
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(cp: Int32): Bool =
-        unsafe Character.isDefined(cp)
+        Character.isDefined(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is Chinese, Japanase, Korean
@@ -167,7 +167,7 @@ mod CodePoint {
     /// Returns the original code point if it does not have a lowercase version.
     ///
     pub def toLowerCase(cp: Int32): Int32 =
-        unsafe Character.toLowerCase(cp)
+        Character.toLowerCase(cp)
 
     ///
     /// Converts a code point representing a letter to its uppercase version.
@@ -175,7 +175,7 @@ mod CodePoint {
     /// Returns the original code point if it does not have a uppercase version.
     ///
     pub def toUpperCase(cp: Int32): Int32 =
-        unsafe Character.toUpperCase(cp)
+        Character.toUpperCase(cp)
 
     ///
     /// Converts a code point representing a letter to its titlecase version.
@@ -184,7 +184,7 @@ mod CodePoint {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(cp: Int32): Int32 =
-        unsafe Character.toTitleCase(cp)
+        Character.toTitleCase(cp)
 
     ///
     /// Returns the name of the code point `cp`.
