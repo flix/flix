@@ -1292,8 +1292,8 @@ object Resolver {
           Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.Handler(eff, rules, loc) =>
-      val handlerVal = visitHandler(eff, rules, env0)
+    case NamedAst.Expr.Handler(qname, rules, loc) =>
+      val handlerVal = visitHandler(qname, rules, env0)
       mapN(handlerVal) {
         case Result.Ok((effUse, rs)) =>
           ResolvedAst.Expr.Handler(effUse, rs, loc)
