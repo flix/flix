@@ -38,7 +38,7 @@
     "java.lang.System::getenv": "Env, IO",
     "java.lang.System::getLogger": "Env, IO",
     "java.lang.System::exit": "Sys, IO",
-    "java.lang.System::gc": "Sys, IO",
+    "java.lang.System::gc": "IO",
     "java.lang.System::runFinalization": "Sys, IO",
     "java.lang.System::load": "Exec, Sys, IO",
     "java.lang.System::loadLibrary": "Exec, Sys, IO",
