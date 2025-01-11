@@ -1,6 +1,7 @@
-def main(): Unit \ {Sys, Net, IO} =
-    let result = App.runAllWithResult(() ->
-        let lines = FileRead.readLines("Main.flix");
-        List.forEach(println, lines)
-    );
-    println(result)
+def main(): Unit \ IO =
+    run {
+        match FileReadWithResult.readLines("Main.flix") {
+            case Result.Ok(lines) => List.forEach(println, lines)
+            case Result.Err(e)    => println(e)
+        }
+    } with FileReadWithResult.runWithIO
