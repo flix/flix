@@ -145,7 +145,7 @@ object Resolver {
     case ResolvedAst.Declaration.Op(sym, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.Sig(sym, _, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
+    case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
   }
 
   /**
@@ -453,8 +453,8 @@ object Resolver {
               val tconstrs = optTconstrs.collect { case Some(t) => t }
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
-                  val traitUse = TraitSymUse(trt.sym, trt0.loc)
-                  ResolvedAst.Declaration.Instance(doc, ann, mod, traitUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
+                  val symUse = TraitSymUse(trt.sym, trt0.loc)
+                  ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
           }
       }
@@ -659,8 +659,8 @@ object Resolver {
         val errors = mutable.ListBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
-        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, use, _, _, loc1) <- xs) {
-          val sym = use.sym
+        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
+          val sym = symUse.sym
           m.get(sym) match {
             case None =>
               m.put(sym, d)
@@ -680,10 +680,10 @@ object Resolver {
             // We recover by introducing a dummy associated type definition.
             val doc = Doc(Nil, loc)
             val mod = Modifiers.Empty
-            val use = AssocTypeSymUse(ascSym, loc)
+            val symUse = AssocTypeSymUse(ascSym, loc)
             val arg = targ
             val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
+            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
             m.put(ascSym, ascDef)
           }
         }
@@ -1167,9 +1167,9 @@ object Resolver {
       lookupStructField(field0, env0, ns0, root) match {
         case Result.Ok(field) =>
           val eVal = resolveExp(e, env0)
-          val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
+          val symUse = StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
-            case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
+            case e => ResolvedAst.Expr.StructGet(e, symUse, loc)
           }
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -1181,13 +1181,13 @@ object Resolver {
         case Result.Ok(field) =>
           val e1Val = resolveExp(e1, env0)
           val e2Val = resolveExp(e2, env0)
-          val fieldSymUse = StructFieldSymUse(field.sym, field0.loc)
+          val symUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
             sctx.errors.add(error)
           }
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSymUse, e2, loc)
+            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, symUse, e2, loc)
           }
 
         case Result.Err(error) =>
@@ -1282,10 +1282,10 @@ object Resolver {
       lookupEffect(qname, env0, ns0, root) match {
         case Result.Ok(decl) =>
           checkEffectIsAccessible(decl, ns0, qname.loc)
-          val sym = EffectSymUse(decl.sym, qname)
+          val symUse = EffectSymUse(decl.sym, qname)
           val expVal = resolveExp(exp, env0)
           mapN(expVal) {
-            case e => ResolvedAst.Expr.Without(e, sym, loc)
+            case e => ResolvedAst.Expr.Without(e, symUse, loc)
           }
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -1295,8 +1295,8 @@ object Resolver {
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       val handlerVal = visitHandler(qname, rules, env0)
       mapN(handlerVal) {
-        case Result.Ok((sym, rs)) =>
-          ResolvedAst.Expr.Handler(sym, rs, loc)
+        case Result.Ok((symUse, rs)) =>
+          ResolvedAst.Expr.Handler(symUse, rs, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
@@ -1732,11 +1732,11 @@ object Resolver {
     * Performs name resolution on the handler that handles `eff` with rules `rules0`.
     */
   // TODO: the nested Result/Validation is ugly here, but should be fixed by the Validation removal refactoring
-  private def visitHandler(eff: Name.QName, rules0: List[NamedAst.HandlerRule], env0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffectSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
-    lookupEffect(eff, env0, ns, root) match {
+  private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], env0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffectSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
+    lookupEffect(qname, env0, ns, root) match {
       case Result.Ok(decl) =>
-        checkEffectIsAccessible(decl, ns, eff.loc)
-        val effUse = EffectSymUse(decl.sym, eff)
+        checkEffectIsAccessible(decl, ns, qname.loc)
+        val symUse = EffectSymUse(decl.sym, qname)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body) =>
             val opVal = findOpInEffect(ident, decl)
@@ -1748,8 +1748,7 @@ object Resolver {
                 val bodyVal = resolveExp(body, env)
                 mapN(bodyVal) {
                   case b =>
-                    val opUse = OpSymUse(o.sym, ident.loc)
-                    ResolvedAst.HandlerRule(opUse, fp, b)
+                    ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b)
                 }
             }
         }
@@ -1757,11 +1756,11 @@ object Resolver {
           case rules =>
             // Check that all the operations have respective definitions
             val allOps = decl.ops.map(_.sym)
-            val missingDefs = allOps.toSet -- rules.map(_.op.sym)
+            val missingDefs = allOps.toSet -- rules.map(_.symUse.sym)
             missingDefs.foreach {
-              case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, eff.loc))
+              case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, qname.loc))
             }
-            Result.Ok((effUse, rules))
+            Result.Ok((symUse, rules))
         }
       case Result.Err(error) =>
         sctx.errors.add(error)
@@ -3579,7 +3578,7 @@ object Resolver {
 
     def addTypeAlias(alias: ResolvedAst.Declaration.TypeAlias): SymbolTable = copy(typeAliases = typeAliases + (alias.sym -> alias))
 
-    def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.trt.sym -> inst))
+    def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.symUse.sym -> inst))
 
     private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(

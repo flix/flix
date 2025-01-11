@@ -70,7 +70,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, tpe, exp) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Tag(sym, exps, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
+    case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
@@ -82,10 +82,10 @@ object ResolvedAstPrinter {
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
     case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map {
-      case (sym, exp) => (sym.sym, print(exp))
+      case (symUse, exp) => (symUse.sym, print(exp))
     }, print(region))
-    case Expr.StructGet(e, sym, _) => DocAst.Expr.StructGet(print(e), sym.sym)
-    case Expr.StructPut(exp1, sym, exp2, _) => DocAst.Expr.StructPut(print(exp1), sym.sym, print(exp2))
+    case Expr.StructGet(exp, symUse, _) => DocAst.Expr.StructGet(print(exp), symUse.sym)
+    case Expr.StructPut(exp1, symUse, exp2, _) => DocAst.Expr.StructPut(print(exp1), symUse.sym, print(exp2))
     case Expr.VectorLit(exps, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
@@ -94,16 +94,16 @@ object ResolvedAstPrinter {
     case Expr.CheckedCast(cast, exp, _) => DocAst.Expr.CheckedCast(cast, print(exp))
     case Expr.UncheckedCast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), tpe.map(UnkindedTypePrinter.print), eff.map(UnkindedTypePrinter.print))
     case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
-    case Expr.Without(exp, sym, _) => DocAst.Expr.Without(print(exp), sym.sym)
+    case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
-    case Expr.Handler(sym, rules, _) => DocAst.Expr.Handler(sym.sym, rules.map {
-      case ResolvedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
+    case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
+      case ResolvedAst.HandlerRule(symUse, fparams, exp) => (symUse.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
-    case Expr.Do(op, exps, _) => DocAst.Expr.Do(op.sym, exps.map(print))
+    case Expr.Do(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
@@ -135,7 +135,7 @@ object ResolvedAstPrinter {
     case Pattern.Wild(_) => DocAst.Expr.Wild
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(sym, pats, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error
