@@ -605,6 +605,8 @@ object Type {
       case that: AssocType => this.cst == that.cst && this.arg == that.arg
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(cst, arg)
   }
 
   /**
