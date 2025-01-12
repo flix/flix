@@ -600,7 +600,14 @@ object Type {
   /**
     * An associated type.
     */
-  case class AssocType(cst: AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
+  case class AssocType(cst: AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
+    override def equals(obj: Any): Boolean = obj match {
+      case that: AssocType => this.cst == that.cst && this.arg == that.arg
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(cst, arg)
+  }
 
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
