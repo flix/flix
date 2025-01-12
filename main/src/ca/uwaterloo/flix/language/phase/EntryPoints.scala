@@ -377,9 +377,10 @@ object EntryPoints {
         eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
         eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.difference(a, b)))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
-      case Type.Alias(_, _, tpe, _) => eval(tpe)
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))case Type.Alias(_, _, tpe, _) => eval(tpe)
       case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
       case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
       case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
