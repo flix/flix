@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
+import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.getInternalPriority
 import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -29,8 +28,8 @@ object TypeAliasCompleter {
     root.typeAliases.map { case (_, t) =>
       val name = t.sym.name
       val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
-      Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), internalPriority,
-        TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
+      Completion.TypeAliasCompletion(t.sym, CompletionUtils.formatTParams(t.tparams), internalPriority,
+        TextEdit(context.range, s"$name${CompletionUtils.formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }
 }
