@@ -181,16 +181,11 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
-
-      case Expr.RecordEmpty(_, _) => ()
 
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
 
@@ -257,12 +252,11 @@ object PatMatch {
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
       case Expr.Handler(_, rules, _, _, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        ruleExps.flatMap(visitExp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.RunWith(exp1, exp2, _, _, _) =>
-        List(exp1, exp2).flatMap(visitExp)
-        (exp :: ruleExps).foreach(visitExp)
+        visitExp(exp1)
+        visitExp(exp2)
 
       case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
 
