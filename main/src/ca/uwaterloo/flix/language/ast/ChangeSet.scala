@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
+import jdk.jshell.SourceCodeAnalysis
 
 sealed trait ChangeSet {
 
@@ -54,7 +55,33 @@ sealed trait ChangeSet {
       (stale, fresh)
   }
 
+  /**
+    * Returns two maps: `stale` and `fresh` according to the given `newMap` and `oldMap`, the value of the map is a list of Sourceable.
+    *
+    * A fresh item in the value list is one that can be reused.
+    * A stale item in the value list is one that must be re-compiled.
+    * An item that is neither fresh nor stale can be deleted.
+    * Actually, all fresh and stale items will be in the newMap
+    *
+    * An item from newMap is fresh if it is also in `oldMap`, and it is not dirty (i.e. has not changed).
+    * Otherwise, it is stale.
+    *
+    * The type of the value in the map must be the same, since when checking stale, we need to check if the value is in the fresh map.
+    */
+  def partitionOnValues[K, V <: Sourceable](newMap: Map[K, List[V]], oldMap: Map[K, List[V]]): (Map[K, List[V]], Map[K, List[V]]) = this match {
+    case ChangeSet.Everything =>
+      (newMap, Map.empty)
+
+    case ChangeSet.Dirty(dirty) =>
+      val (stale, fresh) = newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
+        val oldList = oldMap.getOrElse(k, Nil)
+        val (freshList, staleList) = vList.partition(v => oldList.contains(v) &&  !dirty.contains(v.src.input))
+        (stale + (k -> staleList), fresh + (k -> freshList))
+      }
+      (stale, fresh)
+  }
 }
+
 
 object ChangeSet {
 
