@@ -122,7 +122,6 @@ object GotoProvider {
     case SymUse.StructFieldSymUse(sym, loc) => Some(mkGoto(LocationLink.fromStructFieldSym(sym, loc)))
     // Traits
     case SymUse.TraitSymUse(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
-    case TraitConstraint.Head(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
     case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
     // Type Vars
     case Type.Var(sym, loc) => Some(mkGoto(LocationLink.fromTypeVarSym(sym, loc)))
@@ -180,7 +179,6 @@ object GotoProvider {
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
     case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal

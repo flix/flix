@@ -86,7 +86,6 @@ trait Consumer {
   def consumeTypeMatchRule(rule: TypeMatchRule): Unit = ()
   def consumeTrait(traitt: Trait): Unit = ()
   def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
-  def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = ()
   def consumeTraitSymUse(symUse: TraitSymUse): Unit= ()
   def consumeType(tpe: Type): Unit = ()
   def consumeTypeAlias(alias: TypeAlias): Unit = ()

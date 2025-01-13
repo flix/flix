@@ -129,15 +129,15 @@ object Visitor {
 
     c.consumeTraitConstraint(tc)
 
-    visitTraitConstraintHead(head)
+    visitTraitSymUse(head)
     visitType(arg)
   }
 
-  private def visitTraitConstraintHead(tcHead: TraitConstraint.Head)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TraitConstraint.Head(_, loc) = tcHead
+  private def visitTraitSymUse(symUse: TraitSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    val TraitSymUse(_, loc) = symUse
     if (!a.accept(loc)) { return }
 
-    c.consumeTraitConstraintHead(tcHead)
+    c.consumeTraitConstraintHead(symUse)
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {

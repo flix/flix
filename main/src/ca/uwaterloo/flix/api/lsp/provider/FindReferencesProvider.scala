@@ -179,7 +179,6 @@ object FindReferencesProvider {
     case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
     case tpe: Type => tpe.loc.isReal
     case _ => false
@@ -228,7 +227,6 @@ object FindReferencesProvider {
     // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     // Type Alias
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
     case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
@@ -418,7 +416,6 @@ object FindReferencesProvider {
 
     object TraitSymConsumer extends Consumer {
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
