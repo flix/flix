@@ -92,13 +92,17 @@ object PatMatch {
       val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
       ParOps.parMap(classDefExprs)(visitExp)
 
-      ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp))
-      ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp))
+      ParOps.parMap(root.defs.values)(visitDef)
+      ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
       // Only need to check sigs with implementations
       root.sigs.values.flatMap(_.exp).foreach(visitExp)
 
       (root, sctx.errors.asScala.toList)
     }
+
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    visitExp(defn.exp)
+  }
 
   /**
     * Check that all patterns in an expression are exhaustive
@@ -106,76 +110,149 @@ object PatMatch {
     * @param tast The expression to check
     * @param root The AST root
     */
-  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, sctx: SharedContext, flix: Flix): Unit = {
+  private def visitExp(tast: TypedAst.Expr)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     tast match {
       case Expr.Var(_, _, _) => ()
+
       case Expr.Hole(_, _, _, _) => ()
+
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
+
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
+
       case Expr.Use(_, _, exp, _) => visitExp(exp)
+
       case Expr.Cst(_, _, _) => ()
+
       case Expr.Lambda(_, body, _, _) => visitExp(body)
-      case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
       case Expr.ApplySig(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
-      case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
-      case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
-      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.Binary(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.Let(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.Region(_, _) => ()
+
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).foreach(visitExp)
-      case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
+      case Expr.Stm(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.Discard(exp, _, _) => visitExp(exp)
 
       case Expr.Match(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        val guards = rules.flatMap(_.guard)
-        (exp :: ruleExps ::: guards ).foreach(visitExp)
+        visitExp(exp)
+        rules.foreach{r =>
+          visitExp(r.exp)
+          r.guard.foreach(visitExp)
+        }
         checkRules(exp, rules, root)
 
       case Expr.TypeMatch(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).foreach(visitExp)
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).foreach(visitExp)
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
+
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
+
       case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
+
       case Expr.RecordEmpty(_, _) => ()
+
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
-      case Expr.RecordExtend(_, value, rest, _, _, _) => List(value, rest).foreach(visitExp)
+
+      case Expr.RecordExtend(_, value, rest, _, _, _) =>
+        visitExp(value)
+        visitExp(rest)
+
       case Expr.RecordRestrict(_, rest, _, _, _) => visitExp(rest)
-      case Expr.ArrayLit(exps, exp, _, _, _) => (exp :: exps).foreach(visitExp)
-      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).foreach(visitExp)
-      case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).foreach(visitExp)
-      case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).foreach(visitExp)
+
+      case Expr.ArrayLit(exps, exp, _, _, _) =>
+        visitExp(exp)
+        exps.foreach(visitExp)
+
+      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
+      case Expr.ArrayLoad(base, index, _, _, _) =>
+        visitExp(base)
+        visitExp(index)
+
+      case Expr.ArrayStore(base, index, elm, _, _) =>
+        visitExp(base)
+        visitExp(index)
+        visitExp(elm)
+
       case Expr.ArrayLength(base, _, _) => visitExp(base)
+
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        val fieldExps = fields.map { case (_, v) => v }
-        (region :: fieldExps).foreach(visitExp)
-      case Expr.StructGet(e, _, _, _, _) => visitExp(e)
-      case Expr.StructPut(e1, _, e2, _, _, _) => List(e1, e2).foreach(visitExp)
+        visitExp(region)
+        fields.foreach { case (_, v) => visitExp(v) }
+
+      case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
+
+      case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.VectorLit(exps, _, _, _) => exps.foreach(visitExp)
-      case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.VectorLength(exp, _) => visitExp(exp)
+
       case Expr.Ascribe(exp, _, _, _) => visitExp(exp)
+
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
+
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
+
       case Expr.Unsafe(exp, _, _, _, _) => visitExp(exp)
+
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).foreach(visitExp)
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
@@ -188,39 +265,71 @@ object PatMatch {
         (exp :: ruleExps).foreach(visitExp)
 
       case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
+
       case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
-      case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).foreach(visitExp)
+
+      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+        visitExp(exp)
+        args.foreach(visitExp)
+
       case Expr.InvokeStaticMethod(_, args, _, _, _) => args.foreach(visitExp)
+
       case Expr.GetField(_, exp, _, _, _) => visitExp(exp)
-      case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.PutField(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.GetStaticField(_, _, _, _) => ()
+
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.NewObject(_, _, _, _, methods, _) => methods.foreach(m => visitExp(m.exp))
+
       case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
+
       case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
-      case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.PutChannel(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        val chans = rules.map(_.chan)
-        (ruleExps ::: chans ::: default.toList).foreach(visitExp)
+        rules.foreach{r =>
+          visitExp(r.exp)
+          visitExp(r.chan)
+        }
+        default.foreach(visitExp)
 
-      case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+      case Expr.Spawn(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
 
       case Expr.ParYield(frags, exp, _, _, loc) =>
-        val fragsExps = frags.map(_.exp)
-        (exp :: fragsExps).foreach(visitExp)
+        visitExp(exp)
+        frags.foreach(f => visitExp(f.exp))
         checkFrags(frags, root, loc)
 
       case Expr.Lazy(exp, _, _) => visitExp(exp)
+
       case Expr.Force(exp, _, _, _) => visitExp(exp)
+
       case Expr.FixpointConstraintSet(cs, _, _) => cs.foreach(visitConstraint)
+
       case Expr.FixpointLambda(_, exp, _, _, _) => visitExp(exp)
-      case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).foreach(visitExp)
+
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp)
+
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.Error(_, _, _) => ()
     }
   }
@@ -228,17 +337,17 @@ object PatMatch {
   /**
     * Performs exhaustive checking on the given constraint `c`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, sctx: SharedContext, flix: Flix): Unit = c0 match {
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
       visitHeadPred(head0)
       body0.foreach(visitBodyPred)
   }
 
-  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, sctx: SharedContext, flix: Flix): Unit = h0 match {
+  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = h0 match {
     case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.foreach(visitExp)
   }
 
-  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, sctx: SharedContext, flix: Flix): Unit = b0 match {
+  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => ()
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
