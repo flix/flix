@@ -166,7 +166,6 @@ object RenameProvider {
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
     case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal

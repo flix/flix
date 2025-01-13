@@ -128,7 +128,6 @@ object CodeHinter {
         case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = traitOccurs = TraitSymUse(tcHead.sym, tcHead.loc) :: traitOccurs
       override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitOccurs = symUse :: traitOccurs
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumOccurs = (sym, loc) :: enumOccurs

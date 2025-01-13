@@ -792,15 +792,15 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTraitConstraint(tc0: TraitConstraint): Iterator[SemanticToken] = tc0 match {
-    case TraitConstraint(head, arg, _) =>
-      visitTraitConstraintHead(head) ++ visitType(arg)
+    case TraitConstraint(symUse, arg, _) =>
+      visitTraitSymUse(symUse) ++ visitType(arg)
   }
 
   /**
     * Returns all semantic tokens in the given type constraint head `head0`.
     */
-  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Iterator[SemanticToken] = head0 match {
-    case TraitConstraint.Head(_, loc) =>
+  private def visitTraitSymUse(head0: TraitSymUse): Iterator[SemanticToken] = head0 match {
+    case TraitSymUse(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

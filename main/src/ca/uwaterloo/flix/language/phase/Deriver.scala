@@ -180,13 +180,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
       )
   }
@@ -374,13 +374,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -540,13 +540,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -677,13 +677,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -825,13 +825,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, retTpe, loc)
         ),
         tpe = retTpe,
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -869,7 +869,7 @@ object Deriver {
     */
   private def getTraitConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], trt: Symbol.TraitSym, loc: SourceLocation): List[TraitConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
-      TraitConstraint(TraitConstraint.Head(trt, loc), Type.Var(tparam.sym, loc), loc)
+      TraitConstraint(TraitSymUse(trt, loc), Type.Var(tparam.sym, loc), loc)
   }
 
   /**
