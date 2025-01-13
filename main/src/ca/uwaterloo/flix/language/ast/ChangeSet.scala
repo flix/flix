@@ -72,12 +72,11 @@ sealed trait ChangeSet {
       (newMap, Map.empty)
 
     case ChangeSet.Dirty(dirty) =>
-      val (stale, fresh) = newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
+      newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
         val oldList = oldMap.getOrElse(k, Nil)
         val (freshList, staleList) = vList.partition(v => oldList.contains(v) &&  !dirty.contains(v.src.input))
         (stale + (k -> staleList), fresh + (k -> freshList))
       }
-      (stale, fresh)
   }
 }
 
