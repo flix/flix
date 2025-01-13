@@ -963,7 +963,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class: '${qn.toString}'."
+    def summary: String = s"Undefined trait: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
