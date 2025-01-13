@@ -1173,7 +1173,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      docTraitName(t.head.sym)
+      docTraitName(t.symUse.sym)
       sb.append("[")
       docType(t.arg)
       sb.append("]")

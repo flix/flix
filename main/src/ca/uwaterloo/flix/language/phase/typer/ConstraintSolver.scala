@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -141,7 +142,7 @@ object ConstraintSolver {
     */
   def expandTraitEnv(tenv: TraitEnv, tconstrs: List[TraitConstraint]): TraitEnv = {
     tconstrs.foldLeft(tenv) {
-      case (acc, TraitConstraint(TraitConstraint.Head(sym, _), arg, loc)) =>
+      case (acc, TraitConstraint(TraitSymUse(sym, _), arg, loc)) =>
         acc.addInstance(sym, arg)
     }
   }
@@ -463,7 +464,7 @@ object ConstraintSolver {
               case Some(tconstrs) =>
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
-                  case TraitConstraint(TraitConstraint.Head(c, _), arg, _) =>
+                  case TraitConstraint(TraitSymUse(c, _), arg, _) =>
                     resolveTraitConstraint(c, arg, renv0, loc)
                 } map {
                   case res =>
@@ -512,9 +513,9 @@ object ConstraintSolver {
     * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
     */
   def withSupers(tconstr: TraitConstraint, tenv: TraitEnv): List[TraitConstraint] = {
-    val superSyms = tenv.getSuperTraits(tconstr.head.sym)
+    val superSyms = tenv.getSuperTraits(tconstr.symUse.sym)
     val directSupers = superSyms.map {
-      case sym => TraitConstraint(TraitConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+      case sym => TraitConstraint(TraitSymUse(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
     }
     val allSupers = directSupers.flatMap(withSupers(_, tenv))
     tconstr :: allSupers
@@ -663,7 +664,7 @@ object ConstraintSolver {
       case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
         TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
       case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
-        mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
+        mkMissingInstance(tconstr.symUse.sym, tconstr.arg, RigidityEnv.empty, loc)
 
       // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
       case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
