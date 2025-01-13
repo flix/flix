@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TypeAliasSymUse, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.scalatest.funsuite.AnyFunSuite
 
