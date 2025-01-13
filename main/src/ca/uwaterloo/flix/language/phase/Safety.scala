@@ -37,7 +37,7 @@ object Safety {
     val (staleInstances, freshInstances) = changeSet.partitionOnValues(root.instances, oldRoot.instances)
     val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
     val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
-    val instances = MergeMapdList(freshInstances, ParOps.parMapValues(staleInstances)(visitInstanceList))
+    val instances = mergeMappedList(freshInstances, ParOps.parMapValues(staleInstances)(visitInstanceList))
 
     val newRoot = root.copy(
       defs = defs,
@@ -809,7 +809,7 @@ object Safety {
     !eff.effects.forall(Symbol.isPrimitiveEff)
   }
 
-  private def MergeMapdList[K, V](map1: Map[K, List[V]], map2: Map[K, List[V]]): Map[K, List[V]] = {
+  private def mergeMappedList[K, V](map1: Map[K, List[V]], map2: Map[K, List[V]]): Map[K, List[V]] = {
     map2.foldLeft(map1) {
       case (acc, (k, v)) => acc.updated(k, acc.getOrElse(k, Nil) ++ v)
     }
