@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -593,7 +594,7 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(cst: AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(symUse: TypeAliasSymUse, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
 

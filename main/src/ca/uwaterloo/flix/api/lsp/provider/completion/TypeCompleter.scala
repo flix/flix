@@ -24,7 +24,6 @@ object TypeCompleter {
     */
   def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     ModuleCompleter.getCompletions(context) ++
-      StructTypeCompleter.getCompletions(context) ++
       TypeAliasCompleter.getCompletions(context) ++
       TypeBuiltinCompleter.getCompletions
   }
@@ -39,29 +38,5 @@ object TypeCompleter {
       Priority.Low
     else
       Priority.Lower
-  }
-
-  /**
-    * Format type params in the right form to be inserted as a snippet
-    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
-    */
-  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
-    tparams match {
-      case Nil => ""
-      case _ => tparams.zipWithIndex.map {
-        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
-      }.mkString("[", ", ", "]")
-    }
-  }
-
-  /**
-    * Format type params in the right form to be displayed in the list of completions
-    * e.g. "[a, b, c]"
-    */
-  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
-    tparams match {
-      case Nil => ""
-      case _ => tparams.map(_.name).mkString("[", ", ", "]")
-    }
   }
 }
