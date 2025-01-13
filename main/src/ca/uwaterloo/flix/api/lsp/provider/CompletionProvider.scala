@@ -66,7 +66,8 @@ object CompletionProvider {
             AutoUseCompleter.getCompletions(err) ++
             EffSymCompleter.getCompletions(err) ++
             TypeCompleter.getCompletions(ctx) ++
-            EnumCompleter.getCompletions(err, namespace, ident)
+            EnumCompleter.getCompletions(err, namespace, ident) ++
+            StructCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)

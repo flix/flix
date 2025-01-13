@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
@@ -138,16 +138,6 @@ sealed trait Completion {
         textEdit         = TextEdit(context.range, edit),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Enum
-      )
-
-    case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(
-        label            = s"${structSym.toString}$nameSuffix",
-        sortText         = Priority.toSortText(priority, structSym.name),
-        textEdit         = textEdit,
-        documentation    = documentation,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Struct
       )
 
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
@@ -299,6 +289,28 @@ sealed trait Completion {
         documentation       = Some(enm.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Enum,
+        additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.StructCompletion(struct, ap, qualified, inScope) =>
+      val qualifiedName = struct.sym.toString
+      val name = if (qualified) qualifiedName else struct.sym.name
+      val label = name + CompletionUtils.formatTParams(struct.tparams)
+      val snippet = name + CompletionUtils.formatTParamsSnippet(struct.tparams)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = label,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        documentation       = Some(struct.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Struct,
         additionalTextEdits = additionalTextEdit
       )
 
@@ -583,18 +595,6 @@ object Completion {
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
-    * Represents a type completion for struct
-    *
-    * @param structSym     the struct symbol.
-    * @param nameSuffix    the suffix for the name of the Struct.
-    * @param priority      the priority of the Struct.
-    * @param textEdit      the edit which is applied to a document when selecting this completion.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
-                            documentation: Option[String]) extends Completion
-
-  /**
     * Represents a type completion for alias
     *
     * @param aliasSym      the alias symbol.
@@ -730,6 +730,16 @@ object Completion {
     * @param inScope   indicate whether to the enum is inScope.
     */
   case class EnumCompletion(enm: TypedAst.Enum, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+   * Represents a Enum completion
+   *
+   * @param struct    the struct construct.
+   * @param ap        the anchor position for the use statement.
+   * @param qualified indicate whether to use a qualified label.
+   * @param inScope   indicate whether to the enum is inScope.
+   */
+  case class StructCompletion(struct: TypedAst.Struct, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion
