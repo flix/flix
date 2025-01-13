@@ -297,7 +297,6 @@ object HighlightProvider {
       // Traits
       case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
       case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-      case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
       case SymUse.TypeAliasSymUse(sym, _) => Some(getTypeAliasSymOccurs(sym))
@@ -570,7 +569,6 @@ object HighlightProvider {
     object TraitSymConsumer extends Consumer {
       override def consumeTrait(traitt: TypedAst.Trait): Unit = considerWrite(traitt.sym, traitt.sym.loc)
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = considerRead(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, acceptor)

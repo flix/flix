@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
@@ -128,7 +129,7 @@ object Typer {
           case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Instance(tpe, tconstrs)
         }
         // ignore the super trait parameters since they should all be the same as the trait param
-        val superTraits = trt.superTraits.map(_.head.sym)
+        val superTraits = trt.superTraits.map(_.symUse.sym)
         (traitSym, TraitContext(superTraits, envInsts))
     }
     TraitEnv(m)
@@ -218,7 +219,7 @@ object Typer {
           val tp = visitTypeParam(tp0, root) // TODO ASSOC-TYPES redundant?
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, tpe, loc) // TODO ASSOC-TYPES trivial
       }
-      val tconstr = TraitConstraint(TraitConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
+      val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
       val laws = laws0.map(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv, open = false))
       TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
@@ -438,7 +439,7 @@ object Typer {
           case Type.AssocType(AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
             val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
-              case TraitConstraint(TraitConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+              case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
                 trtSym == tconstrSym && tvarSym1 == tvarSym2
               case _ => false
             }

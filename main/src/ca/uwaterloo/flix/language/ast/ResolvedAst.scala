@@ -353,7 +353,7 @@ object ResolvedAst {
     case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
   }
 
-  case class TraitConstraint(head: shared.TraitConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
+  case class TraitConstraint(symUse: TraitSymUse, tpe: UnkindedType, loc: SourceLocation)
 
   case class EqualityConstraint(cst: AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
