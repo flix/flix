@@ -220,9 +220,9 @@ object PredDeps {
     case Expr.StructGet(e, _, _, _, _) =>
       visitExp(e)
 
-    case Expr.StructPut(e1, _, e2, _, _, _) =>
-      visitExp(e1)
-      visitExp(e2)
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
