@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.formatTParams
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
@@ -296,7 +295,8 @@ sealed trait Completion {
     case Completion.StructCompletion(struct, ap, qualified, inScope) =>
       val qualifiedName = struct.sym.toString
       val name = if (qualified) qualifiedName else struct.sym.name
-      val label = name + formatTParams(struct.tparams)
+      val label = name + CompletionUtils.formatTParams(struct.tparams)
+      val snippet = name + CompletionUtils.formatTParamsSnippet(struct.tparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -307,7 +307,7 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, label),
+        textEdit            = TextEdit(context.range, snippet),
         documentation       = Some(struct.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Struct,

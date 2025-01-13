@@ -281,4 +281,17 @@ object CompletionUtils {
       case _ => tparams.map(_.name).mkString("[", ", ", "]")
     }
   }
+
+  /**
+   * Format type params in the right form to be inserted as a snippet
+   * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+   */
+  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.zipWithIndex.map {
+        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+      }.mkString("[", ", ", "]")
+    }
+  }
 }
