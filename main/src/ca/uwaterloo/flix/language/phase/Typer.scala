@@ -142,7 +142,7 @@ object Typer {
       (traitSym, trt) <- traits0.iterator
       inst <- instances0.getOrElse(traitSym, Nil)
       assocSig <- trt.assocs
-      assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+      assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
       assocDef = assocDefOpt match {
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)

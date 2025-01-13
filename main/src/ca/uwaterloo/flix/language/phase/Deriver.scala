@@ -51,8 +51,8 @@ object Deriver {
     val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
     val newInstances = derivedInstances.foldLeft(root.instances) {
       case (acc, inst) =>
-        val accInsts = acc.getOrElse(inst.trt.sym, Nil)
-        acc + (inst.trt.sym -> (inst :: accInsts))
+        val accInsts = acc.getOrElse(inst.symUse.sym, Nil)
+        acc + (inst.symUse.sym -> (inst :: accInsts))
     }
     (root.copy(instances = newInstances), sctx.errors.asScala.toList)
   }
