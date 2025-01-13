@@ -69,7 +69,7 @@ object CompletionProvider {
             EnumCompleter.getCompletions(err, namespace, ident) ++
             StructCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)

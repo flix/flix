@@ -680,21 +680,21 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the class name was not found.
+    * An error raised to indicate that the class name in an importing was not found.
     *
     * @param name the class name.
     * @param ap   the anchor position.
     * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined Java class: '$name'."
+  case class UndefinedJvmImport(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined Java Import: '$name'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined Java class '${red(name)}'.
+      s""">> Undefined Java Import '${red(name)}'.
          |
-         |${code(loc, "undefined class.")}
+         |${code(loc, "undefined Import.")}
          |
          |$msg
          |""".stripMargin
@@ -708,6 +708,50 @@ object ResolutionError {
         Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
       else
         None
+    }
+  }
+
+  /**
+    * An error raised to indicate that a class name was not found.
+    * @param name  the class name.
+    * @param ap    the anchor position.
+    * @param msg   the Java error message.
+    * @param loc   the location of the class name.
+    */
+  case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined Java class: '$name'."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined Java class '${red(name)}'.
+         |
+         |${code(loc, "undefined class.")}
+         |
+         |$msg
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that class/struct name was not found in a new expression.
+    *
+    * @param name the class/struct name
+    * @param ap   the anchor position.
+    * @param env  the variables in the scope.
+    * @param msg  the error message.
+    * @param loc  the location of the class/struct name.
+    */
+  case class UndefinedNew(name: String, ap: AnchorPosition, env: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined New: '$name'."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined New '${red(name)}'.
+         |
+         |${code(loc, "undefined new.")}
+         |
+         |$msg
+         |""".stripMargin
     }
   }
 

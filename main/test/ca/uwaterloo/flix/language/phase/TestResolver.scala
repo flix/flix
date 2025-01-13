@@ -648,7 +648,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
   test("UndefinedJvmClass.02") {
@@ -661,7 +661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
   test("UndefinedJvmClass.03") {
@@ -673,7 +673,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
   test("UndefinedJvmMethod.01") {
