@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, Constant, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -300,7 +300,7 @@ object HighlightProvider {
       case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+      case SymUse.TypeAliasSymUse(sym, _) => Some(getTypeAliasSymOccurs(sym))
       // Type Variables
       case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
       case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -593,7 +593,7 @@ object HighlightProvider {
     object TypeAliasSymConsumer extends Consumer {
       override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = considerWrite(alias.sym, alias.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => considerRead(sym, loc)
+        case Type.Alias(TypeAliasSymUse(sym, _), _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }

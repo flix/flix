@@ -2563,8 +2563,8 @@ object Resolver {
     def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
       val map = alias.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
-      val cst = AliasConstructor(alias.sym, cstLoc)
-      UnkindedType.Alias(cst, args, tpe, tpe0.loc)
+      val symUse = TypeAliasSymUse(alias.sym, cstLoc)
+      UnkindedType.Alias(symUse, args, tpe, tpe0.loc)
     }
 
     val baseType = tpe0.baseType
