@@ -133,7 +133,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(eqTraitSym, loc),
+        symUse = TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -282,7 +282,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(orderTraitSym, loc),
+        symUse = TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -299,14 +299,14 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
 
-      val lambdaVarSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
+      val lambdaSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
 
       // Create the lambda mapping tags to indices
-      val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
+      val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Modifiers.Empty, lambdaParamVarSym.tvar, TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamSym, Modifiers.Empty, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
         allowSubeffecting = false,
         loc
@@ -324,14 +324,14 @@ object Deriver {
           SigSymUse(compareSigSym, loc),
           List(
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaVarSym, loc),
+              mkVarExpr(lambdaSym, loc),
               mkVarExpr(param1, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaVarSym, loc),
+              mkVarExpr(lambdaSym, loc),
               mkVarExpr(param2, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
@@ -352,7 +352,7 @@ object Deriver {
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaVarSym, lambda, matchExp, loc)
+      KindedAst.Expr.Let(lambdaSym, lambda, matchExp, loc)
   }
 
   /**
@@ -500,7 +500,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(toStringTraitSym, loc),
+        symUse = TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -635,7 +635,7 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(hashTraitSym, loc),
+        symUse = TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -779,7 +779,7 @@ object Deriver {
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
-          trt = TraitSymUse(coerceTraitSym, loc),
+          symUse = TraitSymUse(coerceTraitSym, loc),
           tpe = tpe,
           tconstrs = Nil,
           defs = List(defn),
@@ -880,7 +880,7 @@ object Deriver {
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(varSym, loc)
+  private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
@@ -923,7 +923,7 @@ object Deriver {
   /**
     * Creates a variable pattern using the given variable symbol.
     */
-  private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar, loc)
+  private def mkVarPattern(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(sym, sym.tvar, loc)
 
   /**
     * Inserts `sep` between every two elements of `list`.

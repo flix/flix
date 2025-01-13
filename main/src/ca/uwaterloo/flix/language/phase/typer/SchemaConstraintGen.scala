@@ -229,8 +229,8 @@ object SchemaConstraintGen {
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
-      case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
-        val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
+      case KindedAst.Predicate.Body.Functional(syms, exp, loc) =>
+        val tupleType = Type.mkTuplish(syms.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         val (tpe, eff) = visitExp(exp)
         c.unifyType(expectedType, tpe, loc)
