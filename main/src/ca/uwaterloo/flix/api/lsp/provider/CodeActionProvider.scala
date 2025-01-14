@@ -45,7 +45,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedJvmImport(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>

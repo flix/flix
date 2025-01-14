@@ -1229,7 +1229,7 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
-            val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
+            val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
             sctx.errors.add(error)
             Validation.Success(ResolvedAst.Expr.Error(error))
         }
@@ -1317,7 +1317,7 @@ object Resolver {
             case Some(List(Resolution.JavaClass(clazz))) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
-              val error = ResolutionError.UndefinedJvmClass(className.name, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
+              val error = ResolutionError.UndefinedNewJvmClassOrStruct(className, AnchorPosition.mkImportOrUseAnchor(ns0), env0, "", loc)
               sctx.errors.add(error)
               Validation.Success(ResolvedAst.Expr.Error(error))
           }
@@ -3267,8 +3267,8 @@ object Resolver {
     val initialize = false
     Result.Ok(Class.forName(className, initialize, flix.jarLoader))
   } catch {
-    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
-    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
+    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
+    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
   }
 
   /**
