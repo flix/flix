@@ -67,8 +67,7 @@ object LocalScopeCompleter {
       case Resolution.Declaration(Namespace(_, _, _, _)) |
            Resolution.Declaration(TypeAlias(_, _, _, _, _, _, _)) |
            Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
-           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) |
-           Resolution.Declaration(Effect(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
     }
 
   /**

@@ -59,7 +59,7 @@ object AutoUseCompleter {
   def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (!shouldComplete(err.qn.ident.name)) return Nil
     if (err.qn.namespace.idents.nonEmpty) return Nil
-    mkEffCompletions(err.qn.ident.name, err.env, err.ap)
+    Nil
   }
 
   /**
