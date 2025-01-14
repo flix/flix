@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -34,17 +34,11 @@ object Safety {
 
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val (staleInstances, freshInstances) = changeSet.partitionOnValues(root.instances, oldRoot.instances)
     val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
     val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
-    val instances = mergeMappedList(freshInstances, ParOps.parMapValues(staleInstances)(visitInstanceList))
+    ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
 
-    val newRoot = root.copy(
-      defs = defs,
-      traits = traits,
-      instances = instances
-    )
-    (newRoot, sctx.errors.asScala.toList)
+    (root.copy(defs = defs, traits = traits), sctx.errors.asScala.toList)
   }
 
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
@@ -65,14 +59,6 @@ object Safety {
     visitExp(defn.exp)(inTryCatch = false, renv, sctx, flix)
     defn
   }
-
-  private def visitInstanceList(insts: List[TypedAst.Instance])(implicit sctx: SharedContext, flix: Flix): List[TypedAst.Instance] = {
-    insts.foreach(visitInstance)
-    insts
-  }
-
-  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit =
-    inst.defs.foreach(visitDef)
 
   /**
     * Checks tje safety and well-formedness of `exp0`.
@@ -807,12 +793,6 @@ object Safety {
   private def hasControlEffects(eff: Type): Boolean = {
     // TODO: This is unsound and incomplete because it ignores type variables, associated types, etc.
     !eff.effects.forall(Symbol.isPrimitiveEff)
-  }
-
-  private def mergeMappedList[K, V](map1: Map[K, List[V]], map2: Map[K, List[V]]): Map[K, List[V]] = {
-    map2.foldLeft(map1) {
-      case (acc, (k, v)) => acc.updated(k, acc.getOrElse(k, Nil) ++ v)
-    }
   }
 
   /**
