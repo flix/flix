@@ -1902,14 +1902,14 @@ object Resolver {
       Validation.Success(ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
 
     case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
-      val outVars = idents.map {
+      val syms = idents.map {
         case ident => env(ident.name).collectFirst {
           case Resolution.Var(sym) => sym
         }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
       }
       val eVal = resolveExp(exp, env)
       mapN(eVal) {
-        case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+        case e => ResolvedAst.Predicate.Body.Functional(syms, e, loc)
       }
 
     case NamedAst.Predicate.Body.Guard(exp, loc) =>
@@ -1956,31 +1956,31 @@ object Resolver {
     * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
     */
   private def resolveKindedTypeParam(tparam0: NamedAst.TypeParam.Kinded, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
-    case NamedAst.TypeParam.Kinded(name, tpe, kind0, loc) =>
+    case NamedAst.TypeParam.Kinded(name, sym, kind0, loc) =>
       val kind = resolveKind(kind0, env, ns0, root)
-      Validation.Success(ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc))
+      Validation.Success(ResolvedAst.TypeParam.Kinded(name, sym, kind, loc))
   }
 
   /**
     * Performs name resolution on the given unkinded type parameter `tparam0` in the given namespace `ns0`.
     */
   private def resolveUnkindedTypeParam(tparam0: NamedAst.TypeParam.Unkinded): ResolvedAst.TypeParam.Unkinded = tparam0 match {
-    case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc)
+    case NamedAst.TypeParam.Unkinded(name, sym, loc) => ResolvedAst.TypeParam.Unkinded(name, sym, loc)
   }
 
   /**
     * Performs name resolution on the given implicit type parameter `tparam0` in the given namespace `ns0`.
     */
   private def resolveImplicitTypeParam(tparam0: NamedAst.TypeParam, env0: LocalScope): Option[ResolvedAst.TypeParam] = tparam0 match {
-    case NamedAst.TypeParam.Implicit(name, tpe, loc) =>
+    case NamedAst.TypeParam.Implicit(name, sym, loc) =>
       // Check if the tparam is in the environment
       env0(name.name) collectFirst {
-        case Resolution.TypeVar(sym) => sym
+        case Resolution.TypeVar(envSym) => envSym
       } match {
         // Case 1: Already in the environment, this is not a type parameter.
         case Some(_) => None
         // Case 2: Not in the environment. This is a real type parameter.
-        case None => Some(ResolvedAst.TypeParam.Implicit(name, tpe, loc))
+        case None => Some(ResolvedAst.TypeParam.Implicit(name, sym, loc))
       }
     case NamedAst.TypeParam.Kinded(_, _, _, loc) => throw InternalCompilerException("unexpected explicit type parameter", loc)
     case NamedAst.TypeParam.Unkinded(_, _, loc) => throw InternalCompilerException("unexpected explicit type parameter", loc)
@@ -2088,13 +2088,13 @@ object Resolver {
     // Check for [[DuplicateDerivation]].
     val seen = mutable.Map.empty[Symbol.TraitSym, SourceLocation]
     val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
-    for (Derivation(traitSym, loc1) <- derives) {
-      seen.get(traitSym) match {
+    for (Derivation(sym, loc1) <- derives) {
+      seen.get(sym) match {
         case None =>
-          seen.put(traitSym, loc1)
+          seen.put(sym, loc1)
         case Some(loc2) =>
-          errors += DuplicateDerivation(traitSym, loc1, loc2)
-          errors += DuplicateDerivation(traitSym, loc2, loc1)
+          errors += DuplicateDerivation(sym, loc1, loc2)
+          errors += DuplicateDerivation(sym, loc2, loc1)
       }
     }
     errors.foreach(sctx.errors.add)

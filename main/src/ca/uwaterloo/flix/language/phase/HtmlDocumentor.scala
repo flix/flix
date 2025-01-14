@@ -1231,7 +1231,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
-      docTraitName(t.trt)
+      docTraitName(t.sym)
     }
     sb.append("</span>")
   }

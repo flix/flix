@@ -144,7 +144,7 @@ object Typer {
       (traitSym, trt) <- traits0.iterator
       inst <- instances0.getOrElse(traitSym, Nil)
       assocSig <- trt.assocs
-      assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+      assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
       assocDef = assocDefOpt match {
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
@@ -272,13 +272,13 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
-    case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, symUse, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
       val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
-          TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) =>
+          TypedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
 
       val defs = defs0.map {
@@ -287,7 +287,7 @@ object Typer {
           val open = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.InsDefs)
           visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
       }
-      TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      TypedAst.Instance(doc, ann, mod, symUse, tpe, tconstrs, assocs, defs, ns, loc)
   }
 
   /**

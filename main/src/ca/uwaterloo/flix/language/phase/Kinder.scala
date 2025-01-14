@@ -528,7 +528,7 @@ object Kinder {
       KindedAst.Expr.ArrayLength(exp, evar, loc)
 
     case ResolvedAst.Expr.StructNew(sym, exps0, region0, loc) =>
-      val exps = exps0.map {
+      val fields = exps0.map {
         case (symUse, fieldExp0) =>
           val exp = visitExp(fieldExp0, kenv0, taenv, henv0, root)
           (symUse, exp)
@@ -536,7 +536,7 @@ object Kinder {
       val region = visitExp(region0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.StructNew(sym, exps, region, tvar, evar, loc)
+      KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc)
 
     case ResolvedAst.Expr.StructGet(exp0, symUse, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
@@ -939,9 +939,9 @@ object Kinder {
       val pvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
       KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, pvar, loc)
 
-    case ResolvedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+    case ResolvedAst.Predicate.Body.Functional(syms, exp0, loc) =>
       val exp = visitExp(exp0, kenv, taenv, henv, root)
-      KindedAst.Predicate.Body.Functional(outVars, exp, loc)
+      KindedAst.Predicate.Body.Functional(syms, exp, loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       val exp = visitExp(exp0, kenv, taenv, henv, root)
@@ -1445,8 +1445,8 @@ object Kinder {
     * Gets a kind environment from the type param, defaulting to Star kind if it is unkinded.
     */
   private def getKindEnvFromTypeParam(tparam0: ResolvedAst.TypeParam): KindEnv = tparam0 match {
-    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Star)
+    case ResolvedAst.TypeParam.Kinded(_, sym, kind, _) => KindEnv.singleton(sym -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Star)
     case ResolvedAst.TypeParam.Implicit(_, _, _) => KindEnv.empty
   }
 
@@ -1454,8 +1454,8 @@ object Kinder {
     * Gets a kind environment from the type param, defaulting the to kind of the given enum's tags if it is unkinded.
     */
   private def getKindEnvFromIndex(index0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym): KindEnv = index0 match {
-    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.CaseSet(sym))
+    case ResolvedAst.TypeParam.Kinded(_, kSym, kind, _) => KindEnv.singleton(kSym -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, uSym, _) => KindEnv.singleton(uSym -> Kind.CaseSet(sym))
     case ResolvedAst.TypeParam.Implicit(_, _, _) => KindEnv.empty
   }
 
@@ -1463,9 +1463,9 @@ object Kinder {
     * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
     */
   private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam): KindEnv = tparam0 match {
-    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
-    case ResolvedAst.TypeParam.Implicit(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
+    case ResolvedAst.TypeParam.Kinded(_, sym, kind, _) => KindEnv.singleton(sym -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
+    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
   }
 
   /**

@@ -515,7 +515,7 @@ object CodeActionProvider {
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
+    val alreadyDerived = e.derives.traits.exists(d => d.sym.name == trt)
     if (alreadyDerived)
       None
     else Some(
