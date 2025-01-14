@@ -639,7 +639,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.ConstructorNotFound](result)
   }
 
-  test("UndefinedJvmClass.01") {
+  test("UndefinedJvmImport.01") {
     val input =
       raw"""
            |import foo.bar.Baz
@@ -651,7 +651,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
-  test("UndefinedJvmClass.02") {
+  test("UndefinedJvmImport.02") {
     val input =
       raw"""
            |import foo.bar.Baz
@@ -664,7 +664,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
-  test("UndefinedJvmClass.03") {
+  test("UndefinedJvmImport.03") {
     val input =
       raw"""
            |import foo.bar.Baz
