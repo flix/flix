@@ -509,7 +509,7 @@ object Resolver {
           flatMapN(fparamsVal) {
             case fparams =>
               val env = env1 ++ mkFormalParamEnv(fparams)
-              val tpeVal = resolveType(tpe0, None, Wildness.AllowWild, env, taenv, ns0, root)
+              val tpeVal = resolveType(tpe0, Some(Kind.Star), Wildness.AllowWild, env, taenv, ns0, root)
               val effVal = traverseOpt(eff0)(resolveType(_, Some(Kind.Eff), Wildness.AllowWild, env, taenv, ns0, root))
               val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
@@ -581,7 +581,7 @@ object Resolver {
     */
   private def resolveCase(caze0: NamedAst.Declaration.Case, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
     case NamedAst.Declaration.Case(sym, tpes0, loc) =>
-      val tpesVal = traverse(tpes0)(resolveType(_, None, Wildness.ForbidWild, env, taenv, ns0, root))
+      val tpesVal = traverse(tpes0)(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, env, taenv, ns0, root))
       mapN(tpesVal) {
         tpes => ResolvedAst.Declaration.Case(sym, tpes, loc)
       }
@@ -592,7 +592,7 @@ object Resolver {
     */
   private def resolveStructField(field0: NamedAst.Declaration.StructField, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
-      val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, env, taenv, ns0, root)
+      val tpeVal = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
         tpe => ResolvedAst.Declaration.StructField(mod, sym, tpe, loc)
       }
@@ -603,7 +603,7 @@ object Resolver {
     */
   private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
     case NamedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
-      val tpesVal = traverse(tpes0)(resolveType(_, None, Wildness.ForbidWild, env, taenv, ns0, root))
+      val tpesVal = traverse(tpes0)(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, env, taenv, ns0, root))
       mapN(tpesVal) {
         tpes => ResolvedAst.Declaration.RestrictableCase(sym, tpes, loc)
       }
@@ -639,7 +639,7 @@ object Resolver {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, tpe0, loc) =>
       val tparamVal = resolveTypeParam(tparam0, env, ns0, root)
       val kind = resolveKind(kind0, env, ns0, root)
-      val tpeVal = traverseOpt(tpe0)(resolveType(_, None, Wildness.ForbidWild, env, taenv, ns0, root))
+      val tpeVal = traverseOpt(tpe0)(resolveType(_, Some(kind), Wildness.ForbidWild, env, taenv, ns0, root))
       mapN(tparamVal, tpeVal) {
         case (tparam, tpe) => ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
       }
@@ -1215,8 +1215,8 @@ object Resolver {
       }
 
     case NamedAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
-      val expectedTypVal = traverseOpt(expectedType)(resolveType(_, None, Wildness.AllowWild, env0, taenv, ns0, root))
-      val expectedEffVal = traverseOpt(expectedEff)(resolveType(_, None, Wildness.AllowWild, env0, taenv, ns0, root))
+      val expectedTypVal = traverseOpt(expectedType)(resolveType(_, Some(Kind.Star), Wildness.AllowWild, env0, taenv, ns0, root))
+      val expectedEffVal = traverseOpt(expectedEff)(resolveType(_, Some(Kind.Eff), Wildness.AllowWild, env0, taenv, ns0, root))
 
       val eVal = resolveExp(exp, env0)
       mapN(eVal, expectedTypVal, expectedEffVal) {
@@ -1241,8 +1241,8 @@ object Resolver {
       }
 
     case NamedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
-      val declaredTypVal = traverseOpt(declaredType)(resolveType(_, None, Wildness.ForbidWild, env0, taenv, ns0, root))
-      val declaredEffVal = traverseOpt(declaredEff)(resolveType(_, None, Wildness.ForbidWild, env0, taenv, ns0, root))
+      val declaredTypVal = traverseOpt(declaredType)(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, env0, taenv, ns0, root))
+      val declaredEffVal = traverseOpt(declaredEff)(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, env0, taenv, ns0, root))
 
       val eVal = resolveExp(exp, env0)
       mapN(eVal, declaredTypVal, declaredEffVal) {
@@ -1251,7 +1251,7 @@ object Resolver {
 
     case NamedAst.Expr.Unsafe(exp, eff0, loc) =>
       val eVal = resolveExp(exp, env0)
-      val effVal = resolveType(eff0, None, Wildness.ForbidWild, env0, taenv, ns0, root)
+      val effVal = resolveType(eff0, Some(Kind.Eff), Wildness.ForbidWild, env0, taenv, ns0, root)
       mapN(eVal, effVal) {
         case (e, eff) => ResolvedAst.Expr.Unsafe(e, eff, loc)
       }
@@ -1339,7 +1339,7 @@ object Resolver {
       }
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
-      flatMapN(resolveType(tpe, None, Wildness.ForbidWild, env0, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, env0))) {
+      flatMapN(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, env0, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, env0))) {
         case (t, ms) =>
           //
           // Check that the type is a JVM type (after type alias erasure).
@@ -1720,8 +1720,8 @@ object Resolver {
         case fparams =>
           val env = env0 ++ mkFormalParamEnv(fparams)
           val expVal = resolveExp(exp, env)
-          val tpeVal = resolveType(tpe, None, Wildness.ForbidWild, env, taenv, ns0, root)
-          val effVal = traverseOpt(eff)(resolveType(_, None, Wildness.ForbidWild, env, taenv, ns0, root))
+          val tpeVal = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, env, taenv, ns0, root)
+          val effVal = traverseOpt(eff)(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, env, taenv, ns0, root))
           mapN(expVal, tpeVal, effVal) {
             case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
           }
@@ -1923,7 +1923,7 @@ object Resolver {
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
     */
   private def resolveFormalParam(fparam0: NamedAst.FormalParam, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-    val tVal = traverseOpt(fparam0.tpe)(resolveType(_, None, Wildness.AllowWild, env, taenv, ns0, root))
+    val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), Wildness.AllowWild, env, taenv, ns0, root))
     mapN(tVal) {
       t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
@@ -1937,7 +1937,7 @@ object Resolver {
       Validation.Success(ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
     case NamedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
-      mapN(traverse(tpes)(resolveType(_, None, Wildness.ForbidWild, env, taenv, ns0, root))) {
+      mapN(traverse(tpes)(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, env, taenv, ns0, root))) {
         case ts => ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
       }
 
@@ -2695,6 +2695,8 @@ object Resolver {
 
   /**
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
+    *
+    * Note: the kindOpt argument is _NOT_ used for resolution. It is only used for any potential error message.
     */
   private def resolveType(tpe0: NamedAst.Type, kindOpt: Option[Kind], wildness: Wildness, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     val tVal = semiResolveType(tpe0, kindOpt, wildness, env, ns0, root)
