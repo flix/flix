@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Annotation, Derivation, Derivations, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivations, EqualityConstraint, TraitConstraint}
 
 /**
   * Defines how each AST node type is handled when it's visited.
@@ -45,7 +45,6 @@ import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Annotation, 
   */
 trait Consumer {
   def consumeAnnotation(ann: Annotation): Unit = ()
-  def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
   def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
   def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
   def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()

@@ -811,14 +811,14 @@ object SemanticTokensProvider {
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
     case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeSymUse(symUse: AssocTypeSymUse): Iterator[SemanticToken] = symUse match {
+    case AssocTypeSymUse(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

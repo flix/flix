@@ -1205,9 +1205,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.cst.sym.trt)
+      docTraitName(e.symUse.sym.trt)
       sb.append(".")
-      sb.append(esc(e.cst.sym.name))
+      sb.append(esc(e.symUse.sym.name))
       sb.append("[")
       docType(e.tpe1)
       sb.append("] ~ ")

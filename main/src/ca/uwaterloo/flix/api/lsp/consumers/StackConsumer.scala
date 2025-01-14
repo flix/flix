@@ -41,7 +41,6 @@ case class StackConsumer() extends Consumer {
   def getStack: List[AnyRef] = stack
 
   override def consumeAnnotation(ann: Annotation): Unit = push(ann)
-  override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = push(tcst)
   override def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = push(tdefn)
   override def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = push(tsig)
   override def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = push(symUse)
