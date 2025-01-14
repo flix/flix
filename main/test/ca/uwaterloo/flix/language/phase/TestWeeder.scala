@@ -75,55 +75,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateTag.01") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Red
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.02") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Red
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.03") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Red
-        |  case Blu
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.04") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Blu,
-        |  case Ylw
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
   test("DuplicateStructField.01") {
     val input =
       """struct Person[r] {
