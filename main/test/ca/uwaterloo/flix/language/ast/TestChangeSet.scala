@@ -40,7 +40,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.partition should put something changed into staleMap.01") {
+  test("ChangeSet.partition should put anything changed into staleMap.01") {
     val oldMap = Map(src1 -> 1, src2 -> 2)
     val newMap = Map(src1 -> 3, src2 -> 2)
 
@@ -51,7 +51,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map(src2 -> 2))
   }
 
-  test("ChangeSet.partition should put something changed into staleMap.02") {
+  test("ChangeSet.partition should put anything changed into staleMap.02") {
     val oldMap = Map(src1 -> 1, src2 -> 2, src3 -> 3, src4 -> 4, src5 -> 5)
     val newMap = Map(src1 -> 3, src2 -> 2, src3 -> 3, src4 -> 4, src5 -> 5)
 
@@ -62,7 +62,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.partition should put something new into staleMap") {
+  test("ChangeSet.partition should put anything new into staleMap") {
     val oldMap = Map(src1 -> 1, src2 -> 2)
     val newMap = Map(src1 -> 1, src2 -> 2, src3 -> 3)
 
@@ -117,7 +117,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.partitionOnValues should put something changed into staleMap.01") {
+  test("ChangeSet.partitionOnValues should put anything changed into staleMap.01") {
     val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2))
     val newMap = Map(1 -> List(src1, src2), 2 -> List(src2))
 
@@ -128,7 +128,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map(1 -> List(src2), 2 -> List(src2)))
   }
 
-  test("ChangeSet.partitionOnValues should put something changed into staleMap.02") {
+  test("ChangeSet.partitionOnValues should put anything changed into staleMap.02") {
     val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5))
     val newMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5))
 
@@ -139,7 +139,7 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.partitionOnValues should put something new into staleMap") {
+  test("ChangeSet.partitionOnValues should put anything new into staleMap") {
     val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2))
     val newMap = Map(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src4))
 
