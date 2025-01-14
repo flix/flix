@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -984,11 +984,12 @@ object ResolutionError {
   /**
     * Undefined Type Error.
     *
-    * @param qn  the name.
-    * @param ap  the enclosing module.
-    * @param loc the location where the error occurred.
+    * @param qn       the name.
+    * @param kindOpt  the kind of the type.
+    * @param ap       the enclosing module.
+    * @param loc      the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
