@@ -33,17 +33,6 @@ sealed trait Completion {
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
 
-    case Completion.EffectCompletion(sym, doc) =>
-      val name = sym.toString
-      CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        textEdit         = TextEdit(context.range, name),
-        documentation    = Some(doc),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
     case Completion.AutoUseEffCompletion(sym, doc, ap) =>
       val name = sym.name
       val qualifiedName = sym.toString
@@ -314,6 +303,24 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
+    case Completion.EffectCompletion(effect, ap, qualified, inScope) =>
+      val qualifiedName = effect.sym.toString
+      val name = if (qualified) qualifiedName else effect.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(effect.doc.text),
+        kind                = CompletionItemKind.Event,
+        additionalTextEdits = additionalTextEdit
+      )
     case Completion.SigCompletion(decl) =>
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
@@ -515,14 +522,6 @@ sealed trait Completion {
 }
 
 object Completion {
-
-  /**
-    * Represents an effect symbol completion.
-    *
-    * @param sym the effect symbol.
-    * @param doc the documentation associated with the effect.
-    */
-  case class EffectCompletion(sym: Symbol.EffectSym, doc: String) extends Completion
 
   /**
     * Represents a keyword completion.
@@ -740,6 +739,16 @@ object Completion {
    * @param inScope   indicate whether to the enum is inScope.
    */
   case class StructCompletion(struct: TypedAst.Struct, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a Enum completion
+    *
+    * @param effect    the effect construct.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the enum is inScope.
+    */
+  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion
