@@ -392,17 +392,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
@@ -458,17 +450,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.RestrictableCase(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
