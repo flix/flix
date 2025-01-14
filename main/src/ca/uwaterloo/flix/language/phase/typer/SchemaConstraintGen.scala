@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Denotation, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
@@ -141,7 +142,7 @@ object SchemaConstraintGen {
         c.addClassConstraints(List(order, foldable), loc)
 
         val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
-        val aefTpe = Type.AssocType(AssocTypeConstructor(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
+        val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
 
         val (tpe, eff) = visitExp(exp)
         c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
