@@ -75,7 +75,9 @@ sealed trait ChangeSet {
       newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
         val oldList = oldMap.getOrElse(k, Nil)
         val (freshList, staleList) = vList.partition(v => oldList.contains(v) &&  !dirty.contains(v.src.input))
-        (stale + (k -> staleList), fresh + (k -> freshList))
+        val staleMap = if (staleList.nonEmpty) stale + (k -> staleList) else stale
+        val freshMap = if (freshList.nonEmpty) fresh + (k -> freshList) else fresh
+        (staleMap, freshMap)
       }
   }
 }

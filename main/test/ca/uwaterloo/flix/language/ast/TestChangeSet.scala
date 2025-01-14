@@ -30,18 +30,20 @@ class TestChangeSet extends AnyFunSuite {
   )))
 
   test("ChangeSet.Everything.partition should make everything stale") {
-    val cs = ChangeSet.Everything
     val oldMap = Map(src1 -> 1, src2 -> 2)
     val newMap = Map(src3 -> 3, src4 -> 4)
+
+    val cs = ChangeSet.Everything
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
     assert(staleMap == newMap)
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.Dirty.partition should put something changed into staleMap.01") {
+  test("ChangeSet.partition should put something changed into staleMap.01") {
     val oldMap = Map(src1 -> 1, src2 -> 2)
     val newMap = Map(src1 -> 3, src2 -> 2)
+
     val cs = ChangeSet.Everything.markChanged(input1, dg1)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
@@ -49,9 +51,10 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map(src2 -> 2))
   }
 
-  test("ChangeSet.Dirty.partition should put something changed into staleMap.02") {
+  test("ChangeSet.partition should put something changed into staleMap.02") {
     val oldMap = Map(src1 -> 1, src2 -> 2, src3 -> 3, src4 -> 4, src5 -> 5)
     val newMap = Map(src1 -> 3, src2 -> 2, src3 -> 3, src4 -> 4, src5 -> 5)
+
     val cs = ChangeSet.Everything.markChanged(input1, dg2)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
@@ -59,43 +62,124 @@ class TestChangeSet extends AnyFunSuite {
     assert(freshMap == Map.empty)
   }
 
-  test("ChangeSet.Dirty.partition should put something new into staleMap") {
+  test("ChangeSet.partition should put something new into staleMap") {
     val oldMap = Map(src1 -> 1, src2 -> 2)
     val newMap = Map(src1 -> 1, src2 -> 2, src3 -> 3)
-    val cs = ChangeSet.Dirty(Set.empty)
+
+    val cs = ChangeSet.Everything.markChanged(input3, dg1)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
     assert(staleMap == Map(src3 -> 3))
     assert(freshMap == Map(src1 -> 1, src2 -> 2))
   }
 
-  test("ChangeSet.Dirty.partition should ignore anything deleted") {
+  test("ChangeSet.partition should ignore anything deleted") {
     val oldMap = Map(src1 -> 1, src2 -> 2, src3 -> 3)
     val newMap = Map(src1 -> 1, src2 -> 2)
-    val cs = ChangeSet.Dirty(Set.empty)
+
+    val cs = ChangeSet.Everything.markChanged(input3, dg1)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
     assert(staleMap == Map.empty)
     assert(freshMap == Map(src1 -> 1, src2 -> 2))
   }
 
-  test("ChangeSet.Dirty.partition test with both newed and deleted input") {
+  test("ChangeSet.partition test with both newed and deleted input") {
     val oldMap = Map(src1 -> 1, src2 -> 2, src3 -> 3)
     val newMap = Map(src2 -> 2, src3 -> 3, src4 -> 4)
-    val cs = ChangeSet.Dirty(Set.empty)
+
+    val cs = ChangeSet.Everything.markChanged(input1, dg1).markChanged(input4, dg1)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
     assert(staleMap == Map(src4 -> 4))
     assert(freshMap == Map(src2 -> 2, src3 -> 3))
   }
 
-  test("ChangeSet.Dirty.partition test with new, deleted and changed input") {
+  test("ChangeSet.partition test with new, deleted and changed input") {
     val oldMap = Map(src1 -> 1, src2 -> 2, src3 -> 3, src5 -> 5)
     val newMap = Map(src2 -> 2, src3 -> 30, src4 -> 4, src5 -> 5)
-    val cs = ChangeSet.Everything.markChanged(input3, dg2)
+
+    val cs = ChangeSet.Everything.markChanged(input1, dg1).markChanged(input3, dg2).markChanged(input4, dg1)
     val (staleMap, freshMap) = cs.partition(newMap, oldMap)
 
     assert(staleMap == Map(src3 -> 30, src4 -> 4, src5 -> 5))
     assert(freshMap == Map(src2 -> 2))
+  }
+
+  test("ChangeSet.Everything.partitionOnValues should make everything stale") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2))
+    val newMap = Map(3 -> List(src3), 4 -> List(src4, src5))
+
+    val cs = ChangeSet.Everything
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == newMap)
+    assert(freshMap == Map.empty)
+  }
+
+  test("ChangeSet.partitionOnValues should put something changed into staleMap.01") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2))
+
+    val cs = ChangeSet.Everything.markChanged(input1, dg1)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map(1 -> List(src1)))
+    assert(freshMap == Map(1 -> List(src2), 2 -> List(src2)))
+  }
+
+  test("ChangeSet.partitionOnValues should put something changed into staleMap.02") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5))
+
+    val cs = ChangeSet.Everything.markChanged(input1, dg2)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5)))
+    assert(freshMap == Map.empty)
+  }
+
+  test("ChangeSet.partitionOnValues should put something new into staleMap") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src4))
+
+    val cs = ChangeSet.Everything.markChanged(input3, dg1)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map(2 -> List(src3), 3 -> List(src4)))
+    assert(freshMap == Map(1 -> List(src1, src2), 2 -> List(src2)))
+  }
+
+  test("ChangeSet.partitionOnValues should ignore anything deleted") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src4))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2))
+
+    val cs = ChangeSet.Everything.markChanged(input3, dg1).markChanged(input4, dg1)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map.empty)
+    assert(freshMap == Map(1 -> List(src1, src2), 2 -> List(src2)))
+  }
+
+  test("ChangeSet.partitionOnValues test with both newed and deleted input") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src4))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4, src5))
+
+    val cs = ChangeSet.Everything.markChanged(input3, dg1).markChanged(input5, dg1)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map(3 -> List(src5)))
+    assert(freshMap == Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4)))
+  }
+
+  test("ChangeSet.partitionOnValues test with new, deleted and changed input") {
+    val oldMap = Map(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src5))
+    val newMap = Map(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4, src5))
+
+    val cs = ChangeSet.Everything.markChanged(input1, dg1).markChanged(input3, dg1).markChanged(input4, dg1)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+
+    assert(staleMap == Map(1 -> List(src1), 3 -> List(src4)))
+    assert(freshMap == Map(1 -> List(src2), 2 -> List(src2), 3 -> List(src5)))
   }
 }
