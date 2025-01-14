@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Constant, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -266,7 +266,6 @@ object HighlightProvider {
       // Assoc Types
       case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
       case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
       // Defs
       case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))

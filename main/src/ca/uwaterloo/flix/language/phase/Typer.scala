@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -436,7 +437,7 @@ object Typer {
 
         // check that they are all covered by the type constraints
         tpes.flatMap(getAssocTypes).foreach {
-          case Type.AssocType(AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+          case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
             val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
               case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>

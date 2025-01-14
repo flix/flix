@@ -249,21 +249,14 @@ object Visitor {
   }
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EqualityConstraint(cst, tpe1, tpe2, loc) = ec
+    val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) { return }
 
     c.consumeEqualityConstraint(ec)
 
-    visitAssocTypeConstructor(cst)
+    visitAssocTypeSymUse(symUse)
     visitType(tpe1)
     visitType(tpe2)
-  }
-
-  private def visitAssocTypeConstructor(tcst: AssocTypeConstructor)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeConstructor(_, loc) = tcst
-    if (!a.accept(loc)) { return }
-
-    c.consumeAssocTypeConstructor(tcst)
   }
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {

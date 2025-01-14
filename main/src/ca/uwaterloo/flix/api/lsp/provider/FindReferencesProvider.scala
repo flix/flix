@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -177,7 +177,6 @@ object FindReferencesProvider {
     case SymUse.StructFieldSymUse(_, loc) => loc.isReal
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
-    case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
     case TraitConstraint(_, _, loc) => loc.isReal
 
@@ -198,8 +197,6 @@ object FindReferencesProvider {
     // Assoc Types
     case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
     case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
-    case AssocTypeConstructor(sym, _) => Some(getAssocTypeSymOccurs(sym))
-    case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
     // Cases
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
@@ -250,11 +247,6 @@ object FindReferencesProvider {
 
     object AssocTypeSymConsumer extends Consumer {
       override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = consider(symUse.sym, symUse.loc)
-      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, tcst.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.AssocType(AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, loc)
-        case _ => ()
-      }
     }
 
     Visitor.visitRoot(root, AssocTypeSymConsumer, AllAcceptor)
