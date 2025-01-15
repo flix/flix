@@ -329,7 +329,7 @@ object ConstraintSolver2 {
 
       // Find the instance that matches
       val matches = insts.flatMap {
-        case Instance(instTpe, instConstrs) =>
+        case Instance(_, instTpe, instConstrs) => // MATT use tparams
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
