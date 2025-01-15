@@ -127,7 +127,7 @@ object Typer {
       case (traitSym, trt) =>
         val instances = instances0.getOrElse(traitSym, Nil)
         val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, tparams, tpe, tconstrs, _, _, _, _) => Instance(tparams, tpe, tconstrs)
+          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) => Instance(tparams.map(_.sym), tpe, tconstrs)
         }
         // ignore the super trait parameters since they should all be the same as the trait param
         val superTraits = trt.superTraits.map(_.symUse.sym)
@@ -272,9 +272,9 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
-    case KindedAst.Instance(doc, ann, mod, symUse, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
-      val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+      val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_)) // MATT use tparams0
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) =>

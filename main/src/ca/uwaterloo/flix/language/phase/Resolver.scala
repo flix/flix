@@ -437,7 +437,6 @@ object Resolver {
     */
   private def resolveInstance(i0: NamedAst.Declaration.Instance, env0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann, mod, trt0, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
-      // TODO NS-REFACTOR pull tparams all the way through phases
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -454,7 +453,7 @@ object Resolver {
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
                   val symUse = TraitSymUse(trt.sym, trt0.loc)
-                  ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
+                  ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
           }
       }
