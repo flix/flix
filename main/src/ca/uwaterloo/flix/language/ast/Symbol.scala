@@ -787,7 +787,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = name
+    override def toString: String = namespace.mkString(".") + "." + name
   }
 
   /**

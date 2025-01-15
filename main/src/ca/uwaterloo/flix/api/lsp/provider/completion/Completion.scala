@@ -129,16 +129,6 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(
-        label            = s"${aliasSym.name}$nameSuffix",
-        sortText         = Priority.toSortText(priority, aliasSym.name),
-        textEdit         = textEdit,
-        documentation    = documentation,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(
         label            = name,
@@ -321,6 +311,30 @@ sealed trait Completion {
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
       )
+
+    case Completion.TypeAliasCompletion(typeAlias, ap, qualified, inScope) =>
+      val qualifiedName = typeAlias.sym.toString
+      println(qualifiedName)
+      val name = if (qualified) qualifiedName else typeAlias.sym.name
+      val label = name + CompletionUtils.formatTParams(typeAlias.tparams)
+      val snippet = name + CompletionUtils.formatTParamsSnippet(typeAlias.tparams)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = label,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        documentation       = Some(typeAlias.doc.text),
+        kind                = CompletionItemKind.TypeParameter,
+        insertTextFormat    = InsertTextFormat.Snippet,
+        additionalTextEdits = additionalTextEdit
+      )
+
     case Completion.SigCompletion(decl) =>
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
@@ -594,18 +608,6 @@ object Completion {
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
-    * Represents a type completion for alias
-    *
-    * @param aliasSym      the alias symbol.
-    * @param nameSuffix    the suffix for the name of the AliasType.
-    * @param priority      the priority of the AliasType.
-    * @param textEdit      the edit which is applied to a document when selecting this completion.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
-                                 documentation: Option[String]) extends Completion
-
-  /**
     * Represents a With completion
     *
     * @param name             the name of the completion.
@@ -749,6 +751,12 @@ object Completion {
     * @param inScope   indicate whether to the enum is inScope.
     */
   case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a type completion for type alias
+    *
+    */
+  case class TypeAliasCompletion(typeAlias: TypedAst.TypeAlias, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion
