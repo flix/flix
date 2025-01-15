@@ -314,7 +314,6 @@ sealed trait Completion {
 
     case Completion.TypeAliasCompletion(typeAlias, ap, qualified, inScope) =>
       val qualifiedName = typeAlias.sym.toString
-      println(qualifiedName)
       val name = if (qualified) qualifiedName else typeAlias.sym.name
       val label = name + CompletionUtils.formatTParams(typeAlias.tparams)
       val snippet = name + CompletionUtils.formatTParamsSnippet(typeAlias.tparams)
