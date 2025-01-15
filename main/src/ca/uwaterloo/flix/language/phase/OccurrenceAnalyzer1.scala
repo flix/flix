@@ -363,8 +363,8 @@ object OccurrenceAnalyzer1 {
   }
 
   private def combineApplyCloInfo(occurInfo0: OccurInfo, exp0: OccurrenceAst1.Expr): OccurInfo = exp0 match {
-    case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
-      occurInfo0 :+ sym -> Once
+    case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) => ???
+    // occurInfo0 :+ sym -> Once
     case _ => occurInfo0
   }
 
