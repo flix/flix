@@ -93,4 +93,10 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
    */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
 
+  def values: Iterable[List[V]] = m.values
+
+  def keys: Iterable[K] = m.keys
+
+  def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
+
 }

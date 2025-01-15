@@ -39,7 +39,7 @@ object Regions {
     implicit val sctx: SharedContext = SharedContext.mk()
     ParOps.parMapValues(root.defs)(visitDef)
     ParOps.parMapValues(root.sigs)(visitSig)
-    ParOps.parMapValues(root.instances)(visitInstanceList)
+    ParOps.parMapValueList(root.instances)(visitInstanceList)
     (root, sctx.errors.asScala.toList)
   }
 

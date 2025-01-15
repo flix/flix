@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
@@ -87,6 +88,14 @@ object ParOps {
     */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
+      case (k, v) => (k, f(v))
+    }.toMap
+
+  /**
+    * Applies the function `f` to every value of the map `m` in parallel.
+    */
+  def parMapValueList[K, A, B](m: ListMap[K, A])(f: List[A] => B)(implicit flix: Flix): Map[K, B] =
+    parMap(m.m) {
       case (k, v) => (k, f(v))
     }.toMap
 

@@ -43,7 +43,7 @@ object PredDeps {
     implicit val sctx: SharedContext = SharedContext.mk()
     ParOps.parMapValues(root.defs)(visitDef)
     ParOps.parMapValues(root.traits)(visitTrait)
-    ParOps.parMapValues(root.instances)(visitInstanceList)
+    ParOps.parMapValueList(root.instances)(visitInstanceList)
 
     val g = LabelledPrecedenceGraph(sctx.edges.asScala.toVector)
     (root.copy(precedenceGraph = g), List.empty)
