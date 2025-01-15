@@ -55,7 +55,6 @@ object CompletionProvider {
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            AutoUseCompleter.getCompletions(err) ++
             ExprCompleter.getCompletions(ctx) ++
             DefCompleter.getCompletions(err, namespace, ident) ++
             EnumCompleter.getCompletions(err, namespace, ident)
@@ -63,7 +62,6 @@ object CompletionProvider {
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            AutoUseCompleter.getCompletions(err) ++
             TypeCompleter.getCompletions(ctx) ++
             EnumCompleter.getCompletions(err, namespace, ident) ++
             StructCompleter.getCompletions(err, namespace, ident) ++
