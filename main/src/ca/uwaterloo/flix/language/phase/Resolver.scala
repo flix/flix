@@ -2449,11 +2449,6 @@ object Resolver {
           r => UnkindedType.mkSchema(r, loc)
         }
 
-      case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, ns0, loc).toValidation) {
-          case clazz => flixifyType(clazz, loc)
-        }
-
       case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
         val tresultVal = visit(tresult0)
