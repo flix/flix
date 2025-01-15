@@ -64,7 +64,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
     val tpe2 = Type.Int32
     val renv = RigidityEnv.empty
-    val eqEnv = ListMap.singleton(ElemSym, AssocTypeDef(Type.Str, Type.Char))
+    val eqEnv = ListMap.singleton(ElemSym, AssocTypeDef(Nil, Type.Str, Type.Char))
     val result = Unification.unifiesWith(tpe1, tpe2, renv, eqEnv)
 
     val expectedResult = false

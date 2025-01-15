@@ -145,13 +145,15 @@ object Typer {
       inst <- instances0.getOrElse(traitSym, Nil)
       assocSig <- trt.assocs
       assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
+      tparams = inst.tparams.map(_.sym)
       assocDef = assocDefOpt match {
+        // If there's no definition, then we fall back to the default
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
-          AssocTypeDef(inst.tpe, tpe)
+          AssocTypeDef(tparams, inst.tpe, tpe)
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
-          AssocTypeDef(arg, tpe)
+          AssocTypeDef(tparams, arg, tpe)
       }
     } yield (assocSig.sym, assocDef)
 
