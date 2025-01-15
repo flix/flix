@@ -227,14 +227,15 @@ object Kinder {
     * Performs kinding on the given instance.
     */
   private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = inst match {
-    case ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+    case ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val kind = getTraitKind(root.traits(symUse.sym))
       val kenv = inferType(tpe0, kind, KindEnv.empty, taenv, root)
+      val tparams = tparams0.map(visitTypeParam(_, kenv))
       val t = visitType(tpe0, kind, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, taenv, root))
       val defs = defs0.map(visitDef(_, kenv, taenv, root))
-      KindedAst.Instance(doc, ann, mod, symUse, t, tconstrs, assocs, defs, ns, loc)
+      KindedAst.Instance(doc, ann, mod, symUse, tparams, t, tconstrs, assocs, defs, ns, loc)
   }
 
   /**

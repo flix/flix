@@ -134,6 +134,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         symUse = TraitSymUse(eqTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -283,6 +284,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         symUse = TraitSymUse(orderTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -501,6 +503,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         symUse = TraitSymUse(toStringTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -636,6 +639,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         symUse = TraitSymUse(hashTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -751,7 +755,7 @@ object Deriver {
     * }}}
     */
   private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[KindedAst.Instance] = enum0 match {
-    case KindedAst.Enum(_, _, _, sym, _, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, sym, tparams, _, cases, tpe, _) =>
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
         val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId()))
@@ -780,6 +784,7 @@ object Deriver {
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
           symUse = TraitSymUse(coerceTraitSym, loc),
+          tparams = tparams,
           tpe = tpe,
           tconstrs = Nil,
           defs = List(defn),
