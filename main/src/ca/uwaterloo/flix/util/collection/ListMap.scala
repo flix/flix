@@ -99,4 +99,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
 
   def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
 
+  def withFilter(p: ((K, List[V])) => Boolean): ListMap[K, V] = ListMap(m.filter(p))
+
+  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
 }

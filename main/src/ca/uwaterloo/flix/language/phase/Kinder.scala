@@ -75,7 +75,7 @@ object Kinder {
 
     val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
-    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
+    val instances = ParOps.parMapValueList(root.instances)(_.map(visitInstance(_, taenv, root)))
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 

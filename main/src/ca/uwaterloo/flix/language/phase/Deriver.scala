@@ -52,7 +52,7 @@ object Deriver {
     val newInstances = derivedInstances.foldLeft(root.instances) {
       case (acc, inst) =>
         val accInsts = acc.getOrElse(inst.symUse.sym, Nil)
-        acc + (inst.symUse.sym -> (inst :: accInsts))
+        acc ++ (inst.symUse.sym -> (inst :: accInsts))
     }
     (root.copy(instances = newInstances), sctx.errors.asScala.toList)
   }

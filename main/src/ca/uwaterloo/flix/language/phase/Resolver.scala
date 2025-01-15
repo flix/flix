@@ -100,14 +100,14 @@ object Resolver {
               case () =>
                 ResolvedAst.Root(
                   table.traits,
-                  table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
+                  table.instances, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
                   table.structs,
                   table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
-                  uses.toMap,
+                  ListMap(uses.toMap),
                   taOrder,
                   root.mainEntryPoint,
                   root.sources,
