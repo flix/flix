@@ -410,8 +410,6 @@ object SyntaxTree {
 
       case object Function extends Type
 
-      case object Native extends Type
-
       case object PredicateWithAlias extends Type
 
       case object PredicateWithTypes extends Type
