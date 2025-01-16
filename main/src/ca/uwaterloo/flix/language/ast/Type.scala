@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -601,13 +601,13 @@ object Type {
   /**
     * An associated type.
     */
-  case class AssocType(cst: AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
+  case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
     override def equals(obj: Any): Boolean = obj match {
-      case that: AssocType => this.cst == that.cst && this.arg == that.arg
+      case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, arg)
+    override def hashCode(): Int = Objects.hash(symUse, arg)
   }
 
   /**

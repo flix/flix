@@ -792,15 +792,15 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTraitConstraint(tc0: TraitConstraint): Iterator[SemanticToken] = tc0 match {
-    case TraitConstraint(head, arg, _) =>
-      visitTraitConstraintHead(head) ++ visitType(arg)
+    case TraitConstraint(symUse, arg, _) =>
+      visitTraitSymUse(symUse) ++ visitType(arg)
   }
 
   /**
     * Returns all semantic tokens in the given type constraint head `head0`.
     */
-  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Iterator[SemanticToken] = head0 match {
-    case TraitConstraint.Head(_, loc) =>
+  private def visitTraitSymUse(head0: TraitSymUse): Iterator[SemanticToken] = head0 match {
+    case TraitSymUse(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
@@ -811,14 +811,14 @@ object SemanticTokensProvider {
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
     case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeSymUse(symUse: AssocTypeSymUse): Iterator[SemanticToken] = symUse match {
+    case AssocTypeSymUse(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

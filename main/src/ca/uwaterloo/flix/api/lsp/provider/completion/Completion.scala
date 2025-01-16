@@ -33,17 +33,6 @@ sealed trait Completion {
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
 
-    case Completion.EffectCompletion(sym, doc) =>
-      val name = sym.toString
-      CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        textEdit         = TextEdit(context.range, name),
-        documentation    = Some(doc),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
     case Completion.AutoUseEffCompletion(sym, doc, ap) =>
       val name = sym.name
       val qualifiedName = sym.toString
@@ -136,16 +125,6 @@ sealed trait Completion {
       CompletionItem(label = name,
         sortText         = Priority.toSortText(priority, name),
         textEdit         = TextEdit(context.range, edit),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
-      )
-
-    case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(
-        label            = s"${aliasSym.name}$nameSuffix",
-        sortText         = Priority.toSortText(priority, aliasSym.name),
-        textEdit         = textEdit,
-        documentation    = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Enum
       )
@@ -311,6 +290,47 @@ sealed trait Completion {
         documentation       = Some(struct.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Struct,
+        additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.EffectCompletion(effect, ap, qualified, inScope) =>
+      val qualifiedName = effect.sym.toString
+      val name = if (qualified) qualifiedName else effect.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(effect.doc.text),
+        kind                = CompletionItemKind.Event,
+        additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.TypeAliasCompletion(typeAlias, ap, qualified, inScope) =>
+      val qualifiedName = typeAlias.sym.toString
+      val name = if (qualified) qualifiedName else typeAlias.sym.name
+      val label = name + CompletionUtils.formatTParams(typeAlias.tparams)
+      val snippet = name + CompletionUtils.formatTParamsSnippet(typeAlias.tparams)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = label,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        documentation       = Some(typeAlias.doc.text),
+        kind                = CompletionItemKind.TypeParameter,
+        insertTextFormat    = InsertTextFormat.Snippet,
         additionalTextEdits = additionalTextEdit
       )
 
@@ -517,14 +537,6 @@ sealed trait Completion {
 object Completion {
 
   /**
-    * Represents an effect symbol completion.
-    *
-    * @param sym the effect symbol.
-    * @param doc the documentation associated with the effect.
-    */
-  case class EffectCompletion(sym: Symbol.EffectSym, doc: String) extends Completion
-
-  /**
     * Represents a keyword completion.
     *
     * @param name      the name of the keyword.
@@ -593,18 +605,6 @@ object Completion {
     * @param priority  the priority of the type.
     */
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
-
-  /**
-    * Represents a type completion for alias
-    *
-    * @param aliasSym      the alias symbol.
-    * @param nameSuffix    the suffix for the name of the AliasType.
-    * @param priority      the priority of the AliasType.
-    * @param textEdit      the edit which is applied to a document when selecting this completion.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
-                                 documentation: Option[String]) extends Completion
 
   /**
     * Represents a With completion
@@ -740,6 +740,22 @@ object Completion {
    * @param inScope   indicate whether to the enum is inScope.
    */
   case class StructCompletion(struct: TypedAst.Struct, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a Enum completion
+    *
+    * @param effect    the effect construct.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the enum is inScope.
+    */
+  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a type completion for type alias
+    *
+    */
+  case class TypeAliasCompletion(typeAlias: TypedAst.TypeAlias, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion

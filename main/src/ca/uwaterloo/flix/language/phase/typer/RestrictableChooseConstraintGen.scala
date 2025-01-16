@@ -46,7 +46,7 @@ object RestrictableChooseConstraintGen {
     */
   private def dom(rules: List[KindedAst.RestrictableChooseRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.flatMap {
-      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _), _) => List(sym.sym)
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(symUse, _, _, _), _) => List(symUse.sym)
       case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Error(_, _), _) => List.empty
     }.toSet
   }
@@ -83,8 +83,8 @@ object RestrictableChooseConstraintGen {
             case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
               (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Eff, loc))
 
-            case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
-              val enumSym = sym.sym.enumSym
+            case RestrictableChoosePattern.Tag(symUse, _, _, _) => // If the pattern is Tag then we emit constraint rules
+              val enumSym = symUse.sym.enumSym
               val enum0 = root.restrictableEnums(enumSym)
               val universe = enum0.cases.keys.toSet
               val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
@@ -125,8 +125,8 @@ object RestrictableChooseConstraintGen {
             case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
               (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Eff, loc))
 
-            case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
-              val enumSym = sym.sym.enumSym
+            case RestrictableChoosePattern.Tag(symUse, _, _, _) => // If the pattern is Tag then we emit constraint rules
+              val enumSym = symUse.sym.enumSym
               val enum0 = root.restrictableEnums(enumSym)
 
               // The expected enum types and the index variables.
@@ -134,7 +134,7 @@ object RestrictableChooseConstraintGen {
               val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
               val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, enum0, loc.asSynthetic)).unzip3
               val patternTagTypes = rules0.map(_.pat match {
-                case RestrictableChoosePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
+                case RestrictableChoosePattern.Tag(symUse, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
                 case RestrictableChoosePattern.Error(tvar, _) => tvar
               })
 

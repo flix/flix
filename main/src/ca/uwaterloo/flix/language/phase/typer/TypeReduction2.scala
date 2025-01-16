@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -46,14 +47,14 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => tpe
 
-    case Type.AssocType(AssocTypeConstructor(sym, _), tpe, _, _) =>
+    case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
 
       // Get all the associated types from the context
       val assocs = eqenv(sym)
 
       // Find the instance that matches
       val matches = assocs.flatMap {
-        case AssocTypeDef(assocTpe, ret) =>
+        case AssocTypeDef(_, assocTpe, ret) => // MATT use tparams
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
