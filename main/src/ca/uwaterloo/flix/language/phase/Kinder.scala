@@ -428,10 +428,13 @@ object Kinder {
       KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
     case ResolvedAst.Expr.LocalDef(sym, fparams0, exp10, exp20, loc) =>
-      val fparams = fparams0.map(visitFormalParam(_, kenv0, taenv, root))
+      // we must infer the formal parameters because the may contain wildcard types
+      // which would not appear in the function's kenv
       val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, taenv, root))
-      val kenv1 = kenv0 ++ KindEnv.merge(fparamKenvs)
+      val kenv1 = KindEnv.merge(kenv0 :: fparamKenvs)
+      val fparams = fparams0.map(visitFormalParam(_, kenv1, taenv, root))
       val exp1 = visitExp(exp10, kenv1, taenv, henv0, root)
+      // We visit exp2 outside the new kenv since it's not in the def's scope
       val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
       KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
 
@@ -571,8 +574,14 @@ object Kinder {
 
     case ResolvedAst.Expr.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
-      val expectedType = expectedType0.map(visitType(_, Kind.Star, kenv0, taenv, root))
-      val expectedEff = expectedEff0.map(visitType(_, Kind.Eff, kenv0, taenv, root))
+
+      // We must infer for the ascriptions because they may have wildcard types,
+      // which won't be found in the kenv of the function
+      val kenvTpe = expectedType0.map(inferType(_, Kind.Star, kenv0, taenv, root)).getOrElse(KindEnv.empty)
+      val kenvEff = expectedEff0.map(inferType(_, Kind.Eff, kenv0, taenv, root)).getOrElse(KindEnv.empty)
+      val kenv = KindEnv.merge(List(kenv0, kenvTpe, kenvEff))
+      val expectedType = expectedType0.map(visitType(_, Kind.Star, kenv, taenv, root))
+      val expectedEff = expectedEff0.map(visitType(_, Kind.Eff, kenv, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.Ascribe(exp, expectedType, expectedEff, tvar, loc)
 
