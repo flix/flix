@@ -76,13 +76,13 @@ object EntryPoints {
     root.mainEntryPoint match {
       case None =>
         root.defs.get(defaultMainName) match {
-        case None =>
-          // No main is given and default does not exist - no main.
-          (root, Nil)
-        case Some(entryPoint) =>
-          // No main is given but default exists - use default.
-          (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
-      }
+          case None =>
+            // No main is given and default does not exist - no main.
+            (root, Nil)
+          case Some(entryPoint) =>
+            // No main is given but default exists - use default.
+            (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
+        }
       case Some(sym) => root.defs.get(sym) match {
         case Some(_) =>
           // A main is given and it exists - use it.
@@ -333,8 +333,15 @@ object EntryPoints {
       */
     private def checkPrimitiveEffect(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
       val eff = defn.spec.eff
-      if (isPrimitiveEffect(eff)) None
-      else Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+      isPrimitiveEffect(eff) match {
+        case EvalRes.Ok(true) =>
+          None
+        case EvalRes.Ok(false) =>
+          Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+        case EvalRes.ContainsError | EvalRes.Malformed =>
+          // Do not report an error, since previous phases should have done already.
+          None
+      }
     }
 
     /**
@@ -342,75 +349,45 @@ object EntryPoints {
       *
       * Returns `false` for all effects with either type variables or Error.
       */
-    private def isPrimitiveEffect(eff: Type): Boolean = {
-      if (eff.typeVars.nonEmpty) return false
-      // Now that we have the monomorphic effect, we can evaluate it.
-      eval(eff) match {
-        case EvalRes.EffSet(s) =>
+    private def isPrimitiveEffect(eff: Type): EvalRes[Boolean] = {
+      eval(eff).map {
+        case s =>
           // Check that it is a set is a subset of the primitive effects.
           // s ⊆ prim <=> s - prim = {}
           val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
           CofiniteEffSet.difference(s, primEffs).isEmpty
-        case EvalRes.ContainsError =>
-          // The effect has an Error, return false to make sure it is removed as
-          // an entry point.
-          false
-        case EvalRes.Malformed =>
-          // The effect is malformed, which means that previous phases should
-          // already have reported the error. Return false to make sure it is
-          // removed as an entry point.
-          false
-
       }
     }
 
-    sealed trait EvalRes
+    sealed trait EvalRes[+T] {
+      def map[B](f: T => B): EvalRes[B] = this match {
+        case EvalRes.Ok(x) => EvalRes.Ok(f(x))
+        case EvalRes.ContainsError => EvalRes.ContainsError
+        case EvalRes.Malformed => EvalRes.Malformed
+      }
+
+      def flatMap[B](f: T => EvalRes[B]): EvalRes[B] = this match {
+        case EvalRes.Ok(x) => f(x)
+        case EvalRes.ContainsError => EvalRes.ContainsError
+        case EvalRes.Malformed => EvalRes.Malformed
+      }
+    }
 
     object EvalRes {
 
-      case class EffSet(s: CofiniteEffSet) extends EvalRes
+      case class Ok[T](x: T) extends EvalRes[T]
 
-      case object ContainsError extends EvalRes
+      /** If a type is both malformed and contains error, then [[ContainsError]] is preferred. */
+      case object ContainsError extends EvalRes[Nothing]
 
-      case object Malformed extends EvalRes
+      /** If a type is both malformed and contains error, then [[ContainsError]] is preferred. */
+      case object Malformed extends EvalRes[Nothing]
 
-      def complement(e: EvalRes): EvalRes = e match {
-        case EffSet(s) => EffSet(CofiniteEffSet.complement(s))
-        case ContainsError => ContainsError
-        case Malformed => Malformed
-      }
+      def mapN[A, B](x: EvalRes[A])(f: A => B): EvalRes[B] =
+        x.map(f)
 
-      def union(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
-        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.union(s1, s2))
-        case (ContainsError, _) => ContainsError
-        case (_, ContainsError) => ContainsError
-        case (Malformed, _) => Malformed
-        case (_, Malformed) => Malformed
-      }
-
-      def intersection(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
-        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.intersection(s1, s2))
-        case (ContainsError, _) => ContainsError
-        case (_, ContainsError) => ContainsError
-        case (Malformed, _) => Malformed
-        case (_, Malformed) => Malformed
-      }
-
-      def difference(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
-        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.difference(s1, s2))
-        case (ContainsError, _) => ContainsError
-        case (_, ContainsError) => ContainsError
-        case (Malformed, _) => Malformed
-        case (_, Malformed) => Malformed
-      }
-
-      def symmetricDiff(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
-        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.xor(s1, s2))
-        case (ContainsError, _) => ContainsError
-        case (_, ContainsError) => ContainsError
-        case (Malformed, _) => Malformed
-        case (_, Malformed) => Malformed
-      }
+      def mapN[A, B, C](x: EvalRes[A], y: EvalRes[B])(f: (A, B) => C): EvalRes[C] =
+        x.flatMap(a => y.map(b => f(a, b)))
 
     }
 
@@ -419,24 +396,34 @@ object EntryPoints {
       *
       * If `eff` is contains error and is malformed, [[EvalRes.ContainsError]] is returned.
       */
-    private def eval(eff: Type): EvalRes = eff match {
+    private def eval(eff: Type): EvalRes[CofiniteEffSet] = eff match {
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => EvalRes.EffSet(CofiniteEffSet.empty)
-        case TypeConstructor.Univ => EvalRes.EffSet(CofiniteEffSet.universe)
-        case TypeConstructor.Effect(sym) => EvalRes.EffSet(CofiniteEffSet.mkSet(sym))
+        case TypeConstructor.Pure => EvalRes.Ok(CofiniteEffSet.empty)
+        case TypeConstructor.Univ => EvalRes.Ok(CofiniteEffSet.universe)
+        case TypeConstructor.Effect(sym) => EvalRes.Ok(CofiniteEffSet.mkSet(sym))
         case TypeConstructor.Error(_, _) => EvalRes.ContainsError
         case _ => EvalRes.Malformed
       }
-      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
-        EvalRes.complement(eval(x))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-        EvalRes.union(eval(x), eval(y))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-        EvalRes.intersection(eval(x), eval(y))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-        EvalRes.difference(eval(x), eval(y))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-        EvalRes.symmetricDiff(eval(x), eval(y))
+      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+        EvalRes.mapN(eval(x0)) {
+          case x => CofiniteEffSet.complement(x)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+        EvalRes.mapN(eval(x0), eval(y0)){
+          case (x, y) => CofiniteEffSet.union(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+        EvalRes.mapN(eval(x0), eval(y0)){
+          case (x, y) => CofiniteEffSet.intersection(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+        EvalRes.mapN(eval(x0), eval(y0)){
+          case (x, y) => CofiniteEffSet.difference(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+        EvalRes.mapN(eval(x0), eval(y0)){
+          case (x, y) => CofiniteEffSet.xor(x, y)
+        }
       case Type.Alias(_, _, tpe, _) => eval(tpe)
       case Type.Var(_, _) => EvalRes.Malformed
       case Type.Apply(_, _, _) => EvalRes.Malformed
@@ -526,7 +513,7 @@ object EntryPoints {
     /**
       * A global shared context. Must be thread-safe.
       *
-      * @param errors the [[EntryPointError]]s in the AST, if any.
+      * @param errors      the [[EntryPointError]]s in the AST, if any.
       * @param invalidMain marks the main entrypoint as invalid.
       */
     private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError], invalidMain: AtomicBoolean)
@@ -624,15 +611,15 @@ object EntryPoints {
 
   }
 
-    /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
-    def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
-      val s = mutable.Set.empty[Symbol.DefnSym]
-      for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
-        s += sym
-      }
-      val entryPoints = s.toSet
-      root.copy(entryPoints = Some(entryPoints))
+  /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
+  def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
+    val s = mutable.Set.empty[Symbol.DefnSym]
+    for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
+      s += sym
     }
+    val entryPoints = s.toSet
+    root.copy(entryPoints = Some(entryPoints))
+  }
 
 }
 
