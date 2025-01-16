@@ -408,7 +408,7 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Scope(sym, regionVar, exp, evar, loc) =>
+      case Expr.Scope(sym, regionVar, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -421,8 +421,9 @@ object ConstraintGen {
         c.enterRegion(regionVar.sym)
         c.unifyType(sym.tvar, Type.mkRegion(regionVar, loc), loc)
         val (tpe, eff) = visitExp(exp)
+        c.unifyType(tvar, tpe, loc)
         c.exitRegion(evar, eff, loc)
-        val resTpe = tpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
