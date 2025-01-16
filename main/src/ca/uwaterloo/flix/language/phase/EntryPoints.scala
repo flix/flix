@@ -346,48 +346,104 @@ object EntryPoints {
       if (eff.typeVars.nonEmpty) return false
       // Now that we have the monomorphic effect, we can evaluate it.
       eval(eff) match {
-        case Some(s) =>
+        case EvalRes.EffSet(s) =>
           // Check that it is a set is a subset of the primitive effects.
           // s ⊆ prim <=> s - prim = {}
           val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
           CofiniteEffSet.difference(s, primEffs).isEmpty
-        case None =>
+        case EvalRes.ContainsError =>
           // The effect has an Error, return false to make sure it is removed as
           // an entry point.
           false
+        case EvalRes.Malformed =>
+          // The effect is malformed, which means that previous phases should
+          // already have reported the error. Return false to make sure it is
+          // removed as an entry point.
+          false
+
       }
     }
 
+    sealed trait EvalRes
+
+    object EvalRes {
+
+      case class EffSet(s: CofiniteEffSet) extends EvalRes
+
+      case object ContainsError extends EvalRes
+
+      case object Malformed extends EvalRes
+
+      def complement(e: EvalRes): EvalRes = e match {
+        case EffSet(s) => EffSet(CofiniteEffSet.complement(s))
+        case ContainsError => ContainsError
+        case Malformed => Malformed
+      }
+
+      def union(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
+        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.union(s1, s2))
+        case (ContainsError, _) => ContainsError
+        case (_, ContainsError) => ContainsError
+        case (Malformed, _) => Malformed
+        case (_, Malformed) => Malformed
+      }
+
+      def intersection(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
+        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.intersection(s1, s2))
+        case (ContainsError, _) => ContainsError
+        case (_, ContainsError) => ContainsError
+        case (Malformed, _) => Malformed
+        case (_, Malformed) => Malformed
+      }
+
+      def difference(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
+        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.difference(s1, s2))
+        case (ContainsError, _) => ContainsError
+        case (_, ContainsError) => ContainsError
+        case (Malformed, _) => Malformed
+        case (_, Malformed) => Malformed
+      }
+
+      def symmetricDiff(e1: EvalRes, e2: EvalRes): EvalRes = (e1, e2) match {
+        case (EffSet(s1), EffSet(s2)) => EffSet(CofiniteEffSet.xor(s1, s2))
+        case (ContainsError, _) => ContainsError
+        case (_, ContainsError) => ContainsError
+        case (Malformed, _) => Malformed
+        case (_, Malformed) => Malformed
+      }
+
+    }
+
     /**
-      * Returns `eff` evaluated to its co-finite set or None if `eff` contains Error.
+      * Evaluates `eff` if it is well-formed and has no type variables, associated types, or error types.
       *
-      * N.B.: `eff` must be a well-formed effect formula without type variables and associated types.
+      * If `eff` is contains error and is malformed, [[EvalRes.ContainsError]] is returned.
       */
-    private def eval(eff: Type): Option[CofiniteEffSet] = eff match {
+    private def eval(eff: Type): EvalRes = eff match {
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => Some(CofiniteEffSet.empty)
-        case TypeConstructor.Univ => Some(CofiniteEffSet.universe)
-        case TypeConstructor.Effect(sym) => Some(CofiniteEffSet.mkSet(sym))
-        case TypeConstructor.Error(_, _) => None
-        case _ => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+        case TypeConstructor.Pure => EvalRes.EffSet(CofiniteEffSet.empty)
+        case TypeConstructor.Univ => EvalRes.EffSet(CofiniteEffSet.universe)
+        case TypeConstructor.Effect(sym) => EvalRes.EffSet(CofiniteEffSet.mkSet(sym))
+        case TypeConstructor.Error(_, _) => EvalRes.ContainsError
+        case _ => EvalRes.Malformed
       }
       case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
-        eval(x).map(CofiniteEffSet.complement)
+        EvalRes.complement(eval(x))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
+        EvalRes.union(eval(x), eval(y))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
+        EvalRes.intersection(eval(x), eval(y))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.difference(a, b)))
+        EvalRes.difference(eval(x), eval(y))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
+        EvalRes.symmetricDiff(eval(x), eval(y))
       case Type.Alias(_, _, tpe, _) => eval(tpe)
-      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.Var(_, _) => EvalRes.Malformed
+      case Type.Apply(_, _, _) => EvalRes.Malformed
+      case Type.AssocType(_, _, _, _) => EvalRes.Malformed
+      case Type.JvmToType(_, _) => EvalRes.Malformed
+      case Type.JvmToEff(_, _) => EvalRes.Malformed
+      case Type.UnresolvedJvmType(_, _) => EvalRes.Malformed
     }
 
     /** Returns an error if `defn` is in the root namespace. */
