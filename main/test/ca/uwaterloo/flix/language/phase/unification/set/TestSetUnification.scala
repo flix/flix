@@ -28,7 +28,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
   implicit val opts: SetUnification.Options = SetUnification.Options.default
   implicit val listener: SolverListener = SolverListener.DoNothing
 
-  test("testSelectRandom05") {
+  test("Iterator.mapWithIndex") {
     val input = List(
       mkEq(Var(0), Cst(21)),
       mkEq(Var(9), Var(10)),
