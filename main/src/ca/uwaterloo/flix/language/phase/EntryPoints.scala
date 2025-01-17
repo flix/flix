@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -49,6 +49,8 @@ import scala.jdk.CollectionConverters.*
   *   - Compute the set of all entry points and store it in Root.
   */
 object EntryPoints {
+
+  private case object ErrorOrMalformed
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
@@ -118,16 +120,16 @@ object EntryPoints {
 
   /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
-  private def isUnitType(tpe: Type): EvalRes[Boolean] = tpe match {
-    case Type.Cst(TypeConstructor.Unit, _) => EvalRes.Ok(true)
-    case Type.Cst(_, _) => EvalRes.Ok(false)
-    case Type.Apply(_, _, _) => EvalRes.Ok(false)
+  private def isUnitType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = tpe match {
+    case Type.Cst(TypeConstructor.Unit, _) => Result.Ok(true)
+    case Type.Cst(_, _) => Result.Ok(false)
+    case Type.Apply(_, _, _) => Result.Ok(false)
     case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
-    case Type.Var(_, _) => EvalRes.ErrorOrMalformed
-    case Type.AssocType(_, _, _, _) => EvalRes.ErrorOrMalformed
-    case Type.JvmToType(_, _) => EvalRes.ErrorOrMalformed
-    case Type.JvmToEff(_, _) => EvalRes.ErrorOrMalformed
-    case Type.UnresolvedJvmType(_, _) => EvalRes.ErrorOrMalformed
+    case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
   }
 
   private object CheckEntryPoints {
@@ -288,10 +290,10 @@ object EntryPoints {
         // One parameter of type Unit - valid.
         case List(arg) =>
           isUnitType(arg.tpe) match {
-            case EvalRes.Ok(true) => None
-            case EvalRes.Ok(false) =>
+            case Result.Ok(true) => None
+            case Result.Ok(false) =>
               Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
-            case EvalRes.ErrorOrMalformed =>
+            case Result.Err(ErrorOrMalformed) =>
               // Do not report an error, since previous phases should have done already.
               None
           }
@@ -313,16 +315,16 @@ object EntryPoints {
     private def checkToStringOrUnitResult(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Option[EntryPointError] = {
       val resultType = defn.spec.retTpe
       isUnitType(resultType) match {
-        case EvalRes.Ok(true) =>
+        case Result.Ok(true) =>
           None
-        case EvalRes.Ok(false) =>
+        case Result.Ok(false) =>
           val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
           val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
           val constraint = TraitConstraint(TraitSymUse(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
           val hasToString = TraitEnvironment.holds(constraint, TraitEnv(root.traitEnv), ListMap.empty)
           if (hasToString) None
           else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
-        case EvalRes.ErrorOrMalformed =>
+        case Result.Err(ErrorOrMalformed) =>
           // Do not report an error, since previous phases should have done already.
           None
       }
@@ -335,11 +337,11 @@ object EntryPoints {
     private def checkPrimitiveEffect(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
       val eff = defn.spec.eff
       isPrimitiveEffect(eff) match {
-        case EvalRes.Ok(true) =>
+        case Result.Ok(true) =>
           None
-        case EvalRes.Ok(false) =>
+        case Result.Ok(false) =>
           Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
-        case EvalRes.ErrorOrMalformed =>
+        case Result.Err(ErrorOrMalformed) =>
           // Do not report an error, since previous phases should have done already.
           None
       }
@@ -350,7 +352,7 @@ object EntryPoints {
       *
       * Returns `false` for all effects with either type variables or Error.
       */
-    private def isPrimitiveEffect(eff: Type): EvalRes[Boolean] = {
+    private def isPrimitiveEffect(eff: Type): Result[Boolean, ErrorOrMalformed.type] = {
       eval(eff).map {
         case s =>
           // Check that it is a set is a subset of the primitive effects.
@@ -364,41 +366,40 @@ object EntryPoints {
       * Evaluates `eff` if it is well-formed and has no type variables,
       * associated types, or error types.
       */
-    private def eval(eff: Type): EvalRes[CofiniteEffSet] = eff match {
+    private def eval(eff: Type): Result[CofiniteEffSet, ErrorOrMalformed.type] = eff match {
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => EvalRes.Ok(CofiniteEffSet.empty)
-        case TypeConstructor.Univ => EvalRes.Ok(CofiniteEffSet.universe)
-        case TypeConstructor.Effect(sym) => EvalRes.Ok(CofiniteEffSet.mkSet(sym))
-        case TypeConstructor.Error(_, _) => EvalRes.ErrorOrMalformed
-        case _ => EvalRes.ErrorOrMalformed
+        case TypeConstructor.Pure => Result.Ok(CofiniteEffSet.empty)
+        case TypeConstructor.Univ => Result.Ok(CofiniteEffSet.universe)
+        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteEffSet.mkSet(sym))
+        case _ => Result.Err(ErrorOrMalformed)
       }
       case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
-        EvalRes.mapN(eval(x0)) {
+        Result.mapN(eval(x0)) {
           case x => CofiniteEffSet.complement(x)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
-        EvalRes.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)){
           case (x, y) => CofiniteEffSet.union(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
-        EvalRes.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)){
           case (x, y) => CofiniteEffSet.intersection(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
-        EvalRes.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)){
           case (x, y) => CofiniteEffSet.difference(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
-        EvalRes.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)){
           case (x, y) => CofiniteEffSet.xor(x, y)
         }
       case Type.Alias(_, _, tpe, _) => eval(tpe)
-      case Type.Var(_, _) => EvalRes.ErrorOrMalformed
-      case Type.Apply(_, _, _) => EvalRes.ErrorOrMalformed
-      case Type.AssocType(_, _, _, _) => EvalRes.ErrorOrMalformed
-      case Type.JvmToType(_, _) => EvalRes.ErrorOrMalformed
-      case Type.JvmToEff(_, _) => EvalRes.ErrorOrMalformed
-      case Type.UnresolvedJvmType(_, _) => EvalRes.ErrorOrMalformed
+      case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.Apply(_, _, _) => Result.Err(ErrorOrMalformed)
+      case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+      case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
     }
 
     /** Returns an error if `defn` is in the root namespace. */
@@ -427,11 +428,11 @@ object EntryPoints {
       val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
       types.flatMap(tpe => {
         isExportableType(tpe) match {
-          case EvalRes.Ok(true) =>
+          case Result.Ok(true) =>
             None
-          case EvalRes.Ok(false) =>
+          case Result.Ok(false) =>
             Some(EntryPointError.IllegalExportType(tpe, tpe.loc))
-          case EvalRes.ErrorOrMalformed =>
+          case Result.Err(ErrorOrMalformed) =>
             // Do not report an error, since previous phases should have done already.
             None
         }
@@ -448,26 +449,26 @@ object EntryPoints {
       *   - `isExportableType(java.lang.Object) = true`
       */
     @tailrec
-    private def isExportableType(tpe: Type): EvalRes[Boolean] = {
+    private def isExportableType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = {
       // TODO: Currently, because of eager erasure, we only allow primitive types and Object.
       tpe match {
-        case Type.Cst(TypeConstructor.Bool, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Char, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Float32, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Float64, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Int8, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Int16, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Int32, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Int64, _) => EvalRes.Ok(true)
-        case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => EvalRes.Ok(true)
-        case Type.Cst(_, _) => EvalRes.Ok(false)
-        case Type.Apply(_, _, _) => EvalRes.Ok(false)
+        case Type.Cst(TypeConstructor.Bool, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Char, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Float32, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Float64, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int8, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int16, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int32, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int64, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
+        case Type.Cst(_, _) => Result.Ok(false)
+        case Type.Apply(_, _, _) => Result.Ok(false)
         case Type.Alias(_, _, tpe, _) => isExportableType(tpe)
-        case Type.Var(_, _) => EvalRes.ErrorOrMalformed
-        case Type.AssocType(_, _, _, _) => EvalRes.ErrorOrMalformed
-        case Type.JvmToType(_, _) => EvalRes.ErrorOrMalformed
-        case Type.JvmToEff(_, _) => EvalRes.ErrorOrMalformed
-        case Type.UnresolvedJvmType(_, _) => EvalRes.ErrorOrMalformed
+        case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+        case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
       }
     }
 
@@ -504,10 +505,10 @@ object EntryPoints {
       root.mainEntryPoint.map(root.defs(_)) match {
         case Some(main0: TypedAst.Def) =>
           isUnitType(main0.spec.retTpe) match {
-            case EvalRes.Ok(true) =>
+            case Result.Ok(true) =>
               // main doesn't need a wrapper.
               (root, Nil)
-            case EvalRes.Ok(false) =>
+            case Result.Ok(false) =>
               // main needs a wrapper.
               val main = mkEntryPoint(main0, root)
               val root1 = root.copy(
@@ -515,7 +516,7 @@ object EntryPoints {
                 mainEntryPoint = Some(main.sym)
               )
               (root1, Nil)
-            case EvalRes.ErrorOrMalformed =>
+            case Result.Err(ErrorOrMalformed) =>
               // Do not report an error, since previous phases should have done already.
               (root, Nil)
           }
@@ -601,32 +602,4 @@ object EntryPoints {
     root.copy(entryPoints = Some(entryPoints))
   }
 
-  sealed trait EvalRes[+T] {
-    def map[B](f: T => B): EvalRes[B] = this match {
-      case EvalRes.Ok(x) => EvalRes.Ok(f(x))
-      case EvalRes.ErrorOrMalformed => EvalRes.ErrorOrMalformed
-    }
-
-    def flatMap[B](f: T => EvalRes[B]): EvalRes[B] = this match {
-      case EvalRes.Ok(x) => f(x)
-      case EvalRes.ErrorOrMalformed => EvalRes.ErrorOrMalformed
-    }
-  }
-
-  object EvalRes {
-
-    case class Ok[T](x: T) extends EvalRes[T]
-
-    /** A type is was either malformed or contains [[TypeConstructor.Error]]. */
-    case object ErrorOrMalformed extends EvalRes[Nothing]
-
-    def mapN[A, B](x: EvalRes[A])(f: A => B): EvalRes[B] =
-      x.map(f)
-
-    def mapN[A, B, C](x: EvalRes[A], y: EvalRes[B])(f: (A, B) => C): EvalRes[C] =
-      x.flatMap(a => y.map(b => f(a, b)))
-
-  }
-
 }
-
