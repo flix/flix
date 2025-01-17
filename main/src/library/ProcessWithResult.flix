@@ -70,11 +70,10 @@ mod ProcessWithResult {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
                     foreach(e <- Map.toList(env)) {
-                        pb.environment().put(fst(e), snd(e));
-                        ()
+                        discard pb.environment().put(fst(e), snd(e))
                     };
                     match cwd {
-                        case Some(cwd) => pb.directory(new JFile(cwd)); ()
+                        case Some(cwd) => discard pb.directory(new JFile(cwd))
                         case None => ()
                     };
                     let process = pb.start();
