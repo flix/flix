@@ -1129,7 +1129,11 @@ object Desugar {
         val matchRule = DesugaredAst.MatchRule(p1, None, acc)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-    DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    val scope = DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    // We add an ascription to Unit because inference across region boundaries is limited.
+    DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**
