@@ -476,6 +476,12 @@ object Main {
             .required()
         )
 
+      cmd("lsp-vscode").text("  starts the LSP server and listens on the given port.")
+        .children(
+          arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
+            .required()
+        )
+
       cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
 
