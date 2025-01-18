@@ -22,9 +22,9 @@ object ZhegalkinCache {
   /**
     * Controls what caches are enabled.
     */
-  private val EnableUnionCache: Boolean = true
-  private val EnableInterCache: Boolean = true
-  private val EnableXorCache: Boolean = true
+  var EnableUnionCache: Boolean = true
+  var EnableInterCache: Boolean = true
+  var EnableXorCache: Boolean = true
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
