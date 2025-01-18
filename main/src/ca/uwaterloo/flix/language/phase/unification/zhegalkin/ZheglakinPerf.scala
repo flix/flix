@@ -22,11 +22,12 @@ import ca.uwaterloo.flix.util.LocalResource
 
 object ZheglakinPerf {
 
-  private val Iterations: Int = 10
+  private val Iterations: Int = 3
 
   private object Config {
     val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false)
   }
+
   private case class Config(
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
@@ -38,22 +39,34 @@ object ZheglakinPerf {
 
   def main(args: Array[String]): Unit = {
 
+    rq3(Iterations)
+
+  }
+
+  private def rq3(n: Int): Unit = {
     println("Caching Experiment")
     val cfg0 = Config.Default
     val cfg1 = Config.Default.copy(cacheUnion = true)
     val cfg2 = Config.Default.copy(cacheInter = true)
     val cfg3 = Config.Default.copy(cacheXor = true)
-    List(cfg0, cfg1, cfg2, cfg3).foreach(runConfig)
 
+    val thrpt0 = runConfig(cfg0, n)
+    val thrpt1 = runConfig(cfg1, n)
+    val thrpt2 = runConfig(cfg2, n)
+    val thrpt3 = runConfig(cfg3, n)
+
+    println(thrpt0)
+    println(thrpt1)
+    println(thrpt2)
+    println(thrpt3)
     println("-" * 80)
-
   }
 
   /**
     * Run a specific configuration.
     */
-  private def runConfig(c: Config): Unit = {
-    val baseLine = aggregate(runN(Iterations, c))
+  private def runConfig(c: Config, n: Int): Throughput = {
+    val baseLine = aggregate(runN(n, c))
 
     // Find the number of lines of source code.
     val lines = baseLine.lines.toLong
@@ -76,8 +89,7 @@ object ZheglakinPerf {
     // Compute the median throughput (per second).
     val mdn = median(throughputs.map(_.toLong)).toInt
 
-    println(s"  $c")
-    println(f"  min: $min%,7d, max: $max%,7d, avg: $avg%,7d, median: $mdn%,7d")
+    Throughput(min, max, avg, mdn)
   }
 
   /**
@@ -115,10 +127,6 @@ object ZheglakinPerf {
 
     Run(totalLines, totalTime)
   }
-
-  case class Run(lines: Int, time: Long)
-
-  case class Runs(lines: Int, times: List[Long])
 
   /**
     * Merges a sequences of runs `l`.
@@ -159,6 +167,14 @@ object ZheglakinPerf {
     flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
+  }
+
+  case class Run(lines: Int, time: Long)
+
+  case class Runs(lines: Int, times: List[Long])
+
+  case class Throughput(min: Int, max: Int, avg: Int, mdn: Int) {
+    override def toString: String = f"min: $min%,7d, max: $max%,7d, avg: $avg%,7d, median: $mdn%,7d"
   }
 
 }
