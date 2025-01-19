@@ -51,7 +51,7 @@ object ZhegalkinCache {
   private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
 
   /**
-    * A cache that represents the union of the given Zhegalkin constant and expression.
+    * A cache that represents the intersection of the given Zhegalkin constant and expression.
     */
   private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
 
@@ -60,6 +60,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkUnion: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableUnionCache) {
       return mkUnion(e1, e2)
@@ -72,6 +73,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkInter: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCache) {
       return mkInter(e1, e2)
@@ -84,6 +86,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkXor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableXorCache) {
       return mkXor(e1, e2)
@@ -97,6 +100,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
     if (!EnableSVECache) {
       return sve(q)
@@ -110,6 +114,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCstCache) {
       return mkInter(c, e)
