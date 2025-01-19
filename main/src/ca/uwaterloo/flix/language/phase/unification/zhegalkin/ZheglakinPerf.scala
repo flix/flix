@@ -28,11 +28,11 @@ object ZheglakinPerf {
   private val Iterations: Int = 5
 
   private object Config {
-    val Default: Config = Config(cacheCstInter = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
+    val Default: Config = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
   }
 
   private case class Config(
-                             cacheCstInter: Boolean = false, // TODO
+                             cacheInterCst: Boolean = false, // TODO
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
                              cacheXor: Boolean = false,
@@ -49,13 +49,15 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val m1 = runConfig(Config.Default.copy(cacheCstInter = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false), n).mdn
-    val m2 = 0
+    // TODO: How to write the configs accurately?
+    val m1 = runConfig(Config.Default.copy(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false), n).mdn
+    val m2 = runConfig(Config.Default.copy(cacheInterCst = true), n).mdn
+    println(ZhegalkinCache.stats)
     val m3 = runConfig(Config.Default.copy(cacheUnion = true), n).mdn
     val m4 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
     val m5 = runConfig(Config.Default.copy(cacheXor = true), n).mdn
     val m6 = runConfig(Config.Default.copy(cacheSVE = true), n).mdn
-    val m7 = runConfig(Config.Default.copy(cacheCstInter = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m7 = runConfig(Config.Default.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
     val m8 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
 
     println("-" * 80)
@@ -126,6 +128,7 @@ object ZheglakinPerf {
       ZhegalkinCache.EnableInterCache = c.cacheInter
       ZhegalkinCache.EnableXorCache = c.cacheXor
       ZhegalkinCache.EnableSVECache = c.cacheSVE
+      ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
 
       val flix = new Flix()
       flix.setOptions(c.opts)
