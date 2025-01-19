@@ -109,4 +109,9 @@ object ZhegalkinCache {
     cachedSVE.clear()
   }
 
+  /**
+    * Returns a human-readable string with statistics about the caches.
+    */
+  def stats: String = s"cachedUnion = ${cachedUnion.size()}, cachedInter = ${cachedInter.size()}, cachedXor = ${cachedXor.size()}, cachedSVE = ${cachedSVE.size()}"
+
 }
