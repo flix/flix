@@ -31,15 +31,12 @@ object ZheglakinPerf {
   }
 
   private case class Config(
-                             cacheCstInter: Boolean = false,  // TODO
+                             cacheCstInter: Boolean = false, // TODO
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
                              cacheXor: Boolean = false,
-                             cacheSVE: Boolean = false,  // TODO
-                           ) {
-
-    override def toString: String = s"{cacheUnion = $cacheUnion, cacheInter = $cacheInter, cacheXor = $cacheXor}"
-  }
+                             cacheSVE: Boolean = false
+                           )
 
   def main(args: Array[String]): Unit = {
     rq3(Iterations)
@@ -50,17 +47,18 @@ object ZheglakinPerf {
     println(RQ3)
 
     val m1 = runConfig(Config.Default, n).mdn
-    val m2 = runConfig(Config.Default.copy(cacheCstInter = true), n).mdn
+    val m2 = 0
     val m3 = runConfig(Config.Default.copy(cacheUnion = true), n).mdn
     val m4 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
     val m5 = runConfig(Config.Default.copy(cacheXor = true), n).mdn
-    val m6 = runConfig(Config.Default.copy(cacheCstInter = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
-    val m7 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
+    val m6 = runConfig(Config.Default.copy(cacheSVE = true), n).mdn
+    val m7 = runConfig(Config.Default.copy(cacheCstInter = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m8 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
 
     println("-" * 80)
     println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} & \\textsf{Best} \\\\")
     println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d \\\\")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d & $m8%,7d \\\\")
     println("-" * 80)
   }
 
