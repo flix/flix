@@ -32,7 +32,7 @@ object ZheglakinPerf {
   }
 
   private case class Config(
-                             cacheInterCst: Boolean = false, // TODO
+                             cacheInterCst: Boolean = false,
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
                              cacheXor: Boolean = false,
@@ -49,16 +49,16 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    // TODO: How to write the configs accurately?
-    val m1 = runConfig(Config.Default.copy(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false), n).mdn
-    val m2 = runConfig(Config.Default.copy(cacheInterCst = true), n).mdn
-    println(ZhegalkinCache.stats)
-    val m3 = runConfig(Config.Default.copy(cacheUnion = true), n).mdn
-    val m4 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
-    val m5 = runConfig(Config.Default.copy(cacheXor = true), n).mdn
-    val m6 = runConfig(Config.Default.copy(cacheSVE = true), n).mdn
-    val m7 = runConfig(Config.Default.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
-    val m8 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
+    val AllFalse = Config.Default.copy(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false)
+
+    val m1 = runConfig(AllFalse, n).mdn
+    val m2 = runConfig(AllFalse.copy(cacheInterCst = true), n).mdn
+    val m3 = runConfig(AllFalse.copy(cacheUnion = true), n).mdn
+    val m4 = runConfig(AllFalse.copy(cacheInter = true), n).mdn
+    val m5 = runConfig(AllFalse.copy(cacheXor = true), n).mdn
+    val m6 = runConfig(AllFalse.copy(cacheSVE = true), n).mdn
+    val m7 = runConfig(AllFalse.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m8 = runConfig(AllFalse.copy(cacheInter = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
     println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} & \\textsf{Best} \\\\")
