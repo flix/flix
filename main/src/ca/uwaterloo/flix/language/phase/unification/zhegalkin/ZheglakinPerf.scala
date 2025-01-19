@@ -18,16 +18,17 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.{LocalResource, Options, Subeffecting}
 
 object ZheglakinPerf {
 
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
+  private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
   private val Iterations: Int = 5
 
   private object Config {
-    val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false)
+    val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false, opts = Options.Default)
   }
 
   private case class Config(
@@ -35,11 +36,13 @@ object ZheglakinPerf {
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
                              cacheXor: Boolean = false,
-                             cacheSVE: Boolean = false
+                             cacheSVE: Boolean = false,
+                             opts: Options
                            )
 
   def main(args: Array[String]): Unit = {
     rq3(Iterations)
+    rq6(Iterations)
   }
 
 
@@ -60,6 +63,28 @@ object ZheglakinPerf {
     println("\\midrule")
     println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d & $m8%,7d \\\\")
     println("-" * 80)
+    println()
+  }
+
+
+  private def rq6(n: Int): Unit = {
+    println(RQ6)
+
+    // TODO: Decide on the defaults
+    val default = Config.Default.copy(cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true)
+
+    // TODO: We use full subeffecting
+
+    val base = runConfig(default, n).mdn
+    val unoptimized = runConfig(default.copy(opts = Options.Default.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas))), n).mdn
+    val solveAndRetry = 0
+
+    println("-" * 80)
+    println("\\textbf{Variant} & \\textbf{Baseline} & \\textbf{Unoptimized} & \\textbf{Solve-and-Retry} \\\\")
+    println("\\midrule")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $base%,7d & $unoptimized%,7d & $solveAndRetry%,7d \\\\")
+    println("-" * 80)
+    println()
   }
 
   /**
@@ -103,6 +128,7 @@ object ZheglakinPerf {
       ZhegalkinCache.EnableSVECache = c.cacheSVE
 
       val flix = new Flix()
+      flix.setOptions(c.opts)
       addInputs(flix)
       runSingle(flix)
     }
