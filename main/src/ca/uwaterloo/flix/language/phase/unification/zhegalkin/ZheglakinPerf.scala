@@ -27,10 +27,6 @@ object ZheglakinPerf {
 
   private val Iterations: Int = 250
 
-  private object Config {
-    val Default: Config = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
-  }
-
   private case class Config(
                              cacheInterCst: Boolean = false,
                              cacheUnion: Boolean = false,
@@ -49,15 +45,15 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val AllFalse = Config.Default.copy(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false)
+    val DefaultAllFalse = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
 
-    val m1 = runConfig(AllFalse, n).mdn
-    val m2 = runConfig(AllFalse.copy(cacheInterCst = true), n).mdn
-    val m3 = runConfig(AllFalse.copy(cacheUnion = true), n).mdn
-    val m4 = runConfig(AllFalse.copy(cacheInter = true), n).mdn
-    val m5 = runConfig(AllFalse.copy(cacheXor = true), n).mdn
-    val m6 = runConfig(AllFalse.copy(cacheSVE = true), n).mdn
-    val m7 = runConfig(AllFalse.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m1 = runConfig(DefaultAllFalse, n).mdn
+    val m2 = runConfig(DefaultAllFalse.copy(cacheInterCst = true), n).mdn
+    val m3 = runConfig(DefaultAllFalse.copy(cacheUnion = true), n).mdn
+    val m4 = runConfig(DefaultAllFalse.copy(cacheInter = true), n).mdn
+    val m5 = runConfig(DefaultAllFalse.copy(cacheXor = true), n).mdn
+    val m6 = runConfig(DefaultAllFalse.copy(cacheSVE = true), n).mdn
+    val m7 = runConfig(DefaultAllFalse.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
     println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} \\\\")
@@ -71,13 +67,12 @@ object ZheglakinPerf {
   private def rq6(n: Int): Unit = {
     println(RQ6)
 
-    // TODO: Decide on the defaults
-    val default = Config.Default.copy(cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true)
+    val DefaultNoSubeffecting = Config(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true, opts = Options.Default)
 
     // TODO: We use full subeffecting
 
-    val base = runConfig(default, n).mdn
-    val unoptimized = runConfig(default.copy(opts = Options.Default.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas))), n).mdn
+    val base = runConfig(DefaultNoSubeffecting, n).mdn
+    val unoptimized = runConfig(DefaultNoSubeffecting.copy(opts = Options.Default.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas))), n).mdn
     val solveAndRetry = 0
 
     println("-" * 80)
