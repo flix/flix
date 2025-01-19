@@ -22,43 +22,45 @@ import ca.uwaterloo.flix.util.LocalResource
 
 object ZheglakinPerf {
 
-  private val Iterations: Int = 3
+  private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
+
+  private val Iterations: Int = 1
 
   private object Config {
     val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false)
   }
 
   private case class Config(
+                             cacheCstInter: Boolean = false,  // TODO
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
-                             cacheXor: Boolean = false
+                             cacheXor: Boolean = false,
+                             cacheSVE: Boolean = false,  // TODO
                            ) {
 
     override def toString: String = s"{cacheUnion = $cacheUnion, cacheInter = $cacheInter, cacheXor = $cacheXor}"
   }
 
   def main(args: Array[String]): Unit = {
-
     rq3(Iterations)
-
   }
 
+
   private def rq3(n: Int): Unit = {
-    println("Caching Experiment")
-    val cfg0 = Config.Default
-    val cfg1 = Config.Default.copy(cacheUnion = true)
-    val cfg2 = Config.Default.copy(cacheInter = true)
-    val cfg3 = Config.Default.copy(cacheXor = true)
+    println(RQ3)
 
-    val thrpt0 = runConfig(cfg0, n)
-    val thrpt1 = runConfig(cfg1, n)
-    val thrpt2 = runConfig(cfg2, n)
-    val thrpt3 = runConfig(cfg3, n)
+    val m1 = runConfig(Config.Default, n).mdn
+    val m2 = runConfig(Config.Default.copy(cacheCstInter = true), n).mdn
+    val m3 = runConfig(Config.Default.copy(cacheUnion = true), n).mdn
+    val m4 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
+    val m5 = runConfig(Config.Default.copy(cacheXor = true), n).mdn
+    val m6 = runConfig(Config.Default.copy(cacheCstInter = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m7 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
 
-    println(thrpt0)
-    println(thrpt1)
-    println(thrpt2)
-    println(thrpt3)
+    println("-" * 80)
+    println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} & \\textsf{Best} \\\\")
+    println("\\midrule")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d \\\\")
     println("-" * 80)
   }
 
