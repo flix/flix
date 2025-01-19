@@ -28,7 +28,7 @@ object ZheglakinPerf {
   private val Iterations: Int = 5
 
   private object Config {
-    val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false, opts = Options.Default)
+    val Default: Config = Config(cacheCstInter = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
   }
 
   private case class Config(
@@ -49,7 +49,7 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val m1 = runConfig(Config.Default, n).mdn
+    val m1 = runConfig(Config.Default.copy(cacheCstInter = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false), n).mdn
     val m2 = 0
     val m3 = runConfig(Config.Default.copy(cacheUnion = true), n).mdn
     val m4 = runConfig(Config.Default.copy(cacheInter = true), n).mdn
