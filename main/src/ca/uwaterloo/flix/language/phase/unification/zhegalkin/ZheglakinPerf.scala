@@ -25,7 +25,7 @@ object ZheglakinPerf {
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
-  private val Iterations: Int = 5
+  private val Iterations: Int = 250
 
   private object Config {
     val Default: Config = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
@@ -58,12 +58,11 @@ object ZheglakinPerf {
     val m5 = runConfig(AllFalse.copy(cacheXor = true), n).mdn
     val m6 = runConfig(AllFalse.copy(cacheSVE = true), n).mdn
     val m7 = runConfig(AllFalse.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
-    val m8 = runConfig(AllFalse.copy(cacheInter = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
-    println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} & \\textsf{Best} \\\\")
+    println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} \\\\")
     println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d & $m8%,7d \\\\")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d \\\\")
     println("-" * 80)
     println()
   }
