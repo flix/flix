@@ -24,7 +24,7 @@ object ZheglakinPerf {
 
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
 
-  private val Iterations: Int = 1
+  private val Iterations: Int = 5
 
   private object Config {
     val Default: Config = Config(cacheUnion = false, cacheInter = false, cacheXor = false)
@@ -100,6 +100,7 @@ object ZheglakinPerf {
       ZhegalkinCache.EnableUnionCache = c.cacheUnion
       ZhegalkinCache.EnableInterCache = c.cacheInter
       ZhegalkinCache.EnableXorCache = c.cacheXor
+      ZhegalkinCache.EnableSVECache = c.cacheSVE
 
       val flix = new Flix()
       addInputs(flix)
