@@ -317,6 +317,9 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.EffectLock =>
+          println("Effect Lock run")
+
       }
     }
 
@@ -401,6 +404,8 @@ object Main {
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
+
+    case object EffectLock extends Command
 
   }
 
