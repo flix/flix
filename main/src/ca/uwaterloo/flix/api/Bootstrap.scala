@@ -845,7 +845,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   def mkEffectLockSignatures(root: TypedAst.Root): List[String] = {
     root.defs.map {
-      case (sym, defn) => s"$sym:${defn.spec}" // TODO: Consider correct types
+      // TODO: Consider types / type schemes and only reachable functions / visible functions
+      case (sym, defn) => s"$sym:${defn.spec}"
     }.toList
   }
 }
