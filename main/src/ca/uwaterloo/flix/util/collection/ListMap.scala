@@ -16,6 +16,9 @@
 
 package ca.uwaterloo.flix.util.collection
 
+import java.util.Locale.FilteringMode
+import scala.collection.MapOps
+
 /**
   * Companion object for the [[ListMap]] class.
   */
@@ -57,6 +60,33 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
   /**
+    * Returns all the values in the list map in a single iterable.
+    */
+  def values: Iterable[V] = m.values.flatten
+
+  /**
+    * Returns all the keys in the list map.
+    */
+  def keys: Iterable[K] = m.keys
+
+  /**
+    * Applies `f` to each of the mappings in the list map.
+    */
+  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
+
+  /**
+    * Returns the mapped list in the list map, if any.
+    * Otherwise, returns the default list.
+    */
+  def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
+
+  /**
+    * Required for pattern-matching in for-patterns.
+    * Just call withFilter on the underlying map.
+    */
+  def withFilter(p: ((K, List[V])) => Boolean): MapOps.WithFilter[K, List[V], Iterable, Map] = m.withFilter(p)
+
+  /**
     * Returns `this` list map extended with an additional mapping from `k` to `v`.
     */
   def +(kv: (K, V)): ListMap[K, V] = {
@@ -92,17 +122,4 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     * Returns ´this´ list map without the mappings for ´ks´.
     */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
-
-  /**
-    * Returns all the values in the list map in a single iterable.
-    */
-  def values: Iterable[V] = m.values.flatten
-
-  def keys: Iterable[K] = m.keys
-
-  def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
-
-  def withFilter(p: ((K, List[V])) => Boolean): ListMap[K, V] = ListMap(m.filter(p))
-
-  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
 }
