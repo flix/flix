@@ -18,31 +18,43 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.phase.unification.set.EquationGenerator.mkEq
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormulaGenerator.{Options, generate}
-import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.{SolverListener, solve, stateString}
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
+import ca.uwaterloo.flix.util.TwoList
 import org.scalatest.funsuite.AnyFunSuite
-
-import scala.util.Random
 
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
-  implicit val genOpts: Options = Options.default
-  implicit val solveOpts: SetUnification.Options = SetUnification.Options.default
+  implicit val opts: SetUnification.Options = SetUnification.Options.default
   implicit val listener: SolverListener = SolverListener.DoNothing
 
-  test("TestSetUnification.NotEqComplementSelf") {
-    val seed = System.currentTimeMillis()
-    implicit val r: Random = new Random(seed)
-    // Always print seed to ensure the ability to reproduce failing tests.
-    println(s"Testing with seed $seed")
-
-    for (size <- 0 until 500) {
-      val f = generate(size, maxDepth = -1)
-      val inputEq = mkEq(f, SetFormula.mkCompl(f))
-      val input = List(inputEq)
-      val (eqs, subst) = solve(input)
-      assert(eqs.nonEmpty, s"\nCould not solve equation (seed: $seed): $inputEq\n${stateString(eqs, subst)}")
-    }
+  test("Iterator.mapWithIndex") {
+    val input = List(
+      mkEq(Var(0), Cst(21)),
+      mkEq(Var(9), Var(10)),
+      mkEq(Var(10), Var(0)),
+      mkEq(Var(10), Var(11)),
+      mkEq(Var(11), Var(1)),
+      mkEq(Var(2), Empty),
+      mkEq(Var(10), Var(12)),
+      mkEq(Var(3), Union(TwoList(Var(12), Var(2), List()))),
+      mkEq(Var(14), Empty),
+      mkEq(Var(14), Var(4)),
+      mkEq(Var(13), Cst(19)),
+      mkEq(Var(5), Union(TwoList(Var(13), Var(4), List()))),
+      mkEq(Var(15), Union(TwoList(Var(9), Var(8), List()))),
+      mkEq(Var(15), Var(6)),
+      mkEq(Var(16), Union(TwoList(Var(1), Var(3), List(Var(5))))),
+      mkEq(Var(16), Var(7)),
+      mkEq(Var(9), Var(18)),
+      mkEq(Union(TwoList(Var(18), Var(17), List())), Union(TwoList(Var(6), Var(7), List()))),
+      mkEq(Var(17), Union(TwoList(Cst(20), Cst(19), List()))),
+      mkEq(Var(18), Cst(21)),
+      mkEq(Var(8), Cst(20)),
+      mkEq(Var(9), Cst(21))
+    )
+    val (eqs, _) = SetUnification.solve(input)
+    assert(eqs.isEmpty)
   }
 
 }

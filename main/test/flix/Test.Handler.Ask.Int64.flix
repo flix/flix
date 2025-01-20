@@ -10,7 +10,7 @@ mod Test.Handler.Ask.Int64 {
     def sample(limit: Int64): List[Int64] =
         run {
             generator(0i64); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()
         }
 

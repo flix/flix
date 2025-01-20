@@ -77,6 +77,46 @@ sealed trait SetFormula {
   }
 
   /**
+   * Returns the constants (i.e. "rigid variables") in `this` set formula.
+   */
+  final def cstsOf: SortedSet[Int] = this match {
+    case SetFormula.Univ => SortedSet.empty
+    case SetFormula.Empty => SortedSet.empty
+    case Cst(x) => SortedSet(x)
+    case Var(x) => SortedSet.empty
+    case ElemSet(_) => SortedSet.empty
+    case Compl(f) => f.cstsOf
+    case Inter(_, cstsPos, _, _, cstsNeg, _, other) =>
+      other.foldLeft(cstsPos.map(_.c) ++ cstsNeg.map(_.c)) {
+        case (acc, f) => acc ++ f.cstsOf
+      }
+    case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
+    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
+      case (acc, f) => acc ++ f.cstsOf
+    }
+  }
+
+  /**
+   * Returns the variables (i.e. "flexible variables") in `this` set formula.
+   */
+  final def varsOf: SortedSet[Int] = this match {
+    case SetFormula.Univ => SortedSet.empty
+    case SetFormula.Empty => SortedSet.empty
+    case Cst(_) => SortedSet.empty
+    case Var(x) => SortedSet(x)
+    case ElemSet(_) => SortedSet.empty
+    case Compl(f) => f.varsOf
+    case Inter(_, _, varsPos, _, _, varsNeg, other) =>
+      other.foldLeft(varsPos.map(_.x) ++ varsNeg.map(_.x)) {
+        case (acc, f) => acc ++ f.varsOf
+      }
+    case Union(l) => l.toList.map(_.varsOf).reduce(_ ++ _)
+    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
+      case (acc, f) => acc ++ f.varsOf
+    }
+  }
+
+  /**
     * Returns the number of connectives in the unary/binary representation of `this`.
     *
     * [[Compl]], [[Union]], and [[Inter]] are connectives.

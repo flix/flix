@@ -505,8 +505,8 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, _, _, _) =>
       visitType(runEff) ++ visitExp(exp)
 
-    case Expr.Without(exp, eff, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
+    case Expr.Without(exp, sym, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -519,10 +519,10 @@ object SemanticTokensProvider {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryWith(exp, eff, rules, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.qname.loc)
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       val st1 = Iterator(t)
-      val st2 = rules.foldLeft(visitExp(exp)) {
+      val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp)) =>
           val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
           val t1 = Iterator(st)
@@ -530,6 +530,9 @@ object SemanticTokensProvider {
           acc ++ t1 ++ t2 ++ visitExp(exp)
       }
       st1 ++ st2
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Do(op, exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
@@ -789,15 +792,15 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTraitConstraint(tc0: TraitConstraint): Iterator[SemanticToken] = tc0 match {
-    case TraitConstraint(head, arg, _) =>
-      visitTraitConstraintHead(head) ++ visitType(arg)
+    case TraitConstraint(symUse, arg, _) =>
+      visitTraitSymUse(symUse) ++ visitType(arg)
   }
 
   /**
     * Returns all semantic tokens in the given type constraint head `head0`.
     */
-  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Iterator[SemanticToken] = head0 match {
-    case TraitConstraint.Head(_, loc) =>
+  private def visitTraitSymUse(head0: TraitSymUse): Iterator[SemanticToken] = head0 match {
+    case TraitSymUse(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
@@ -808,14 +811,14 @@ object SemanticTokensProvider {
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
     case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeSymUse(symUse: AssocTypeSymUse): Iterator[SemanticToken] = symUse match {
+    case AssocTypeSymUse(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

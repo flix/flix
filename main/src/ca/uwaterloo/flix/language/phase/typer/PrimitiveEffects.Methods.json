@@ -1,6 +1,8 @@
 {
   "methods": {
     "java.lang.Boolean::getBoolean": "Env, IO",
+    "java.lang.Double::resolveConstantDesc": "Sys, IO",
+    "java.lang.Float::resolveConstantDesc": "Sys, IO",
 
     "java.lang.Object::toString": "NonDet, IO",
     "java.lang.Object::finalize": "IO",

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
 
 import scala.collection.mutable
 
@@ -434,9 +434,13 @@ object SetUnification {
     val f1 = Zhegalkin.toZhegalkin(eq.f1)
     val f2 = Zhegalkin.toZhegalkin(eq.f2)
     val q = alg.mkXor(f1, f2)
-    val fvs = alg.freeVars(q).toList
+
     try {
-      val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
+      val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
+        val fvs = alg.freeVars(q).toList
+        SveAlgorithm.successiveVariableElimination(q, fvs)
+      })
+
       val m = subst.m.toList.map {
         case (x, e) => x -> Zhegalkin.toSetFormula(e)
       }.toMap

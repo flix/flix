@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Scope}
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
@@ -58,6 +59,9 @@ object EffUnification3 {
       // unchanged.
       case InvalidType => return (eqs, Substitution.empty)
     }
+
+    // Notify all Flix listeners that we are solving a new effect equation system.
+    flix.emitEvent(FlixEvent.SolveEffEquations(equations))
 
     // Solve the equations and convert them back.
     val (setEqs, setSubst) = SetUnification.solve(equations)
@@ -305,7 +309,7 @@ object EffUnification3 {
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
     private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
-      case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
       case _ => throw InvalidType
     }
@@ -341,7 +345,7 @@ object EffUnification3 {
       */
     private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) =>
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
         getAssocAtoms(arg).map(Atom.Assoc(sym, _))
       case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
       case _ => None
@@ -356,7 +360,7 @@ object EffUnification3 {
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
-        Type.AssocType(AssocTypeConstructor(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+        Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
   }

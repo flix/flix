@@ -1173,7 +1173,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      docTraitName(t.head.sym)
+      docTraitName(t.symUse.sym)
       sb.append("[")
       docType(t.arg)
       sb.append("]")
@@ -1205,9 +1205,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.cst.sym.trt)
+      docTraitName(e.symUse.sym.trt)
       sb.append(".")
-      sb.append(esc(e.cst.sym.name))
+      sb.append(esc(e.symUse.sym.name))
       sb.append("[")
       docType(e.tpe1)
       sb.append("] ~ ")
@@ -1231,7 +1231,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
-      docTraitName(t.trt)
+      docTraitName(t.sym)
     }
     sb.append("</span>")
   }

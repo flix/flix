@@ -236,6 +236,8 @@ object SyntaxTree {
 
       case object GetField extends Expr
 
+      case object Handler extends Expr
+
       case object Hole extends Expr
 
       case object HoleVariable extends Expr
@@ -407,8 +409,6 @@ object SyntaxTree {
       case object EffectSet extends Type
 
       case object Function extends Type
-
-      case object Native extends Type
 
       case object PredicateWithAlias extends Type
 

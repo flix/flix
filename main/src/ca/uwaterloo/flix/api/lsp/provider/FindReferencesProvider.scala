@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -176,10 +177,8 @@ object FindReferencesProvider {
     case SymUse.StructFieldSymUse(_, loc) => loc.isReal
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
-    case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
     case tpe: Type => tpe.loc.isReal
     case _ => false
@@ -198,8 +197,6 @@ object FindReferencesProvider {
     // Assoc Types
     case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
     case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
-    case AssocTypeConstructor(sym, _) => Some(getAssocTypeSymOccurs(sym))
-    case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
     // Cases
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
@@ -228,10 +225,9 @@ object FindReferencesProvider {
     // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-    case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
     // Type Alias
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
-    case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+    case Type.Alias(TypeAliasSymUse(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
     // Type Vars
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -251,11 +247,6 @@ object FindReferencesProvider {
 
     object AssocTypeSymConsumer extends Consumer {
       override def consumeAssocTypeSymUse(symUse: SymUse.AssocTypeSymUse): Unit = consider(symUse.sym, symUse.loc)
-      override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = consider(tcst.sym, tcst.loc)
-      override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.AssocType(AssocTypeConstructor(sym, loc), _, _, _) => consider(sym, loc)
-        case _ => ()
-      }
     }
 
     Visitor.visitRoot(root, AssocTypeSymConsumer, AllAcceptor)
@@ -418,7 +409,6 @@ object FindReferencesProvider {
 
     object TraitSymConsumer extends Consumer {
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = consider(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = consider(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, AllAcceptor)
@@ -435,7 +425,7 @@ object FindReferencesProvider {
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(AliasConstructor(sym, loc), _, _, _) => consider(sym, loc)
+        case Type.Alias(TypeAliasSymUse(sym, loc), _, _, _) => consider(sym, loc)
         case _ => ()
       }
     }

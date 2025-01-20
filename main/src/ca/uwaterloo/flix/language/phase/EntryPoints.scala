@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
@@ -318,7 +318,7 @@ object EntryPoints {
       else {
         val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
         val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
-        val constraint = TraitConstraint(TraitConstraint.Head(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
+        val constraint = TraitConstraint(TraitSymUse(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
         val hasToString = TraitEnvironment.holds(constraint, TraitEnv(root.traitEnv), ListMap.empty)
         if (hasToString) None
         else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
@@ -377,6 +377,8 @@ object EntryPoints {
         eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
         eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.difference(a, b)))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
         eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
       case Type.Alias(_, _, tpe, _) => eval(tpe)

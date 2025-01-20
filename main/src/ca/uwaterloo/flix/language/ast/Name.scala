@@ -168,6 +168,38 @@ object Name {
     def isUnqualified: Boolean = namespace.isRoot
 
     /**
+     * Returns `true` if `this` qualified name is incomplete, i.e. it ends with a dot.
+     *
+     * May return `false` out of an over abundance of caution.
+     *
+     * Note: In some cases this function may give false positives. For example, in:
+     *
+     * {{{
+     *   x.byteValueExact()
+     * }}}
+     *
+     * We report that the QName `x` ends with a dot.
+     */
+    def endsWithDot: Boolean = {
+      // We return false if this source location is unknown.
+      // This should not happen for code that the programmer is writing.
+      if (loc == SourceLocation.Unknown)
+        false
+      else {
+        val lineNumber = loc.sp2.line
+        val columnOffset = loc.sp2.col - 1
+        val line = loc.sp2.source.getLine(lineNumber)
+        if (!(columnOffset < line.length)) {
+          // Out of bounds; return false.
+          false
+        } else {
+          // Within bounds; check if the qname ends with a dot.
+          '.'== line.charAt(columnOffset)
+        }
+      }
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "." + ident

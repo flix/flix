@@ -110,7 +110,7 @@ mod FileWriteWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + IO = x ->
         run {
             f(x)
-        } with FileWriteWithResult {
+        } with handler FileWriteWithResult {
             def write(data, f, k) = {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
