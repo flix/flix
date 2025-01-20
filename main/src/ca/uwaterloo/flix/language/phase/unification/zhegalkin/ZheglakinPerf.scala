@@ -15,13 +15,18 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.set.Equation
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{LocalResource, Options, Subeffecting}
+import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, Subeffecting}
+
+import java.nio.file.Paths
+import scala.collection.mutable
 
 object ZheglakinPerf {
 
+  private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
@@ -37,10 +42,127 @@ object ZheglakinPerf {
                            )
 
   def main(args: Array[String]): Unit = {
+    rq1(Iterations)
     rq3(Iterations)
     rq6(Iterations)
   }
 
+
+  private def rq1(n: Int): Unit = {
+    println(RQ1)
+
+    // TODO: What options should be used when we collect the constraints?
+
+    // Collect all Boolean effect equation systems.
+    val buffer = mutable.ArrayBuffer.empty[List[Equation]]
+    val flix = new Flix()
+    flix.addListener {
+      case FlixEvent.SolveEffEquations(eqns) =>
+        if (eqns.nonEmpty) {
+          buffer += eqns
+        }
+      case _ => // nop
+    }
+    addInputs(flix)
+    val (_, errors) = flix.check()
+    assert(errors.isEmpty)
+    val allEquationSystems = buffer.toList
+
+    // (RQ1.1) What is the (min, max, avg, median) number of constraints?
+    val numberOfConstraintsPerSystem = allEquationSystems.map {
+      system => system.length
+    }
+
+    // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
+    val numberOfFlexibleVarsPerSystem = allEquationSystems.map {
+      system =>
+        system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.varsOf.size
+        }
+    }
+
+    // (RQ1.3) What is the (min, max, avg, median) number of rigid variables?
+    val numberOfRigidVarsPerSystem = allEquationSystems.map {
+      system =>
+        system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.cstsOf.size
+        }
+    }
+
+    // (RQ1.4) What is the (min, max, avg, median) number of flexible sub-effect variables?
+    val numberOfEffSlackVarsPerSystem = Nil // TODO
+
+    val py1 =
+      """import matplotlib.pyplot as plt
+        |import numpy as np
+        |from numpy import loadtxt
+        |
+        |data = [loadtxt("numberOfConstraintsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
+        |
+        |plt.boxplot(data, patch_artist=True)
+        |plt.title("Constraints per Equation System")
+        |plt.ylabel("Number of Constraints")
+        |plt.grid(True)
+        |
+        |plt.savefig('numberOfConstraintsPerSystem.png')
+        |
+        |plt.show()
+        |
+        |""".stripMargin
+
+    val py2 =
+      """import matplotlib.pyplot as plt
+        |import numpy as np
+        |from numpy import loadtxt
+        |
+        |data = [loadtxt("numberOfFlexibleVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
+        |
+        |plt.boxplot(data, patch_artist=True)
+        |plt.title("Flexible Variables per Constraint System")
+        |plt.ylabel("Number of Flexible Variables")
+        |plt.grid(True)
+        |
+        |plt.savefig('numberOfFlexibleVarsPerSystem.png')
+        |
+        |plt.show()
+        |
+        |""".stripMargin
+
+    val py3 =
+      """import matplotlib.pyplot as plt
+        |import numpy as np
+        |from numpy import loadtxt
+        |
+        |data = [loadtxt("numberOfRigidVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
+        |
+        |plt.boxplot(data, patch_artist=True)
+        |plt.title("Rigid Constants per Constraint System")
+        |plt.ylabel("Number of Rigid Constants")
+        |plt.grid(True)
+        |
+        |plt.savefig('numberOfRigidVarsPerSystem.png')
+        |
+        |plt.show()
+        |
+        |""".stripMargin
+
+    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.py"), py1)
+    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.txt"), numberOfConstraintsPerSystem.mkString("\n"))
+
+    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.py"), py2)
+    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), numberOfFlexibleVarsPerSystem.mkString("\n"))
+
+    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.py"), py3)
+    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.txt"), numberOfRigidVarsPerSystem.mkString("\n"))
+
+    println("-" * 80)
+    println(s"Total Constraints   : ${numberOfConstraintsPerSystem.sum}")
+    println(s"Total Flexible Vars : ${numberOfFlexibleVarsPerSystem.sum}")
+    println(s"Total Rigid Conts   : ${numberOfRigidVarsPerSystem.sum}")
+    //println(s"numberOfEffSlackVarsPerSystem = [${numberOfEffSlackVarsPerSystem.mkString(",")}];")
+    println("-" * 80)
+    println()
+  }
 
   private def rq3(n: Int): Unit = {
     println(RQ3)

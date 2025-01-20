@@ -38,7 +38,13 @@ import scala.annotation.nowarn
 case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Status, loc: SourceLocation) {
 
   /** Returns `true` if `this` equation is considered complex. */
-  final def isComplex: Boolean = f1.fvs.size >= 2 && f2.fvs.size >= 2
+  final def isComplex: Boolean = f1.varsOf.size >= 2 && f2.varsOf.size >= 2
+
+  /** Returns the constants (i.e. "rigid variables") in `this` equation. */
+  final def cstsOf: Set[Int] = f1.cstsOf ++ f2.cstsOf
+
+  /** Returns the variables (i.e. "flexible variables") in `this` equation. */
+  final def varsOf: Set[Int] = f1.varsOf ++ f2.varsOf
 
   /** Returns the sum of the sizes of the formulas in `this`. */
   final def size: Int = f1.size + f2.size
