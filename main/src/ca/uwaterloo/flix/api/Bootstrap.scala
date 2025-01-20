@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -200,6 +200,11 @@ object Bootstrap {
     * Returns the path to the pkg file based on the given path `p`.
     */
   private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".fpkg").normalize()
+
+  /**
+    * Returns the path to the Manifest file relative to the given path `p`.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("./effect.lock").normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -827,9 +832,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
-    mapN(check(flix)) {
-      root => ()
+  def effectLock(path: Path, flix: Flix): Validation[Unit, BootstrapError] = {
+    check(flix) match {
+      case Validation.Failure(errors) => Validation.Failure(errors)
+      case Validation.Success(root) =>
+        val outputStream = Files.newOutputStream(getEffectLockFile(path))
+        ???
     }
   }
 }
