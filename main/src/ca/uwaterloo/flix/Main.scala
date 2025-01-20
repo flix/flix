@@ -322,7 +322,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
-              bootstrap.effectLock(flix)
+              bootstrap.effectLock(cwd, flix)
           }.toResult match {
             case Result.Ok(_) =>
               println("Ran Effect Lock")
