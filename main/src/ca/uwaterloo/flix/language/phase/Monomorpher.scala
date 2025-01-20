@@ -402,7 +402,7 @@ object Monomorpher {
     * Creates a table for fast lookup of instances.
     */
   private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
-    instances.flatMap{
+    instances.flatMap {
       case (sym, insts) => insts.map(inst => ((sym, inst.tpe.typeConstructor.get), inst))
     }.toMap
   }

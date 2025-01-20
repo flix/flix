@@ -100,7 +100,7 @@ object Resolver {
               case () =>
                 ResolvedAst.Root(
                   table.traits,
-                  table.instances, // TODO NS-REFACTOR use ListMap elsewhere for this too
+                  table.instances,
                   table.defs,
                   table.enums,
                   table.structs,
