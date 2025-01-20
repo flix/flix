@@ -61,9 +61,14 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
   /**
-    * Returns all the values in the list map in a single iterable.
+    * Returns all the values in the list map flattened into a single iterable.
     */
   def values: Iterable[V] = m.values.flatten
+
+  /**
+    * Returns all the value lists in the list map.
+    */
+  def valueLists: Iterable[List[V]] = m.values
 
   /**
     * Returns all the keys in the list map.
