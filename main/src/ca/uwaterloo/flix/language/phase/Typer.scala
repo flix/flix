@@ -125,7 +125,7 @@ object Typer {
   private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): TraitEnv = {
     val m = traits0.map {
       case (traitSym, trt) =>
-        val instances = instances0.getOrElse(traitSym, Nil)
+        val instances = instances0.get(traitSym)
         val envInsts = instances.map {
           case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Instance(tpe, tconstrs)
         }
@@ -142,7 +142,7 @@ object Typer {
   private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     val assocs = for {
       (traitSym, trt) <- traits0.iterator
-      inst <- instances0.getOrElse(traitSym, Nil)
+      inst <- instances0.get(traitSym)
       assocSig <- trt.assocs
       assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
       assocDef = assocDefOpt match {

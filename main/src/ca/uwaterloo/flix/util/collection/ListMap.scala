@@ -71,12 +71,6 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def get(k: K): List[V] = m.getOrElse(k, Nil)
 
   /**
-    * Returns the mapped list in the list map, if any.
-    * Otherwise, returns the default list.
-    */
-  def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
-
-  /**
     * Returns the list of values that the key `k` maps to.
     */
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
