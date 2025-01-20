@@ -27,38 +27,21 @@ import org.eclipse.lsp4j.services.{LanguageServer, TextDocumentService, Workspac
 
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.CompletableFuture
-import scala.collection.immutable.StringOps
 import scala.collection.mutable
 
-class LspServer(o: Options) {
-
-  /**
-    * The Flix instance (the same instance is used for incremental compilation).
-    */
-  private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
-
-  /**
-    * A map from source URIs to source code.
-    */
-  private val sources: mutable.Map[String, String] = mutable.Map.empty
-
-  /**
-    * The current AST root. The root is null until the source code is compiled.
-    */
-  private var root: Root = TypedAst.empty
-
-  def run(): Unit = {
+object LspServer {
+  def run(o: Options): Unit = {
     val in = System.in
     val out = System.out
-    val server = new FlixLanguageServer
+    val server = new FlixLanguageServer(o)
     System.err.println(s"Starting Default LSP Server...")
     LSPLauncher.createServerLauncher(server, in, out).startListening.get()
     System.err.println(s"LSP Server Terminated.")
   }
 
-  private class FlixLanguageServer extends LanguageServer {
+  private class FlixLanguageServer(o: Options) extends LanguageServer {
 
-    private val flixTextDocumentService = new FlixTextDocumentService
+    private val flixTextDocumentService = new FlixTextDocumentService(o)
     private val flixWorkspaceService = new FlixWorkspaceService
 
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
@@ -74,8 +57,7 @@ class LspServer(o: Options) {
       val mainUri = mainPath.toString
       if (Files.exists(mainPath)) {
         val mainSrc = StreamOps.readAll(Files.newInputStream(mainPath))
-        flix.addSourceCode(mainUri, mainSrc)(SecurityContext.AllPermissions)
-        sources += (mainUri -> mainSrc)
+        flixTextDocumentService.addSourceCode(mainUri, mainSrc)
         CompletableFuture.completedFuture(new InitializeResult(capabilities))
       } else {
         System.err.println(s"Main file not found: $mainPath")
@@ -97,7 +79,22 @@ class LspServer(o: Options) {
     override def getWorkspaceService: WorkspaceService = flixWorkspaceService
   }
 
-  private class FlixTextDocumentService extends TextDocumentService {
+  private class FlixTextDocumentService(o: Options) extends TextDocumentService {
+    /**
+      * The Flix instance (the same instance is used for incremental compilation).
+      */
+    private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+
+    /**
+      * A map from source URIs to source code.
+      */
+    private val sources: mutable.Map[String, String] = mutable.Map.empty
+
+    /**
+      * The current AST root. The root is null until the source code is compiled.
+      */
+    private var root: Root = TypedAst.empty
+
     override def didOpen(didOpenTextDocumentParams: DidOpenTextDocumentParams): Unit = {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
     }
@@ -119,6 +116,11 @@ class LspServer(o: Options) {
 
       val h = new Hover(new MarkupContent("plaintext", "Hello World from Hover!"))
       CompletableFuture.completedFuture(h)
+    }
+
+    def addSourceCode(uri: String, src: String): Unit = {
+      flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
+      sources.put(uri, src)
     }
   }
 

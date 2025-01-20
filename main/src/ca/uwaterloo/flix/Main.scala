@@ -265,8 +265,7 @@ object Main {
           }
 
         case PlainLsp =>
-          val lspServer = new LspServer(options)
-          lspServer.run()
+          LspServer.run(options)
           System.exit(0)
 
         case Command.VSCodeLsp(port) =>
