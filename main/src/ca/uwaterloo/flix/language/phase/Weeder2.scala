@@ -392,17 +392,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
@@ -458,17 +450,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.RestrictableCase(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
@@ -890,6 +874,7 @@ object Weeder2 {
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
+        case TreeKind.Expr.Handler => visitHandlerExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
@@ -1753,8 +1738,16 @@ object Weeder2 {
             loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        // Case: run expr with eff { handlers... }
-        case (expr, withs) => Validation.Success(Expr.TryWith(expr, withs, tree.loc))
+        // Case: run expr [with expr]...
+        case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
+      }
+    }
+
+    private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Handler)
+      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
+      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+        (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
       }
     }
 
@@ -1793,12 +1786,9 @@ object Weeder2 {
       }
     }
 
-    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[WithHandler, CompilationMessage] = {
+    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithBodyExpr)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
-        (eff, handlers) => WithHandler(eff, handlers)
-      }
+      pickExpr(tree)
     }
 
     private def visitTryWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
@@ -2710,7 +2700,6 @@ object Weeder2 {
         case TreeKind.Type.RecordRow => visitRecordRowType(inner)
         case TreeKind.Type.Schema => visitSchemaType(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRowType(inner)
-        case TreeKind.Type.Native => visitNativeType(inner)
         case TreeKind.Type.Apply => visitApplyType(inner)
         case TreeKind.Type.Constant => visitConstantType(inner)
         case TreeKind.Type.Unary => visitUnaryType(inner)
@@ -2818,16 +2807,6 @@ object Weeder2 {
           }
 
         case (_, acc) => Validation.Success(acc)
-      }
-    }
-
-    private def visitNativeType(tree: Tree): Validation[Type.Native, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Native)
-      text(tree) match {
-        case head :: rest =>
-          val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
-          Validation.Success(Type.Native(fqn, tree.loc))
-        case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
       }
     }
 

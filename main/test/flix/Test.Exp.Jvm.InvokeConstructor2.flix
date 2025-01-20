@@ -21,11 +21,11 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Character('a')
 
     @test
-    def testInvokeConstructor_03(): Float \ IO =
+    def testInvokeConstructor_03(): Float =
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor_04(): Double \ IO =
+    def testInvokeConstructor_04(): Double =
         new Double(123.456f64)
 
     @test

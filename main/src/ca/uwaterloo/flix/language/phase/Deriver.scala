@@ -51,8 +51,8 @@ object Deriver {
     val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
     val newInstances = derivedInstances.foldLeft(root.instances) {
       case (acc, inst) =>
-        val accInsts = acc.getOrElse(inst.trt.sym, Nil)
-        acc + (inst.trt.sym -> (inst :: accInsts))
+        val accInsts = acc.getOrElse(inst.symUse.sym, Nil)
+        acc + (inst.symUse.sym -> (inst :: accInsts))
     }
     (root.copy(instances = newInstances), sctx.errors.asScala.toList)
   }
@@ -133,7 +133,8 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(eqTraitSym, loc),
+        symUse = TraitSymUse(eqTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -180,13 +181,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(eqTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
       )
   }
@@ -282,7 +283,8 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(orderTraitSym, loc),
+        symUse = TraitSymUse(orderTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -299,14 +301,14 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
 
-      val lambdaVarSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
+      val lambdaSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
 
       // Create the lambda mapping tags to indices
-      val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
+      val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Modifiers.Empty, lambdaParamVarSym.tvar, TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamSym, Modifiers.Empty, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
         allowSubeffecting = false,
         loc
@@ -324,14 +326,14 @@ object Deriver {
           SigSymUse(compareSigSym, loc),
           List(
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaVarSym, loc),
+              mkVarExpr(lambdaSym, loc),
               mkVarExpr(param1, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaVarSym, loc),
+              mkVarExpr(lambdaSym, loc),
               mkVarExpr(param2, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
@@ -352,7 +354,7 @@ object Deriver {
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaVarSym, lambda, matchExp, loc)
+      KindedAst.Expr.Let(lambdaSym, lambda, matchExp, loc)
   }
 
   /**
@@ -374,13 +376,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(orderTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -500,7 +502,8 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(toStringTraitSym, loc),
+        symUse = TraitSymUse(toStringTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -540,13 +543,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(toStringTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -635,7 +638,8 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        trt = TraitSymUse(hashTraitSym, loc),
+        symUse = TraitSymUse(hashTraitSym, loc),
+        tparams = tparams,
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -677,13 +681,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(hashTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -751,7 +755,7 @@ object Deriver {
     * }}}
     */
   private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[KindedAst.Instance] = enum0 match {
-    case KindedAst.Enum(_, _, _, sym, _, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, sym, tparams, _, cases, tpe, _) =>
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
         val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId()))
@@ -779,7 +783,8 @@ object Deriver {
           doc = Doc(Nil, loc),
           ann = Annotations.Empty,
           mod = Modifiers.Empty,
-          trt = TraitSymUse(coerceTraitSym, loc),
+          symUse = TraitSymUse(coerceTraitSym, loc),
+          tparams = tparams,
           tpe = tpe,
           tconstrs = Nil,
           defs = List(defn),
@@ -825,13 +830,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(TraitConstraint(TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+          List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, retTpe, loc)
         ),
         tpe = retTpe,
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(TraitConstraint(TraitConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+        tconstrs = List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
   }
@@ -869,7 +874,7 @@ object Deriver {
     */
   private def getTraitConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], trt: Symbol.TraitSym, loc: SourceLocation): List[TraitConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
-      TraitConstraint(TraitConstraint.Head(trt, loc), Type.Var(tparam.sym, loc), loc)
+      TraitConstraint(TraitSymUse(trt, loc), Type.Var(tparam.sym, loc), loc)
   }
 
   /**
@@ -880,7 +885,7 @@ object Deriver {
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(varSym, loc)
+  private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
@@ -923,7 +928,7 @@ object Deriver {
   /**
     * Creates a variable pattern using the given variable symbol.
     */
-  private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar, loc)
+  private def mkVarPattern(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(sym, sym.tvar, loc)
 
   /**
     * Inserts `sep` between every two elements of `list`.

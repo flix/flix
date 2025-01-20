@@ -54,14 +54,14 @@ instance Box[Char] {
 
 instance Box[Float32] {
     type Boxed = Float
-    pub def box(x: Float32): Float = unsafe Float.valueOf(x)
-    pub def unbox(x: Float): Float32 = unsafe x.floatValue()
+    pub def box(x: Float32): Float = Float.valueOf(x)
+    pub def unbox(x: Float): Float32 = x.floatValue()
 }
 
 instance Box[Float64] {
     type Boxed = Double
-    pub def box(x: Float64): Double = unsafe Double.valueOf(x)
-    pub def unbox(x: Double): Float64 = unsafe x.doubleValue()
+    pub def box(x: Float64): Double = Double.valueOf(x)
+    pub def unbox(x: Double): Float64 = x.doubleValue()
 }
 
 instance Box[Int8] {

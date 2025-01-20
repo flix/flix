@@ -50,11 +50,11 @@ instance Hash[Char] {
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int32 = unsafe Float.hashCode(x)
+    pub def hash(x: Float32): Int32 = Float.hashCode(x)
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int32 = unsafe Double.hashCode(x)
+    pub def hash(x: Float64): Int32 = Double.hashCode(x)
 }
 
 instance Hash[BigDecimal] {

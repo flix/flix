@@ -1,5 +1,6 @@
-def main(): Unit \ {Env, Net, Sys, IO} =
-    App.runAll(() -> {
-        let m = "${Chalk.blue("Hello")} ${Chalk.green("World!")}!";
-        Console.println(m)
-    })
+def main(): Unit \ IO =
+    run {
+        Console.println("Please enter your name: ");
+        let name = Console.readln();
+        Console.println("Hello ${name}")
+    } with Console.runWithIO

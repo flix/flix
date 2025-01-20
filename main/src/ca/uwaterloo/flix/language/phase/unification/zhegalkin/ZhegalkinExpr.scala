@@ -205,12 +205,20 @@ object ZhegalkinExpr {
 
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
+    */
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = {
+    // Perform a cache lookup or an actual computation.
+    ZhegalkinCache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
+  }
+
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     *
     * {{{
     *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
     * }}}
     */
-  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
+  private def computeInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)

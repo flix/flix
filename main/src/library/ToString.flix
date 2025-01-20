@@ -48,11 +48,11 @@ instance ToString[Char] {
 }
 
 instance ToString[Float32] {
-    pub def toString(x: Float32): String = unsafe Float.toString(x)
+    pub def toString(x: Float32): String = Float.toString(x)
 }
 
 instance ToString[Float64] {
-    pub def toString(x: Float64): String = unsafe Double.toString(x)
+    pub def toString(x: Float64): String = Double.toString(x)
 }
 
 instance ToString[Int8] {

@@ -755,9 +755,9 @@ object Namer {
       val eff = visitType(eff0)
       NamedAst.Expr.Unsafe(e, eff, loc)
 
-    case DesugaredAst.Expr.Without(exp, eff, loc) =>
+    case DesugaredAst.Expr.Without(exp, qname, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.Without(e, eff, loc)
+      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
@@ -768,10 +768,14 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Throw(e, loc)
 
-    case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
-      val e = visitExp(exp, ns0)
+    case DesugaredAst.Expr.Handler(qname, rules, loc) =>
       val rs = rules.map(visitTryWithRule(_, ns0))
-      NamedAst.Expr.TryWith(e, eff, rs, loc)
+      NamedAst.Expr.Handler(qname, rs, loc)
+
+    case DesugaredAst.Expr.RunWith(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.RunWith(e1, e2, loc)
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
@@ -1083,9 +1087,6 @@ object Namer {
       val t = visitType(tpe)
       NamedAst.Type.Schema(t, loc)
 
-    case DesugaredAst.Type.Native(fqn, loc) =>
-      NamedAst.Type.Native(fqn, loc)
-
     case DesugaredAst.Type.Arrow(tparams, eff, tpe, loc) =>
       val ts = tparams.map(visitType)
       val ef = eff.map(visitType)
@@ -1206,22 +1207,7 @@ object Namer {
   private def freeVars(pat0: DesugaredAst.Pattern): List[Name.Ident] = pat0 match {
     case DesugaredAst.Pattern.Var(ident, _) => List(ident)
     case DesugaredAst.Pattern.Wild(_) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Unit, _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Bool(true), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Bool(false), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Char(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Float32(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Float64(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.BigDecimal(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Int8(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Int16(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Int32(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Int64(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.BigInt(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Str(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Regex(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.RecordEmpty, _) => Nil
-    case DesugaredAst.Pattern.Cst(Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
+    case DesugaredAst.Pattern.Cst(_, _) => Nil
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
     case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
@@ -1252,7 +1238,6 @@ object Namer {
     case DesugaredAst.Type.SchemaRowExtendByTypes(_, _, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.Schema(row, _) => freeTypeVars(row)
-    case DesugaredAst.Type.Native(_, _) => Nil
     case DesugaredAst.Type.Arrow(tparams, eff, tresult, _) => tparams.flatMap(freeTypeVars) ::: eff.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case DesugaredAst.Type.Apply(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.True(_) => Nil

@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -593,14 +595,21 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(cst: AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(symUse: TypeAliasSymUse, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
 
   /**
     * An associated type.
     */
-  case class AssocType(cst: AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
+  case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
+    override def equals(obj: Any): Boolean = obj match {
+      case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(symUse, arg)
+  }
 
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
@@ -680,7 +689,15 @@ object Type {
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
-    val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
+    val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, isSlack = false, loc)
+    Type.Var(sym, loc)
+  }
+
+  /**
+    * Returns a fresh effect slack variable.
+    */
+  def freshEffSlackVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+    val sym = Symbol.freshKindedTypeVarSym(Absent, Kind.Eff, isRegion = false, isSlack = true, loc)
     Type.Var(sym, loc)
   }
 

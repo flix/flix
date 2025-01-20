@@ -170,7 +170,7 @@ mod Test.Dec.Assoc.Type.Eff {
     pub def handleWithListInt32(f: a -> Unit \ OutInt32, x: a): List[Int32] =
         run {
             f(x); Nil
-        } with OutInt32 {
+        } with handler OutInt32 {
             def toStream(a, k) =
                 (a :: k()) ::: Nil
         }
@@ -197,7 +197,7 @@ mod Test.Dec.Assoc.Type.Eff {
     pub def handleWithListString(f: a -> Unit \ OutString, x: a): List[String] =
         run {
             f(x); Nil
-        } with OutString {
+        } with handler OutString {
             def toStream(a, k) =
                 (a :: k()) ::: Nil
         }

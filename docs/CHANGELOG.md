@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.56.0:
+- Language: Added support for first-class handlers (thanks Jonathan!)
+- Library: Extended the `Process` effect (thanks Maxim!)
+- Compiler: Improved support for incremental compilation (thanks Magnus!)
+
 Version 0.55.0:
 - Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
 - Compiler: Improved performance of LSP API (thanks Alexander!)

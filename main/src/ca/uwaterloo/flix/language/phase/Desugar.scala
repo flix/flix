@@ -298,9 +298,6 @@ object Desugar {
       val r = visitType(row)
       DesugaredAst.Type.Schema(r, loc)
 
-    case WeededAst.Type.Native(fqn, loc) =>
-      DesugaredAst.Type.Native(fqn, loc)
-
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       val tparams1 = tparams.map(visitType)
       val eff1 = eff.map(visitType)
@@ -715,12 +712,14 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Throw(e, loc)
 
-    case WeededAst.Expr.TryWith(exp, handlers, loc) =>
+    case WeededAst.Expr.Handler(eff, rules, loc) =>
+      val rs = rules.map(visitHandlerRule)
+      Expr.Handler(eff, rs, loc)
+
+    case WeededAst.Expr.RunWith(exp, exps, loc) =>
       val e = visitExp(exp)
-      handlers.foldLeft(e) {
-        case (acc, handler) =>
-          val rs = handler.rules.map(visitHandlerRule)
-          Expr.TryWith(acc, handler.eff, rs, loc)
+      exps.foldLeft(e) {
+        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
       }
 
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>
@@ -1130,7 +1129,11 @@ object Desugar {
         val matchRule = DesugaredAst.MatchRule(p1, None, acc)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-    DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    val scope = DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    // We add an ascription to Unit because inference across region boundaries is limited.
+    DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**

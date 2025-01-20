@@ -85,7 +85,7 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
     val syms = getTransitiveSuperTraits(sym) + sym
     val newM = syms.foldLeft(m) {
       case (acc, s) =>
-        val inst = Instance(tpe, Nil)
+        val inst = Instance(tpe.typeVars.map(_.sym).toList, tpe, Nil)
         val context = m.get(s) match {
           case Some(TraitContext(supers, insts)) => TraitContext(supers, inst :: insts)
           case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", sym.loc)

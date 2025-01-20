@@ -48,11 +48,12 @@ mod Fixpoint.Solver {
     @Internal
     def runWithStratification(d0: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
         let d = Fixpoint.Debugging.notifyPreSolve(d0);
-        let compiler = cs ->
-            Fixpoint.Phase.Compiler.compile(cs, stf) |>
-            Fixpoint.Phase.Simplifier.simplifyStmt |>
-            Fixpoint.Phase.IndexSelection.queryStmt |>
-            Fixpoint.Phase.VarsToIndices.lowerStmt;
+        def compiler(cs: Datalog[v]) = {
+            Fixpoint.Phase.Compiler.compile(cs, stf)
+            |> Fixpoint.Phase.Simplifier.simplifyStmt
+            |> Fixpoint.Phase.IndexSelection.queryStmt
+            |> Fixpoint.Phase.VarsToIndices.lowerStmt
+        };
         let model = match d {
             case Datalog(_, _) => region rc {
                 compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel

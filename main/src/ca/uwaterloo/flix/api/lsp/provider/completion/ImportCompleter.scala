@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object ImportCompleter {
 
-  def getCompletions(err: ResolutionError.UndefinedJvmClass)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
+  def getCompletions(err: ResolutionError.UndefinedJvmImport)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     val path = err.name.split('.').toList
     // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
     javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
