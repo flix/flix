@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -828,6 +828,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
-    Validation.Success(())
+    mapN(check(flix)) {
+      root => ()
+    }
   }
 }
