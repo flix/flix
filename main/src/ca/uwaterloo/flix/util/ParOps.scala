@@ -94,10 +94,10 @@ object ParOps {
   /**
     * Applies the function `f` to every value of the map `m` in parallel.
     */
-  def parMapValueList[K, A, B](m: ListMap[K, A])(f: List[A] => List[B])(implicit flix: Flix): ListMap[K, B] =
+  def parMapValueList[K, A, B](m: ListMap[K, A])(f: A => B)(implicit flix: Flix): ListMap[K, B] =
     ListMap(
       parMap(m.m) {
-        case (k, v) => (k, f(v))
+        case (k, v) => (k, v.map(f))
       }.toMap
     )
 
