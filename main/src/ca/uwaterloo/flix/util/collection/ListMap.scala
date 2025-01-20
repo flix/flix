@@ -51,16 +51,6 @@ object ListMap {
 case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
-    * Optionally returns the list of values that the key `k` maps to.
-    */
-  def get(k: K): Option[List[V]] = m.get(k)
-
-  /**
-    * Returns the list of values that the key `k` maps to.
-    */
-  def apply(k: K): List[V] = m.getOrElse(k, List.empty)
-
-  /**
     * Returns all the values in the list map flattened into a single iterable.
     */
   def values: Iterable[V] = m.values.flatten
@@ -76,15 +66,25 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def keys: Iterable[K] = m.keys
 
   /**
-    * Applies `f` to each of the mappings in the list map.
+    * Optionally returns the list of values that the key `k` maps to.
     */
-  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
+  def get(k: K): Option[List[V]] = m.get(k)
 
   /**
     * Returns the mapped list in the list map, if any.
     * Otherwise, returns the default list.
     */
   def getOrElse(k: K, default: List[V]): List[V] = m.getOrElse(k, default)
+
+  /**
+    * Returns the list of values that the key `k` maps to.
+    */
+  def apply(k: K): List[V] = m.getOrElse(k, List.empty)
+
+  /**
+    * Applies `f` to each of the mappings in the list map.
+    */
+  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
 
   /**
     * Required for pattern-matching in for-patterns.
