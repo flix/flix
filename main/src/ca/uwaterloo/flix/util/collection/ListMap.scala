@@ -77,8 +77,12 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
     * Applies `f` to each of the mappings in the list map.
+    * The function `f` is expected to take a key `k` and a value `v`, not a list of values.
     */
-  def flatMap[A](f: ((K, List[V])) => Iterable[A]): Iterable[A] = m.flatMap(f)
+  def flatMap[A](f: ((K, V)) => Iterable[A]): Iterable[A] =
+    m.flatMap {
+      case (k, vs) => vs.flatMap(v => f(k, v))
+    }
 
   /**
     * Required for pattern-matching in for-patterns.
