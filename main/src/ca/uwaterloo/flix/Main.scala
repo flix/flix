@@ -484,6 +484,8 @@ object Main {
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
+      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
+
       note("")
 
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
