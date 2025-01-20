@@ -1,0 +1,9 @@
+def main(): Unit \ IO =
+    run {
+        match FileReadWithResult.readLines("Main.flix") {
+            case Result.Ok(lines) =>
+                lines |> List.forEach(println)
+            case Result.Err(err) =>
+                println("Unable to read file. Error: ${err}")
+        }
+    } with FileReadWithResult.runWithIO

@@ -124,7 +124,7 @@ mod Test.Exp.NewRegion {
     @test
     def testEmpty2MutLists2NestedRegions06(): Int32 =
         region rc1 {
-            let l1 = MutList.empty(rc1);
+            let l1: MutList[Int32, _] = MutList.empty(rc1);
             region rc2 {
                 MutList.push(1, l1);
                 let l2 = MutList.empty(rc2);
@@ -260,7 +260,7 @@ mod Test.Exp.NewRegion {
     @test
     def testEmpty2MutMaps2NestedRegions06(): Int32 =
         region rc1 {
-            let m1 = MutMap.empty(rc1);
+            let m1: MutMap[Int32, Int32, _] = MutMap.empty(rc1);
             region rc2 {
                 MutMap.put(1, 1, m1);
                 let m2 = MutMap.empty(rc2);

@@ -1651,6 +1651,7 @@ object Parser2 {
         case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
+        case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
@@ -2435,7 +2436,7 @@ object Parser2 {
     }
 
     /**
-      * `unsafely TTYPE run EXPRESSION`
+      * `'unsafely' TTYPE 'run' EXPRESSION`
       *
       * produces
       *
@@ -2453,6 +2454,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Unsafe)
     }
 
+    /**
+      * `'run' EXPRESSION ('with' EXPRESSION)*`
+      *
+      * produces
+      *   - TreeKind.Expr.Run
+      *     - TreeKind.Expr.RunWithBodyExpr
+      *     - TreeKind.Expr.RunWithBodyExpr
+      *     - .. (potentially zero)
+      */
     private def runExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordRun))
       val mark = open()
@@ -2462,6 +2472,29 @@ object Parser2 {
         withBody()
       }
       close(mark, TreeKind.Expr.Run)
+    }
+
+    private def handlerExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordHandler))
+      val mark = open()
+      expect(TokenKind.KeywordHandler, SyntacticContext.Expr.OtherExpr)
+      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
+      if (at(TokenKind.CurlyL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.WithRule,
+          getItem = withRule,
+          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+          breakWhen = _.isRecoverExpr,
+          separation = Separation.Optional(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.Handler)
+      } else {
+        val token = nth(0)
+        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+      }
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
@@ -2509,23 +2542,8 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
-      if (at(TokenKind.CurlyL)) {
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.WithRule,
-          getItem = withRule,
-          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
-          breakWhen = _.isRecoverExpr,
-          separation = Separation.Optional(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
-          context = SyntacticContext.Expr.OtherExpr
-        )
-        close(mark, TreeKind.Expr.RunWithBodyExpr)
-      } else {
-        val token = nth(0)
-        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
-      }
+      expression()
+      close(mark, TreeKind.Expr.RunWithBodyExpr)
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {

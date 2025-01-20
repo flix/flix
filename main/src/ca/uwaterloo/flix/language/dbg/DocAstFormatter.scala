@@ -206,17 +206,15 @@ object DocAstFormatter {
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
         )
-      case TryWith(d, eff, rules) =>
+      case Handler(eff, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, params, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
             text("def") +: text(sym.toString) |:: tuple(params.map(aux(_, paren = false))) +:
               text("=") |:: breakWith(" ") |:: curlyOpen(rulef)
         })
-        val bodyf = aux(d, paren = false, inBlock = true)
         group(
-          text("try") +: curly(bodyf) +:
-            text("with") +: text(eff.toString) +: curly(rs)
+          text("handler") +: text(eff.toString) +: curly(rs)
         )
       case NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(

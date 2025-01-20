@@ -98,6 +98,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("force"       , Priority.High),
       Completion.KeywordCompletion("foreach"     , Priority.Lower),
       Completion.KeywordCompletion("from"        , Priority.Highest),
+      // H
+      Completion.KeywordCompletion("handler", Priority.Default),
       // I
       Completion.KeywordCompletion("if"          , Priority.Higher),
       Completion.KeywordCompletion("inject"      , Priority.Low),

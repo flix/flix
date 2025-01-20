@@ -10,7 +10,7 @@ mod Test.Handler.Ask.Bool {
     def sample(limit: Int32): List[Bool] =
         run {
             generator(0); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else next(x) :: k()
         }
 

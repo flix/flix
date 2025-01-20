@@ -109,7 +109,7 @@ mod Float32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float32] = try {
-        Some(unsafe Float.parseFloat(s.strip()))
+        Some(Float.parseFloat(unsafe s.strip()))
      } catch {
          case _: NumberFormatException => None
      }
@@ -127,7 +127,7 @@ mod Float32 {
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Float.valueOf(x).byteValue())
+            Some(Float.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -142,7 +142,7 @@ mod Float32 {
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Float.valueOf(x).shortValue())
+            Some(Float.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -160,7 +160,7 @@ mod Float32 {
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Float.valueOf(x).intValue())
+            Some(Float.valueOf(x).intValue())
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -178,7 +178,7 @@ mod Float32 {
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Float.valueOf(x).longValue())
+            Some(Float.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -194,7 +194,7 @@ mod Float32 {
     /// Convert `x` to an Float64.
     ///
     pub def toFloat64(x: Float32): Float64 =
-        unsafe Float.valueOf(x).doubleValue()
+        Float.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to an `Option[BigDecimal]`.
@@ -233,7 +233,7 @@ mod Float32 {
         if (isNan(x))
             nanValue
         else
-            unsafe Float.valueOf(clamp(x, minf32, maxf32)).byteValue()
+            Float.valueOf(clamp(x, minf32, maxf32)).byteValue()
 
     ///
     /// Convert `x` to an `Int16`.
@@ -249,7 +249,7 @@ mod Float32 {
         if (isNan(x))
             nanValue
         else
-            unsafe Float.valueOf(clamp(x, minf32, maxf32)).shortValue()
+            Float.valueOf(clamp(x, minf32, maxf32)).shortValue()
 
     ///
     /// Convert `x` to an `Int32`.
@@ -265,7 +265,7 @@ mod Float32 {
         if (isNan(x))
             nanValue
         else
-            unsafe Float.valueOf(clamp(x, minf32, maxf32)).intValue()
+            Float.valueOf(clamp(x, minf32, maxf32)).intValue()
 
     ///
     /// Convert `x` to an `Int64`.
@@ -281,7 +281,7 @@ mod Float32 {
         if (isNan(x))
             nanValue
         else
-            unsafe Float.valueOf(clamp(x, minf32, maxf32)).longValue()
+            Float.valueOf(clamp(x, minf32, maxf32)).longValue()
 
     ///
     /// Returns the absolute value of `x`.
@@ -325,7 +325,7 @@ mod Float32 {
     /// code you should not need to use `java.lang.Float`.
     ///
     pub def floatValue(d: Float): Float32 =
-        unsafe d.floatValue()
+        d.floatValue()
 
     ///
     /// Convert an Float32 value to its object representation (i.e. java.lang.Float).
@@ -334,6 +334,6 @@ mod Float32 {
     /// code you should not need to use `java.lang.Float`.
     ///
     pub def valueOf(d: Float32): Float =
-        unsafe Float.valueOf(d)
+        Float.valueOf(d)
 
 }
