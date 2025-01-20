@@ -746,7 +746,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Bool =
         |    let result = run {
         |        mutual1(10)
-        |    } with AskTell ;
+        |    } with handler AskTell ;
         |    Assert.eq(Some(84), result)
         |def main(): Int32 = 123
         |""".stripMargin

@@ -77,6 +77,26 @@ sealed trait SetFormula {
   }
 
   /**
+   * Returns the `variables` in `this` set formula.
+   */
+  final def fvs: SortedSet[Int] = this match {
+    case SetFormula.Univ => SortedSet.empty
+    case SetFormula.Empty => SortedSet.empty
+    case Cst(_) => SortedSet.empty
+    case Var(x) => SortedSet(x)
+    case ElemSet(_) => SortedSet.empty
+    case Compl(f) => f.fvs
+    case Inter(_, _, varsPos, _, _, varsNeg, other) =>
+      other.foldLeft(varsPos.map(_.x) ++ varsNeg.map(_.x)) {
+        case (acc, f) => acc ++ f.fvs
+      }
+    case Union(l) => l.toList.map(_.fvs).reduce(_ ++ _)
+    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
+      case (acc, f) => acc ++ f.fvs
+    }
+  }
+
+  /**
     * Returns the number of connectives in the unary/binary representation of `this`.
     *
     * [[Compl]], [[Union]], and [[Inter]] are connectives.

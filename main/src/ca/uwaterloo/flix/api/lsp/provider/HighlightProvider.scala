@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, Constant, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -266,7 +266,6 @@ object HighlightProvider {
       // Assoc Types
       case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
       case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
       // Defs
       case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
@@ -297,10 +296,9 @@ object HighlightProvider {
       // Traits
       case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
       case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-      case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+      case SymUse.TypeAliasSymUse(sym, _) => Some(getTypeAliasSymOccurs(sym))
       // Type Variables
       case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
       case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -570,7 +568,6 @@ object HighlightProvider {
     object TraitSymConsumer extends Consumer {
       override def consumeTrait(traitt: TypedAst.Trait): Unit = considerWrite(traitt.sym, traitt.sym.loc)
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = considerRead(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, acceptor)
@@ -593,7 +590,7 @@ object HighlightProvider {
     object TypeAliasSymConsumer extends Consumer {
       override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = considerWrite(alias.sym, alias.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => considerRead(sym, loc)
+        case Type.Alias(TypeAliasSymUse(sym, _), _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }

@@ -64,7 +64,7 @@ mod Random {
             let rnd = new JRandom(); // Reuse Random instance.
             run {
                 f(x)
-            } with Random {
+            } with handler Random {
                 def randomBool(k)       = k(rnd.nextBoolean())
                 def randomFloat32(k)    = k(rnd.nextFloat())
                 def randomFloat64(k)    = k(rnd.nextDouble())
@@ -93,7 +93,7 @@ mod Random {
             let rnd = unchecked_cast (new JRandom(seed) as _ \ local);
             run {
                 f(x)
-            } with Random {
+            } with handler Random {
                 def randomBool(k)       = k(unchecked_cast (rnd.nextBoolean() as _ \ local))
                 def randomFloat32(k)    = k(unchecked_cast (rnd.nextFloat() as _ \ local))
                 def randomFloat64(k)    = k(unchecked_cast (rnd.nextDouble() as _ \ local))

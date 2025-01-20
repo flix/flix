@@ -45,7 +45,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedJvmImport(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
@@ -57,7 +57,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
       mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
 
-    case ResolutionError.UndefinedType(qn, ap, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
@@ -515,7 +515,7 @@ object CodeActionProvider {
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
+    val alreadyDerived = e.derives.traits.exists(d => d.sym.name == trt)
     if (alreadyDerived)
       None
     else Some(

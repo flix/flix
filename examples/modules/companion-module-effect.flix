@@ -10,6 +10,6 @@ mod StdOut {
 def main(): Unit \ IO =
     run {
         StdOut.println(42)
-    } with StdOut {
+    } with handler StdOut {
         def printStr(s, k) = {println(s); k()}
     }

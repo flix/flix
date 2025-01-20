@@ -338,9 +338,9 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, effUse, tpe, eff, _) =>
+    case Expr.Without(exp, sym, tpe, eff, _) =>
       visitExp(exp)
-      visitSymUse(effUse)
+      visitSymUse(sym)
       visitType(tpe)
       visitType(eff)
 
@@ -355,10 +355,17 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, _) =>
-      visitExp(exp)
-      visitSymUse(effUse)
+    case Expr.Handler(sym, rules, bodyType, bodyEff, handledEff, tpe, _) =>
+      visitSymUse(sym)
       rules.foreach(visitHandlerRule)
+      visitType(bodyType)
+      visitType(bodyEff)
+      visitType(handledEff)
+      visitType(tpe)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 

@@ -114,7 +114,7 @@ mod Environment {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + {Sys, IO} = x ->
         run {
             f(x)
-        } with Environment {
+        } with handler Environment {
             def getArgs(k) =
                 k(unsafe Array.toList(Global.getArgs()))
 

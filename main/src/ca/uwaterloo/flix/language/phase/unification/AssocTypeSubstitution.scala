@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
 
 /**
@@ -33,7 +34,7 @@ object AssocTypeSubstitution {
   def singleton(assoc: Symbol.AssocTypeSym, tvar: Symbol.KindedTypeVarSym, tpe: Type): AssocTypeSubstitution = {
     tpe match {
       // avoid x -> x mappings
-      case Type.AssocType(AssocTypeConstructor(assoc1, _), Type.Var(tvar1, _), _, _) if assoc == assoc1 && tvar == tvar1 => AssocTypeSubstitution.empty
+      case Type.AssocType(AssocTypeSymUse(assoc1, _), Type.Var(tvar1, _), _, _) if assoc == assoc1 && tvar == tvar1 => AssocTypeSubstitution.empty
       case _ => AssocTypeSubstitution(Map((assoc, tvar) -> tpe))
     }
   }
@@ -81,7 +82,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
-        case Type.AssocType(AssocTypeConstructor(assoc, _), Type.Var(tvar, _), _, _) =>
+        case Type.AssocType(AssocTypeSymUse(assoc, _), Type.Var(tvar, _), _, _) =>
           m.getOrElse((assoc, tvar), t)
         case Type.AssocType(cst, args0, kind, loc) =>
           val args = args0.map(visit)

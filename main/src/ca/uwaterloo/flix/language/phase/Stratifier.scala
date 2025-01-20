@@ -307,10 +307,14 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Throw(e, tpe, eff, loc)
 
-    case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       val rs = rules.map(visitTryWithRule)
-      Expr.TryWith(e, sym, rs, tpe, eff, loc)
+      Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.RunWith(e1, e2, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

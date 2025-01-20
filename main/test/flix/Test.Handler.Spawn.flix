@@ -11,14 +11,14 @@ mod Test.Handler.Spawn {
     def runAsk(tx: Sender[Int32]): Unit \ Chan =
         run {
             Ask.ask(42)
-        } with Ask {
+        } with handler Ask {
             def ask(x, _) = Channel.send(x, tx)
         }
 
     def runGen(tx: Sender[Int32]): Unit \ Chan =
         run {
             Channel.send(Gen.gen(), tx)
-        } with Gen {
+        } with handler Gen {
             def gen(k) = k(42)
         }
 
@@ -27,11 +27,11 @@ mod Test.Handler.Spawn {
             Ask.ask(
                 run {
                     Gen.gen()
-                } with Gen {
+                } with handler Gen {
                     def gen(k) = k(42)
                 }
             )
-        } with Ask {
+        } with handler Ask {
             def ask(x, _) = Channel.send(x + x, tx)
         }
 

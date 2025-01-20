@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -158,13 +159,13 @@ object TraitEnvironment {
   private def bySuper(tconstr: TraitConstraint, traitEnv: TraitEnv): List[TraitConstraint] = {
 
     // Get the traits that are directly super traits of the trait in `tconstr`
-    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.head.sym).getOrElse(Nil)
+    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.symUse.sym).getOrElse(Nil)
 
     // Walk the super trait tree.
     // There may be duplicates, but this will terminate since super traits must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the super traits of each direct super trait
-      superTrait => bySuper(TraitConstraint(TraitConstraint.Head(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
+      superTrait => bySuper(TraitConstraint(TraitSymUse(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
     }
   }
 

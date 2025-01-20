@@ -106,7 +106,7 @@ object LoweredAstPrinter {
       val rulesD = rules.map {
         case LoweredAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
       }
-      DocAst.Expr.TryWith(expD, effD, rulesD)
+      DocAst.Expr.RunWithHandler(expD, effD, rulesD)
     case Expr.Do(op, exps, tpe, eff, loc) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
