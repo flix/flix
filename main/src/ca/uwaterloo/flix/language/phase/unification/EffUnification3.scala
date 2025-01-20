@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -59,6 +59,9 @@ object EffUnification3 {
       // unchanged.
       case InvalidType => return (eqs, Substitution.empty)
     }
+
+    // Notify all Flix listeners that we are solving a new effect equation system.
+    flix.emitEvent(FlixEvent.SolveEffEquations(equations))
 
     // Solve the equations and convert them back.
     val (setEqs, setSubst) = SetUnification.solve(equations)
