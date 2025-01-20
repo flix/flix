@@ -18,13 +18,17 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, StreamOps}
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageServer, TextDocumentService, WorkspaceService}
 
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.CompletableFuture
+import scala.collection.immutable.StringOps
+import scala.collection.mutable
 
 class LspServer(o: Options) {
 
@@ -32,6 +36,11 @@ class LspServer(o: Options) {
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+
+  /**
+    * A map from source URIs to source code.
+    */
+  private val sources: mutable.Map[String, String] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -57,7 +66,21 @@ class LspServer(o: Options) {
 
       val capabilities = new ServerCapabilities
       capabilities.setHoverProvider(true)
-      CompletableFuture.completedFuture(new InitializeResult(capabilities))
+      if (initializeParams.getWorkspaceFolders == null || initializeParams.getWorkspaceFolders.isEmpty) {
+        System.err.println("No workspace folders.")
+        return CompletableFuture.failedFuture(new RuntimeException("No workspace folders"))
+      }
+      val mainPath = Paths.get(initializeParams.getWorkspaceFolders.get(0).getName, "Main.flix")
+      val mainUri = mainPath.toString
+      if (Files.exists(mainPath)) {
+        val mainSrc = StreamOps.readAll(Files.newInputStream(mainPath))
+        flix.addSourceCode(mainUri, mainSrc)(SecurityContext.AllPermissions)
+        sources += (mainUri -> mainSrc)
+        CompletableFuture.completedFuture(new InitializeResult(capabilities))
+      } else {
+        System.err.println(s"Main file not found: $mainPath")
+        CompletableFuture.failedFuture(new RuntimeException("Main file not found"))
+      }
     }
 
     override def shutdown(): CompletableFuture[AnyRef] = {
