@@ -840,4 +840,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         ???
     }
   }
+
+  def mkEffectLockSignatures(root: TypedAst.Root): String = ???
 }
