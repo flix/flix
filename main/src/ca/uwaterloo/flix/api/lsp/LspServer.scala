@@ -15,6 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
@@ -22,9 +26,19 @@ import org.eclipse.lsp4j.services.{LanguageServer, TextDocumentService, Workspac
 
 import java.util.concurrent.CompletableFuture
 
-object LspServer {
+class LspServer(o: Options) {
 
-  def run(o: Options): Unit = {
+  /**
+    * The Flix instance (the same instance is used for incremental compilation).
+    */
+  private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+
+  /**
+    * The current AST root. The root is null until the source code is compiled.
+    */
+  private var root: Root = TypedAst.empty
+
+  def run(): Unit = {
     val in = System.in
     val out = System.out
     val server = new FlixLanguageServer
