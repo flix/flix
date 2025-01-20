@@ -1782,11 +1782,25 @@ object Weeder2 {
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      mapN(pickExpr(tree)){
-        expr => CatchRule(idents.head, idents.last, expr)
+      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
+        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr)
+        case _ =>
+          val error = IllegalQualifiedName(tree.loc)
+          sctx.errors.add(error)
+          CatchRule(Name.Ident("error", tree.loc), Name.Ident("error", tree.loc), Expr.Error(error))
       }
-
+//      pickAll(TreeKind.Ident, tree).map(tokenToIdent) match {
+//        case ident :: className :: Nil =>
+//          println("first case")
+//          mapN(pickExpr(tree)){
+//            expr => CatchRule(ident, className, expr)
+//          }
+//        case _ =>
+//          println("second case")
+//          val error = Malformed(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+//          sctx.errors.add(error)
+//          Validation.Success(CatchRule(Name.Ident("error", tree.loc), Name.Ident("error", tree.loc), Expr.Error(error)))
+//      }
     }
 
     private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
