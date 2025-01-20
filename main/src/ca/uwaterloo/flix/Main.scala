@@ -318,7 +318,19 @@ object Main {
           CompilerMemory.run(options)
 
         case Command.EffectLock =>
-          println("Effect Lock run")
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.effectLock(flix)
+          }.toResult match {
+            case Result.Ok(_) =>
+              println("Ran Effect Lock")
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
       }
     }

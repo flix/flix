@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -481,13 +482,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Type checks the source files for the project.
     */
-  def check(flix: Flix): Validation[Unit, BootstrapError] = {
+  def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    val (_, errors) = flix.check()
+    val (optRoot, errors) = flix.check()
     if (errors.isEmpty) {
-      Validation.Success(())
+      Validation.Success(optRoot.get)
     } else {
       Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
@@ -824,5 +825,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       out.println("")
       Validation.Success(true)
     }
+  }
+
+  def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
+    Validation.Success(())
   }
 }
