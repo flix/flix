@@ -60,7 +60,7 @@ object EffUnification3 {
       case InvalidType => return (eqs, Substitution.empty)
     }
 
-    // Notify Flix that we are solving a new equation system.
+    // Notify all Flix listeners that we are solving a new effect equation system.
     flix.emitEvent(FlixEvent.SolveEffEquations(equations))
 
     // Solve the equations and convert them back.

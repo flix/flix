@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException, TwoLis
 import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.

@@ -32,8 +32,8 @@ object FlixEvent {
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
-   * An event that is fired when a new effect system of Boolean equations is about to be solved.
+   * An event that is fired when a new system of Boolean equation is about to be solved.
    */
-  case class SolveEffEquations(seconstrs: List[Equation]) extends FlixEvent
+  case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent
 
 }
