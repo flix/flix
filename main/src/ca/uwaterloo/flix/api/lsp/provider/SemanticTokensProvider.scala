@@ -51,11 +51,9 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from instances.
     //
     val instanceTokens = root.instances.values.flatMap {
-      case instances => instances.flatMap {
         case instance if include(uri, instance.trt.loc) => visitInstance(instance)
         case _ => Nil
       }
-    }
 
     //
     // Construct an iterator of the semantic tokens from defs.

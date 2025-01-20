@@ -87,7 +87,7 @@ object Summary {
   /** Returns a function summary for every function */
   private def defSummaries(root: Root): List[DefSummary] = {
     val defs = root.defs.values.map(defSummary(_, isInstance = false))
-    val instances = root.instances.values.flatten.flatMap(_.defs.map(defSummary(_, isInstance = true)))
+    val instances = root.instances.values.flatMap(_.defs.map(defSummary(_, isInstance = true)))
     val traits = root.traits.values.flatMap(_.sigs.flatMap(defSummary))
     (defs ++ instances ++ traits).toList
   }

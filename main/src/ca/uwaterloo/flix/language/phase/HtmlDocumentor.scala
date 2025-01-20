@@ -312,7 +312,7 @@ object HtmlDocumentor {
       case _ => false
     }
 
-    val allInstances = root.instances.values.flatten
+    val allInstances = root.instances.values
     val instances = allInstances.filter(i => enumMatchesInstance(sym, i.tpe)).toList
 
     Enum(root.enums(sym), instances, parent, None)

@@ -254,25 +254,22 @@ object Instances {
   /**
     * Reassembles a set of instances of the same trait.
     */
-  private def checkInstancesOfTrait(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
+  private def checkInstancesOfTrait(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
 
     // Instances can be uniquely identified by their heads,
     // due to the non-complexity rule and non-overlap rule.
     // This maps each instance head to its corresponding instance.
     var heads = Map.empty[TypeConstructor, TypedAst.Instance]
 
-    insts0.flatMap {
-      // check that the instance is on a valid type, suppressing other errors if not
-      case inst => checkSimple(inst) match {
-        // Case 1: No Errors. Run other checks.
-        case Nil =>
-          val res = checkOverlap(inst, heads) ::: checkInstance(inst, root, changeSet)
-          // add the head to the set
-          heads += (unsafeGetHead(inst) -> inst)
-          res
-        // Case 2: Errors. Skip other checks.
-        case errs => errs
-      }
+    checkSimple(inst) match {
+      // Case 1: No Errors. Run other checks.
+      case Nil =>
+        val res = checkOverlap(inst, heads) ::: checkInstance(inst, root, changeSet)
+        // add the head to the set
+        heads += (unsafeGetHead(inst) -> inst)
+        res
+      // Case 2: Errors. Skip other checks.
+      case errs => errs
     }
   }
 
