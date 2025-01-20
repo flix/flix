@@ -15,13 +15,17 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.set.Equation
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{LocalResource, Options, Subeffecting}
 
+import scala.collection.mutable
+
 object ZheglakinPerf {
 
+  private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
@@ -37,8 +41,61 @@ object ZheglakinPerf {
                            )
 
   def main(args: Array[String]): Unit = {
+    rq1(Iterations)
     rq3(Iterations)
     rq6(Iterations)
+  }
+
+
+  private def rq1(n: Int): Unit = {
+    println(RQ1)
+
+    // TODO: What options should be used when we collect the constraints?
+
+    // Collect all Boolean effect equation systems.
+    val buffer = mutable.ArrayBuffer.empty[List[Equation]]
+    val flix = new Flix()
+    flix.addListener {
+      case FlixEvent.SolveEffEquations(eqns) =>
+        buffer += eqns
+      case _ => // nop
+    }
+    addInputs(flix)
+    val (_, errors) = flix.check()
+    assert(errors.isEmpty)
+    val allEquationSystems = buffer.toList
+
+    // (RQ1.1) What is the (min, max, avg, median) number of constraints?
+    val numberOfConstraintsPerSystem = allEquationSystems.map {
+      system => system.length
+    }
+
+    // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
+    val numberOfFlexibleVarsPerSystem = allEquationSystems.map {
+      system =>
+        system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.varsOf.size
+        }
+    }
+
+    // (RQ1.3) What is the (min, max, avg, median) number of rigid variables?
+    val numberOfRigidVarsPerSystem = allEquationSystems.map {
+      system =>
+        system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.cstsOf.size
+        }
+    }
+
+    // (RQ1.4) What is the (min, max, avg, median) number of flexible sub-effect variables?
+    val numberOfEffSlackVarsPerSystem = Nil // TODO
+
+    println("-" * 80)
+    println(s"numberOfConstraintsPerSystem  = [${numberOfConstraintsPerSystem.mkString(",")}];")
+    println(s"numberOfFlexibleVarsPerSystem = [${numberOfFlexibleVarsPerSystem.mkString(",")}];")
+    println(s"numberOfRigidVarsPerSystem    = [${numberOfRigidVarsPerSystem.mkString(",")}];")
+    println(s"numberOfEffSlackVarsPerSystem = [${numberOfEffSlackVarsPerSystem.mkString(",")}];")
+    println("-" * 80)
+    println()
   }
 
 
@@ -84,8 +141,8 @@ object ZheglakinPerf {
   }
 
   /**
-    * Run a specific configuration.
-    */
+   * Run a specific configuration.
+   */
   private def runConfig(c: Config, n: Int): Throughput = {
     val baseLine = aggregate(runN(n, c))
 
@@ -114,8 +171,8 @@ object ZheglakinPerf {
   }
 
   /**
-    * Runs Flix multiple times.
-    */
+   * Runs Flix multiple times.
+   */
   private def runN(N: Int, c: Config): IndexedSeq[Run] = {
     (0 until N).map { _ =>
       ZhegalkinCache.EnableUnionCache = c.cacheUnion
@@ -132,8 +189,8 @@ object ZheglakinPerf {
   }
 
   /**
-    * Runs Flix once.
-    */
+   * Runs Flix once.
+   */
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
     ZhegalkinCache.clearCaches()
@@ -153,8 +210,8 @@ object ZheglakinPerf {
   }
 
   /**
-    * Merges a sequences of runs `l`.
-    */
+   * Merges a sequences of runs `l`.
+   */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
       return Runs(0, List(0))
@@ -166,13 +223,13 @@ object ZheglakinPerf {
   }
 
   /**
-    * Returns the throughput per second.
-    */
+   * Returns the throughput per second.
+   */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
   /**
-    * Adds test code to the benchmarking suite.
-    */
+   * Adds test code to the benchmarking suite.
+   */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
