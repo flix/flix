@@ -68,7 +68,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   /**
     * Optionally returns the list of values that the key `k` maps to.
     */
-  def get(k: K): Option[List[V]] = m.get(k)
+  def get(k: K): List[V] = m.getOrElse(k, Nil)
 
   /**
     * Returns the mapped list in the list map, if any.

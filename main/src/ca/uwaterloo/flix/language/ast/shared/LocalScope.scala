@@ -51,7 +51,7 @@ case class LocalScope(env: ListMap[String, Resolution]){
   /**
     * Returns an option of the list of resolutions corresponding to the variable `name`.
     */
-  def get(name: String): Option[List[Resolution]] = env.get(name)
+  def get(name: String): List[Resolution] = env.get(name)
 
   /**
     * Returns the list of resolutions corresponding to the variable `name`.
