@@ -2,7 +2,6 @@
   "classes": {
     "java.lang.Boolean": "",
     "java.lang.Character": "",
-    "java.lang.constant.ConstantDesc": "Sys, IO",
     "java.lang.Float": "",
 
     "java.lang.Process": "Exec, IO",
