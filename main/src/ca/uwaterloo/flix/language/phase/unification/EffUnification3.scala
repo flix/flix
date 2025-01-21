@@ -64,7 +64,7 @@ object EffUnification3 {
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
-          return (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst))
+          return (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst)(withSlack = false, m = bimap))
         }
         // Otherwise we fall through.
       } catch {
@@ -79,7 +79,7 @@ object EffUnification3 {
       val equations = toEquations(eqs, withSlack = true)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
       val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
-      (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst))
+      (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst)(withSlack = true, m = bimap))
     } catch {
       case InvalidType =>
         // The effect equations are invalid.
@@ -117,7 +117,7 @@ object EffUnification3 {
     SetUnification.solve(List(equation)) match {
       case (Nil, subst) =>
         // The equation was solved, return the substitution.
-        Result.Ok(Some(fromSetSubst(subst)))
+        Result.Ok(Some(fromSetSubst(subst)(withSlack = true, m = bimap)))
 
       case (eq :: _, _) =>
         // The equation wasn't (completely) solved, return an error for the first unsolved equation.
@@ -226,14 +226,20 @@ object EffUnification3 {
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
-  private def fromSetSubst(s: SetSubstitution)(implicit m: SortedBimap[Atom, Int]): Substitution = {
+  private def fromSetSubst(s: SetSubstitution)(implicit withSlack: Boolean, m: SortedBimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
           // A proper var. Add it to the substitution.
           case Some(Atom.VarFlex(sym)) =>
-            macc + (sym -> fromSetFormula(v, sym.loc))
+            if (sym.isSlack && !withSlack) {
+              // Special Case: The slack variable was set to the empty set.
+              macc + (sym -> Type.Pure)
+            } else {
+              // General Case: The map determines the type variable.
+              macc + (sym -> fromSetFormula(v, sym.loc))
+            }
           // An error type. Don't add it to the substitution.
           case Some(Atom.Error(_)) =>
             macc
