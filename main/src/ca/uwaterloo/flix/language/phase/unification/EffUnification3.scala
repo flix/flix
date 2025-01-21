@@ -366,11 +366,7 @@ object EffUnification3 {
       */
     def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
-      case Type.Var(sym, _) =>
-        if (sym.isSlack) {
-          ???
-        }
-        SortedSet(Atom.VarFlex(sym))
+      case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
