@@ -32,7 +32,7 @@ object EffUnification3 {
   /**
    * Controls whether to enable solve-and-retry for subeffecting.
    */
-  val EnableSmartSubeffecting: Boolean = false
+  var EnableSmartSubeffecting: Boolean = false
 
   /**
     * Tries to solve the system of effect equality constraints `eqs`.
