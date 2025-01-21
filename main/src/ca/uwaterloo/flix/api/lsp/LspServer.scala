@@ -20,12 +20,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.{Options, StreamOps}
+import ca.uwaterloo.flix.util.Options
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
-import java.nio.file.{Files, Paths}
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 
@@ -78,21 +77,12 @@ object LspServer {
       *
       * During the initialization, we should:
       * - Store the client capabilities.
-      * - Load the main file from the workspace folders.
       * - Return the server capabilities.
       */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
       System.err.println(s"initialize: $initializeParams")
 
       clientCapabilities = initializeParams.getCapabilities
-
-      try {
-        loadMain(initializeParams.getWorkspaceFolders)
-      } catch {
-        case ex: Throwable =>
-          System.err.println(s"Failed to initialize the LSP: ${ex.getMessage}")
-          return CompletableFuture.failedFuture(ex)
-      }
 
       val serverCapabilities = new ServerCapabilities
       serverCapabilities.setHoverProvider(true)
@@ -120,34 +110,25 @@ object LspServer {
     override def getWorkspaceService: WorkspaceService = flixWorkspaceService
 
     /**
-      * Currently we just suppose there is a single Main.flix in the root of the workspace.
-      */
-    private def loadMain(workspaceFolders: java.util.List[WorkspaceFolder]): Unit = {
-      if (workspaceFolders == null || workspaceFolders.isEmpty)
-        throw new RuntimeException("No workspace folders")
-
-      val mainPath = Paths.get(workspaceFolders.get(0).getName, "Main.flix")
-      val mainUri = mainPath.toString
-
-      if (Files.exists(mainPath)) {
-        val mainSrc = StreamOps.readAll(Files.newInputStream(mainPath))
-        addSourceCode(mainUri, mainSrc)
-      } else
-        throw new RuntimeException(s"Main file not found $mainPath")
-    }
-
-    /**
       * Adds the given source code to the Flix instance.
       */
-    private def addSourceCode(uri: String, src: String): Unit = {
+    def addSourceCode(uri: String, src: String): Unit = {
       flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
       sources.put(uri, src)
     }
   }
 
   private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer) extends TextDocumentService {
+    /**
+      * Called when a text document is opened.
+      * If the document is a Flix source file, we add the source code to the Flix instance.
+      */
     override def didOpen(didOpenTextDocumentParams: DidOpenTextDocumentParams): Unit = {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
+      val textDocument = didOpenTextDocumentParams.getTextDocument
+      if (textDocument.getLanguageId == "flix") {
+        flixLanguageServer.addSourceCode(textDocument.getUri, textDocument.getText)
+      }
     }
 
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
