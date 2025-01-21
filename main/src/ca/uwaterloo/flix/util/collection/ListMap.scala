@@ -77,6 +77,16 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
   /**
+    * Returns an iterable by applying `f` to each of the mappings in the list map.
+    * The function `f` is expected to take a key `k` and a value `v`, not a list of values.
+    */
+  def map[A](f: ((K, V)) => A): Iterable[A] = {
+    m.flatMap {
+      case (k, vs) => vs.map(v => f(k, v))
+    }
+  }
+
+  /**
     * Applies `f` to each of the mappings in the list map.
     * The function `f` is expected to take a key `k` and a value `v`, not a list of values.
     */
