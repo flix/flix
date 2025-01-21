@@ -66,7 +66,8 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   def keys: Iterable[K] = m.keys
 
   /**
-    * Optionally returns the list of values that the key `k` maps to.
+    * Returns the list of values that the key `k` maps to.
+    * If there is no mapping for `k` returns an empty list.
     */
   def get(k: K): List[V] = m.getOrElse(k, Nil)
 
@@ -86,7 +87,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
     * Required for pattern-matching in for-patterns.
-    * Just call withFilter on the underlying map.
+    * For simplicity, we will filter eagerly.
     */
   def withFilter(p: ((K, V)) => Boolean): Map[K, V] = {
     for {
