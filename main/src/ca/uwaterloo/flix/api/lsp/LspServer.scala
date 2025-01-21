@@ -31,13 +31,14 @@ import scala.collection.mutable
 
 object LspServer {
   def run(o: Options): Unit = {
-    val in = System.in
-    val out = System.out
-    val server = new FlixLanguageServer(o)
     System.err.println(s"Starting Default LSP Server...")
-    val launcher = LSPLauncher.createServerLauncher(server, in, out)
-    server.connect(launcher.getRemoteProxy)
+
+    val server = new FlixLanguageServer(o)
+    val launcher = LSPLauncher.createServerLauncher(server, System.in, System.out)
+    val client = launcher.getRemoteProxy
+    server.connect(client)
     launcher.startListening().get()
+
     System.err.println(s"LSP Server Terminated.")
   }
 
@@ -57,29 +58,45 @@ object LspServer {
       */
     var root: Root = TypedAst.empty
 
+    /**
+      * The proxy to the language client.
+      * Used to send messages to the client.
+      */
     var flixLanguageClient: LanguageClient = _
 
-    private var clientCapabilities: ClientCapabilities = _;
+    /**
+      * The client capabilities.
+      * Will be set during the initialization.
+      */
+    private var clientCapabilities: ClientCapabilities = _
 
     private val flixTextDocumentService = new FlixTextDocumentService(this)
     private val flixWorkspaceService = new FlixWorkspaceService(this)
 
+    /**
+      * Initializes the language server.
+      *
+      * During the initialization, we should:
+      * - Store the client capabilities.
+      * - Load the main file from the workspace folders.
+      * - Return the server capabilities.
+      */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
       System.err.println(s"initialize: $initializeParams")
 
       clientCapabilities = initializeParams.getCapabilities
 
-      val serverCapabilities = new ServerCapabilities
-      serverCapabilities.setHoverProvider(true)
-      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)
-
       try {
-        loadMain(initializeParams)
+        loadMain(initializeParams.getWorkspaceFolders)
       } catch {
         case ex: Throwable =>
           System.err.println(s"Failed to initialize the LSP: ${ex.getMessage}")
           return CompletableFuture.failedFuture(ex)
       }
+
+      val serverCapabilities = new ServerCapabilities
+      serverCapabilities.setHoverProvider(true)
+      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)
 
       CompletableFuture.completedFuture(new InitializeResult(serverCapabilities))
     }
@@ -102,22 +119,26 @@ object LspServer {
 
     override def getWorkspaceService: WorkspaceService = flixWorkspaceService
 
-    private def loadMain(initializeParams: InitializeParams): Unit = {
-      if (initializeParams.getWorkspaceFolders == null || initializeParams.getWorkspaceFolders.isEmpty) {
-        System.err.println("No workspace folders.")
+    /**
+      * Currently we just suppose there is a single Main.flix in the root of the workspace.
+      */
+    private def loadMain(workspaceFolders: java.util.List[WorkspaceFolder]): Unit = {
+      if (workspaceFolders == null || workspaceFolders.isEmpty)
         throw new RuntimeException("No workspace folders")
-      }
-      val mainPath = Paths.get(initializeParams.getWorkspaceFolders.get(0).getName, "Main.flix")
+
+      val mainPath = Paths.get(workspaceFolders.get(0).getName, "Main.flix")
       val mainUri = mainPath.toString
+
       if (Files.exists(mainPath)) {
         val mainSrc = StreamOps.readAll(Files.newInputStream(mainPath))
         addSourceCode(mainUri, mainSrc)
-      } else {
-        System.err.println(s"Main file not found: $mainPath")
-        throw new RuntimeException("Main file not found")
-      }
+      } else
+        throw new RuntimeException(s"Main file not found $mainPath")
     }
 
+    /**
+      * Adds the given source code to the Flix instance.
+      */
     private def addSourceCode(uri: String, src: String): Unit = {
       flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
       sources.put(uri, src)
@@ -141,6 +162,11 @@ object LspServer {
       System.err.println(s"didSaveTextDocumentParams: $didSaveTextDocumentParams")
     }
 
+    /**
+      * Returns the hover information for the given position in the given document.
+      *
+      * Now a mock implementation that just returns a simple greeting.
+      */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       System.err.println(s"hover: $params")
 
