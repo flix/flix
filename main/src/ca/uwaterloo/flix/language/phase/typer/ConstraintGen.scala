@@ -143,11 +143,7 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          val redundant = exp match {
-            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-            case _ => false
-          }
-          enabled && allowSubeffecting && !useless && !redundant
+          enabled && allowSubeffecting && !useless
         }
         val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshEffSlackVar(loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
@@ -389,11 +385,7 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          val redundant = exp1 match {
-            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-            case _ => false
-          }
-          enabled && !useless && !redundant
+          enabled && !useless
         }
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
@@ -686,7 +678,15 @@ object ConstraintGen {
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
             val resTpe = tvar
-            val resEff = Type.mkUnion(eff, evar, loc)
+
+            // Optimization: Check if subeffecting is enabled.
+            val resEff = if (flix.options.xsubeffecting == Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)) {
+              // If all subeffecting options are enabled then we skip the fresh effect variable.
+              eff
+            } else {
+              // Otherwise we use the fresh effect variable.
+              Type.mkUnion(eff, evar, loc)
+            }
             (resTpe, resEff)
         }
 

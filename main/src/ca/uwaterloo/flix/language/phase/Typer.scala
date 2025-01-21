@@ -466,11 +466,7 @@ object Typer {
   private def shouldSubeffect(body: KindedAst.Expr, eff: Type, subeffecting: Subeffecting)(implicit flix: Flix): Boolean = {
     val enabled = flix.options.xsubeffecting.contains(subeffecting)
     val useless = eff == Type.Pure
-    val redundant = body match {
-      case KindedAst.Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-      case _ => false
-    }
-    enabled && !useless && !redundant
+    enabled && !useless
   }
 
 
