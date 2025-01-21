@@ -98,10 +98,11 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   /**
     * Required for pattern-matching in for-patterns.
     * For simplicity, we will filter eagerly.
+    * We will return a Seq to store the filtered key-value pairs, as map will remove duplicates.
     */
-  def withFilter(p: ((K, V)) => Boolean): Map[K, V] = {
+  def withFilter(p: ((K, V)) => Boolean): Seq[(K, V)] = {
     for {
-      (k, vs) <- m
+      (k, vs) <- m.toSeq
       v <- vs
       if (p(k, v))
     } yield (k, v)
