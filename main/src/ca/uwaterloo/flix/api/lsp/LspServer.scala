@@ -69,8 +69,8 @@ object LspServer {
       */
     private var clientCapabilities: ClientCapabilities = _
 
-    private val flixTextDocumentService = new FlixTextDocumentService(this)
-    private val flixWorkspaceService = new FlixWorkspaceService(this)
+    private val flixTextDocumentService = new FlixTextDocumentService(this, flixLanguageClient)
+    private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
 
     /**
       * Initializes the language server.
@@ -118,7 +118,7 @@ object LspServer {
     }
   }
 
-  private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer) extends TextDocumentService {
+  private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends TextDocumentService {
     /**
       * Called when a text document is opened.
       * If the document is a Flix source file, we add the source code to the Flix instance.
@@ -156,7 +156,7 @@ object LspServer {
     }
   }
 
-  private class FlixWorkspaceService(flixLanguageServer: FlixLanguageServer) extends WorkspaceService {
+  private class FlixWorkspaceService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends WorkspaceService {
     override def didChangeConfiguration(didChangeConfigurationParams: DidChangeConfigurationParams): Unit = {
       System.err.println(s"didChangeConfiguration: $didChangeConfigurationParams")
     }
