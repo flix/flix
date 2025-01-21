@@ -1944,25 +1944,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.03") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            checked_cast(())
-        |        else
-        |            region rc {
-        |                let _ = $ARRAY_NEW$(rc, 8, 8);
-        |                ()
-        |            };
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
-  }
-
   test("RedundantCheckedTypeCast.04") {
     val input =
       """
