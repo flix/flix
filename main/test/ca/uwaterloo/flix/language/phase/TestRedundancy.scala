@@ -1944,7 +1944,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.04") {
+  test("RedundantCheckedTypeCast.03") {
     val input =
       """
         |def f(): Unit =
@@ -1960,7 +1960,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.06") {
+  test("RedundantCheckedTypeCast.04") {
     val input =
       """
         |pub eff A
