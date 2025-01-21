@@ -88,7 +88,13 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     * Required for pattern-matching in for-patterns.
     * Just call withFilter on the underlying map.
     */
-  def withFilter(p: ((K, List[V])) => Boolean): MapOps.WithFilter[K, List[V], Iterable, Map] = m.withFilter(p)
+  def withFilter(p: ((K, V)) => Boolean): Map[K, V] = {
+    for {
+      (k, vs) <- m
+      v <- vs
+      if (p(k, v))
+    } yield (k, v)
+  }
 
   /**
     * Returns `this` list map extended with an additional mapping from `k` to `v`.

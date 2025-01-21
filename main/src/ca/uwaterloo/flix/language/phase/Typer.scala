@@ -256,10 +256,7 @@ object Typer {
     * Performs type inference and reassembly on all instances in the given AST root.
     */
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
-    val instances0 = for {
-      (_, insts) <- root.instances
-      inst <- insts
-    } yield inst
+    val instances0 = root.instances.values
 
     val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
     val mapping = instances.map {

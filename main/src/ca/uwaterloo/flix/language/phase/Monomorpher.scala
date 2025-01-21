@@ -403,8 +403,7 @@ object Monomorpher {
     */
   private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
     for {
-      (sym, insts) <- instances
-      inst <- insts
+      (sym, inst) <- instances
     } yield ((sym, inst.tpe.typeConstructor.get), inst)
   }
 
