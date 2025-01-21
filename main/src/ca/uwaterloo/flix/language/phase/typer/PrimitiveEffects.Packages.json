@@ -1,5 +1,6 @@
 {
   "packages": {
+    "java.lang.constant": "Sys, IO",
     "java.lang.net": "Net, IO",
     "java.util.random": "NonDet, IO"
   }
