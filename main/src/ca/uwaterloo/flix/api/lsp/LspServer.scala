@@ -128,14 +128,18 @@ object LspServer {
     def processCheck(): Unit = {
       try {
         val diagnostics = flix.check() match {
+          // Case 1: Compilation was successful or partially successful so that we have the root and errors.
           case (Some(root), errors) =>
             this.root = root
             this.currentErrors = errors
+            // We provide diagnostics for errors and code hints.
             val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
 
+          // Case 2: Compilation failed so that we have only errors.
           case (None, errors) =>
             this.currentErrors = errors
+            // We provide diagnostics only for errors.
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
         }
         diagnostics.foreach(d => flixLanguageClient.publishDiagnostics(d.toLsp4j))
@@ -151,7 +155,7 @@ object LspServer {
   private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends TextDocumentService {
     /**
       * Called when a text document is opened.
-      * If the document is a Flix source file, we add the source code to the Flix instance.
+      * If the document is a Flix source file, we add the source code to the Flix instance and check it.
       */
     override def didOpen(didOpenTextDocumentParams: DidOpenTextDocumentParams): Unit = {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
@@ -162,6 +166,10 @@ object LspServer {
       }
     }
 
+    /**
+      * Called when a text document is changed.
+      * If the document is a Flix source file, we update the source code in the Flix instance and check it.
+      */
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
       System.err.println(s"didChange: $didChangeTextDocumentParams")
       val uri = didChangeTextDocumentParams.getTextDocument.getUri
