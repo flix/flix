@@ -70,6 +70,7 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
   // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toJSON: JValue = ("line" -> (line - 1)) ~ ("character" -> (character - 1))
 
+  // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toLsp4j: lsp4j.Position = new lsp4j.Position(line - 1, character - 1)
 
   def compare(that: Position): Int = {
