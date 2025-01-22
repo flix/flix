@@ -37,10 +37,10 @@ object UseEnumCompleter {
   private def getLocalEnumSyms(parsedWord: String)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
     val modFragment = ModuleSymFragment.parseModuleSym(parsedWord)
     modFragment match {
-      case ModuleSymFragment.Complete(modSym) => root.modules.getOrElse(modSym, Nil).collect {
+      case ModuleSymFragment.Complete(modSym) => root.modules.get(modSym).collect {
         case sym: EnumSym => sym
       }
-      case ModuleSymFragment.Partial(modSym, suffix) => root.modules.getOrElse(modSym, Nil).collect {
+      case ModuleSymFragment.Partial(modSym, suffix) => root.modules.get(modSym).collect {
         case sym: EnumSym if matches(sym, suffix) => sym
       }
     }

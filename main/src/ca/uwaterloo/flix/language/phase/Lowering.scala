@@ -147,7 +147,7 @@ object Lowering {
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
-    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val instances = ParOps.parMapValueList(root.instances)(visitInstance)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)

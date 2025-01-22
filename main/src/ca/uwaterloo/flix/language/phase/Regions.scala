@@ -39,7 +39,7 @@ object Regions {
     implicit val sctx: SharedContext = SharedContext.mk()
     ParOps.parMapValues(root.defs)(visitDef)
     ParOps.parMapValues(root.sigs)(visitSig)
-    ParOps.parMapValues(root.instances)(visitInstanceList)
+    ParOps.parMapValueList(root.instances)(visitInstance)
     (root, sctx.errors.asScala.toList)
   }
 
@@ -51,11 +51,6 @@ object Regions {
   private def visitSig(sig: Sig)(implicit sctx: SharedContext, flix: Flix): Sig = {
     sig.exp.map(visitExp(_)(Nil, sctx, flix)).getOrElse(Nil)
     sig
-  }
-
-  private def visitInstanceList(insts: List[Instance])(implicit sctx: SharedContext, flix: Flix): List[Instance] = {
-    insts.foreach(visitInstance)
-    insts
   }
 
   private def visitInstance(ins: Instance)(implicit sctx: SharedContext, flix: Flix): Unit =

@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2025 Chenahao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,9 @@
  */
 
 package ca.uwaterloo.flix.util.collection
+
+import java.util.Locale.FilteringMode
+import scala.collection.MapOps
 
 /**
   * Companion object for the [[ListMap]] class.
@@ -47,14 +51,62 @@ object ListMap {
 case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
-    * Optionally returns the list of values that the key `k` maps to.
+    * Returns all the values in the list map flattened into a single iterable.
     */
-  def get(k: K): Option[List[V]] = m.get(k)
+  def values: Iterable[V] = m.values.flatten
+
+  /**
+    * Returns all the value lists in the list map.
+    */
+  def valueLists: Iterable[List[V]] = m.values
+
+  /**
+    * Returns all the keys in the list map.
+    */
+  def keys: Iterable[K] = m.keys
+
+  /**
+    * Returns the list of values that the key `k` maps to.
+    * If there is no mapping for `k` returns an empty list.
+    */
+  def get(k: K): List[V] = m.getOrElse(k, Nil)
 
   /**
     * Returns the list of values that the key `k` maps to.
     */
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
+
+  /**
+    * Returns an iterable by applying `f` to each of the mappings in the list map.
+    * The function `f` is expected to take a key `k` and a value `v`, not a list of values.
+    */
+  def map[A](f: ((K, V)) => A): Iterable[A] = {
+    m.flatMap {
+      case (k, vs) => vs.map(v => f(k, v))
+    }
+  }
+
+  /**
+    * Applies `f` to each of the mappings in the list map.
+    * The function `f` is expected to take a key `k` and a value `v`, not a list of values.
+    */
+  def flatMap[A](f: ((K, V)) => Iterable[A]): Iterable[A] =
+    m.flatMap {
+      case (k, vs) => vs.flatMap(v => f(k, v))
+    }
+
+  /**
+    * Required for pattern-matching in for-patterns.
+    * For simplicity, we will filter eagerly.
+    * We will return a Seq to store the filtered key-value pairs, as map will remove duplicates.
+    */
+  def withFilter(p: ((K, V)) => Boolean): Seq[(K, V)] = {
+    for {
+      (k, vs) <- m.toSeq
+      v <- vs
+      if (p(k, v))
+    } yield (k, v)
+  }
 
   /**
     * Returns `this` list map extended with an additional mapping from `k` to `v`.
@@ -84,13 +136,12 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   }
 
   /**
-   * Returns `this` list map without the mapping for `k`.
-   */
+    * Returns `this` list map without the mapping for `k`.
+    */
   def -(k: K): ListMap[K, V] = ListMap(m - k)
 
   /**
-   * Returns ´this´ list map without the mappings for ´ks´.
-   */
+    * Returns ´this´ list map without the mappings for ´ks´.
+    */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
-
 }

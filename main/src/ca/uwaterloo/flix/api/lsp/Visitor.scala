@@ -58,7 +58,7 @@ object Visitor {
 
     root.enums.values.foreach(visitEnum)
 
-    root.instances.values.flatten.foreach(visitInstance)
+    root.instances.values.foreach(visitInstance)
 
     root.structs.values.foreach(visitStruct)
 

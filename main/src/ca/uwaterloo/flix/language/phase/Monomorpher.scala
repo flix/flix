@@ -401,11 +401,10 @@ object Monomorpher {
   /**
     * Creates a table for fast lookup of instances.
     */
-  private def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
-    for {
-      (sym, insts) <- instances
-      inst <- insts
-    } yield (sym, inst.tpe.typeConstructor.get) -> inst
+  private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+    instances.map{
+      case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst)
+    }.toMap
   }
 
   /** Visit a struct field, simplifying its polymorphic type. */

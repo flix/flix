@@ -51,9 +51,9 @@ object Typer {
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-    val modules = collectModules(root)
+    val modules = ListMap(collectModules(root))
 
-    val result = TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, None, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, None, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
 
     (result, sctx.errors.asScala.toList)
 
@@ -122,10 +122,10 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): TraitEnv = {
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): TraitEnv = {
     val m = traits0.map {
       case (traitSym, trt) =>
-        val instances = instances0.getOrElse(traitSym, Nil)
+        val instances = instances0.get(traitSym)
         val envInsts = instances.map {
           case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) => Instance(tparams.map(_.sym), tpe, tconstrs)
         }
@@ -139,10 +139,10 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     val assocs = for {
       (traitSym, trt) <- traits0.iterator
-      inst <- instances0.getOrElse(traitSym, Nil)
+      inst <- instances0.get(traitSym)
       assocSig <- trt.assocs
       assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
       tparams = inst.tparams.map(_.sym)
@@ -258,10 +258,7 @@ object Typer {
     * Performs type inference and reassembly on all instances in the given AST root.
     */
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
-    val instances0 = for {
-      (_, insts) <- root.instances
-      inst <- insts
-    } yield inst
+    val instances0 = root.instances.values
 
     val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
     val mapping = instances.map {
