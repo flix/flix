@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
@@ -125,6 +126,9 @@ object LspServer {
       sources.put(uri, src)
     }
 
+    /**
+      * Compile the current source code.
+      */
     def processCheck(): Unit = {
       try {
         val diagnostics = flix.check() match {
@@ -142,14 +146,30 @@ object LspServer {
             // We provide diagnostics only for errors.
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
         }
-        diagnostics.foreach(d => flixLanguageClient.publishDiagnostics(d.toLsp4j))
+        publishDiagnostics(diagnostics)
       } catch {
         case ex: Throwable =>
           val reportPath = CrashHandler.handleCrash(ex)(flix)
           flixLanguageClient.showMessage(new MessageParams(MessageType.Error, s"The flix compiler crashed. See the crash report for details:\n${reportPath.map(_.toString)}"))
       }
     }
+
+    /**
+      * Publishes the given diagnostics to the client.
+      * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
+      */
+    private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
+      val sourcesWithDiagnostics = diagnostics.map(d => d.uri).toSet
+      val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
+      sourcesWithoutDiagnostics.foreach { source =>
+        flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
+      }
+      diagnostics.foreach { diagnostic =>
+        flixLanguageClient.publishDiagnostics(diagnostic.toLsp4j)
+      }
+    }
   }
+
 
 
   private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends TextDocumentService {
