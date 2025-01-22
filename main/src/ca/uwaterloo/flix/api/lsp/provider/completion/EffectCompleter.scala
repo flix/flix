@@ -16,6 +16,10 @@ object EffectCompleter {
     getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
   }
 
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
       root.effects.values.collect{

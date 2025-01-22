@@ -79,6 +79,23 @@ object CompletionUtils {
   }
 
   /**
+    * Generate a snippet which represents calling a function.
+    * Drops the last one or two arguments in the event that the function is in a pipeline
+    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
+    */
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    } :+ s"$${${fparams.length + 1}:resume}"
+    if (functionIsUnit)
+      s"$name($${1:resume}) = "
+    else
+      s"$name(${args.mkString(", ")}) = "
+  }
+
+  /**
     * Helper function for deciding if a snippet can be generated.
     * Returns false if there are too few arguments.
     */

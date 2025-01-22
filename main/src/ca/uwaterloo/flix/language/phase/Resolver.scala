@@ -1738,7 +1738,7 @@ object Resolver {
         val symUse = EffectSymUse(decl.sym, qname)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body) =>
-            val opVal = findOpInEffect(ident, decl)
+            val opVal = findOpInEffect(ident, decl, ns, env0)
             val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns, root))
             flatMapN(opVal, fparamsVal) {
               case (o, fp) =>
@@ -2213,13 +2213,13 @@ object Resolver {
   /**
     * Looks up the effect operation as a member of the given effect.
     */
-  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect): Validation[NamedAst.Declaration.Op, ResolutionError] = {
+  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect, ns: Name.NName, env0: LocalScope): Validation[NamedAst.Declaration.Op, ResolutionError] = {
     val opOpt = eff.ops.find(o => o.sym.name == ident.name)
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
-        val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
-        Validation.Failure(ResolutionError.UndefinedOp(qname, ident.loc))
+        val qname = Name.mkQName(nname, ident.name, ident.loc)
+        Validation.Failure(ResolutionError.UndefinedOp(qname, AnchorPosition.mkImportOrUseAnchor(ns), env0, ident.loc))
       case Some(op) =>
         Validation.Success(op)
     }
