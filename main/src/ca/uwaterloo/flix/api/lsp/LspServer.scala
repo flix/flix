@@ -15,12 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CrashHandler, Flix}
+import ca.uwaterloo.flix.api.lsp.PublishDiagnosticsParams
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
@@ -58,6 +62,11 @@ object LspServer {
     var root: Root = TypedAst.empty
 
     /**
+      * The current compilation errors.
+      */
+    private var currentErrors: List[CompilationMessage] = Nil
+
+    /**
       * The proxy to the language client.
       * Used to send messages to the client.
       */
@@ -86,7 +95,7 @@ object LspServer {
 
       val serverCapabilities = new ServerCapabilities
       serverCapabilities.setHoverProvider(true)
-      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)
+      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       CompletableFuture.completedFuture(new InitializeResult(serverCapabilities))
     }
@@ -116,23 +125,80 @@ object LspServer {
       flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
       sources.put(uri, src)
     }
+
+    /**
+      * Compile the current source code.
+      */
+    def processCheck(): Unit = {
+      try {
+        val diagnostics = flix.check() match {
+          // Case 1: Compilation was successful or partially successful so that we have the root and errors.
+          case (Some(root), errors) =>
+            this.root = root
+            this.currentErrors = errors
+            // We provide diagnostics for errors and code hints.
+            val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+            PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+
+          // Case 2: Compilation failed so that we have only errors.
+          case (None, errors) =>
+            this.currentErrors = errors
+            // We provide diagnostics only for errors.
+            PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
+        }
+        publishDiagnostics(diagnostics)
+      } catch {
+        case ex: Throwable =>
+          val reportPath = CrashHandler.handleCrash(ex)(flix)
+          flixLanguageClient.showMessage(new MessageParams(MessageType.Error, s"The flix compiler crashed. See the crash report for details:\n${reportPath.map(_.toString)}"))
+      }
+    }
+
+    /**
+      * Publishes the given diagnostics to the client.
+      * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
+      */
+    private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
+      val sourcesWithDiagnostics = diagnostics.map(d => d.uri).toSet
+      val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
+      sourcesWithoutDiagnostics.foreach { source =>
+        flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
+      }
+      diagnostics.foreach { diagnostic =>
+        flixLanguageClient.publishDiagnostics(diagnostic.toLsp4j)
+      }
+    }
   }
+
+
 
   private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends TextDocumentService {
     /**
       * Called when a text document is opened.
-      * If the document is a Flix source file, we add the source code to the Flix instance.
+      * If the document is a Flix source file, we add the source code to the Flix instance and check it.
       */
     override def didOpen(didOpenTextDocumentParams: DidOpenTextDocumentParams): Unit = {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
       val textDocument = didOpenTextDocumentParams.getTextDocument
       if (textDocument.getLanguageId == "flix") {
         flixLanguageServer.addSourceCode(textDocument.getUri, textDocument.getText)
+        flixLanguageServer.processCheck()
       }
     }
 
+    /**
+      * Called when a text document is changed.
+      * If the document is a Flix source file, we update the source code in the Flix instance and check it.
+      */
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
       System.err.println(s"didChange: $didChangeTextDocumentParams")
+      val uri = didChangeTextDocumentParams.getTextDocument.getUri
+      if (flixLanguageServer.sources.contains(uri)) {
+        //Since the TextDocumentSyncKind is Full, we can assume that there is only one change that is a full content change.
+        val src = didChangeTextDocumentParams.getContentChanges.get(0).getText
+        flixLanguageServer.addSourceCode(uri, src)
+        flixLanguageServer.processCheck()
+      }
     }
 
     override def didClose(didCloseTextDocumentParams: DidCloseTextDocumentParams): Unit = {
@@ -165,5 +231,4 @@ object LspServer {
       System.err.println(s"didChangeWatchedFiles: $didChangeWatchedFilesParams")
     }
   }
-
 }
