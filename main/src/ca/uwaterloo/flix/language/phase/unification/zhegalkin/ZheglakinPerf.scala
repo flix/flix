@@ -17,9 +17,10 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, Subeffecting}
+import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils, Subeffecting}
 
 import java.nio.file.Paths
 import scala.collection.mutable
@@ -30,7 +31,7 @@ object ZheglakinPerf {
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
-  private val Iterations: Int = 250
+  private val Iterations: Int = 2
 
   private case class Config(
                              cacheInterCst: Boolean = false,
@@ -38,13 +39,14 @@ object ZheglakinPerf {
                              cacheInter: Boolean = false,
                              cacheXor: Boolean = false,
                              cacheSVE: Boolean = false,
+                             smartSubeffecting: Boolean = false,
                              opts: Options
                            )
 
   def main(args: Array[String]): Unit = {
     rq1(Iterations)
-    rq3(Iterations)
-    rq6(Iterations)
+    //rq3(Iterations)
+    //rq6(Iterations)
   }
 
 
@@ -69,12 +71,12 @@ object ZheglakinPerf {
     val allEquationSystems = buffer.toList
 
     // (RQ1.1) What is the (min, max, avg, median) number of constraints?
-    val numberOfConstraintsPerSystem = allEquationSystems.map {
+    val q11 = allEquationSystems.map {
       system => system.length
     }
 
     // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
-    val numberOfFlexibleVarsPerSystem = allEquationSystems.map {
+    val q12 = allEquationSystems.map {
       system =>
         system.foldLeft(0) {
           (acc, eqn) => acc + eqn.varsOf.size
@@ -82,7 +84,7 @@ object ZheglakinPerf {
     }
 
     // (RQ1.3) What is the (min, max, avg, median) number of rigid variables?
-    val numberOfRigidVarsPerSystem = allEquationSystems.map {
+    val q13 = allEquationSystems.map {
       system =>
         system.foldLeft(0) {
           (acc, eqn) => acc + eqn.cstsOf.size
@@ -93,15 +95,18 @@ object ZheglakinPerf {
     val numberOfEffSlackVarsPerSystem = Nil // TODO
 
     val py1 =
-      """import matplotlib.pyplot as plt
-        |import numpy as np
+      """import seaborn
+        |import matplotlib.pyplot as plt
         |from numpy import loadtxt
         |
         |data = [loadtxt("numberOfConstraintsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
         |
-        |plt.boxplot(data, patch_artist=True)
+        |seaborn.set(style = 'whitegrid')
+        |palette = [seaborn.color_palette()[0]]
+        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
+        |
         |plt.title("Constraints per Equation System")
-        |plt.ylabel("Number of Constraints")
+        |plt.xlabel("Number of Constraints")
         |plt.grid(True)
         |
         |plt.savefig('numberOfConstraintsPerSystem.png')
@@ -111,13 +116,17 @@ object ZheglakinPerf {
         |""".stripMargin
 
     val py2 =
-      """import matplotlib.pyplot as plt
-        |import numpy as np
+      """import seaborn
+        |import matplotlib.pyplot as plt
         |from numpy import loadtxt
         |
         |data = [loadtxt("numberOfFlexibleVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
         |
-        |plt.boxplot(data, patch_artist=True)
+        |seaborn.set(style = 'whitegrid')
+        |palette = [seaborn.color_palette()[1]]
+        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
+        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5)
+        |
         |plt.title("Flexible Variables per Constraint System")
         |plt.ylabel("Number of Flexible Variables")
         |plt.grid(True)
@@ -129,13 +138,16 @@ object ZheglakinPerf {
         |""".stripMargin
 
     val py3 =
-      """import matplotlib.pyplot as plt
-        |import numpy as np
+      """import seaborn
+        |import matplotlib.pyplot as plt
         |from numpy import loadtxt
         |
         |data = [loadtxt("numberOfRigidVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
         |
-        |plt.boxplot(data, patch_artist=True)
+        |seaborn.set(style = 'whitegrid')
+        |palette = [seaborn.color_palette()[2]]
+        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
+        |
         |plt.title("Rigid Constants per Constraint System")
         |plt.ylabel("Number of Rigid Constants")
         |plt.grid(True)
@@ -147,19 +159,19 @@ object ZheglakinPerf {
         |""".stripMargin
 
     FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.py"), py1)
-    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.txt"), numberOfConstraintsPerSystem.mkString("\n"))
+    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.txt"), q11.mkString("\n"))
 
     FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.py"), py2)
-    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), numberOfFlexibleVarsPerSystem.mkString("\n"))
+    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), q12.mkString("\n"))
 
     FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.py"), py3)
-    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.txt"), numberOfRigidVarsPerSystem.mkString("\n"))
+    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.txt"), q13.mkString("\n"))
 
     println("-" * 80)
-    println(s"Total Constraints   : ${numberOfConstraintsPerSystem.sum}")
-    println(s"Total Flexible Vars : ${numberOfFlexibleVarsPerSystem.sum}")
-    println(s"Total Rigid Conts   : ${numberOfRigidVarsPerSystem.sum}")
-    //println(s"numberOfEffSlackVarsPerSystem = [${numberOfEffSlackVarsPerSystem.mkString(",")}];")
+    println(s"                    Total          Min       Max       Avg       Med")
+    println(f"Constraints       ${q11.sum}%,7d            ${q11.min}       ${q11.max}%,3d       ${StatUtils.average(q11)}%1.1f       ${StatUtils.median(q11)}%1.1f")
+    println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
+    println(f"Rigid Vars        ${q13.sum}%,7d            ${q13.min}       ${q13.max}%,3d       ${StatUtils.average(q13)}%1.1f       ${StatUtils.median(q13)}%1.1f")
     println("-" * 80)
     println()
   }
@@ -167,7 +179,7 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultAllFalse = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, opts = Options.Default)
+    val DefaultAllFalse = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default)
 
     val m1 = runConfig(DefaultAllFalse, n).mdn
     val m2 = runConfig(DefaultAllFalse.copy(cacheInterCst = true), n).mdn
@@ -190,12 +202,11 @@ object ZheglakinPerf {
     println(RQ6)
 
     val DefaultNoSubeffecting = Config(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true, opts = Options.Default)
-
-    // TODO: We use full subeffecting
+    val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 
     val base = runConfig(DefaultNoSubeffecting, n).mdn
-    val unoptimized = runConfig(DefaultNoSubeffecting.copy(opts = Options.Default.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas))), n).mdn
-    val solveAndRetry = 0
+    val unoptimized = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
+    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
 
     println("-" * 80)
     println("\\textbf{Variant} & \\textbf{Baseline} & \\textbf{Unoptimized} & \\textbf{Solve-and-Retry} \\\\")
@@ -245,6 +256,8 @@ object ZheglakinPerf {
       ZhegalkinCache.EnableXorCache = c.cacheXor
       ZhegalkinCache.EnableSVECache = c.cacheSVE
       ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
+
+      EffUnification3.EnableSmartSubeffecting = c.smartSubeffecting
 
       val flix = new Flix()
       flix.setOptions(c.opts)
