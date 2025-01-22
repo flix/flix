@@ -58,14 +58,6 @@ object UnificationError {
   case class MismatchedCaseSets(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
-    *
-    * @param ts1 the first list of types.
-    * @param ts2 the second list of types.
-    */
-  case class MismatchedArity(ts1: List[Type], ts2: List[Type]) extends UnificationError
-
-  /**
     * An unification error due to a rigid type variable `tvar` in `tpe`.
     *
     * @param tvar the type variable.

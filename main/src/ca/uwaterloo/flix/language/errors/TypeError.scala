@@ -137,27 +137,6 @@ object TypeError {
   }
 
   /**
-    * Mismatched Arity.
-    *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MismatchedArity(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
-         |
-         |${code(loc, "mismatched arity of types.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Mismatched Pure and Effectful Arrows.
     *
     * @param baseType1 the first boolean formula.
@@ -732,28 +711,6 @@ object TypeError {
     def summary: String = s"Unresolved static method"
 
     def message(formatter: Formatter): String = s"Unresolved static method"
-  }
-
-  /**
-    * Unsupported equality error.
-    *
-    * @param econstr the unsupported equality constraint.
-    * @param loc     the location where the error occurred.
-    */
-  case class UnsupportedEquality(econstr: BroadEqualityConstraint, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unsupported type equality: ${formatEqualityConstraint(econstr)}
-         |
-         |${code(loc, "unsupported type equality.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Tip: Add an equality constraint to the function."
-    })
   }
 
   /**
