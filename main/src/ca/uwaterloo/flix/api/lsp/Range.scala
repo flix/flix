@@ -17,10 +17,10 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.eclipse.lsp4j
 
 /**
   * Companion object of [[Range]].
@@ -57,6 +57,8 @@ object Range {
   */
 case class Range(start: Position, end: Position) {
   def toJSON: JValue = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
+
+  def toLsp4j: lsp4j.Range = new lsp4j.Range(start.toLsp4j, end.toLsp4j)
 
   /**
     * Returns the range that starts earlier.
