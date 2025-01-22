@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
-import ca.uwaterloo.flix.api.lsp.PublishDiagnosticsParams
+import ca.uwaterloo.flix.api.lsp.{PublishDiagnosticsParams, Position}
+import ca.uwaterloo.flix.api.lsp.provider.HoverProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -24,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
-import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
@@ -217,6 +217,9 @@ object LspServer {
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       System.err.println(s"hover: $params")
 
+      val uri = params.getTextDocument.getUri
+      val position = Position.fromLsp4j(params.getPosition)
+      HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix)
       val h = new Hover(new MarkupContent("plaintext", "Hello World from Hover!"))
       CompletableFuture.completedFuture(h)
     }

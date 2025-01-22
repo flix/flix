@@ -40,6 +40,9 @@ object Position {
   def fromEnd(loc: SourceLocation): Position =
     Position(loc.endLine, loc.endCol)
 
+  def fromLsp4j(pos: lsp4j.Position): Position =
+    Position(pos.getLine + 1, pos.getCharacter + 1)
+
   /**
     * Tries to parse the given `json` value as a [[Position]].
     */
