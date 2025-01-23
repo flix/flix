@@ -77,7 +77,7 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
   def toLsp4j: lsp4j.Diagnostic = {
     val diagnostic = new lsp4j.Diagnostic()
     diagnostic.setRange(range.toLsp4j)
-    diagnostic.setSeverity(severity.map(_.toLsp4j).getOrElse(DiagnosticSeverity.Error.toLsp4j))
+    diagnostic.setSeverity(severity.map(_.toLsp4j).orNull)
     diagnostic.setCode(code.orNull)
     diagnostic.setSource(source.orNull)
     diagnostic.setMessage(message)

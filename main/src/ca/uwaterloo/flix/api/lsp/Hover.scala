@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,20 @@
 package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j
-import org.json4s.JString
-import org.json4s.JsonAST.JValue
+import org.json4s.JObject
+import org.json4s.JsonDSL.*
 
-/**
-  * Represents a `MarkupKind` in LSP.
-  */
-sealed trait MarkupKind {
-  def toJSON: JValue = this match {
-    case MarkupKind.PlainText => JString("plaintext")
-    case MarkupKind.Markdown => JString("markdown")
+case class Hover(contents: MarkupContent, range: Range) {
+  def toJSON: JObject = {
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
-  def toLsp4j: String = this match {
-    case MarkupKind.PlainText => lsp4j.MarkupKind.PLAINTEXT
-    case MarkupKind.Markdown => lsp4j.MarkupKind.MARKDOWN
+  def toLsp4j: lsp4j.Hover = {
+    val hover = new lsp4j.Hover()
+    hover.setContents(contents.toLsp4j)
+    hover.setRange(range.toLsp4j)
+    hover
   }
-}
-
-object MarkupKind {
-
-  case object PlainText extends MarkupKind
-
-  case object Markdown extends MarkupKind
 
 }

@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -278,7 +277,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
+      HoverProvider.processHover(uri, pos)(root, flix) match {
+        case Some(hover) => ("id" -> id) ~ hover.toJSON
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
+      }
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
