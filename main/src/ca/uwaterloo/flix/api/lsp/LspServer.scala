@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
-import ca.uwaterloo.flix.api.lsp.{PublishDiagnosticsParams, Position}
+import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.api.lsp.provider.HoverProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
@@ -211,14 +213,20 @@ object LspServer {
 
     /**
       * Returns the hover information for the given position in the given document.
-      * processHover().toLsp4j will handle failure cases itself.
       */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       System.err.println(s"hover: $params")
 
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
-      val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix).toLsp4j
+      val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix) match {
+        case Ok(hover) => hover.toLsp4j
+        case Err(msg) =>
+          val contents = new MarkupContent
+          contents.setKind(lsp4j.MarkupKind.PLAINTEXT)
+          contents.setValue(msg)
+          new lsp4j.Hover(contents)
+      }
       CompletableFuture.completedFuture(hover)
     }
   }

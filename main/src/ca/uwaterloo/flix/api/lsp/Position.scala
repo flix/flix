@@ -40,6 +40,10 @@ object Position {
   def fromEnd(loc: SourceLocation): Position =
     Position(loc.endLine, loc.endCol)
 
+  /**
+    * Returns a position from the given LSP `Position` `pos`.
+    * NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
+    */
   def fromLsp4j(pos: lsp4j.Position): Position =
     Position(pos.getLine + 1, pos.getCharacter + 1)
 
