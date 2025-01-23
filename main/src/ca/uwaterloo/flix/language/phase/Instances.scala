@@ -76,7 +76,7 @@ object Instances {
     */
   private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     // Check the instances of each trait in parallel.
-    val results = ParOps.parMap(root.instances.values)(checkInstancesOfTrait(_, root, changeSet))
+    val results = ParOps.parMap(root.instances.valueLists)(checkInstancesOfTrait(_, root, changeSet))
     results.flatten.toList
   }
 

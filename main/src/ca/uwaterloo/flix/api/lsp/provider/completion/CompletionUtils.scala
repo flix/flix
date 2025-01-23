@@ -122,11 +122,11 @@ object CompletionUtils {
   def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
     ModuleSymFragment.parseModuleSym(word) match {
       case ModuleSymFragment.Complete(modSym) =>
-        root.modules.getOrElse(modSym, Nil).collect {
+        root.modules.get(modSym).collect {
           case sym: Symbol.ModuleSym => sym
         }
       case ModuleSymFragment.Partial(modSym, suffix) =>
-        root.modules.getOrElse(modSym, Nil).collect {
+        root.modules.get(modSym).collect {
           case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
         }
       case _ => Nil

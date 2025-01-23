@@ -648,9 +648,6 @@ object ConstraintSolver {
       case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
         TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-      case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
-        TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
-
       case (UnificationError.TooComplex(msg, _), Provenance.Match(_, _, loc)) =>
         TypeError.TooComplex(msg, loc)
 

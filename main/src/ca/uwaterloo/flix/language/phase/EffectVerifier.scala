@@ -42,7 +42,7 @@ object EffectVerifier {
     if (flix.options.xverifyeffects) {
       ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
-      ParOps.parMapValues(root.instances)(ins => ins.foreach(visitInstance(_)(root.eqEnv, flix)))
+      ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
     }
   }
 

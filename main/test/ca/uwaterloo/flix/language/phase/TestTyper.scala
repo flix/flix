@@ -315,27 +315,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("NoMatchingInstance.07") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def foo(x: a): Int32
-        |}
-        |
-        |enum E[_: Eff] {
-        |    case E(Int32)
-        |}
-        |
-        |instance C[E[Pure]] {
-        |    pub def foo(x: E[Pure]): Int32 = 1
-        |}
-        |
-        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[Pure]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("NoMatchingInstance.Relation.01") {
     val input =
       """

@@ -57,7 +57,7 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val ds = ParOps.parMapValues(root.defs)(visitDef)
-    val is = ParOps.parMapValues(root.instances)(is0 => is0.map(visitInstance))
+    val is = ParOps.parMapValueList(root.instances)(visitInstance)
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
     (root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala.toList)

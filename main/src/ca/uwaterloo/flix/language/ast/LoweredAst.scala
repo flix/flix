@@ -22,10 +22,10 @@ import ca.uwaterloo.flix.util.collection.ListMap
 
 object LoweredAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty)
+  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Trait],
-                  instances: Map[Symbol.TraitSym, List[Instance]],
+                  instances: ListMap[Symbol.TraitSym, Instance],
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],

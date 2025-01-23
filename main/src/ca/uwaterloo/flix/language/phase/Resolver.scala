@@ -100,14 +100,14 @@ object Resolver {
               case () =>
                 ResolvedAst.Root(
                   table.traits,
-                  table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
+                  table.instances,
                   table.defs,
                   table.enums,
                   table.structs,
                   table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
-                  uses.toMap,
+                  ListMap(uses.toMap),
                   taOrder,
                   root.mainEntryPoint,
                   root.sources,
@@ -777,7 +777,7 @@ object Resolver {
         // We may have an imported class name.
         val className = qname.namespace.idents.head
         env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             // We have a static field access.
             val fieldName = qname.ident
             JvmUtils.getField(clazz, fieldName.name, static = true) match {
@@ -867,7 +867,7 @@ object Resolver {
         // We may have an imported class name.
         val className = qname.namespace.idents.head
         env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             // We have a static method call.
             val methodName = qname.ident
             val expsVal = traverse(exps)(resolveExp(_, env0))
@@ -1225,7 +1225,7 @@ object Resolver {
     case NamedAst.Expr.InstanceOf(exp, className, loc) =>
       flatMapN(resolveExp(exp, env0)) {
         case e => env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
             val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
@@ -1313,7 +1313,7 @@ object Resolver {
       flatMapN(esVal) {
         es =>
           env0.get(className.name) match {
-            case Some(List(Resolution.JavaClass(clazz))) =>
+            case List(Resolution.JavaClass(clazz)) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
               val error = ResolutionError.UndefinedNewJvmClassOrStruct(className, AnchorPosition.mkImportOrUseAnchor(ns0), env0, "", loc)
@@ -3274,7 +3274,7 @@ object Resolver {
     lookupJvmClass(className, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
-        case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
+        case List(Resolution.JavaClass(clazz)) => Result.Ok(clazz)
         case _ => Result.Err(e)
       }
     }
