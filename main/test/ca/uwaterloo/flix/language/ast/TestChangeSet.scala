@@ -135,7 +135,7 @@ class TestChangeSet extends AnyFunSuite {
     val cs = ChangeSet.Everything.markChanged(input1, dg2)
     val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
 
-    assert(staleMap == ListMap(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5)))
+    assert(staleMap == ListMap(1 -> List(src2, src1), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5)))
     assert(freshMap == ListMap.empty)
   }
 
@@ -147,7 +147,7 @@ class TestChangeSet extends AnyFunSuite {
     val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
 
     assert(staleMap == ListMap(2 -> List(src3), 3 -> List(src4)))
-    assert(freshMap == ListMap(1 -> List(src1, src2), 2 -> List(src2)))
+    assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2)))
   }
 
   test("ChangeSet.partitionOnValues should ignore anything deleted") {
@@ -158,7 +158,7 @@ class TestChangeSet extends AnyFunSuite {
     val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
 
     assert(staleMap == ListMap.empty)
-    assert(freshMap == ListMap(1 -> List(src1, src2), 2 -> List(src2)))
+    assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2)))
   }
 
   test("ChangeSet.partitionOnValues test with both newed and deleted input") {
@@ -169,7 +169,7 @@ class TestChangeSet extends AnyFunSuite {
     val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
 
     assert(staleMap == ListMap(3 -> List(src5)))
-    assert(freshMap == ListMap(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4)))
+    assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2), 3 -> List(src4)))
   }
 
   test("ChangeSet.partitionOnValues test with new, deleted and changed input") {
