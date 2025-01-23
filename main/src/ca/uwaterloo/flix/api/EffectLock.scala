@@ -97,7 +97,7 @@ object EffectLock {
     case Expr.OpenAs(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Use(sym, alias, exp, _) => // TODO: look up functions in alias
+    case Expr.Use(_, _, exp, _) =>
       visitExp(exp)
 
     case Expr.Lambda(_, exp, _, _) =>
