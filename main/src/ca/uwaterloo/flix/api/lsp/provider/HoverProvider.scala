@@ -18,18 +18,16 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
-import ca.uwaterloo.flix.api.lsp.{MarkupContent, MarkupKind, Position, Range, ResponseStatus, Visitor}
+import ca.uwaterloo.flix.api.lsp.{Hover, HoverNotFound, HoverResult, MarkupContent, MarkupKind, Position, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object HoverProvider {
 
-  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): HoverResult = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
 
@@ -39,7 +37,7 @@ object HoverProvider {
     }
   }
 
-  private def hoverAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
+  private def hoverAny(x: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): HoverResult = x match {
     case tpe: Type => hoverKind(tpe)
     case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
     case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
@@ -51,7 +49,7 @@ object HoverProvider {
     case _ => mkNotFound(uri, pos)
   }
 
-  private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+  private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Hover = {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
@@ -60,11 +58,10 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
-  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): JObject = {
+  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): Hover = {
     val markup =
       s"""```flix
          |${formatTypAndEff(tpe, eff)}
@@ -72,11 +69,10 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
-  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Hover = {
     val defDecl = root.defs(sym)
     val markup =
       s"""```flix
@@ -87,11 +83,10 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
-  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Hover = {
     val sigDecl = root.sigs(sym)
     val markup =
       s"""```flix
@@ -102,11 +97,10 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
-  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Hover = {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
       s"""```flix
@@ -117,8 +111,7 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
   private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
@@ -133,7 +126,7 @@ object HoverProvider {
     s"$t$p"
   }
 
-  private def hoverKind(t: Type): JObject = {
+  private def hoverKind(t: Type): Hover = {
     val markup =
       s"""```flix
          |${FormatKind.formatKind(t.kind)}
@@ -141,14 +134,12 @@ object HoverProvider {
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(t.loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
+    Hover(contents, range)
   }
 
   /**
    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
+  private def mkNotFound(uri: String, pos: Position): HoverNotFound =
+    HoverNotFound(uri, pos)
 }

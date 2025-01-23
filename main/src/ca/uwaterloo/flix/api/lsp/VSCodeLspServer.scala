@@ -278,7 +278,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix).toJSON
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)

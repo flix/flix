@@ -219,9 +219,8 @@ object LspServer {
 
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
-      HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix)
-      val h = new Hover(new MarkupContent("plaintext", "Hello World from Hover!"))
-      CompletableFuture.completedFuture(h)
+      val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix).toLsp4j
+      CompletableFuture.completedFuture(hover)
     }
   }
 
