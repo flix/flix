@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.language.ast.Type
 
 object Serialization {
 
+  // TODO: Consider making Serializable super / marker trait
+
   def fromType(tpe: Type): SerializableType = ???
 
   def toType(serializableType: SerializableType): Type = ???
