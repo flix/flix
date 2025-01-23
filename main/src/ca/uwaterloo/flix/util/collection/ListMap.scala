@@ -51,13 +51,6 @@ object ListMap {
       case (acc, (k, vs)) => acc ++ (k -> vs)
     }
   }
-
-  /**
-    * Creates a ListMap from the given key-valueList pairs.
-    */
-  def apply[K, V](elems: (K, V)*): ListMap[K, V] = {
-    from(elems)
-  }
 }
 
 /**
