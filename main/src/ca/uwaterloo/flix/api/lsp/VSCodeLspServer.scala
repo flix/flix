@@ -279,7 +279,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Hover(id, uri, pos) =>
       HoverProvider.processHover(uri, pos)(root, flix) match {
         case Some(hover) => ("id" -> id) ~ hover.toJSON
-        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> null)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
       }
 
     case Request.Goto(id, uri, pos) =>
