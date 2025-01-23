@@ -44,7 +44,7 @@ object ListMap {
   }
 
   /**
-    * Creates a ListMap from the given key-value pairs.
+    * Creates a ListMap from the given key-valueList pairs.
     */
   def apply[K, V](elems: (K, List[V])*): ListMap[K, V] = {
     elems.foldLeft(ListMap.empty[K, V]) {
