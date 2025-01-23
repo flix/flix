@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JString
 import org.json4s.JsonAST.JValue
 
@@ -25,6 +26,11 @@ sealed trait MarkupKind {
   def toJSON: JValue = this match {
     case MarkupKind.PlainText => JString("plaintext")
     case MarkupKind.Markdown => JString("markdown")
+  }
+
+  def toLsp4j: String = this match {
+    case MarkupKind.PlainText => lsp4j.MarkupKind.PLAINTEXT
+    case MarkupKind.Markdown => lsp4j.MarkupKind.MARKDOWN
   }
 
 }
