@@ -211,8 +211,7 @@ object LspServer {
 
     /**
       * Returns the hover information for the given position in the given document.
-      *
-      * Now a mock implementation that just returns a simple greeting.
+      * processHover().toLsp4j will handle failure cases itself.
       */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       System.err.println(s"hover: $params")
