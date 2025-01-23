@@ -59,7 +59,8 @@ object CompletionProvider {
             DefCompleter.getCompletions(err, namespace, ident) ++
             EnumCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
-            OpCompleter.getCompletions(err, namespace, ident)
+            OpCompleter.getCompletions(err, namespace, ident) ++
+            SignatureCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
