@@ -27,7 +27,7 @@ object ListMap {
   /**
     * Returns the empty list map.
     */
-  def empty[K, V]: ListMap[K, V] = ListMap(Map.empty)
+  def empty[K, V]: ListMap[K, V] = ListMap(Map.empty[K, List[V]])
 
   /**
     * Returns a singleton list map with a mapping from `k` to `v`.
@@ -40,6 +40,15 @@ object ListMap {
   def from[K, V](it: Iterable[(K, V)]): ListMap[K, V] = {
     it.iterator.foldLeft(ListMap.empty[K, V]) {
       case (acc, (k, v)) => acc + (k, v)
+    }
+  }
+
+  /**
+    * Creates a ListMap from the given key-value pairs.
+    */
+  def apply[K, V](elems: (K, List[V])*): ListMap[K, V] = {
+    elems.foldLeft(ListMap.empty[K, V]) {
+      case (acc, (k, vs)) => acc ++ (k -> vs)
     }
   }
 }
