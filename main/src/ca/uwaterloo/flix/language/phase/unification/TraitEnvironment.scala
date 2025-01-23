@@ -114,7 +114,8 @@ object TraitEnvironment {
     */
   private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
     case TraitConstraint(head, arg, _) =>
-      val matchingInstances = traitEnv.getInstancesOpt(head.sym).getOrElse(Nil)
+
+      val matchingInstanceOpt = traitEnv.getInstance(head.sym, arg)
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
@@ -127,20 +128,15 @@ object TraitEnvironment {
         }
       }
 
-      val tconstrGroups = matchingInstances.map(tryInst).map(_.toResult).collect {
+      val tconstrGroups = matchingInstanceOpt.map(tryInst).map(_.toResult).collect {
         case Result.Ok(tconstrs) => tconstrs
       }
 
       tconstrGroups match {
-        case Nil => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
-        case tconstrs :: Nil =>
+        case None => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
+        case Some(tconstrs) =>
           // apply the base tconstr location to the new tconstrs
           Validation.Success(tconstrs.map(_.copy(loc = tconstr.loc)))
-        case _ :: _ :: _ =>
-          // Multiple matching instances: This will be caught in the Instances phase.
-          // We return Nil here because there is no canonical set of constraints,
-          // so we stop adding constraints and let the later phase take care of it.
-          Validation.Success(Nil)
       }
   }
 
