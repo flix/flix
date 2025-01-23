@@ -109,8 +109,8 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   }
 
   /**
-    * Fold the values in the list map using the given function `f`.
-    * The function f is expected to take a key `k` and a value `v`, not a list of values.
+    * Folds the values in the list map using the given function `f`.
+    * The function `f` takes an accumulator `z` and a tuple `(k, v)` where `v` is a value of type V instead of a list of V.
     */
   def foldLeft[A](z: A)(f: (A, (K, V)) => A): A = {
     m.foldLeft(z) {
