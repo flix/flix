@@ -79,6 +79,21 @@ object CompletionUtils {
   }
 
   /**
+    * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
+    */
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    } :+ s"$${${fparams.length + 1}:resume}"
+    if (functionIsUnit)
+      s"$name($${1:resume}) = "
+    else
+      s"$name(${args.mkString(", ")}) = "
+  }
+
+  /**
     * Helper function for deciding if a snippet can be generated.
     * Returns false if there are too few arguments.
     */

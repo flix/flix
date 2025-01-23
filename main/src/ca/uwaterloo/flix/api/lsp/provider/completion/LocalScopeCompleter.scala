@@ -55,7 +55,6 @@ object LocalScopeCompleter {
       case Resolution.Declaration(Namespace(_, _, _, _)) |
            Resolution.Declaration(Sig(_, _, _, _)) |
            Resolution.Declaration(StructField(_, _, _, _)) |
-           Resolution.Declaration(Op(_, _, _)) |
            Resolution.Declaration(Case(_, _, _)) => Completion.LocalDeclarationCompletion(k)
     }
 

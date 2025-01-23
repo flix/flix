@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +17,63 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Op
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object OpCompleter {
   /**
-    * Returns a List of Completion for completer.
+    * Returns a List of Completion for Op for UndefinedOp.
     */
-  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val word = context.word
-    val uri = context.uri
+  def getCompletions(err: ResolutionError.UndefinedOp, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    val uri = err.loc.source.name
+    root.effects.values.flatMap(_.ops).collect{
+      case op if matchesOp(op, namespace, ident, uri, qualified = false) =>
+        OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
+    }
+  }
 
-    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri))
-      .flatMap(decl =>
-        if (CompletionUtils.canApplySnippet(decl.spec.fparams)(context))
-          Some(Completion.OpCompletion(decl))
-        else
-          None
-      )
+  /**
+    * Returns a List of Completion for Op for UndefinedName.
+    */
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    if (namespace.nonEmpty)
+      root.effects.values.flatMap(_.ops).collect{
+        case op if matchesOp(op, namespace, ident, uri, qualified = true) =>
+          OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
+      }
+    else
+      root.effects.values.flatMap(_.ops).collect{
+        case op if matchesOp(op, namespace, ident, uri, qualified = false) =>
+          OpCompletion(op, ap, qualified = false, inScope = inScope(op, env), isHandler = false)
+      }
+  }
+
+  private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
+    val thisName = op.sym.toString
+    val isResolved = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Op(thatName, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    val isRoot = op.sym.namespace.isEmpty
+    isRoot || isResolved
   }
 
   /**
     * Returns `true` if the given effect operation `op` should be included in the suggestions.
     */
-  private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
-    val isPublic = op.spec.mod.isPublic
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      op.sym.toString.startsWith(word)
-    else
-      op.sym.name.startsWith(word)
+  private def matchesOp(op: TypedAst.Op, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = op.spec.mod.isPublic && !op.spec.ann.isInternal
     val isInFile = op.sym.loc.source.name == uri
-
+    val isMatch = if (qualified)
+      CompletionUtils.matchesQualifiedName(op.sym.namespace, op.sym.name, namespace, ident)
+    else
+      CompletionUtils.fuzzyMatch(ident, op.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }
