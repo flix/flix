@@ -35,9 +35,24 @@ object EffectLock {
     }.toList
   }
 
+  object Serialization {
+
+    case class SerializableLibrary(name: String, defs: List[SerializableFunction])
+
+    case class SerializableFunction(name: String, tpe: SerializableType)
+
+    sealed trait SerializableType
+
+    sealed trait BaseType extends SerializableType
+
+    // TODO: Add case classes
+
+  }
+
   object Reachable {
+
     /**
-      * Performs tree shaking on the given AST `root`.
+      * Returns the root with only reachable functions.
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
       // Entry points are always reachable.
