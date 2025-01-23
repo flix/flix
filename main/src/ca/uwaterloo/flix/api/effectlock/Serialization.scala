@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.shared.VarText
 
 object Serialization {
 
@@ -20,7 +21,7 @@ object Serialization {
   }
 
   object SerializableType {
-    sealed trait BaseType extends SerializableType
+    case class Var(sym: SerializableSymbol.KindedTypeVarSym)
   }
 
   sealed trait SerializableKind
@@ -62,6 +63,10 @@ object Serialization {
   sealed trait SerializableSymbol
 
   object SerializableSymbol {
-    case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[SerializableName.Ident])
+    case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[SerializableName.Ident]) extends SerializableSymbol
+
+    case class KindedTypeVarSym(id: Int, text: VarText, kind: SerializableKind, isRegion: Boolean, isSlack: Boolean, scope: Scope) extends SerializableSymbol
   }
+
+  case class Scope(syms: List[SerializableSymbol.KindedTypeVarSym])
 }
