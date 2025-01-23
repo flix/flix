@@ -79,9 +79,7 @@ object CompletionUtils {
   }
 
   /**
-    * Generate a snippet which represents calling a function.
-    * Drops the last one or two arguments in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
+    * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
   def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
     val functionIsUnit = isUnitFunction(fparams)
