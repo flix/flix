@@ -213,22 +213,13 @@ object LspServer {
 
     /**
       * Returns the hover information for the given position in the given document.
+      *
+      * Now a mock implementation that just returns a simple greeting.
       */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       System.err.println(s"hover: $params")
-
-      val uri = params.getTextDocument.getUri
-      val position = Position.fromLsp4j(params.getPosition)
-      val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix) match {
-        case Ok(hover) => hover.toLsp4j
-        case Err(msg) =>
-          val contents = new MarkupContent
-          contents.setKind(lsp4j.MarkupKind.PLAINTEXT)
-          contents.setValue(msg)
-          new lsp4j.Hover(contents)
-      }
-      CompletableFuture.completedFuture(hover)
-    }
+      val h = new Hover(new MarkupContent("plaintext", "Hello World from Hover!"))
+      CompletableFuture.completedFuture(h)    }
   }
 
   private class FlixWorkspaceService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends WorkspaceService {
