@@ -881,7 +881,7 @@ class Flix {
       // Initialize fork-join thread pool.
       initForkJoinPool()
 
-      val root = EffectLock.run(optRoot.get)
+      val root = EffectLock.Reachable.run(optRoot.get)
 
       shutdownForkJoinPool()
 
