@@ -41,7 +41,7 @@ object EffectLock {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
     // Entry points are always reachable.
-    val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
+    val initReach: Set[ReachableSym] = root.entryPoints.get.map(ReachableSym.DefnSym.apply)
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
