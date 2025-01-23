@@ -872,4 +872,24 @@ class Flix {
     }
   }
 
+  def effectLock(): Option[TypedAst.Root] = {
+    val (optRoot, errors) = check()
+    if (errors.isEmpty) {
+      // Mark this object as implicit.
+      implicit val flix: Flix = this
+
+      // Initialize fork-join thread pool.
+      initForkJoinPool()
+
+      val root = EffectLock.run(optRoot.get)
+
+      shutdownForkJoinPool()
+
+      Some(root)
+
+    } else {
+      None
+    }
+  }
+
 }

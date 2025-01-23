@@ -275,7 +275,7 @@ object EffectLock {
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val exps = rules.flatMap(r => r.exp :: r.chan :: Nil)
-      visitExps(exps) ++ default.map(visitExp)
+      visitExps(exps) ++ visitExps(default.toList)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
