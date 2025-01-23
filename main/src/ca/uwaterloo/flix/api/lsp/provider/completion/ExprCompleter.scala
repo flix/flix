@@ -28,8 +28,7 @@ object ExprCompleter {
       EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
       ModuleCompleter.getCompletions(context) ++
-      HoleCompletion.getHoleCompletion(context, root) ++
-      OpCompleter.getCompletions(context)
+      HoleCompletion.getHoleCompletion(context, root)
   }
 
 }
