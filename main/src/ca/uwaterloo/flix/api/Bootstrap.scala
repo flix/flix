@@ -833,20 +833,22 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def effectLock(path: Path, flix: Flix): Validation[Unit, BootstrapError] = {
-    check(flix) match {
-      case Validation.Failure(errors) => Validation.Failure(errors)
-      case Validation.Success(root) =>
-        val outputStream = Files.newOutputStream(getEffectLockFile(path))
-        val signatures = mkEffectLockSignatures(root).mkString("\n") // TODO: make JSON
-        Validation.Success(outputStream.write(signatures.getBytes))
+  object EffectLock {
+    def effectLock(path: Path, flix: Flix): Validation[Unit, BootstrapError] = {
+      check(flix) match {
+        case Validation.Failure(errors) => Validation.Failure(errors)
+        case Validation.Success(root) =>
+          val outputStream = Files.newOutputStream(getEffectLockFile(path))
+          val signatures = mkEffectLockSignatures(root).mkString("\n") // TODO: make JSON
+          Validation.Success(outputStream.write(signatures.getBytes))
+      }
     }
-  }
 
-  def mkEffectLockSignatures(root: TypedAst.Root): List[String] = {
-    root.defs.map {
-      // TODO: Consider types / type schemes and only reachable functions / visible functions
-      case (sym, defn) => s"$sym:${defn.spec}"
-    }.toList
+    def mkEffectLockSignatures(root: TypedAst.Root): List[String] = {
+      root.defs.map {
+        // TODO: Consider types / type schemes and only reachable functions / visible functions
+        case (sym, defn) => s"$sym:${defn.spec}"
+      }.toList
+    }
   }
 }
