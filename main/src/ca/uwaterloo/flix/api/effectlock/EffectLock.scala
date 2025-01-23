@@ -35,7 +35,7 @@ object EffectLock {
     }.toList
   }
 
-  object Reachable {
+  object Reachability {
 
     /**
       * Returns the root with only reachable functions.
