@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
