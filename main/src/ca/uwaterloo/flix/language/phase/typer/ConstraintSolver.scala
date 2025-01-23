@@ -143,8 +143,8 @@ object ConstraintSolver {
     */
   def expandTraitEnv(tenv: TraitEnv, tconstrs: List[TraitConstraint]): TraitEnv = {
     tconstrs.foldLeft(tenv) {
-      case (acc, TraitConstraint(TraitSymUse(sym, _), arg, loc)) =>
-        acc.addInstance(sym, arg)
+      case (acc, TraitConstraint(TraitSymUse(sym, _), tpe, _)) =>
+        acc.addInstance(sym, tpe)
     }
   }
 
@@ -445,9 +445,9 @@ object ConstraintSolver {
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
             val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
-            val insts = tenv.getInstances(trt)
+
             // find the first (and only) instance that matches
-            val tconstrsOpt = ListOps.findMap(insts) {
+            val tconstrsOpt = tenv.getInstance(trt, t).flatMap {
               inst =>
                 Unification.fullyUnifyTypes(t, inst.tpe, renv, eenv).map {
                   case subst => inst.tconstrs.map(subst.apply)

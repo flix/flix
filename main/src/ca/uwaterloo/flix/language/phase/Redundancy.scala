@@ -199,7 +199,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
