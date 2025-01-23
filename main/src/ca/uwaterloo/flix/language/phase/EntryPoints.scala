@@ -575,7 +575,7 @@ object EntryPoints {
         s += sym
       }
       val entryPoints = s.toSet
-      root.copy(entryPoints = Some(entryPoints))
+      root.copy(entryPoints = entryPoints)
     }
 
 }
