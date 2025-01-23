@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, EffectLock, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
@@ -322,7 +322,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
-              bootstrap.EffectLock.effectLock(cwd, flix)
+              EffectLock.effectLock(cwd, bootstrap, flix)
           }.toResult match {
             case Result.Ok(_) =>
               println("Ran Effect Lock")
