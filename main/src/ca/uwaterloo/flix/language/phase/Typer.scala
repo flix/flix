@@ -53,7 +53,7 @@ object Typer {
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = ListMap(collectModules(root))
 
-    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
 
     (result, sctx.errors.asScala.toList)
 
@@ -126,9 +126,12 @@ object Typer {
     val m = traits0.map {
       case (traitSym, trt) =>
         val instances = instances0.get(traitSym)
-        val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) => Instance(tparams.map(_.sym), tpe, tconstrs)
-        }
+        val envInsts = instances.flatMap {
+          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) =>
+            tpe.typeConstructor.map {
+              tc => TypeHead.Cst(tc) -> Instance(tparams.map(_.sym), tpe, tconstrs)
+            }
+        }.toMap[TypeHead, Instance]
         // ignore the super trait parameters since they should all be the same as the trait param
         val superTraits = trt.superTraits.map(_.symUse.sym)
         (traitSym, TraitContext(superTraits, envInsts))
