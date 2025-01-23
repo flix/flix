@@ -114,7 +114,7 @@ class TestChangeSet extends AnyFunSuite {
     val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
 
     assert(staleMap == newMap)
-    assert(freshMap == Map.empty)
+    assert(freshMap == ListMap.empty)
   }
 
   test("ChangeSet.partitionOnValues should put anything changed into staleMap.01") {
