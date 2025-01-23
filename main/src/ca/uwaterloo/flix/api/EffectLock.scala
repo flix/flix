@@ -84,226 +84,226 @@ object EffectLock {
     case Expr.Cst(_, _, _) =>
       Set.empty
 
-    case Expr.Var(sym, tpe, loc) =>
+    case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Hole(sym, tpe, eff, loc) =>
+    case Expr.Hole(_, _, _, _) =>
       Set.empty
 
-    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.HoleWithExp(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.OpenAs(symUse, exp, tpe, loc) =>
+    case Expr.OpenAs(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Use(sym, alias, exp, loc) =>
+    case Expr.Use(sym, alias, exp, _) => // TODO: look up functions in alias
       visitExp(exp)
 
-    case Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
-    case Expr.ApplyLocalDef(_, exps, arrowTpe, tpe, eff, loc) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _) =>
       Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
-    case Expr.Unary(sop, exp, tpe, eff, loc) =>
+    case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Region(tpe, loc) =>
+    case Expr.Region(_, _) =>
       Set.empty
 
-    case Expr.Scope(bnd, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.map(???)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.map(???)
 
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.map(???)
 
-    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+    case Expr.Tag(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Tuple(exps, tpe, eff, loc) =>
+    case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+    case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+    case Expr.RecordRestrict(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Expr.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ArrayLength(exp, eff, loc) =>
+    case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+    case Expr.StructNew(_, fields, _, _, _, _) =>
       visitExps(fields.map(_._2))
 
-    case Expr.StructGet(exp, sym, tpe, eff, loc) =>
+    case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) =>
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
+    case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.VectorLength(exp, loc) =>
+    case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.InstanceOf(exp, clazz, loc) =>
+    case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+    case Expr.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, sym, tpe, eff, loc) =>
+    case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.map(???)
 
-    case Expr.Throw(exp, tpe, eff, loc) =>
+    case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Handler(sym, rules, bodyType, bodyEff, handledEff, tpe, loc) =>
+    case Expr.Handler(_, rules, _, _, _, _, _) =>
       visitExps(rules.map(???))
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Do(op, exps, tpe, eff, loc) =>
+    case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+    case Expr.InvokeConstructor(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+    case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+    case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.GetField(field, exp, tpe, eff, loc) =>
+    case Expr.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expr.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.GetStaticField(field, tpe, eff, loc) =>
+    case Expr.GetStaticField(_, _, _, _) =>
       Set.empty
 
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expr.NewChannel(exp, tpe, eff, loc) =>
+    case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.GetChannel(exp, tpe, eff, loc) =>
+    case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Expr.SelectChannel(rules, default, _, _, _) =>
       visitExps(rules.map(???)) ++ default.map(visitExp)
 
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case Expr.ParYield(frags, exp, _, _, _) =>
       visitExp(frags.map(???)) ++ visitExp(exp)
 
-    case Expr.Lazy(exp, tpe, loc) =>
+    case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Force(exp, tpe, eff, loc) =>
+    case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       visitExps(cs.map(???))
 
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
+    case Expr.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Error(m, tpe, eff) =>
+    case Expr.Error(_, _, _) =>
       Set.empty
 
   }
