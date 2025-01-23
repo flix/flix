@@ -325,7 +325,7 @@ object ConstraintSolver2 {
     case c@TypeConstraint2.Trait(sym, tpe, loc) =>
 
       // Get all the instances from the context
-      val insts = trenv.getInstances(sym)
+      val insts = trenv.getInstance(sym, tpe)
 
       // Find the instance that matches
       val matches = insts.flatMap {
@@ -344,14 +344,11 @@ object ConstraintSolver2 {
       // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
       matches match {
         // Case 1: No match. Throw the constraint back in the pool.
-        case Nil => List(c)
+        case None => List(c)
 
         // Case 2: One match. Use the instance constraints.
-        case newConstrs :: Nil => newConstrs.map(traitConstraintToTypeConstraint)
-
-        // Case 3: Multiple matches. Throw the constraint back in the pool.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => List(c)
+        case Some(newConstrs) =>
+          newConstrs.map(traitConstraintToTypeConstraint)
       }
   }
 
