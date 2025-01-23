@@ -785,10 +785,10 @@ object Completion {
   /**
     * Represents a Signature completion
     *
-    * @param sig  the signature.
+    * @param sig        the signature.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
-    * @param inScope    indicate whether to the type alias is inScope.
+    * @param inScope    indicate whether to the signature is inScope.
     */
   case class SigCompletion(sig: TypedAst.Sig, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 

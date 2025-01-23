@@ -54,7 +54,7 @@ object SignatureCompleter {
   }
 
   /**
-    * Returns `true` if the given trait signature `sig` should be included in the suggestions.
+    * Returns `true` if the given signature `sig` should be included in the suggestions.
     */
   private def matchesSig(sig: TypedAst.Sig, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = sig.spec.mod.isPublic && !sig.spec.ann.isInternal
