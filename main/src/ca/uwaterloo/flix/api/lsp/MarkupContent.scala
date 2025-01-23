@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.*
 
@@ -27,11 +26,4 @@ import org.json4s.*
   */
 case class MarkupContent(kind: MarkupKind, value: String) {
   def toJSON: JValue = ("kind" -> kind.toJSON) ~ ("value" -> value)
-
-  def toLsp4j: lsp4j.MarkupContent ={
-    val content = new lsp4j.MarkupContent()
-    content.setKind(kind.toLsp4j)
-    content.setValue(value)
-    content
-  }
 }
