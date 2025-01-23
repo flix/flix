@@ -45,6 +45,28 @@ class EffectLockSuite extends AnyFunSuite {
     assert(result == expected)
   }
 
+  test("Reachable.03") {
+    val input =
+      """
+        |use A.{q => f}
+        |
+        |mod A {
+        |    pub def q(): Unit = ()
+        |}
+        |
+        |def main(): Unit =
+        |    g(f)
+        |
+        |def g(h: Unit -> Unit): Unit = h()
+        |
+        |def a(): Unit = ()
+        |
+      """.stripMargin
+    val result = reachableDefs(checkEffectLock(input))
+    val expected = Set("main", "q", "g")
+    assert(result == expected)
+  }
+
   private def checkEffectLock(input: String): Option[TypedAst.Root] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
