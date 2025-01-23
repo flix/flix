@@ -7,8 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class EffectLockSuite extends AnyFunSuite {
 
-  test("EffectLock.01") {
-    val input = {
+  test("Reachable.01") {
+    val input =
       """
         |def main(): Unit =
         |    g(f)
@@ -20,9 +20,28 @@ class EffectLockSuite extends AnyFunSuite {
         |def a(): Unit = ()
         |
       """.stripMargin
-    }
     val result = reachableDefs(checkEffectLock(input))
     val expected = Set("main", "f", "g")
+    assert(result == expected)
+  }
+
+  test("Reachable.02") {
+    val input =
+      """
+        |use A.{q => f}
+        |
+        |mod A {
+        |    pub def q(): Unit = ()
+        |}
+        |
+        |def main(): Unit =
+        |    g(f)
+        |
+        |def g(h: Unit -> Unit): Unit = h()
+        |
+      """.stripMargin
+    val result = reachableDefs(checkEffectLock(input))
+    val expected = Set("main", "q", "g")
     assert(result == expected)
   }
 
