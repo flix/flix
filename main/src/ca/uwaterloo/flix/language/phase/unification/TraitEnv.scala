@@ -19,9 +19,14 @@ import ca.uwaterloo.flix.language.ast.shared.{Instance, TraitContext}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeHead}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+
 /**
   * The trait environment stores information about traits.
   */
+object TraitEnv {
+  val empty: TraitEnv = TraitEnv(Map.empty)
+}
+
 case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
 
   /**
@@ -132,8 +137,4 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
     val indirectSupers = directSupers.toSet.flatMap(getTransitiveSuperTraits)
     indirectSupers ++ directSupers
   }
-}
-
-object TraitEnv {
-  val empty: TraitEnv = TraitEnv(Map.empty)
 }
