@@ -41,6 +41,13 @@ object Position {
     Position(loc.endLine, loc.endCol)
 
   /**
+    * Returns a position from the given LSP `Position` `pos`.
+    * NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
+    */
+  def fromLsp4j(pos: lsp4j.Position): Position =
+    Position(pos.getLine + 1, pos.getCharacter + 1)
+
+  /**
     * Tries to parse the given `json` value as a [[Position]].
     */
   def parse(json: JValue): Result[Position, String] = {
@@ -70,6 +77,7 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
   // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toJSON: JValue = ("line" -> (line - 1)) ~ ("character" -> (character - 1))
 
+  // NB: LSP line and column numbers are zero-indexed, but Flix uses one-indexed numbers internally.
   def toLsp4j: lsp4j.Position = new lsp4j.Position(line - 1, character - 1)
 
   def compare(that: Position): Int = {
