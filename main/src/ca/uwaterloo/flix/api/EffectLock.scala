@@ -16,6 +16,7 @@ object EffectLock {
   private def getEffectLockFile(p: Path): Path = p.resolve("./effect.lock").normalize()
 
   def effectLock(path: Path, bootstrap: Bootstrap, flix: Flix): Validation[Unit, BootstrapError] = {
+    // TODO: Refactor this to callee (Main) and pass the root and Flix instance to this function instead
     bootstrap.check(flix) match {
       case Validation.Failure(errors) => Validation.Failure(errors)
       case Validation.Success(root) =>
