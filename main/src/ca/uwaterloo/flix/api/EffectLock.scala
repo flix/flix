@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 
 import java.nio.file.{Files, Path}
@@ -142,13 +143,16 @@ object EffectLock {
       visitExp(exp)
 
     case Expr.Match(exp, rules, _, _, _) =>
-      visitExp(exp) ++ rules.map(???)
+      val exps = rules.flatMap(r => r.exp :: r.guard.toList)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ rules.map(???)
+      val exps = rules.map(_.exp)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-      visitExp(exp) ++ rules.map(???)
+      val exps = rules.map(_.exp)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expr.Tag(_, exps, _, _, _) =>
       visitExps(exps)
@@ -220,13 +224,15 @@ object EffectLock {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ rules.map(???)
+      val exps = rules.map(_.exp)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      visitExps(rules.map(???))
+      val exps = rules.map(_.exp)
+      visitExps(exps)
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -268,13 +274,15 @@ object EffectLock {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
-      visitExps(rules.map(???)) ++ default.map(visitExp)
+      val exps = rules.flatMap(r => r.exp :: r.chan :: Nil)
+      visitExps(exps) ++ default.map(visitExp)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
-      visitExp(frags.map(???)) ++ visitExp(exp)
+      val exps = frags.map(_.exp)
+      visitExps(exps) ++ visitExp(exp)
 
     case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -283,9 +291,18 @@ object EffectLock {
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
-      visitExps(cs.map(???))
+      val exps = cs.flatMap {
+        case TypedAst.Constraint(_, TypedAst.Predicate.Head.Atom(_, _, exps1, _, _), body, _) =>
+          val exps2 = body.flatMap {
+            case Body.Atom(_, _, _, _, _, _, _) => List.empty
+            case Body.Functional(_, exp, _) => List(exp)
+            case Body.Guard(exp, _) => List(exp)
+          }
+          exps1 ::: exps2
+      }
+      visitExps(exps)
 
-    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
