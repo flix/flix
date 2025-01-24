@@ -22,7 +22,7 @@ class TestListMap extends AnyFunSuite {
 
   test("ListMap.from.02"){
     val lm = ListMap.from((1, 2) :: (2, 3) :: (1, 3) ::  Nil)
-    assert(lm.m == Map(1 -> List(2, 3), 2 -> List(3)))
+    assert(lm.m == Map(1 -> List(3, 2), 2 -> List(3)))
   }
 
   test("ListMap.map.01"){
@@ -58,7 +58,7 @@ class TestListMap extends AnyFunSuite {
   test("ListMap.+.02"){
     val lm1 = ListMap(1 -> List(1, 2), 2 -> List(3, 4))
     val res = lm1 + (1, 1) + (1, 2) + (1, 3)
-    assert(res == ListMap(1 -> List(3, 2, 1, 1, 2), 2 -> List(3, 4), 3 -> List(5)))
+    assert(res == ListMap(1 -> List(3, 2, 1, 1, 2), 2 -> List(3, 4)))
   }
 
   test("ListMap.++.01"){
