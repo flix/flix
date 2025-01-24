@@ -1,4 +1,4 @@
-name: remote ssh command
+name: Compiler Performance
 on: [push]
 jobs:
   build:
@@ -9,7 +9,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EXTERNAL_HOST }}
-          username: ${{ secrets.EXTERNAL_USER }}
+          username: gh
           password: ${{ secrets.EXTERNAL_PASS }}
           port: 22
           script: /home/gh/run.sh
