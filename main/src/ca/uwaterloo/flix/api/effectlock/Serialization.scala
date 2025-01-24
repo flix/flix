@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
 
 object Serialization {
 
+  // TODO: Scheme: only use base and list of typevar
+
   // TODO: Consider making Serializable super / marker trait
 
   def fromType(tpe: Type): SerializableType = tpe match {
@@ -308,7 +310,7 @@ object Serialization {
 
   }
 
-  sealed trait SerializableKind
+  sealed trait SerializableKind // only have star, eff, arrow
 
   object SerializableKind {
     case object Wild extends SerializableKind
@@ -341,10 +343,10 @@ object Serialization {
   sealed trait SerializableName
 
   object SerializableName {
-    case class Ident(name: String) extends SerializableName
+    case class Ident(name: String) extends SerializableName // jvm types do not exist after typing
   }
 
-  sealed trait SerializableSymbol
+  sealed trait SerializableSymbol // only have varsym(int, string / text, kind), exceptions otherwise
 
   object SerializableSymbol {
 
@@ -360,6 +362,6 @@ object Serialization {
 
   }
 
-  case class SerializableScope(syms: List[SerializableSymbol.KindedTypeVarSym])
+  case class SerializableScope(syms: List[SerializableSymbol.KindedTypeVarSym]) // drop
 
 }

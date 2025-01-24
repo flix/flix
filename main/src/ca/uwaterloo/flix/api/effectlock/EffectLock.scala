@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypedAst}
 import ca.uwaterloo.flix.util.Validation
 
 import java.nio.file.{Files, Path}
@@ -31,4 +31,8 @@ object EffectLock {
       case (sym, defn) => s"$sym:${defn.spec}"
     }.toList
   }
+
+  def isSafe1(tpe1: Type, tpe2: Type): Boolean = ???
+
+  def isSafe2(sc1: Scheme, sc2: Scheme): Boolean = ???
 }
