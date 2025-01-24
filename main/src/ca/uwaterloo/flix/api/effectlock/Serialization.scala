@@ -1,13 +1,66 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 
 object Serialization {
 
   // TODO: Consider making Serializable super / marker trait
 
-  def fromType(tpe: Type): SerializableType = ???
+  def fromType(tpe: Type): SerializableType = tpe match {
+    case Type.Var(sym, loc) =>
+      // TODO: Consider not using qualified case classes but just classes so we can use simple recursion
+      // TODO: If there is a 1:1 mapping, then foregoing some type safety is ok
+      val serializableSym = SerializableSymbol.KindedTypeVarSym(sym.id, sym.text, fromKind(sym.kind), sym.isRegion, sym.isSlack, fromScope(sym.scope))
+      SerializableType.Var(serializableSym)
+    case Type.Cst(tc, loc) => ???
+    case Type.Apply(tpe1, tpe2, loc) => ???
+    case Type.Alias(symUse, args, tpe, loc) => ???
+    case Type.AssocType(symUse, arg, kind, loc) => ???
+    case Type.JvmToType(tpe, loc) => ???
+    case Type.JvmToEff(tpe, loc) => ???
+    case Type.UnresolvedJvmType(member, loc) => ???
+  }
+
+  def fromSymbol(sym0: Symbol): SerializableSymbol = sym0 match {
+    case sym: Symbol.VarSym => ???
+    case sym: Symbol.KindedTypeVarSym =>
+      SerializableSymbol.KindedTypeVarSym(sym.id, sym.text, fromKind(sym.kind), sym.isRegion, sym.isSlack, fromScope(sym.scope))
+    case sym: Symbol.UnkindedTypeVarSym => ???
+    case sym: Symbol.DefnSym => ???
+    case sym: Symbol.EnumSym => ???
+    case sym: Symbol.StructSym => ???
+    case sym: Symbol.RestrictableEnumSym => ???
+    case sym: Symbol.CaseSym => ???
+    case sym: Symbol.StructFieldSym => ???
+    case sym: Symbol.RestrictableCaseSym => ???
+    case sym: Symbol.TraitSym => ???
+    case sym: Symbol.SigSym => ???
+    case sym: Symbol.LabelSym => ???
+    case sym: Symbol.HoleSym => ???
+    case sym: Symbol.TypeAliasSym => ???
+    case sym: Symbol.AssocTypeSym => ???
+    case sym: Symbol.EffectSym => ???
+    case sym: Symbol.OpSym => ???
+    case sym: Symbol.ModuleSym => ???
+  }
+
+  def fromKind(kind0: Kind): SerializableKind = kind0 match {
+    case Kind.Wild => ???
+    case Kind.WildCaseSet => ???
+    case Kind.Star => ???
+    case Kind.Eff => ???
+    case Kind.Bool => ???
+    case Kind.RecordRow => ???
+    case Kind.SchemaRow => ???
+    case Kind.Predicate => ???
+    case Kind.Jvm => ???
+    case Kind.CaseSet(sym) => ???
+    case Kind.Arrow(k1, k2) => ???
+    case Kind.Error => ???
+  }
+
+  def fromScope(scope0: Scope): SerializableScope = ???
 
   def toType(serializableType: SerializableType): Type = ???
 
@@ -196,10 +249,9 @@ object Serialization {
 
   object SerializableSymbol {
 
-    case class KindedTypeVarSym(id: Int, text: VarText, kind: SerializableKind, isRegion: Boolean, isSlack: Boolean, scope: Scope) extends SerializableSymbol
+    case class KindedTypeVarSym(id: Int, text: VarText, kind: SerializableKind, isRegion: Boolean, isSlack: Boolean, scope: SerializableScope) extends SerializableSymbol
 
     case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[SerializableName.Ident]) extends SerializableSymbol
-
 
     case class TypeAliasSym(namespace: List[String], name: String) extends SerializableSymbol
 
@@ -207,6 +259,8 @@ object Serialization {
 
     case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
 
-    case class Scope(syms: List[SerializableSymbol.KindedTypeVarSym])
   }
+
+  case class SerializableScope(syms: List[SerializableSymbol.KindedTypeVarSym])
+
 }
