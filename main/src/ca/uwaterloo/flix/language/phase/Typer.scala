@@ -53,7 +53,7 @@ object Typer {
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = ListMap(collectModules(root))
 
-    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, None, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
 
     (result, sctx.errors.asScala.toList)
 
