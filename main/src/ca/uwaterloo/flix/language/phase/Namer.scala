@@ -635,14 +635,18 @@ object Namer {
       NamedAst.Expr.Region(tpe, loc)
 
     case DesugaredAst.Expr.Scope(ident, exp, loc) =>
-      // Introduce a fresh variable symbol for the region.
-      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(sym.text), isRegion = true, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = true, loc)
+
+      // Create a new scope for the region.
+      val newScope = scope.enter(regionVar.withKind(Kind.Eff))
+
+      // Introduce a fresh variable symbol for the region.
+      // The fresh variable is considered to be in the region.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)(newScope, flix)
 
       // Visit the body in the inner scope
-      val e = visitExp(exp, ns0)(scope.enter(regionVar.withKind(Kind.Eff)), sctx, flix)
+      val e = visitExp(exp, ns0)(newScope, sctx, flix)
       NamedAst.Expr.Scope(sym, regionVar, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
