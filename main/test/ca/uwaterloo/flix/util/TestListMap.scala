@@ -26,8 +26,8 @@ class TestListMap extends AnyFunSuite {
   }
 
   test("ListMap.apply.02"){
-    val lm = ListMap(1 -> List(1, 2), 2 -> List(3, 4), 1 -> List(1, 2))
-    assert(lm.m == Map(1 -> List(1, 2, 1, 2), 2 -> List(3, 4)))
+    val lm = ListMap(1 -> List(1, 2), 2 -> List(3, 4), 1 -> List(3, 4))
+    assert(lm.m == Map(1 -> List(3, 4, 1, 2), 2 -> List(3, 4)))
   }
 
   test("ListMap.from.01"){
