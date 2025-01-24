@@ -12,4 +12,4 @@ jobs:
           username: gh
           password: ${{ secrets.EXTERNAL_PASS }}
           port: 22
-          script: /home/gh/run.sh
+          script: /home/gh/run.sh ${{ github.ref_name }}
