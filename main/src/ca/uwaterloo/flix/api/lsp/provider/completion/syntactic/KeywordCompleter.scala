@@ -81,7 +81,6 @@ object KeywordCompleter {
     */
   def getEffectKeywords: List[Completion] =
     List(
-      Completion.KeywordCompletion("eff", Priority.Default),
       Completion.KeywordCompletion("def", Priority.Default)
     )
 
