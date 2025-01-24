@@ -100,7 +100,6 @@ object CompletionProvider {
 
           // Patterns.
           case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx)
-//            ++ EnumTagCompleter.getCompletions(ctx)
 
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
