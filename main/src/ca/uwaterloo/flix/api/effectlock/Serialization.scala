@@ -25,9 +25,9 @@ object Serialization {
 
     case class Apply(tpe1: SerializableType, tpe2: SerializableType) extends SerializableType
 
-    // case class Alias(symUse: TypeAliasSymUse, args: List[SerializableType], tpe: SerializableType) extends Type
+    case class Alias(symUse: SerializableSymbol.TypeAliasSym, args: List[SerializableType], tpe: SerializableType) extends SerializableType
 
-    // case class AssocType(symUse: AssocTypeSymUse, arg: SerializableType, kind: SerializableKind) extends SerializableType
+    case class AssocType(symUse: SerializableSymbol.AssocTypeSym, arg: SerializableType, kind: SerializableKind) extends SerializableType
 
     case class JvmToType(tpe: SerializableType) extends SerializableType
 
@@ -38,6 +38,13 @@ object Serialization {
     sealed trait JvmMember
 
     object JvmMember {
+      case class JvmConstructor(clazz: String, tpes: List[SerializableType]) extends JvmMember
+
+      case class JvmField(tpe: SerializableType, name: SerializableName.Ident) extends JvmMember
+
+      case class JvmMethod(tpe: SerializableType, name: SerializableName.Ident, tpes: List[SerializableType]) extends JvmMember
+
+      case class JvmStaticMethod(clazz: String, name: SerializableName.Ident, tpes: List[SerializableType]) extends JvmMember
     }
 
   }
@@ -186,10 +193,18 @@ object Serialization {
   sealed trait SerializableSymbol
 
   object SerializableSymbol {
-    case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[SerializableName.Ident]) extends SerializableSymbol
 
     case class KindedTypeVarSym(id: Int, text: VarText, kind: SerializableKind, isRegion: Boolean, isSlack: Boolean, scope: Scope) extends SerializableSymbol
-  }
 
-  case class Scope(syms: List[SerializableSymbol.KindedTypeVarSym])
+    case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[SerializableName.Ident]) extends SerializableSymbol
+
+
+    case class TypeAliasSym(namespace: List[String], name: String) extends SerializableSymbol
+
+    case class AssocTypeSym(trt: SerializableSymbol.TraitSym, name: String) extends SerializableSymbol
+
+    case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
+
+    case class Scope(syms: List[SerializableSymbol.KindedTypeVarSym])
+  }
 }
