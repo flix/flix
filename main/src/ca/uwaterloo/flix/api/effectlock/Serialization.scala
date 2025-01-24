@@ -38,12 +38,14 @@ object Serialization {
     sealed trait JvmMember
 
     object JvmMember {
+      // TODO: Use class.getName()
       case class JvmConstructor(clazz: String, tpes: List[SerializableType]) extends JvmMember
 
       case class JvmField(tpe: SerializableType, name: SerializableName.Ident) extends JvmMember
 
       case class JvmMethod(tpe: SerializableType, name: SerializableName.Ident, tpes: List[SerializableType]) extends JvmMember
 
+      // TODO: Use class.getName()
       case class JvmStaticMethod(clazz: String, name: SerializableName.Ident, tpes: List[SerializableType]) extends JvmMember
     }
 
