@@ -30,6 +30,13 @@ object EnumTagCompleter {
     getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
   }
 
+  /**
+    * Returns a List of Completion for Tag for UndefinedTag.
+    */
+  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
       root.enums.values.flatMap(_.cases.values).collect{

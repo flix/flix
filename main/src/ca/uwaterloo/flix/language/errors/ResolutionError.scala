@@ -932,16 +932,16 @@ object ResolutionError {
   /**
     * Undefined Tag Error.
     *
-    * @param tag the tag.
+    * @param qn the tag.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined tag: '$tag'."
+  case class UndefinedTag(qn: Name.QName, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined tag: '$qn'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined tag '${red(tag)}'.
+      s""">> Undefined tag '${red(qn.toString)}'.
          |
          |${code(loc, "tag not found.")}
          |

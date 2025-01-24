@@ -25,7 +25,6 @@ object ExprCompleter {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
-      EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
       ModuleCompleter.getCompletions(context) ++
       HoleCompletion.getHoleCompletion(context, root)

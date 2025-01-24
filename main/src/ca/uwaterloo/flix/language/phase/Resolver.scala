@@ -2236,7 +2236,7 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedTag(qname,AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0, qname.loc))
       // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
       case caze :: _ => Result.Ok(caze)
     }
