@@ -1,25 +1,124 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
+import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
 
 object Serialization {
 
   // TODO: Consider making Serializable super / marker trait
 
   def fromType(tpe: Type): SerializableType = tpe match {
-    case Type.Var(sym, loc) =>
+    case Type.Var(sym, _) =>
       // TODO: Consider not using qualified case classes but just classes so we can use simple recursion
       // TODO: If there is a 1:1 mapping, then foregoing some type safety is ok
-      val serializableSym = SerializableSymbol.KindedTypeVarSym(sym.id, sym.text, fromKind(sym.kind), sym.isRegion, sym.isSlack, fromScope(sym.scope))
-      SerializableType.Var(serializableSym)
-    case Type.Cst(tc, loc) => ???
-    case Type.Apply(tpe1, tpe2, loc) => ???
-    case Type.Alias(symUse, args, tpe, loc) => ???
-    case Type.AssocType(symUse, arg, kind, loc) => ???
-    case Type.JvmToType(tpe, loc) => ???
-    case Type.JvmToEff(tpe, loc) => ???
-    case Type.UnresolvedJvmType(member, loc) => ???
+      val serSym = SerializableSymbol.KindedTypeVarSym(sym.id, sym.text, fromKind(sym.kind), sym.isRegion, sym.isSlack, fromScope(sym.scope))
+      SerializableType.Var(serSym)
+
+    case Type.Cst(tc, _) =>
+      val serTC = fromTypeConstructor(tc)
+      SerializableType.Cst(serTC)
+
+    case Type.Apply(tpe1, tpe2, _) =>
+      val serT1 = fromType(tpe1)
+      val serT2 = fromType(tpe2)
+      SerializableType.Apply(serT1, serT2)
+
+    case Type.Alias(SymUse.TypeAliasSymUse(sym, _), args, tpe, _) =>
+      val serSym = SerializableSymbol.TypeAliasSym(sym.namespace, sym.name)
+      val serTs = args.map(fromType)
+      val serT = fromType(tpe)
+      SerializableType.Alias(serSym, serTs, serT)
+
+    case Type.AssocType(SymUse.AssocTypeSymUse(sym, _), arg, kind, _) =>
+      val serTrtSym = SerializableSymbol.TraitSym(sym.trt.namespace, sym.trt.name)
+      val serSym = SerializableSymbol.AssocTypeSym(serTrtSym, sym.name)
+      val serT = fromType(arg)
+      val serKind = fromKind(kind)
+
+      SerializableType.AssocType(serSym, serT, serKind)
+    case Type.JvmToType(tpe, _) =>
+      val serT = fromType(tpe)
+      SerializableType.JvmToType(serT)
+
+    case Type.JvmToEff(tpe, _) =>
+      val serT = fromType(tpe)
+      SerializableType.JvmToEff(serT)
+
+    case Type.UnresolvedJvmType(member, _) =>
+      val serMem = fromMember(member)
+      SerializableType.UnresolvedJvmType(serMem)
+
+  }
+
+  def fromTypeConstructor(tc0: TypeConstructor): SerializableTypeConstructor = tc0 match {
+    case TypeConstructor.Void => ???
+    case TypeConstructor.AnyType => ???
+    case TypeConstructor.Unit => ???
+    case TypeConstructor.Null => ???
+    case TypeConstructor.Bool => ???
+    case TypeConstructor.Char => ???
+    case TypeConstructor.Float32 => ???
+    case TypeConstructor.Float64 => ???
+    case TypeConstructor.BigDecimal => ???
+    case TypeConstructor.Int8 => ???
+    case TypeConstructor.Int16 => ???
+    case TypeConstructor.Int32 => ???
+    case TypeConstructor.Int64 => ???
+    case TypeConstructor.BigInt => ???
+    case TypeConstructor.Str => ???
+    case TypeConstructor.Regex => ???
+    case TypeConstructor.Arrow(arity) => ???
+    case TypeConstructor.ArrowWithoutEffect(arity) => ???
+    case TypeConstructor.RecordRowEmpty => ???
+    case TypeConstructor.RecordRowExtend(label) => ???
+    case TypeConstructor.Record => ???
+    case TypeConstructor.SchemaRowEmpty => ???
+    case TypeConstructor.SchemaRowExtend(pred) => ???
+    case TypeConstructor.Schema => ???
+    case TypeConstructor.Sender => ???
+    case TypeConstructor.Receiver => ???
+    case TypeConstructor.Lazy => ???
+    case TypeConstructor.Enum(sym, kind) => ???
+    case TypeConstructor.Struct(sym, kind) => ???
+    case TypeConstructor.RestrictableEnum(sym, kind) => ???
+    case TypeConstructor.Native(clazz) => ???
+    case TypeConstructor.JvmConstructor(constructor) => ???
+    case TypeConstructor.JvmMethod(method) => ???
+    case TypeConstructor.JvmField(field) => ???
+    case TypeConstructor.Array => ???
+    case TypeConstructor.ArrayWithoutRegion => ???
+    case TypeConstructor.Vector => ???
+    case TypeConstructor.Tuple(l) => ???
+    case TypeConstructor.Relation => ???
+    case TypeConstructor.Lattice => ???
+    case TypeConstructor.True => ???
+    case TypeConstructor.False => ???
+    case TypeConstructor.Not => ???
+    case TypeConstructor.And => ???
+    case TypeConstructor.Or => ???
+    case TypeConstructor.Pure => ???
+    case TypeConstructor.Univ => ???
+    case TypeConstructor.Complement => ???
+    case TypeConstructor.Union => ???
+    case TypeConstructor.Intersection => ???
+    case TypeConstructor.Difference => ???
+    case TypeConstructor.SymmetricDiff => ???
+    case TypeConstructor.Effect(sym) => ???
+    case TypeConstructor.CaseComplement(sym) => ???
+    case TypeConstructor.CaseUnion(sym) => ???
+    case TypeConstructor.CaseIntersection(sym) => ???
+    case TypeConstructor.CaseSet(syms, enumSym) => ???
+    case TypeConstructor.RegionToStar => ???
+    case TypeConstructor.RegionWithoutRegion => ???
+    case TypeConstructor.Error(id, kind) => ???
+  }
+
+  def fromMember(member0: Type.JvmMember): SerializableType.JvmMember = member0 match {
+    case JvmMember.JvmConstructor(clazz, tpes) => ???
+    case JvmMember.JvmField(base, tpe, name) => ???
+    case JvmMember.JvmMethod(tpe, name, tpes) => ???
+    case JvmMember.JvmStaticMethod(clazz, name, tpes) => ???
   }
 
   def fromSymbol(sym0: Symbol): SerializableSymbol = sym0 match {
