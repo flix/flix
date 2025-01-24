@@ -12,4 +12,4 @@ jobs:
           username: ${{ secrets.EXTERNAL_USER }}
           password: ${{ secrets.EXTERNAL_PASS }}
           port: 22
-          script: whoami
+          script: date
