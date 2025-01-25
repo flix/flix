@@ -774,7 +774,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
-      val evar = Type.freshVar(Kind.Eff, m.loc)
+      val evar = Type.freshEffSlackVar(m.loc)
       KindedAst.Expr.Error(m, tvar, evar)
   }
 
