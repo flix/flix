@@ -1239,8 +1239,8 @@ object Parser2 {
 
     private def effectDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordEff))
-      expect(TokenKind.KeywordEff, SyntacticContext.Decl.Module)
-      nameUnqualified(NAME_EFFECT, SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordEff, SyntacticContext.Decl.Effect)
+      nameUnqualified(NAME_EFFECT, SyntacticContext.Decl.Effect)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
@@ -1266,11 +1266,11 @@ object Parser2 {
               while (!nth(0).isFirstEff && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Effect, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
-        expect(TokenKind.CurlyR, SyntacticContext.Decl.Module)
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Effect)
       }
       close(mark, TreeKind.Decl.Effect)
     }

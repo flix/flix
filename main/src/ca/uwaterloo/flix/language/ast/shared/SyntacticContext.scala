@@ -32,6 +32,8 @@ object SyntacticContext {
   object Decl {
     case object Enum extends Decl
 
+    case object Effect extends Decl
+
     case object Instance extends Decl
 
     case object Module extends Decl

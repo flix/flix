@@ -27,7 +27,7 @@ object ListMap {
   /**
     * Returns the empty list map.
     */
-  def empty[K, V]: ListMap[K, V] = ListMap(Map.empty)
+  def empty[K, V]: ListMap[K, V] = ListMap(Map.empty[K, List[V]])
 
   /**
     * Returns a singleton list map with a mapping from `k` to `v`.
@@ -35,11 +35,26 @@ object ListMap {
   def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k -> v)
 
   /**
-    * Creates a ListMap from the given iterable.
+    * Creates a ListMap from the given iterable of key-value pairs.
+    *
+    * Note that from takes a different type of iterable than `apply`.
+    * If you want to create a ListMap from a list of key-valueList pairs, use `apply`.
     */
   def from[K, V](it: Iterable[(K, V)]): ListMap[K, V] = {
     it.iterator.foldLeft(ListMap.empty[K, V]) {
       case (acc, (k, v)) => acc + (k, v)
+    }
+  }
+
+  /**
+    * Creates a ListMap from the given key-valueList pairs.
+    *
+    * Note that apply takes a different type of iterable than `from`.
+    * If you want to create a ListMap from a list of key-value pairs, use `from`.
+    */
+  def apply[K, V](elems: (K, List[V])*): ListMap[K, V] = {
+    elems.foldLeft(ListMap.empty[K, V]) {
+      case (acc, (k, vs)) => acc ++ (k -> vs)
     }
   }
 }
@@ -106,6 +121,18 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
       v <- vs
       if (p(k, v))
     } yield (k, v)
+  }
+
+  /**
+    * Folds the values in the list map using the given function `f`.
+    * The function `f` takes an accumulator `z` and a tuple `(k, v)` where `v` is a value of type V instead of a list of V.
+    */
+  def foldLeft[A](z: A)(f: (A, (K, V)) => A): A = {
+    m.foldLeft(z) {
+      case (acc, (k, vs)) => vs.foldLeft(acc) {
+        case (acc2, v) => f(acc2, (k, v))
+      }
+    }
   }
 
   /**
