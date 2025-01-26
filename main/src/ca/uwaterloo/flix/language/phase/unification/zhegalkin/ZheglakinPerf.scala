@@ -78,7 +78,7 @@ object ZheglakinPerf {
     // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
     val q12 = allEquationSystems.map {
       system =>
-        system.length.toString + ", " + system.foldLeft(0) {
+        system.foldLeft(0) {
           (acc, eqn) => acc + eqn.varsOf.size
         }
     }
@@ -91,28 +91,25 @@ object ZheglakinPerf {
         }
     }
 
-    // (RQ1.4) What is the (min, max, avg, median) number of flexible sub-effect variables?
-    val numberOfEffSlackVarsPerSystem = Nil // TODO
-
     val py1 =
       """import seaborn
         |import matplotlib.pyplot as plt
-        |from numpy import loadtxt
+        |import pandas as pd
         |
-        |data = [loadtxt("numberOfConstraintsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
+        |df = pd.read_csv('data.txt')
         |
         |seaborn.set(style = 'whitegrid')
-        |palette = [seaborn.color_palette()[0]]
-        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
+        |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.2)
         |
         |plt.title("Constraints per Equation System")
         |plt.xlabel("Number of Constraints")
+        |plt.xlim(1, None)
+        |
         |plt.grid(True)
         |
         |plt.savefig('numberOfConstraintsPerSystem.png')
         |
         |plt.show()
-        |
         |""".stripMargin
 
     val py2 =
@@ -120,10 +117,11 @@ object ZheglakinPerf {
         |import matplotlib.pyplot as plt
         |import pandas as pd
         |
-        |df = pd.read_csv('numberOfFlexibleVarsPerSystem.txt')
+        |df = pd.read_csv('data.txt')
         |
         |seaborn.set(style = 'whitegrid')
-        |seaborn.scatterplot(data=df, x="Size", y="Vars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
         |
         |plt.title("Flexible Variables per Constraint System")
         |plt.ylabel("Number of Flexible Variables")
@@ -131,47 +129,41 @@ object ZheglakinPerf {
         |plt.ylim(None, 120)
         |plt.grid(True)
         |
-        |plt.savefig('numberOfFlexibleVarsPerSystem.png')
+        |plt.savefig('numberOfVarsPerSystem.png')
         |
         |plt.show()
-        |
         |""".stripMargin
 
-    val py3 =
-      """import seaborn
-        |import matplotlib.pyplot as plt
-        |from numpy import loadtxt
-        |
-        |data = [loadtxt("numberOfRigidVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
-        |
-        |seaborn.set(style = 'whitegrid')
-        |palette = [seaborn.color_palette()[2]]
-        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
-        |
-        |plt.title("Rigid Constants per Constraint System")
-        |plt.ylabel("Number of Rigid Constants")
-        |plt.grid(True)
-        |
-        |plt.savefig('numberOfRigidVarsPerSystem.png')
-        |
-        |plt.show()
-        |
-        |""".stripMargin
+    val table = allEquationSystems.map {
+      system =>
+        val numberOfConstraints = system.length
+        val numberOfFlexVariables = system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.varsOf.size
+        }
+        val numberOfRigidVariables = system.foldLeft(0) {
+          (acc, eqn) => acc + eqn.cstsOf.size
+        }
+        (numberOfConstraints, numberOfFlexVariables, numberOfRigidVariables)
+    }
 
+    val data = "Constraints,FlexVars,RigidVars" + "\n" + table.map(t => s"${t._1},${t._2},${t._3}").mkString("\n")
+    FileOps.writeString(Paths.get("./data.txt"), data)
     FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.py"), py1)
-    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.txt"), q11.mkString("\n"))
-
-    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.py"), py2)
-    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), "Size,Vars" + "\n" + q12.mkString("\n"))
-
-    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.py"), py3)
-    FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.txt"), q13.mkString("\n"))
+    FileOps.writeString(Paths.get("./numberOfVarsPerSystem.py"), py2)
 
     println("-" * 80)
     println(s"                    Total          Min       Max       Avg       Med")
     println(f"Constraints       ${q11.sum}%,7d            ${q11.min}       ${q11.max}%,3d       ${StatUtils.average(q11)}%1.1f       ${StatUtils.median(q11)}%1.1f")
-    //println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
+    println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
     println(f"Rigid Vars        ${q13.sum}%,7d            ${q13.min}       ${q13.max}%,3d       ${StatUtils.average(q13)}%1.1f       ${StatUtils.median(q13)}%1.1f")
+    println("-" * 80)
+    println()
+    println("-" * 80)
+    println(f"\\newcommand{\\TotalNumberOfConstraints}{${table.map(_._1).sum}%,d}")
+    println(f"\\newcommand{\\MinNumberOfConstraints}{${table.map(_._1).min}%,d}")
+    println(f"\\newcommand{\\MaxNumberOfConstraints}{${table.map(_._1).max}%,d}")
+    println(f"\\newcommand{\\AverageNumberOfConstraints}{${average(table.map(_._1))}%1.1f}")
+    println(f"\\newcommand{\\MedianNumberOfConstraints}{${median(table.map(_._1))}%1.1f}")
     println("-" * 80)
     println()
   }
