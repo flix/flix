@@ -78,7 +78,7 @@ object ZheglakinPerf {
     // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
     val q12 = allEquationSystems.map {
       system =>
-        system.foldLeft(0) {
+        system.length.toString + ", " + system.foldLeft(0) {
           (acc, eqn) => acc + eqn.varsOf.size
         }
     }
@@ -118,17 +118,17 @@ object ZheglakinPerf {
     val py2 =
       """import seaborn
         |import matplotlib.pyplot as plt
-        |from numpy import loadtxt
+        |import pandas as pd
         |
-        |data = [loadtxt("numberOfFlexibleVarsPerSystem.txt", comments="#", delimiter=",", unpack=False)]
+        |df = pd.read_csv('numberOfFlexibleVarsPerSystem.txt')
         |
         |seaborn.set(style = 'whitegrid')
-        |palette = [seaborn.color_palette()[1]]
-        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5, palette=palette)
-        |seaborn.stripplot(x=data[0], size=4.0, jitter=0.5)
+        |seaborn.scatterplot(data=df, x="Size", y="Vars", alpha=0.2)
         |
         |plt.title("Flexible Variables per Constraint System")
         |plt.ylabel("Number of Flexible Variables")
+        |plt.xlim(None, 120)
+        |plt.ylim(None, 120)
         |plt.grid(True)
         |
         |plt.savefig('numberOfFlexibleVarsPerSystem.png')
@@ -162,7 +162,7 @@ object ZheglakinPerf {
     FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.txt"), q11.mkString("\n"))
 
     FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.py"), py2)
-    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), q12.mkString("\n"))
+    FileOps.writeString(Paths.get("./numberOfFlexibleVarsPerSystem.txt"), "Size,Vars" + "\n" + q12.mkString("\n"))
 
     FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.py"), py3)
     FileOps.writeString(Paths.get("./numberOfRigidVarsPerSystem.txt"), q13.mkString("\n"))
@@ -170,7 +170,7 @@ object ZheglakinPerf {
     println("-" * 80)
     println(s"                    Total          Min       Max       Avg       Med")
     println(f"Constraints       ${q11.sum}%,7d            ${q11.min}       ${q11.max}%,3d       ${StatUtils.average(q11)}%1.1f       ${StatUtils.median(q11)}%1.1f")
-    println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
+    //println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
     println(f"Rigid Vars        ${q13.sum}%,7d            ${q13.min}       ${q13.max}%,3d       ${StatUtils.average(q13)}%1.1f       ${StatUtils.median(q13)}%1.1f")
     println("-" * 80)
     println()
