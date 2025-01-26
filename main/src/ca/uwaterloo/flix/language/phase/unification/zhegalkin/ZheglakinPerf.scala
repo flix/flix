@@ -96,41 +96,31 @@ object ZheglakinPerf {
         |import matplotlib.pyplot as plt
         |import pandas as pd
         |
+        |seaborn.set(style = 'whitegrid')
+        |
         |df = pd.read_csv('data.txt')
         |
-        |seaborn.set(style = 'whitegrid')
-        |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.2)
-        |
+        |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.4)
         |plt.title("Constraints per Equation System")
-        |plt.xlabel("Number of Constraints")
+        |plt.xlabel("Constraints")
         |plt.xlim(1, None)
-        |
         |plt.grid(True)
         |
         |plt.savefig('numberOfConstraintsPerSystem.png')
-        |
         |plt.show()
-        |""".stripMargin
-
-    val py2 =
-      """import seaborn
-        |import matplotlib.pyplot as plt
-        |import pandas as pd
         |
-        |df = pd.read_csv('data.txt')
         |
-        |seaborn.set(style = 'whitegrid')
+        |
         |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
         |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
-        |
-        |plt.title("Flexible Variables per Constraint System")
-        |plt.ylabel("Number of Flexible Variables")
-        |plt.xlim(None, 120)
-        |plt.ylim(None, 120)
+        |plt.title("Flexible and Rigid Variables per Constraint System")
+        |plt.ylabel("Constraints")
+        |plt.ylabel("Variables")
+        |plt.xlim(1, 60)
+        |plt.ylim(1, 120)
         |plt.grid(True)
         |
         |plt.savefig('numberOfVarsPerSystem.png')
-        |
         |plt.show()
         |""".stripMargin
 
@@ -148,22 +138,26 @@ object ZheglakinPerf {
 
     val data = "Constraints,FlexVars,RigidVars" + "\n" + table.map(t => s"${t._1},${t._2},${t._3}").mkString("\n")
     FileOps.writeString(Paths.get("./data.txt"), data)
-    FileOps.writeString(Paths.get("./numberOfConstraintsPerSystem.py"), py1)
-    FileOps.writeString(Paths.get("./numberOfVarsPerSystem.py"), py2)
+    FileOps.writeString(Paths.get("./plots.py"), py1)
+
 
     println("-" * 80)
-    println(s"                    Total          Min       Max       Avg       Med")
-    println(f"Constraints       ${q11.sum}%,7d            ${q11.min}       ${q11.max}%,3d       ${StatUtils.average(q11)}%1.1f       ${StatUtils.median(q11)}%1.1f")
-    println(f"Flexible Vars     ${q12.sum}%,7d            ${q12.min}       ${q12.max}%,3d       ${StatUtils.average(q12)}%1.1f       ${StatUtils.median(q12)}%1.1f")
-    println(f"Rigid Vars        ${q13.sum}%,7d            ${q13.min}       ${q13.max}%,3d       ${StatUtils.average(q13)}%1.1f       ${StatUtils.median(q13)}%1.1f")
-    println("-" * 80)
-    println()
-    println("-" * 80)
-    println(f"\\newcommand{\\TotalNumberOfConstraints}{${table.map(_._1).sum}%,d}")
+    // Constraints
+    println(f"\\newcommand{\\TotNumberOfConstraints}{${table.map(_._1).sum}%,d}")
     println(f"\\newcommand{\\MinNumberOfConstraints}{${table.map(_._1).min}%,d}")
     println(f"\\newcommand{\\MaxNumberOfConstraints}{${table.map(_._1).max}%,d}")
-    println(f"\\newcommand{\\AverageNumberOfConstraints}{${average(table.map(_._1))}%1.1f}")
-    println(f"\\newcommand{\\MedianNumberOfConstraints}{${median(table.map(_._1))}%1.1f}")
+    println(f"\\newcommand{\\AvgNumberOfConstraints}{${average(table.map(_._1))}%1.1f}")
+    println(f"\\newcommand{\\MedNumberOfConstraints}{${median(table.map(_._1))}%1.1f}")
+    // Flexible Variables
+    println(f"\\newcommand{\\MinNumberOfFlexVars}{${table.map(_._2).min}%,d}")
+    println(f"\\newcommand{\\MaxNumberOfFlexVars}{${table.map(_._2).max}%,d}")
+    println(f"\\newcommand{\\AvgNumberOfFlexVars}{${average(table.map(_._2))}%1.1f}")
+    println(f"\\newcommand{\\MedNumberOfFlexVars}{${median(table.map(_._2))}%1.1f}")
+    // Rigid Variables
+    println(f"\\newcommand{\\MinNumberOfRigidVars}{${table.map(_._3).min}%,d}")
+    println(f"\\newcommand{\\MaxNumberOfRigidVars}{${table.map(_._3).max}%,d}")
+    println(f"\\newcommand{\\AvgNumberOfRigidVars}{${average(table.map(_._3))}%1.1f}")
+    println(f"\\newcommand{\\MedNumberOfRigidVars}{${median(table.map(_._3))}%1.1f}")
     println("-" * 80)
     println()
   }
