@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils, Subeffecting}
+import ca.uwaterloo.flix.util.{FileOps, Options, Subeffecting}
 
 import java.nio.file.Paths
 import scala.collection.mutable
@@ -31,7 +31,9 @@ object ZheglakinPerf {
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
-  private val Iterations: Int = 2
+  private val DefaultN: Int = 2
+
+  private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 
   private case class Config(
                              cacheInterCst: Boolean = false,
@@ -44,9 +46,14 @@ object ZheglakinPerf {
                            )
 
   def main(args: Array[String]): Unit = {
-    rq1(Iterations)
-    //rq3(Iterations)
-    //rq6(Iterations)
+    val N: Int = args.headOption.flatMap(_.toIntOption) match {
+      case None => DefaultN
+      case Some(n) => n
+    }
+
+    rq1(N)
+    rq3(N)
+    rq6(N)
   }
 
 
@@ -69,27 +76,6 @@ object ZheglakinPerf {
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
     val allEquationSystems = buffer.toList
-
-    // (RQ1.1) What is the (min, max, avg, median) number of constraints?
-    val q11 = allEquationSystems.map {
-      system => system.length
-    }
-
-    // (RQ1.2) What is the (min, max, avg, median) number of flexible variables?
-    val q12 = allEquationSystems.map {
-      system =>
-        system.foldLeft(0) {
-          (acc, eqn) => acc + eqn.varsOf.size
-        }
-    }
-
-    // (RQ1.3) What is the (min, max, avg, median) number of rigid variables?
-    val q13 = allEquationSystems.map {
-      system =>
-        system.foldLeft(0) {
-          (acc, eqn) => acc + eqn.cstsOf.size
-        }
-    }
 
     val py1 =
       """import seaborn
@@ -143,21 +129,21 @@ object ZheglakinPerf {
 
     println("-" * 80)
     // Constraints
-    println(f"\\newcommand{\\TotNumberOfConstraints}{${table.map(_._1).sum}%,d}")
-    println(f"\\newcommand{\\MinNumberOfConstraints}{${table.map(_._1).min}%,d}")
-    println(f"\\newcommand{\\MaxNumberOfConstraints}{${table.map(_._1).max}%,d}")
-    println(f"\\newcommand{\\AvgNumberOfConstraints}{${average(table.map(_._1))}%1.1f}")
-    println(f"\\newcommand{\\MedNumberOfConstraints}{${median(table.map(_._1))}%1.1f}")
+    println(f"\\newcommand{\\ConstraintsTot}{${table.map(_._1).sum}%,d}")
+    println(f"\\newcommand{\\ConstraintsMin}{${table.map(_._1).min}%,d}")
+    println(f"\\newcommand{\\ConstraintsMax}{${table.map(_._1).max}%,d}")
+    println(f"\\newcommand{\\ConstraintsAvg}{${average(table.map(_._1))}%1.1f}")
+    println(f"\\newcommand{\\ConstraintsMed}{${median(table.map(_._1))}%1.1f}")
     // Flexible Variables
-    println(f"\\newcommand{\\MinNumberOfFlexVars}{${table.map(_._2).min}%,d}")
-    println(f"\\newcommand{\\MaxNumberOfFlexVars}{${table.map(_._2).max}%,d}")
-    println(f"\\newcommand{\\AvgNumberOfFlexVars}{${average(table.map(_._2))}%1.1f}")
-    println(f"\\newcommand{\\MedNumberOfFlexVars}{${median(table.map(_._2))}%1.1f}")
+    println(f"\\newcommand{\\FlexVarsMin}{${table.map(_._2).min}%,d}")
+    println(f"\\newcommand{\\FlexVarsMax}{${table.map(_._2).max}%,d}")
+    println(f"\\newcommand{\\FlexVarsAvg}{${average(table.map(_._2))}%1.1f}")
+    println(f"\\newcommand{\\FlexVarsMed}{${median(table.map(_._2))}%1.1f}")
     // Rigid Variables
-    println(f"\\newcommand{\\MinNumberOfRigidVars}{${table.map(_._3).min}%,d}")
-    println(f"\\newcommand{\\MaxNumberOfRigidVars}{${table.map(_._3).max}%,d}")
-    println(f"\\newcommand{\\AvgNumberOfRigidVars}{${average(table.map(_._3))}%1.1f}")
-    println(f"\\newcommand{\\MedNumberOfRigidVars}{${median(table.map(_._3))}%1.1f}")
+    println(f"\\newcommand{\\RigidVarsMin}{${table.map(_._3).min}%,d}")
+    println(f"\\newcommand{\\RigidVarsMax}{${table.map(_._3).max}%,d}")
+    println(f"\\newcommand{\\RigidVarsAvg}{${average(table.map(_._3))}%1.1f}")
+    println(f"\\newcommand{\\RigidVarsMed}{${median(table.map(_._3))}%1.1f}")
     println("-" * 80)
     println()
   }
@@ -165,15 +151,15 @@ object ZheglakinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultAllFalse = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default)
+    val DefaultNoCaches = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
 
-    val m1 = runConfig(DefaultAllFalse, n).mdn
-    val m2 = runConfig(DefaultAllFalse.copy(cacheInterCst = true), n).mdn
-    val m3 = runConfig(DefaultAllFalse.copy(cacheUnion = true), n).mdn
-    val m4 = runConfig(DefaultAllFalse.copy(cacheInter = true), n).mdn
-    val m5 = runConfig(DefaultAllFalse.copy(cacheXor = true), n).mdn
-    val m6 = runConfig(DefaultAllFalse.copy(cacheSVE = true), n).mdn
-    val m7 = runConfig(DefaultAllFalse.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
+    val m1 = runConfig(DefaultNoCaches, n).mdn
+    val m2 = runConfig(DefaultNoCaches.copy(cacheInterCst = true), n).mdn
+    val m3 = runConfig(DefaultNoCaches.copy(cacheUnion = true), n).mdn
+    val m4 = runConfig(DefaultNoCaches.copy(cacheInter = true), n).mdn
+    val m5 = runConfig(DefaultNoCaches.copy(cacheXor = true), n).mdn
+    val m6 = runConfig(DefaultNoCaches.copy(cacheSVE = true), n).mdn
+    val m7 = runConfig(DefaultNoCaches.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
     println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} \\\\")
@@ -187,9 +173,7 @@ object ZheglakinPerf {
   private def rq6(n: Int): Unit = {
     println(RQ6)
 
-    val DefaultNoSubeffecting = Config(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true, opts = Options.Default)
-    val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
-
+    val DefaultNoSubeffecting = Config(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true, opts = Options.Default.copy(xsubeffecting = Set.empty))
     val base = runConfig(DefaultNoSubeffecting, n).mdn
     val unoptimized = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
     val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
@@ -296,22 +280,22 @@ object ZheglakinPerf {
     */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
-    flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
-    flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
-    flix.addSourceCode("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
-    flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
-    flix.addSourceCode("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
-    flix.addSourceCode("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
-    flix.addSourceCode("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
-    flix.addSourceCode("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
-    flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
-    flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
-    flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
+//    flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
+//    flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
+//    flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
+//    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
+//    flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
+//    flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
+//    flix.addSourceCode("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
+//    flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
+//    flix.addSourceCode("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
+//    flix.addSourceCode("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
+//    flix.addSourceCode("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
+//    flix.addSourceCode("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
+//    flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
+//    flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
+//    flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
+//    flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
 
   case class Run(lines: Int, time: Long)
