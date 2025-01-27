@@ -23,7 +23,6 @@ object TypeCompleter {
     * Returns a List of Completion for types (enums, aliases and builtin).
     */
   def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    ModuleCompleter.getCompletions(context) ++
       TypeBuiltinCompleter.getCompletions
   }
 

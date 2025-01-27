@@ -399,6 +399,24 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
+    case Completion.ModuleCompletion(module, ap, qualified, inScope) =>
+      val qualifiedName = module.toString
+      val name = if (qualified) qualifiedName else module.ns.last
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        kind                = CompletionItemKind.Module,
+        additionalTextEdits = additionalTextEdit
+      )
+
     case Completion.InstanceCompletion(trt, completion) =>
       val traitSym = trt.sym
       CompletionItem(
@@ -801,6 +819,16 @@ object Completion {
     * @param inScope    indicate whether to the signature is inScope.
     */
   case class EnumTagCompletion(tag: TypedAst.Case, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a Module completion
+    *
+    * @param module        the module.
+    * @param ap         the anchor position for the use statement.
+    * @param qualified  indicate whether to use a qualified label.
+    * @param inScope    indicate whether to the signature is inScope.
+    */
+  case class ModuleCompletion(module: Symbol.ModuleSym, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Instance completion (based on traits)

@@ -26,7 +26,6 @@ object ExprCompleter {
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
       ExprSnippetCompleter.getCompletions() ++
-      ModuleCompleter.getCompletions(context) ++
       HoleCompletion.getHoleCompletion(context, root)
   }
 

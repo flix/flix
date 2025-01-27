@@ -52,8 +52,7 @@ object LocalScopeCompleter {
     */
   private def mkDeclarationCompletionForExpr(k: String, v: List[Resolution]): Iterable[Completion] =
     v.collect {
-      case Resolution.Declaration(Namespace(_, _, _, _)) |
-           Resolution.Declaration(StructField(_, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+      case Resolution.Declaration(StructField(_, _, _, _)) => Completion.LocalDeclarationCompletion(k)
     }
 
   /**
@@ -61,8 +60,7 @@ object LocalScopeCompleter {
     */
   private def mkDeclarationCompletionForType(k: String, v: List[Resolution]): Iterable[Completion] =
     v.collect {
-      case Resolution.Declaration(Namespace(_, _, _, _)) |
-           Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
+      case Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
            Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
     }
 
