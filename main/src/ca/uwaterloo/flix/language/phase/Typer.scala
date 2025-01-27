@@ -276,7 +276,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
     case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
-      val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_)) // MATT use tparams0
+      val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_)) // MATT use tparams0
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) =>
