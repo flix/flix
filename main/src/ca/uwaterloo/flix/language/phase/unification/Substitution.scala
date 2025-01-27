@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -241,4 +241,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     Substitution(result)
   }
+
+  /**
+    * Returns the size of the largest type in this substitution.
+    */
+  def maxSize: Int = m.values.map(_.size).maxOption.getOrElse(0)
 }
