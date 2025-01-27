@@ -26,7 +26,7 @@ object ModuleCompleter {
   /**
     * Returns a List of Completion for modules.
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
-    * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
+    * When providing completions for unqualified enums that is not in scope, we will also automatically use the module.
     */
   def getCompletions(err: ResolutionError.UndefinedType, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     getCompletions(err.ap, err.env, namespace, ident)
@@ -50,10 +50,10 @@ object ModuleCompleter {
   }
 
   /**
-    * Checks if the definition is in scope.
-    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    * Checks if the module is in scope.
+    * If we can find the module in the scope or the module is in the root namespace, it is in scope.
     *
-    * Note: the module.ns is required to be non-empty.
+    * Note: module.ns is required to be non-empty.
     */
   private def inScope(module: Symbol.ModuleSym, scope: LocalScope): Boolean = {
     val thisName = module.toString
@@ -66,10 +66,9 @@ object ModuleCompleter {
   }
 
   /**
-    * Checks if the definition matches the QName.
-    * Names should match and the definition should be available.
+    * Checks if the module name matches the QName.
     *
-    * Note: the module.ns is required to be non-empty.
+    * Note: module.ns is required to be non-empty.
     */
   private def matchesModule(module: Symbol.ModuleSym, namespace: List[String], ident: String, qualified: Boolean): Boolean = {
     if (qualified) {
