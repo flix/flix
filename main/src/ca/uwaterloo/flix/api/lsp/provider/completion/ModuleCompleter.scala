@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Lukas Rønn
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ModCompletion, ModuleCompletion}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModuleCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Namespace
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -51,6 +52,8 @@ object ModuleCompleter {
   /**
     * Checks if the definition is in scope.
     * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    *
+    * Note: the module.ns is required to be non-empty.
     */
   private def inScope(module: Symbol.ModuleSym, scope: LocalScope): Boolean = {
     val thisName = module.toString
@@ -65,6 +68,8 @@ object ModuleCompleter {
   /**
     * Checks if the definition matches the QName.
     * Names should match and the definition should be available.
+    *
+    * Note: the module.ns is required to be non-empty.
     */
   private def matchesModule(module: Symbol.ModuleSym, namespace: List[String], ident: String, qualified: Boolean): Boolean = {
     if (qualified) {
