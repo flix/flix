@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.phase.typer.Progress
 import ca.uwaterloo.flix.language.phase.unification.set.EquationGenerator.mkEq
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
@@ -27,6 +28,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
 
   implicit val opts: SetUnification.Options = SetUnification.Options.default
   implicit val listener: SolverListener = SolverListener.DoNothing
+  implicit val progress: Progress = Progress()
 
   test("Iterator.mapWithIndex") {
     val input = List(

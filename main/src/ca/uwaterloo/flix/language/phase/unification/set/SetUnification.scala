@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.phase.typer.Progress
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
@@ -81,7 +82,7 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     */
-  def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation])(implicit listener: SolverListener, progress: Progress, opts: Options): (List[Equation], SetSubstitution) = {
     val state = new State(l)
     val trivialPhaseName = "Trivial Equations"
 
@@ -111,7 +112,7 @@ object SetUnification {
     * Runs the given equation system solver `phase` on `state`, printing debugging information
     * according to [[Options]].
     */
-  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
+  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit progress: Progress, listener: SolverListener): Unit = {
     listener.onEnterPhase(phaseName, state)
 
     phase(state.eqs) match {
@@ -119,6 +120,10 @@ object SetUnification {
         state.eqs = eqs
         state.subst = subst @@ state.subst
         listener.onExitPhase(state, progress = true)
+        // Report progress only if we don't have errors.
+        if (!progress.query() && eqs.forall(_.isPending)) {
+          progress.markProgress()
+        }
 
       case None =>
         listener.onExitPhase(state, progress = false)

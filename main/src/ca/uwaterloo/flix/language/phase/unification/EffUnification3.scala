@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.Progress
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.util.collection.SortedBimap
@@ -44,13 +45,15 @@ object EffUnification3 {
   def unifyAll(
                 eqs: List[(Type, Type, SourceLocation)],
                 scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options
+                opts: SetUnification.Options,
+                progress: Progress,
               )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
+    implicit val progressImplicit: Progress = progress
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
@@ -102,6 +105,7 @@ object EffUnification3 {
     implicit val renvImplicit: RigidityEnv = renv
     implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
+    implicit val progress: Progress = Progress()
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
