@@ -85,7 +85,7 @@ sealed trait ChangeSet {
   /**
     * Updates the stale part of the map with the given function `f`.
     */
-  def updateStaleValues[K <: Sourceable, V](newMap: Map[K, V], oldMap: Map[K, V], f: Map[K, V] => Map[K, V]): Map[K, V] = {
+  def updateStaleValues[K <: Sourceable, V](newMap: Map[K, V], oldMap: Map[K, V])(f: Map[K, V] => Map[K, V]): Map[K, V] = {
     val (stale, fresh) = partition(newMap, oldMap)
     fresh ++ stale
   }
@@ -93,7 +93,7 @@ sealed trait ChangeSet {
   /**
     * Updates the stale part of the list map with the given function `f`.
     */
-  def updateStaleValueLists[K, V <: Sourceable](newMap: ListMap[K, V], oldMap: ListMap[K, V], f: ListMap[K, V] => ListMap[K, V]): ListMap[K, V] = {
+  def updateStaleValueLists[K, V <: Sourceable](newMap: ListMap[K, V], oldMap: ListMap[K, V])(f: ListMap[K, V] => ListMap[K, V]): ListMap[K, V] = {
     val (stale, fresh) = partitionOnValues(newMap, oldMap)
     fresh ++ f(stale)
   }
