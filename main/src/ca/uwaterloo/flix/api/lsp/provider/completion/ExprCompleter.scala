@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +25,6 @@ object ExprCompleter {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
-      EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
       ModuleCompleter.getCompletions(context) ++
       HoleCompletion.getHoleCompletion(context, root)

@@ -32,6 +32,10 @@ object EnumCompleter {
     getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
   }
 
+  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
   def getCompletions(err: ResolutionError.UndefinedType, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
   }

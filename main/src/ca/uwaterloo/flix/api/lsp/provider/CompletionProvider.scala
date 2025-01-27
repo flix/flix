@@ -50,7 +50,9 @@ object CompletionProvider {
         case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
-        case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedTag =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          EnumCompleter.getCompletions(err, namespace, ident) ++ EnumTagCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedName =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -60,7 +62,8 @@ object CompletionProvider {
             EnumCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
             OpCompleter.getCompletions(err, namespace, ident) ++
-            SignatureCompleter.getCompletions(err, namespace, ident)
+            SignatureCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -97,7 +100,7 @@ object CompletionProvider {
           case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
 
           // Patterns.
-          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx)
 
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)

@@ -381,6 +381,24 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
+    case Completion.EnumTagCompletion(tag, ap, qualified, inScope) =>
+      val qualifiedName = tag.sym.toString
+      val name = if (qualified) qualifiedName else tag.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        kind                = CompletionItemKind.EnumMember,
+        additionalTextEdits = additionalTextEdit
+      )
+
     case Completion.InstanceCompletion(trt, completion) =>
       val traitSym = trt.sym
       CompletionItem(
@@ -446,24 +464,6 @@ sealed trait Completion {
         textEdit      = TextEdit(context.range, name),
         documentation = None,
         kind          = CompletionItemKind.Method
-      )
-
-    case Completion.EnumTagCompletion(enumSym, cas) =>
-      val name = s"${enumSym.toString}.${cas.sym.name}"
-      val args = (1 until cas.tpes.length + 1).map(i => s"?elem$i").mkString(", ")
-      val snippet = if (args.isEmpty) name else s"$name($args)"
-      val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getParamsLabelForEnumTags(cas)),
-        None)
-      CompletionItem(
-        label            = name,
-        labelDetails     = Some(labelDetails),
-        sortText         = Priority.toSortText(Priority.Default, name),
-        textEdit         = TextEdit(context.range, snippet),
-        detail           = Some(enumSym.name),
-        documentation    = None,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.EnumMember
       )
 
     case Completion.ModCompletion(modSym) =>
@@ -793,6 +793,16 @@ object Completion {
   case class SigCompletion(sig: TypedAst.Sig, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
+    * Represents an Enum Tag completion
+    *
+    * @param tag        the tag.
+    * @param ap         the anchor position for the use statement.
+    * @param qualified  indicate whether to use a qualified label.
+    * @param inScope    indicate whether to the signature is inScope.
+    */
+  case class EnumTagCompletion(tag: TypedAst.Case, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
     * Represents an Instance completion (based on traits)
     *
     * @param trt        the trait.
@@ -842,14 +852,6 @@ object Completion {
     * @param name the name of the use signature completion.
     */
   case class UseSignatureCompletion(name: String) extends Completion
-
-  /**
-    * Represents an EnumTag completion
-    *
-    * @param enumSym the sym of the enum.
-    * @param cas     the case (for that specific enum).
-    */
-  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case) extends Completion
 
   /**
    * Represents a struct field completion.
