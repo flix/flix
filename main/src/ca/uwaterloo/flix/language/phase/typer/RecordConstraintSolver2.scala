@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -26,7 +27,7 @@ object RecordConstraintSolver2 {
   /**
     * Unifies the two given record row types.
     */
-  def solve(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv, loc: SourceLocation)(implicit progress: Progress, flix: Flix): (List[TypeConstraint2], Substitution) = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv, prov: Provenance, loc: SourceLocation)(implicit progress: Progress, flix: Flix): (List[TypeConstraint2], Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅
@@ -54,7 +55,7 @@ object RecordConstraintSolver2 {
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       progress.markProgress()
-      (List(TypeConstraint2.Equality(t1, t2, loc), TypeConstraint2.Equality(rest1, rest2, loc)), Substitution.empty)
+      (List(TypeConstraint2.Equality(t1, t2, prov, loc), TypeConstraint2.Equality(rest1, rest2, prov, loc)), Substitution.empty)
 
     // If labels do not match, then we pivot the right row to make them match.
     //
@@ -65,16 +66,16 @@ object RecordConstraintSolver2 {
       pivot(r2, label, t1, r1.typeVars.map(_.sym))(scope, renv, flix) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
           progress.markProgress()
-          (List(TypeConstraint2.Equality(t1, t3, loc), TypeConstraint2.Equality(rest1, rest3, loc)), subst)
+          (List(TypeConstraint2.Equality(t1, t3, prov, loc), TypeConstraint2.Equality(rest1, rest3, prov, loc)), subst)
 
         case None =>
-          (List(TypeConstraint2.Equality(tpe1, tpe2, loc)), Substitution.empty)
+          (List(TypeConstraint2.Equality(tpe1, tpe2, prov, loc)), Substitution.empty)
 
         case Some((t, _)) => throw InternalCompilerException("unexpected result from pivot: " + t, t.loc)
       }
 
     // If nothing matches, we give up and return the constraints as we got them.
-    case _ => (List(TypeConstraint2.Equality(tpe1, tpe2, loc)), Substitution.empty)
+    case _ => (List(TypeConstraint2.Equality(tpe1, tpe2, prov, loc)), Substitution.empty)
   }
 
   /**
