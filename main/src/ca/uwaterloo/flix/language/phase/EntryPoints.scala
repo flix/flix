@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
 
@@ -378,19 +378,19 @@ object EntryPoints {
           case x => CofiniteEffSet.complement(x)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)) {
           case (x, y) => CofiniteEffSet.union(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)) {
           case (x, y) => CofiniteEffSet.intersection(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)) {
           case (x, y) => CofiniteEffSet.difference(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)){
+        Result.mapN(eval(x0), eval(y0)) {
           case (x, y) => CofiniteEffSet.xor(x, y)
         }
       case Type.Alias(_, _, tpe, _) => eval(tpe)
