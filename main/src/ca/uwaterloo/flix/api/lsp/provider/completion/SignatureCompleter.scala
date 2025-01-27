@@ -32,15 +32,19 @@ object SignatureCompleter {
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
-      root.sigs.values.collect{
-        case sig if matchesSig(sig, namespace, ident, uri, qualified = true) =>
-          SigCompletion(sig, ap, qualified = true, inScope = true)
-      }
+      root.traits.values.flatMap(trt =>
+        trt.sigs.collect {
+          case sig if matchesSig(trt, sig, namespace, ident, uri, qualified = true) =>
+            SigCompletion(sig, ap, qualified = true, inScope = true)
+        }
+      )
     else
-      root.sigs.values.collect{
-        case sig if matchesSig(sig, namespace, ident, uri, qualified = false) =>
-          SigCompletion(sig, ap, qualified = false, inScope = inScope(sig, env))
-      }
+      root.traits.values.flatMap(trt =>
+        trt.sigs.collect {
+          case sig if matchesSig(trt, sig, namespace, ident, uri, qualified = false) =>
+            SigCompletion(sig, ap, qualified = false, inScope = inScope(sig, env))
+        }
+      )
   }
 
   private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {
@@ -55,10 +59,12 @@ object SignatureCompleter {
 
   /**
     * Returns `true` if the given signature `sig` should be included in the suggestions.
+    *
+    * For visibility, we just need to check the parent trait.
     */
-  private def matchesSig(sig: TypedAst.Sig, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = sig.spec.mod.isPublic && !sig.spec.ann.isInternal
-    val isInFile = sig.sym.loc.source.name == uri
+  private def matchesSig(trt: TypedAst.Trait, sig: TypedAst.Sig, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = trt.mod.isPublic && !trt.ann.isInternal
+    val isInFile = trt.loc.source.name == uri
     val isMatch = if (qualified)
       CompletionUtils.matchesQualifiedName(sig.sym.namespace, sig.sym.name, namespace, ident)
     else
