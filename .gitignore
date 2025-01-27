@@ -15,5 +15,8 @@ target
 crash_report_*.txt
 .DS_Store
 
+# backup files and IntelliJ profiler reports
+*~
+
 # local development files
 **/personal/**

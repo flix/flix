@@ -24,12 +24,10 @@ object ExprCompleter {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
-      SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
       ModuleCompleter.getCompletions(context) ++
-      HoleCompletion.getHoleCompletion(context, root) ++
-      OpCompleter.getCompletions(context)
+      HoleCompletion.getHoleCompletion(context, root)
   }
 
 }

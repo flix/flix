@@ -75,7 +75,7 @@ object Kinder {
 
     val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
-    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
+    val instances = ParOps.parMapValueList(root.instances)(visitInstance(_, taenv, root))
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
@@ -342,13 +342,13 @@ object Kinder {
 
     case ResolvedAst.Expr.Hole(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      val evar = Type.freshEffSlackVar(loc.asSynthetic)
       KindedAst.Expr.Hole(sym, tvar, evar, loc)
 
     case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      val evar = Type.freshEffSlackVar(loc.asSynthetic)
       KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
 
     case ResolvedAst.Expr.OpenAs(symUse, exp0, loc) =>
@@ -774,7 +774,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
-      val evar = Type.freshVar(Kind.Eff, m.loc)
+      val evar = Type.freshEffSlackVar(m.loc)
       KindedAst.Expr.Error(m, tvar, evar)
   }
 

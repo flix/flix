@@ -100,14 +100,14 @@ object Resolver {
               case () =>
                 ResolvedAst.Root(
                   table.traits,
-                  table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
+                  table.instances,
                   table.defs,
                   table.enums,
                   table.structs,
                   table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
-                  uses.toMap,
+                  ListMap(uses.toMap),
                   taOrder,
                   root.mainEntryPoint,
                   root.sources,
@@ -777,7 +777,7 @@ object Resolver {
         // We may have an imported class name.
         val className = qname.namespace.idents.head
         env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             // We have a static field access.
             val fieldName = qname.ident
             JvmUtils.getField(clazz, fieldName.name, static = true) match {
@@ -867,7 +867,7 @@ object Resolver {
         // We may have an imported class name.
         val className = qname.namespace.idents.head
         env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             // We have a static method call.
             val methodName = qname.ident
             val expsVal = traverse(exps)(resolveExp(_, env0))
@@ -1225,7 +1225,7 @@ object Resolver {
     case NamedAst.Expr.InstanceOf(exp, className, loc) =>
       flatMapN(resolveExp(exp, env0)) {
         case e => env0.get(className.name) match {
-          case Some(List(Resolution.JavaClass(clazz))) =>
+          case List(Resolution.JavaClass(clazz)) =>
             Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
           case _ =>
             val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
@@ -1313,7 +1313,7 @@ object Resolver {
       flatMapN(esVal) {
         es =>
           env0.get(className.name) match {
-            case Some(List(Resolution.JavaClass(clazz))) =>
+            case List(Resolution.JavaClass(clazz)) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
               val error = ResolutionError.UndefinedNewJvmClassOrStruct(className, AnchorPosition.mkImportOrUseAnchor(ns0), env0, "", loc)
@@ -1738,7 +1738,7 @@ object Resolver {
         val symUse = EffectSymUse(decl.sym, qname)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body) =>
-            val opVal = findOpInEffect(ident, decl)
+            val opVal = findOpInEffect(ident, decl, ns, env0)
             val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns, root))
             flatMapN(opVal, fparamsVal) {
               case (o, fp) =>
@@ -2213,13 +2213,13 @@ object Resolver {
   /**
     * Looks up the effect operation as a member of the given effect.
     */
-  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect): Validation[NamedAst.Declaration.Op, ResolutionError] = {
+  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect, ns: Name.NName, env0: LocalScope): Validation[NamedAst.Declaration.Op, ResolutionError] = {
     val opOpt = eff.ops.find(o => o.sym.name == ident.name)
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
-        val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
-        Validation.Failure(ResolutionError.UndefinedOp(qname, ident.loc))
+        val qname = Name.mkQName(nname, ident.name, ident.loc)
+        Validation.Failure(ResolutionError.UndefinedOp(qname, AnchorPosition.mkImportOrUseAnchor(ns), env0, ident.loc))
       case Some(op) =>
         Validation.Success(op)
     }
@@ -3274,7 +3274,7 @@ object Resolver {
     lookupJvmClass(className, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
-        case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
+        case List(Resolution.JavaClass(clazz)) => Result.Ok(clazz)
         case _ => Result.Err(e)
       }
     }

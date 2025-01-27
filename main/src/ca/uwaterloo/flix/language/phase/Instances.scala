@@ -76,7 +76,7 @@ object Instances {
     */
   private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     // Check the instances of each trait in parallel.
-    val results = ParOps.parMap(root.instances.values)(checkInstancesOfTrait(_, root, changeSet))
+    val results = ParOps.parMap(root.instances.valueLists)(checkInstancesOfTrait(_, root, changeSet))
     results.flatten.toList
   }
 
@@ -179,7 +179,7 @@ object Instances {
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
-            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, TraitEnv(root.traitEnv), root.eqEnv)) {
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, root.eqEnv)) {
               // Case 5.1: the schemes match. Success!
               Nil
             } else {
@@ -204,9 +204,9 @@ object Instances {
     * Finds an instance of the trait for a given type.
     */
   def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
-    val superInsts = root.traitEnv.get(trt).map(_.instances).getOrElse(Nil)
+    val instOpt = root.traitEnv.getInstance(trt, tpe)
     // lazily find the instance whose type unifies and save the substitution
-    ListOps.findMap(superInsts) {
+    instOpt.flatMap {
       superInst =>
         Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty, root.eqEnv).map {
           case subst => (superInst, subst)
@@ -220,7 +220,7 @@ object Instances {
     */
   private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, trt, tpe, tconstrs, _, _, _, _) =>
-      val superTraits = root.traitEnv(trt.sym).superTraits
+      val superTraits = root.traitEnv.getSuperTraits(trt.sym)
       superTraits flatMap {
         superTrait =>
           // Find the instance of the super trait matching the type of this instance.
@@ -229,7 +229,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), TraitEnv(root.traitEnv), root.eqEnv).toResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv).toResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, trt.loc)

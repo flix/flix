@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
-import ca.uwaterloo.flix.language.ast.{KindedAst, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+
+import java.lang.reflect.Executable
 
 object TypeReconstruction2 {
 
@@ -187,7 +189,7 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.Scope(sym, regionVar, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
-      val e = visitExp(exp)(subst.branches(regionVar.sym))
+      val e = visitExp(exp)(subst.branches.getOrElse(regionVar.sym, SubstitutionTree.empty))
       val tpe = subst(tvar)
       val eff = subst(evar)
       val bnd = TypedAst.Binder(sym, eff)
@@ -372,19 +374,11 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
-      // Omit the unchecked cast if the inferred type and effect are the same as the declared ones.
-      // Note: We do not aim to remove all redundant unchecked casts. That is not possible until monomorphization,
-      // due to both Boolean equivalence, record/schema equivalence, and associated types/effects.
-      // We only aim to remove unchecked casts which are syntactically identifiable as redundant.
-      (declaredType0.map(tpe => subst(tpe)), declaredEff0.map(eff => subst(eff))) match {
-        case (Some(tpe), None) if tpe == e.tpe => e
-        case (None, Some(eff)) if eff == e.eff => e
-        case (Some(tpe), Some(eff)) if tpe == e.tpe && eff == e.eff => e
-        case (declaredType, declaredEff) =>
-          val tpe = subst(tvar)
-          val eff = declaredEff0.getOrElse(e.eff)
-          TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
-      }
+      val declaredType = declaredType0.map(tpe => subst(tpe))
+      val declaredEff = declaredEff0.map(eff => subst(eff))
+      val tpe = subst(tvar)
+      val eff = declaredEff0.getOrElse(e.eff)
+      TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case KindedAst.Expr.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
@@ -441,12 +435,13 @@ object TypeReconstruction2 {
       TypedAst.Expr.Do(symUse, es, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
+          val es = getArgumentsWithVarArgs(constructor, es0, loc)
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
@@ -454,24 +449,26 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.InvokeMethod(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
     case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>
-      val es = exps.map(visitExp)
+      val es0 = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
@@ -624,6 +621,24 @@ object TypeReconstruction2 {
   }
 
   /**
+    * Returns the given arguments `es` possibly with an empty VarArgs array added as the last argument.
+    */
+  private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
+    val declaredArity = exc.getParameterCount
+    val actualArity = es.length
+    // Check if (a) an argument is missing and (b) the constructor/method is VarArgs.
+    if (actualArity == declaredArity - 1 && exc.isVarArgs) {
+      // Case 1: Argument missing. Introduce a new empty vector argument.
+      val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
+      val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
+      es ::: varArgs :: Nil
+    } else {
+      // Case 2: No argument missing. Return the arguments as-is.
+      es
+    }
+  }
+
+  /**
     * Applies the substitution to the given constraint.
     */
   private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: SubstitutionTree): TypedAst.Constraint = {
@@ -668,8 +683,7 @@ object TypeReconstruction2 {
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(symUse, pats, tvar, loc) =>
-      TypedAst.Pattern.Tag(symUse, pats.map(visitPattern), subst(tvar), loc)
+    case KindedAst.Pattern.Tag(symUse, pats, tvar, loc) => TypedAst.Pattern.Tag(symUse, pats.map(visitPattern), subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)

@@ -57,7 +57,10 @@ object CompletionProvider {
             LocalScopeCompleter.getCompletions(err) ++
             ExprCompleter.getCompletions(ctx) ++
             DefCompleter.getCompletions(err, namespace, ident) ++
-            EnumCompleter.getCompletions(err, namespace, ident)
+            EnumCompleter.getCompletions(err, namespace, ident) ++
+            EffectCompleter.getCompletions(err, namespace, ident) ++
+            OpCompleter.getCompletions(err, namespace, ident) ++
+            SignatureCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -71,6 +74,9 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedOp =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qname)
+          OpCompleter.getCompletions(err, namespace, ident)
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
         case err: ParseError => err.sctx match {
@@ -80,6 +86,7 @@ object CompletionProvider {
 
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+          case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
           case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
           case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords

@@ -325,7 +325,7 @@ object ConstraintSolver2 {
     case c@TypeConstraint2.Trait(sym, tpe, loc) =>
 
       // Get all the instances from the context
-      val insts = trenv.getInstances(sym)
+      val insts = trenv.getInstance(sym, tpe)
 
       // Find the instance that matches
       val matches = insts.flatMap {
@@ -344,14 +344,11 @@ object ConstraintSolver2 {
       // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
       matches match {
         // Case 1: No match. Throw the constraint back in the pool.
-        case Nil => List(c)
+        case None => List(c)
 
         // Case 2: One match. Use the instance constraints.
-        case newConstrs :: Nil => newConstrs.map(traitConstraintToTypeConstraint)
-
-        // Case 3: Multiple matches. Throw the constraint back in the pool.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => List(c)
+        case Some(newConstrs) =>
+          newConstrs.map(traitConstraintToTypeConstraint)
       }
   }
 
@@ -361,7 +358,7 @@ object ConstraintSolver2 {
   private def effectUnification(constr: TypeConstraint2)(implicit progress: Progress, scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case c@TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff =>
       EffUnification3.unify(tpe1, tpe2, scope, renv) match {
-        case Result.Ok(Some(subst)) => (Nil, SubstitutionTree(subst, Map()))
+        case Result.Ok(Some(subst)) => (Nil, SubstitutionTree.shallow(subst))
         case _ => (List(c), SubstitutionTree.empty)
       }
 
@@ -380,7 +377,7 @@ object ConstraintSolver2 {
   private def recordUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
       RecordConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc) match {
-        case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
+        case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
@@ -398,7 +395,7 @@ object ConstraintSolver2 {
   private def schemaUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
       SchemaConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc) match {
-        case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
+        case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>

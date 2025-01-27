@@ -334,41 +334,51 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.SigCompletion(decl) =>
-      val name = decl.sym.toString
-      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
-        None)
+    case Completion.OpCompletion(op, ap, qualified, inScope, isHandler) =>
+      val qualifiedName = op.sym.toString
+      val name = if (qualified) qualifiedName else op.sym.name
+      val snippet = if (isHandler)
+          CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
+        else
+          CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
-        label            = name,
-        labelDetails     = Some(labelDetails),
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        filterText       = Some(CompletionUtils.getFilterTextForName(name)),
-        textEdit         = TextEdit(context.range, snippet),
-        detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-        documentation    = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Interface
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
+        documentation       = Some(op.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(decl) =>
-      // NB: priority is high because only an op can come after `do`
-      val name = decl.sym.toString
-      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
-      val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
-        None)
+    case Completion.SigCompletion(sig, ap, qualified, inScope) =>
+      val qualifiedName = sig.sym.toString
+      val name = if (qualified) qualifiedName else sig.sym.name
+      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)(context)
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
-        label            = name,
-        labelDetails     = Some(labelDetails),
-        sortText         = Priority.toSortText(Priority.Lower, name),
-        filterText       = Some(CompletionUtils.getFilterTextForName(name)),
-        textEdit         = TextEdit(context.range, snippet),
-        detail           = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-        documentation    = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Interface
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        detail              = Some(FormatScheme.formatScheme(sig.spec.declaredScheme)(flix)),
+        documentation       = Some(sig.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
+        additionalTextEdits = additionalTextEdit
       )
 
     case Completion.InstanceCompletion(trt, completion) =>
@@ -752,24 +762,35 @@ object Completion {
   case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
-    * Represents a type completion for type alias
+    * Represents a TypeAlias completion
     *
+    * @param typeAlias  the type alias.
+    * @param ap         the anchor position for the use statement.
+    * @param qualified  indicate whether to use a qualified label.
+    * @param inScope    indicate whether to the type alias is inScope.
     */
   case class TypeAliasCompletion(typeAlias: TypedAst.TypeAlias, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
-    * Represents a Signature completion
+    * Represents an Op completion
     *
-    * @param decl the signature decl.
+    * @param op         the op.
+    * @param ap         the anchor position for the use statement.
+    * @param qualified  indicate whether to use a qualified label.
+    * @param inScope    indicate whether to the op is inScope.
+    * @param isHandler  indicate whether the completion is in a handler.
     */
-  case class SigCompletion(decl: TypedAst.Sig) extends Completion
+  case class OpCompletion(op: TypedAst.Op, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, isHandler: Boolean) extends Completion
 
   /**
-    * Represents a Op completion
+    * Represents a Signature completion
     *
-    * @param decl the op decl.
+    * @param sig        the signature.
+    * @param ap         the anchor position for the use statement.
+    * @param qualified  indicate whether to use a qualified label.
+    * @param inScope    indicate whether to the signature is inScope.
     */
-  case class OpCompletion(decl: TypedAst.Op) extends Completion
+  case class SigCompletion(sig: TypedAst.Sig, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Instance completion (based on traits)

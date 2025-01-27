@@ -185,7 +185,7 @@ object Redundancy {
   private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
     val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
     val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTraitConstraints(trt.superTraits))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val instErrors = ParOps.parMap(root.instances.values)(inst => redundantTraitConstraints(inst.tconstrs))
     val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
@@ -199,7 +199,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 

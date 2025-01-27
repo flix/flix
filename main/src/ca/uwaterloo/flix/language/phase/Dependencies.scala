@@ -41,7 +41,7 @@ object Dependencies {
     ParOps.parMap(root.defs.values)(visitDef)
     ParOps.parMap(root.effects.values)(visitEff)
     ParOps.parMap(root.enums.values)(visitEnum)
-    ParOps.parMap(root.instances.values)(visitInstances)
+    ParOps.parMap(root.instances.values)(visitInstance)
     ParOps.parMap(root.structs.values)(visitStruct)
     ParOps.parMap(root.traits.values)(visitTrait)
     ParOps.parMap(root.typeAliases.values)(visitTypeAlias)
@@ -70,8 +70,8 @@ object Dependencies {
   private def visitEnum(enm: TypedAst.Enum)(implicit sctx: SharedContext): Unit =
     enm.cases.values.foreach(visitCase)
 
-  private def visitInstances(instances: List[TypedAst.Instance])(implicit sctx: SharedContext): Unit =
-    instances.foreach(instance => addDependency(instance.trt.sym.loc, instance.loc))
+  private def visitInstance(instance: TypedAst.Instance)(implicit sctx: SharedContext): Unit =
+    addDependency(instance.trt.sym.loc, instance.loc)
 
   private def visitStruct(struct: TypedAst.Struct)(implicit sctx: SharedContext): Unit = {
     visitScheme(struct.sc)

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -688,7 +689,15 @@ object Type {
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
-    val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
+    val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, isSlack = false, loc)
+    Type.Var(sym, loc)
+  }
+
+  /**
+    * Returns a fresh effect slack variable.
+    */
+  def freshEffSlackVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+    val sym = Symbol.freshKindedTypeVarSym(Absent, Kind.Eff, isRegion = false, isSlack = true, loc)
     Type.Var(sym, loc)
   }
 

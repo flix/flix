@@ -143,8 +143,8 @@ object ConstraintSolver {
     */
   def expandTraitEnv(tenv: TraitEnv, tconstrs: List[TraitConstraint]): TraitEnv = {
     tconstrs.foldLeft(tenv) {
-      case (acc, TraitConstraint(TraitSymUse(sym, _), arg, loc)) =>
-        acc.addInstance(sym, arg)
+      case (acc, TraitConstraint(TraitSymUse(sym, _), tpe, _)) =>
+        acc.addInstance(sym, tpe)
     }
   }
 
@@ -445,9 +445,9 @@ object ConstraintSolver {
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
             val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
-            val insts = tenv.getInstances(trt)
+
             // find the first (and only) instance that matches
-            val tconstrsOpt = ListOps.findMap(insts) {
+            val tconstrsOpt = tenv.getInstance(trt, t).flatMap {
               inst =>
                 Unification.fullyUnifyTypes(t, inst.tpe, renv, eenv).map {
                   case subst => inst.tconstrs.map(subst.apply)
@@ -647,9 +647,6 @@ object ConstraintSolver {
 
       case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
         TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-
-      case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
-        TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
 
       case (UnificationError.TooComplex(msg, _), Provenance.Match(_, _, loc)) =>
         TypeError.TooComplex(msg, loc)

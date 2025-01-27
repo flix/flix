@@ -19,17 +19,18 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.phase.unification.TraitEnv
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, Map.empty, Map.empty, ListMap.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty)
+  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, Map.empty, TraitEnv.empty, ListMap.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty)
 
-  case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
+  case class Root(modules: ListMap[Symbol.ModuleSym, Symbol],
                   traits: Map[Symbol.TraitSym, Trait],
-                  instances: Map[Symbol.TraitSym, List[Instance]],
+                  instances: ListMap[Symbol.TraitSym, Instance],
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -37,11 +38,11 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
+                  uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
-                  entryPoints: Option[Set[Symbol.DefnSym]],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  traitEnv: Map[Symbol.TraitSym, TraitContext],
+                  traitEnv: TraitEnv,
                   eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
                   availableClasses: AvailableClasses,
                   precedenceGraph: LabelledPrecedenceGraph,

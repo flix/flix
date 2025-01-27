@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 sealed trait ChangeSet {
 
@@ -67,17 +68,16 @@ sealed trait ChangeSet {
     *
     * The type of the value in the map must be the same, since when checking stale, we need to check if the value is in the fresh map.
     */
-  def partitionOnValues[K, V <: Sourceable](newMap: Map[K, List[V]], oldMap: Map[K, List[V]]): (Map[K, List[V]], Map[K, List[V]]) = this match {
+  def partitionOnValues[K, V <: Sourceable](newMap: ListMap[K, V], oldMap: ListMap[K, V]): (ListMap[K, V], ListMap[K, V]) = this match {
     case ChangeSet.Everything =>
-      (newMap, Map.empty)
+      (newMap, ListMap.empty)
 
     case ChangeSet.Dirty(dirty) =>
-      newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
-        val oldList = oldMap.getOrElse(k, Nil)
-        val (freshList, staleList) = vList.partition(v => oldList.contains(v) &&  !dirty.contains(v.src.input))
-        val staleMap = if (staleList.nonEmpty) stale + (k -> staleList) else stale
-        val freshMap = if (freshList.nonEmpty) fresh + (k -> freshList) else fresh
-        (staleMap, freshMap)
+      newMap.foldLeft((ListMap.empty[K, V], ListMap.empty[K, V])){ case ((stale, fresh), (k, v)) =>
+        if (oldMap.get(k).contains(v) && !dirty.contains(v.src.input))
+          (stale, fresh + (k -> v))
+        else
+          (stale + (k -> v), fresh)
       }
   }
 }

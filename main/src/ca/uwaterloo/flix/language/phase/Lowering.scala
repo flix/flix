@@ -147,7 +147,7 @@ object Lowering {
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
-    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val instances = ParOps.parMapValueList(root.instances)(visitInstance)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
@@ -162,9 +162,7 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    // EntryPoints should have set this to Some.
-    val entryPoints = root.entryPoints.get
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, entryPoints, root.sources, root.traitEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, root.entryPoints, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
