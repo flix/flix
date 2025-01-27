@@ -39,15 +39,19 @@ object EnumTagCompleter {
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
-      root.enums.values.flatMap(_.cases.values).collect{
-        case tag if matchesTag(tag, namespace, ident, uri, qualified = true) =>
-          EnumTagCompletion(tag, ap, qualified = true, inScope = true)
-      }
+      root.enums.values.flatMap(enm =>
+        enm.cases.values.collect{
+          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = true) =>
+            EnumTagCompletion(tag, ap, qualified = true, inScope = true)
+        }
+      )
     else
-      root.enums.values.flatMap(_.cases.values).collect{
-        case tag if matchesTag(tag, namespace, ident, uri, qualified = false) =>
-          EnumTagCompletion(tag, ap, qualified = false, inScope = inScope(tag, env))
-      }
+      root.enums.values.flatMap(enm =>
+        enm.cases.values.collect{
+          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = false) =>
+            EnumTagCompletion(tag, ap, qualified = false, inScope = inScope(tag, env))
+        }
+      )
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
@@ -63,9 +67,13 @@ object EnumTagCompleter {
   /**
     * Returns `true` if the given signature `sig` should be included in the suggestions.
     */
-  private def matchesTag(tag: TypedAst.Case, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean =
-    if (qualified)
+  private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = enm.mod.isPublic && !enm.ann.isInternal
+    val isInFile = enm.loc.source.name == uri
+    val isMatch = if (qualified)
       CompletionUtils.matchesQualifiedName(tag.sym.namespace, tag.sym.name, namespace, ident)
     else
       CompletionUtils.fuzzyMatch(ident, tag.sym.name)
+    isMatch && (isPublic || isInFile)
+  }
 }
