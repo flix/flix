@@ -73,6 +73,8 @@ object OpCompleter {
 
   /**
     * Returns `true` if the given effect operation `op` should be included in the suggestions.
+    *
+    * For visibility, we just need to check if the parent effect.
     */
   private def matchesOp(eff: TypedAst.Effect, op: TypedAst.Op, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = eff.mod.isPublic && !eff.ann.isInternal

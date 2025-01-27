@@ -66,6 +66,8 @@ object EnumTagCompleter {
 
   /**
     * Returns `true` if the given signature `sig` should be included in the suggestions.
+    *
+    * For visibility, we just need to check the parent enum.
     */
   private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = enm.mod.isPublic && !enm.ann.isInternal

@@ -59,6 +59,8 @@ object SignatureCompleter {
 
   /**
     * Returns `true` if the given signature `sig` should be included in the suggestions.
+    *
+    * For visibility, we just need to check the parent trait.
     */
   private def matchesSig(trt: TypedAst.Trait, sig: TypedAst.Sig, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
     val isPublic = trt.mod.isPublic && !trt.ann.isInternal
