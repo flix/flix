@@ -36,6 +36,10 @@ object ModuleCompleter {
     getCompletions(err.ap, err.env, namespace, ident)
   }
 
+  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.ap, err.env, namespace, ident)
+  }
+
   private def getCompletions(ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
       root.modules.keys.collect{

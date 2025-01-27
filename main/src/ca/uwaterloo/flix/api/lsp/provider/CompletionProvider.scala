@@ -52,7 +52,9 @@ object CompletionProvider {
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedTag =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          EnumCompleter.getCompletions(err, namespace, ident) ++ EnumTagCompleter.getCompletions(err, namespace, ident)
+          EnumCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedName =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -100,9 +102,6 @@ object CompletionProvider {
 
           // Types.
           case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
-
-          // Patterns.
-//          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx)
 
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
