@@ -87,7 +87,7 @@ sealed trait ChangeSet {
     */
   def updateStaleValues[K <: Sourceable, V](newMap: Map[K, V], oldMap: Map[K, V])(f: Map[K, V] => Map[K, V]): Map[K, V] = {
     val (stale, fresh) = partition(newMap, oldMap)
-    fresh ++ stale
+    fresh ++ f(stale)
   }
 
   /**

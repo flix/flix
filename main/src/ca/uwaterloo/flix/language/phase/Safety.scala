@@ -3,10 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -32,25 +31,11 @@ object Safety {
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
-    val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
-    ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
 
-    (root.copy(defs = defs, traits = traits), sctx.errors.asScala.toList)
-  }
-
-  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
-    val sigs = trt.sigs.map(visitSig)
-    trt.copy(sigs = sigs)
-  }
-
-  /** Checks the safety and well-formedness of `sig`. */
-  private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Sig = {
-    val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, sctx, flix))
-    sig
+    (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
   }
 
   /** Checks the safety and well-formedness of `defn`. */
@@ -58,6 +43,22 @@ object Safety {
     val renv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
     visitExp(defn.exp)(inTryCatch = false, renv, sctx, flix)
     defn
+  }
+
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+    trt.sigs.foreach(visitSig)
+    trt
+  }
+
+  private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+    inst.defs.foreach(visitDef)
+    inst
+  }
+
+  /** Checks the safety and well-formedness of `sig`. */
+  private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
+    val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, sctx, flix))
   }
 
   /**
