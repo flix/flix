@@ -144,7 +144,11 @@ object SubstitutionTree {
     * Returns a substitution tree with no branches.
     */
   def shallow(subst: Substitution): SubstitutionTree = {
-    new SubstitutionTree(subst, Map.empty)
+    if (subst.isEmpty) {
+      SubstitutionTree.empty
+    } else {
+      new SubstitutionTree(subst, Map.empty)
+    }
   }
 }
 
