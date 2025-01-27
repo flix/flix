@@ -69,9 +69,9 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          AutoImportCompleter.getCompletions(err) ++
+          TypeBuiltinCompleter.getCompletions ++
+            AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            TypeCompleter.getCompletions(ctx) ++
             EnumCompleter.getCompletions(err, namespace, ident) ++
             StructCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
@@ -100,16 +100,11 @@ object CompletionProvider {
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-          // Types.
-          case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
-
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
-          case SyntacticContext.WithClause =>
-            // A with context could also be just a type context.
-            TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
+          case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
 
           // Try-with handler.
           case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
