@@ -382,6 +382,51 @@ object ConstraintSolver2 {
   }
 
   /**
+    * Performs case set unification on the given constraint.
+    */
+  private def caseSetUnification(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
+    case c@TypeConstraint2.Equality(tpe1, tpe2, _, _) => (tpe1.kind, tpe2.kind) match {
+      case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+        CaseSetUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
+          case Result.Ok(subst) => (Nil, SubstitutionTree.shallow(subst))
+          case Result.Err(err) => (List(c), SubstitutionTree.empty)
+        }
+      case _ => (List(c), SubstitutionTree.empty)
+    }
+
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
+      val (nested, branch) = foldSubstitution(nested0)(caseSetUnification(_, progress)(scope.enter(sym), renv, flix))
+      val tree = SubstitutionTree.oneBranch(sym, branch)
+      val cs = List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
+      (cs, tree)
+
+    case c => (List(c), SubstitutionTree.empty)
+  }
+
+  /**
+    * Performs Boolean unification on the given constraint.
+    */
+  private def booleanUnification(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
+    case c@TypeConstraint2.Equality(tpe1, tpe2, _, _) if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
+      // BoolUnification is all-or-nothing:
+      // Either we get a substitution and have nothing left over
+      // Or we have leftovers but the substitution is empty.
+      BoolUnification.unify(tpe1, tpe2, renv) match {
+        case Result.Ok((subst, Nil)) => (Nil, SubstitutionTree.shallow(subst))
+        case Result.Ok((_, _ :: _)) => (List(c), SubstitutionTree.empty)
+        case Result.Err(_) => (List(c), SubstitutionTree.empty)
+      }
+
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
+      val (nested, branch) = foldSubstitution(nested0)(booleanUnification(_, progress)(scope.enter(sym), renv, flix))
+      val tree = SubstitutionTree.oneBranch(sym, branch)
+      val cs = List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
+      (cs, tree)
+
+    case c => (List(c), SubstitutionTree.empty)
+  }
+
+  /**
     * Performs record row unification on the given type constraint.
     */
   private def recordUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
