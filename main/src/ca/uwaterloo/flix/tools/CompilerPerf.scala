@@ -207,6 +207,18 @@ object CompilerPerf {
 
   case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
 
+  case class Record(id: String, phase: String, lines: Int, time: Long)
+
+  def runToRecords(id: String, run: Run): List[Record] = run match {
+    case Run(lines, _, phases) =>
+      phases.map {
+        case (phase, time) => Record(id, phase, lines, time)
+      }
+  }
+
+  val tsvHeader: String = Record("", "", 0, 0).productElementNames.mkString("\t")
+  def recordToTsv(record: Record): String = record.productIterator.mkString("\t")
+
   /**
     * Run compiler performance experiments.
     */
