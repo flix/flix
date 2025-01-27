@@ -63,7 +63,8 @@ object CompletionProvider {
             EffectCompleter.getCompletions(err, namespace, ident) ++
             OpCompleter.getCompletions(err, namespace, ident) ++
             SignatureCompleter.getCompletions(err, namespace, ident) ++
-            EnumTagCompleter.getCompletions(err, namespace, ident)
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -72,7 +73,8 @@ object CompletionProvider {
             EnumCompleter.getCompletions(err, namespace, ident) ++
             StructCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
-            TypeAliasCompleter.getCompletions(err, namespace, ident)
+            TypeAliasCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
@@ -100,7 +102,7 @@ object CompletionProvider {
           case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
 
           // Patterns.
-          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx)
+//          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx)
 
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
