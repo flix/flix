@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -424,6 +425,62 @@ object ConstraintSolver2 {
       (cs, tree)
 
     case c => (List(c), SubstitutionTree.empty)
+  }
+
+  private def blockEffectUnification(constrs0: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+
+    // Separate out the effect unification stuff
+    val (eqConstrs, rest0) = constrs0.partition {
+      case TypeConstraint2.Equality(tpe1, tpe2, _, loc) => tpe1.kind == Kind.Eff
+      case _ => false
+    }
+
+    val eqs = eqConstrs.map {
+      case TypeConstraint2.Equality(tpe1, tpe2, _, loc) => (tpe1, tpe2, loc)
+      case _ => throw InternalCompilerException("Unexpected non-equality constraint", SourceLocation.Unknown)
+    }
+
+    // First solve all the top-level constraints together
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv, SetUnification.Options.default) match {
+      // If we solved everything, then we can use the new substitution.
+      case (Nil, subst) =>
+        // We only mark progress if there was something to solve.
+        if (eqConstrs.nonEmpty) {
+          progress.markProgress()
+        }
+        (Nil, subst)
+      // Otherwise, throw away everything.
+      case (_ :: _, _) =>
+        (eqConstrs, Substitution.empty)
+    }
+
+    val tree0 = SubstitutionTree.shallow(subst1)
+
+    // Apply the substitution to the remaining constraints
+    val rest1 = rest0.map(tree0.apply)
+
+    // Now we separate the purification constraints and recurse on those individually
+    var branches = Map.empty[Symbol.KindedTypeVarSym, SubstitutionTree]
+    val rest = rest1.map {
+      // If it's a purification constraint, solve the nested constraints
+      // and put the substitution in the tree
+      case TypeConstraint2.Purification(sym, eff1, eff2_0, nested0, loc) =>
+        val nested1 = nested0.map(tree0.apply)
+        val (nested, subst2) = blockEffectUnification(nested1, progress)(scope.enter(sym), renv, flix)
+        branches = branches + (sym -> subst2)
+
+        // apply the inner substitution to the to-be-purified effect
+        val eff2 = subst2.root(eff2_0)
+        TypeConstraint2.Purification(sym, eff1, eff2, nested, loc)
+
+      // Otherwise no change
+      case c => c
+    }
+
+    val tree = SubstitutionTree.mk(tree0.root, branches)
+    val constrs = leftovers1 ++ rest
+
+    (constrs, tree)
   }
 
   /**
