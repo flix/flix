@@ -571,7 +571,7 @@ class Flix {
 
             EffectVerifier.run(afterTyper)
 
-            val (afterRegions, regionErrors) = Regions.run(afterTyper)
+            val (afterRegions, regionErrors) = Regions.run(afterTyper, cachedTyperAst, changeSet)
             errors ++= regionErrors
 
             val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
