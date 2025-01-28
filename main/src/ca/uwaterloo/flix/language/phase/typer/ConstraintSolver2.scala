@@ -225,6 +225,7 @@ object ConstraintSolver2 {
     */
   private def purifyEmptyRegion(constr: TypeConstraint2, progress: Progress): TypeConstraint2 = constr match {
     case TypeConstraint2.Purification(sym, eff1, eff2, Nil, loc) =>
+      progress.markProgress()
       val purified = Substitution.singleton(sym, Type.Pure)(eff2)
       TypeConstraint2.Equality(eff1, purified, Provenance.Match(eff1, purified, loc), loc)
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
