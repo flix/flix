@@ -207,14 +207,32 @@ object ConstraintSolver2 {
     */
   private def solveOne(soup: Soup, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Soup = {
     soup
-      .flatMap(breakDownConstraints(_, progress))
-      .flatMap(eliminateIdentities(_, progress))
-      .map(reduceTypes(_, progress))
-      .map(purifyEmptyRegion(_, progress))
-      .flatMapSubst(makeSubstitution(_, progress))
-      .flatMapSubst(effectUnification(_, progress))
-      .flatMapSubst(recordUnification(_, progress))
-      .flatMapSubst(schemaUnification(_, progress))
+      .exhaustively(progress) {
+        (soup, progress) =>
+          soup
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .flatMap(eliminateIdentities(_, progress))
+            .map(reduceTypes(_, progress))
+            .flatMapSubst(makeSubstitution(_, progress))
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .flatMap(eliminateIdentities(_, progress))
+            .map(reduceTypes(_, progress))
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .flatMap(eliminateIdentities(_, progress))
+            .map(reduceTypes(_, progress))
+            .flatMapSubst(recordUnification(_, progress))
+            .flatMapSubst(schemaUnification(_, progress))
+            .map(purifyEmptyRegion(_, progress))
+      }
+      .blockApply(blockEffectUnification(_, progress))
+      .flatMapSubst(caseSetUnification(_, progress))
+      .flatMapSubst(booleanUnification(_, progress))
       .flatMap(contextReduction(_, progress))
   }
 
