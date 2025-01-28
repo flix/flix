@@ -221,7 +221,7 @@ object ConstraintSolverInterface {
     *   Elm[b] ~ String
     * }}}
     */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
+  def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
       case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
         // we set tparams to Nil because we are adding econstrs (with rigid parameters) rather than instances
