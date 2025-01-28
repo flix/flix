@@ -1,14 +1,18 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.api.effectlock.Serialization.SerializableType.Cst
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.{SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.json4s.{Formats, NoTypeHints}
+import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
 
-  private implicit val formats: Formats = org.json4s.native.Serialization.formats(NoTypeHints)
+  private implicit val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
+    classOf[Cst],
+    SerializableTypeConstructor.Unit.getClass
+  )))
 
   def serialize(tpe: Type): String = {
     write(fromType(tpe))
@@ -166,12 +170,64 @@ object Serialization {
     case Kind.Error => ???
   }
 
-  def toType(serializableType: SerializableType): Type = ???
+  def toType(tpe: SerializableType): Type = tpe match {
+    case SerializableType.Var(sym) => ???
+    case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
+    case SerializableType.Apply(tpe1, tpe2) => ???
+    case SerializableType.Alias(symUse, args, tpe) => ???
+    case SerializableType.AssocType(symUse, arg, kind) => ???
+  }
+
+  def toTypeConstructor(tc0: SerializableTypeConstructor): TypeConstructor = tc0 match {
+    case SerializableTypeConstructor.Void => ???
+    case SerializableTypeConstructor.AnyType => ???
+    case SerializableTypeConstructor.Unit => TypeConstructor.Unit
+    case SerializableTypeConstructor.Null => ???
+    case SerializableTypeConstructor.Bool => ???
+    case SerializableTypeConstructor.Char => ???
+    case SerializableTypeConstructor.Float32 => ???
+    case SerializableTypeConstructor.Float64 => ???
+    case SerializableTypeConstructor.BigDecimal => ???
+    case SerializableTypeConstructor.Int8 => ???
+    case SerializableTypeConstructor.Int16 => ???
+    case SerializableTypeConstructor.Int32 => ???
+    case SerializableTypeConstructor.Int64 => ???
+    case SerializableTypeConstructor.BigInt => ???
+    case SerializableTypeConstructor.Str => ???
+    case SerializableTypeConstructor.Regex => ???
+    case SerializableTypeConstructor.Arrow(arity) => ???
+    case SerializableTypeConstructor.ArrowWithoutEffect(arity) => ???
+    case SerializableTypeConstructor.RecordRowEmpty => ???
+    case SerializableTypeConstructor.Record => ???
+    case SerializableTypeConstructor.SchemaRowEmpty => ???
+    case SerializableTypeConstructor.Schema => ???
+    case SerializableTypeConstructor.Sender => ???
+    case SerializableTypeConstructor.Receiver => ???
+    case SerializableTypeConstructor.Lazy => ???
+    case SerializableTypeConstructor.Array => ???
+    case SerializableTypeConstructor.Vector => ???
+    case SerializableTypeConstructor.Tuple(l) => ???
+    case SerializableTypeConstructor.Relation => ???
+    case SerializableTypeConstructor.Lattice => ???
+    case SerializableTypeConstructor.True => ???
+    case SerializableTypeConstructor.False => ???
+    case SerializableTypeConstructor.Not => ???
+    case SerializableTypeConstructor.And => ???
+    case SerializableTypeConstructor.Or => ???
+    case SerializableTypeConstructor.Pure => ???
+    case SerializableTypeConstructor.Univ => ???
+    case SerializableTypeConstructor.Complement => ???
+    case SerializableTypeConstructor.Union => ???
+    case SerializableTypeConstructor.Intersection => ???
+    case SerializableTypeConstructor.Difference => ???
+    case SerializableTypeConstructor.SymmetricDiff => ???
+    case SerializableTypeConstructor.RegionToStar => ???
+  }
 
 
   case class SerializableLibrary(name: String, defs: List[SerializableFunction]) // TODO: Maybe not String for name field
 
-  case class SerializableFunction(name: SerializableSymbol.DefnSyn, tpe: SerializableType) // TODO: Maybe not String for name field
+  case class SerializableFunction(name: SerializableSymbol.DefnSyn, tpe: SerializableType) // TODO: Use Spec instead of type
 
   sealed trait SerializableType
 
