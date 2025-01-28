@@ -46,6 +46,12 @@ object EffUnification3 {
                 scope: Scope, renv: RigidityEnv,
                 opts: SetUnification.Options
               )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
+
+    // Performance: Nothing to do if the equation list is empty
+    if (eqs.isEmpty) {
+      return (Nil, Substitution.empty)
+    }
+
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv

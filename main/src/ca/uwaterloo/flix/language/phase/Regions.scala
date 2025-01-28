@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -35,12 +35,12 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): (Root, List[TypeError]) = flix.phaseNew("Regions") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[TypeError]) = flix.phaseNew("Regions") {
     implicit val sctx: SharedContext = SharedContext.mk()
-    ParOps.parMapValues(root.defs)(visitDef)
-    ParOps.parMapValues(root.sigs)(visitSig)
-    ParOps.parMapValueList(root.instances)(visitInstance)
-    (root, sctx.errors.asScala.toList)
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val sigs = changeSet.updateStaleValues(root.sigs, oldRoot.sigs)(ParOps.parMapValues(_)(visitSig))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    (root.copy(defs = defs, sigs = sigs, instances = instances), sctx.errors.asScala.toList)
   }
 
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
@@ -53,8 +53,10 @@ object Regions {
     sig
   }
 
-  private def visitInstance(ins: Instance)(implicit sctx: SharedContext, flix: Flix): Unit =
+  private def visitInstance(ins: Instance)(implicit sctx: SharedContext, flix: Flix): Instance = {
     ins.defs.foreach(visitDef)
+    ins
+  }
 
   private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], sctx: SharedContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) => ()

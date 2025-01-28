@@ -50,7 +50,11 @@ object CompletionProvider {
         case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
-        case ResolutionError.UndefinedTag(_, _, _, _) => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedTag =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          EnumCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedName =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
@@ -60,16 +64,19 @@ object CompletionProvider {
             EnumCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
             OpCompleter.getCompletions(err, namespace, ident) ++
-            SignatureCompleter.getCompletions(err, namespace, ident)
+            SignatureCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedType =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          AutoImportCompleter.getCompletions(err) ++
+          TypeBuiltinCompleter.getCompletions ++
+            AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            TypeCompleter.getCompletions(ctx) ++
             EnumCompleter.getCompletions(err, namespace, ident) ++
             StructCompleter.getCompletions(err, namespace, ident) ++
             EffectCompleter.getCompletions(err, namespace, ident) ++
-            TypeAliasCompleter.getCompletions(err, namespace, ident)
+            TypeAliasCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
@@ -86,25 +93,18 @@ object CompletionProvider {
 
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+          case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
           case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
           case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-          // Types.
-          case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
-
-          // Patterns.
-          case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
-
           // Uses.
           case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
-          case SyntacticContext.WithClause =>
-            // A with context could also be just a type context.
-            TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
+          case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
 
           // Try-with handler.
           case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)

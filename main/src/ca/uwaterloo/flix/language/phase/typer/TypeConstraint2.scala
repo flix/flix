@@ -17,7 +17,26 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
-sealed trait TypeConstraint2
+sealed trait TypeConstraint2 {
+
+  /**
+    * Returns the sum of the sizes of all the types in this constraint.
+    */
+  def size: Int = this match {
+    case TypeConstraint2.Equality(tpe1, tpe2, prov, loc) => tpe1.size + tpe2.size
+    case TypeConstraint2.Trait(sym, tpe, loc) => tpe.size
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => eff1.size + eff2.size + nested.map(_.size).sum
+  }
+
+  /**
+    * Returns a string representation of this constraint.
+    */
+  override def toString: String = this match {
+    case TypeConstraint2.Equality(tpe1, tpe2, _, _) => s"$tpe1 ~ $tpe2"
+    case TypeConstraint2.Trait(sym, tpe, _) => s"$sym[$tpe]"
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, _) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ${nested.map(x => "\n∧ " + x.toString).mkString.replace("\n", "\n  ")}"
+  }
+}
 
 object TypeConstraint2 {
   /**
@@ -26,7 +45,7 @@ object TypeConstraint2 {
     *   tpe1 ~ tpe2
     * }}}
     */
-  case class Equality(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeConstraint2
+  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance, loc: SourceLocation) extends TypeConstraint2
 
   /**
     * A constraint indicating that the given type is a member of the given trait.
@@ -50,4 +69,32 @@ object TypeConstraint2 {
     * }}}
     */
   case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, nested: List[TypeConstraint2], loc: SourceLocation) extends TypeConstraint2
+
+  /**
+    * Indicates the original source of a constraint.
+    */
+  sealed trait Provenance
+
+  object Provenance {
+
+    /**
+      * The constraint indicates that the left type is the expected type, while the right type is the actual type.
+      */
+    case class Expect(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
+      */
+    case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the types must match.
+      */
+    case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint has arisen from block effect unification, and cannot be traced further to its original source.
+      */
+    case object BlockEffects extends Provenance
+  }
 }

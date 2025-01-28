@@ -28,10 +28,12 @@ object OpCompleter {
     */
   def getCompletions(err: ResolutionError.UndefinedOp, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val uri = err.loc.source.name
-    root.effects.values.flatMap(_.ops).collect{
-      case op if matchesOp(op, namespace, ident, uri, qualified = false) =>
-        OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
-    }
+    root.effects.values.flatMap(eff =>
+      eff.ops.collect {
+        case op if matchesOp(eff, op, namespace, ident, uri, qualified = false) =>
+          OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
+      }
+    )
   }
 
   /**
@@ -42,16 +44,21 @@ object OpCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    if (namespace.nonEmpty)
-      root.effects.values.flatMap(_.ops).collect{
-        case op if matchesOp(op, namespace, ident, uri, qualified = true) =>
-          OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
-      }
-    else
-      root.effects.values.flatMap(_.ops).collect{
-        case op if matchesOp(op, namespace, ident, uri, qualified = false) =>
-          OpCompletion(op, ap, qualified = false, inScope = inScope(op, env), isHandler = false)
-      }
+    if (namespace.nonEmpty) {
+      root.effects.values.flatMap(eff =>
+        eff.ops.collect {
+          case op if matchesOp(eff, op, namespace, ident, uri, qualified = true) =>
+            OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
+        }
+      )
+    } else {
+      root.effects.values.flatMap(eff =>
+        eff.ops.collect {
+          case op if matchesOp(eff, op, namespace, ident, uri, qualified = false) =>
+            OpCompletion(op, ap, qualified = false, inScope(op, env), isHandler = false)
+        }
+      )
+    }
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
@@ -66,10 +73,12 @@ object OpCompleter {
 
   /**
     * Returns `true` if the given effect operation `op` should be included in the suggestions.
+    *
+    * For visibility, we just need to check if the parent effect.
     */
-  private def matchesOp(op: TypedAst.Op, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = op.spec.mod.isPublic && !op.spec.ann.isInternal
-    val isInFile = op.sym.loc.source.name == uri
+  private def matchesOp(eff: TypedAst.Effect, op: TypedAst.Op, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = eff.mod.isPublic && !eff.ann.isInternal
+    val isInFile = eff.loc.source.name == uri
     val isMatch = if (qualified)
       CompletionUtils.matchesQualifiedName(op.sym.namespace, op.sym.name, namespace, ident)
     else
