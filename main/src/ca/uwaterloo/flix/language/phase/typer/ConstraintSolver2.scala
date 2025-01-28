@@ -427,17 +427,19 @@ object ConstraintSolver2 {
     case c => (List(c), SubstitutionTree.empty)
   }
 
+  /**
+    * Performs effect unification on all the given constraints.
+    */
   private def blockEffectUnification(constrs0: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
 
     // Separate out the effect unification stuff
-    val (eqConstrs, rest0) = constrs0.partition {
-      case TypeConstraint2.Equality(tpe1, tpe2, _, loc) => tpe1.kind == Kind.Eff
-      case _ => false
+    val (eqConstrs, rest0) = constrs0.partitionMap {
+      case eq@TypeConstraint2.Equality(tpe1, _, _, _) if tpe1.kind == Kind.Eff => Left(eq)
+      case other => Right(other)
     }
 
     val eqs = eqConstrs.map {
       case TypeConstraint2.Equality(tpe1, tpe2, _, loc) => (tpe1, tpe2, loc)
-      case _ => throw InternalCompilerException("Unexpected non-equality constraint", SourceLocation.Unknown)
     }
 
     // First solve all the top-level constraints together
