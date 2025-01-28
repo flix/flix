@@ -3,8 +3,32 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.{SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.json4s.{Formats, NoTypeHints}
+import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
+
+  private implicit val formats: Formats = org.json4s.native.Serialization.formats(NoTypeHints)
+
+  def serialize(tpe: Type): String = {
+    write(fromType(tpe))
+  }
+
+  def deserialize(tpe: String): Option[Type] = {
+    // Toggle error handling
+    if (true) {
+      val deser = read[SerializableType](tpe)
+      Some(toType(deser))
+    } else {
+      try {
+        val deser = read[SerializableType](tpe)
+        Some(toType(deser))
+      }
+      catch {
+        case _: Exception => None
+      }
+    }
+  }
 
   // TODO: Scheme: only use base and list of typevar
 
@@ -61,23 +85,23 @@ object Serialization {
     case TypeConstructor.Arrow(arity) => SerializableTypeConstructor.Arrow(arity)
     case TypeConstructor.ArrowWithoutEffect(arity) => SerializableTypeConstructor.ArrowWithoutEffect(arity)
     case TypeConstructor.RecordRowEmpty => SerializableTypeConstructor.RecordRowEmpty
-    // case TypeConstructor.RecordRowExtend(label) => SerializableTypeConstructor.RecordRowExtend(label)
+    case TypeConstructor.RecordRowExtend(label) => ??? // SerializableTypeConstructor.RecordRowExtend(label)
     case TypeConstructor.Record => SerializableTypeConstructor.Record
     case TypeConstructor.SchemaRowEmpty => SerializableTypeConstructor.SchemaRowEmpty
-    // case TypeConstructor.SchemaRowExtend(pred) => SerializableTypeConstructor.SchemaRowExtend(pred)
+    case TypeConstructor.SchemaRowExtend(pred) => ??? // SerializableTypeConstructor.SchemaRowExtend(pred)
     case TypeConstructor.Schema => SerializableTypeConstructor.Schema
     case TypeConstructor.Sender => SerializableTypeConstructor.Sender
     case TypeConstructor.Receiver => SerializableTypeConstructor.Receiver
     case TypeConstructor.Lazy => SerializableTypeConstructor.Lazy
-    // case TypeConstructor.Enum(sym, kind) => SerializableTypeConstructor.Enum(sym, kind)
-    // case TypeConstructor.Struct(sym, kind) => SerializableTypeConstructor.Struct(sym, kind)
-    // case TypeConstructor.RestrictableEnum(sym, kind) => SerializableTypeConstructor.RestrictableEnum(sym, kind)
-    // case TypeConstructor.Native(clazz) => SerializableTypeConstructor.Native(clazz)
-    // case TypeConstructor.JvmConstructor(constructor) => SerializableTypeConstructor.JvmConstructor(constructor)
-    // case TypeConstructor.JvmMethod(method) => SerializableTypeConstructor.JvmMethod(method)
-    // case TypeConstructor.JvmField(field) => SerializableTypeConstructor.JvmField(field)
+    case TypeConstructor.Enum(sym, kind) => ??? // SerializableTypeConstructor.Enum(sym, kind)
+    case TypeConstructor.Struct(sym, kind) => ??? // SerializableTypeConstructor.Struct(sym, kind)
+    case TypeConstructor.RestrictableEnum(sym, kind) => ??? // SerializableTypeConstructor.RestrictableEnum(sym, kind)
+    case TypeConstructor.Native(clazz) => ??? // SerializableTypeConstructor.Native(clazz)
+    case TypeConstructor.JvmConstructor(constructor) => ??? // SerializableTypeConstructor.JvmConstructor(constructor)
+    case TypeConstructor.JvmMethod(method) => ??? // SerializableTypeConstructor.JvmMethod(method)
+    case TypeConstructor.JvmField(field) => ??? // SerializableTypeConstructor.JvmField(field)
     case TypeConstructor.Array => SerializableTypeConstructor.Array
-    // case TypeConstructor.ArrayWithoutRegion => SerializableTypeConstructor.ArrayWithoutRegion
+    case TypeConstructor.ArrayWithoutRegion => ??? // SerializableTypeConstructor.ArrayWithoutRegion
     case TypeConstructor.Vector => SerializableTypeConstructor.Vector
     case TypeConstructor.Tuple(l) => SerializableTypeConstructor.Tuple(l)
     case TypeConstructor.Relation => SerializableTypeConstructor.Relation
@@ -94,14 +118,14 @@ object Serialization {
     case TypeConstructor.Intersection => SerializableTypeConstructor.Intersection
     case TypeConstructor.Difference => SerializableTypeConstructor.Difference
     case TypeConstructor.SymmetricDiff => SerializableTypeConstructor.SymmetricDiff
-    // case TypeConstructor.Effect(sym) => SerializableTypeConstructor.Effect(sym)
-    // case TypeConstructor.CaseComplement(sym) => SerializableTypeConstructor.CaseComplement(sym)
-    // case TypeConstructor.CaseUnion(sym) => SerializableTypeConstructor.CaseUnion(sym)
-    // case TypeConstructor.CaseIntersection(sym) => SerializableTypeConstructor.CaseIntersection(sym)
-    // case TypeConstructor.CaseSet(syms, enumSym) => SerializableTypeConstructor.CaseSet(syms, enumSym)
+    case TypeConstructor.Effect(sym) => ??? // SerializableTypeConstructor.Effect(sym)
+    case TypeConstructor.CaseComplement(sym) => ??? // SerializableTypeConstructor.CaseComplement(sym)
+    case TypeConstructor.CaseUnion(sym) => ??? // SerializableTypeConstructor.CaseUnion(sym)
+    case TypeConstructor.CaseIntersection(sym) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
+    case TypeConstructor.CaseSet(syms, enumSym) => ??? // SerializableTypeConstructor.CaseSet(syms, enumSym)
     case TypeConstructor.RegionToStar => SerializableTypeConstructor.RegionToStar
-    // case TypeConstructor.RegionWithoutRegion => SerializableTypeConstructor.RegionWithoutRegion
-    // case TypeConstructor.Error(id, kind) => SerializableTypeConstructor.Error(id, kind)
+    case TypeConstructor.RegionWithoutRegion => ??? // SerializableTypeConstructor.RegionWithoutRegion
+    case TypeConstructor.Error(id, kind) => ??? // SerializableTypeConstructor.Error(id, kind)
   }
 
   def fromSymbol(sym0: Symbol): SerializableSymbol = sym0 match {

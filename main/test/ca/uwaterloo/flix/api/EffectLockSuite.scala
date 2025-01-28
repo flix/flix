@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.Serialization
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Options
@@ -66,6 +67,25 @@ class EffectLockSuite extends AnyFunSuite {
     val expected = Set("main", "q", "g")
     assert(result == expected)
   }
+
+  test("Serialization.01") {
+    val input =
+      """
+        |def main(): Unit \ IO = println("a")
+        |
+        |pub def f(): Unit = ???
+        |
+        |""".stripMargin
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addSourceCode("<test>", input)
+    val (optRoot, _) = flix.check()
+    val root = optRoot.get
+    val f = root.defs.filter(kv => kv._1.text == "f").toList.head
+    val tpe = f._2.spec.retTpe
+    val ser = Serialization.serialize(tpe)
+    assert(Serialization.deserialize(ser).get == tpe)
+  }
+
 
   private def checkEffectLock(input: String): Option[TypedAst.Root] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
