@@ -15,14 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen2, ConstraintSolver, ConstraintSolverInterface, InfResult2, TypeContext2}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -170,7 +169,7 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_){
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
@@ -184,21 +183,22 @@ object Typer {
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext = new TypeContext
-    val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
+    implicit val context: TypeContext2 = new TypeContext2
+    val (tpe, eff0) = ConstraintGen2.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
-    flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
+    // TODO new-constraint solver: revise NewConstraintsDef
+    //    flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
 
     // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
     val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
-    val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
+    val infResult = InfResult2(infTconstrs, tpe, eff, infRenv)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction2.visitDef(defn, subst)
   }
 
   /**
@@ -233,23 +233,23 @@ object Typer {
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext = new TypeContext
+    implicit val context: TypeContext2 = new TypeContext2
     sig.exp match {
       case None => TypeReconstruction.visitSig(sig, Substitution.empty)
       case Some(exp) =>
-        val (tpe, eff0) = ConstraintGen.visitExp(exp)
-        val renv = context.getRigidityEnv
-        val constrs = context.getTypeConstraints
+        val (tpe, eff0) = ConstraintGen2.visitExp(exp)
+        val infRenv = context.getRigidityEnv
+        val infTconstrs = context.getTypeConstraints
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         // A small optimization: If the signature is pure there is no room for subeffecting.
         val open = shouldSubeffect(exp, sig.spec.eff, Subeffecting.ModDefs)
         val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
-        val infResult = InfResult(constrs, tpe, eff, renv)
+        val infResult = InfResult2(infTconstrs, tpe, eff, infRenv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction.visitSig(sig, subst)
+        TypeReconstruction2.visitSig(sig, subst)
     }
   }
 
@@ -272,7 +272,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
     case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
-      val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_)) // MATT use tparams0
+      val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) =>
