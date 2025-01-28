@@ -163,19 +163,11 @@ object ConstraintSolver2 {
   /**
     * Solves the given constraint set as far as possible.
     */
-  def solveAll(constrs0: List[TypeConstraint2])(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
-    var constrs = constrs0
-    var subst = SubstitutionTree.empty
-    var progressMade = true
-    while (progressMade) {
-      val progress: Progress = Progress()
-      val (newConstrs, newSubst) = solveOne(constrs, progress)
-      // invariant: the new subst is already applied to all the newConstrs
-      constrs = newConstrs
-      subst = newSubst @@ subst
-      progressMade = progress.query()
-    }
-    (constrs, subst)
+  def solveAll(constrs: List[TypeConstraint2])(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+    val soup = new Soup(constrs, SubstitutionTree.empty)
+    val progress = Progress()
+    val res = soup.exhaustively(progress)(solveOne)
+    res.get
   }
 
   /**
@@ -201,8 +193,8 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def solveOne(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
-    Soup.of(constrs)
+  private def solveOne(soup: Soup, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Soup = {
+    soup
       .flatMap(breakDownConstraints(_, progress))
       .flatMap(eliminateIdentities(_, progress))
       .map(reduceTypes(_, progress))
@@ -212,7 +204,6 @@ object ConstraintSolver2 {
       .flatMapSubst(recordUnification(_, progress))
       .flatMapSubst(schemaUnification(_, progress))
       .flatMap(contextReduction(_, progress))
-      .get
   }
 
   /**
