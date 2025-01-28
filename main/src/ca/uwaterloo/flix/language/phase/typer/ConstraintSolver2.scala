@@ -38,7 +38,7 @@ object ConstraintSolver2 {
     * This class provides several methods for manipulating the constraints.
     */
   // Invariant: the constraints always have the tree applied
-  class Soup private(private val constrs: List[TypeConstraint2], private val tree: SubstitutionTree) {
+  final class Soup(private val constrs: List[TypeConstraint2], private val tree: SubstitutionTree) {
 
     /**
       * Transforms the constraint set by applying a one-to-many constraint function.
@@ -62,6 +62,14 @@ object ConstraintSolver2 {
       */
     def flatMapSubst(f: TypeConstraint2 => (List[TypeConstraint2], SubstitutionTree)): Soup = {
       val (newConstrs, moreTree) = foldSubstitution(constrs)(f)
+      new Soup(newConstrs, moreTree @@ tree)
+    }
+
+    /**
+      * Transforms the entire set of constraints with the given many-to-many constraint function.
+      */
+    def blockApply(f: List[TypeConstraint2] => (List[TypeConstraint2], SubstitutionTree)): Soup = {
+      val (newConstrs, moreTree) = f(constrs)
       new Soup(newConstrs, moreTree @@ tree)
     }
 
@@ -107,6 +115,22 @@ object ConstraintSolver2 {
         case _ => new Soup(constrs.sortBy(rank), tree)
       }
     }
+
+    /**
+      * Performs the function `f` on the constraints until no progress is made.
+      */
+    @tailrec
+    def exhaustively(progress: Progress)(f: (Soup, Progress) => Soup): Soup = {
+      val innerProgress = Progress()
+      val res = f(this, innerProgress)
+      if (innerProgress.query()) {
+        progress.markProgress()
+        res.exhaustively(progress)(f)
+      } else {
+        this
+      }
+    }
+
   }
 
   object Soup {
