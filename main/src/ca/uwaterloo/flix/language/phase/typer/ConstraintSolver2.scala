@@ -188,18 +188,9 @@ object ConstraintSolver2 {
     * The constraint set must contain only equality constraints.
     */
   def solveAllTypes(constrs0: List[TypeConstraint2])(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], Substitution) = {
-    var constrs = constrs0
-    var subst = Substitution.empty
-    var progressMade = true
-    while (progressMade) {
-      val progress: Progress = Progress()
-      val (newConstrs, newSubst) = solveOneTypes(constrs, progress)
-      // invariant: the new subst is already applied to all the newConstrs
-      constrs = newConstrs
-      subst = newSubst @@ subst
-      progressMade = progress.query()
+    solveAll(constrs0, SubstitutionTree.empty)(scope, renv, TraitEnv(Map.empty), eqenv, flix) match {
+      case (constrs, subst) => (constrs, subst.root)
     }
-    (constrs, subst)
   }
 
   /**
@@ -234,24 +225,6 @@ object ConstraintSolver2 {
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))
       .flatMap(contextReduction(_, progress))
-  }
-
-  /**
-    * Iterates once over all reduction rules to apply them to the constraint set.
-    *
-    * Only applies rules relevant to equality constraints.
-    */
-  private def solveOneTypes(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], Substitution) = {
-    Soup.of(constrs)
-      .flatMap(breakDownConstraints(_, progress))
-      .flatMap(eliminateIdentities(_, progress))
-      .sort()
-      .map(reduceTypes(_, progress))
-      .flatMapSubst(effectUnification(_, progress))
-      .flatMapSubst(makeSubstitution(_, progress))
-      .flatMapSubst(recordUnification(_, progress))
-      .flatMapSubst(schemaUnification(_, progress))
-      .getShallow
   }
 
   /**
