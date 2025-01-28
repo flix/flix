@@ -173,15 +173,16 @@ object ZheglakinPerf {
   private def rq6(n: Int): Unit = {
     println(RQ6)
 
-    val DefaultNoSubeffecting = Config(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true, opts = Options.Default.copy(xsubeffecting = Set.empty))
-    val base = runConfig(DefaultNoSubeffecting, n).mdn
-    val unoptimized = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
+    val DefaultNoSubeffecting = Config(cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
+
+    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
     val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
+    val optimal = runConfig(DefaultNoSubeffecting, n).mdn
 
     println("-" * 80)
-    println("\\textbf{Variant} & \\textbf{Baseline} & \\textbf{Unoptimized} & \\textbf{Solve-and-Retry} \\\\")
+    println("\\textbf{Variant} & \\textbf{Baseline} & \\textbf{Solve-and-Retry} & \\textbf{Optimal} \\\\")
     println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $base%,7d & $unoptimized%,7d & $solveAndRetry%,7d \\\\")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $baseline%,7d & $solveAndRetry%,7d & $optimal%,7d \\\\")
     println("-" * 80)
     println()
   }
