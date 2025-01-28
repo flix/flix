@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, ConstraintSolverInterface, TypeConstraint, TypeReduction}
 import ca.uwaterloo.flix.language.phase.typer.*
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TraitEnv}
@@ -170,8 +173,8 @@ object Scheme {
     }
 
     // Add sc2's constraints to the environment
-    val eenv = ConstraintSolver.expandEqualityEnv(eenv0, econstrs2)
-    val cenv = ConstraintSolver.expandTraitEnv(tenv0, cconstrs2)
+    val eenv = ConstraintSolverInterface.expandEqualityEnv(eenv0, econstrs2)
+    val cenv = ConstraintSolverInterface.expandTraitEnv(tenv0, cconstrs2)
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++

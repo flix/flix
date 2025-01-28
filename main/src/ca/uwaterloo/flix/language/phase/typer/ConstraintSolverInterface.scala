@@ -16,15 +16,14 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv, UnificationError}
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
@@ -88,8 +87,8 @@ object ConstraintSolverInterface {
       val eenv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       // We add extra constraints for the declared type and effect
-      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.Expect(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.Expect(expected = eff, actual = infEff, loc))
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       ///////////////////////////////////////////////////////////////////
@@ -186,7 +185,7 @@ object ConstraintSolverInterface {
     *   Elm[b] ~ String
     * }}}
     */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
+  def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
       case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
         // we set tparams to Nil because we are adding econstrs (with rigid parameters) rather than instances

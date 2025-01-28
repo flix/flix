@@ -247,7 +247,7 @@ object Typer {
         val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
-        val (subst, constraintErrors) = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+        val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
         TypeReconstruction.visitSig(sig, subst)
     }
