@@ -174,8 +174,9 @@ object ConstraintSolver2 {
   /**
     * Solves the given constraint set as far as possible.
     */
-  def solveAll(constrs: List[TypeConstraint2])(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
-    val soup = new Soup(constrs, SubstitutionTree.empty)
+  def solveAll(constrs0: List[TypeConstraint2], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+    val constrs = constrs0.map(initialSubst.apply)
+    val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
     res.get
