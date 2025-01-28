@@ -46,7 +46,7 @@ object ConstraintSolver2 {
       */
     def flatMap(f: TypeConstraint2 => List[TypeConstraint2]): Soup = {
       val newConstrs = constrs.flatMap(f)
-      new Soup(newConstrs, tree)
+      renew(newConstrs, tree)
     }
 
     /**
@@ -54,7 +54,7 @@ object ConstraintSolver2 {
       */
     def map(f: TypeConstraint2 => TypeConstraint2): Soup = {
       val newConstrs = constrs.map(f)
-      new Soup(newConstrs, tree)
+      renew(newConstrs, tree)
     }
 
     /**
@@ -63,7 +63,7 @@ object ConstraintSolver2 {
       */
     def flatMapSubst(f: TypeConstraint2 => (List[TypeConstraint2], SubstitutionTree)): Soup = {
       val (newConstrs, moreTree) = foldSubstitution(constrs)(f)
-      new Soup(newConstrs, moreTree @@ tree)
+      renew(newConstrs, moreTree @@ tree)
     }
 
     /**
@@ -71,7 +71,7 @@ object ConstraintSolver2 {
       */
     def blockApply(f: List[TypeConstraint2] => (List[TypeConstraint2], SubstitutionTree)): Soup = {
       val (newConstrs, moreTree) = f(constrs)
-      new Soup(newConstrs, moreTree @@ tree)
+      renew(newConstrs, moreTree @@ tree)
     }
 
     /**
@@ -129,6 +129,17 @@ object ConstraintSolver2 {
         res.exhaustively(progress)(f)
       } else {
         this
+      }
+    }
+
+    /**
+      * Creates a new [[Soup]], but reuses this one if the arguments are the same.
+      */
+    private def renew(newConstrs: List[TypeConstraint2], newTree: SubstitutionTree): Soup = {
+      if ((constrs eq newConstrs) && (tree eq newTree)) {
+        this
+      } else {
+        new Soup(newConstrs, newTree)
       }
     }
 
