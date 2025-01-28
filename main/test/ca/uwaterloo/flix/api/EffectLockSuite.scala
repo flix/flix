@@ -70,7 +70,7 @@ class EffectLockSuite extends AnyFunSuite {
   private def checkEffectLock(input: String): Option[TypedAst.Root] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
-    val result = flix.effectLock()
+    val result = flix.effectLockReachable()
     result
   }
 

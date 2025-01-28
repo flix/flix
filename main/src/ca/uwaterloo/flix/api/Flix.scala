@@ -876,7 +876,7 @@ class Flix {
   /**
     * Temporary function for testing
     */
-  def effectLock(): Option[TypedAst.Root] = {
+  def effectLockReachable(): Option[TypedAst.Root] = {
     val (optRoot, errors) = check()
     if (errors.isEmpty) {
       // Mark this object as implicit.
