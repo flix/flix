@@ -19,11 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, ConstraintSolverInterface, TypeConstraint, TypeReduction}
 import ca.uwaterloo.flix.language.phase.typer.*
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
