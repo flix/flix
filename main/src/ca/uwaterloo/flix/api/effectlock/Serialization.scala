@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.api.effectlock.Serialization.SerializableType.Cst
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.{SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
