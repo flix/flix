@@ -9,7 +9,7 @@ jobs:
     permissions:
       pull-requests: read
     env:
-      regex: "^(chore|ci|docs|feat|fix|refactor|style|test): "
+      regex: "^(chore|ci|docs|feat|fix|perf|refactor|style|test): "
     steps:
       - name: Check title
         uses: actions/github-script@v7
