@@ -170,14 +170,12 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val updatedDefs = ParOps.parMapValues(staleDefs) {
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_){
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
-    }
-    updatedDefs ++ freshDefs
+    })
   }
 
   /**
@@ -207,9 +205,7 @@ object Typer {
     * Performs type inference and reassembly on all traits in the given AST root.
     */
   private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
-    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val updatedTrais = ParOps.parMapValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv))
-    updatedTrais ++ freshTraits
+    changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait(_, root, traitEnv, eqEnv)))
   }
 
   /**
