@@ -200,9 +200,8 @@ object Kinder {
     * Performs kinding on the all the traits in the given root.
     */
   private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, KindedAst.Trait] = {
-    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val result = ParOps.parMapValues(staleTraits)(visitTrait(_, taenv, root))
-    freshTraits ++ result
+    val res = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait(_, taenv, root)))
+    res
   }
 
   /**
@@ -251,9 +250,7 @@ object Kinder {
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val result = ParOps.parMapValues(staleDefs)(visitDef(_, KindEnv.empty, taenv, root))
-    freshDefs ++ result
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, taenv, root)))
   }
 
   /**

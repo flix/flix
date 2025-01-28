@@ -33,11 +33,8 @@ object Desugar {
     */
   def run(root: WeededAst.Root, oldRoot: DesugaredAst.Root, changeSet: ChangeSet)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
     // Compute the stale and fresh sources.
-    val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
-
-    val units = ParOps.parMapValues(stale)(visitUnit)
-    val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.mainEntryPoint, root.availableClasses)
+    val units = changeSet.updateStaleValues(root.units, oldRoot.units)(ParOps.parMapValues(_)(visitUnit))
+    DesugaredAst.Root(units, root.mainEntryPoint, root.availableClasses)
   }
 
   /**
