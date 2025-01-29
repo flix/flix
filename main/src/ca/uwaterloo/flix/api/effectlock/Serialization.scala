@@ -70,6 +70,18 @@ object Serialization {
     // classOf[SerializableTypeConstructor.CaseIntersection],
     // classOf[SerializableTypeConstructor.CaseSet],
     SerializableTypeConstructor.RegionToStar.getClass,
+
+    // Kinds
+    SerializableKind.Wild.getClass,
+    SerializableKind.WildCaseSet.getClass,
+    SerializableKind.Star.getClass,
+    SerializableKind.Eff.getClass,
+    SerializableKind.Bool.getClass,
+    SerializableKind.RecordRow.getClass,
+    SerializableKind.SchemaRow.getClass,
+    SerializableKind.Predicate.getClass,
+    SerializableKind.Jvm.getClass,
+    classOf[SerializableKind.Arrow]
   )))
 
   def serialize(tpe: Type): String = {
