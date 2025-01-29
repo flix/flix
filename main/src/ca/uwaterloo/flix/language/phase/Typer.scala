@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen2, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -183,8 +183,8 @@ object Typer {
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext2 = new TypeContext2
-    val (tpe, eff0) = ConstraintGen2.visitExp(defn.exp)
+    implicit val context: TypeContext = new TypeContext
+    val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
@@ -233,11 +233,11 @@ object Typer {
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext2 = new TypeContext2
+    implicit val context: TypeContext = new TypeContext
     sig.exp match {
       case None => TypeReconstruction.visitSig(sig, Substitution.empty)
       case Some(exp) =>
-        val (tpe, eff0) = ConstraintGen2.visitExp(exp)
+        val (tpe, eff0) = ConstraintGen.visitExp(exp)
         val infRenv = context.getRigidityEnv
         val infTconstrs = context.getTypeConstraints
 
