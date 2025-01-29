@@ -10,7 +10,11 @@ object Serialization {
 
   private implicit val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
     // Types
+    classOf[SerializableType.Var],
     classOf[SerializableType.Cst],
+    classOf[SerializableType.Apply],
+    classOf[SerializableType.Alias],
+    classOf[SerializableType.AssocType],
 
     // TypeConstructors
     SerializableTypeConstructor.Void.getClass,
@@ -81,7 +85,15 @@ object Serialization {
     SerializableKind.SchemaRow.getClass,
     SerializableKind.Predicate.getClass,
     SerializableKind.Jvm.getClass,
-    classOf[SerializableKind.Arrow]
+    // classOf[SerializableKind.CaseSet],
+    classOf[SerializableKind.Arrow],
+
+    // Symbols
+    classOf[SerializableSymbol.VarSym],
+    classOf[SerializableSymbol.TypeAliasSym],
+    classOf[SerializableSymbol.AssocTypeSym],
+    classOf[SerializableSymbol.TraitSym],
+    classOf[SerializableSymbol.DefnSyn],
   )))
 
   def serialize(tpe: Type): String = {
