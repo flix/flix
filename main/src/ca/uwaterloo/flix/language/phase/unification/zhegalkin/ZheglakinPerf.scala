@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.language.phase.unification.set.Equation
+import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetUnification}
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, Options, Subeffecting}
 
@@ -28,6 +28,7 @@ import scala.collection.mutable
 object ZheglakinPerf {
 
   private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
+  private val RQ2 = "RQ2: Performance Gain of the Simple Rewrite Rules"
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
@@ -36,6 +37,7 @@ object ZheglakinPerf {
   private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 
   private case class Config(
+                             rewriteRules: Boolean = false,
                              cacheInterCst: Boolean = false,
                              cacheUnion: Boolean = false,
                              cacheInter: Boolean = false,
@@ -51,9 +53,10 @@ object ZheglakinPerf {
       case Some(n) => n
     }
 
-    rq1(N)
-    rq3(N)
-    rq6(N)
+    //rq1(N)
+    rq2(N)
+    //rq3(N)
+    //rq6(N)
   }
 
 
@@ -148,10 +151,26 @@ object ZheglakinPerf {
     println()
   }
 
+  private def rq2(n: Int): Unit = {
+    println(RQ2)
+
+    val DefaultNoRewriteRules = Config(rewriteRules = false, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
+
+    val m1 = runConfig(DefaultNoRewriteRules, n).mdn
+    val m2 = runConfig(DefaultNoRewriteRules.copy(rewriteRules = true), n).mdn
+
+    println("-" * 80)
+    println("\\textsf{Baseline} & Rewrite Rules \\\\")
+    println("\\midrule")
+    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d \\\\")
+    println("-" * 80)
+    println()
+  }
+
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultNoCaches = Config(cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
+    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
 
     val m1 = runConfig(DefaultNoCaches, n).mdn
     val m2 = runConfig(DefaultNoCaches.copy(cacheInterCst = true), n).mdn
@@ -173,7 +192,7 @@ object ZheglakinPerf {
   private def rq6(n: Int): Unit = {
     println(RQ6)
 
-    val DefaultNoSubeffecting = Config(cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
+    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
 
     val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
     val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
@@ -222,6 +241,9 @@ object ZheglakinPerf {
     */
   private def runN(N: Int, c: Config): IndexedSeq[Run] = {
     (0 until N).map { _ =>
+
+      SetUnification.EnableRewriteRules = c.rewriteRules
+
       ZhegalkinCache.EnableUnionCache = c.cacheUnion
       ZhegalkinCache.EnableInterCache = c.cacheInter
       ZhegalkinCache.EnableXorCache = c.cacheXor
