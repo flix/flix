@@ -102,7 +102,7 @@ object ConstraintSolverInterface {
       val (leftovers, tree) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil => (tree, Nil)
-        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree))) // TODO use getErrorsFromTypeConstraints
+        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree)))
       }
   }
 
