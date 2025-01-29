@@ -102,18 +102,25 @@ object Instances {
   }
 
   /**
+    * Returns a Boolean to indicate whether any error is found.
+    *
     * Checks that the instance type is simple:
     * * all type variables are unique
     * * all type arguments are variables
     */
-  private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+  private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Boolean = inst match {
     case TypedAst.Instance(_, _, _, trt, tpe, _, _, _, _, _) => tpe match {
-      case _: Type.Cst => ()
-      case _: Type.Var => sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+      case _: Type.Cst => false
+      case _: Type.Var =>
+        sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+        true
       case _: Type.Apply =>
+        var found = false
         // ensure that the head is a concrete type
         tpe.typeConstructor match {
-          case None => sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+          case None =>
+            sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+            found = true
           case Some(_) => ()
         }
         tpe.typeArguments.foldLeft(List.empty[Type.Var]) {
@@ -122,6 +129,7 @@ object Instances {
             // Case 1.1 We've seen it already. Error.
             if (seen.contains(tvar)) {
               sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, trt.loc))
+              found = true
               seen
             }
             // Case 1.2 We haven't seen it before. Add it to the list.
@@ -130,11 +138,17 @@ object Instances {
           // Case 2: Non-variable. Error.
           case (seen, _) =>
             sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+            found = true
             seen
         }
+        found
 
-      case Type.Alias(alias, _, _, _) => sctx.errors.add(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
-      case Type.AssocType(assoc, _, _, loc) => sctx.errors.add(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
+      case Type.Alias(alias, _, _, _) =>
+        sctx.errors.add(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
+        true
+      case Type.AssocType(assoc, _, _, loc) =>
+        sctx.errors.add(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
+        true
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff in instance declaration", loc)
@@ -267,12 +281,13 @@ object Instances {
     var heads = Map.empty[TypeConstructor, TypedAst.Instance]
 
     insts0.foreach {
-      // check that the instance is on a valid type
+      // check that the instance is on a valid type, suppressing other errors if not
       case inst =>
-        checkSimple(inst)
-        checkOverlap(inst, heads)
-        checkInstance(inst, root, changeSet)
-        heads += (unsafeGetHead(inst) -> inst)
+        if (!checkSimple(inst)) {
+          checkOverlap(inst, heads)
+          checkInstance(inst, root, changeSet)
+          heads += (unsafeGetHead(inst) -> inst)
+        }
     }
   }
 
