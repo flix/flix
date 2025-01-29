@@ -122,14 +122,14 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(TypeError.MismatchedTypes(baseTpe1, baseTpe2, tpe1, tpe2, renv, loc))
+      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(TypeError.MismatchedTypes(tpe1, tpe2, tpe1, tpe2, renv, prov.loc))
 
     case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, tpe, renv, loc))
 
-    case TypeConstraint.Purification(sym, _, _, prov, nested) =>
+    case TypeConstraint.Purification(sym, _, _, _, nested) =>
       nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty)))
   }
 
