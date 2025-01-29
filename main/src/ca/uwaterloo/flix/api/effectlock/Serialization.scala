@@ -213,18 +213,18 @@ object Serialization {
     case sym: Symbol.ModuleSym => ???
   }
 
-  def fromKind(kind0: Kind): SerializableKind = kind0 match {
-    case Kind.Wild => ???
-    case Kind.WildCaseSet => ???
-    case Kind.Star => ???
-    case Kind.Eff => ???
-    case Kind.Bool => ???
-    case Kind.RecordRow => ???
-    case Kind.SchemaRow => ???
-    case Kind.Predicate => ???
-    case Kind.Jvm => ???
+  private def fromKind(kind0: Kind): SerializableKind = kind0 match {
+    case Kind.Wild => SerializableKind.Wild
+    case Kind.WildCaseSet => SerializableKind.WildCaseSet
+    case Kind.Star => SerializableKind.Star
+    case Kind.Eff => SerializableKind.Eff
+    case Kind.Bool => SerializableKind.Bool
+    case Kind.RecordRow => SerializableKind.RecordRow
+    case Kind.SchemaRow => SerializableKind.SchemaRow
+    case Kind.Predicate => SerializableKind.Predicate
+    case Kind.Jvm => SerializableKind.Jvm
     case Kind.CaseSet(sym) => ???
-    case Kind.Arrow(k1, k2) => ???
+    case Kind.Arrow(k1, k2) => SerializableKind.Arrow(fromKind(k1), fromKind(k2))
     case Kind.Error => ???
   }
 
