@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
@@ -170,7 +169,7 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_){
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
@@ -198,7 +197,7 @@ object Typer {
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction2.visitDef(defn, subst)
   }
 
   /**
@@ -249,7 +248,7 @@ object Typer {
         val infResult = InfResult(constrs, tpe, eff, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction.visitSig(sig, subst)
+        TypeReconstruction2.visitSig(sig, subst)
     }
   }
 
