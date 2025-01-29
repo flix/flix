@@ -36,14 +36,14 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
   /**
     * Applies this substitution tree to the given type constraint.
     */
-  def apply(constr: TypeConstraint2): TypeConstraint2 = {
+  def apply(constr: TypeConstraint): TypeConstraint = {
     if (root.isEmpty) {
       // Performance: The substitution is empty. Nothing to be done.
       return constr
     }
 
     constr match {
-      case TypeConstraint2.Equality(tpe1, tpe2, prov, loc) =>
+      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
         // Check whether the substitution has to be applied.
         val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
         val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
@@ -51,18 +51,18 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
         if ((t1 eq tpe1) && (t2 eq tpe2))
           constr
         else
-          TypeConstraint2.Equality(t1, t2, prov, loc)
+          TypeConstraint.Equality(t1, t2, prov)
 
-      case TypeConstraint2.Trait(sym, tpe, loc) =>
-        TypeConstraint2.Trait(sym, root(tpe), loc)
+      case TypeConstraint.Trait(sym, tpe, loc) =>
+        TypeConstraint.Trait(sym, root(tpe), loc)
 
-      case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
+      case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
         // Use the root substitution for the external effects.
         // Use the appropriate branch substitution for the nested constraints.
 
         // We use the root as a fallback (as all branches are supersets of root)
         val subtree = branches.getOrElse(sym, this)
-        TypeConstraint2.Purification(sym, root(eff1), subtree(eff2), nested.map(subtree.apply), loc)
+        TypeConstraint.Purification(sym, root(eff1), subtree(eff2), prov, nested.map(subtree.apply))
     }
   }
 
