@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -53,22 +53,22 @@ class TypeContext2 {
     /**
       * The constraints generated for the scope.
       */
-    private val constrs: mutable.ListBuffer[TypeConstraint2] = mutable.ListBuffer.empty
+    private val constrs: mutable.ListBuffer[TypeConstraint] = mutable.ListBuffer.empty
 
     /**
       * Adds the given constraint to the constraint set.
       */
-    def add(constr: TypeConstraint2): Unit = this.constrs.addOne(constr)
+    def add(constr: TypeConstraint): Unit = this.constrs.addOne(constr)
 
     /**
       * Adds all the given constraints to the constraint set.
       */
-    def addAll(constrs: Iterable[TypeConstraint2]): Unit = this.constrs.addAll(constrs)
+    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.addAll(constrs)
 
     /**
       * Returns the generated constraints.
       */
-    def getConstraints: List[TypeConstraint2] = this.constrs.toList
+    def getConstraints: List[TypeConstraint] = this.constrs.toList
   }
 
   /**
@@ -100,7 +100,7 @@ class TypeContext2 {
   /**
     * Returns the current type constraints.
     */
-  def getTypeConstraints: List[TypeConstraint2] = currentScopeConstraints.getConstraints
+  def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
 
   /**
     * Returns the current scope.
@@ -115,7 +115,7 @@ class TypeContext2 {
     * }}}
     */
   def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint2.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc), loc)
+    val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
     currentScopeConstraints.add(constr)
   }
 
@@ -165,7 +165,7 @@ class TypeContext2 {
     * }}}
     */
   def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint2.Equality(expected, actual, Provenance.Expect(expected, actual, loc), loc)
+    val constr = TypeConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
     currentScopeConstraints.add(constr)
   }
 
@@ -185,7 +185,7 @@ class TypeContext2 {
     expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
-        val constr = TypeConstraint2.Equality(expectedType, actualType, Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc), loc)
+        val constr = TypeConstraint.Equality(expectedType, actualType, Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc))
         currentScopeConstraints.add(constr)
     }
   }
@@ -196,7 +196,7 @@ class TypeContext2 {
   def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case TraitConstraint(head, arg, _) => TypeConstraint2.Trait(head.sym, arg, loc)
+      case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }
@@ -244,7 +244,8 @@ class TypeContext2 {
       case Scope(Nil) => throw InternalCompilerException("unexpected missing region", loc)
       case Scope(r :: _) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
-        TypeConstraint2.Purification(r, externalEff1, internalEff2, currentScopeConstraints.getConstraints, loc)
+        val prov = Provenance.Match(externalEff1, internalEff2, loc)
+        TypeConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)
     }
 
     currentScopeConstraints = constraintStack.pop()
