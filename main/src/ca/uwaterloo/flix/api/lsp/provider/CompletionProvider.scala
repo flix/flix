@@ -48,7 +48,7 @@ object CompletionProvider {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
         case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
-        case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+        case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
         case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
         case err: ResolutionError.UndefinedTag =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
