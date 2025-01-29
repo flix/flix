@@ -713,24 +713,17 @@ object Parser2 {
             found.foreach(t => isTail = tail.contains(t))
             close(mark, TreeKind.Ident)
           }
-        case TokenKind.DotWhiteSpace if kinds.contains(nth(1)) =>
-          // Nice error for:
-          // SomeName.
-          //    myFunc()
-          val markErr = open()
-          advance() // Eat the dot
+        case TokenKind.DotWhiteSpace =>
+          // Trailing dot, stop parsing the qualified name.
           val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.Dot)),
-            actual = None,
+            expected = NamedTokenSet.FromKinds(kinds),
+            actual = Some(TokenKind.Dot),
             sctx = context,
-            hint = Some("Remove whitespace after '.'"),
-            loc = previousSourceLocation()
+            hint = None,
+            loc = currentSourceLocation()
           )
-          closeWithError(markErr, error)
-          // Now continue parsing qualified name.
-          val mark = open()
-          expectAny(kinds, context)
-          close(mark, TreeKind.Ident)
+          advanceWithError(error)
+          continue = false
         case _ => continue = false
       }
     }
@@ -3504,7 +3497,9 @@ object Parser2 {
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf, SyntacticContext.Expr.Constraint)
+      expect(TokenKind.ParenL, SyntacticContext.Expr.Constraint)
       Expr.expression()
+      expect(TokenKind.ParenR, SyntacticContext.Expr.Constraint)
       close(mark, TreeKind.Predicate.Guard)
     }
 
