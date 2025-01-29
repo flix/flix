@@ -1227,8 +1227,15 @@ object Type {
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(r: Type, loc: SourceLocation): Type =
+  def mkRegionToStar(r: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
+
+  /**
+    * Returns a region type with the given symbol.
+    */
+  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.Region(sym), loc)
+  }
 
   /**
     * Replace type aliases with the types they represent.

@@ -97,7 +97,7 @@ object SimpleType {
 
   case object True extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionToStar extends SimpleType
 
   case object RegionWithoutRegion extends SimpleType
 
@@ -301,6 +301,10 @@ object SimpleType {
     */
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A region.
+    */
+  case class Region(name: String) extends SimpleType
 
   /**
     * An error type.
@@ -619,7 +623,8 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error

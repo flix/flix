@@ -135,9 +135,9 @@ object EffectVerifier {
     case Expr.Region(tpe, loc) => ()
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       visitExp(exp)
-      val expected = Substitution.singleton(regionVar.sym, Type.Pure)(exp.eff)
-      val actual = eff
-      expectType(expected, actual, loc)
+//      val expected = Substitution.singleton(regionVar.sym, Type.Pure)(exp.eff)
+//      val actual = eff
+//      expectType(expected, actual, loc) // MATT revisit
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)

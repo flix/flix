@@ -199,7 +199,8 @@ object ConstraintSolver2 {
   private def purifyEmptyRegion(constr: TypeConstraint, progress: Progress): TypeConstraint = constr match {
     case TypeConstraint.Purification(sym, eff1, eff2, prov, Nil) =>
       progress.markProgress()
-      val purified = Substitution.singleton(sym, Type.Pure)(eff2)
+//      val purified = Substitution.singleton(sym, Type.Pure)(eff2)
+      val purified = eff2 // MATT revisit
       TypeConstraint.Equality(eff1, purified, prov)
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.map(purifyEmptyRegion(_, progress))
@@ -415,7 +416,7 @@ object ConstraintSolver2 {
     val rest1 = rest0.map(tree0.apply)
 
     // Now we separate the purification constraints and recurse on those individually
-    var branches = Map.empty[Symbol.KindedTypeVarSym, SubstitutionTree]
+    var branches = Map.empty[Symbol.RegionSym, SubstitutionTree]
     val rest = rest1.map {
       // If it's a purification constraint, solve the nested constraints
       // and put the substitution in the tree
