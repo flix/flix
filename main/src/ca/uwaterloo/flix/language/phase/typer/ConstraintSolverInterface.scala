@@ -86,8 +86,8 @@ object ConstraintSolverInterface {
       val eenv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       // We add extra constraints for the declared type and effect
-      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, prov = Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, prov = Provenance.ExpectType(expected = eff, actual = infEff, loc))
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       // Apply the initial substitution to all the constraints
@@ -230,5 +230,4 @@ object ConstraintSolverInterface {
         acc + (sym -> assoc)
     }
   }
-
 }

@@ -166,8 +166,6 @@ object ConstraintSolver2 {
 
   /**
     * Solves the given constraint set as far as possible.
-    *
-    * INVARIANT: The initial substitution is already applied to the constraints.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     val constrs = constrs0.map(initialSubst.apply)
