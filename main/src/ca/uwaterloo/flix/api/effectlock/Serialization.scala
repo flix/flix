@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{Doc, Scope, SymUse, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Input, Scope, SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization.{read, write}
@@ -19,7 +19,33 @@ object Serialization {
     */
   private implicit val formats: Formats = TypeHints.formats
 
-  def serialize(root: TypedAst.Root): String = ???
+  def serialize(root: TypedAst.Root): String = {
+    // TODO: Refactor to this: group(filterLibraries(root.defs.values))
+    // TODO: Consider testing
+    val libs = root.defs.values.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
+      case (acc, defn) =>
+        val isPackage = defn.sym.loc.sp1.source.input match {
+          case Input.Text(name, text, sctx) => false
+          case Input.TxtFile(path, sctx) => false
+          case Input.PkgFile(packagePath, sctx) => false
+          case Input.FileInPackage(packagePath, virtualPath, text, sctx) => true
+          case Input.Unknown => false
+        }
+        if (isPackage)
+          defn.sym.loc.sp1.source.input match {
+            case Input.Text(name, text, sctx) => throw InternalCompilerException("", defn.sym.loc)
+            case Input.TxtFile(path, sctx) => throw InternalCompilerException("", defn.sym.loc)
+            case Input.PkgFile(packagePath, sctx) => throw InternalCompilerException("", defn.sym.loc)
+            case Input.FileInPackage(packagePath, virtualPath, text, sctx) =>
+              val defs = acc.getOrElse(text, List.empty)
+              acc + (text -> (defn :: defs))
+            case Input.Unknown => throw InternalCompilerException("", defn.sym.loc)
+          }
+        else
+          acc
+    }
+    write(fromLibs(libs))
+  }
 
   def serialize(tpe: Type): String = {
     write(fromType(tpe))
