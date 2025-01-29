@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.effectlock.Serialization
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -73,16 +73,29 @@ class EffectLockSuite extends AnyFunSuite {
       """
         |pub def f(): Unit = ???
         |""".stripMargin
+    val (tpe: Type, ser: String) = checkSerialization(input, "f")
+    assert(Serialization.deserialize(ser).get == tpe)
+  }
+
+  test("Serialization.02") {
+    val input =
+      """
+        |pub def f(): a = ???
+        |""".stripMargin
+    val (tpe: Type, ser: String) = checkSerialization(input, "f")
+    assert(Serialization.deserialize(ser).get == tpe)
+  }
+
+  private def checkSerialization(input: String, funSym: String): (Type, String) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
     val (optRoot, _) = flix.check()
     val root = optRoot.get
-    val f = root.defs.filter(kv => kv._1.text == "f").toList.head
+    val f = root.defs.filter(kv => kv._1.text == funSym).toList.head
     val tpe = f._2.spec.retTpe
     val ser = Serialization.serialize(tpe)
-    assert(Serialization.deserialize(ser).get == tpe)
+    (tpe, ser)
   }
-
 
   private def checkEffectLock(input: String): Option[TypedAst.Root] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
