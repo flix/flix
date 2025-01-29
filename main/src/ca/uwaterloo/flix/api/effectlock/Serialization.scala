@@ -51,6 +51,7 @@ object Serialization {
     write(fromType(tpe))
   }
 
+  // TODO: UPDATE DESERIALIZATION TO THE BELOW TYPE
   // def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = ???
 
   def deserialize(tpe: String): Option[Type] = {
