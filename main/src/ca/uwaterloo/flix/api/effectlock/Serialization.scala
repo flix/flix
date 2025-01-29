@@ -8,6 +8,11 @@ import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
 
+  /**
+    * Type hints for JSON library to (de)serialize ADTs.
+    * If an error occurs, it is probably because the [[TypeHints.formats]]
+    * list has not been updated.
+    */
   private implicit val formats: Formats = TypeHints.formats
 
   def serialize(tpe: Type): String = {
@@ -405,6 +410,12 @@ object Serialization {
   }
 
   private object TypeHints {
+
+    /**
+      * List of type hints for serialization library.
+      * Each constructor is registered here, so the library can serialize the name
+      * of the constructor and its fields via reflection.
+      */
     val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
       // Types
       classOf[SerializableType.Var],
