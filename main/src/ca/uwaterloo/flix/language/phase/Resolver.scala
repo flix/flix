@@ -978,12 +978,12 @@ object Resolver {
     case NamedAst.Expr.Region(tpe, loc) =>
       Validation.Success(ResolvedAst.Expr.Region(tpe, loc))
 
-    case NamedAst.Expr.Scope(sym, regionVar, exp, loc) =>
-      val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regionVar)
+    case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
+      val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regSym)
       // Visit the body in the new scope
-      val eVal = resolveExp(exp, env)(scope.enter(regionVar.withKind(Kind.Eff)), ns0, taenv, sctx, root, flix)
+      val eVal = resolveExp(exp, env)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       mapN(eVal) {
-        e => ResolvedAst.Expr.Scope(sym, regionVar, e, loc)
+        e => ResolvedAst.Expr.Scope(sym, regSym, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>

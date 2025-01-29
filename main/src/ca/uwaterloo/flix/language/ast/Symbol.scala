@@ -148,6 +148,13 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh region sym with the given text.
+    */
+  def freshRegionSym(ident: Ident)(implicit flix: Flix): RegionSym = {
+    new RegionSym(flix.genSym.freshId(), ident.name, ident.loc)
+  }
+
+  /**
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkDefnSym(ns: NName, ident: Ident): DefnSym = {
@@ -908,6 +915,30 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = eff.namespace :+ eff.name
+  }
+
+  /**
+    * Region symbol.
+    */
+  final class RegionSym(val id: Int, val name: String, val loc: SourceLocation) extends Symbol {
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: Any): Boolean = obj match {
+      case that: RegionSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id)
+
+    /**
+      * Human-readable representation.
+      */
+    override def toString: String = name + id
   }
 
   /**
