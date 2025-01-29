@@ -38,20 +38,13 @@ object Dependencies {
     */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
     implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(Input, Input), Unit]())
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val (staleEffs, freshEffs) = changeSet.partition(root.effects, oldRoot.effects)
-    val (staleEnums, freshEnums) = changeSet.partition(root.enums, oldRoot.enums)
-    val (staleInstances, freshInstances) = changeSet.partition(root.instances, oldRoot.instances)
-    val (staleStructs, freshStructs) = changeSet.partition(root.structs, oldRoot.structs)
-    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val (staleTypeAliases, freshTypeAliases) = changeSet.partition(root.typeAliases, oldRoot.typeAliases)
-    val defs = freshDefs ++ ParOps.parMapValues(staleDefs)(visitDef)
-    val effects = freshEffs ++ ParOps.parMapValues(staleEffs)(visitEff)
-    val enums = freshEnums ++ ParOps.parMapValues(staleEnums)(visitEnum)
-    val instances = freshInstances ++  ParOps.parMapValues(staleInstances)(visitInstances)
-    val structs = freshStructs ++ ParOps.parMapValues(staleStructs)(visitStruct)
-    val traits = freshTraits ++ ParOps.parMapValues(staleTraits)(visitTrait)
-    val typeAliases = freshTypeAliases ++ ParOps.parMapValues(staleTypeAliases)(visitTypeAlias)
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
+    val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    val structs = changeSet.updateStaleValues(root.structs, oldRoot.structs)(ParOps.parMapValues(_)(visitStruct))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
     var deps = MultiMap.empty[Input, Input]
     sctx.deps.forEach((k, _) => deps = deps + k)
@@ -92,9 +85,9 @@ object Dependencies {
     enm
   }
 
-  private def visitInstances(instances: List[TypedAst.Instance])(implicit sctx: SharedContext): List[TypedAst.Instance] = {
-    instances.foreach(instance => addDependency(instance.trt.sym.loc, instance.loc))
-    instances
+  private def visitInstance(instance: TypedAst.Instance)(implicit sctx: SharedContext): TypedAst.Instance = {
+    addDependency(instance.trt.sym.loc, instance.loc)
+    instance
   }
 
   private def visitStruct(struct: TypedAst.Struct)(implicit sctx: SharedContext): TypedAst.Struct = {
