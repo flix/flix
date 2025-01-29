@@ -122,7 +122,7 @@ object Serialization {
 
   // TODO: Scheme: only use base and list of typevar
 
-  def fromType(tpe: Type): SerializableType = tpe match {
+  private def fromType(tpe: Type): SerializableType = tpe match {
     case Type.Var(sym, _) =>
       val serSym = SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
       SerializableType.Var(serSym)
@@ -153,7 +153,7 @@ object Serialization {
 
   }
 
-  def fromTypeConstructor(tc0: TypeConstructor): SerializableTypeConstructor = tc0 match {
+  private def fromTypeConstructor(tc0: TypeConstructor): SerializableTypeConstructor = tc0 match {
     case TypeConstructor.Void => SerializableTypeConstructor.Void
     case TypeConstructor.AnyType => SerializableTypeConstructor.AnyType
     case TypeConstructor.Unit => SerializableTypeConstructor.Unit
@@ -254,7 +254,7 @@ object Serialization {
     case SerializableKind.Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
   }
 
-  def toType(tpe: SerializableType): Type = tpe match {
+  private def toType(tpe: SerializableType): Type = tpe match {
     case SerializableType.Var(sym) =>
       val sym1 = new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
       Type.Var(sym1, SourceLocation.Unknown)
@@ -264,59 +264,60 @@ object Serialization {
     case SerializableType.AssocType(symUse, arg, kind) => ???
   }
 
-  def toTypeConstructor(tc0: SerializableTypeConstructor): TypeConstructor = tc0 match {
-    case SerializableTypeConstructor.Void => ???
-    case SerializableTypeConstructor.AnyType => ???
+  private def toTypeConstructor(tc0: SerializableTypeConstructor): TypeConstructor = tc0 match {
+    case SerializableTypeConstructor.Void => TypeConstructor.Void
+    case SerializableTypeConstructor.AnyType => TypeConstructor.AnyType
     case SerializableTypeConstructor.Unit => TypeConstructor.Unit
-    case SerializableTypeConstructor.Null => ???
-    case SerializableTypeConstructor.Bool => ???
-    case SerializableTypeConstructor.Char => ???
-    case SerializableTypeConstructor.Float32 => ???
-    case SerializableTypeConstructor.Float64 => ???
-    case SerializableTypeConstructor.BigDecimal => ???
-    case SerializableTypeConstructor.Int8 => ???
-    case SerializableTypeConstructor.Int16 => ???
-    case SerializableTypeConstructor.Int32 => ???
-    case SerializableTypeConstructor.Int64 => ???
-    case SerializableTypeConstructor.BigInt => ???
-    case SerializableTypeConstructor.Str => ???
-    case SerializableTypeConstructor.Regex => ???
-    case SerializableTypeConstructor.Arrow(arity) => ???
-    case SerializableTypeConstructor.ArrowWithoutEffect(arity) => ???
-    case SerializableTypeConstructor.RecordRowEmpty => ???
-    case SerializableTypeConstructor.Record => ???
-    case SerializableTypeConstructor.SchemaRowEmpty => ???
-    case SerializableTypeConstructor.Schema => ???
-    case SerializableTypeConstructor.Sender => ???
-    case SerializableTypeConstructor.Receiver => ???
-    case SerializableTypeConstructor.Lazy => ???
-    case SerializableTypeConstructor.Array => ???
-    case SerializableTypeConstructor.Vector => ???
-    case SerializableTypeConstructor.Tuple(l) => ???
-    case SerializableTypeConstructor.Relation => ???
-    case SerializableTypeConstructor.Lattice => ???
-    case SerializableTypeConstructor.True => ???
-    case SerializableTypeConstructor.False => ???
-    case SerializableTypeConstructor.Not => ???
-    case SerializableTypeConstructor.And => ???
-    case SerializableTypeConstructor.Or => ???
-    case SerializableTypeConstructor.Pure => ???
-    case SerializableTypeConstructor.Univ => ???
-    case SerializableTypeConstructor.Complement => ???
-    case SerializableTypeConstructor.Union => ???
-    case SerializableTypeConstructor.Intersection => ???
-    case SerializableTypeConstructor.Difference => ???
-    case SerializableTypeConstructor.SymmetricDiff => ???
-    case SerializableTypeConstructor.RegionToStar => ???
+    case SerializableTypeConstructor.Null => TypeConstructor.Null
+    case SerializableTypeConstructor.Bool => TypeConstructor.Bool
+    case SerializableTypeConstructor.Char => TypeConstructor.Char
+    case SerializableTypeConstructor.Float32 => TypeConstructor.Float32
+    case SerializableTypeConstructor.Float64 => TypeConstructor.Float64
+    case SerializableTypeConstructor.BigDecimal => TypeConstructor.BigDecimal
+    case SerializableTypeConstructor.Int8 => TypeConstructor.Int8
+    case SerializableTypeConstructor.Int16 => TypeConstructor.Int16
+    case SerializableTypeConstructor.Int32 => TypeConstructor.Int32
+    case SerializableTypeConstructor.Int64 => TypeConstructor.Int64
+    case SerializableTypeConstructor.BigInt => TypeConstructor.BigInt
+    case SerializableTypeConstructor.Str => TypeConstructor.Str
+    case SerializableTypeConstructor.Regex => TypeConstructor.Regex
+    case SerializableTypeConstructor.Arrow(arity) => TypeConstructor.Arrow(arity)
+    case SerializableTypeConstructor.ArrowWithoutEffect(arity) => TypeConstructor.ArrowWithoutEffect(arity)
+    case SerializableTypeConstructor.RecordRowEmpty => TypeConstructor.RecordRowEmpty
+    case SerializableTypeConstructor.Record => TypeConstructor.Record
+    case SerializableTypeConstructor.SchemaRowEmpty => TypeConstructor.SchemaRowEmpty
+    case SerializableTypeConstructor.Schema => TypeConstructor.Schema
+    case SerializableTypeConstructor.Sender => TypeConstructor.Sender
+    case SerializableTypeConstructor.Receiver => TypeConstructor.Receiver
+    case SerializableTypeConstructor.Lazy => TypeConstructor.Lazy
+    case SerializableTypeConstructor.Array => TypeConstructor.Array
+    case SerializableTypeConstructor.Vector => TypeConstructor.Vector
+    case SerializableTypeConstructor.Tuple(l) => TypeConstructor.Tuple(l)
+    case SerializableTypeConstructor.Relation => TypeConstructor.Relation
+    case SerializableTypeConstructor.Lattice => TypeConstructor.Lattice
+    case SerializableTypeConstructor.True => TypeConstructor.True
+    case SerializableTypeConstructor.False => TypeConstructor.False
+    case SerializableTypeConstructor.Not => TypeConstructor.Not
+    case SerializableTypeConstructor.And => TypeConstructor.And
+    case SerializableTypeConstructor.Or => TypeConstructor.Or
+    case SerializableTypeConstructor.Pure => TypeConstructor.Pure
+    case SerializableTypeConstructor.Univ => TypeConstructor.Univ
+    case SerializableTypeConstructor.Complement => TypeConstructor.Complement
+    case SerializableTypeConstructor.Union => TypeConstructor.Union
+    case SerializableTypeConstructor.Intersection => TypeConstructor.Intersection
+    case SerializableTypeConstructor.Difference => TypeConstructor.Difference
+    case SerializableTypeConstructor.SymmetricDiff => TypeConstructor.SymmetricDiff
+    case SerializableTypeConstructor.RegionToStar => TypeConstructor.RegionToStar
   }
 
-  case class SerializableLibrary(name: String, defs: List[SerializableFunction]) // TODO: Maybe not String for name field
+  private case class SerializableLibrary(name: String, defs: List[SerializableFunction]) // TODO: Maybe not String for name field
 
-  case class SerializableFunction(name: SerializableSymbol.DefnSyn, tpe: SerializableType) // TODO: Use Spec instead of type
+  private case class SerializableFunction(name: SerializableSymbol.DefnSyn, tpe: SerializableType) // TODO: Use Spec instead of type
 
-  sealed trait SerializableType
+  private sealed trait SerializableType
 
-  object SerializableType {
+  private object SerializableType {
+
     case class Var(sym: SerializableSymbol.VarSym) extends SerializableType
 
     case class Cst(tc: SerializableTypeConstructor) extends SerializableType
@@ -329,9 +330,10 @@ object Serialization {
 
   }
 
-  sealed trait SerializableTypeConstructor
+  private sealed trait SerializableTypeConstructor
 
-  object SerializableTypeConstructor {
+  private object SerializableTypeConstructor {
+
     case object Void extends SerializableTypeConstructor
 
     case object AnyType extends SerializableTypeConstructor
@@ -435,11 +437,13 @@ object Serialization {
     // case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
 
     case object RegionToStar extends SerializableTypeConstructor
+
   }
 
-  sealed trait SerializableKind // only have star, eff, arrow
+  private sealed trait SerializableKind // only have star, eff, arrow
 
-  object SerializableKind {
+  private object SerializableKind {
+
     case object Wild extends SerializableKind
 
     case object WildCaseSet extends SerializableKind
@@ -464,16 +468,9 @@ object Serialization {
 
   }
 
+  private sealed trait SerializableSymbol
 
-  sealed trait SerializableName
-
-  object SerializableName {
-    case class Ident(name: String) extends SerializableName // jvm types do not exist after typing
-  }
-
-  sealed trait SerializableSymbol
-
-  object SerializableSymbol {
+  private object SerializableSymbol {
 
     case class VarSym(id: Int, text: SerializableVarText, kind: SerializableKind) extends SerializableSymbol
 
@@ -484,11 +481,12 @@ object Serialization {
     case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
 
     case class DefnSyn(id: Option[Int], namespace: List[String], text: String) extends SerializableSymbol
+
   }
 
-  sealed trait SerializableVarText
+  private sealed trait SerializableVarText
 
-  object SerializableVarText {
+  private object SerializableVarText {
 
     case object Absent extends SerializableVarText
 
