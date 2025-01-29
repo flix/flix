@@ -122,8 +122,6 @@ object Serialization {
 
   // TODO: Scheme: only use base and list of typevar
 
-  // TODO: Consider making Serializable super / marker trait
-
   def fromType(tpe: Type): SerializableType = tpe match {
     case Type.Var(sym, _) =>
       val serSym = SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
