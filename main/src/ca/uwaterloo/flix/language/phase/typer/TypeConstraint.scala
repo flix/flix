@@ -39,6 +39,15 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
   }
 
+  /**
+    * Returns the sum of the sizes of all the types in this constraint.
+    */
+  def size: Int = this match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.Trait(_, tpe, _) => tpe.size
+    case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
+  }
+
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"

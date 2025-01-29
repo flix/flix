@@ -25,6 +25,11 @@ import scala.collection.mutable
 object SetUnification {
 
   /**
+    * Enable simple rewrite rules.
+    */
+  var EnableRewriteRules: Boolean = true
+
+  /**
     * The static parameters of set unification.
     *
     * @param sizeThreshold       if positive, [[solve]] will give up before SVE if there are more equations than this
@@ -85,15 +90,18 @@ object SetUnification {
     val state = new State(l)
     val trivialPhaseName = "Trivial Equations"
 
-    runWithState(state, runRule(constantAssignment), "Constant Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAlias), "Variable Aliases")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, assertSveEquationCount, "Assert Size")
+    if (EnableRewriteRules) {
+      runWithState(state, runRule(constantAssignment), "Constant Assignment")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(variableAlias), "Variable Aliases")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, assertSveEquationCount, "Assert Size")
+    }
+
     runWithState(state, runRule(sve), "SVE")
 
     (state.eqs, state.subst)

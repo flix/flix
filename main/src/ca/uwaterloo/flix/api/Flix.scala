@@ -581,13 +581,13 @@ class Flix {
             val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
             errors ++= instanceErrors
 
-            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
             errors ++= predDepErrors
 
             val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
             errors ++= stratificationErrors
 
-            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier, cachedTyperAst, changeSet)
             errors ++= patMatchErrors
 
             val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
