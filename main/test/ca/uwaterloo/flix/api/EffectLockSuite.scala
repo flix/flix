@@ -71,13 +71,10 @@ class EffectLockSuite extends AnyFunSuite {
   test("Serialization.01") {
     val input =
       """
-        |def main(): Unit \ IO = println("a")
-        |
         |pub def f(): Unit = ???
-        |
         |""".stripMargin
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addSourceCode("<test>", input)
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
     val (optRoot, _) = flix.check()
     val root = optRoot.get
     val f = root.defs.filter(kv => kv._1.text == "f").toList.head
