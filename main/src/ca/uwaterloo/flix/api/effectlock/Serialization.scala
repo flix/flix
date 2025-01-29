@@ -1,12 +1,14 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Doc, Scope, SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
+
+  type NamedTypeScheme = (Symbol.DefnSym, Scheme)
 
   /**
     * Type hints for JSON library to (de)serialize ADTs.
@@ -43,6 +45,12 @@ object Serialization {
     }
   }
 
+  private def toLibs(libs: Map[Library, List[SerializableFunction]]): Map[Library, List[NamedTypeScheme]] = {
+    libs.map {
+      case (l, defs) => l -> defs.map(toNamedTypeScheme)
+    }
+  }
+
   private def fromDef(defn0: TypedAst.Def): SerializableFunction = defn0 match {
     case TypedAst.Def(sym, spec, _, _) =>
       val ns = sym.namespace
@@ -51,11 +59,32 @@ object Serialization {
       SerializableFunction(ns, text, sc)
   }
 
+  private def toNamedTypeScheme(defn0: SerializableFunction): NamedTypeScheme = defn0 match {
+    case SerializableFunction(namespace, text, scheme) =>
+      val sym = Symbol.mkDefnSym(namespace.mkString(".").appendedAll(text))
+      (sym, toScheme(scheme))
+  }
+
   private def fromScheme(scheme: Scheme): SerializableScheme = scheme match {
     case Scheme(quantifiers, _, _, base) =>
-      val qs = quantifiers.map(sym => SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind)))
+      val qs = quantifiers.map(fromKindedTypeVarSym)
       val b = fromType(base)
       SerializableScheme(qs, b)
+  }
+
+  private def toScheme(scheme: SerializableScheme): Scheme = scheme match {
+    case SerializableScheme(quantifiers, base) =>
+      val qs = quantifiers.map(toKindedTypeVarSym)
+      val b = toType(base)
+      Scheme(qs, List.empty, List.empty, b)
+  }
+
+  private def fromKindedTypeVarSym(sym: Symbol.KindedTypeVarSym): SerializableSymbol.VarSym = {
+    SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
+  }
+
+  private def toKindedTypeVarSym(sym: SerializableSymbol.VarSym): Symbol.KindedTypeVarSym = {
+    new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
   }
 
   private def fromType(tpe: Type): SerializableType = tpe match {
@@ -191,9 +220,7 @@ object Serialization {
   }
 
   private def toType(tpe: SerializableType): Type = tpe match {
-    case SerializableType.Var(sym) =>
-      val sym1 = new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
-      Type.Var(sym1, SourceLocation.Unknown)
+    case SerializableType.Var(sym) => Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
     case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
     case SerializableType.Apply(tpe1, tpe2) => ???
     case SerializableType.Alias(symUse, args, tpe) => ???
