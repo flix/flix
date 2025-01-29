@@ -53,10 +53,10 @@ object ZheglakinPerf {
       case Some(n) => n
     }
 
-    //rq1(N)
-    rq2(N)
-    //rq3(N)
-    //rq6(N)
+    rq1(N)
+    //rq2(N)
+    rq3(N)
+    rq6(N)
   }
 
 
