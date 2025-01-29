@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.{Formats, ShortTypeHints}
@@ -35,7 +35,28 @@ object Serialization {
     }
   }
 
-  // TODO: Scheme: only use base and list of typevar
+  private type Library = String
+
+  private def fromLibs(libs: Map[Library, List[TypedAst.Def]]): Map[Library, List[SerializableFunction]] = {
+    libs.map {
+      case (l, defs) => l -> defs.map(fromDef)
+    }
+  }
+
+  private def fromDef(defn0: TypedAst.Def): SerializableFunction = defn0 match {
+    case TypedAst.Def(sym, spec, _, _) =>
+      val ns = sym.namespace
+      val text = sym.text
+      val sc = fromScheme(spec.declaredScheme)
+      SerializableFunction(ns, text, sc)
+  }
+
+  private def fromScheme(scheme: Scheme): SerializableScheme = scheme match {
+    case Scheme(quantifiers, _, _, base) =>
+      val qs = quantifiers.map(sym => SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind)))
+      val b = fromType(base)
+      SerializableScheme(qs, b)
+  }
 
   private def fromType(tpe: Type): SerializableType = tpe match {
     case Type.Var(sym, _) =>
@@ -225,9 +246,9 @@ object Serialization {
     case SerializableTypeConstructor.RegionToStar => TypeConstructor.RegionToStar
   }
 
-  private case class SerializableLibrary(name: String, defs: List[SerializableFunction]) // TODO: Maybe not String for name field
+  private case class SerializableFunction(namespace: List[String], text: String, scheme: SerializableScheme)
 
-  private case class SerializableFunction(name: SerializableSymbol.DefnSyn, tpe: SerializableType) // TODO: Use Spec instead of type
+  private case class SerializableScheme(quantifiers: List[SerializableSymbol.VarSym], base: SerializableType)
 
   private sealed trait SerializableType
 
@@ -395,8 +416,6 @@ object Serialization {
 
     case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
 
-    case class DefnSyn(id: Option[Int], namespace: List[String], text: String) extends SerializableSymbol
-
   }
 
   private sealed trait SerializableVarText
@@ -501,7 +520,6 @@ object Serialization {
       classOf[SerializableSymbol.TypeAliasSym],
       classOf[SerializableSymbol.AssocTypeSym],
       classOf[SerializableSymbol.TraitSym],
-      classOf[SerializableSymbol.DefnSyn],
 
       // VarText
       SerializableVarText.Absent.getClass,
