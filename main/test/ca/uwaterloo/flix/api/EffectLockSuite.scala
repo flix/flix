@@ -73,7 +73,7 @@ class EffectLockSuite extends AnyFunSuite {
       """
         |pub def f(): Unit = ???
         |""".stripMargin
-    val (tpe: Type, ser: String) = checkSerialization(input, "f")
+    val (tpe: Type, ser: String) = checkSerializationType(input, "f")
     assert(Serialization.deserialize(ser).get == tpe)
   }
 
@@ -82,11 +82,11 @@ class EffectLockSuite extends AnyFunSuite {
       """
         |pub def f(): a = ???
         |""".stripMargin
-    val (tpe: Type, ser: String) = checkSerialization(input, "f")
+    val (tpe: Type, ser: String) = checkSerializationType(input, "f")
     assert(Serialization.deserialize(ser).get == tpe)
   }
 
-  private def checkSerialization(input: String, funSym: String): (Type, String) = {
+  private def checkSerializationType(input: String, funSym: String): (Type, String) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
     val (optRoot, _) = flix.check()
