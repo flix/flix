@@ -8,7 +8,9 @@ import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
 
-  type NamedTypeScheme = (Symbol.DefnSym, Scheme)
+  private type Library = String
+
+  private type NamedTypeScheme = (Symbol.DefnSym, Scheme)
 
   /**
     * Type hints for JSON library to (de)serialize ADTs.
@@ -17,9 +19,13 @@ object Serialization {
     */
   private implicit val formats: Formats = TypeHints.formats
 
+  def serialize(root: TypedAst.Root): String = ???
+
   def serialize(tpe: Type): String = {
     write(fromType(tpe))
   }
+
+  // def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = ???
 
   def deserialize(tpe: String): Option[Type] = {
     // Toggle error handling
@@ -37,7 +43,6 @@ object Serialization {
     }
   }
 
-  private type Library = String
 
   private def fromLibs(libs: Map[Library, List[TypedAst.Def]]): Map[Library, List[SerializableFunction]] = {
     libs.map {
