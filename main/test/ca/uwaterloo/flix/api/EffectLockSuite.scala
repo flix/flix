@@ -1,10 +1,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.effectlock.Serialization
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
+
+import java.nio.file.Path
 
 class EffectLockSuite extends AnyFunSuite {
 
@@ -73,8 +75,8 @@ class EffectLockSuite extends AnyFunSuite {
       """
         |pub def f(): Unit = ???
         |""".stripMargin
-    val (tpe: Type, ser: String) = checkSerializationType(input, "f")
-    assert(Serialization.deserialize(ser).get == tpe)
+    val (tpe, ser) = checkSerializationType(input, "f")
+    assert(Serialization.deserializeTpe(ser).get == tpe)
   }
 
   test("Serialization.02") {
@@ -82,8 +84,36 @@ class EffectLockSuite extends AnyFunSuite {
       """
         |pub def g(): a = ???
         |""".stripMargin
-    val (tpe: Type, ser: String) = checkSerializationType(input, "g")
-    assert(Serialization.deserialize(ser).get == tpe)
+    val (tpe, ser) = checkSerializationType(input, "g")
+    assert(Serialization.deserializeTpe(ser).get == tpe)
+  }
+
+  test("Serialization.03") {
+    val input =
+      """
+        |pub def f(): Bool = ???
+        |""".stripMargin
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
+    val (optRoot, _) = flix.check()
+    val root = optRoot.get
+    val funcs = List("f")
+    val defs = root.defs.map {
+      case (sym, defn) if funcs.contains(sym.text) =>
+        val input = Input.FileInPackage(Path.of("."), "", "testPkg", sctx)
+        val source = sym.loc.sp1.source.copy(input = input)
+        val sp1 = sym.loc.sp1.copy(source)
+        val sp2 = sym.loc.sp2.copy(source)
+        val loc = sym.loc.copy(sp1 = sp1, sp2 = sp2)
+        val sym1 = new Symbol.DefnSym(sym.id, sym.namespace, sym.text, loc)
+        (sym1, defn.copy(sym = sym1))
+      case sd => sd
+    }
+    val root1 = root.copy(defs = defs)
+    val ser = Serialization.serialize(root1)
+    val deser = Serialization.deserialize(ser)
+    // TODO: Assert type schemes are equal and refactor the above code
+    assert(false)
   }
 
   private def checkSerializationType(input: String, funSym: String): (Type, String) = {

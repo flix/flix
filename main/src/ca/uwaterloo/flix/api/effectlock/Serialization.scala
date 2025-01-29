@@ -51,10 +51,23 @@ object Serialization {
     write(fromType(tpe))
   }
 
-  // TODO: UPDATE DESERIALIZATION TO THE BELOW TYPE
-  // def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = ???
+  def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = {
+    // Toggle error handling
+    if (true) {
+      val deser = read[Map[Library, List[SerializableFunction]]](json)
+      Some(toLibs(deser))
+    } else {
+      try {
+        val deser = read[Map[Library, List[SerializableFunction]]](json)
+        Some(toLibs(deser))
+      }
+      catch {
+        case _: Exception => None
+      }
+    }
+  }
 
-  def deserialize(tpe: String): Option[Type] = {
+  def deserializeTpe(tpe: String): Option[Type] = {
     // Toggle error handling
     if (true) {
       val deser = read[SerializableType](tpe)
@@ -254,7 +267,7 @@ object Serialization {
   private def toType(tpe: SerializableType): Type = tpe match {
     case SerializableType.Var(sym) => Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
     case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
-    case SerializableType.Apply(tpe1, tpe2) => ???
+    case SerializableType.Apply(tpe1, tpe2) => Type.Apply(toType(tpe1), toType(tpe2), SourceLocation.Unknown)
     case SerializableType.Alias(symUse, args, tpe) => ???
     case SerializableType.AssocType(symUse, arg, kind) => ???
   }
