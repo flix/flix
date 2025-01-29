@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.ast.shared.{SymUse, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization.{read, write}
@@ -94,6 +94,10 @@ object Serialization {
     classOf[SerializableSymbol.AssocTypeSym],
     classOf[SerializableSymbol.TraitSym],
     classOf[SerializableSymbol.DefnSyn],
+
+    // VarText
+    SerializableVarText.Absent.getClass,
+    classOf[SerializableVarText.SourceText],
   )))
 
   def serialize(tpe: Type): String = {
@@ -122,7 +126,7 @@ object Serialization {
 
   def fromType(tpe: Type): SerializableType = tpe match {
     case Type.Var(sym, _) =>
-      val serSym = SerializableSymbol.VarSym(sym.id, sym.text, fromKind(sym.kind))
+      val serSym = SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
       SerializableType.Var(serSym)
 
     case Type.Cst(tc, _) =>
@@ -214,27 +218,14 @@ object Serialization {
     case TypeConstructor.Error(id, kind) => ??? // SerializableTypeConstructor.Error(id, kind)
   }
 
-  def fromSymbol(sym0: Symbol): SerializableSymbol = sym0 match {
-    case sym: Symbol.VarSym => ???
-    case sym: Symbol.KindedTypeVarSym =>
-      SerializableSymbol.VarSym(sym.id, sym.text, fromKind(sym.kind))
-    case sym: Symbol.UnkindedTypeVarSym => ???
-    case sym: Symbol.DefnSym => SerializableSymbol.DefnSyn(sym.id, sym.namespace, sym.text)
-    case sym: Symbol.EnumSym => ???
-    case sym: Symbol.StructSym => ???
-    case sym: Symbol.RestrictableEnumSym => ???
-    case sym: Symbol.CaseSym => ???
-    case sym: Symbol.StructFieldSym => ???
-    case sym: Symbol.RestrictableCaseSym => ???
-    case sym: Symbol.TraitSym => ???
-    case sym: Symbol.SigSym => ???
-    case sym: Symbol.LabelSym => ???
-    case sym: Symbol.HoleSym => ???
-    case sym: Symbol.TypeAliasSym => ???
-    case sym: Symbol.AssocTypeSym => ???
-    case sym: Symbol.EffectSym => ???
-    case sym: Symbol.OpSym => ???
-    case sym: Symbol.ModuleSym => ???
+  private def fromVarText(text: VarText): SerializableVarText = text match {
+    case VarText.Absent => SerializableVarText.Absent
+    case VarText.SourceText(s) => SerializableVarText.SourceText(s)
+  }
+
+  private def toVarText(text: SerializableVarText): VarText = text match {
+    case SerializableVarText.Absent => VarText.Absent
+    case SerializableVarText.SourceText(s) => VarText.SourceText(s)
   }
 
   private def fromKind(kind0: Kind): SerializableKind = kind0 match {
@@ -252,8 +243,23 @@ object Serialization {
     case Kind.Error => ???
   }
 
+  private def toKind(kind0: SerializableKind): Kind = kind0 match {
+    case SerializableKind.Wild => Kind.Wild
+    case SerializableKind.WildCaseSet => Kind.WildCaseSet
+    case SerializableKind.Star => Kind.Star
+    case SerializableKind.Eff => Kind.Eff
+    case SerializableKind.Bool => Kind.Bool
+    case SerializableKind.RecordRow => Kind.RecordRow
+    case SerializableKind.SchemaRow => Kind.SchemaRow
+    case SerializableKind.Predicate => Kind.Predicate
+    case SerializableKind.Jvm => Kind.Jvm
+    case SerializableKind.Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
+  }
+
   def toType(tpe: SerializableType): Type = tpe match {
-    case SerializableType.Var(sym) => ???
+    case SerializableType.Var(sym) =>
+      val sym1 = new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
+      Type.Var(sym1, SourceLocation.Unknown)
     case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
     case SerializableType.Apply(tpe1, tpe2) => ???
     case SerializableType.Alias(symUse, args, tpe) => ???
@@ -305,7 +311,6 @@ object Serialization {
     case SerializableTypeConstructor.SymmetricDiff => ???
     case SerializableTypeConstructor.RegionToStar => ???
   }
-
 
   case class SerializableLibrary(name: String, defs: List[SerializableFunction]) // TODO: Maybe not String for name field
 
@@ -472,7 +477,7 @@ object Serialization {
 
   object SerializableSymbol {
 
-    case class VarSym(id: Int, text: VarText, kind: SerializableKind) extends SerializableSymbol
+    case class VarSym(id: Int, text: SerializableVarText, kind: SerializableKind) extends SerializableSymbol
 
     case class TypeAliasSym(namespace: List[String], name: String) extends SerializableSymbol
 
@@ -481,6 +486,16 @@ object Serialization {
     case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
 
     case class DefnSyn(id: Option[Int], namespace: List[String], text: String) extends SerializableSymbol
+  }
+
+  sealed trait SerializableVarText
+
+  object SerializableVarText {
+
+    case object Absent extends SerializableVarText
+
+    case class SourceText(s: String) extends SerializableVarText
+
   }
 
 }
