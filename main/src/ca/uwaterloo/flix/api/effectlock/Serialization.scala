@@ -8,97 +8,7 @@ import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
 
-  private implicit val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
-    // Types
-    classOf[SerializableType.Var],
-    classOf[SerializableType.Cst],
-    classOf[SerializableType.Apply],
-    classOf[SerializableType.Alias],
-    classOf[SerializableType.AssocType],
-
-    // TypeConstructors
-    SerializableTypeConstructor.Void.getClass,
-    SerializableTypeConstructor.AnyType.getClass,
-    SerializableTypeConstructor.Unit.getClass,
-    SerializableTypeConstructor.Null.getClass,
-    SerializableTypeConstructor.Bool.getClass,
-    SerializableTypeConstructor.Char.getClass,
-    SerializableTypeConstructor.Float32.getClass,
-    SerializableTypeConstructor.Float64.getClass,
-    SerializableTypeConstructor.BigDecimal.getClass,
-    SerializableTypeConstructor.Int8.getClass,
-    SerializableTypeConstructor.Int16.getClass,
-    SerializableTypeConstructor.Int32.getClass,
-    SerializableTypeConstructor.Int64.getClass,
-    SerializableTypeConstructor.BigInt.getClass,
-    SerializableTypeConstructor.Str.getClass,
-    SerializableTypeConstructor.Regex.getClass,
-    classOf[SerializableTypeConstructor.Arrow],
-    classOf[SerializableTypeConstructor.ArrowWithoutEffect],
-    SerializableTypeConstructor.RecordRowEmpty.getClass,
-    // classOf[SerializableTypeConstructor.RecordRowExtend],
-    SerializableTypeConstructor.Record.getClass,
-    SerializableTypeConstructor.SchemaRowEmpty.getClass,
-    // classOf[SerializableTypeConstructor.SchemaRowExtend],
-    SerializableTypeConstructor.Schema.getClass,
-    SerializableTypeConstructor.Sender.getClass,
-    SerializableTypeConstructor.Receiver.getClass,
-    SerializableTypeConstructor.Lazy.getClass,
-    // classOf[SerializableTypeConstructor.Enum],
-    // classOf[SerializableTypeConstructor.Struct],
-    // classOf[SerializableTypeConstructor.RestrictableEnum],
-    // classOf[SerializableTypeConstructor.Native],
-    // classOf[SerializableTypeConstructor.JvmConstructor],
-    // classOf[SerializableTypeConstructor.JvmMethod],
-    // classOf[SerializableTypeConstructor.JvmField],
-    SerializableTypeConstructor.Array.getClass,
-    SerializableTypeConstructor.Vector.getClass,
-    classOf[SerializableTypeConstructor.Tuple],
-    SerializableTypeConstructor.Relation.getClass,
-    SerializableTypeConstructor.Lattice.getClass,
-    SerializableTypeConstructor.True.getClass,
-    SerializableTypeConstructor.False.getClass,
-    SerializableTypeConstructor.Not.getClass,
-    SerializableTypeConstructor.And.getClass,
-    SerializableTypeConstructor.Or.getClass,
-    SerializableTypeConstructor.Pure.getClass,
-    SerializableTypeConstructor.Univ.getClass,
-    SerializableTypeConstructor.Complement.getClass,
-    SerializableTypeConstructor.Union.getClass,
-    SerializableTypeConstructor.Intersection.getClass,
-    SerializableTypeConstructor.Difference.getClass,
-    SerializableTypeConstructor.SymmetricDiff.getClass,
-    // classOf[SerializableTypeConstructor.Effect],
-    // classOf[SerializableTypeConstructor.CaseComplement],
-    // classOf[SerializableTypeConstructor.CaseUnion],
-    // classOf[SerializableTypeConstructor.CaseIntersection],
-    // classOf[SerializableTypeConstructor.CaseSet],
-    SerializableTypeConstructor.RegionToStar.getClass,
-
-    // Kinds
-    SerializableKind.Wild.getClass,
-    SerializableKind.WildCaseSet.getClass,
-    SerializableKind.Star.getClass,
-    SerializableKind.Eff.getClass,
-    SerializableKind.Bool.getClass,
-    SerializableKind.RecordRow.getClass,
-    SerializableKind.SchemaRow.getClass,
-    SerializableKind.Predicate.getClass,
-    SerializableKind.Jvm.getClass,
-    // classOf[SerializableKind.CaseSet],
-    classOf[SerializableKind.Arrow],
-
-    // Symbols
-    classOf[SerializableSymbol.VarSym],
-    classOf[SerializableSymbol.TypeAliasSym],
-    classOf[SerializableSymbol.AssocTypeSym],
-    classOf[SerializableSymbol.TraitSym],
-    classOf[SerializableSymbol.DefnSyn],
-
-    // VarText
-    SerializableVarText.Absent.getClass,
-    classOf[SerializableVarText.SourceText],
-  )))
+  private implicit val formats: Formats = TypeHints.formats
 
   def serialize(tpe: Type): String = {
     write(fromType(tpe))
@@ -492,6 +402,100 @@ object Serialization {
 
     case class SourceText(s: String) extends SerializableVarText
 
+  }
+
+  private object TypeHints {
+    val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
+      // Types
+      classOf[SerializableType.Var],
+      classOf[SerializableType.Cst],
+      classOf[SerializableType.Apply],
+      classOf[SerializableType.Alias],
+      classOf[SerializableType.AssocType],
+
+      // TypeConstructors
+      SerializableTypeConstructor.Void.getClass,
+      SerializableTypeConstructor.AnyType.getClass,
+      SerializableTypeConstructor.Unit.getClass,
+      SerializableTypeConstructor.Null.getClass,
+      SerializableTypeConstructor.Bool.getClass,
+      SerializableTypeConstructor.Char.getClass,
+      SerializableTypeConstructor.Float32.getClass,
+      SerializableTypeConstructor.Float64.getClass,
+      SerializableTypeConstructor.BigDecimal.getClass,
+      SerializableTypeConstructor.Int8.getClass,
+      SerializableTypeConstructor.Int16.getClass,
+      SerializableTypeConstructor.Int32.getClass,
+      SerializableTypeConstructor.Int64.getClass,
+      SerializableTypeConstructor.BigInt.getClass,
+      SerializableTypeConstructor.Str.getClass,
+      SerializableTypeConstructor.Regex.getClass,
+      classOf[SerializableTypeConstructor.Arrow],
+      classOf[SerializableTypeConstructor.ArrowWithoutEffect],
+      SerializableTypeConstructor.RecordRowEmpty.getClass,
+      // classOf[SerializableTypeConstructor.RecordRowExtend],
+      SerializableTypeConstructor.Record.getClass,
+      SerializableTypeConstructor.SchemaRowEmpty.getClass,
+      // classOf[SerializableTypeConstructor.SchemaRowExtend],
+      SerializableTypeConstructor.Schema.getClass,
+      SerializableTypeConstructor.Sender.getClass,
+      SerializableTypeConstructor.Receiver.getClass,
+      SerializableTypeConstructor.Lazy.getClass,
+      // classOf[SerializableTypeConstructor.Enum],
+      // classOf[SerializableTypeConstructor.Struct],
+      // classOf[SerializableTypeConstructor.RestrictableEnum],
+      // classOf[SerializableTypeConstructor.Native],
+      // classOf[SerializableTypeConstructor.JvmConstructor],
+      // classOf[SerializableTypeConstructor.JvmMethod],
+      // classOf[SerializableTypeConstructor.JvmField],
+      SerializableTypeConstructor.Array.getClass,
+      SerializableTypeConstructor.Vector.getClass,
+      classOf[SerializableTypeConstructor.Tuple],
+      SerializableTypeConstructor.Relation.getClass,
+      SerializableTypeConstructor.Lattice.getClass,
+      SerializableTypeConstructor.True.getClass,
+      SerializableTypeConstructor.False.getClass,
+      SerializableTypeConstructor.Not.getClass,
+      SerializableTypeConstructor.And.getClass,
+      SerializableTypeConstructor.Or.getClass,
+      SerializableTypeConstructor.Pure.getClass,
+      SerializableTypeConstructor.Univ.getClass,
+      SerializableTypeConstructor.Complement.getClass,
+      SerializableTypeConstructor.Union.getClass,
+      SerializableTypeConstructor.Intersection.getClass,
+      SerializableTypeConstructor.Difference.getClass,
+      SerializableTypeConstructor.SymmetricDiff.getClass,
+      // classOf[SerializableTypeConstructor.Effect],
+      // classOf[SerializableTypeConstructor.CaseComplement],
+      // classOf[SerializableTypeConstructor.CaseUnion],
+      // classOf[SerializableTypeConstructor.CaseIntersection],
+      // classOf[SerializableTypeConstructor.CaseSet],
+      SerializableTypeConstructor.RegionToStar.getClass,
+
+      // Kinds
+      SerializableKind.Wild.getClass,
+      SerializableKind.WildCaseSet.getClass,
+      SerializableKind.Star.getClass,
+      SerializableKind.Eff.getClass,
+      SerializableKind.Bool.getClass,
+      SerializableKind.RecordRow.getClass,
+      SerializableKind.SchemaRow.getClass,
+      SerializableKind.Predicate.getClass,
+      SerializableKind.Jvm.getClass,
+      // classOf[SerializableKind.CaseSet],
+      classOf[SerializableKind.Arrow],
+
+      // Symbols
+      classOf[SerializableSymbol.VarSym],
+      classOf[SerializableSymbol.TypeAliasSym],
+      classOf[SerializableSymbol.AssocTypeSym],
+      classOf[SerializableSymbol.TraitSym],
+      classOf[SerializableSymbol.DefnSyn],
+
+      // VarText
+      SerializableVarText.Absent.getClass,
+      classOf[SerializableVarText.SourceText],
+    )))
   }
 
 }
