@@ -80,9 +80,9 @@ class EffectLockSuite extends AnyFunSuite {
   test("Serialization.02") {
     val input =
       """
-        |pub def f(): a = ???
+        |pub def g(): a = ???
         |""".stripMargin
-    val (tpe: Type, ser: String) = checkSerializationType(input, "f")
+    val (tpe: Type, ser: String) = checkSerializationType(input, "g")
     assert(Serialization.deserialize(ser).get == tpe)
   }
 
