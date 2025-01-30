@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
@@ -582,7 +583,7 @@ object Monomorpher {
       ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>
           // try to unify
-          Unification.fullyUnifyTypes(expTpe, subst.nonStrict(t), renv, root.eqEnv) match {
+          ConstraintSolver2.fullyUnify(expTpe, subst.nonStrict(t), Scope.Top, renv)(root.eqEnv, flix) match {
             // Case 1: types don't unify; just continue
             case None => None
             // Case 2: types unify; use the substitution in the body
@@ -723,7 +724,7 @@ object Monomorpher {
     val trt = root.traits(sym.trt)
 
     // find out what we're specializing the sig to by unifying with the type
-    val subst = Unification.unifyTypesIgnoreLeftoverAssocs(sig.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv).get
+    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val specialization = subst.m(trt.tparam.sym)
     val tycon = specialization.typeConstructor.get
 
@@ -836,7 +837,7 @@ object Monomorpher {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
+    ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
         StrictSubstitution.mk(subst, root.eqEnv)
       case None =>

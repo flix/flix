@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
@@ -208,7 +209,7 @@ object Instances {
     // lazily find the instance whose type unifies and save the substitution
     instOpt.flatMap {
       superInst =>
-        Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty, root.eqEnv).map {
+        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).map {
           case subst => (superInst, subst)
         }
     }

@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -399,7 +400,7 @@ object EffectVerifier {
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
-    if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {
+    if (ConstraintSolver2.fullyUnify(expected, actual, Scope.Top, renv).isEmpty) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }
