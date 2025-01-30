@@ -245,16 +245,29 @@ object Serialization {
   }
 
   private def toType(tpe: SerializableType): Type = tpe match {
-    case SerializableType.Var(sym) => Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
-    case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
-    case SerializableType.Apply(tpe1, tpe2) => Type.Apply(toType(tpe1), toType(tpe2), SourceLocation.Unknown)
+    case SerializableType.Var(sym) =>
+      Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
+
+    case SerializableType.Cst(tc) =>
+      Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
+
+    case SerializableType.Apply(tpe1, tpe2) =>
+      Type.Apply(toType(tpe1), toType(tpe2), SourceLocation.Unknown)
+
     case SerializableType.Alias(symUse, args, tpe) =>
       val sym = new Symbol.TypeAliasSym(symUse.namespace, symUse.name, SourceLocation.Unknown)
       val su = SymUse.TypeAliasSymUse(sym, SourceLocation.Unknown)
       val as = args.map(toType)
       val t = toType(tpe)
       Type.Alias(su, as, t, SourceLocation.Unknown)
-    case SerializableType.AssocType(symUse, arg, kind) => ???
+
+    case SerializableType.AssocType(symUse, arg, kind) =>
+      val tsym = new Symbol.TraitSym(symUse.trt.namespace, symUse.trt.name, SourceLocation.Unknown)
+      val sym = new Symbol.AssocTypeSym(tsym, symUse.name, SourceLocation.Unknown)
+      val su = SymUse.AssocTypeSymUse(sym, SourceLocation.Unknown)
+      val a = toType(arg)
+      val k = toKind(kind)
+      Type.AssocType(su, a, k, SourceLocation.Unknown)
   }
 
   private def toTypeConstructor(tc0: SerializableTypeConstructor): TypeConstructor = tc0 match {
