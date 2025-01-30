@@ -27,6 +27,7 @@ object Serialization {
     write(fromType(tpe))
   }
 
+  // TODO: Use Map[Symbol.DefnSym, Scheme] instead of List[NamedTypeScheme]
   def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = {
     // Toggle error handling
     if (true) {
