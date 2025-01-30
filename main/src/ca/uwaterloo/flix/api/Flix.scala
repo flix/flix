@@ -896,4 +896,7 @@ class Flix {
     }
   }
 
+  // TODO: Do not use CompilationMessage but custom error type
+  def effectUpgrade(upgrade: Map[String, List[(Symbol.DefnSym, Scheme)]]): Validation[Unit, CompilationMessage] = ???
+
 }
