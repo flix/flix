@@ -20,9 +20,12 @@ object Serialization {
   private implicit val formats: Formats = TypeHints.formats
 
   def serialize(root: TypedAst.Root): String = {
-    // TODO: Refactor to this: group(filterLibraries(root.defs.values))
-    // TODO: Consider testing
-    val libs = root.defs.values.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
+    val libs = extractLibs(root)
+    write(fromLibs(libs))
+  }
+
+  private def extractLibs(root: TypedAst.Root): Map[Library, List[TypedAst.Def]] = {
+    root.defs.values.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
       case (acc, defn) =>
         val isPackage = defn.sym.loc.sp1.source.input match {
           case Input.Text(name, text, sctx) => false
@@ -44,7 +47,6 @@ object Serialization {
         else
           acc
     }
-    write(fromLibs(libs))
   }
 
   def serialize(tpe: Type): String = {
