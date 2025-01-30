@@ -356,7 +356,7 @@ object SetFormula {
     * Nested intersections are put into a single intersection.
     */
   def mkInterAll(fs: List[SetFormula]): SetFormula = {
-    // TODO: This can be extended to track seenElms.
+    // Note: The seen sets are used to eliminate duplicates, NOT to group csts and vars.
     def visit(l: List[SetFormula], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
       case Nil => Nil
 
@@ -411,6 +411,8 @@ object SetFormula {
     * Nested unions are put into a single union.
     */
   def mkUnionAll(fs: List[SetFormula]): SetFormula = {
+    // Note: The seen sets are used to eliminate duplicates, NOT to group csts and vars.
+    // The elmAcc *IS* used to group elements.
     def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
       case Nil => if (elmAcc.isEmpty) Nil else ElemSet(elmAcc) :: Nil
 
