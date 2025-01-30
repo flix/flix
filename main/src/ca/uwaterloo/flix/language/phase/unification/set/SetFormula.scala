@@ -123,7 +123,7 @@ sealed trait SetFormula {
     case Empty => "empty"
     case Cst(c) => s"c$c"
     case ElemSet(s) if s.sizeIs == 1 => s"e${s.head}"
-    case ElemSet(s) => s"e${s.mkString("+")}"
+    case ElemSet(s) => s"{${s.map(x => s"e$x").mkString(", ")}}"
     case Var(x) => s"x$x"
     case Compl(f) => f match {
       case Univ | Empty | Cst(_) | ElemSet(_) | Var(_) | Compl(_) => s"!$f"
@@ -335,71 +335,27 @@ object SetFormula {
   }
 
   /**
-    * Returns the intersection of `f1` and `f2` (`f1 ∩ f2`).
-    *
-    * Nested intersections are put into a single intersection.
-    *
-    * Example
-    *   - `mkInter((x ∩ y), (z ∩ q)) = x ∩ y ∩ z ∩ q`
+    * Returns the intersection of `f1` and `f2`.
     */
   def mkInter(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
     case (Empty, _) => Empty
     case (_, Empty) => Empty
     case (Univ, _) => f2
     case (_, Univ) => f1
-    case _ => mkInterAll(List(f1, f2))
+    case (Inter(TwoList(x, y, rs)), f) => Inter(TwoList(x, y, f :: rs))
+    case (f, Inter(TwoList(x, y, rs))) => Inter(TwoList(x, y, f :: rs))
+    case _ => Inter(TwoList(f1, f2, Nil))
   }
 
   /**
     * Returns the intersection of `f1`, `f2`, and `f3`.
-    *
-    * Assumes these three formulas a reasonably disjoint and performs only few optimizations.
     */
   def mkInter3(f1: SetFormula, f2: SetFormula, f3: SetFormula): SetFormula = (f1, f2, f3) match {
     // The following cases were determined by profiling.
     case (Univ, _, Univ) => f2
     case (Univ, _, _) => Inter(TwoList(f2, f3, Nil))
     case (_, _, Univ) => Inter(TwoList(f1, f2, Nil))
-    case _ => mkInterAll(List(f1, f2, f3))
-  }
-
-  /**
-    * Returns the intersection of `fs` (`fs1 ∩ fs2 ∩ ..`).
-    *
-    * Nested intersections are put into a single intersection.
-    */
-  def mkInterAll(fs: List[SetFormula]): SetFormula = {
-    // Note: The seen sets are used to eliminate duplicates, NOT to group csts and vars.
-    def visit(l: List[SetFormula], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
-      case Nil => Nil
-
-      case Empty :: _ => Nil
-
-      case Univ :: rs => visit(rs, seenCsts, seenVars)
-
-      case (f@Cst(c)) :: rs =>
-        if (seenCsts.contains(c))
-          visit(rs, seenCsts, seenVars)
-        else
-          f :: visit(rs, seenCsts + c, seenVars)
-
-      case (f@Var(x)) :: rs =>
-        if (seenVars.contains(x))
-          visit(rs, seenCsts, seenVars)
-        else
-          f :: visit(rs, seenCsts, seenVars + x)
-
-      case Inter(l2) :: rs =>
-        visit(l2.toList ::: rs, seenCsts, seenVars)
-
-      case f :: rs => f :: visit(rs, seenCsts, seenVars)
-    }
-
-    visit(fs, SortedSet.empty, SortedSet.empty) match {
-      case Nil => Univ
-      case f :: Nil => f
-      case f1 :: f2 :: rest => Inter(TwoList(f1, f2, rest))
-    }
+    case _ => Inter(TwoList(f1, f2, List(f3)))
   }
 
   /**
