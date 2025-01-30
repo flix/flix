@@ -92,12 +92,17 @@ class EffectLockSuite extends AnyFunSuite {
     val input =
       """
         |pub def f(): Bool = ???
+        |
+        |pub def g(): Unit = ???
+        |
+        |pub def h(_: Bool): Int32 = ???
+        |
         |""".stripMargin
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
     val (optRoot, _) = flix.check()
     val root = optRoot.get
-    val funcs = List("f")
+    val funcs = List("f", "g", "h")
     val defs = root.defs.map {
       case (sym, defn) if funcs.contains(sym.text) =>
         val input = Input.FileInPackage(Path.of("."), "", "testPkg", sctx)
