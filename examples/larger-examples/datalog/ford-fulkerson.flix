@@ -64,10 +64,10 @@ mod FordFulkerson {
     def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
         let edges = inject g into Edge;
         let rules = #{
-            Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if (u - f) > 0. // Forward edge
-            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if (u - f) > 0. // Forward edge
-            Reach(x, y; init(y, x)) :- Edge(y, u, f, x),                 if f > 0.       // Back edge
-            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if f > 0.       // Back edge
+            Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if ((u - f) > 0). // Forward edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if ((u - f) > 0). // Forward edge
+            Reach(x, y; init(y, x)) :- Edge(y, u, f, x),                 if (f > 0).       // Back edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if (f > 0).       // Back edge
         };
         let result = query edges, rules select fn from Reach(src, dst; fn);
         Vector.head(result)
