@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{Input, Scope, SymUse, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, SymUse, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization.{read, write}
