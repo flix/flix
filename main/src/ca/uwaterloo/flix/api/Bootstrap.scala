@@ -843,13 +843,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  // TODO: add printstream as implicit parameter
-  def effectUpgrade(flix: Flix): Validation[Unit, BootstrapError] = {
+  def effectUpgrade(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     val path = getEffectLockFile(projectPath)
+    out.println(s"Reading from file: ${path.getFileName.toString}")
     // TODO: Add error handling
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
     Serialization.deserialize(json) match {
       case Some(lockedSignatures) =>
+        out.println("Lock file read. Checking upgrade safety")
         Validation.flatMapN(check(flix)) {
           case root =>
             val result = Validation.traverse(root.defs) {
@@ -877,6 +878,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                       if (baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch) {
                         Validation.Success(())
                       } else {
+                        out.println(s"$sym is a bad upgrade")
                         Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
                       }
                     case None => Validation.Success(())
