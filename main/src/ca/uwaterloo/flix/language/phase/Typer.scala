@@ -436,7 +436,7 @@ object Typer {
         tpes.flatMap(getAssocTypes).foreach {
           case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
-            val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
+            val matches = (extraTconstrs ::: tconstrs).flatMap(withSupers(_, tenv)).exists {
               case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
                 trtSym == tconstrSym && tvarSym1 == tvarSym2
               case _ => false
@@ -452,6 +452,21 @@ object Typer {
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
     }
+  }
+
+  /**
+    * Gets the list of type constraints implied by this type constraint due to a supertrait relationship,
+    * including the type constraint itself.
+    *
+    * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
+    */
+  private def withSupers(tconstr: TraitConstraint, tenv: TraitEnv): List[TraitConstraint] = {
+    val superSyms = tenv.getSuperTraits(tconstr.symUse.sym)
+    val directSupers = superSyms.map {
+      case sym => TraitConstraint(TraitSymUse(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+    }
+    val allSupers = directSupers.flatMap(withSupers(_, tenv))
+    tconstr :: allSupers
   }
 
   /**
