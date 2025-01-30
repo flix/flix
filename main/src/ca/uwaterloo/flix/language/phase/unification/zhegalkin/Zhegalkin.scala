@@ -65,7 +65,7 @@ object Zhegalkin {
           case (acc, zvar) if !zvar.flexible => SetFormula.mkInter(acc, SetFormula.Cst(zvar.id))
           case (acc, _) => acc
         }
-        SetFormula.mkInterAll(List(visitCst(cst), flexVars, rigidVars))
+        SetFormula.mkInter3(visitCst(cst), flexVars, rigidVars)
     }
 
     z match {

@@ -351,6 +351,19 @@ object SetFormula {
   }
 
   /**
+    * Returns the intersection of `f1`, `f2`, and `f3`.
+    *
+    * Assumes these three formulas a reasonably disjoint and performs only few optimizations.
+    */
+  def mkInter3(f1: SetFormula, f2: SetFormula, f3: SetFormula): SetFormula = (f1, f2, f3) match {
+    // The following cases were determined by profiling.
+    case (Univ, _, Univ) => f2
+    case (Univ, _, _) => Inter(TwoList(f2, f3, Nil))
+    case (_, _, Univ) => Inter(TwoList(f1, f2, Nil))
+    case _ => mkInterAll(List(f1, f2, f3))
+  }
+
+  /**
     * Returns the intersection of `fs` (`fs1 ∩ fs2 ∩ ..`).
     *
     * Nested intersections are put into a single intersection.
