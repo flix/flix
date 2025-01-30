@@ -534,7 +534,7 @@ object Serialization {
       SerializableTypeConstructor.Sender.getClass,
       SerializableTypeConstructor.Receiver.getClass,
       SerializableTypeConstructor.Lazy.getClass,
-      // classOf[SerializableTypeConstructor.Enum],
+      classOf[SerializableTypeConstructor.Enum],
       // classOf[SerializableTypeConstructor.Struct],
       // classOf[SerializableTypeConstructor.RestrictableEnum],
       // classOf[SerializableTypeConstructor.Native],
