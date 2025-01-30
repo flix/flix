@@ -906,14 +906,12 @@ class Flix {
     shutdownForkJoinPool()
     root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
       case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
-        case Input.FileInPackage(_, _, _, _) => acc
-        case Input.Text(_, _, _) => acc
-        case Input.TxtFile(_, _) => acc
-        case Input.PkgFile(path, _) =>
-          val text = path.getFileName.toString
-          val defs = acc.getOrElse(text, List.empty)
-          acc + (text -> (defn :: defs))
-        case Input.Unknown => acc
+        case Input.FileInPackage(path, virtualPath, _, _) =>
+          val name = path.getFileName.toString
+          val defs = acc.getOrElse(name, List.empty)
+          acc + (name -> (defn :: defs))
+
+        case Input.Text(_, _, _) | Input.TxtFile(_, _) | Input.PkgFile(_, _) | Input.Unknown => acc
       }
       case (acc, _) => acc
     }
