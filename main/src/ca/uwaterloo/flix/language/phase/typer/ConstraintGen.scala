@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,13 +143,9 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          val redundant = exp match {
-            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-            case _ => false
-          }
-          enabled && allowSubeffecting && !useless && !redundant
+          enabled && allowSubeffecting && !useless
         }
-        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc) else eff0
+        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshEffSlackVar(loc), loc) else eff0
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -388,13 +385,9 @@ object ConstraintGen {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          val redundant = exp1 match {
-            case Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-            case _ => false
-          }
-          enabled && !useless && !redundant
+          enabled && !useless
         }
-        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc) else eff1
+        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -407,7 +400,7 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Scope(sym, regionVar, exp, evar, loc) =>
+      case Expr.Scope(sym, regionVar, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -420,8 +413,9 @@ object ConstraintGen {
         c.enterRegion(regionVar.sym)
         c.unifyType(sym.tvar, Type.mkRegion(regionVar, loc), loc)
         val (tpe, eff) = visitExp(exp)
+        c.unifyType(tvar, tpe, loc)
         c.exitRegion(evar, eff, loc)
-        val resTpe = tpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
@@ -464,11 +458,6 @@ object ConstraintGen {
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
         val resTpe = Type.mkTuple(elmTpes, loc)
         val resEff = Type.mkUnion(elmEffs, loc)
-        (resTpe, resEff)
-
-      case Expr.RecordEmpty(loc) =>
-        val resTpe = Type.mkRecord(Type.RecordRowEmpty, loc)
-        val resEff = Type.Pure
         (resTpe, resEff)
 
       case Expr.RecordSelect(exp, label, tvar, loc) =>
@@ -602,11 +591,11 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructGet(exp, field, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.sym.structSym, root.structs)
+      case Expr.StructGet(exp, symUse, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
-        val (mutable, fieldTpe) = instantiatedFieldTpes(field.sym)
+        val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
         val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
@@ -615,12 +604,12 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.sym.structSym, root.structs)
+      case Expr.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
-        val (_, fieldTpe) = instantiatedFieldTpes(field.sym)
+        val (_, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
         c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
@@ -689,7 +678,15 @@ object ConstraintGen {
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
             val resTpe = tvar
-            val resEff = Type.mkUnion(eff, evar, loc)
+
+            // Optimization: Check if subeffecting is enabled.
+            val resEff = if (flix.options.xsubeffecting == Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)) {
+              // If all subeffecting options are enabled then we skip the fresh effect variable.
+              eff
+            } else {
+              // Otherwise we use the fresh effect variable.
+              Type.mkUnion(eff, evar, loc)
+            }
             (resTpe, resEff)
         }
 
@@ -701,15 +698,21 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.Without(exp, effSymUse, _) =>
+      case Expr.Unsafe(exp, eff0, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val resTpe = tpe
+        val resEff = Type.mkDifference(eff, eff0, loc)
+        (resTpe, resEff)
+
+      case Expr.Without(exp, symUse, _) =>
         //
-        // e: tpe \ eff - effSym
+        // e: tpe \ eff - symUse
         // -------------------------
-        // e without effSym : tpe
+        // e without symUse : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(effSymUse.sym), effSymUse.loc), effSymUse.loc)
-        c.unifyType(eff, effWithoutSym, effSymUse.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc), symUse.qname.loc)
+        c.unifyType(eff, effWithoutSym, symUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -731,17 +734,16 @@ object ConstraintGen {
         val resultEff = evar
         (resultTpe, resultEff)
 
-      case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
+      case Expr.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
         //
-        //     Γ ⊢ e: e_t \ e_ef
-        // ∀i. Γ, opix1: opit1, .., ki: opit -> e_t \ k_ef ⊢ ei: ei_t \ ei_ef
-        //     k_ef = (e_ef - Eff) ∪ (∪_i ei_ef)
+        // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
+        //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
         // ---------------------------------------------------------------------
-        // Γ ⊢ try e with Eff {
+        // Γ ⊢ handler Eff {
         //   def op1(op1x1, .., k1) = e1
         //   def op2(op2x1, .., k2) = e2
         //   ..
-        // }: e_t \ k_ef
+        // }: (Unit -> t \ ef) -> t \ k_ef
         //
         // where:
         // eff Eff {
@@ -750,22 +752,29 @@ object ConstraintGen {
         //  ..
         // }
         //
-        val (tpe, eff) = visitExp(exp)
-        val continuationEffectVar = Type.freshVar(Kind.Eff, loc)
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffectVar, loc)).unzip
-        c.unifyAllTypes(tpe :: tvar :: tpes, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
+        c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(eff, handledEffect, effUse.loc), Type.mkUnion(effs, loc), loc)
-        c.unifyType(continuationEffectVar, continuationEffect, loc)
-        val resultTpe = tpe
-        val resultEff = continuationEffect
+        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
+        c.unifyType(evar2, continuationEffect, loc)
+        val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
+        val resultEff = Type.Pure
         (resultTpe, resultEff)
 
-      case Expr.Do(opUse, exps, tvar, loc) =>
-        val op = lookupOp(opUse.sym, opUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
+      case Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp1)
+        val (handlerTpe, handlerExpEff) = visitExp(exp2)
+        val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
+        c.unifyType(Type.mkArrowWithEffect(handlerArg, evar, tvar, loc.asSynthetic), handlerTpe, loc)
+        val resultTpe = tvar
+        val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
+        (resultTpe, resultEff)
+
+      case Expr.Do(symUse, exps, tvar, loc) =>
+        val op = lookupOp(symUse.sym, symUse.loc)
+        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
 
         // length check done in Resolver
         val effs = visitOpArgs(op, exps)
@@ -1003,8 +1012,6 @@ object ConstraintGen {
         c.unifyType(resTpe, tvar, loc)
         resTpe
 
-      case KindedAst.Pattern.RecordEmpty(loc) => Type.mkRecord(Type.RecordRowEmpty, loc)
-
       case KindedAst.Pattern.Error(tvar, _) => tvar
 
     }
@@ -1089,19 +1096,19 @@ object ConstraintGen {
     * @param continuationEffect the effect of the continuation
     */
   private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.HandlerRule(op, actualFparams0, body, opTvar) =>
-      val effect = root.effects(op.sym.eff)
+    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar) =>
+      val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // Don't need to generalize since ops are monomorphic
       // Don't need to handle unknown op because resolver would have caught this
       val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
-      ops(op.sym) match {
+      ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
           val resumptionArgType = opTpe
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
+          unifyFormalParams(symUse.sym, expected = expectedFparams, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val (actualTpe, actualEff) = visitExp(body)
 

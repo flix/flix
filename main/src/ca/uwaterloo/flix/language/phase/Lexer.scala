@@ -17,10 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -69,22 +69,62 @@ object Lexer {
     */
   private def isDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-  /**
-    * The internal state of the lexer as it tokenizes a single source.
-    * At any point execution `start` represents the start of the token currently being considered.
-    * Likewise `end` represents the end of the token currently being considered,
-    * while `current` is the current read head of the lexer.
-    * Note that both start and current are `Position`s since they are not necessarily on the same line.
-    * `current` will always be on the same character as or past `start`.
-    * As tokens are produced they are placed in `tokens`.
-    */
+  /** The internal state of the lexer as it tokenizes a single source. */
   private class State(val src: Source) {
+
+    /** `start` is the first position of the token that is currently being lexed. */
     var start: Position = new Position(0, 0, 0)
+
+    /**
+      * The current head of the reader, not yet lexed.
+      *
+      * This is always equal to `start` or ahead of `start`.
+      */
     val current: Position = new Position(0, 0, 0)
-    var end: Position = new Position(0, 0, 0)
-    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+
+    /**
+      * The width of the previous line. This allows computing `current`s previous position.
+      *
+      * See [[addToken]].
+      */
+    var prevWidth: Int = -1
+
+    /**
+      * The sequence of tokens produced by the lexer.
+      *
+      * Note: The initial size of the array buffer has been determined by careful profiling.
+      */
+    val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
+
+    /** The current interpolation nesting level.
+      *
+      * This is compared to [[InterpolatedStringMaxNestingLevel]].
+      */
     var interpolationNestingLevel: Int = 0
+
+    /** Save a checkpoint to revert to. */
+    def save(): Checkpoint = {
+      Checkpoint(
+        start = new Position(this.start.line, this.start.column, this.start.offset),
+        current = new Position(this.current.line, this.current.column, this.current.offset),
+        tokensLength = tokens.length,
+        interpolationNestingLevel = this.interpolationNestingLevel
+      )
+    }
+
+    /** Restore a previously saved checkpoint. No tokens must have been produced since the checkpoint was created. */
+    def restore(c: Checkpoint): Unit = {
+      if (tokens.length != c.tokensLength) throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
+      if (start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset)
+        throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
+      this.current.line = c.current.line
+      this.current.column = c.current.column
+      this.current.offset = c.current.offset
+      this.interpolationNestingLevel = c.interpolationNestingLevel
+    }
   }
+
+  private case class Checkpoint(start: Position, current: Position, tokensLength: Int, interpolationNestingLevel: Int)
 
   /**
     * A source position keeping track of both line, column as well as absolute character offset.
@@ -130,6 +170,7 @@ object Lexer {
     }
 
     // Add a virtual eof token at the last position.
+    s.start = new Position(s.current.line, s.current.column, s.current.offset)
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
@@ -152,36 +193,14 @@ object Lexer {
 
     val c = s.src.data(s.current.offset)
     if (c == '\n') {
-      s.end = new Position(s.current.line, s.current.column, s.current.offset)
-      s.current.offset += 1
+      s.prevWidth = s.current.column
       s.current.line += 1
       s.current.column = 0
     } else {
-      s.end = new Position(s.current.line, (s.current.column + 1).toShort, s.current.offset)
-      s.current.offset += 1
       s.current.column += 1
     }
+    s.current.offset += 1
     c
-  }
-
-  /**
-    * Retreats current position one char backwards while keeping track of line and column numbers too.
-    */
-  private def retreat()(implicit s: State): Unit = {
-    if (s.current.offset == 0) {
-      return
-    }
-    s.current.offset -= 1
-    val c = s.src.data(s.current.offset)
-    if (c == '\n') {
-      s.current.line -= 1
-      s.current.column = 0
-      s.end.line -= 1
-      s.end.column = 0
-    } else {
-      s.current.column -= 1
-      s.end.column -= 1
-    }
   }
 
   /**
@@ -300,8 +319,16 @@ object Lexer {
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
     val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
-    val e = SourcePosition(s.src, s.end.line + 1, (s.end.column + 1).toShort)
-    s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
+    // If we are currently at the start of a line, create a non-existent position and the
+    // end of the previous line as the exclusive end position.
+    // This should not happen for zero-width tokens at the start of lines.
+    val end = if (s.current.column == 0 && s.start.offset != s.current.offset) {
+      new Position(s.current.line - 1, s.prevWidth + 1, s.current.offset)
+    } else {
+      new Position(s.current.line, s.current.column, s.current.offset)
+    }
+    val e = SourcePosition(s.src, end.line + 1, (end.column + 1).toShort)
+    s.tokens.append(Token(kind, s.src, s.start.offset, s.current.offset, b, e))
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -328,7 +355,7 @@ object Lexer {
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
       case '\\' => TokenKind.Backslash
-      case _ if isMatch(".{") => TokenKind.DotCurlyL
+      case _ if isMatchPrev(".{") => TokenKind.DotCurlyL
       case '.' =>
         if (peek() == '.' && peekPeek().contains('.')) {
           advance()
@@ -353,15 +380,15 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("#{") => TokenKind.HashCurlyL
-      case _ if isMatch("#(") => TokenKind.HashParenL
+      case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
+      case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("//") => acceptLineOrDocComment()
-      case _ if isMatch("/*") => acceptBlockComment()
+      case _ if isMatchPrev("//") => acceptLineOrDocComment()
+      case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if peek().isLetter => acceptAnnotation()
       case '@' => TokenKind.At
-      case _ if isMatch("???") => TokenKind.HoleAnonymous
+      case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
       case _ if isOperator("::") => TokenKind.ColonColon
@@ -419,6 +446,7 @@ object Lexer {
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
+      case _ if isKeyword("handler") => TokenKind.KeywordHandler
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
@@ -468,6 +496,7 @@ object Lexer {
       case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
       case _ if isKeyword("Univ") => TokenKind.KeywordUniv
       case _ if isKeyword("unsafe") => TokenKind.KeywordUnsafe
+      case _ if isKeyword("unsafely") => TokenKind.KeywordUnsafely
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
       case _ if isKeyword("with") => TokenKind.KeywordWith
@@ -479,7 +508,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isMatch("regex\"") => acceptRegex()
+      case _ if isMatchPrev("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
@@ -540,10 +569,10 @@ object Lexer {
   }
 
   /**
-    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
+    * Checks whether the previous char and the following substring matches a keyword.
+    * Will advance the current position past the keyword if there is a match.
     */
-  private def isMatch(keyword: String)(implicit s: State): Boolean = {
+  private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
     if (s.current.offset + keyword.length - 1 > s.src.data.length) {
       return false
@@ -571,12 +600,43 @@ object Lexer {
   }
 
   /**
+    * Checks whether the following substring matches a keyword.
+    * Will advance the current position past the keyword if there is a match.
+    */
+  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean = {
+    // Check if the keyword can appear before eof.
+    if (s.current.offset + keyword.length > s.src.data.length) {
+      return false
+    }
+
+    // Check if the next n characters in source matches those of keyword one at a time.
+    val start = s.current.offset
+    var matches = true
+    var offset = 0
+    while (matches && offset < keyword.length) {
+      if (s.src.data(start + offset) != keyword(offset)) {
+        matches = false
+      } else {
+        offset += 1
+      }
+    }
+
+    if (matches) {
+      for (_ <- 0 until keyword.length) {
+        advance()
+      }
+    }
+
+    matches
+  }
+
+  /**
     * Checks whether the following substring matches a operator.
     * Note that __comparison includes current__.
     * Also note that this will advance the current position past the keyword if there is a match.
     */
   private def isOperator(op: String)(implicit s: State): Boolean = {
-    isSeparatedOperator(op) && isMatch(op)
+    isSeparatedOperator(op) && isMatchPrev(op)
   }
 
   /**
@@ -590,7 +650,7 @@ object Lexer {
     // This is because a symbol like 'not' can be imported from Java in a qualified path.
     // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be read as a name here.
     // We are assuming no literal keyword needs to be imported. So no importing something called 'true' from java.
-    isSeparated(keyword, allowDot = true) && isMatch(keyword)
+    isSeparated(keyword, allowDot = true) && isMatchPrev(keyword)
   }
 
   /**
@@ -599,7 +659,7 @@ object Lexer {
     * Also note that this will advance the current position past the keyword if there is a match.
     */
   private def isKeyword(keyword: String)(implicit s: State): Boolean = {
-    isSeparated(keyword) && isMatch(keyword)
+    isSeparated(keyword) && isMatchPrev(keyword)
   }
 
   /**
@@ -611,7 +671,8 @@ object Lexer {
     * and then the lexer needs to be retreated to just after "$".
     */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    var advances = 0
+    val checkpoint = s.save()
+    var advanced = false
     while (!eof()) {
       val p = peek()
 
@@ -624,9 +685,7 @@ object Lexer {
       if (p.isLower) {
         // This means that the opening '$' was a separator.
         // we need to rewind the lexer to just after '$'.
-        for (_ <- 0 until advances) {
-          retreat()
-        }
+        if (advanced) s.restore(checkpoint)
         return TokenKind.Dollar
       }
 
@@ -638,7 +697,7 @@ object Lexer {
       }
 
       advance()
-      advances += 1
+      advanced = true
     }
     TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
@@ -951,25 +1010,28 @@ object Lexer {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
+        // underscore in tail position
+        case '_' =>
+          advance()
+          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
-        case _ => return advance() match {
-          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
-          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
-          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
-          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
-          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
-          case _ =>
-            retreat()
-            if (isDecimal) {
-              error.getOrElse(TokenKind.LiteralFloat64)
-            } else {
-              error.getOrElse(TokenKind.LiteralInt32)
-            }
-        }
+        case c =>
+          return c match {
+            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
+            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
+            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
+            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
+            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+            case _ =>
+              if (isDecimal) {
+                error.getOrElse(TokenKind.LiteralFloat64)
+              } else {
+                error.getOrElse(TokenKind.LiteralInt32)
+              }
+          }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
@@ -1013,19 +1075,18 @@ object Lexer {
           advance()
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next
-        case _ => return advance() match {
-          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
-          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
-          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
-          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
-          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
-          case _ =>
-            retreat()
-            error.getOrElse(TokenKind.LiteralInt32)
+        case c =>
+          return c match {
+            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
+            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
+            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
+            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
+            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+            case _ =>
+              error.getOrElse(TokenKind.LiteralInt32)
         }
       }
     }

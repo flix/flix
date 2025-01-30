@@ -14,7 +14,7 @@ mod Test.Handler.NewObject {
         def $run(_this: Runnable): Unit \ { rc } =
             run {
               Ask.ask(42)
-            } with Ask {
+            } with handler Ask {
                 def ask(x, _) = Ref.put(x, r)
             }
     }
@@ -23,7 +23,7 @@ mod Test.Handler.NewObject {
         def $run(_this: Runnable): Unit \ { rc } =
             run {
               Ref.put(Gen.gen(), r)
-            } with Gen {
+            } with handler Gen {
                 def gen(k) = k(42)
             }
     }
@@ -34,11 +34,11 @@ mod Test.Handler.NewObject {
                 Ask.ask(
                     run {
                         Gen.gen()
-                    } with Gen {
+                    } with handler Gen {
                         def gen(k) = k(42)
                     }
                 )
-            } with Ask {
+            } with handler Ask {
                 def ask(x, _) = Ref.put(x + x, r)
             }
     }

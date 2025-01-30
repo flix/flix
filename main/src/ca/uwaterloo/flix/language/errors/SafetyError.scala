@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.util.Formatter
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
-  val kind: String = "Safety Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.SafetyError
 }
 
 object SafetyError {
@@ -331,35 +331,6 @@ object SafetyError {
          |from which it originates is marked with `fix`.
          |""".stripMargin
     })
-  }
-
-  /**
-    * Unable to derive Sendable error.
-    *
-    * @param tpe the type that is not Sendable.
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Cannot derive Sendable for $tpe"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Cannot derive 'Sendable' for type ${red(tpe.toString)}
-         |
-         |Because it takes a type parameter of kind 'Region'.
-         |
-         |${code(loc, "unable to derive Sendable.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some(
-      s"""
-         |An example of a type parameter of kind 'Region':
-         |
-         |enum MyEnum[r: Region] { ... }
-         |""".stripMargin
-    )
   }
 
   /**

@@ -42,26 +42,26 @@ trait Box[a] {
 
 instance Box[Bool] {
     type Boxed = Boolean
-    pub def box(x: Bool): Boolean = unsafe Boolean.valueOf(x)
-    pub def unbox(x: Boolean): Bool = unsafe x.booleanValue()
+    pub def box(x: Bool): Boolean = Boolean.valueOf(x)
+    pub def unbox(x: Boolean): Bool = x.booleanValue()
 }
 
 instance Box[Char] {
     type Boxed = Character
-    pub def box(x: Char): Character = unsafe Character.valueOf(x)
-    pub def unbox(x: Character): Char = unsafe x.charValue()
+    pub def box(x: Char): Character = Character.valueOf(x)
+    pub def unbox(x: Character): Char = x.charValue()
 }
 
 instance Box[Float32] {
     type Boxed = Float
-    pub def box(x: Float32): Float = unsafe Float.valueOf(x)
-    pub def unbox(x: Float): Float32 = unsafe x.floatValue()
+    pub def box(x: Float32): Float = Float.valueOf(x)
+    pub def unbox(x: Float): Float32 = x.floatValue()
 }
 
 instance Box[Float64] {
     type Boxed = Double
-    pub def box(x: Float64): Double = unsafe Double.valueOf(x)
-    pub def unbox(x: Double): Float64 = unsafe x.doubleValue()
+    pub def box(x: Float64): Double = Double.valueOf(x)
+    pub def unbox(x: Double): Float64 = x.doubleValue()
 }
 
 instance Box[Int8] {

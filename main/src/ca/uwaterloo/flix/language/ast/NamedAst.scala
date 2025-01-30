@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
@@ -134,8 +133,6 @@ object NamedAst {
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordEmpty(loc: SourceLocation) extends Expr
-
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
     case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
@@ -172,13 +169,17 @@ object NamedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
+
+    case class Without(exp: Expr, qname: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(qname: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+
+    case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -241,8 +242,6 @@ object NamedAst {
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
-
-    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     case class Error(loc: SourceLocation) extends Pattern
 
@@ -321,8 +320,6 @@ object NamedAst {
     case class SchemaRowExtendWithTypes(ident: Name.Ident, den: Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
-
-    case class Native(fqn: String, loc: SourceLocation) extends Type
 
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 

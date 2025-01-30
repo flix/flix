@@ -42,7 +42,7 @@ object EffectVerifier {
     if (flix.options.xverifyeffects) {
       ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
-      ParOps.parMapValues(root.instances)(ins => ins.foreach(visitInstance(_)(root.eqEnv, flix)))
+      ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
     }
   }
 
@@ -188,7 +188,6 @@ object EffectVerifier {
       val expected = Type.mkUnion(elms.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordEmpty(tpe, loc) => ()
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
@@ -266,7 +265,12 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.Without(exp, effUse, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+      visitExp(exp)
+      val expected = Type.mkDifference(exp.eff, runEff, loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+    case Expr.Without(exp, sym, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
@@ -280,9 +284,13 @@ object EffectVerifier {
     case Expr.Throw(exp, eff, _, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
+      // TODO effect stuff
+      ()
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
       // TODO effect stuff
       ()
     case Expr.Do(op, exps, tpe, eff, loc) =>

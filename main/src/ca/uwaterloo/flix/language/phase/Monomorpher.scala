@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -400,11 +401,10 @@ object Monomorpher {
   /**
     * Creates a table for fast lookup of instances.
     */
-  private def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
-    for {
-      (sym, insts) <- instances
-      inst <- insts
-    } yield (sym, inst.tpe.typeConstructor.get) -> inst
+  private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+    instances.map{
+      case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst)
+    }.toMap
   }
 
   /** Visit a struct field, simplifying its polymorphic type. */
@@ -682,7 +682,6 @@ object Monomorpher {
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
-    case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**
@@ -846,8 +845,8 @@ object Monomorpher {
   }
 
   /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
-    EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+  private def infallibleReduceAssocType(symUse: AssocTypeSymUse, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
+    EqualityEnvironment.reduceAssocType(symUse, arg, eqEnv) match {
       case Ok(t) => t
       case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
     }

@@ -76,11 +76,19 @@ pub eff FileWriteWithResult {
     ///
     def mkDirs(d: String): Result[IoError, Unit]
 
+    ///
+    /// Creates a new temporary directory with the given prefix.
+    ///
+    /// Returns the path to the directory.
+    ///
+    def mkTempDir(prefix: String): Result[IoError, String]
+
 }
 
 mod FileWriteWithResult {
 
     import java.io.IOException
+    import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.FileAttribute
@@ -102,7 +110,7 @@ mod FileWriteWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + IO = x ->
         run {
             f(x)
-        } with FileWriteWithResult {
+        } with handler FileWriteWithResult {
             def write(data, f, k) = {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
@@ -237,6 +245,25 @@ mod FileWriteWithResult {
                 };
                 k(res)
             }
+
+            def mkTempDir(prefix, k) = {
+                let res = try {
+                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+                    Ok(path.toString())
+                } catch {
+                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
         }
+
+    ///
+    /// Runs the `FileWriteWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileWriteWithResult) + {IO} = handle(f)()
 
 }

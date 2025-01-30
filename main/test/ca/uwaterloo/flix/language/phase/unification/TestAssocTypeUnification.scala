@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -32,7 +33,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
   private val eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef] = ListMap.empty
   private val CollSym: Symbol.TraitSym = Symbol.mkTraitSym("Coll")
   private val ElemSym: Symbol.AssocTypeSym = Symbol.mkAssocTypeSym(CollSym, Name.Ident("Elem", SourceLocation.Unknown))
-  private val ElemCst: Ast.AssocTypeConstructor = Ast.AssocTypeConstructor(ElemSym, loc)
+  private val ElemCst: AssocTypeSymUse = AssocTypeSymUse(ElemSym, loc)
 
   test("TestUnifyTypes.01") {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
@@ -63,7 +64,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
     val tpe2 = Type.Int32
     val renv = RigidityEnv.empty
-    val eqEnv = ListMap.singleton(ElemSym, AssocTypeDef(Type.Str, Type.Char))
+    val eqEnv = ListMap.singleton(ElemSym, AssocTypeDef(Nil, Type.Str, Type.Char))
     val result = Unification.unifiesWith(tpe1, tpe2, renv, eqEnv)
 
     val expectedResult = false

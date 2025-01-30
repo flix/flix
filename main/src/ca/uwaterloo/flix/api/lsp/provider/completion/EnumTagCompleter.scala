@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Lukas Rønn
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,95 +17,65 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
-import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Case
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EnumTagCompleter {
-
   /**
-    * Returns a List of Completion for enum tags.
+    * Returns a List of Completion for Tag for UndefinedName.
     */
-  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
-    // We don't know if the user has provided a tag, so we have to try both cases
-    val fqn = context.word.split('.').toList
-
-    getEnumTagCompletionsWithoutTag(fqn) ++
-      getEnumTagCompletionsWithTag(fqn)
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
   }
 
   /**
-    * Gets completions for enum tags without tag provided
+    * Returns a List of Completion for Tag for UndefinedTag.
     */
-  private def getEnumTagCompletionsWithoutTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
-    val enumSym = mkEnumSym(fqn)
-    root.enums.get(enumSym) match {
-      case None => // Case 1: Enum does not exist.
-        Nil
-      case Some(enm) => // Case 2: Enum does exist -> Get cases.
-        enm.cases.map {
-          case (_, cas) => EnumTagCompletion(enumSym, cas)
+  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  }
+
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (namespace.nonEmpty)
+      root.enums.values.flatMap(enm =>
+        enm.cases.values.collect{
+          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = true) =>
+            EnumTagCompletion(tag, ap, qualified = true, inScope = true)
         }
-    }
-  }
-
-  /**
-    * Gets completions for enum tags with tag provided
-    */
-  private def getEnumTagCompletionsWithTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
-    // The user has provided a tag
-    // We know that there is at least one dot, so we split the context.word and
-    // make a fqn from the everything but the the last (hence it could be the tag).
-    if (fqn.isEmpty) {
-      return Nil
-    }
-
-    val fqnWithTag = fqn.dropRight(1)
-    val tag = fqn.takeRight(1).mkString
-    val enumSym = mkEnumSym(fqnWithTag)
-
-    root.enums.get(enumSym) match {
-      case None => // Case 1: Enum does not exist.
-        Nil
-      case Some(enm) => // Case 2: Enum does exist
-        enm.cases.flatMap {
-          case (caseSym, cas) =>
-            if (matchesTag(caseSym, tag)) {
-              // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, cas))
-            } else {
-              // Case 2.2: Tag provided doesn't match the case
-              None
-            }
+      )
+    else
+      root.enums.values.flatMap(enm =>
+        enm.cases.values.collect{
+          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = false) =>
+            EnumTagCompletion(tag, ap, qualified = false, inScope = inScope(tag, env))
         }
-    }
+      )
+  }
+
+  private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
+    val thisName = tag.sym.toString
+    val isResolved = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Case(thatName, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    val isRoot = tag.sym.namespace.isEmpty
+    isRoot || isResolved
   }
 
   /**
-    * Checks if the provided tag matches the case.
+    * Returns `true` if the given signature `sig` should be included in the suggestions.
     *
-    * @param caseSym the caseSym of the case from the enum.
-    * @param tag     the provided tag.
-    * @return        true, if the provided tag matches the case, false otherwise.
+    * For visibility, we just need to check the parent enum.
     */
-  private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
-
-  /**
-    * Generates an enumSym with a correct nameSpace. This is different from the one in Symbol.scala.
-    *
-    * Symbol.mkEnumSym("A.B.C.Color") would make an enumSym with namespace=List("A"), and name = "B.C.Color"
-    *
-    * This function: mkEnumSym(List["A","B","C","Color"]) makes an enumSym with namespace=List("A","B","C") and name = "Color"
-    *
-    * @param fqn the fully qualified name as a List[String].
-    * @return    the enum symbol for the given fully qualified name.
-    */
-  private def mkEnumSym(fqn: List[String]): EnumSym = {
-    if (fqn.isEmpty) {
-      new EnumSym(Nil, "", SourceLocation.Unknown)
-    } else {
-      val ns = fqn.dropRight(1)
-      val name = fqn.takeRight(1).mkString
-      new EnumSym(ns, name, SourceLocation.Unknown)
-    }
+  private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = enm.mod.isPublic && !enm.ann.isInternal
+    val isInFile = enm.loc.source.name == uri
+    val isMatch = if (qualified)
+      CompletionUtils.matchesQualifiedName(tag.sym.namespace, tag.sym.name, namespace, ident)
+    else
+      CompletionUtils.fuzzyMatch(ident, tag.sym.name)
+    isMatch && (isPublic || isInFile)
   }
 }

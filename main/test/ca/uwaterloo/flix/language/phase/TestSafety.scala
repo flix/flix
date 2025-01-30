@@ -433,7 +433,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run println("Hello, World!") with IO {}
+        |    run println("Hello, World!") with handler IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInTryWith](result)
@@ -443,7 +443,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with Exec {}
+        |    run g() with handler Exec {}
         |
         |def g(): Unit \ Exec = ???
       """.stripMargin
@@ -455,7 +455,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with FsRead {}
+        |    run g() with handler FsRead {}
         |
         |def g(): Unit \ FsRead = ???
       """.stripMargin
@@ -467,7 +467,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with FsWrite {}
+        |    run g() with handler FsWrite {}
         |
         |def g(): Unit \ FsWrite = ???
       """.stripMargin
@@ -479,7 +479,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with Net {}
+        |    run g() with handler Net {}
         |
         |def g(): Unit \ Net = ???
     """.stripMargin
@@ -491,7 +491,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with NonDet {}
+        |    run g() with handler NonDet {}
         |
         |def g(): Unit \ NonDet = ???
     """.stripMargin
@@ -503,30 +503,12 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with Sys {}
+        |    run g() with handler Sys {}
         |
         |def g(): Unit \ Sys = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInTryWith](result)
-  }
-
-  test("UnableToDeriveSendable.01") {
-    val input =
-      """
-        |enum Enum1[r: Region](Array[Int32, r]) with Sendable
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IllegalSendableInstance](result)
-  }
-
-  test("UnableToDeriveSendable.02") {
-    val input =
-      """
-        |instance Sendable[Array[a, r]]
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IllegalSendableInstance](result)
   }
 
   test("ImpossibleCast.01") {

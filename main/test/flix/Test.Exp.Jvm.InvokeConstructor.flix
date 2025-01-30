@@ -15,19 +15,19 @@ mod Test.Exp.Jvm.InvokeConstructor {
     import java.util.{Locale$Builder => Builder}
 
     @test
-    def testInvokeConstructor01(): Boolean \ IO =
+    def testInvokeConstructor01(): Boolean =
         new Boolean(true)
 
     @test
-    def testInvokeConstructor02(): Character \ IO =
+    def testInvokeConstructor02(): Character =
         new Character('a')
 
     @test
-    def testInvokeConstructor03(): Float \ IO =
+    def testInvokeConstructor03(): Float =
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor04(): Double \ IO =
+    def testInvokeConstructor04(): Double =
         new Double(123.456f64)
 
     @test

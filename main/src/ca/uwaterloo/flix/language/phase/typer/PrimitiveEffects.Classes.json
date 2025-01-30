@@ -1,5 +1,10 @@
 {
   "classes": {
+    "java.lang.Boolean": "",
+    "java.lang.Character": "",
+    "java.lang.Double": "",
+    "java.lang.Float": "",
+
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
     "java.lang.ProcessHandle": "Exec, IO",
@@ -34,6 +39,7 @@
     "java.net.spi.URLStreamHandlerProvider": "Net, IO",
 
     "java.lang.Runtime": "Sys, IO",
-    "java.lang.System": "Sys, IO"
+    "java.lang.System": "Sys, IO",
+    "java.util.Random": "NonDet, IO"
   }
 }

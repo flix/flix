@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
@@ -59,7 +58,7 @@ object Visitor {
 
     root.enums.values.foreach(visitEnum)
 
-    root.instances.values.flatten.foreach(visitInstance)
+    root.instances.values.foreach(visitInstance)
 
     root.structs.values.foreach(visitStruct)
 
@@ -125,20 +124,13 @@ object Visitor {
   }
 
   private def visitTraitConstraint(tc: TraitConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TraitConstraint(head, arg, loc) = tc
+    val TraitConstraint(symUse, arg, loc) = tc
     if (!a.accept(loc)) { return }
 
     c.consumeTraitConstraint(tc)
 
-    visitTraitConstraintHead(head)
+    visitTraitSymUse(symUse)
     visitType(arg)
-  }
-
-  private def visitTraitConstraintHead(tcHead: TraitConstraint.Head)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TraitConstraint.Head(_, loc) = tcHead
-    if (!a.accept(loc)) { return }
-
-    c.consumeTraitConstraintHead(tcHead)
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -257,21 +249,14 @@ object Visitor {
   }
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EqualityConstraint(cst, tpe1, tpe2, loc) = ec
+    val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) { return }
 
     c.consumeEqualityConstraint(ec)
 
-    visitAssocTypeConstructor(cst)
+    visitAssocTypeSymUse(symUse)
     visitType(tpe1)
     visitType(tpe2)
-  }
-
-  private def visitAssocTypeConstructor(tcst: AssocTypeConstructor)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeConstructor(_, loc) = tcst
-    if (!a.accept(loc)) { return }
-
-    c.consumeAssocTypeConstructor(tcst)
   }
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -385,8 +370,6 @@ object Visitor {
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.RecordEmpty(_, _) => ()
-
       case Expr.RecordSelect(exp, _, _, _, _) =>
         visitExpr(exp)
 
@@ -459,9 +442,14 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.Without(exp, effUse, _, _, _) =>
+      case Expr.Unsafe(exp, runEff, _, _, _) =>
+        // runEff is first syntactically
+        visitType(runEff)
         visitExpr(exp)
-        visitEffectSymUse(effUse)
+
+      case Expr.Without(exp, sym, _, _, _) =>
+        visitExpr(exp)
+        visitEffectSymUse(sym)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -470,10 +458,13 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-        visitExpr(exp)
-        visitEffectSymUse(effUse)
+      case Expr.Handler(sym, rules, _, _, _, _, _) =>
+        visitEffectSymUse(sym)
         rules.foreach(visitHandlerRule)
+
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Do(op, exps, _, _, _) =>
         visitOpSymUse(op)
@@ -594,8 +585,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, loc) = effUse
-    if (!a.accept(loc)) { return }
+    val EffectSymUse(_, qname) = effUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }
@@ -790,7 +781,6 @@ object Visitor {
     	case Record(pats, pat, _, _) =>
     	  pats.foreach(visitRecordLabelPattern)
     	  visitPattern(pat)
-    	case RecordEmpty(_, _) =>
     	case Pattern.Error(_, _) =>
     }
   }

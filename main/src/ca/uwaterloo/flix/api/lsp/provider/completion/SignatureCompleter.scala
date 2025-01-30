@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +17,58 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Sig
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object SignatureCompleter {
   /**
-    * Returns a List of Completion for completer.
+    * Returns a List of Completion for Sig for UndefinedName.
     */
-  def getCompletions(context: CompletionContext)(implicit root: TypedAst.Root): Iterable[SigCompletion] = {
-    val word = context.word
-    val uri = context.uri
+  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  }
 
-    root.sigs.values.filter(matchesSig(_, word, uri))
-      .flatMap(decl =>
-        if (CompletionUtils.canApplySnippet(decl.spec.fparams)(context))
-          Some(Completion.SigCompletion(decl))
-        else
-          None
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (namespace.nonEmpty)
+      root.traits.values.flatMap(trt =>
+        trt.sigs.collect {
+          case sig if matchesSig(trt, sig, namespace, ident, uri, qualified = true) =>
+            SigCompletion(sig, ap, qualified = true, inScope = true)
+        }
+      )
+    else
+      root.traits.values.flatMap(trt =>
+        trt.sigs.collect {
+          case sig if matchesSig(trt, sig, namespace, ident, uri, qualified = false) =>
+            SigCompletion(sig, ap, qualified = false, inScope = inScope(sig, env))
+        }
       )
   }
 
-  /**
-    * Returns `true` if the given signature `sign` should be included in the suggestions.
-    */
-  private def matchesSig(sign: TypedAst.Sig, word: String, uri: String): Boolean = {
-    val isPublic = sign.spec.mod.isPublic
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      sign.sym.toString.startsWith(word)
-    else
-      sign.sym.name.startsWith(word)
-    val isInFile = sign.sym.loc.source.name == uri
+  private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {
+    val thisName = sig.sym.toString
+    val isResolved = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Sig(thatName, _, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    val isRoot = sig.sym.namespace.isEmpty
+    isRoot || isResolved
+  }
 
+  /**
+    * Returns `true` if the given signature `sig` should be included in the suggestions.
+    *
+    * For visibility, we just need to check the parent trait.
+    */
+  private def matchesSig(trt: TypedAst.Trait, sig: TypedAst.Sig, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+    val isPublic = trt.mod.isPublic && !trt.ann.isInternal
+    val isInFile = trt.loc.source.name == uri
+    val isMatch = if (qualified)
+      CompletionUtils.matchesQualifiedName(sig.sym.namespace, sig.sym.name, namespace, ident)
+    else
+      CompletionUtils.fuzzyMatch(ident, sig.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

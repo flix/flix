@@ -57,7 +57,7 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val ds = ParOps.parMapValues(root.defs)(visitDef)
-    val is = ParOps.parMapValues(root.instances)(is0 => is0.map(visitInstance))
+    val is = ParOps.parMapValueList(root.instances)(visitInstance)
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
     (root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala.toList)
@@ -206,9 +206,6 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.Tuple(es, tpe, eff, loc)
 
-    case Expr.RecordEmpty(tpe, loc) =>
-      Expr.RecordEmpty(tpe, loc)
-
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.RecordSelect(e, label, tpe, eff, loc)
@@ -293,6 +290,10 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
+    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.Unsafe(e, runEff, tpe, eff, loc)
+
     case Expr.Without(exp, sym, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.Without(e, sym, tpe, eff, loc)
@@ -306,10 +307,14 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Throw(e, tpe, eff, loc)
 
-    case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       val rs = rules.map(visitTryWithRule)
-      Expr.TryWith(e, sym, rs, tpe, eff, loc)
+      Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.RunWith(e1, e2, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

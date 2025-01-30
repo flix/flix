@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -42,7 +41,6 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
@@ -85,29 +83,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * The current AST root. The root is null until the source code is compiled.
     */
   private var root: Root = TypedAst.empty
-
-  /**
-    * The current reverse index. The index is empty until the source code is compiled.
-    *
-    * Note: The index is updated *asynchronously* by a different thread, hence:
-    *
-    * - The field must volatile because it is modified by a different thread.
-    * - The index may not always reflect the very latest version of the program.
-    */
-  @volatile
-  private var index: Index = Index.empty
-
-  /**
-    * A thread pool, with a single thread, which we use to execute indexing operations.
-    */
-  private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
-
-  /**
-    * A (possibly-null) volatile reference to a future that represents the latest indexing operation.
-    *
-    * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
-    */
-  private var indexingFuture: Future[?] = _
 
   /**
     * The current compilation errors.
@@ -200,7 +175,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/showAst") => Request.parseShowAst(json)
       case JString("lsp/codeAction") => Request.parseCodeAction(json)
 
-      case s => Err(s"Unsupported request: '$s'.")
+      case _ => Err(s"Unsupported request: '$s'.")
     }
   } catch {
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
@@ -283,13 +258,16 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
+      HoverProvider.processHover(uri, pos)(root, flix) match {
+        case Some(hover) => ("id" -> id) ~ hover.toJSON
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
+      }
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
@@ -298,8 +276,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(root)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
@@ -308,7 +285,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
@@ -319,7 +296,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
-    case Request.CodeAction(id, uri, range, context) =>
+    case Request.CodeAction(id, uri, range, _) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
 
   }
@@ -334,19 +311,19 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     try {
       // Run the compiler up to the type checking phase.
       flix.check() match {
-        case (Some(root), Nil) =>
+        case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, List.empty, flix.options.explain, t)
 
-        case (Some(root), errors) =>
+        case (Some(r), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, errors, flix.options.explain, t)
 
         case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Update the current errors.
-          this.currentErrors = errors.toList
+          this.currentErrors = errors
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
@@ -367,10 +344,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
-    this.currentErrors = errors.toList
-
-    // Asynchronously compute the reverse index.
-    asynchronouslyUpdateIndex(root)
+    this.currentErrors = errors
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -379,31 +353,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
 
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-  }
-
-  /**
-    * Asynchronously compute the reverse index using the thread pool.
-    */
-  private def asynchronouslyUpdateIndex(root: Root): Unit = {
-    this.indexingFuture = indexingPool.submit(new Runnable {
-      override def run(): Unit = {
-        VSCodeLspServer.this.index = Indexer.visitRoot(root)
-      }
-    })
-  }
-
-  /**
-    * Synchronously wait for the most recent indexing operation to complete.
-    *
-    * This function is used to ensure the index is up-to-date before certain operations, e.g. rename.
-    */
-  private def synchronouslyAwaitIndex(): Unit = {
-    if (indexingFuture != null) indexingFuture.get()
   }
 
   /**

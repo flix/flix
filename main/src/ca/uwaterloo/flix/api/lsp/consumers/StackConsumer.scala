@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp.consumers
 
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
-import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -42,7 +41,6 @@ case class StackConsumer() extends Consumer {
   def getStack: List[AnyRef] = stack
 
   override def consumeAnnotation(ann: Annotation): Unit = push(ann)
-  override def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = push(tcst)
   override def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = push(tdefn)
   override def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = push(tsig)
   override def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = push(symUse)
@@ -83,7 +81,6 @@ case class StackConsumer() extends Consumer {
   override def consumeTypeMatchRule(rule: TypeMatchRule): Unit = push(rule)
   override def consumeTrait(traitt: Trait): Unit = push(traitt)
   override def consumeTraitConstraint(tc: TraitConstraint): Unit = push(tc)
-  override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = push(tcHead)
   override def consumeTraitSymUse(symUse: TraitSymUse): Unit= push(symUse)
   override def consumeType(tpe: Type): Unit = push(tpe)
   override def consumeTypeAlias(alias: TypeAlias): Unit = push(alias)

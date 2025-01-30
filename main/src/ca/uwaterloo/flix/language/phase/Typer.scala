@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -49,9 +50,9 @@ object Typer {
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-    val modules = collectModules(root)
+    val modules = ListMap(collectModules(root))
 
-    val result = TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, None, root.sources, traitEnv.toMap, eqEnv, root.availableClasses, precedenceGraph)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
 
     (result, sctx.errors.asScala.toList)
 
@@ -120,15 +121,18 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): TraitEnv = {
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): TraitEnv = {
     val m = traits0.map {
       case (traitSym, trt) =>
-        val instances = instances0.getOrElse(traitSym, Nil)
-        val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Instance(tpe, tconstrs)
-        }
+        val instances = instances0.get(traitSym)
+        val envInsts = instances.flatMap {
+          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) =>
+            tpe.typeConstructor.map {
+              tc => TypeHead.Cst(tc) -> Instance(tparams.map(_.sym), tpe, tconstrs)
+            }
+        }.toMap[TypeHead, Instance]
         // ignore the super trait parameters since they should all be the same as the trait param
-        val superTraits = trt.superTraits.map(_.head.sym)
+        val superTraits = trt.superTraits.map(_.symUse.sym)
         (traitSym, TraitContext(superTraits, envInsts))
     }
     TraitEnv(m)
@@ -137,19 +141,21 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: ListMap[Symbol.TraitSym, KindedAst.Instance])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     val assocs = for {
       (traitSym, trt) <- traits0.iterator
-      inst <- instances0.getOrElse(traitSym, Nil)
+      inst <- instances0.get(traitSym)
       assocSig <- trt.assocs
-      assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+      assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
+      tparams = inst.tparams.map(_.sym)
       assocDef = assocDefOpt match {
+        // If there's no definition, then we fall back to the default
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
-          AssocTypeDef(inst.tpe, tpe)
+          AssocTypeDef(tparams, inst.tpe, tpe)
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
-          AssocTypeDef(arg, tpe)
+          AssocTypeDef(tparams, arg, tpe)
       }
     } yield (assocSig.sym, assocDef)
 
@@ -163,14 +169,12 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    val updatedDefs = ParOps.parMapValues(staleDefs) {
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
-    }
-    updatedDefs ++ freshDefs
+    })
   }
 
   /**
@@ -184,23 +188,23 @@ object Typer {
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
+    flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
+
     // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
-    val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
+    val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction2.visitDef(defn, subst)
   }
 
   /**
     * Performs type inference and reassembly on all traits in the given AST root.
     */
   private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
-    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val updatedTrais = ParOps.parMapValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv))
-    updatedTrais ++ freshTraits
+    changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait(_, root, traitEnv, eqEnv)))
   }
 
   /**
@@ -216,7 +220,7 @@ object Typer {
           val tp = visitTypeParam(tp0, root) // TODO ASSOC-TYPES redundant?
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, tpe, loc) // TODO ASSOC-TYPES trivial
       }
-      val tconstr = TraitConstraint(TraitConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
+      val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
       val laws = laws0.map(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv, open = false))
       TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
@@ -239,12 +243,12 @@ object Typer {
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         // A small optimization: If the signature is pure there is no room for subeffecting.
         val open = shouldSubeffect(exp, sig.spec.eff, Subeffecting.ModDefs)
-        val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
+        val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
-        val (subst, constraintErrors) = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+        val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction.visitSig(sig, subst)
+        TypeReconstruction2.visitSig(sig, subst)
     }
   }
 
@@ -252,10 +256,7 @@ object Typer {
     * Performs type inference and reassembly on all instances in the given AST root.
     */
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
-    val instances0 = for {
-      (_, insts) <- root.instances
-      inst <- insts
-    } yield inst
+    val instances0 = root.instances.values
 
     val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
     val mapping = instances.map {
@@ -268,13 +269,13 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
-    case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
-      val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+      val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_)) // MATT use tparams0
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
-          TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) =>
+          TypedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
 
       val defs = defs0.map {
@@ -283,7 +284,7 @@ object Typer {
           val open = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.InsDefs)
           visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
       }
-      TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      TypedAst.Instance(doc, ann, mod, symUse, tpe, tconstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -433,10 +434,10 @@ object Typer {
 
         // check that they are all covered by the type constraints
         tpes.flatMap(getAssocTypes).foreach {
-          case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+          case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
             val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
-              case TraitConstraint(TraitConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+              case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
                 trtSym == tconstrSym && tvarSym1 == tvarSym2
               case _ => false
             }
@@ -460,11 +461,7 @@ object Typer {
   private def shouldSubeffect(body: KindedAst.Expr, eff: Type, subeffecting: Subeffecting)(implicit flix: Flix): Boolean = {
     val enabled = flix.options.xsubeffecting.contains(subeffecting)
     val useless = eff == Type.Pure
-    val redundant = body match {
-      case KindedAst.Expr.CheckedCast(CheckedCastType.EffectCast, _, _, _, _) => true
-      case _ => false
-    }
-    enabled && !useless && !redundant
+    enabled && !useless
   }
 
 

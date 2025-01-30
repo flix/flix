@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
@@ -234,7 +234,7 @@ object HtmlDocumentor {
       */
     def visitMod(moduleSym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym]): Module = {
       val mod = root.modules(moduleSym)
-      val uses = root.uses.getOrElse(moduleSym, Nil)
+      val uses = root.uses.get(moduleSym)
 
       var submodules: List[Symbol.ModuleSym] = Nil
       var traits: List[Trait] = Nil
@@ -279,7 +279,7 @@ object HtmlDocumentor {
     val decl = root.traits(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
-    val instances = root.instances.getOrElse(sym, Nil)
+    val instances = root.instances.get(sym)
 
     Trait(decl, sigs, defs, instances, parent, None)
   }
@@ -312,7 +312,7 @@ object HtmlDocumentor {
       case _ => false
     }
 
-    val allInstances = root.instances.values.flatten
+    val allInstances = root.instances.values
     val instances = allInstances.filter(i => enumMatchesInstance(sym, i.tpe)).toList
 
     Enum(root.enums(sym), instances, parent, None)
@@ -1173,7 +1173,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      docTraitName(t.head.sym)
+      docTraitName(t.symUse.sym)
       sb.append("[")
       docType(t.arg)
       sb.append("]")
@@ -1205,9 +1205,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.cst.sym.trt)
+      docTraitName(e.symUse.sym.trt)
       sb.append(".")
-      sb.append(esc(e.cst.sym.name))
+      sb.append(esc(e.symUse.sym.name))
       sb.append("[")
       docType(e.tpe1)
       sb.append("] ~ ")
@@ -1218,7 +1218,7 @@ object HtmlDocumentor {
 
   /**
     * Documents the given `Derivations`s, `derives`.
-    * E.g. "with Sendable".
+    * E.g. "with ToString".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -1231,7 +1231,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
-      docTraitName(t.trt)
+      docTraitName(t.sym)
     }
     sb.append("</span>")
   }
@@ -1537,7 +1537,7 @@ object HtmlDocumentor {
     */
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
-                            uses: List[Ast.UseOrImport],
+                            uses: List[UseOrImport],
                             submodules: List[Module],
                             traits: List[Trait],
                             effects: List[Effect],

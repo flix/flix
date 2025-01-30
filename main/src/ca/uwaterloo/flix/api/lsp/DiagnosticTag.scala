@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
+
 /**
   * Represents a `DiagnosticTag` in LSP.
   */
@@ -22,6 +24,11 @@ sealed trait DiagnosticTag {
   def toInt: Int = this match {
     case DiagnosticTag.Unnecessary => 1
     case DiagnosticTag.Deprecated => 2
+  }
+
+  def toLsp4j: lsp4j.DiagnosticTag = this match {
+    case DiagnosticTag.Unnecessary => lsp4j.DiagnosticTag.Unnecessary
+    case DiagnosticTag.Deprecated => lsp4j.DiagnosticTag.Deprecated
   }
 }
 

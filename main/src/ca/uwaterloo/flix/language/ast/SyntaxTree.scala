@@ -236,6 +236,8 @@ object SyntaxTree {
 
       case object GetField extends Expr
 
+      case object Handler extends Expr
+
       case object Hole extends Expr
 
       case object HoleVariable extends Expr
@@ -314,6 +316,8 @@ object SyntaxTree {
 
       case object RestrictableChooseStar extends Expr
 
+      case object Run extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
@@ -340,7 +344,7 @@ object SyntaxTree {
 
       case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBodyFragment extends Expr
+      case object RunWithBodyExpr extends Expr
 
       case object TryWithRuleFragment extends Expr
 
@@ -353,6 +357,8 @@ object SyntaxTree {
       case object Unary extends Expr
 
       case object UncheckedCast extends Expr
+
+      case object Unsafe extends Expr
 
       case object UnsafeOld extends Expr
 
@@ -403,8 +409,6 @@ object SyntaxTree {
       case object EffectSet extends Type
 
       case object Function extends Type
-
-      case object Native extends Type
 
       case object PredicateWithAlias extends Type
 

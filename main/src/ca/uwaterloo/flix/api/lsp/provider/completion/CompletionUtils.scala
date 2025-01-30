@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn, Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Name.QName
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.language.ast.Symbol
+
 import scala.annotation.tailrec
 
 object CompletionUtils {
@@ -77,6 +79,21 @@ object CompletionUtils {
   }
 
   /**
+    * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
+    */
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    } :+ s"$${${fparams.length + 1}:resume}"
+    if (functionIsUnit)
+      s"$name($${1:resume}) = "
+    else
+      s"$name(${args.mkString(", ")}) = "
+  }
+
+  /**
     * Helper function for deciding if a snippet can be generated.
     * Returns false if there are too few arguments.
     */
@@ -120,11 +137,11 @@ object CompletionUtils {
   def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
     ModuleSymFragment.parseModuleSym(word) match {
       case ModuleSymFragment.Complete(modSym) =>
-        root.modules.getOrElse(modSym, Nil).collect {
+        root.modules.get(modSym).collect {
           case sym: Symbol.ModuleSym => sym
         }
       case ModuleSymFragment.Partial(modSym, suffix) =>
-        root.modules.getOrElse(modSym, Nil).collect {
+        root.modules.get(modSym).collect {
           case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
         }
       case _ => Nil
@@ -227,5 +244,69 @@ object CompletionUtils {
     */
   private def splitByCamelCase(input: String): List[String] = {
     input.split("(?=[A-Z])").toList
+  }
+
+  /**
+    * Parse given `qn` based on the character immediately following the location.
+    * If the character is a dot, we move the ident to the namespace.
+    * Otherwise, we will just take namespace and ident out of qn.
+    *
+    * Example:
+    *   - Source "A.B.C", QName(["A", "B"], "C") -> ("A.B", "C")
+    *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
+    */
+  def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
+    val ident = if (followedByDot(qn.loc)) "" else qn.ident.name
+    val namespace = qn.namespace.idents.map(_.name) ++ {
+      if (followedByDot(qn.loc)) List(qn.ident.name)
+      else Nil
+    }
+    (namespace, ident)
+  }
+
+  /**
+    * Returns true if the character immediately following the location is a dot.
+    * Note:
+    *   - loc.endCol will point to the next character after QName. That's exactly what we want to check.
+    *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
+    */
+  private def followedByDot(loc: SourceLocation): Boolean = {
+    val line = loc.lineAt(loc.endLine)
+    loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
+  }
+
+  /**
+   * Checks if the namespace and ident from the error matches the qualified name.
+   * We require a full match on the namespace and a fuzzy match on the ident.
+   *
+   * Example:
+   *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+   */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, namespace: List[String], ident: String): Boolean = {
+    targetNamespace == namespace && fuzzyMatch(ident, targetIdent)
+  }
+
+  /**
+   * Format type params in the right form to be displayed in the list of completions
+   * e.g. "[a, b, c]"
+   */
+  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.map(_.name).mkString("[", ", ", "]")
+    }
+  }
+
+  /**
+   * Format type params in the right form to be inserted as a snippet
+   * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+   */
+  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.zipWithIndex.map {
+        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+      }.mkString("[", ", ", "]")
+    }
   }
 }

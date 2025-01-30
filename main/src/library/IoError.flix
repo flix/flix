@@ -22,13 +22,13 @@
 ///
 /// The second element is a string that describes the error, meant to be used for debugging purposes.
 ///
-pub enum IoError(IoError.ErrorKind, String) with Eq
+pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
 
 mod IoError {
 
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
-        case PermissionDenied,
+        case ConnectionFailed,
         case Interrupted,
         case InvalidPath,
         case InvalidInput,
@@ -36,6 +36,7 @@ mod IoError {
         case NotFound,
         case NotFile,
         case NotDirectory,
+        case PermissionDenied,
         case UnexpectedEof,
         case Unsupported,
         case Other

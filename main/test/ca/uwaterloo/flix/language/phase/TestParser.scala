@@ -443,7 +443,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
-    expectMain(result)
   }
 
   test("BadUnary.01") {
@@ -745,9 +744,9 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Bool =
-        |    let result = try {
+        |    let result = run {
         |        mutual1(10)
-        |    } with AskTell ;
+        |    } with handler AskTell ;
         |    Assert.eq(Some(84), result)
         |def main(): Int32 = 123
         |""".stripMargin
@@ -761,6 +760,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingRunBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    run { true }
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -793,6 +804,16 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
+  }
+
+  test("BadArrowEffectApplication.01") {
+    val input =
+      """
+        |type alias T[_a] = Unit
+        |pub def seqCheck(f: a -> a \ l: T[a]): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
   }
 }
 
@@ -1046,4 +1067,78 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  test("Nested.Mod.Eff") {
+    val input =
+      """
+        |eff E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Instance") {
+    val input =
+      """
+        |instance E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Nested.Mod.Trait") {
+    val input =
+      """
+        |trait E {
+        |    mod
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("BadTupleEnd.01") {
+    val input =
+      """
+        |def foo(x: Int32): (Int32, Int32) = (x, |)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.NoBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.YesBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.Capital.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -ABC
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }

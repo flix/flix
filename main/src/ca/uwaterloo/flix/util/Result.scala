@@ -99,6 +99,18 @@ object Result {
   case class Err[T, E](e: E) extends Result[T, E]
 
   /**
+    * Applies the given function `f` to value of `res` wrapping it in [[Result.Ok]].
+    */
+  def mapN[T, U, E](res: Result[T, E])(f: T => U): Result[U, E] =
+    res.map(f)
+
+  /**
+    * Applies the given function `f` to values of the results wrapping it in [[Result.Ok]].
+    */
+  def mapN[T1, T2, U, E](res1: Result[T1, E], res2: Result[T2, E])(f: (T1, T2) => U): Result[U, E] =
+    res1.flatMap(r1 => res2.map(r2 => f(r1, r2)))
+
+  /**
     * Evaluates the given results from left to right collecting the values into a list.
     *
     * Returns the first error value encountered, if any.

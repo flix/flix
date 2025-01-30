@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -113,7 +114,8 @@ object TraitEnvironment {
     */
   private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
     case TraitConstraint(head, arg, _) =>
-      val matchingInstances = traitEnv.getInstancesOpt(head.sym).getOrElse(Nil)
+
+      val matchingInstanceOpt = traitEnv.getInstance(head.sym, arg)
 
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
@@ -126,20 +128,15 @@ object TraitEnvironment {
         }
       }
 
-      val tconstrGroups = matchingInstances.map(tryInst).map(_.toResult).collect {
+      val tconstrGroups = matchingInstanceOpt.map(tryInst).map(_.toResult).collect {
         case Result.Ok(tconstrs) => tconstrs
       }
 
       tconstrGroups match {
-        case Nil => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
-        case tconstrs :: Nil =>
+        case None => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
+        case Some(tconstrs) =>
           // apply the base tconstr location to the new tconstrs
           Validation.Success(tconstrs.map(_.copy(loc = tconstr.loc)))
-        case _ :: _ :: _ =>
-          // Multiple matching instances: This will be caught in the Instances phase.
-          // We return Nil here because there is no canonical set of constraints,
-          // so we stop adding constraints and let the later phase take care of it.
-          Validation.Success(Nil)
       }
   }
 
@@ -158,13 +155,13 @@ object TraitEnvironment {
   private def bySuper(tconstr: TraitConstraint, traitEnv: TraitEnv): List[TraitConstraint] = {
 
     // Get the traits that are directly super traits of the trait in `tconstr`
-    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.head.sym).getOrElse(Nil)
+    val directSupers = traitEnv.getSuperTraitsOpt(tconstr.symUse.sym).getOrElse(Nil)
 
     // Walk the super trait tree.
     // There may be duplicates, but this will terminate since super traits must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the super traits of each direct super trait
-      superTrait => bySuper(TraitConstraint(TraitConstraint.Head(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
+      superTrait => bySuper(TraitConstraint(TraitSymUse(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
     }
   }
 

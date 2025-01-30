@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for weeding errors.
   */
 sealed trait WeederError extends CompilationMessage {
-  val kind = "Syntax Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.WeederError
 }
 
 object WeederError {
@@ -141,37 +141,6 @@ object WeederError {
       import formatter.*
       s"${underline("Tip:")} Remove one of the two fields."
     })
-  }
-
-  /**
-    * An error raised to indicate that the tag `name` was declared multiple times.
-    *
-    * @param enumName the name of the enum.
-    * @param tag      the name of the tag.
-    * @param loc1     the location of the first tag.
-    * @param loc2     the location of the second tag.
-    */
-  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Duplicate tag: '$tag'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
-         |
-         |${code(loc1, "the first declaration was here.")}
-         |
-         |${code(loc2, "the second declaration was here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
-    })
-
-    def loc: SourceLocation = loc1
-
   }
 
   /**

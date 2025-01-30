@@ -36,20 +36,20 @@ mod Char {
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
-        unsafe Character.isLetter(c)
+        Character.isLetter(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(c: Char): Bool =
-        unsafe Character.isDigit(c)
+        Character.isDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(c: Char): Bool =
-        unsafe Character.isLetterOrDigit(c)
+        Character.isLetterOrDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
@@ -77,58 +77,58 @@ mod Char {
     /// Returns `true` if the given char `c` is lowercase.
     ///
     pub def isLowerCase(c: Char): Bool =
-        unsafe Character.isLowerCase(c)
+        Character.isLowerCase(c)
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     pub def isUpperCase(c: Char): Bool =
-        unsafe Character.isUpperCase(c)
+        Character.isUpperCase(c)
 
     ///
     /// Returns `true` if the given char `c` is titlecase, i.e. in the Unicode
     /// category of title case letters.
     ///
     pub def isTitleCase(c: Char): Bool =
-        unsafe Character.isTitleCase(c)
+        Character.isTitleCase(c)
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
-        unsafe Character.isWhitespace(c)
+        Character.isWhitespace(c)
 
     ///
     /// Returns `true` if the given char `c` is defined either as a entry in the
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(c: Char): Bool =
-        unsafe Character.isDefined(c)
+        Character.isDefined(c)
 
     ///
     /// Returns `true` if the given char `c` is an ISO control character.
     ///
     pub def isISOControl(c: Char): Bool =
-        unsafe Character.isISOControl(c)
+        Character.isISOControl(c)
 
     ///
     /// Returns `true` if the given char `c` is mirrored.
     ///
     pub def isMirrored(c: Char): Bool =
-        unsafe Character.isMirrored(c)
+        Character.isMirrored(c)
 
     ///
     /// Returns `true` if the given char `c` is a surrogate code unit.
     ///
     pub def isSurrogate(c: Char): Bool =
-        unsafe Character.isSurrogate(c)
+        Character.isSurrogate(c)
 
     ///
     /// Returns `true` if the given characters `high` and `low` represent a valid
     /// Unicode surrogate pair.
     ///
     pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
-        unsafe Character.isSurrogatePair(high#high, low#low)
+        Character.isSurrogatePair(high#high, low#low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -136,7 +136,7 @@ mod Char {
     /// Returns the original character if it does not have a lowercase version.
     ///
     pub def toLowerCase(c: Char): Char =
-        unsafe Character.toLowerCase(c)
+        Character.toLowerCase(c)
 
     ///
     /// Converts a letter to its uppercase version.
@@ -144,7 +144,7 @@ mod Char {
     /// Returns the original character if it does not have a uppercase version.
     ///
     pub def toUpperCase(c: Char): Char =
-        unsafe Character.toUpperCase(c)
+        Character.toUpperCase(c)
 
     ///
     /// Converts a letter to its titlecase version.
@@ -153,7 +153,7 @@ mod Char {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(c: Char): Char =
-        unsafe Character.toTitleCase(c)
+        Character.toTitleCase(c)
 
     ///
     /// Returns the code point representation of Char `c`.
@@ -167,7 +167,7 @@ mod Char {
     /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
-        unsafe Character.toCodePoint(high#high, low#low)
+        Character.toCodePoint(high#high, low#low)
 
     ///
     /// Returns the character `c` as a string.
@@ -191,7 +191,7 @@ mod Char {
     /// This function cannot handle supplementary characters.
     ///
     pub def getNumericValue(c: Char): Option[Int32] =
-        match (unsafe Character.getNumericValue(c)) {
+        match (Character.getNumericValue(c)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -204,7 +204,7 @@ mod Char {
     /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
-        match (unsafe Character.digit(c, radix#radix)) {
+        match (Character.digit(c, radix#radix)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -217,7 +217,7 @@ mod Char {
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
-        match (unsafe Character.forDigit(n, radix#radix)) {
+        match (Character.forDigit(n, radix#radix)) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
@@ -229,7 +229,7 @@ mod Char {
     /// code you should not need to use `java.lang.Character`.
     ///
     pub def charValue(c: Character): Char =
-        unsafe c.charValue()
+        c.charValue()
 
     ///
     /// Convert an Char value to its its object representation (i.e. java.lang.Character).
@@ -238,6 +238,6 @@ mod Char {
     /// code you should not need to use `java.lang.Character`.
     ///
     pub def valueOf(c: Char): Character =
-        unsafe Character.valueOf(c)
+        Character.valueOf(c)
 
 }

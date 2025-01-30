@@ -17,11 +17,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
 
@@ -50,6 +50,8 @@ import scala.jdk.CollectionConverters.*
   */
 object EntryPoints {
 
+  private case object ErrorOrMalformed
+
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
@@ -76,13 +78,13 @@ object EntryPoints {
     root.mainEntryPoint match {
       case None =>
         root.defs.get(defaultMainName) match {
-        case None =>
-          // No main is given and default does not exist - no main.
-          (root, Nil)
-        case Some(entryPoint) =>
-          // No main is given but default exists - use default.
-          (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
-      }
+          case None =>
+            // No main is given and default does not exist - no main.
+            (root, Nil)
+          case Some(entryPoint) =>
+            // No main is given but default exists - use default.
+            (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
+        }
       case Some(sym) => root.defs.get(sym) match {
         case Some(_) =>
           // A main is given and it exists - use it.
@@ -116,22 +118,18 @@ object EntryPoints {
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
     root.mainEntryPoint.contains(defn.sym)
 
-  /**
-    * Returns `true` if `tpe` is equivalent to Unit (via type aliases).
-    *
-    * N.B.: `tpe` must not have type variables or associated types.
-    */
+  /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
-  private def isUnitType(tpe: Type): Boolean = tpe match {
-    case Type.Cst(TypeConstructor.Unit, _) => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
+  private def isUnitType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = tpe match {
+    case Type.Cst(TypeConstructor.Unit, _) => Result.Ok(true)
+    case Type.Cst(_, _) => Result.Ok(false)
+    case Type.Apply(_, _, _) => Result.Ok(false)
     case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+    case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
   }
 
   private object CheckEntryPoints {
@@ -286,15 +284,19 @@ object EntryPoints {
         defn.spec.econstrs.flatMap(ec => List(ec.tpe1, ec.tpe2))
     }
 
-    /**
-      * Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise.
-      *
-      * N.B.: `defn` must not have type variables or associated types.
-      */
+    /** Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise. */
     private def checkUnitArg(defn: TypedAst.Def): Option[EntryPointError] = {
       defn.spec.fparams match {
         // One parameter of type Unit - valid.
-        case List(arg) if isUnitType(arg.tpe) => None
+        case List(arg) =>
+          isUnitType(arg.tpe) match {
+            case Result.Ok(true) => None
+            case Result.Ok(false) =>
+              Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
+            case Result.Err(ErrorOrMalformed) =>
+              // Do not report an error, since previous phases should have done already.
+              None
+          }
         // One parameter of a non-Unit type or more than two parameters - invalid.
         case _ :: _ =>
           Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
@@ -307,34 +309,42 @@ object EntryPoints {
       * Returns `None` if `defn` has return type Unit or has a return type with `ToString` defined.
       * Returns an error otherwise.
       *
-      * N.B.: `defn` must not have type variables or associated types.
-      *
       * In order to support compilation without the standard library, Unit is checked first even
       * though it has `ToString` defined.
       */
     private def checkToStringOrUnitResult(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Option[EntryPointError] = {
       val resultType = defn.spec.retTpe
-      if (isUnitType(resultType)) None
-      else {
-        val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-        val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
-        val constraint = TraitConstraint(TraitConstraint.Head(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
-        val hasToString = TraitEnvironment.holds(constraint, TraitEnv(root.traitEnv), ListMap.empty)
-        if (hasToString) None
-        else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
+      isUnitType(resultType) match {
+        case Result.Ok(true) =>
+          None
+        case Result.Ok(false) =>
+          val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
+          val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
+          val constraint = TraitConstraint(TraitSymUse(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
+          val hasToString = TraitEnvironment.holds(constraint, root.traitEnv, ListMap.empty)
+          if (hasToString) None
+          else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
+        case Result.Err(ErrorOrMalformed) =>
+          // Do not report an error, since previous phases should have done already.
+          None
       }
     }
 
     /**
       * Returns `None` if `defn` has an effect that is a subset of the set of primitive effects
       * (e.g. `IO + Console`). Returns an error otherwise.
-      *
-      * N.B.: `defn` must not have type variables or associated types.
       */
     private def checkPrimitiveEffect(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
       val eff = defn.spec.eff
-      if (isPrimitiveEffect(eff)) None
-      else Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+      isPrimitiveEffect(eff) match {
+        case Result.Ok(true) =>
+          None
+        case Result.Ok(false) =>
+          Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+        case Result.Err(ErrorOrMalformed) =>
+          // Do not report an error, since previous phases should have done already.
+          None
+      }
     }
 
     /**
@@ -342,50 +352,54 @@ object EntryPoints {
       *
       * Returns `false` for all effects with either type variables or Error.
       */
-    private def isPrimitiveEffect(eff: Type): Boolean = {
-      if (eff.typeVars.nonEmpty) return false
-      // Now that we have the monomorphic effect, we can evaluate it.
-      eval(eff) match {
-        case Some(s) =>
+    private def isPrimitiveEffect(eff: Type): Result[Boolean, ErrorOrMalformed.type] = {
+      eval(eff).map {
+        case s =>
           // Check that it is a set is a subset of the primitive effects.
           // s ⊆ prim <=> s - prim = {}
           val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
           CofiniteEffSet.difference(s, primEffs).isEmpty
-        case None =>
-          // The effect has an Error, return false to make sure it is removed as
-          // an entry point.
-          false
       }
     }
 
     /**
-      * Returns `eff` evaluated to its co-finite set or None if `eff` contains Error.
-      *
-      * N.B.: `eff` must be a well-formed effect formula without type variables and associated types.
+      * Evaluates `eff` if it is well-formed and has no type variables,
+      * associated types, or error types.
       */
-    private def eval(eff: Type): Option[CofiniteEffSet] = eff match {
+    private def eval(eff: Type): Result[CofiniteEffSet, ErrorOrMalformed.type] = eff match {
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => Some(CofiniteEffSet.empty)
-        case TypeConstructor.Univ => Some(CofiniteEffSet.universe)
-        case TypeConstructor.Effect(sym) => Some(CofiniteEffSet.mkSet(sym))
-        case TypeConstructor.Error(_, _) => None
-        case _ => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+        case TypeConstructor.Pure => Result.Ok(CofiniteEffSet.empty)
+        case TypeConstructor.Univ => Result.Ok(CofiniteEffSet.universe)
+        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteEffSet.mkSet(sym))
+        case _ => Result.Err(ErrorOrMalformed)
       }
-      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
-        eval(x).map(CofiniteEffSet.complement)
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.union(a, b)))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.intersection(a, b)))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-        eval(x).flatMap(a => eval(y).map(b => CofiniteEffSet.xor(a, b)))
+      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+        Result.mapN(eval(x0)) {
+          case x => CofiniteEffSet.complement(x)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+        Result.mapN(eval(x0), eval(y0)) {
+          case (x, y) => CofiniteEffSet.union(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+        Result.mapN(eval(x0), eval(y0)) {
+          case (x, y) => CofiniteEffSet.intersection(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+        Result.mapN(eval(x0), eval(y0)) {
+          case (x, y) => CofiniteEffSet.difference(x, y)
+        }
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+        Result.mapN(eval(x0), eval(y0)) {
+          case (x, y) => CofiniteEffSet.xor(x, y)
+        }
       case Type.Alias(_, _, tpe, _) => eval(tpe)
-      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
-      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected effect '$eff'.", eff.loc)
+      case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.Apply(_, _, _) => Result.Err(ErrorOrMalformed)
+      case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+      case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
     }
 
     /** Returns an error if `defn` is in the root namespace. */
@@ -409,16 +423,19 @@ object EntryPoints {
       else Some(EntryPointError.IllegalExportName(defn.sym.loc))
     }
 
-    /**
-      * Returns an error for each type in `defn` that is not valid in Java.
-      *
-      * N.B.: `defn` must not have type variables or associated types.
-      */
+    /** Returns an error for each type in `defn` that is not valid in Java. */
     private def checkJavaTypes(defn: TypedAst.Def): List[EntryPointError] = {
       val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
       types.flatMap(tpe => {
-        if (isExportableType(tpe)) None
-        else Some(EntryPointError.IllegalExportType(tpe, tpe.loc))
+        isExportableType(tpe) match {
+          case Result.Ok(true) =>
+            None
+          case Result.Ok(false) =>
+            Some(EntryPointError.IllegalExportType(tpe, tpe.loc))
+          case Result.Err(ErrorOrMalformed) =>
+            // Do not report an error, since previous phases should have done already.
+            None
+        }
       })
     }
 
@@ -430,30 +447,28 @@ object EntryPoints {
       *   - `isExportableType(String) = true`
       *   - `isExportableType(List[String]) = false`
       *   - `isExportableType(java.lang.Object) = true`
-      *
-      * N.B.: `tpe` must not have type variables or associated types.
       */
     @tailrec
-    private def isExportableType(tpe: Type): Boolean = {
+    private def isExportableType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = {
       // TODO: Currently, because of eager erasure, we only allow primitive types and Object.
       tpe match {
-        case Type.Cst(TypeConstructor.Bool, _) => true
-        case Type.Cst(TypeConstructor.Char, _) => true
-        case Type.Cst(TypeConstructor.Float32, _) => true
-        case Type.Cst(TypeConstructor.Float64, _) => true
-        case Type.Cst(TypeConstructor.Int8, _) => true
-        case Type.Cst(TypeConstructor.Int16, _) => true
-        case Type.Cst(TypeConstructor.Int32, _) => true
-        case Type.Cst(TypeConstructor.Int64, _) => true
-        case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => true
-        case Type.Cst(_, _) => false
-        case Type.Apply(_, _, _) => false
+        case Type.Cst(TypeConstructor.Bool, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Char, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Float32, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Float64, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int8, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int16, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int32, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Int64, _) => Result.Ok(true)
+        case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
+        case Type.Cst(_, _) => Result.Ok(false)
+        case Type.Apply(_, _, _) => Result.Ok(false)
         case Type.Alias(_, _, tpe, _) => isExportableType(tpe)
-        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
-        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected entry point parameter type '$tpe'", tpe.loc)
+        case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+        case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
       }
     }
 
@@ -468,7 +483,7 @@ object EntryPoints {
     /**
       * A global shared context. Must be thread-safe.
       *
-      * @param errors the [[EntryPointError]]s in the AST, if any.
+      * @param errors      the [[EntryPointError]]s in the AST, if any.
       * @param invalidMain marks the main entrypoint as invalid.
       */
     private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError], invalidMain: AtomicBoolean)
@@ -488,13 +503,24 @@ object EntryPoints {
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
       root.mainEntryPoint.map(root.defs(_)) match {
-        case Some(main0: TypedAst.Def) if !isUnitType(main0.spec.retTpe) =>
-          val main = mkEntryPoint(main0, root)
-          val root1 = root.copy(
-            defs = root.defs + (main.sym -> main),
-            mainEntryPoint = Some(main.sym)
-          )
-          (root1, Nil)
+        case Some(main0: TypedAst.Def) =>
+          isUnitType(main0.spec.retTpe) match {
+            case Result.Ok(true) =>
+              // main doesn't need a wrapper.
+              (root, Nil)
+            case Result.Ok(false) =>
+              // main needs a wrapper.
+              val main = mkEntryPoint(main0, root)
+              val root1 = root.copy(
+                defs = root.defs + (main.sym -> main),
+                mainEntryPoint = Some(main.sym)
+              )
+              (root1, Nil)
+            case Result.Err(ErrorOrMalformed) =>
+              // Do not report an error, since previous phases should have done already.
+              (root, Nil)
+          }
+
         case Some(_) | None =>
           // Main doesn't need a wrapper or no main exists.
           (root, Nil)
@@ -530,7 +556,7 @@ object EntryPoints {
           TypedAst.Binder(argSym, argType),
           Modifiers.Empty,
           argType,
-          Ast.TypeSource.Ascribed,
+          TypeSource.Ascribed,
           SourceLocation.Unknown)
         ),
         declaredScheme = Scheme(Nil, Nil, Nil, tpe),
@@ -566,15 +592,14 @@ object EntryPoints {
 
   }
 
-    /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
-    def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
-      val s = mutable.Set.empty[Symbol.DefnSym]
-      for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
-        s += sym
-      }
-      val entryPoints = s.toSet
-      root.copy(entryPoints = Some(entryPoints))
+  /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
+  def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
+    val s = mutable.Set.empty[Symbol.DefnSym]
+    for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
+      s += sym
     }
+    val entryPoints = s.toSet
+    root.copy(entryPoints = entryPoints)
+  }
 
 }
-

@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -280,25 +281,25 @@ object UnkindedType {
   /**
     * A fully resolved type alias.
     */
-  case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class Alias(symUse: TypeAliasSymUse, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
+      case Alias(TypeAliasSymUse(sym2, _), args2, tpe2, _) => symUse.sym == sym2 && args == args2 && tpe == tpe2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, args, tpe)
+    override def hashCode(): Int = Objects.hash(symUse, args, tpe)
   }
 
   /**
     * A fully resolved associated type.
     */
-  case class AssocType(cst: Ast.AssocTypeConstructor, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class AssocType(assocTypeSymUse: AssocTypeSymUse, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(Ast.AssocTypeConstructor(sym2, _), arg2, _) => cst.sym == sym2 && arg == arg2
+      case AssocType(AssocTypeSymUse(sym2, _), arg2, _) => assocTypeSymUse.sym == sym2 && arg == arg2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, arg)
+    override def hashCode(): Int = Objects.hash(assocTypeSymUse, arg)
   }
 
   /**

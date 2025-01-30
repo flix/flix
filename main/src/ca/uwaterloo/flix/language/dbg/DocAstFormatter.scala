@@ -176,14 +176,24 @@ object DocAstFormatter {
         aux(f) |:: doubleSquareTuple(args.map(aux(_, paren = false)))
       case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
-      case Ascription(v, tpe) =>
+      case AscriptionTpe(v, tpe) =>
         aux(v) |:: text(":") +: formatType(tpe, paren = false)
+      case AscriptionEff(v, tpe0, eff0) => (tpe0, eff0) match {
+        case (Some(tpe), Some(eff)) => aux(v) |:: text(":") +: formatType(tpe, paren = false) +: text("\\") +: formatType(eff, paren = false)
+        case (None, Some(eff)) => aux(v) |:: text(":") +: formatType(DocAst.Type.Wild, paren = false) +: text("\\") +: formatType(eff, paren = false)
+        case (Some(tpe), None) => aux(v) |:: text(":") +: formatType(tpe, paren = false)
+        case (None, None) => aux(v, paren = paren)
+      }
+      case Unsafe(d, tpe) =>
+        text("unsafe_remove") +: formatType(tpe, paren = false) +: curly(format(d))
       case DoubleKeyword(word1, d1, word2, d2E) =>
         val d2Part = d2E match {
           case Left(d2) => aux(d2, paren = false)
           case Right(tpe) => formatType(tpe, paren = false)
         }
         group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: d2Part)
+      case TripleKeyword(word1, d1, word2, d2, word3, d3) =>
+        group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: formatType(d2, paren = false) +\: text(word3) +: formatType(d3, paren = false))
       case TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
@@ -196,17 +206,15 @@ object DocAstFormatter {
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
         )
-      case TryWith(d, eff, rules) =>
+      case Handler(eff, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, params, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
             text("def") +: text(sym.toString) |:: tuple(params.map(aux(_, paren = false))) +:
               text("=") |:: breakWith(" ") |:: curlyOpen(rulef)
         })
-        val bodyf = aux(d, paren = false, inBlock = true)
         group(
-          text("try") +: curly(bodyf) +:
-            text("with") +: text(eff.toString) +: curly(rs)
+          text("handler") +: text(eff.toString) +: curly(rs)
         )
       case NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
@@ -329,6 +337,8 @@ object DocAstFormatter {
         text("Unit")
       case Type.AsIs(s) =>
         text(s)
+      case Type.Ascribe(t, kind) =>
+        formatType(t) |:: text(":") +: formatType(kind)
       case Type.App(obj, args) =>
         formatType(obj) |:: squareTuple(args.map(formatType(_, paren = false)))
       case Type.Tuple(elms) =>

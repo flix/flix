@@ -140,7 +140,7 @@ object PrimitiveEffects {
       case JObject(l) => l.map {
         case (packageName, JString(s)) =>
           val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
-          val effSet = s.split(',').map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          val effSet = parseEffSet(s)
           (clazz, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -170,7 +170,7 @@ object PrimitiveEffects {
       case JObject(l) => l.map {
         case (className, JString(s)) =>
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          val effSet = parseEffSet(s)
           (clazz, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -202,7 +202,7 @@ object PrimitiveEffects {
       case JObject(l) => l.flatMap {
         case (className, JString(s)) =>
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          val effSet = parseEffSet(s)
           clazz.getConstructors.map(c => (c, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -236,7 +236,7 @@ object PrimitiveEffects {
           val className = classNameAndMethod.substring(0, cc)
           val methodName = classNameAndMethod.substring(cc + 2)
           val clazz = Class.forName(className)
-          val effSet = s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
+          val effSet = parseEffSet(s)
           clazz.getMethods.filter(_.getName == methodName).map(m => (m, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
@@ -244,5 +244,17 @@ object PrimitiveEffects {
     }
 
     m.toMap
+  }
+
+  /**
+   * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
+   *
+   * Returns the empty set if the string is empty.
+   */
+  private def parseEffSet(s: String): Set[Symbol.EffectSym] = {
+    if (s.trim.isEmpty)
+      Set.empty
+    else
+      s.split(",").map(_.trim).map(Symbol.parsePrimitiveEff).toSet
   }
 }

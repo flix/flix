@@ -137,8 +137,6 @@ object WeededAst {
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordEmpty(loc: SourceLocation) extends Expr
-
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
     case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -181,6 +179,8 @@ object WeededAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
+
     case class UnsafeOld(exp: Expr, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
@@ -189,7 +189,9 @@ object WeededAst {
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
+    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+
+    case class RunWith(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -266,8 +268,6 @@ object WeededAst {
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
-
-    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     case class Error(loc: SourceLocation) extends Pattern
 
@@ -350,8 +350,6 @@ object WeededAst {
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
-    case class Native(fqn: String, loc: SourceLocation) extends Type
-
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 
     case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
@@ -421,8 +419,6 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class WithHandler(eff: Name.QName, rules: List[HandlerRule])
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

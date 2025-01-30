@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst}
+import ca.uwaterloo.flix.language.ast.LoweredAst
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
@@ -89,7 +89,7 @@ object LoweredAstPrinter {
     case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, loc) => DocAst.Expr.ArrayLength(print(exp))
-    case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
+    case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expr.Cast(print(exp), TypePrinter.print(t))
@@ -106,7 +106,7 @@ object LoweredAstPrinter {
       val rulesD = rules.map {
         case LoweredAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
       }
-      DocAst.Expr.TryWith(expD, effD, rulesD)
+      DocAst.Expr.RunWithHandler(expD, effD, rulesD)
     case Expr.Do(op, exps, tpe, eff, loc) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
@@ -125,7 +125,6 @@ object LoweredAstPrinter {
     case Pattern.Tag(sym, pats, tpe, loc) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
-    case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
   }
 
   /**
@@ -139,11 +138,11 @@ object LoweredAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.Ascription = {
+  private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val LoweredAst.FormalParam(sym, _, tpe, _, _) = fp
-    DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
   /**

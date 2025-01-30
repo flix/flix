@@ -16,15 +16,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The region phase ensures that regions do not escape outside of their scope.
@@ -34,286 +35,365 @@ import scala.collection.immutable.SortedSet
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): (Root, List[TypeError]) = flix.phaseNew("Regions") {
-    val defErrors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
-    val sigErrors = ParOps.parMap(root.sigs)(kv => visitSig(kv._2)).flatten
-    val instanceErrors = ParOps.parMap(root.instances)(kv => kv._2.flatMap(visitInstance)).flatten
-    val errors = defErrors ++ sigErrors ++ instanceErrors
-    (root, errors.toList)
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[TypeError]) = flix.phaseNew("Regions") {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val sigs = changeSet.updateStaleValues(root.sigs, oldRoot.sigs)(ParOps.parMapValues(_)(visitSig))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    (root.copy(defs = defs, sigs = sigs, instances = instances), sctx.errors.asScala.toList)
   }
 
-  private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
-    visitExp(def0.exp)(Nil, flix)
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
+    visitExp(defn.exp)(Nil, sctx, flix)
+    defn
+  }
 
-  private def visitSig(sig: Sig)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
-    sig.exp.map(visitExp(_)(Nil, flix)).getOrElse(Nil)
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, flix: Flix): Sig = {
+    sig.exp.map(visitExp(_)(Nil, sctx, flix)).getOrElse(Nil)
+    sig
+  }
 
-  private def visitInstance(ins: Instance)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
-    ins.defs.flatMap(visitDef)
+  private def visitInstance(ins: Instance)(implicit sctx: SharedContext, flix: Flix): Instance = {
+    ins.defs.foreach(visitDef)
+    ins
+  }
 
-  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = exp0 match {
-    case Expr.Cst(_, _, _) => Nil
+  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], sctx: SharedContext, flix: Flix): Unit = exp0 match {
+    case Expr.Cst(_, _, _) => ()
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expr.Hole(_, _, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => ()
 
     case Expr.HoleWithExp(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.OpenAs(_, exp, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
-    case Expr.Use(_, _, exp, loc) => visitExp(exp)
+    case Expr.Use(_, _, exp, _) => visitExp(exp)
 
     case Expr.Lambda(_, exp, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.ApplyLocalDef(_, exps, _, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.ApplySig(_, exps, _, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.Binary(_, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.Let(_, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.LocalDef(_, _, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
-    case Expr.Region(_, _) =>
-      Nil
+    case Expr.Region(_, _) => ()
 
     case Expr.Scope(_, regionVar, exp, tpe, _, loc) =>
-      visitExp(exp)(regionVar :: scope, flix) ++ checkType(tpe, loc)
+      visitExp(exp)(regionVar :: scope, sctx, flix)
+      checkType(tpe, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+      checkType(tpe, loc)
 
     case Expr.Stm(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.Discard(exp, _, _) => visitExp(exp)
 
     case Expr.Match(exp, rules, tpe, _, loc) =>
-      val matchErrors = visitExp(exp)
-      val rulesErrors = rules.flatMap {
-        case MatchRule(pat, guard, body) => guard.map(visitExp).getOrElse(Nil) ++ visitExp(body)
+      visitExp(exp)
+      rules.foreach{ case MatchRule(_, guard, body) =>
+        guard.foreach(visitExp)
+        visitExp(body)
       }
-      matchErrors ++ rulesErrors ++ checkType(tpe, loc)
+      checkType(tpe, loc)
 
     case Expr.TypeMatch(exp, rules, tpe, _, loc) =>
-      val matchErrors = visitExp(exp)
-      val rulesErrors = rules.flatMap {
-        case TypeMatchRule(_, _, body) => visitExp(body)
-      }
-      matchErrors ++ rulesErrors ++ checkType(tpe, loc)
+      visitExp(exp)
+      rules.foreach{ case TypeMatchRule(_, _, body) => visitExp(body) }
+      checkType(tpe, loc)
 
     case Expr.RestrictableChoose(_, exp, rules, tpe, _, loc) =>
-      val expErrors = visitExp(exp)
-      val rulesErrors = rules.flatMap {
-        case RestrictableChooseRule(_, exp) => visitExp(exp)
-      }
-      expErrors ++ rulesErrors ++ checkType(tpe, loc)
+      visitExp(exp)
+      rules.foreach{ case RestrictableChooseRule(_, exp) => visitExp(exp) }
+      checkType(tpe, loc)
 
     case Expr.Tag(_, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.RestrictableTag(_, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.Tuple(elms, tpe, _, loc) =>
-      elms.flatMap(visitExp) ++ checkType(tpe, loc)
-
-    case Expr.RecordEmpty(_, _) =>
-      Nil
+      elms.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.RecordSelect(exp, _, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.RecordExtend(_, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.RecordRestrict(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.ArrayLit(exps, exp, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.ArrayNew(exp1, exp2, exp3, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+      checkType(tpe, loc)
 
     case Expr.ArrayLoad(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
-    case Expr.ArrayLength(exp, _, loc) =>
+    case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ArrayStore(exp1, exp2, exp3, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
 
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
-      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+      fields.map { case (_, v) => v }.foreach(visitExp)
+      visitExp(region)
+      checkType(tpe, loc)
 
     case Expr.StructGet(e, _, tpe, _, loc) =>
-      visitExp(e) ++ checkType(tpe, loc)
+      visitExp(e)
+      checkType(tpe, loc)
 
     case Expr.StructPut(e1, _, e2, tpe, _, loc) =>
-      visitExp(e1) ++ visitExp(e2) ++ checkType(tpe, loc)
+      visitExp(e1)
+      visitExp(e2)
+      checkType(tpe, loc)
 
     case Expr.VectorLit(exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
-    case Expr.VectorLength(exp, loc) =>
+    case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
     case Expr.Ascribe(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
-    case Expr.InstanceOf(exp, _, loc) =>
+    case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.UncheckedCast(exp, _, _, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
+
+    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+      checkType(runEff, loc)
+      visitExp(exp)
 
     case Expr.Without(exp, _, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
-      val rulesErrors = rules.flatMap {
-        case CatchRule(sym, clazz, e) => visitExp(e)
-      }
-      rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+      rules.foreach{ case CatchRule(_, _, e) => visitExp(e) }
+      visitExp(exp)
+      checkType(tpe, loc)
 
-    case Expr.Throw(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Throw(exp, tpe, _, loc) =>
+      visitExp(exp)
+      checkType(tpe, loc)
 
-    case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
-      val rulesErrors = rules.flatMap {
-        case HandlerRule(_, _, e) => visitExp(e)
-      }
-      rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Handler(_, rules, _, _, _, tpe, loc) =>
+      rules.foreach{ case HandlerRule(_, _, e) => visitExp(e) }
+      checkType(tpe, loc)
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.Do(_, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.InvokeConstructor(_, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.InvokeMethod(_, exp, exps, tpe, _, loc) =>
-      visitExp(exp) ++ exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.InvokeStaticMethod(_, exps, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ checkType(tpe, loc)
+      exps.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.GetField(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.PutField(_, exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
-    case Expr.GetStaticField(_, tpe, _, loc) =>
-      Nil
+    case Expr.GetStaticField(_, _, _, _) => ()
 
     case Expr.PutStaticField(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.NewObject(_, _, tpe, _, methods, loc) =>
-      methods.flatMap(visitJvmMethod) ++ checkType(tpe, loc)
+      methods.foreach(visitJvmMethod)
+      checkType(tpe, loc)
 
     case Expr.NewChannel(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.GetChannel(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.PutChannel(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.SelectChannel(rules, default, tpe, _, loc) =>
-      val rulesErrors = rules.flatMap {
-        case SelectChannelRule(sym, chan, exp) => visitExp(chan) ++ visitExp(exp)
+      rules.foreach{
+        case SelectChannelRule(_, chan, exp) =>
+          visitExp(chan)
+          visitExp(exp)
       }
-      val defaultErrors = default.map(visitExp).getOrElse(Nil)
-      rulesErrors ++ defaultErrors ++ checkType(tpe, loc)
+      default.foreach(visitExp)
+      checkType(tpe, loc)
 
     case Expr.Spawn(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.ParYield(frags, exp, tpe, _, loc) =>
-      val fragsErrors = frags.flatMap {
+      frags.foreach{
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
-      fragsErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.Lazy(exp, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.Force(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
-      Nil // TODO
+      () // TODO
 
     case Expr.FixpointLambda(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.FixpointMerge(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+      checkType(tpe, loc)
 
     case Expr.FixpointSolve(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.FixpointFilter(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.FixpointInject(exp, _, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
     case Expr.FixpointProject(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
 
-    case Expr.Error(_, _, _) =>
-      Nil
-
+    case Expr.Error(_, _, _) => ()
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], sctx: SharedContext, flix: Flix): Unit = method match {
     case JvmMethod(_, _, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      visitExp(exp)
+      checkType(tpe, loc)
   }
 
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], sctx: SharedContext, flix: Flix): Unit = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
     val regs = regionVarsOf(tpe)
     for (reg <- regs -- scope) {
       if (essentialTo(reg, tpe)) {
-        return TypeError.RegionVarEscapes(reg, tpe, loc) :: Nil
+        sctx.errors.add(TypeError.RegionVarEscapes(reg, tpe, loc))
       }
     }
-    Nil
   }
 
   /**
@@ -375,13 +455,16 @@ object Regions {
       * where `trueVars` are the variables ascribed the value TRUE,
       * and all other variables are ascribed the value FALSE.
       */
-    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
-      case Type.Pure => true
-      case Type.Univ => false
-      case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
-      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
-      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
-      case tvar: Type.Var => trueVars.contains(tvar)
+    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): CofiniteEffSet = tpe match {
+      case Type.Pure => CofiniteEffSet.empty
+      case Type.Univ => CofiniteEffSet.universe
+      case Type.Cst(TypeConstructor.Effect(sym), _) => CofiniteEffSet.mkSet(sym)
+      case Type.Apply(Type.Complement, x, _) => CofiniteEffSet.complement(eval(x, trueVars))
+      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => CofiniteEffSet.union(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => CofiniteEffSet.intersection(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.Difference, x1, _), x2, _) => CofiniteEffSet.difference(eval(x1, trueVars), eval(x2, trueVars))
+      case Type.Apply(Type.Apply(Type.SymmetricDiff, x1, _), x2, _) => CofiniteEffSet.xor(eval(x1, trueVars), eval(x2, trueVars))
+      case tvar: Type.Var => if (trueVars.contains(tvar)) CofiniteEffSet.universe else CofiniteEffSet.empty
       case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
 
@@ -399,4 +482,21 @@ object Regions {
       isBool && isRegion
   }
 
+  /**
+   * Companion object for [[SharedContext]]
+   */
+  private object SharedContext {
+
+    /**
+     * Returns a fresh shared context.
+     */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+   * A global shared context. Must be thread-safe.
+   *
+   * @param errors the [[TypeError]]s in the AST, if any.
+   */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[TypeError])
 }

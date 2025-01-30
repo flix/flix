@@ -315,27 +315,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("NoMatchingInstance.07") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def foo(x: a): Int32
-        |}
-        |
-        |enum E[_: Eff] {
-        |    case E(Int32)
-        |}
-        |
-        |instance C[E[Pure]] {
-        |    pub def foo(x: E[Pure]): Int32 = 1
-        |}
-        |
-        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[Pure]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("NoMatchingInstance.Relation.01") {
     val input =
       """
@@ -363,34 +342,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
-  test("MissingSendable.01") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a](a) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
-  test("MissingSendable.02") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a, b](a, b) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
-      """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }

@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.*
@@ -46,7 +45,6 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivation
   */
 trait Consumer {
   def consumeAnnotation(ann: Annotation): Unit = ()
-  def consumeAssocTypeConstructor(tcst: AssocTypeConstructor): Unit = ()
   def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
   def consumeAssocTypeSig(tsig: AssocTypeSig): Unit = ()
   def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
@@ -87,7 +85,6 @@ trait Consumer {
   def consumeTypeMatchRule(rule: TypeMatchRule): Unit = ()
   def consumeTrait(traitt: Trait): Unit = ()
   def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
-  def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = ()
   def consumeTraitSymUse(symUse: TraitSymUse): Unit= ()
   def consumeType(tpe: Type): Unit = ()
   def consumeTypeAlias(alias: TypeAlias): Unit = ()

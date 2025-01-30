@@ -17,16 +17,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifier, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
@@ -393,17 +392,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: Case) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
@@ -459,17 +450,9 @@ object Weeder2 {
               // enum Foo { case Foo(Int32), case Bar, case Baz }
               val syntheticCase = WeededAst.RestrictableCase(ident, ts, ident.loc)
               val allCases = syntheticCase :: cs
-              val errors = getDuplicates(allCases, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map {
-                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
-              }
-              errors.foreach(sctx.errors.add)
               Validation.Success(cases)
           }
           mapN(casesVal) {
@@ -888,7 +871,10 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
+        case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
+        case TreeKind.Expr.Run => visitRunExpr(tree)
+        case TreeKind.Expr.Handler => visitHandlerExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Index => visitIndexExpr(tree)
@@ -1113,7 +1099,7 @@ object Weeder2 {
           // First expression must be a name
           e1 match {
             case Expr.Ambiguous(qname, _) =>
-              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc)
+              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.Cst(Constant.RecordEmpty, tree.loc), tree.loc)
             case _ =>
               val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
               sctx.errors.add(error)
@@ -1567,7 +1553,7 @@ object Weeder2 {
       val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
-          fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
+          fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
             case ((label, expr, loc), acc) =>
               val SourceLocation(isReal, sp1, _) = loc
               val extendLoc = SourceLocation(isReal, sp1, tree.loc.sp2)
@@ -1705,6 +1691,13 @@ object Weeder2 {
       }
     }
 
+    private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Unsafe)
+      mapN(Types.pickType(tree), pickExpr(tree)) {
+        (eff, expr) => Expr.Unsafe(expr, eff, tree.loc)
+      }
+    }
+
     private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.UnsafeOld)
       mapN(pickExpr(tree)) {
@@ -1728,33 +1721,55 @@ object Weeder2 {
       }
     }
 
-    private def visitTryExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Try)
-      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
-      val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree)
+    private def visitRunExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Run)
+      val maybeWith = pickAll(TreeKind.Expr.RunWithBodyExpr, tree)
       flatMapN(
         pickExpr(tree),
-        traverse(maybeCatch)(visitTryCatchBody),
         traverse(maybeWith)(visitTryWithBody),
       ) {
-        // Bad case: try expr
-        case (_, Nil, Nil) =>
-          // Fall back on Expr.Error, Parser has already reported an error.
+        // Bad case: run expr
+        case (_, Nil) =>
+          // Fall back on Expr.Error
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
             actual = None,
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
+          sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (_, _ :: _, _ :: _) =>
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordTry)), SyntacticContext.Expr.OtherExpr, hint = Some(s"Use either ${TokenKind.KeywordWith.display} or ${TokenKind.KeywordCatch.display} on ${TokenKind.KeywordTry.display}."), tree.loc)
-          // Fall back on Expr.Error, Parser has already reported an error.
+        // Case: run expr [with expr]...
+        case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
+      }
+    }
+
+    private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Handler)
+      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
+      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+        (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
+      }
+    }
+
+    private def visitTryExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Try)
+      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
+      flatMapN(
+        pickExpr(tree),
+        traverse(maybeCatch)(visitTryCatchBody),
+      ) {
+        // Bad case: try expr
+        case (_, Nil) =>
+          // Fall back on Expr.Error
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
+            actual = None,
+            SyntacticContext.Expr.OtherExpr,
+            loc = tree.loc)
+          sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
         // Case: try expr catch { rules... }
-        case (expr, catches, Nil) => Validation.Success(Expr.TryCatch(expr, catches.flatten, tree.loc))
-        // Case: try expr with eff { handlers... }
-        case (expr, Nil, withs) => Validation.Success(Expr.TryWith(expr, withs, tree.loc))
+        case (expr, catches) => Validation.Success(Expr.TryCatch(expr, catches.flatten, tree.loc))
       }
     }
 
@@ -1771,12 +1786,9 @@ object Weeder2 {
       }
     }
 
-    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[WithHandler, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TryWithBodyFragment)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
-        (eff, handlers) => WithHandler(eff, handlers)
-      }
+    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.RunWithBodyExpr)
+      pickExpr(tree)
     }
 
     private def visitTryWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
@@ -2290,7 +2302,7 @@ object Weeder2 {
 
         // Pattern { ... }
         case (fs, None) =>
-          Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc)
+          Pattern.Record(fs, Pattern.Cst(Constant.RecordEmpty, tree.loc.asSynthetic), tree.loc)
 
         // Pattern { x, ... | r }
         case (x :: xs, Some(Pattern.Var(v, l))) =>
@@ -2336,8 +2348,8 @@ object Weeder2 {
     private def visitUnaryPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
-      val literalToken = tree.children(1) match {
-        case t@Token(_, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
+      val literalToken = ArrayOps.getOption(tree.children, 1) match {
+        case Some(t@Token(_, _, _, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
       flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
@@ -2349,7 +2361,9 @@ object Weeder2 {
               val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.sp1, lit.sp2)
               val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(syntheticToken), tree.loc.asSynthetic)
               visitLiteralPat(syntheticLiteral)
-            case _ => throw InternalCompilerException(s"No number literal found for unary '-'", tree.loc)
+            case _ =>
+              sctx.errors.add(WeederError.MalformedInt(tree.loc))
+              Validation.Success(Pattern.Error(tree.loc))
           }
         case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
       })
@@ -2686,7 +2700,6 @@ object Weeder2 {
         case TreeKind.Type.RecordRow => visitRecordRowType(inner)
         case TreeKind.Type.Schema => visitSchemaType(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRowType(inner)
-        case TreeKind.Type.Native => visitNativeType(inner)
         case TreeKind.Type.Apply => visitApplyType(inner)
         case TreeKind.Type.Constant => visitConstantType(inner)
         case TreeKind.Type.Unary => visitUnaryType(inner)
@@ -2797,16 +2810,6 @@ object Weeder2 {
       }
     }
 
-    private def visitNativeType(tree: Tree): Validation[Type.Native, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Native)
-      text(tree) match {
-        case head :: rest =>
-          val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
-          Validation.Success(Type.Native(fqn, tree.loc))
-        case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
-      }
-    }
-
     private def visitApplyType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Apply)
       flatMapN(pickType(tree), pick(TreeKind.Type.ArgumentList, tree)) {
@@ -2890,7 +2893,7 @@ object Weeder2 {
             case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
 
-        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands", tree.loc)
+        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: ${operands}", tree.loc)
       }
     }
 

@@ -86,6 +86,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordForeach => "'foreach'"
       case TokenKind.KeywordForM => "'forM'"
       case TokenKind.KeywordFrom => "'from'"
+      case TokenKind.KeywordHandler => "'handler'"
       case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordImport => "'import'"
       case TokenKind.KeywordInject => "'inject'"
@@ -135,6 +136,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
+      case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -238,6 +240,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordForeach => true
     case TokenKind.KeywordForM => true
     case TokenKind.KeywordFrom => true
+    case TokenKind.KeywordHandler => true
     case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
@@ -284,6 +287,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
+    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
@@ -427,6 +431,17 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an effect.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstEff: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef => true
+    case _ => false
+  })
+
+  /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
     * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
     */
@@ -479,6 +494,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordForM
          | TokenKind.KeywordForce
          | TokenKind.KeywordForeach
+         | TokenKind.KeywordHandler
          | TokenKind.KeywordIf
          | TokenKind.KeywordImport
          | TokenKind.KeywordInject
@@ -503,6 +519,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordTypeMatch
          | TokenKind.KeywordUncheckedCast
          | TokenKind.KeywordUnsafe
+         | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
@@ -904,6 +921,8 @@ object TokenKind {
 
   case object KeywordFrom extends TokenKind
 
+  case object KeywordHandler extends TokenKind
+
   case object KeywordIf extends TokenKind
 
   case object KeywordImport extends TokenKind
@@ -1001,6 +1020,8 @@ object TokenKind {
   case object KeywordUniv extends TokenKind
 
   case object KeywordUnsafe extends TokenKind
+
+  case object KeywordUnsafely extends TokenKind
 
   case object KeywordUse extends TokenKind
 

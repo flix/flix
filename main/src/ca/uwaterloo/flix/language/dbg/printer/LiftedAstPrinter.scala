@@ -60,7 +60,7 @@ object LiftedAstPrinter {
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
-    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), effUse.sym, rules.map {
+    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case LiftedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
@@ -72,11 +72,11 @@ object LiftedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expr.Ascription = {
+  private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val LiftedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expr.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
   /**

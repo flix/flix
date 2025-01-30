@@ -18,11 +18,16 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
 
 import scala.collection.mutable
 
 object SetUnification {
+
+  /**
+    * Enable simple rewrite rules.
+    */
+  var EnableRewriteRules: Boolean = true
 
   /**
     * The static parameters of set unification.
@@ -34,7 +39,7 @@ object SetUnification {
 
   final object Options {
     /** The default [[Options]]. */
-    val default: Options = Options(25, 10_000)
+    val default: Options = Options(100, 10_000)
   }
 
   /** Represents the running mutable state of the solver. */
@@ -85,15 +90,18 @@ object SetUnification {
     val state = new State(l)
     val trivialPhaseName = "Trivial Equations"
 
-    runWithState(state, runRule(constantAssignment), "Constant Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAlias), "Variable Aliases")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
-    runWithState(state, runRule(trivial), trivialPhaseName)
-    runWithState(state, assertSveEquationCount, "Assert Size")
+    if (EnableRewriteRules) {
+      runWithState(state, runRule(constantAssignment), "Constant Assignment")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(variableAlias), "Variable Aliases")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
+      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, assertSveEquationCount, "Assert Size")
+    }
+
     runWithState(state, runRule(sve), "SVE")
 
     (state.eqs, state.subst)
@@ -434,9 +442,13 @@ object SetUnification {
     val f1 = Zhegalkin.toZhegalkin(eq.f1)
     val f2 = Zhegalkin.toZhegalkin(eq.f2)
     val q = alg.mkXor(f1, f2)
-    val fvs = alg.freeVars(q).toList
+
     try {
-      val subst = SveAlgorithm.successiveVariableElimination(q, fvs)
+      val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
+        val fvs = alg.freeVars(q).toList
+        SveAlgorithm.successiveVariableElimination(q, fvs)
+      })
+
       val m = subst.m.toList.map {
         case (x, e) => x -> Zhegalkin.toSetFormula(e)
       }.toMap

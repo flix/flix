@@ -1634,6 +1634,26 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
+  test("UselessUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely {} run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessUnsafe](result)
+  }
+
+  test("RedundantUnsafe.01") {
+    val input =
+      raw"""
+           |pub def f(): Int32 = unsafely IO run 42
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUnsafe](result)
+  }
+
   test("RedundantTraitConstraint.Trait.01") {
     val input =
       """
@@ -1930,25 +1950,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            checked_cast(())
-        |        else
-        |            region rc {
-        |                let _ = $ARRAY_NEW$(rc, 8, 8);
-        |                ()
-        |            };
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
-  }
-
-  test("RedundantCheckedTypeCast.04") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
         |            checked_cast((1, "a"))
         |        else
         |            (1, "a");
@@ -1959,7 +1960,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.06") {
+  test("RedundantCheckedTypeCast.04") {
     val input =
       """
         |pub eff A

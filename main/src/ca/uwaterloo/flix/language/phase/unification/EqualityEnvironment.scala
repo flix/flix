@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, BroadEqualityConstraint, EqualityConstraint, Scope}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -77,7 +78,7 @@ object EqualityEnvironment {
     */
   def broaden(econstr: EqualityConstraint): BroadEqualityConstraint = econstr match {
     case EqualityConstraint(cst, tpe1, tpe2, loc) =>
-      BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
+      BroadEqualityConstraint(Type.AssocType(cst, tpe1, tpe2.kind, loc), tpe2)
   }
 
   /**
@@ -85,7 +86,7 @@ object EqualityEnvironment {
     */
   private def toSubst(econstrs: List[EqualityConstraint]): AssocTypeSubstitution = {
     econstrs.foldLeft(AssocTypeSubstitution.empty) {
-      case (acc, EqualityConstraint(Ast.AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
+      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), Type.Var(tvar, _), tpe2, _)) =>
         acc ++ AssocTypeSubstitution.singleton(sym, tvar, tpe2)
       case (_, EqualityConstraint(cst, tpe1, tpe2, loc)) => throw InternalCompilerException("unexpected econstr", loc) // TODO ASSOC-TYPES
     }
@@ -96,16 +97,16 @@ object EqualityEnvironment {
     *
     * Only performs one reduction step. The result may itself contain associated types.
     */
-  def reduceAssocTypeStep(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocTypeStep(symUse: AssocTypeSymUse, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     val renv = arg.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-    val insts = eqEnv(cst.sym)
+    val insts = eqEnv(symUse.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
         Unification.unifyTypesIgnoreLeftoverAssocs(arg, inst.arg, renv, eqEnv).map {
           case subst => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {
-      case None => Result.Err(UnificationError.IrreducibleAssocType(cst.sym, arg))
+      case None => Result.Err(UnificationError.IrreducibleAssocType(symUse.sym, arg))
       case Some(t) => Result.Ok(t)
     }
   }
@@ -113,9 +114,9 @@ object EqualityEnvironment {
   /**
     * Fully reduces the given associated type.
     */
-  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
+  def reduceAssocType(symUse: AssocTypeSymUse, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     for {
-      tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
+      tpe <- reduceAssocTypeStep(symUse, arg, eqEnv)
       res <- reduceType(tpe, eqEnv)
     } yield res
   }

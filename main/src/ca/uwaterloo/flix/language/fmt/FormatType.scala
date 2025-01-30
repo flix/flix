@@ -51,7 +51,7 @@ object FormatType {
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.scope, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.isSlack, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 
@@ -202,11 +202,13 @@ object FormatType {
       case SimpleType.Tuple(_) => true
       case SimpleType.JvmToType(_) => true
       case SimpleType.JvmToEff(_) => true
-      case SimpleType.FieldType(_) => true
-      case SimpleType.JvmConstructor(_, _) => true
-      case SimpleType.JvmField(_, _) => true
-      case SimpleType.JvmMethod(_, _, _) => true
-      case SimpleType.JvmStaticMethod(_, _, _) => true
+      case SimpleType.JvmUnresolvedConstructor(_, _) => true
+      case SimpleType.JvmUnresolvedField(_, _) => true
+      case SimpleType.JvmUnresolvedMethod(_, _, _) => true
+      case SimpleType.JvmUnresolvedStaticMethod(_, _, _) => true
+      case SimpleType.JvmConstructor(_) => true
+      case SimpleType.JvmField(_) => true
+      case SimpleType.JvmMethod(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -379,26 +381,31 @@ object FormatType {
         val arg = visit(tpe, Mode.Type)
         "JvmToEff(" + arg + ")"
 
-      case SimpleType.JvmConstructor(name, tpes0) =>
+      case SimpleType.JvmUnresolvedConstructor(name, tpes0) =>
         val tpes = tpes0.map(visit(_, Mode.Type))
-        "Constructor(" + name + ", " + tpes.mkString(", ") + ")"
+        "JvmUnresolvedConstructor(" + name + ", " + tpes.mkString(", ") + ")"
 
-      case SimpleType.JvmField(t0, name) =>
+      case SimpleType.JvmUnresolvedField(t0, name) =>
         val t = visit(t0, Mode.Type)
-        "JvmField(" + t + ", " + name + ")"
+        "JvmUnresolvedField(" + t + ", " + name + ")"
 
-      case SimpleType.JvmMethod(t0, name, ts0) =>
+      case SimpleType.JvmUnresolvedMethod(t0, name, ts0) =>
         val t = visit(t0, Mode.Type)
         val ts = ts0.map(visit(_, Mode.Type))
-        "JvmMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
+        "JvmUnresolvedMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
 
-      case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
+      case SimpleType.JvmUnresolvedStaticMethod(clazz, name, ts0) =>
         val ts = ts0.map(visit(_, Mode.Type))
-        "JvmMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
+        "JvmUnresolvedStaticMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
 
-      case SimpleType.FieldType(tpe) =>
-        val arg = visit(tpe, Mode.Type)
-        "FieldType(" + arg + ")"
+      case SimpleType.JvmConstructor(constructor) =>
+        s"JvmConstructor($constructor)"
+
+      case SimpleType.JvmField(field) =>
+        s"JvmField($field)"
+
+      case SimpleType.JvmMethod(method) =>
+        s"JvmMethod($method)"
 
       case SimpleType.Error => "Error"
 
