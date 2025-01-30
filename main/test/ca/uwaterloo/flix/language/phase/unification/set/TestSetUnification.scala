@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.phase.unification.set.EquationGenerator.mkEq
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.SolverListener
 import ca.uwaterloo.flix.util.TwoList
@@ -27,6 +27,8 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
 
   implicit val opts: SetUnification.Options = SetUnification.Options.default
   implicit val listener: SolverListener = SolverListener.DoNothing
+
+  def mkEq(f1: SetFormula, f2: SetFormula): Equation = Equation.mk(f1, f2, SourceLocation.Unknown)
 
   test("Array.scanLeft") {
     val input = List(
