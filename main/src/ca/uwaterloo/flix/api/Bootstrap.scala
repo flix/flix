@@ -837,7 +837,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(check(flix)) {
       case root =>
         val path = getEffectLockFile(projectPath)
-        val ser = Serialization.serialize(root)
+        val defs = flix.reachableLibraryFunctions(root)
+        val ser = Serialization.serialize(defs)
         FileOps.writeString(path, ser)
     }
   }
@@ -882,7 +883,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                   }
                   case None => Validation.Success(())
                 }
-                case Input.Unknown => Validation.Success(())
+                case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
               }
             }
             Validation.mapN(result)(_ => ())

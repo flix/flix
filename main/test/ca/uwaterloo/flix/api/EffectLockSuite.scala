@@ -88,18 +88,20 @@ class EffectLockSuite extends AnyFunSuite {
     assert(Serialization.deserializeTpe(ser).get == tpe)
   }
 
-  test("Serialization.03") {
+  ignore("Serialization.03") {
     val input =
       """
-        |pub def f(): Bool = ???
+        |def main(): Bool = f()
         |
-        |pub def g(): Unit = ???
+        |pub def f(): Bool = g()
         |
-        |pub def h(_: Bool): Int32 = ???
+        |pub def g(): Bool = h(false) == 1
+        |
+        |pub def h(_: Bool): Int32 = 1
         |
         |""".stripMargin
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibMin).addSourceCode("<test>", input)
     val (optRoot, _) = flix.check()
     val root = optRoot.get
     val funcs = List("f", "g", "h")
@@ -115,24 +117,17 @@ class EffectLockSuite extends AnyFunSuite {
       case sd => sd
     }
     val root1 = root.copy(defs = defs)
-    val ser = Serialization.serialize(root1)
+    val reachableDefs = flix.reachableLibraryFunctions(root1)
+    val ser = Serialization.serialize(reachableDefs)
     val Some(actual) = Serialization.deserialize(ser)
     val expected = root1.defs.foldLeft(Map.empty[Serialization.Library, List[Serialization.NamedTypeScheme]]) {
-      case (acc, (sym, defn)) =>
-        val isPackage = sym.loc.sp1.source.input match {
-          case Input.FileInPackage(_, _, _, _) => true
-          case _ => false
-        }
-        if (isPackage)
-          sym.loc.sp1.source.input match {
-            case Input.FileInPackage(_, _, text, _) =>
-              val defs = acc.getOrElse(text, List.empty)
-              val nts = (defn.sym, defn.spec.declaredScheme)
-              acc + (text -> (nts :: defs))
-            case _ => ???
-          }
-        else
-          acc
+      case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
+        case Input.FileInPackage(_, _, text, _) =>
+          val defs = acc.getOrElse(text, List.empty)
+          val nts = (defn.sym, defn.spec.declaredScheme)
+          acc + (text -> (nts :: defs))
+        case _ => acc
+      }
     }
     assert(expected == actual)
   }

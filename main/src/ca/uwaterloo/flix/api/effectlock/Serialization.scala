@@ -19,23 +19,8 @@ object Serialization {
     */
   private implicit val formats: Formats = TypeHints.formats
 
-  def serialize(root: TypedAst.Root): String = {
-    val libs = extractLibs(root)
-    write(fromLibs(libs))
-  }
-
-  private def extractLibs(root: TypedAst.Root): Map[Library, List[TypedAst.Def]] = {
-    root.defs.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
-      case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
-        case Input.FileInPackage(_, _, text, _) =>
-          val defs = acc.getOrElse(text, List.empty)
-          acc + (text -> (defn :: defs))
-        case Input.Text(_, _, _) => acc
-        case Input.TxtFile(_, _) => acc
-        case Input.PkgFile(_, _) => acc
-        case Input.Unknown => acc
-      }
-    }
+  def serialize(libraryDefs: Map[Library, List[TypedAst.Def]]): String = {
+    write(fromLibs(libraryDefs))
   }
 
   def serialize(tpe: Type): String = {

@@ -896,7 +896,25 @@ class Flix {
     }
   }
 
-  // TODO: Do not use CompilationMessage but custom error type
-  def effectUpgrade(upgrade: Map[String, List[(Symbol.DefnSym, Scheme)]]): Validation[Unit, CompilationMessage] = ???
+  def reachableLibraryFunctions(root: TypedAst.Root): Map[String, List[TypedAst.Def]] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
 
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+    val root1 = Reachability.run(root)
+    shutdownForkJoinPool()
+    root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
+      case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
+        case Input.FileInPackage(_, _, text, _) =>
+          val defs = acc.getOrElse(text, List.empty)
+          acc + (text -> (defn :: defs))
+        case Input.Text(_, _, _) => acc
+        case Input.TxtFile(_, _) => acc
+        case Input.PkgFile(_, _) => acc
+        case Input.Unknown => acc
+      }
+    }
+
+  }
 }
