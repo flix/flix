@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, P
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result}
@@ -504,7 +505,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -546,12 +547,12 @@ object Stratifier {
   /**
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
-  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+  private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty)(Scope.Top, flix) // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
+      case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

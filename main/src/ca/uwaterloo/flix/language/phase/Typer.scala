@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolverInterface, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -170,7 +169,7 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_){
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
@@ -198,7 +197,7 @@ object Typer {
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction2.visitDef(defn, subst)
   }
 
   /**
@@ -249,7 +248,7 @@ object Typer {
         val infResult = InfResult(constrs, tpe, eff, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction.visitSig(sig, subst)
+        TypeReconstruction2.visitSig(sig, subst)
     }
   }
 
@@ -437,7 +436,7 @@ object Typer {
         tpes.flatMap(getAssocTypes).foreach {
           case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val trtSym = assocSym.trt
-            val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
+            val matches = (extraTconstrs ::: tconstrs).flatMap(withSupers(_, tenv)).exists {
               case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
                 trtSym == tconstrSym && tvarSym1 == tvarSym2
               case _ => false
@@ -453,6 +452,21 @@ object Typer {
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
     }
+  }
+
+  /**
+    * Gets the list of type constraints implied by this type constraint due to a supertrait relationship,
+    * including the type constraint itself.
+    *
+    * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
+    */
+  private def withSupers(tconstr: TraitConstraint, tenv: TraitEnv): List[TraitConstraint] = {
+    val superSyms = tenv.getSuperTraits(tconstr.symUse.sym)
+    val directSupers = superSyms.map {
+      case sym => TraitConstraint(TraitSymUse(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+    }
+    val allSupers = directSupers.flatMap(withSupers(_, tenv))
+    tconstr :: allSupers
   }
 
   /**
