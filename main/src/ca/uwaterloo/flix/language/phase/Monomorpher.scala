@@ -143,8 +143,9 @@ object Monomorpher {
         // Remove the Alias and continue.
         apply(t)
 
-      case at: Type.AssocType =>
-        val reducedType = TypeReduction2.reduce(at, Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+      case Type.AssocType(symUse, arg0, kind, loc) =>
+        val arg = apply(arg0)
+        val reducedType = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, eqEnv, isGround = true)
 
