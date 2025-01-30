@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -202,6 +202,20 @@ class TypeContext {
       case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
+  }
+
+  /**
+    * Adds the given equality constraints to the context.
+    */
+  def addEqualityConstraints(econstrs0: List[EqualityConstraint], loc: SourceLocation): Unit = {
+    val econstrs = econstrs0.map {
+      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
+        val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
+        val t2 = tpe2
+        val prov = Provenance.Match(t1, t2, loc)
+        TypeConstraint.Equality(t1, t2, prov)
+    }
+    currentScopeConstraints.addAll(econstrs)
   }
 
   /**

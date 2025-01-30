@@ -565,7 +565,7 @@ object Dependencies {
     case Scheme(_, tconstrs, econstrs, base) =>
       visitType(base)
       tconstrs.foreach(visitTraitConstraint)
-      econstrs.foreach(visitBroadEqualityConstraint)
+      econstrs.foreach(visitEqualityConstraint)
   }
 
   private def visitTraitConstraint(tc: TraitConstraint)(implicit sctx: SharedContext): Unit =
