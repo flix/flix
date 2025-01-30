@@ -168,7 +168,10 @@ object Serialization {
     case TypeConstructor.Sender => SerializableTypeConstructor.Sender
     case TypeConstructor.Receiver => SerializableTypeConstructor.Receiver
     case TypeConstructor.Lazy => SerializableTypeConstructor.Lazy
-    case TypeConstructor.Enum(sym, kind) => ??? // SerializableTypeConstructor.Enum(sym, kind)
+    case TypeConstructor.Enum(sym, kind) =>
+      val serSym = SerializableSymbol.EnumSym(sym.namespace, sym.text)
+      val serKind = fromKind(kind)
+      SerializableTypeConstructor.Enum(serSym, serKind)
     case TypeConstructor.Struct(sym, kind) => ??? // SerializableTypeConstructor.Struct(sym, kind)
     case TypeConstructor.RestrictableEnum(sym, kind) => ??? // SerializableTypeConstructor.RestrictableEnum(sym, kind)
     case TypeConstructor.Native(clazz) => ??? // SerializableTypeConstructor.Native(clazz)
@@ -245,7 +248,12 @@ object Serialization {
     case SerializableType.Var(sym) => Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
     case SerializableType.Cst(tc) => Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
     case SerializableType.Apply(tpe1, tpe2) => Type.Apply(toType(tpe1), toType(tpe2), SourceLocation.Unknown)
-    case SerializableType.Alias(symUse, args, tpe) => ???
+    case SerializableType.Alias(symUse, args, tpe) =>
+      val sym = new Symbol.TypeAliasSym(symUse.namespace, symUse.name, SourceLocation.Unknown)
+      val su = SymUse.TypeAliasSymUse(sym, SourceLocation.Unknown)
+      val as = args.map(toType)
+      val t = toType(tpe)
+      Type.Alias(su, as, t, SourceLocation.Unknown)
     case SerializableType.AssocType(symUse, arg, kind) => ???
   }
 
@@ -275,6 +283,10 @@ object Serialization {
     case SerializableTypeConstructor.Sender => TypeConstructor.Sender
     case SerializableTypeConstructor.Receiver => TypeConstructor.Receiver
     case SerializableTypeConstructor.Lazy => TypeConstructor.Lazy
+    case SerializableTypeConstructor.Enum(sym, kind) =>
+      val s = new Symbol.EnumSym(sym.namespace, sym.text, SourceLocation.Unknown)
+      val k = toKind(kind)
+      TypeConstructor.Enum(s, k)
     case SerializableTypeConstructor.Array => TypeConstructor.Array
     case SerializableTypeConstructor.Vector => TypeConstructor.Vector
     case SerializableTypeConstructor.Tuple(l) => TypeConstructor.Tuple(l)
@@ -373,7 +385,8 @@ object Serialization {
 
     case object Lazy extends SerializableTypeConstructor
 
-    //case class Enum(sym: Symbol.EnumSym, kind: SerializableKind) extends SerializableTypeConstructor
+    case class Enum(sym: SerializableSymbol.EnumSym, kind: SerializableKind) extends SerializableTypeConstructor
+
     // case class Struct(sym: Symbol.StructSym, kind: SerializableKind) extends SerializableTypeConstructor
     // case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: SerializableKind) extends SerializableTypeConstructor
     // case class Native(clazz: Class[?]) extends SerializableTypeConstructor
@@ -465,6 +478,7 @@ object Serialization {
 
     case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
 
+    case class EnumSym(namespace: List[String], text: String) extends SerializableSymbol
   }
 
   private sealed trait SerializableVarText
