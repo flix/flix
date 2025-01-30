@@ -256,23 +256,12 @@ object CompletionUtils {
     *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
     */
   def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
-    val ident = if (followedByDot(qn.loc)) "" else qn.ident.name
+    val ident = if (qn.endsWithDot) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
-      if (followedByDot(qn.loc)) List(qn.ident.name)
+      if (qn.endsWithDot) List(qn.ident.name)
       else Nil
     }
     (namespace, ident)
-  }
-
-  /**
-    * Returns true if the character immediately following the location is a dot.
-    * Note:
-    *   - loc.endCol will point to the next character after QName. That's exactly what we want to check.
-    *   - loc is 1-indexed, so we are actually checking the character at loc.endCol-1.
-    */
-  private def followedByDot(loc: SourceLocation): Boolean = {
-    val line = loc.lineAt(loc.endLine)
-    loc.endCol <= line.length && line.charAt(loc.endCol-1) == '.'
   }
 
   /**
