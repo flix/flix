@@ -905,15 +905,17 @@ class Flix {
     val root1 = Reachability.run(root)
     shutdownForkJoinPool()
     root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
-      case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
-        case Input.FileInPackage(_, _, text, _) =>
-          val defs = acc.getOrElse(text, List.empty)
-          acc + (text -> (defn :: defs))
+      case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
+        case Input.FileInPackage(_, _, _, _) => acc
         case Input.Text(_, _, _) => acc
         case Input.TxtFile(_, _) => acc
-        case Input.PkgFile(_, _) => acc
+        case Input.PkgFile(path, _) =>
+          val text = path.getFileName.toString
+          val defs = acc.getOrElse(text, List.empty)
+          acc + (text -> (defn :: defs))
         case Input.Unknown => acc
       }
+      case (acc, _) => acc
     }
 
   }
