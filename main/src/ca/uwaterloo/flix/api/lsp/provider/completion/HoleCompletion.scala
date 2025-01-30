@@ -21,8 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Position, Visitor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, ConstraintSolver2}
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
 object HoleCompletion {
 
@@ -43,7 +42,7 @@ object HoleCompletion {
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map { case (decl, idx) => Completion.HoleCompletion( sym, decl, f"$idx%09d", loc) }
+          .map { case (decl, idx) => Completion.HoleCompletion(sym, decl, f"$idx%09d", loc) }
       case _ => Nil
     }
   }
