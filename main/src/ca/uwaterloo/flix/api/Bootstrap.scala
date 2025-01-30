@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.api.effectlock.Serialization
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
@@ -211,6 +211,11 @@ object Bootstrap {
     * Returns `true` if the given path `p` is a fpkg-file.
     */
   def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+
+  /**
+    * Returns the path to the effect lock file based on `p`, assuming that `p` is the project root.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
 
   /**
     * Creates a new directory at the given path `p`.
@@ -829,10 +834,39 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
-    mapN(check(flix)) {
+    Validation.mapN(check(flix)) {
       case root =>
+        val path = getEffectLockFile(projectPath)
         val ser = Serialization.serialize(root)
-        FileOps.writeString(projectPath.resolve("effects.lock"), ser)
+        FileOps.writeString(path, ser)
+    }
+  }
+
+  // TODO: add printstream as implicit parameter
+  def effectUpgrade(flix: Flix): Validation[Unit, BootstrapError] = {
+    val path = getEffectLockFile(projectPath)
+    // TODO: Add error handling
+    val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
+    Serialization.deserialize(json) match {
+      case Some(lockedSignatures) =>
+        Validation.flatMapN(check(flix)) {
+          case root =>
+            val result = Validation.traverse(root.defs) {
+              case (sym, defn) => sym.loc.sp1.source.input match {
+                case Input.FileInPackage(_, _, text, _) => lockedSignatures.get(text) match {
+                  case Some(signatures) => ???
+                  case None => Validation.Success(())
+                }
+                case Input.Unknown => Validation.Success(())
+              }
+            }
+            Validation.mapN(result)(_ => ())
+        }
+
+      case None =>
+        val error = BootstrapError.FileError("malformed effect lock file")
+        Validation.Failure(error)
+      // TODO: Add error handling (maybe return Validation or Result in Serialization.deserialize)
     }
   }
 }

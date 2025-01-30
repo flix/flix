@@ -331,7 +331,20 @@ object Main {
             case Result.Err(errors) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
+          }
 
+        case Command.EffectUpgrade =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.effectUpgrade(flix)
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
           }
       }
     }
@@ -420,6 +433,7 @@ object Main {
 
     case object EffectLock extends Command
 
+    case object EffectUpgrade extends Command
   }
 
   /**
@@ -498,6 +512,8 @@ object Main {
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
       cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
+
+      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
 
       note("")
 
