@@ -854,7 +854,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             val result = Validation.traverse(root.defs) {
               case (sym, defn) => sym.loc.sp1.source.input match {
                 case Input.FileInPackage(_, _, text, _) => lockedSignatures.get(text) match {
-                  case Some(signatures) => ???
+                  case Some(signatures) => signatures.find {
+                    case (sym, _) => defn.sym == sym
+                  } match {
+                    case Some((_, originalScheme)) =>
+                      val newScheme = defn.spec.declaredScheme
+
+                      // 1. Check that base types are equal
+                      val baseTypesMatch = originalScheme.base == newScheme.base
+
+                      // 2. Check that schemes match
+                      // 2.1 Check there are same number of quantifiers
+                      val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
+
+                      // 2.1 Check there are
+                      val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
+                        case (a, b) => // TODO: do not consider them ordered by zipping
+                          a.kind == b.kind && a.text == b.text
+                      }
+
+                      if (baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch) {
+                        Validation.Success(())
+                      } else {
+                        Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
+                      }
+                    case None => Validation.Success(())
+                  }
                   case None => Validation.Success(())
                 }
                 case Input.Unknown => Validation.Success(())

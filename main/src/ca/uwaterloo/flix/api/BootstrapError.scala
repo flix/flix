@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -55,5 +56,9 @@ object BootstrapError {
     override def message(f: Formatter): String = e.reduce[String] {
       case (acc, s) => acc + System.lineSeparator() + s
     }
+  }
+
+  case class EffectUpgradeError(sym: Symbol.DefnSym, originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
+    override def message(f: Formatter): String = s"(placeholder): bad effect upgrade $sym"
   }
 }
