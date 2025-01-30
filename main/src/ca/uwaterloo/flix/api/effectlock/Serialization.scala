@@ -25,27 +25,16 @@ object Serialization {
   }
 
   private def extractLibs(root: TypedAst.Root): Map[Library, List[TypedAst.Def]] = {
-    root.defs.values.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
-      case (acc, defn) =>
-        val isPackage = defn.sym.loc.sp1.source.input match {
-          case Input.Text(name, text, sctx) => false
-          case Input.TxtFile(path, sctx) => false
-          case Input.PkgFile(packagePath, sctx) => false
-          case Input.FileInPackage(packagePath, virtualPath, text, sctx) => true
-          case Input.Unknown => false
-        }
-        if (isPackage)
-          defn.sym.loc.sp1.source.input match {
-            case Input.Text(name, text, sctx) => throw InternalCompilerException("", defn.sym.loc)
-            case Input.TxtFile(path, sctx) => throw InternalCompilerException("", defn.sym.loc)
-            case Input.PkgFile(packagePath, sctx) => throw InternalCompilerException("", defn.sym.loc)
-            case Input.FileInPackage(packagePath, virtualPath, text, sctx) =>
-              val defs = acc.getOrElse(text, List.empty)
-              acc + (text -> (defn :: defs))
-            case Input.Unknown => throw InternalCompilerException("", defn.sym.loc)
-          }
-        else
-          acc
+    root.defs.foldLeft(Map.empty[Library, List[TypedAst.Def]]) {
+      case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
+        case Input.FileInPackage(_, _, text, _) =>
+          val defs = acc.getOrElse(text, List.empty)
+          acc + (text -> (defn :: defs))
+        case Input.Text(_, _, _) => acc
+        case Input.TxtFile(_, _) => acc
+        case Input.PkgFile(_, _) => acc
+        case Input.Unknown => acc
+      }
     }
   }
 
