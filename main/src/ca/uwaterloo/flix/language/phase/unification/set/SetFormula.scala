@@ -103,58 +103,18 @@ sealed trait SetFormula {
   }
 
   /**
-    * Returns the number of connectives in the unary/binary representation of `this`.
-    *
-    * [[Compl]], [[Union]], and [[Inter]] are connectives.
+    * Returns the number of connectives in `this` set formula.
     */
-  final def size: Int = {
-    // This is a worklist algorithm (instead of a recursive algorithm) because:
-    // - It doesn't use the stack: error reporting will not be overridden by stack overflow.
-    // - The complexity is self-contained so maintenance cost is lower.
-    // - The cost of bugs is low since size is not used for correctness.
-    var workList = List(this)
-    var counter = 0
-
-    /** Updates `counter` and `workList` given intersection or union subformulas. */
-    def countSetFormulas(
-                          elemPos: Option[ElemSet], cstsPos: SortedSet[Cst], varsPos: SortedSet[Var],
-                          elemNeg: Option[ElemSet], cstsNeg: SortedSet[Cst], varsNeg: SortedSet[Var],
-                          other: List[SetFormula]
-                        ): Unit = {
-      val negElemSize = elemNeg.size
-      val negCstsSize = cstsNeg.size
-      val negVarsSize = varsNeg.size
-      val subformulas = elemPos.size + cstsPos.size + varsPos.size +
-        negElemSize + negCstsSize + negVarsSize + other.size
-      val connectives = negElemSize + negCstsSize + negVarsSize
-      counter += (subformulas - 1) + connectives
-      workList = other ++ workList
-    }
-
-    while (workList.nonEmpty) {
-      val f0 :: next = workList
-      workList = next
-      f0 match {
-        case Univ => ()
-        case Empty => ()
-        case Cst(_) => ()
-        case Var(_) => ()
-        case ElemSet(_) => ()
-        case Compl(f) =>
-          counter += 1
-          workList = f :: workList
-        case Inter(l) =>
-          counter += l.length - 1
-          workList = l.toList ::: workList
-        case Union(l) =>
-          counter += l.length - 1
-          workList = l.toList ::: workList
-        case Xor(other) =>
-          counter +=1
-          workList = other ::: workList
-      }
-    }
-    counter
+  final def size: Int = this match {
+    case SetFormula.Univ => 0
+    case SetFormula.Empty => 0
+    case Cst(_) => 0
+    case Var(_) => 0
+    case ElemSet(_) => 0
+    case Compl(f) => 1 + f.size
+    case Inter(l) => l.length + l.toList.map(_.size).sum
+    case Union(l) => l.length + l.toList.map(_.size).sum
+    case Xor(l) => l.length + l.map(_.size).sum
   }
 
   /** Returns a human-readable string of `this`. */
