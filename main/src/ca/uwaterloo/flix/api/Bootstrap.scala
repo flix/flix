@@ -853,40 +853,46 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         out.println("Lock file read. Checking upgrade safety")
         Validation.flatMapN(check(flix)) {
           case root =>
+            out.println("Program is valid... checking effects...")
             val result = Validation.traverse(root.defs) {
-              case (sym, defn) => sym.loc.sp1.source.input match {
-                case Input.FileInPackage(_, _, text, _) => lockedSignatures.get(text) match {
-                  case Some(signatures) => signatures.find {
-                    case (sym, _) => defn.sym == sym
-                  } match {
-                    case Some((_, originalScheme)) =>
-                      val newScheme = defn.spec.declaredScheme
+              case (sym, defn) =>
+                sym.loc.sp1.source.input match {
+                  case Input.FileInPackage(path, _, _, _) =>
+                    val name = path.getFileName.toString
+                    lockedSignatures.get(name) match {
+                      case Some(signatures) => signatures.find {
+                        case (sym, _) => defn.sym.text == sym.text
+                      } match {
+                        case Some((_, originalScheme)) =>
+                          out.println("Found matching scheme...")
+                          val newScheme = defn.spec.declaredScheme
 
-                      // 1. Check that base types are equal
-                      val baseTypesMatch = originalScheme.base == newScheme.base
+                          // 1. Check that base types are equal
+                          val baseTypesMatch = originalScheme.base == newScheme.base
 
-                      // 2. Check that schemes match
-                      // 2.1 Check there are same number of quantifiers
-                      val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
+                          // 2. Check that schemes match
+                          // 2.1 Check there are same number of quantifiers
+                          val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
 
-                      // 2.1 Check there are
-                      val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
-                        case (a, b) => // TODO: do not consider them ordered by zipping
-                          a.kind == b.kind && a.text == b.text
+                          // 2.1 Check there are
+                          val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
+                            case (a, b) => // TODO: do not consider them ordered by zipping
+                              a.kind == b.kind && a.text == b.text
+                          }
+
+                          if (baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch) {
+                            out.println("Upgrade is valid")
+                            Validation.Success(())
+                          } else {
+                            out.println(s"$sym is a bad upgrade")
+                            Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
+                          }
+                        case None => Validation.Success(())
                       }
-
-                      if (baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch) {
-                        Validation.Success(())
-                      } else {
-                        out.println(s"$sym is a bad upgrade")
-                        Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
-                      }
-                    case None => Validation.Success(())
-                  }
-                  case None => Validation.Success(())
+                      case None => Validation.Success(())
+                    }
+                  case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
                 }
-                case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
-              }
             }
             Validation.mapN(result)(_ => ())
         }
