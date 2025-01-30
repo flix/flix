@@ -8,9 +8,9 @@ import org.json4s.native.Serialization.{read, write}
 
 object Serialization {
 
-  private type Library = String
+  type Library = String
 
-  private type NamedTypeScheme = (Symbol.DefnSym, Scheme)
+  type NamedTypeScheme = (Symbol.DefnSym, Scheme)
 
   /**
     * Type hints for JSON library to (de)serialize ADTs.

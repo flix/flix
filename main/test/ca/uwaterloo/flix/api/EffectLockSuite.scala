@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.effectlock.Serialization
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -111,9 +111,25 @@ class EffectLockSuite extends AnyFunSuite {
     }
     val root1 = root.copy(defs = defs)
     val ser = Serialization.serialize(root1)
-    val deser = Serialization.deserialize(ser)
-    // TODO: Assert type schemes are equal and refactor the above code
-    assert(false)
+    val Some(actual) = Serialization.deserialize(ser)
+    val expected = root1.defs.foldLeft(Map.empty[Serialization.Library, List[Serialization.NamedTypeScheme]]) {
+      case (acc, (sym, defn)) =>
+        val isPackage = sym.loc.sp1.source.input match {
+          case Input.FileInPackage(_, _, _, _) => true
+          case _ => false
+        }
+        if (isPackage)
+          sym.loc.sp1.source.input match {
+            case Input.FileInPackage(_, _, text, _) =>
+              val defs = acc.getOrElse(text, List.empty)
+              val nts = (defn.sym, defn.spec.declaredScheme)
+              acc + (text -> (nts :: defs))
+            case _ => ???
+          }
+        else
+          acc
+    }
+    assert(expected == actual)
   }
 
   private def checkSerializationType(input: String, funSym: String): (Type, String) = {
