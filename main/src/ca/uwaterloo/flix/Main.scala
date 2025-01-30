@@ -511,9 +511,9 @@ object Main {
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
-      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
+      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock))
 
-      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
+      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade))
 
       note("")
 
