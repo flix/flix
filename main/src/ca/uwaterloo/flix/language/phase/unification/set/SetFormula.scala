@@ -75,13 +75,10 @@ sealed trait SetFormula {
     case SetFormula.Univ => SortedSet.empty
     case SetFormula.Empty => SortedSet.empty
     case Cst(x) => SortedSet(x)
-    case Var(x) => SortedSet.empty
+    case Var(_) => SortedSet.empty
     case ElemSet(_) => SortedSet.empty
     case Compl(f) => f.cstsOf
-    case Inter(_, cstsPos, _, _, cstsNeg, _, other) =>
-      other.foldLeft(cstsPos.map(_.c) ++ cstsNeg.map(_.c)) {
-        case (acc, f) => acc ++ f.cstsOf
-      }
+    case Inter(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
     case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
     case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
       case (acc, f) => acc ++ f.cstsOf
@@ -98,10 +95,7 @@ sealed trait SetFormula {
     case Var(x) => SortedSet(x)
     case ElemSet(_) => SortedSet.empty
     case Compl(f) => f.varsOf
-    case Inter(_, _, varsPos, _, _, varsNeg, other) =>
-      other.foldLeft(varsPos.map(_.x) ++ varsNeg.map(_.x)) {
-        case (acc, f) => acc ++ f.varsOf
-      }
+    case Inter(l) => l.toList.map(_.varsOf).reduce(_ ++ _)
     case Union(l) => l.toList.map(_.varsOf).reduce(_ ++ _)
     case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
       case (acc, f) => acc ++ f.varsOf
