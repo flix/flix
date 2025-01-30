@@ -25,46 +25,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 object EqualityEnvironment {
 
   /**
-    * Checks that the given `econstrs` entail the given `econstr`.
-    */
-  def entail(econstrs: List[EqualityConstraint], econstr: BroadEqualityConstraint, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
-    // create assoc-type substitution using econstrs
-    val subst = toSubst(econstrs)
-
-    // extract the types
-    val BroadEqualityConstraint(tpe1, tpe2) = econstr
-
-    // apply the substitution to them
-    val newTpe1 = subst(tpe1)
-    val newTpe2 = subst(tpe2)
-
-    // check that econstr becomes tautological (according to global instance map)
-    // we specifically use the empty eqEnv for this check
-    for {
-      res1 <- reduceType(newTpe1, eqEnv)
-      res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.fullyUnifyTypes(res1, res2, renv, ListMap.empty) match {
-        case Some(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
-        case None => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
-      }
-      // TODO ASSOC-TYPES weird typing hack
-    } yield res
-  }.toValidation
-
-
-  /**
-    * Checks that the `givenEconstrs` entail all the given `wantedEconstrs`.
-    */
-  def entailAll(givenEconstrs: List[EqualityConstraint], wantedEconstrs: List[BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
-    Validation.fold(wantedEconstrs, Substitution.empty) {
-      case (subst, wantedEconstr) =>
-        Validation.mapN(entail(givenEconstrs, subst(wantedEconstr), renv, eqEnv)) {
-          case subst1 => subst1 @@ subst
-        }
-    }
-  }
-
-  /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.
     */
   def narrow(econstr: BroadEqualityConstraint): EqualityConstraint = econstr match {
@@ -79,17 +39,6 @@ object EqualityEnvironment {
   def broaden(econstr: EqualityConstraint): BroadEqualityConstraint = econstr match {
     case EqualityConstraint(cst, tpe1, tpe2, loc) =>
       BroadEqualityConstraint(Type.AssocType(cst, tpe1, tpe2.kind, loc), tpe2)
-  }
-
-  /**
-    * Converts the list of equality constraints to a substitution.
-    */
-  private def toSubst(econstrs: List[EqualityConstraint]): AssocTypeSubstitution = {
-    econstrs.foldLeft(AssocTypeSubstitution.empty) {
-      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), Type.Var(tvar, _), tpe2, _)) =>
-        acc ++ AssocTypeSubstitution.singleton(sym, tvar, tpe2)
-      case (_, EqualityConstraint(cst, tpe1, tpe2, loc)) => throw InternalCompilerException("unexpected econstr", loc) // TODO ASSOC-TYPES
-    }
   }
 
   /**
