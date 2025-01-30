@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.effectlock.Serialization
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -25,8 +26,8 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -824,6 +825,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       ))
       out.println("")
       Validation.Success(true)
+    }
+  }
+
+  def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
+    mapN(check(flix)) {
+      case root =>
+        val ser = Serialization.serialize(root)
+        FileOps.writeString(projectPath.resolve("effects.lock"), ser)
     }
   }
 }
