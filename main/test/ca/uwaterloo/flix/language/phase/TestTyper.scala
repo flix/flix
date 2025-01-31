@@ -637,8 +637,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.MismatchedEff.Without.01") {
+  test("Test.MismatchedEff.Without.01") {
     val input =
       """
         |eff E {
@@ -651,8 +650,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.MismatchedEff.Apply.02") {
+  test("Test.MismatchedEff.Apply.02") {
     val input =
       """
         |eff E {
@@ -667,8 +665,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.GeneralizationError.Eff.01") {
+  test("Test.GeneralizationError.Eff.01") {
     val input =
       """
         |eff E {
@@ -1212,7 +1209,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TestIOAndCustomEffect.03") {
+  test("TestIOAndCustomEffect.03") {
     val input =
       """
         |eff Gen {
@@ -1335,7 +1332,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TestIOAndCustomEffect.08") {
+  test("TestIOAndCustomEffect.08") {
     val input =
       """
         |eff Gen {
