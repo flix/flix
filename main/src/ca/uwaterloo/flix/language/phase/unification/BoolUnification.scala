@@ -34,10 +34,10 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): (Substitution, List[TypeConstraint]) = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Option[Substitution] = {
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
-      return (Substitution.empty, List(TypeConstraint.Equality(tpe1, tpe2, TypeConstraint.Provenance.Match(tpe1, tpe2, tpe1.loc))))
+      return None
     }
 
     // Check for Type.Error
@@ -47,11 +47,7 @@ object BoolUnification {
       case _ => // fallthrough
     }
 
-    val result = lookupOrSolve(tpe1, tpe2, renv0)
-    result match {
-      case Some(subst) => (subst, Nil)
-      case None => (Substitution.empty, List(TypeConstraint.Equality(tpe1, tpe2, TypeConstraint.Provenance.Match(tpe1, tpe2, tpe1.loc))))
-    }
+    lookupOrSolve(tpe1, tpe2, renv0)
   }
 
 

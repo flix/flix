@@ -406,8 +406,8 @@ object ConstraintSolver2 {
       // Either we get a substitution and have nothing left over
       // Or we have leftovers but the substitution is empty.
       BoolUnification.unify(tpe1, tpe2, renv) match {
-        case (subst, Nil) => (Nil, SubstitutionTree.shallow(subst))
-        case (_, _ :: _) => (List(c), SubstitutionTree.empty)
+        case Some(subst) => (Nil, SubstitutionTree.shallow(subst))
+        case None => (List(c), SubstitutionTree.empty)
       }
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
