@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Case
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -39,19 +39,43 @@ object EnumTagCompleter {
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (namespace.nonEmpty)
-      root.enums.values.flatMap(enm =>
-        enm.cases.values.collect{
-          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = true) =>
-            EnumTagCompletion(tag, ap, qualified = true, inScope = true)
-        }
-      )
+        fullyQualifiedCompletion(uri, ap, namespace, ident) ++ partiallyQualifiedCompletions(uri, ap, env, namespace, ident)
     else
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
           case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = false) =>
-            EnumTagCompletion(tag, ap, qualified = false, inScope = inScope(tag, env))
+            EnumTagCompletion(tag, Nil, ap, qualified = false, inScope = inScope(tag, env))
         }
       )
+  }
+
+  private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    root.enums.values.flatMap(enm =>
+      enm.cases.values.collect{
+        case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = true) =>
+          EnumTagCompletion(tag, Nil,  ap, qualified = true, inScope = true)
+      }
+    )
+  }
+
+  /**
+    * Returns a List of Completion for Tag for partially qualified names.
+    *
+    * Example:
+    *   - If `Foo.Bar.Color.Red` is fully qualified, then `Color.Red` is partially qualified
+    *
+    * We need to first find the fully qualified namespace by looking up the local environment, then use it to provide completions.
+    */
+  private def partiallyQualifiedCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    env.m.getOrElse(namespace.mkString("."), Nil).collect {
+      case Resolution.Declaration(Enum(_, _, _, enumSym, _, _, _, _)) =>
+          root.enums.get(enumSym).map(enm =>
+            enm.cases.values.collect {
+              case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = false) =>
+                EnumTagCompletion(tag, namespace, ap, qualified = true, inScope = true)
+            }
+          ).getOrElse(Nil)
+    }.flatten
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
