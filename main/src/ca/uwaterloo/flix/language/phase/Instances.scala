@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
@@ -247,11 +248,13 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs.foreach {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv).toResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv) match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.foreach {
-                      case UnificationError.NoMatchingInstance(missingTconstr) => sctx.errors.add(InstanceError.MissingTraitConstraint(missingTconstr, superTrait, trt.loc))
-                      case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
+                      case TypeConstraint.Trait(sym, tpe, loc) =>
+                        sctx.errors.add(InstanceError.MissingTraitConstraint(TraitConstraint(TraitSymUse(sym, loc), tpe, loc), superTrait, trt.loc))
+                      case _ =>
+                        throw InternalCompilerException("Unexpected type constraint", inst.loc)
                     }
                   }
               }
