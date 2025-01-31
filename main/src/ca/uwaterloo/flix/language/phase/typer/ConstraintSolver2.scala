@@ -199,8 +199,7 @@ object ConstraintSolver2 {
   private def purifyEmptyRegion(constr: TypeConstraint, progress: Progress): TypeConstraint = constr match {
     case TypeConstraint.Purification(sym, eff1, eff2, prov, Nil) =>
       progress.markProgress()
-//      val purified = Substitution.singleton(sym, Type.Pure)(eff2)
-      val purified = eff2 // MATT revisit
+      val purified = Type.purifyRegion(eff2, sym)
       TypeConstraint.Equality(eff1, purified, prov)
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.map(purifyEmptyRegion(_, progress))
