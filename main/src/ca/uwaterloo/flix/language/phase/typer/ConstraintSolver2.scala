@@ -382,8 +382,8 @@ object ConstraintSolver2 {
     case c@TypeConstraint.Equality(tpe1, tpe2, _) => (tpe1.kind, tpe2.kind) match {
       case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
         CaseSetUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
-          case Result.Ok(subst) => (Nil, SubstitutionTree.shallow(subst))
-          case Result.Err(err) => (List(c), SubstitutionTree.empty)
+          case Some(subst) => (Nil, SubstitutionTree.shallow(subst))
+          case None => (List(c), SubstitutionTree.empty)
         }
       case _ => (List(c), SubstitutionTree.empty)
     }
