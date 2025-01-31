@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.Serialization
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.util.Options

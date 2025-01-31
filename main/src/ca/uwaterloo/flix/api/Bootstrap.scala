@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.api.effectlock.Serialization
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor

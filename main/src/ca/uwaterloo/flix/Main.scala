@@ -16,12 +16,10 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, Serialization}
+import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
