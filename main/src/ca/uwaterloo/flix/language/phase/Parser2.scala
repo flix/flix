@@ -699,12 +699,15 @@ object Parser2 {
             // Trailing dot, stop parsing the qualified name.
             val error = UnexpectedToken(
               expected = NamedTokenSet.FromKinds(kinds),
-              actual = Some(TokenKind.Dot),
+              actual = None,
               sctx = context,
-              hint = None,
+              hint = Some("Expect something after '.'"),
               loc = currentSourceLocation()
             )
-            advanceWithError(error)
+            val mark = open()
+            advance()
+            close(mark, TreeKind.TrailingDot)
+            s.errors.append(error)
             continue = false
           } else {
             advance() // Eat the dot
@@ -717,12 +720,15 @@ object Parser2 {
           // Trailing dot, stop parsing the qualified name.
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(kinds),
-            actual = Some(TokenKind.Dot),
+            actual = None,
             sctx = context,
-            hint = None,
+            hint = Some("Expect something after '.'"),
             loc = currentSourceLocation()
           )
-          advanceWithError(error)
+          val mark = open()
+          advance()
+          close(mark, TreeKind.TrailingDot)
+          s.errors.append(error)
           continue = false
         case _ => continue = false
       }

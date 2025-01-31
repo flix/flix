@@ -157,11 +157,12 @@ object Name {
   /**
     * Qualified Name.
     *
-    * @param namespace the namespace
-    * @param ident     the identifier.
-    * @param loc       the source location of the qualified name.
+    * @param namespace    the namespace
+    * @param ident        the identifier.
+    * @param loc          the source location of the qualified name.
+    * @param trailingDot  `true` if the qualified name ends with a dot.
     */
-  case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
+  case class QName(namespace: NName, ident: Ident, loc: SourceLocation, trailingDot: Boolean = false) {
     /**
       * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
