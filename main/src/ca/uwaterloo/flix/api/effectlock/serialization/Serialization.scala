@@ -31,11 +31,11 @@ object Serialization {
   def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = {
     // Toggle error handling
     if (true) {
-      val deser = read[Map[Library, List[SerializableFunction]]](json)
+      val deser = read[Map[Library, List[SDef]]](json)
       Some(toLibs(deser))
     } else {
       try {
-        val deser = read[Map[Library, List[SerializableFunction]]](json)
+        val deser = read[Map[Library, List[SDef]]](json)
         Some(toLibs(deser))
       }
       catch {
@@ -47,11 +47,11 @@ object Serialization {
   def deserializeTpe(tpe: String): Option[Type] = {
     // Toggle error handling
     if (true) {
-      val deser = read[SerializableType](tpe)
+      val deser = read[SType](tpe)
       Some(toType(deser))
     } else {
       try {
-        val deser = read[SerializableType](tpe)
+        val deser = read[SType](tpe)
         Some(toType(deser))
       }
       catch {
@@ -61,207 +61,207 @@ object Serialization {
   }
 
 
-  private def fromLibs(libs: Map[Library, List[TypedAst.Def]]): Map[Library, List[SerializableFunction]] = {
+  private def fromLibs(libs: Map[Library, List[TypedAst.Def]]): Map[Library, List[SDef]] = {
     libs.map {
       case (l, defs) => l -> defs.map(fromDef)
     }
   }
 
-  private def toLibs(libs: Map[Library, List[SerializableFunction]]): Map[Library, List[NamedTypeScheme]] = {
+  private def toLibs(libs: Map[Library, List[SDef]]): Map[Library, List[NamedTypeScheme]] = {
     libs.map {
       case (l, defs) => l -> defs.map(toNamedTypeScheme)
     }
   }
 
-  private def fromDef(defn0: TypedAst.Def): SerializableFunction = defn0 match {
+  private def fromDef(defn0: TypedAst.Def): SDef = defn0 match {
     case TypedAst.Def(sym, spec, _, _) =>
       val ns = sym.namespace
       val text = sym.text
       val sc = fromScheme(spec.declaredScheme)
-      SerializableFunction(ns, text, sc)
+      SDef(ns, text, sc)
   }
 
-  private def toNamedTypeScheme(defn0: SerializableFunction): NamedTypeScheme = defn0 match {
-    case SerializableFunction(namespace, text, scheme) =>
+  private def toNamedTypeScheme(defn0: SDef): NamedTypeScheme = defn0 match {
+    case SDef(namespace, text, scheme) =>
       val sym = Symbol.mkDefnSym(namespace.mkString("", ".", ".").appendedAll(text))
       (sym, toScheme(scheme))
   }
 
-  private def fromScheme(scheme: Scheme): SerializableScheme = scheme match {
+  private def fromScheme(scheme: Scheme): SScheme = scheme match {
     case Scheme(quantifiers, _, _, base) =>
       val qs = quantifiers.map(fromKindedTypeVarSym)
       val b = fromType(base)
-      SerializableScheme(qs, b)
+      SScheme(qs, b)
   }
 
-  private def toScheme(scheme: SerializableScheme): Scheme = scheme match {
-    case SerializableScheme(quantifiers, base) =>
+  private def toScheme(scheme: SScheme): Scheme = scheme match {
+    case SScheme(quantifiers, base) =>
       val qs = quantifiers.map(toKindedTypeVarSym)
       val b = toType(base)
       Scheme(qs, List.empty, List.empty, b)
   }
 
-  private def fromKindedTypeVarSym(sym: Symbol.KindedTypeVarSym): SerializableSymbol.VarSym = {
-    SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
+  private def fromKindedTypeVarSym(sym: Symbol.KindedTypeVarSym): SSymbol.VarSym = {
+    SSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
   }
 
-  private def toKindedTypeVarSym(sym: SerializableSymbol.VarSym): Symbol.KindedTypeVarSym = {
+  private def toKindedTypeVarSym(sym: SSymbol.VarSym): Symbol.KindedTypeVarSym = {
     new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
   }
 
-  private def fromType(tpe: Type): SerializableType = tpe match {
+  private def fromType(tpe: Type): SType = tpe match {
     case Type.Var(sym, _) =>
-      val serSym = SerializableSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
-      SerializableType.Var(serSym)
+      val serSym = SSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
+      SType.Var(serSym)
 
     case Type.Cst(tc, _) =>
       val serTC = fromTypeConstructor(tc)
-      SerializableType.Cst(serTC)
+      SType.Cst(serTC)
 
     case Type.Apply(tpe1, tpe2, _) =>
       val serT1 = fromType(tpe1)
       val serT2 = fromType(tpe2)
-      SerializableType.Apply(serT1, serT2)
+      SType.Apply(serT1, serT2)
 
     case Type.Alias(SymUse.TypeAliasSymUse(sym, _), args, tpe, _) =>
-      val serSym = SerializableSymbol.TypeAliasSym(sym.namespace, sym.name)
+      val serSym = SSymbol.TypeAliasSym(sym.namespace, sym.name)
       val serTs = args.map(fromType)
       val serT = fromType(tpe)
-      SerializableType.Alias(serSym, serTs, serT)
+      SType.Alias(serSym, serTs, serT)
 
     case Type.AssocType(SymUse.AssocTypeSymUse(sym, _), arg, kind, _) =>
-      val serTrtSym = SerializableSymbol.TraitSym(sym.trt.namespace, sym.trt.name)
-      val serSym = SerializableSymbol.AssocTypeSym(serTrtSym, sym.name)
+      val serTrtSym = SSymbol.TraitSym(sym.trt.namespace, sym.trt.name)
+      val serSym = SSymbol.AssocTypeSym(serTrtSym, sym.name)
       val serT = fromType(arg)
       val serKind = fromKind(kind)
-      SerializableType.AssocType(serSym, serT, serKind)
+      SType.AssocType(serSym, serT, serKind)
 
     case Type.JvmToType(_, _) | Type.JvmToEff(_, _) | Type.UnresolvedJvmType(_, _) => throw InternalCompilerException("unexpected jvm type", tpe.loc)
 
   }
 
-  private def fromTypeConstructor(tc0: TypeConstructor): SerializableTypeConstructor = tc0 match {
-    case TypeConstructor.Void => SerializableTypeConstructor.Void
-    case TypeConstructor.AnyType => SerializableTypeConstructor.AnyType
-    case TypeConstructor.Unit => SerializableTypeConstructor.Unit
-    case TypeConstructor.Null => SerializableTypeConstructor.Null
-    case TypeConstructor.Bool => SerializableTypeConstructor.Bool
-    case TypeConstructor.Char => SerializableTypeConstructor.Char
-    case TypeConstructor.Float32 => SerializableTypeConstructor.Float32
-    case TypeConstructor.Float64 => SerializableTypeConstructor.Float64
-    case TypeConstructor.BigDecimal => SerializableTypeConstructor.BigDecimal
-    case TypeConstructor.Int8 => SerializableTypeConstructor.Int8
-    case TypeConstructor.Int16 => SerializableTypeConstructor.Int16
-    case TypeConstructor.Int32 => SerializableTypeConstructor.Int32
-    case TypeConstructor.Int64 => SerializableTypeConstructor.Int64
-    case TypeConstructor.BigInt => SerializableTypeConstructor.BigInt
-    case TypeConstructor.Str => SerializableTypeConstructor.Str
-    case TypeConstructor.Regex => SerializableTypeConstructor.Regex
-    case TypeConstructor.Arrow(arity) => SerializableTypeConstructor.Arrow(arity)
-    case TypeConstructor.ArrowWithoutEffect(arity) => SerializableTypeConstructor.ArrowWithoutEffect(arity)
-    case TypeConstructor.RecordRowEmpty => SerializableTypeConstructor.RecordRowEmpty
+  private def fromTypeConstructor(tc0: TypeConstructor): STC = tc0 match {
+    case TypeConstructor.Void => STC.Void
+    case TypeConstructor.AnyType => STC.AnyType
+    case TypeConstructor.Unit => STC.Unit
+    case TypeConstructor.Null => STC.Null
+    case TypeConstructor.Bool => STC.Bool
+    case TypeConstructor.Char => STC.Char
+    case TypeConstructor.Float32 => STC.Float32
+    case TypeConstructor.Float64 => STC.Float64
+    case TypeConstructor.BigDecimal => STC.BigDecimal
+    case TypeConstructor.Int8 => STC.Int8
+    case TypeConstructor.Int16 => STC.Int16
+    case TypeConstructor.Int32 => STC.Int32
+    case TypeConstructor.Int64 => STC.Int64
+    case TypeConstructor.BigInt => STC.BigInt
+    case TypeConstructor.Str => STC.Str
+    case TypeConstructor.Regex => STC.Regex
+    case TypeConstructor.Arrow(arity) => STC.Arrow(arity)
+    case TypeConstructor.ArrowWithoutEffect(arity) => STC.ArrowWithoutEffect(arity)
+    case TypeConstructor.RecordRowEmpty => STC.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(label) => ??? // SerializableTypeConstructor.RecordRowExtend(label)
-    case TypeConstructor.Record => SerializableTypeConstructor.Record
-    case TypeConstructor.SchemaRowEmpty => SerializableTypeConstructor.SchemaRowEmpty
+    case TypeConstructor.Record => STC.Record
+    case TypeConstructor.SchemaRowEmpty => STC.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => ??? // SerializableTypeConstructor.SchemaRowExtend(pred)
-    case TypeConstructor.Schema => SerializableTypeConstructor.Schema
-    case TypeConstructor.Sender => SerializableTypeConstructor.Sender
-    case TypeConstructor.Receiver => SerializableTypeConstructor.Receiver
-    case TypeConstructor.Lazy => SerializableTypeConstructor.Lazy
+    case TypeConstructor.Schema => STC.Schema
+    case TypeConstructor.Sender => STC.Sender
+    case TypeConstructor.Receiver => STC.Receiver
+    case TypeConstructor.Lazy => STC.Lazy
     case TypeConstructor.Enum(sym, kind) =>
-      val serSym = SerializableSymbol.EnumSym(sym.namespace, sym.text)
+      val serSym = SSymbol.EnumSym(sym.namespace, sym.text)
       val serKind = fromKind(kind)
-      SerializableTypeConstructor.Enum(serSym, serKind)
+      STC.Enum(serSym, serKind)
     case TypeConstructor.Struct(sym, kind) => ??? // SerializableTypeConstructor.Struct(sym, kind)
     case TypeConstructor.RestrictableEnum(sym, kind) => ??? // SerializableTypeConstructor.RestrictableEnum(sym, kind)
     case TypeConstructor.Native(clazz) => ??? // SerializableTypeConstructor.Native(clazz)
     case TypeConstructor.JvmConstructor(constructor) => ??? // SerializableTypeConstructor.JvmConstructor(constructor)
     case TypeConstructor.JvmMethod(method) => ??? // SerializableTypeConstructor.JvmMethod(method)
     case TypeConstructor.JvmField(field) => ??? // SerializableTypeConstructor.JvmField(field)
-    case TypeConstructor.Array => SerializableTypeConstructor.Array
+    case TypeConstructor.Array => STC.Array
     case TypeConstructor.ArrayWithoutRegion => ??? // SerializableTypeConstructor.ArrayWithoutRegion
-    case TypeConstructor.Vector => SerializableTypeConstructor.Vector
-    case TypeConstructor.Tuple(l) => SerializableTypeConstructor.Tuple(l)
-    case TypeConstructor.Relation => SerializableTypeConstructor.Relation
-    case TypeConstructor.Lattice => SerializableTypeConstructor.Lattice
-    case TypeConstructor.True => SerializableTypeConstructor.True
-    case TypeConstructor.False => SerializableTypeConstructor.False
-    case TypeConstructor.Not => SerializableTypeConstructor.Not
-    case TypeConstructor.And => SerializableTypeConstructor.And
-    case TypeConstructor.Or => SerializableTypeConstructor.Or
-    case TypeConstructor.Pure => SerializableTypeConstructor.Pure
-    case TypeConstructor.Univ => SerializableTypeConstructor.Univ
-    case TypeConstructor.Complement => SerializableTypeConstructor.Complement
-    case TypeConstructor.Union => SerializableTypeConstructor.Union
-    case TypeConstructor.Intersection => SerializableTypeConstructor.Intersection
-    case TypeConstructor.Difference => SerializableTypeConstructor.Difference
-    case TypeConstructor.SymmetricDiff => SerializableTypeConstructor.SymmetricDiff
+    case TypeConstructor.Vector => STC.Vector
+    case TypeConstructor.Tuple(l) => STC.Tuple(l)
+    case TypeConstructor.Relation => STC.Relation
+    case TypeConstructor.Lattice => STC.Lattice
+    case TypeConstructor.True => STC.True
+    case TypeConstructor.False => STC.False
+    case TypeConstructor.Not => STC.Not
+    case TypeConstructor.And => STC.And
+    case TypeConstructor.Or => STC.Or
+    case TypeConstructor.Pure => STC.Pure
+    case TypeConstructor.Univ => STC.Univ
+    case TypeConstructor.Complement => STC.Complement
+    case TypeConstructor.Union => STC.Union
+    case TypeConstructor.Intersection => STC.Intersection
+    case TypeConstructor.Difference => STC.Difference
+    case TypeConstructor.SymmetricDiff => STC.SymmetricDiff
     case TypeConstructor.Effect(sym) => ??? // SerializableTypeConstructor.Effect(sym)
     case TypeConstructor.CaseComplement(sym) => ??? // SerializableTypeConstructor.CaseComplement(sym)
     case TypeConstructor.CaseUnion(sym) => ??? // SerializableTypeConstructor.CaseUnion(sym)
     case TypeConstructor.CaseIntersection(sym) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
     case TypeConstructor.CaseSet(syms, enumSym) => ??? // SerializableTypeConstructor.CaseSet(syms, enumSym)
-    case TypeConstructor.RegionToStar => SerializableTypeConstructor.RegionToStar
+    case TypeConstructor.RegionToStar => STC.RegionToStar
     case TypeConstructor.RegionWithoutRegion => ??? // SerializableTypeConstructor.RegionWithoutRegion
     case TypeConstructor.Error(id, kind) => ??? // SerializableTypeConstructor.Error(id, kind)
   }
 
-  private def fromVarText(text: VarText): SerializableVarText = text match {
-    case VarText.Absent => SerializableVarText.Absent
-    case VarText.SourceText(s) => SerializableVarText.SourceText(s)
+  private def fromVarText(text: VarText): SVT = text match {
+    case VarText.Absent => SVT.Absent
+    case VarText.SourceText(s) => SVT.SourceText(s)
   }
 
-  private def toVarText(text: SerializableVarText): VarText = text match {
-    case SerializableVarText.Absent => VarText.Absent
-    case SerializableVarText.SourceText(s) => VarText.SourceText(s)
+  private def toVarText(text: SVT): VarText = text match {
+    case SVT.Absent => VarText.Absent
+    case SVT.SourceText(s) => VarText.SourceText(s)
   }
 
-  private def fromKind(kind0: Kind): SerializableKind = kind0 match {
-    case Kind.Wild => SerializableKind.Wild
-    case Kind.WildCaseSet => SerializableKind.WildCaseSet
-    case Kind.Star => SerializableKind.Star
-    case Kind.Eff => SerializableKind.Eff
-    case Kind.Bool => SerializableKind.Bool
-    case Kind.RecordRow => SerializableKind.RecordRow
-    case Kind.SchemaRow => SerializableKind.SchemaRow
-    case Kind.Predicate => SerializableKind.Predicate
-    case Kind.Jvm => SerializableKind.Jvm
+  private def fromKind(kind0: Kind): SKind = kind0 match {
+    case Kind.Wild => SKind.Wild
+    case Kind.WildCaseSet => SKind.WildCaseSet
+    case Kind.Star => SKind.Star
+    case Kind.Eff => SKind.Eff
+    case Kind.Bool => SKind.Bool
+    case Kind.RecordRow => SKind.RecordRow
+    case Kind.SchemaRow => SKind.SchemaRow
+    case Kind.Predicate => SKind.Predicate
+    case Kind.Jvm => SKind.Jvm
     case Kind.CaseSet(sym) => ???
-    case Kind.Arrow(k1, k2) => SerializableKind.Arrow(fromKind(k1), fromKind(k2))
+    case Kind.Arrow(k1, k2) => SKind.Arrow(fromKind(k1), fromKind(k2))
     case Kind.Error => ???
   }
 
-  private def toKind(kind0: SerializableKind): Kind = kind0 match {
-    case SerializableKind.Wild => Kind.Wild
-    case SerializableKind.WildCaseSet => Kind.WildCaseSet
-    case SerializableKind.Star => Kind.Star
-    case SerializableKind.Eff => Kind.Eff
-    case SerializableKind.Bool => Kind.Bool
-    case SerializableKind.RecordRow => Kind.RecordRow
-    case SerializableKind.SchemaRow => Kind.SchemaRow
-    case SerializableKind.Predicate => Kind.Predicate
-    case SerializableKind.Jvm => Kind.Jvm
-    case SerializableKind.Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
+  private def toKind(kind0: SKind): Kind = kind0 match {
+    case SKind.Wild => Kind.Wild
+    case SKind.WildCaseSet => Kind.WildCaseSet
+    case SKind.Star => Kind.Star
+    case SKind.Eff => Kind.Eff
+    case SKind.Bool => Kind.Bool
+    case SKind.RecordRow => Kind.RecordRow
+    case SKind.SchemaRow => Kind.SchemaRow
+    case SKind.Predicate => Kind.Predicate
+    case SKind.Jvm => Kind.Jvm
+    case SKind.Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
   }
 
-  private def toType(tpe: SerializableType): Type = tpe match {
-    case SerializableType.Var(sym) =>
+  private def toType(tpe: SType): Type = tpe match {
+    case SType.Var(sym) =>
       Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
 
-    case SerializableType.Cst(tc) =>
+    case SType.Cst(tc) =>
       Type.Cst(toTypeConstructor(tc), SourceLocation.Unknown)
 
-    case SerializableType.Apply(tpe1, tpe2) =>
+    case SType.Apply(tpe1, tpe2) =>
       Type.Apply(toType(tpe1), toType(tpe2), SourceLocation.Unknown)
 
-    case SerializableType.Alias(symUse, args, tpe) =>
+    case SType.Alias(symUse, args, tpe) =>
       val sym = new Symbol.TypeAliasSym(symUse.namespace, symUse.name, SourceLocation.Unknown)
       val su = SymUse.TypeAliasSymUse(sym, SourceLocation.Unknown)
       val as = args.map(toType)
       val t = toType(tpe)
       Type.Alias(su, as, t, SourceLocation.Unknown)
 
-    case SerializableType.AssocType(symUse, arg, kind) =>
+    case SType.AssocType(symUse, arg, kind) =>
       val tsym = new Symbol.TraitSym(symUse.trt.namespace, symUse.trt.name, SourceLocation.Unknown)
       val sym = new Symbol.AssocTypeSym(tsym, symUse.name, SourceLocation.Unknown)
       val su = SymUse.AssocTypeSymUse(sym, SourceLocation.Unknown)
@@ -270,135 +270,135 @@ object Serialization {
       Type.AssocType(su, a, k, SourceLocation.Unknown)
   }
 
-  private def toTypeConstructor(tc0: SerializableTypeConstructor): TypeConstructor = tc0 match {
-    case SerializableTypeConstructor.Void => TypeConstructor.Void
-    case SerializableTypeConstructor.AnyType => TypeConstructor.AnyType
-    case SerializableTypeConstructor.Unit => TypeConstructor.Unit
-    case SerializableTypeConstructor.Null => TypeConstructor.Null
-    case SerializableTypeConstructor.Bool => TypeConstructor.Bool
-    case SerializableTypeConstructor.Char => TypeConstructor.Char
-    case SerializableTypeConstructor.Float32 => TypeConstructor.Float32
-    case SerializableTypeConstructor.Float64 => TypeConstructor.Float64
-    case SerializableTypeConstructor.BigDecimal => TypeConstructor.BigDecimal
-    case SerializableTypeConstructor.Int8 => TypeConstructor.Int8
-    case SerializableTypeConstructor.Int16 => TypeConstructor.Int16
-    case SerializableTypeConstructor.Int32 => TypeConstructor.Int32
-    case SerializableTypeConstructor.Int64 => TypeConstructor.Int64
-    case SerializableTypeConstructor.BigInt => TypeConstructor.BigInt
-    case SerializableTypeConstructor.Str => TypeConstructor.Str
-    case SerializableTypeConstructor.Regex => TypeConstructor.Regex
-    case SerializableTypeConstructor.Arrow(arity) => TypeConstructor.Arrow(arity)
-    case SerializableTypeConstructor.ArrowWithoutEffect(arity) => TypeConstructor.ArrowWithoutEffect(arity)
-    case SerializableTypeConstructor.RecordRowEmpty => TypeConstructor.RecordRowEmpty
-    case SerializableTypeConstructor.Record => TypeConstructor.Record
-    case SerializableTypeConstructor.SchemaRowEmpty => TypeConstructor.SchemaRowEmpty
-    case SerializableTypeConstructor.Schema => TypeConstructor.Schema
-    case SerializableTypeConstructor.Sender => TypeConstructor.Sender
-    case SerializableTypeConstructor.Receiver => TypeConstructor.Receiver
-    case SerializableTypeConstructor.Lazy => TypeConstructor.Lazy
-    case SerializableTypeConstructor.Enum(sym, kind) =>
+  private def toTypeConstructor(tc0: STC): TypeConstructor = tc0 match {
+    case STC.Void => TypeConstructor.Void
+    case STC.AnyType => TypeConstructor.AnyType
+    case STC.Unit => TypeConstructor.Unit
+    case STC.Null => TypeConstructor.Null
+    case STC.Bool => TypeConstructor.Bool
+    case STC.Char => TypeConstructor.Char
+    case STC.Float32 => TypeConstructor.Float32
+    case STC.Float64 => TypeConstructor.Float64
+    case STC.BigDecimal => TypeConstructor.BigDecimal
+    case STC.Int8 => TypeConstructor.Int8
+    case STC.Int16 => TypeConstructor.Int16
+    case STC.Int32 => TypeConstructor.Int32
+    case STC.Int64 => TypeConstructor.Int64
+    case STC.BigInt => TypeConstructor.BigInt
+    case STC.Str => TypeConstructor.Str
+    case STC.Regex => TypeConstructor.Regex
+    case STC.Arrow(arity) => TypeConstructor.Arrow(arity)
+    case STC.ArrowWithoutEffect(arity) => TypeConstructor.ArrowWithoutEffect(arity)
+    case STC.RecordRowEmpty => TypeConstructor.RecordRowEmpty
+    case STC.Record => TypeConstructor.Record
+    case STC.SchemaRowEmpty => TypeConstructor.SchemaRowEmpty
+    case STC.Schema => TypeConstructor.Schema
+    case STC.Sender => TypeConstructor.Sender
+    case STC.Receiver => TypeConstructor.Receiver
+    case STC.Lazy => TypeConstructor.Lazy
+    case STC.Enum(sym, kind) =>
       val s = new Symbol.EnumSym(sym.namespace, sym.text, SourceLocation.Unknown)
       val k = toKind(kind)
       TypeConstructor.Enum(s, k)
-    case SerializableTypeConstructor.Array => TypeConstructor.Array
-    case SerializableTypeConstructor.Vector => TypeConstructor.Vector
-    case SerializableTypeConstructor.Tuple(l) => TypeConstructor.Tuple(l)
-    case SerializableTypeConstructor.Relation => TypeConstructor.Relation
-    case SerializableTypeConstructor.Lattice => TypeConstructor.Lattice
-    case SerializableTypeConstructor.True => TypeConstructor.True
-    case SerializableTypeConstructor.False => TypeConstructor.False
-    case SerializableTypeConstructor.Not => TypeConstructor.Not
-    case SerializableTypeConstructor.And => TypeConstructor.And
-    case SerializableTypeConstructor.Or => TypeConstructor.Or
-    case SerializableTypeConstructor.Pure => TypeConstructor.Pure
-    case SerializableTypeConstructor.Univ => TypeConstructor.Univ
-    case SerializableTypeConstructor.Complement => TypeConstructor.Complement
-    case SerializableTypeConstructor.Union => TypeConstructor.Union
-    case SerializableTypeConstructor.Intersection => TypeConstructor.Intersection
-    case SerializableTypeConstructor.Difference => TypeConstructor.Difference
-    case SerializableTypeConstructor.SymmetricDiff => TypeConstructor.SymmetricDiff
-    case SerializableTypeConstructor.RegionToStar => TypeConstructor.RegionToStar
+    case STC.Array => TypeConstructor.Array
+    case STC.Vector => TypeConstructor.Vector
+    case STC.Tuple(l) => TypeConstructor.Tuple(l)
+    case STC.Relation => TypeConstructor.Relation
+    case STC.Lattice => TypeConstructor.Lattice
+    case STC.True => TypeConstructor.True
+    case STC.False => TypeConstructor.False
+    case STC.Not => TypeConstructor.Not
+    case STC.And => TypeConstructor.And
+    case STC.Or => TypeConstructor.Or
+    case STC.Pure => TypeConstructor.Pure
+    case STC.Univ => TypeConstructor.Univ
+    case STC.Complement => TypeConstructor.Complement
+    case STC.Union => TypeConstructor.Union
+    case STC.Intersection => TypeConstructor.Intersection
+    case STC.Difference => TypeConstructor.Difference
+    case STC.SymmetricDiff => TypeConstructor.SymmetricDiff
+    case STC.RegionToStar => TypeConstructor.RegionToStar
   }
 
-  private case class SerializableFunction(namespace: List[String], text: String, scheme: SerializableScheme)
+  private case class SDef(namespace: List[String], text: String, scheme: SScheme)
 
-  private case class SerializableScheme(quantifiers: List[SerializableSymbol.VarSym], base: SerializableType)
+  private case class SScheme(quantifiers: List[SSymbol.VarSym], base: SType)
 
-  private sealed trait SerializableType
+  private sealed trait SType
 
-  private object SerializableType {
+  private object SType {
 
-    case class Var(sym: SerializableSymbol.VarSym) extends SerializableType
+    case class Var(sym: SSymbol.VarSym) extends SType
 
-    case class Cst(tc: SerializableTypeConstructor) extends SerializableType
+    case class Cst(tc: STC) extends SType
 
-    case class Apply(tpe1: SerializableType, tpe2: SerializableType) extends SerializableType
+    case class Apply(tpe1: SType, tpe2: SType) extends SType
 
-    case class Alias(symUse: SerializableSymbol.TypeAliasSym, args: List[SerializableType], tpe: SerializableType) extends SerializableType
+    case class Alias(symUse: SSymbol.TypeAliasSym, args: List[SType], tpe: SType) extends SType
 
-    case class AssocType(symUse: SerializableSymbol.AssocTypeSym, arg: SerializableType, kind: SerializableKind) extends SerializableType
+    case class AssocType(symUse: SSymbol.AssocTypeSym, arg: SType, kind: SKind) extends SType
 
   }
 
-  private sealed trait SerializableTypeConstructor
+  private sealed trait STC
 
-  private object SerializableTypeConstructor {
+  private object STC {
 
-    case object Void extends SerializableTypeConstructor
+    case object Void extends STC
 
-    case object AnyType extends SerializableTypeConstructor
+    case object AnyType extends STC
 
-    case object Unit extends SerializableTypeConstructor
+    case object Unit extends STC
 
-    case object Null extends SerializableTypeConstructor
+    case object Null extends STC
 
-    case object Bool extends SerializableTypeConstructor
+    case object Bool extends STC
 
-    case object Char extends SerializableTypeConstructor
+    case object Char extends STC
 
-    case object Float32 extends SerializableTypeConstructor
+    case object Float32 extends STC
 
-    case object Float64 extends SerializableTypeConstructor
+    case object Float64 extends STC
 
-    case object BigDecimal extends SerializableTypeConstructor
+    case object BigDecimal extends STC
 
-    case object Int8 extends SerializableTypeConstructor
+    case object Int8 extends STC
 
-    case object Int16 extends SerializableTypeConstructor
+    case object Int16 extends STC
 
-    case object Int32 extends SerializableTypeConstructor
+    case object Int32 extends STC
 
-    case object Int64 extends SerializableTypeConstructor
+    case object Int64 extends STC
 
-    case object BigInt extends SerializableTypeConstructor
+    case object BigInt extends STC
 
-    case object Str extends SerializableTypeConstructor
+    case object Str extends STC
 
-    case object Regex extends SerializableTypeConstructor
+    case object Regex extends STC
 
-    case class Arrow(arity: Int) extends SerializableTypeConstructor
+    case class Arrow(arity: Int) extends STC
 
-    case class ArrowWithoutEffect(arity: Int) extends SerializableTypeConstructor
+    case class ArrowWithoutEffect(arity: Int) extends STC
 
-    case object RecordRowEmpty extends SerializableTypeConstructor
+    case object RecordRowEmpty extends STC
 
     // case class RecordRowExtend(label: SerializableName.Label) extends SerializableTypeConstructor
 
-    case object Record extends SerializableTypeConstructor
+    case object Record extends STC
 
-    case object SchemaRowEmpty extends SerializableTypeConstructor
+    case object SchemaRowEmpty extends STC
 
     // case class SchemaRowExtend(pred: SerializableName.Pred) extends SerializableTypeConstructor
 
-    case object Schema extends SerializableTypeConstructor
+    case object Schema extends STC
 
-    case object Sender extends SerializableTypeConstructor
+    case object Sender extends STC
 
-    case object Receiver extends SerializableTypeConstructor
+    case object Receiver extends STC
 
-    case object Lazy extends SerializableTypeConstructor
+    case object Lazy extends STC
 
-    case class Enum(sym: SerializableSymbol.EnumSym, kind: SerializableKind) extends SerializableTypeConstructor
+    case class Enum(sym: SSymbol.EnumSym, kind: SKind) extends STC
 
     // case class Struct(sym: Symbol.StructSym, kind: SerializableKind) extends SerializableTypeConstructor
     // case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: SerializableKind) extends SerializableTypeConstructor
@@ -407,39 +407,39 @@ object Serialization {
     // case class JvmMethod(method: Method) extends SerializableTypeConstructor
     // case class JvmField(field: Field) extends SerializableTypeConstructor
 
-    case object Array extends SerializableTypeConstructor
+    case object Array extends STC
 
-    case object Vector extends SerializableTypeConstructor
+    case object Vector extends STC
 
-    case class Tuple(l: Int) extends SerializableTypeConstructor
+    case class Tuple(l: Int) extends STC
 
-    case object Relation extends SerializableTypeConstructor
+    case object Relation extends STC
 
-    case object Lattice extends SerializableTypeConstructor
+    case object Lattice extends STC
 
-    case object True extends SerializableTypeConstructor
+    case object True extends STC
 
-    case object False extends SerializableTypeConstructor
+    case object False extends STC
 
-    case object Not extends SerializableTypeConstructor
+    case object Not extends STC
 
-    case object And extends SerializableTypeConstructor
+    case object And extends STC
 
-    case object Or extends SerializableTypeConstructor
+    case object Or extends STC
 
-    case object Pure extends SerializableTypeConstructor
+    case object Pure extends STC
 
-    case object Univ extends SerializableTypeConstructor
+    case object Univ extends STC
 
-    case object Complement extends SerializableTypeConstructor
+    case object Complement extends STC
 
-    case object Union extends SerializableTypeConstructor
+    case object Union extends STC
 
-    case object Intersection extends SerializableTypeConstructor
+    case object Intersection extends STC
 
-    case object Difference extends SerializableTypeConstructor
+    case object Difference extends STC
 
-    case object SymmetricDiff extends SerializableTypeConstructor
+    case object SymmetricDiff extends STC
 
     // case class Effect(sym: Symbol.EffectSym) extends SerializableTypeConstructor
     // case class CaseComplement(sym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
@@ -447,60 +447,60 @@ object Serialization {
     // case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
     // case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
 
-    case object RegionToStar extends SerializableTypeConstructor
+    case object RegionToStar extends STC
 
   }
 
-  private sealed trait SerializableKind // only have star, eff, arrow
+  private sealed trait SKind // only have star, eff, arrow
 
-  private object SerializableKind {
+  private object SKind {
 
-    case object Wild extends SerializableKind
+    case object Wild extends SKind
 
-    case object WildCaseSet extends SerializableKind
+    case object WildCaseSet extends SKind
 
-    case object Star extends SerializableKind
+    case object Star extends SKind
 
-    case object Eff extends SerializableKind
+    case object Eff extends SKind
 
-    case object Bool extends SerializableKind
+    case object Bool extends SKind
 
-    case object RecordRow extends SerializableKind
+    case object RecordRow extends SKind
 
-    case object SchemaRow extends SerializableKind
+    case object SchemaRow extends SKind
 
-    case object Predicate extends SerializableKind
+    case object Predicate extends SKind
 
-    case object Jvm extends SerializableKind
+    case object Jvm extends SKind
 
     // case class CaseSet(sym: SerializableSymbol.RestrictableEnumSym) extends SerializableKind
 
-    case class Arrow(k1: SerializableKind, k2: SerializableKind) extends SerializableKind
+    case class Arrow(k1: SKind, k2: SKind) extends SKind
 
   }
 
-  private sealed trait SerializableSymbol
+  private sealed trait SSymbol
 
-  private object SerializableSymbol {
+  private object SSymbol {
 
-    case class VarSym(id: Int, text: SerializableVarText, kind: SerializableKind) extends SerializableSymbol
+    case class VarSym(id: Int, text: SVT, kind: SKind) extends SSymbol
 
-    case class TypeAliasSym(namespace: List[String], name: String) extends SerializableSymbol
+    case class TypeAliasSym(namespace: List[String], name: String) extends SSymbol
 
-    case class AssocTypeSym(trt: SerializableSymbol.TraitSym, name: String) extends SerializableSymbol
+    case class AssocTypeSym(trt: SSymbol.TraitSym, name: String) extends SSymbol
 
-    case class TraitSym(namespace: List[String], name: String) extends SerializableSymbol
+    case class TraitSym(namespace: List[String], name: String) extends SSymbol
 
-    case class EnumSym(namespace: List[String], text: String) extends SerializableSymbol
+    case class EnumSym(namespace: List[String], text: String) extends SSymbol
   }
 
-  private sealed trait SerializableVarText
+  private sealed trait SVT
 
-  private object SerializableVarText {
+  private object SVT {
 
-    case object Absent extends SerializableVarText
+    case object Absent extends SVT
 
-    case class SourceText(s: String) extends SerializableVarText
+    case class SourceText(s: String) extends SVT
 
   }
 
@@ -513,93 +513,93 @@ object Serialization {
       */
     val formats: Formats = org.json4s.native.Serialization.formats(ShortTypeHints(List(
       // Types
-      classOf[SerializableType.Var],
-      classOf[SerializableType.Cst],
-      classOf[SerializableType.Apply],
-      classOf[SerializableType.Alias],
-      classOf[SerializableType.AssocType],
+      classOf[SType.Var],
+      classOf[SType.Cst],
+      classOf[SType.Apply],
+      classOf[SType.Alias],
+      classOf[SType.AssocType],
 
       // TypeConstructors
-      SerializableTypeConstructor.Void.getClass,
-      SerializableTypeConstructor.AnyType.getClass,
-      SerializableTypeConstructor.Unit.getClass,
-      SerializableTypeConstructor.Null.getClass,
-      SerializableTypeConstructor.Bool.getClass,
-      SerializableTypeConstructor.Char.getClass,
-      SerializableTypeConstructor.Float32.getClass,
-      SerializableTypeConstructor.Float64.getClass,
-      SerializableTypeConstructor.BigDecimal.getClass,
-      SerializableTypeConstructor.Int8.getClass,
-      SerializableTypeConstructor.Int16.getClass,
-      SerializableTypeConstructor.Int32.getClass,
-      SerializableTypeConstructor.Int64.getClass,
-      SerializableTypeConstructor.BigInt.getClass,
-      SerializableTypeConstructor.Str.getClass,
-      SerializableTypeConstructor.Regex.getClass,
-      classOf[SerializableTypeConstructor.Arrow],
-      classOf[SerializableTypeConstructor.ArrowWithoutEffect],
-      SerializableTypeConstructor.RecordRowEmpty.getClass,
+      STC.Void.getClass,
+      STC.AnyType.getClass,
+      STC.Unit.getClass,
+      STC.Null.getClass,
+      STC.Bool.getClass,
+      STC.Char.getClass,
+      STC.Float32.getClass,
+      STC.Float64.getClass,
+      STC.BigDecimal.getClass,
+      STC.Int8.getClass,
+      STC.Int16.getClass,
+      STC.Int32.getClass,
+      STC.Int64.getClass,
+      STC.BigInt.getClass,
+      STC.Str.getClass,
+      STC.Regex.getClass,
+      classOf[STC.Arrow],
+      classOf[STC.ArrowWithoutEffect],
+      STC.RecordRowEmpty.getClass,
       // classOf[SerializableTypeConstructor.RecordRowExtend],
-      SerializableTypeConstructor.Record.getClass,
-      SerializableTypeConstructor.SchemaRowEmpty.getClass,
+      STC.Record.getClass,
+      STC.SchemaRowEmpty.getClass,
       // classOf[SerializableTypeConstructor.SchemaRowExtend],
-      SerializableTypeConstructor.Schema.getClass,
-      SerializableTypeConstructor.Sender.getClass,
-      SerializableTypeConstructor.Receiver.getClass,
-      SerializableTypeConstructor.Lazy.getClass,
-      classOf[SerializableTypeConstructor.Enum],
+      STC.Schema.getClass,
+      STC.Sender.getClass,
+      STC.Receiver.getClass,
+      STC.Lazy.getClass,
+      classOf[STC.Enum],
       // classOf[SerializableTypeConstructor.Struct],
       // classOf[SerializableTypeConstructor.RestrictableEnum],
       // classOf[SerializableTypeConstructor.Native],
       // classOf[SerializableTypeConstructor.JvmConstructor],
       // classOf[SerializableTypeConstructor.JvmMethod],
       // classOf[SerializableTypeConstructor.JvmField],
-      SerializableTypeConstructor.Array.getClass,
-      SerializableTypeConstructor.Vector.getClass,
-      classOf[SerializableTypeConstructor.Tuple],
-      SerializableTypeConstructor.Relation.getClass,
-      SerializableTypeConstructor.Lattice.getClass,
-      SerializableTypeConstructor.True.getClass,
-      SerializableTypeConstructor.False.getClass,
-      SerializableTypeConstructor.Not.getClass,
-      SerializableTypeConstructor.And.getClass,
-      SerializableTypeConstructor.Or.getClass,
-      SerializableTypeConstructor.Pure.getClass,
-      SerializableTypeConstructor.Univ.getClass,
-      SerializableTypeConstructor.Complement.getClass,
-      SerializableTypeConstructor.Union.getClass,
-      SerializableTypeConstructor.Intersection.getClass,
-      SerializableTypeConstructor.Difference.getClass,
-      SerializableTypeConstructor.SymmetricDiff.getClass,
+      STC.Array.getClass,
+      STC.Vector.getClass,
+      classOf[STC.Tuple],
+      STC.Relation.getClass,
+      STC.Lattice.getClass,
+      STC.True.getClass,
+      STC.False.getClass,
+      STC.Not.getClass,
+      STC.And.getClass,
+      STC.Or.getClass,
+      STC.Pure.getClass,
+      STC.Univ.getClass,
+      STC.Complement.getClass,
+      STC.Union.getClass,
+      STC.Intersection.getClass,
+      STC.Difference.getClass,
+      STC.SymmetricDiff.getClass,
       // classOf[SerializableTypeConstructor.Effect],
       // classOf[SerializableTypeConstructor.CaseComplement],
       // classOf[SerializableTypeConstructor.CaseUnion],
       // classOf[SerializableTypeConstructor.CaseIntersection],
       // classOf[SerializableTypeConstructor.CaseSet],
-      SerializableTypeConstructor.RegionToStar.getClass,
+      STC.RegionToStar.getClass,
 
       // Kinds
-      SerializableKind.Wild.getClass,
-      SerializableKind.WildCaseSet.getClass,
-      SerializableKind.Star.getClass,
-      SerializableKind.Eff.getClass,
-      SerializableKind.Bool.getClass,
-      SerializableKind.RecordRow.getClass,
-      SerializableKind.SchemaRow.getClass,
-      SerializableKind.Predicate.getClass,
-      SerializableKind.Jvm.getClass,
+      SKind.Wild.getClass,
+      SKind.WildCaseSet.getClass,
+      SKind.Star.getClass,
+      SKind.Eff.getClass,
+      SKind.Bool.getClass,
+      SKind.RecordRow.getClass,
+      SKind.SchemaRow.getClass,
+      SKind.Predicate.getClass,
+      SKind.Jvm.getClass,
       // classOf[SerializableKind.CaseSet],
-      classOf[SerializableKind.Arrow],
+      classOf[SKind.Arrow],
 
       // Symbols
-      classOf[SerializableSymbol.VarSym],
-      classOf[SerializableSymbol.TypeAliasSym],
-      classOf[SerializableSymbol.AssocTypeSym],
-      classOf[SerializableSymbol.TraitSym],
+      classOf[SSymbol.VarSym],
+      classOf[SSymbol.TypeAliasSym],
+      classOf[SSymbol.AssocTypeSym],
+      classOf[SSymbol.TraitSym],
 
       // VarText
-      SerializableVarText.Absent.getClass,
-      classOf[SerializableVarText.SourceText],
+      SVT.Absent.getClass,
+      classOf[SVT.SourceText],
     )))
   }
 
