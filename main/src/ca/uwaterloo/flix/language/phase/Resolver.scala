@@ -2328,7 +2328,8 @@ object Resolver {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
         lookupTypeVar(ident, wildness, env) match {
-          case Result.Ok(sym) => Validation.Success(UnkindedType.Var(sym, loc))
+          case Result.Ok(Left(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
+          case Result.Ok(Right(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
           case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
             sctx.errors.add(error)
@@ -2819,18 +2820,19 @@ object Resolver {
   /**
     * Looks up the type variable with the given name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError] = {
+  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[Either[Symbol.UnkindedTypeVarSym, Symbol.RegionSym], ResolutionError] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
           // We use Top scope because these lookups only occur at top level
-          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc))
+          Result.Ok(Left(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
       val typeVarOpt = env(ident.name).collectFirst {
-        case Resolution.TypeVar(sym) => sym
+        case Resolution.TypeVar(sym) => Left(sym)
+        case Resolution.Region(sym) => Right(sym)
       }
       typeVarOpt match {
         case Some(sym) => Result.Ok(sym)
