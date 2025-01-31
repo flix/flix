@@ -701,13 +701,12 @@ object Parser2 {
               expected = NamedTokenSet.FromKinds(kinds),
               actual = None,
               sctx = context,
-              hint = Some("Expect something after '.'"),
+              hint = Some("Expect ident after '.'"),
               loc = currentSourceLocation()
             )
             val mark = open()
-            advance()
             close(mark, TreeKind.TrailingDot)
-            s.errors.append(error)
+            advanceWithError(error)
             continue = false
           } else {
             advance() // Eat the dot
@@ -722,13 +721,12 @@ object Parser2 {
             expected = NamedTokenSet.FromKinds(kinds),
             actual = None,
             sctx = context,
-            hint = Some("Expect something after '.'"),
+            hint = Some("Expect ident after '.'"),
             loc = currentSourceLocation()
           )
           val mark = open()
-          advance()
           close(mark, TreeKind.TrailingDot)
-          s.errors.append(error)
+          advanceWithError(error)
           continue = false
         case _ => continue = false
       }
