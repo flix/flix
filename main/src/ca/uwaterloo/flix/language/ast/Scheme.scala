@@ -75,15 +75,11 @@ object Scheme {
         // Performance: Reuse tpe0.
         tpe0
 
-      case Type.Apply(tpe1, tpe2, _) =>
+      case app@Type.Apply(tpe1, tpe2, loc) =>
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         // Performance: Reuse tpe0, if possible.
-        if ((t1 eq tpe1) && (t2 eq tpe2)) {
-          tpe0
-        } else {
-          Type.Apply(t1, t2, loc)
-        }
+        app.renew(t1, t2, loc)
 
       case Type.Alias(sym, args, tpe, _) =>
         // Performance: Few aliases, not worth optimizing.

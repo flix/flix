@@ -225,15 +225,11 @@ sealed trait Type {
 
     case Type.Cst(_, _) => this
 
-    case Type.Apply(tpe1, tpe2, loc) =>
+    case app@Type.Apply(tpe1, tpe2, loc) =>
       val t1 = tpe1.map(f)
       val t2 = tpe2.map(f)
       // Performance: Reuse this, if possible.
-      if ((t1 eq tpe1) && (t2 eq tpe2)) {
-        this
-      } else {
-        Type.Apply(t1, t2, loc)
-      }
+      app.renew(t1, t2, loc)
 
     case Type.Alias(sym, args, tpe, loc) =>
       // Performance: Few aliases, not worth optimizing.
@@ -590,6 +586,17 @@ object Type {
     }
 
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
+
+    /**
+      * Creates a new Type.Apply, reusing this one if they are equivalent.
+      */
+    def renew(newTpe1: Type, newTpe2: Type, newLoc: SourceLocation): Type.Apply = {
+      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2) && (loc eq newLoc )) {
+        this
+      } else {
+        Type.Apply(newTpe1, newTpe2, newLoc)
+      }
+    }
   }
 
   /**
