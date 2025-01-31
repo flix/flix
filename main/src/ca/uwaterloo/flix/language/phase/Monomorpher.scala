@@ -909,6 +909,8 @@ object Monomorpher {
     case Type.Pure => CofiniteEffSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteEffSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Region(sym), _) =>
+      CofiniteEffSet.mkSet(sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteEffSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
