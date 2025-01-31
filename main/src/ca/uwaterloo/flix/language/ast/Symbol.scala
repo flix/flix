@@ -920,7 +920,7 @@ object Symbol {
   /**
     * Region symbol.
     */
-  final class RegionSym(val id: Int, val name: String, val loc: SourceLocation) extends Symbol {
+  final class RegionSym(val id: Int, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RegionSym] {
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -939,6 +939,11 @@ object Symbol {
       * Human-readable representation.
       */
     override def toString: String = name + id
+
+    /**
+      * Compares `this` and `that` region sym.
+      */
+    override def compare(that: RegionSym): Int = this.id.compare(that.id)
   }
 
   /**
