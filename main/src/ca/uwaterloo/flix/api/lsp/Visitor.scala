@@ -334,9 +334,8 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(bnd, regionVar, exp, _, _, _) =>
+      case Expr.Scope(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
-//        visitType(regionVar) // MATT revisit
         visitExpr(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
