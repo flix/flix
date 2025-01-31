@@ -30,6 +30,16 @@ object SetUnification {
   var EnableRewriteRules: Boolean = true
 
   /**
+    * Enables simple statistics tracking.
+    */
+  var EnableStats: Boolean = false
+
+  /**
+    * Tracks the number of constraints eliminated by each rewrite rule.
+    */
+  val ElimPerRule: mutable.Map[String, Int] = mutable.Map.empty
+
+  /**
     * The static parameters of set unification.
     *
     * @param sizeThreshold       if positive, [[solve]] will give up before SVE if there are more equations than this
@@ -88,21 +98,21 @@ object SetUnification {
     */
   def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
     val state = new State(l)
-    val trivialPhaseName = "Trivial Equations"
+    val trivialPhaseName = "X. Trivial Equations"
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "Constant Assignment")
+      runWithState(state, runRule(constantAssignment), "1. Constant Assignment")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "Variable Aliases")
+      runWithState(state, runRule(variableAlias), "2. Variable Aliases")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "Simple Variable Assignment")
+      runWithState(state, runRule(variableAssignment), "3. Variable Assignment")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "Duplicates and Reflective")
+      runWithState(state, duplicatedAndReflective, "4. Duplicates and Reflective")
       runWithState(state, runRule(trivial), trivialPhaseName)
       runWithState(state, assertSveEquationCount, "Assert Size")
     }
 
-    runWithState(state, runRule(sve), "SVE")
+    runWithState(state, runRule(sve), "5. SVE")
 
     (state.eqs, state.subst)
   }
@@ -124,6 +134,15 @@ object SetUnification {
 
     phase(state.eqs) match {
       case Some((eqs, subst)) =>
+
+        if (EnableStats) {
+          synchronized {
+            val count = ElimPerRule.getOrElse(phaseName, 0)
+            val delta = state.eqs.length - eqs.length
+            ElimPerRule.put(phaseName, count + delta)
+          }
+        }
+
         state.eqs = eqs
         state.subst = subst @@ state.subst
         listener.onExitPhase(state, progress = true)
