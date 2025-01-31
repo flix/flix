@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.util.TwoList
 
-import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
 
 /**
@@ -65,12 +64,12 @@ sealed trait SetFormula {
     case Inter(l) => l.forall(_.isGround)
     case Union(l) => l.forall(_.isGround)
     case Xor(other) =>
-        other.forall(_.isGround)
+      other.forall(_.isGround)
   }
 
   /**
-   * Returns the constants (i.e. "rigid variables") in `this` set formula.
-   */
+    * Returns the constants (i.e. "rigid variables") in `this` set formula.
+    */
   final def cstsOf: SortedSet[Int] = this match {
     case SetFormula.Univ => SortedSet.empty
     case SetFormula.Empty => SortedSet.empty
@@ -86,8 +85,8 @@ sealed trait SetFormula {
   }
 
   /**
-   * Returns the variables (i.e. "flexible variables") in `this` set formula.
-   */
+    * Returns the variables (i.e. "flexible variables") in `this` set formula.
+    */
   final def varsOf: SortedSet[Int] = this match {
     case SetFormula.Univ => SortedSet.empty
     case SetFormula.Empty => SortedSet.empty
@@ -144,17 +143,14 @@ object SetFormula {
   implicit val ordCst: Ordering[Cst] = Ordering.by(_.c)
   implicit val ordVar: Ordering[Var] = Ordering.by(_.x)
 
-  /** Skip invariant checks if `false`. */
-  private val CHECK_INVARIANTS: Boolean = true
-
   /** A trait used to refer to [[Univ]] and [[Empty]] collectively. */
   sealed trait UnivOrEmpty extends SetFormula
 
   /** The full universe set (`univ`). */
-  final case object Univ extends SetFormula with UnivOrEmpty
+  case object Univ extends SetFormula with UnivOrEmpty
 
   /** The empty set (`empty`). */
-  final case object Empty extends SetFormula with UnivOrEmpty
+  case object Empty extends SetFormula with UnivOrEmpty
 
   /**
     * An uninterpreted constant set (`c42`), i.e. a set that we do not know and cannot make
@@ -162,7 +158,7 @@ object SetFormula {
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
-  final case class Cst(c: Int) extends SetFormula
+  case class Cst(c: Int) extends SetFormula
 
   /**
     * A set variable (`x42`), i.e. a set that we do not know but should instantiate to its most
@@ -170,7 +166,7 @@ object SetFormula {
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
-  final case class Var(x: Int) extends SetFormula
+  case class Var(x: Int) extends SetFormula
 
   /**
     * A concrete, non-empty set/union of elements (`e42` or `e42+43`).
@@ -180,114 +176,33 @@ object SetFormula {
     * Invariant: `s` is non-empty.
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
-    *
-    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
-    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-    * still public. However, we do not use the `copy` method anywhere for [[ElemSet]], so this is
-    * fine.
     */
-  @nowarn
-  final case class ElemSet private(s: SortedSet[Int]) extends SetFormula {
-    if (CHECK_INVARIANTS) assert(s.nonEmpty)
+  case class ElemSet(s: SortedSet[Int]) extends SetFormula {
+    assert(s.nonEmpty)
   }
 
   /**
     * A complement of a formula (`!f`).
-    *
-    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
-    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-    * still public. However, we do not use the `copy` method anywhere for [[Compl]], so this is
-    * fine.
     */
-  @nowarn
-  final case class Compl private(f: SetFormula) extends SetFormula
+  case class Compl(f: SetFormula) extends SetFormula
 
   /**
-    * An intersection of formulas (`f1 ∩ f2`).
-    *
-    * The intersection
-    * {{{
-    * elemPos = Some({e1, e2}),
-    * cstsPos =  Set( c1, c2),
-    * varsPos =  Set( x1, x2),
-    * elemNeg = Some({e3, e4}),
-    * cstsNeg =  Set( c3, c4),
-    * varsNeg =  Set( x3, x4),
-    * other    = List( e1 ∪ x9)
-    * }}}
-    * represents the formula
-    * {{{ (e1 ∪ e2) ∩ c1 ∩ c2 ∩ x1 ∩ x2 ∩ !(e3 ∪ e4) ∩ !c3 ∩ !c4 ∩ !x3 ∩ !x4 ∩ (e1 ∪ x9) }}}
-    *
-    * Property: An empty intersection is [[Univ]].
-    *
-    * Invariant: `elemPos` and `elemNeg` are disjoint.
-    *
-    * Invariant: There is at least two formulas in the intersection.
-    *
-    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
-    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-    * still public. However, we do not use the `copy` method anywhere for [[Inter]], so this is
-    * fine.
+    * An intersection of at least two formulas (`f1 ∩ f2 ∩ ...`).
     */
-  @nowarn
-  final case class Inter(l: TwoList[SetFormula]) extends SetFormula
+  case class Inter(l: TwoList[SetFormula]) extends SetFormula
 
   /**
-    * A union of formulas (`f1 ∪ f2`).
-    *
-    * The union
-    * {{{
-    * elemPos = Some({e1, e2}),
-    * cstsPos =  Set( c1, c2),
-    * varsPos =  Set( x1, x2),
-    * elemNeg = Some({e3, e4}),
-    * cstsNeg =  Set( c3, c4),
-    * varsNeg =  Set( x3, x4),
-    * other    = List( e1 ∩ x9)
-    * }}}
-    * represents the formula
-    * {{{ (e1 ∪ e2) ∪ c1 ∪ c2 ∪ x1 ∪ x2 ∪ !(e3 ∪ e4) ∪ !c3 ∪ !c4 ∪ !x3 ∪ !x4 ∪ (e1 ∩ x9) }}}
-    *
-    * Property: An empty union is [[Empty]].
-    *
-    * Invariant: `elemPos` and `elemNeg` are disjoint.
-    *
-    * Invariant: There is at least two formulas in the union.
-    *
-    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
-    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-    * still public. However, we do not use the `copy` method anywhere for [[Union]], so this is
-    * fine.
+    * A union of at least two formulas (`f1 ∪ f2 ∪ ...`).
     */
-  @nowarn
-  final case class Union(l: TwoList[SetFormula]) extends SetFormula
+  case class Union(l: TwoList[SetFormula]) extends SetFormula
 
   /**
     * A xor (symmetric difference) of formulas (`f1 ⊕ f2`).
-    *
-    * The xor
-    * {{{
-    * other    = List(e1 ∩ x9, x10)
-    * }}}
-    * represents the formula
-    * {{{ (e1 ∩ x9) ⊕ x10 }}}
-    *
-    * Property: An empty xor is ???.
-    *
-    * Invariant: There is at least two formulas in the xor.
-    *
-    * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
-    * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-    * still public. However, we do not use the `copy` method anywhere for [[Xor]], so this is
-    * fine.
     */
-  @nowarn
-  final case class Xor private(
-                              other: List[SetFormula]
-                              ) extends SetFormula {
-    if (CHECK_INVARIANTS) {
-      // There is always at least two subformulas.
-      assert(other.sizeIs >= 2, message = this.toString)
+  case class Xor(other: List[SetFormula]) extends SetFormula { // TODO: Use TwoList
+    other match {
+      case _ :: _ :: _ => // ok
+      case _ => assert(false)
     }
   }
 
@@ -360,65 +275,19 @@ object SetFormula {
 
   /**
     * Returns the union of `f1` and `f2` (`f1 ∪ f2`).
-    *
-    * Nested unions are put into a single union.
-    *
-    * Example
-    *   - `mkUnion((x ∪ y), (z ∪ q)) = x ∪ y ∪ z ∪ q`
     */
-  def mkUnion(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+  def mkUnion2(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
     case (Univ, _) => Univ
     case (_, Univ) => Univ
     case (Empty, _) => f2
     case (_, Empty) => f1
-    case _ => mkUnionAll(List(f1, f2))
-  }
-
-  /**
-    * Returns the union of `fs` (`fs1 ∪ fs2 ∪ ..`).
-    *
-    * Nested unions are put into a single union.
-    */
-  def mkUnionAll(fs: List[SetFormula]): SetFormula = {
-    // Note: The seen sets are used to eliminate duplicates, NOT to group csts and vars.
-    // The elmAcc *IS* used to group elements.
-    def visit(l: List[SetFormula], elmAcc: SortedSet[Int], seenCsts: SortedSet[Int], seenVars: SortedSet[Int]): List[SetFormula] = l match {
-      case Nil => if (elmAcc.isEmpty) Nil else ElemSet(elmAcc) :: Nil
-
-      case Empty :: rs => visit(rs, elmAcc, seenCsts, seenVars)
-
-      case Univ :: _ => List(Univ)
-
-      case ElemSet(s) :: rs =>
-        visit(rs, elmAcc ++ s, seenCsts, seenVars)
-
-      case (f@Cst(c)) :: rs =>
-        if (seenCsts.contains(c))
-          visit(rs, elmAcc, seenCsts, seenVars)
-        else
-          f :: visit(rs, elmAcc, seenCsts + c, seenVars)
-
-      case (f@Var(x)) :: rs =>
-        if (seenVars.contains(x))
-          visit(rs, elmAcc, seenCsts, seenVars)
-        else
-          f :: visit(rs, elmAcc, seenCsts, seenVars + x)
-
-      case Union(l2) :: rs =>
-        visit(l2.toList ::: rs, elmAcc, seenCsts, seenVars)
-
-      case f :: rs => f :: visit(rs, elmAcc, seenCsts, seenVars)
-    }
-
-    visit(fs, SortedSet.empty, SortedSet.empty, SortedSet.empty) match {
-      case Nil => Empty
-      case f :: Nil => f
-      case f1 :: f2 :: rest => Union(TwoList(f1, f2, rest))
-    }
+    case (Union(TwoList(x, y, rs)), f) => Union(TwoList(x, y, f :: rs))
+    case (f, Union(TwoList(x, y, rs))) => Union(TwoList(x, y, f :: rs))
+    case _ => Union(TwoList(f1, f2, Nil))
   }
 
   /** Returns the Xor of `f1` and `f2` (`f1 ⊕ f2`). */
-  def mkXorDirect(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+  def mkXor2(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
     case (Univ, _) => mkCompl(f2)
     case (_, Univ) => mkCompl(f1)
     case (Empty, _) => f2
@@ -427,22 +296,16 @@ object SetFormula {
   }
 
   /**
-    * Returns the xor of `fs` (`fs1 ⊕ fs2 ⊕ ..`).
-    *
-    * Nested xors are put into a single xor.
+    * Returns the xor of `fs` (`fs1 ⊕ fs2 ⊕ ...`).
     */
-  def mkXorDirectAll(fs: List[SetFormula]): SetFormula = fs match {
+  def mkXorAll(fs: List[SetFormula]): SetFormula = fs match {
     case Nil => Empty
     case List(one) => one
     case _ => Xor(fs)
   }
 
-  /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */
-  def mkXor(f1: SetFormula, f2: SetFormula): SetFormula =
-    mkUnion(mkDifference(f1, f2), mkDifference(f2, f1))
-
   /** Returns the difference of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
-  def mkDifference(f1: SetFormula, f2: SetFormula): SetFormula =
+  def mkDiff2(f1: SetFormula, f2: SetFormula): SetFormula =
     mkInter(f1, mkCompl(f2))
 
 }
