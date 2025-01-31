@@ -2327,9 +2327,9 @@ object Resolver {
   private def semiResolveType(tpe0: NamedAst.Type, kindOpt: Option[Kind], wildness: Wildness, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
-        lookupTypeVar(ident, wildness, env) match {
-          case Result.Ok(Left(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
-          case Result.Ok(Right(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
+        lookupLowerType(ident, wildness, env) match {
+          case Result.Ok(LowerType.Var(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
+          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
           case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
             sctx.errors.add(error)
@@ -2818,21 +2818,21 @@ object Resolver {
   }
 
   /**
-    * Looks up the type variable with the given name.
+    * Looks up the type with the given lowercase name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[Either[Symbol.UnkindedTypeVarSym, Symbol.RegionSym], ResolutionError] = {
+  private def lookupLowerType(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[LowerType, ResolutionError] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
           // We use Top scope because these lookups only occur at top level
-          Result.Ok(Left(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)))
+          Result.Ok(LowerType.Var(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
       val typeVarOpt = env(ident.name).collectFirst {
-        case Resolution.TypeVar(sym) => Left(sym)
-        case Resolution.Region(sym) => Right(sym)
+        case Resolution.TypeVar(sym) => LowerType.Var(sym)
+        case Resolution.Region(sym) => LowerType.Region(sym)
       }
       typeVarOpt match {
         case Some(sym) => Result.Ok(sym)
@@ -3630,5 +3630,16 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
+
+  /**
+    * A type represented by a lowercase name.
+    */
+  sealed trait LowerType
+
+  object LowerType {
+    case class Var(sym: Symbol.KindedTypeVarSym) extends LowerType
+
+    case class Region(sym: Symbol.RegionSym) extends LowerType
+  }
 
 }
