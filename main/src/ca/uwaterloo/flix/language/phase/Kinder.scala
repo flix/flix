@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse,
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 

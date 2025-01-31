@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -131,13 +131,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
     case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
-  }
-
-  /**
-    * Applies `this` substitution to the given equality constraint.
-    */
-  def apply(ec: BroadEqualityConstraint): BroadEqualityConstraint = if (isEmpty) ec else ec match {
-    case BroadEqualityConstraint(t1, t2) => BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
   /**
