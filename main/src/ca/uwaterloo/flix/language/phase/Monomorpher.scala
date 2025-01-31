@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, Rigidity
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, Unification}
-import ca.uwaterloo.flix.util.CofiniteEffSet.EffectOrRegion
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
@@ -909,8 +908,9 @@ object Monomorpher {
     case Type.Pure => CofiniteEffSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteEffSet.mkSet(sym)
-    case Type.Cst(TypeConstructor.Region(sym), _) =>
-      CofiniteEffSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Region(_), _) =>
+      // We map regions to IO
+      CofiniteEffSet.mkSet(Symbol.IO)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteEffSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
@@ -926,14 +926,8 @@ object Monomorpher {
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
   private def evalToType(set: CofiniteEffSet, loc: SourceLocation): Type = set match {
-    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(effectOrRegionToType(_, loc)), loc)
-    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(effectOrRegionToType(_, loc)), loc), loc)
-  }
-
-  /** Returns the [[Type]] representation of the given effect or region. */
-  private def effectOrRegionToType(e: CofiniteEffSet.EffectOrRegion, loc: SourceLocation): Type = e match {
-    case EffectOrRegion.Effect(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-    case EffectOrRegion.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
+    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
   /** Returns the normalized default type for the kind of `tpe0`. */
