@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
@@ -99,7 +99,7 @@ object Monomorpher {
       *
       * The smart constructor ensures that all types in the substitution are grounded.
       */
-    def mk(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): StrictSubstitution = {
+    def mk(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix): StrictSubstitution = {
       val m = s.m.map {
         case (sym, tpe) => sym -> simplify(tpe.map(default), eqEnv, isGround = true)
       }
@@ -119,7 +119,7 @@ object Monomorpher {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -849,7 +849,7 @@ object Monomorpher {
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
     */
-  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, eqEnv: EqualityEnv, isGround: Boolean)(implicit flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)

@@ -321,7 +321,7 @@ object EntryPoints {
           val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
           val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
           val constraint = TraitConstraint(TraitSymUse(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
-          val hasToString = TraitEnvironment.holds(constraint, root.traitEnv, ListMap.empty)
+          val hasToString = TraitEnvironment.holds(constraint, root.traitEnv, root.eqEnv)
           if (hasToString) None
           else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
         case Result.Err(ErrorOrMalformed) =>

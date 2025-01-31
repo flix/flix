@@ -32,7 +32,7 @@ case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), Assoc
         val tparams = Nil
         val defn = AssocTypeDef(tparams, arg, ret)
 
-        EqualityEnv(m + (head -> defn))
+        EqualityEnv(m + ((sym, head) -> defn))
     }
   }
 }

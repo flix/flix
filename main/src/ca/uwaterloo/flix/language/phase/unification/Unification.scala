@@ -31,9 +31,9 @@ object Unification {
   /**
     * Fully unifies the given types, returning None if there are unresolvable constraints.
     */
-  def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+  def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     implicit val r: RigidityEnv = renv
-    implicit val e: ListMap[Symbol.AssocTypeSym, AssocTypeDef] = eqEnv
+    implicit val e: EqualityEnv = eqEnv
     ConstraintSolver2.solveAllTypes(List(TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, SourceLocation.Unknown)))) match {
       case (Nil, subst) => Some(subst)
       case (_ :: _, _) => None

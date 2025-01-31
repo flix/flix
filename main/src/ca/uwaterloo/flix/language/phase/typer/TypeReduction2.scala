@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -32,7 +32,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
@@ -51,10 +51,10 @@ object TypeReduction2 {
     case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
 
       // Get all the associated types from the context
-      val assocs = eqenv(sym)
+      val assocOpt = eqenv.getAssocDef(sym, tpe)
 
       // Find the instance that matches
-      val matches = assocs.flatMap {
+      val matches = assocOpt.flatMap {
         case AssocTypeDef(tparams, assocTpe0, ret0) =>
 
 
@@ -79,19 +79,14 @@ object TypeReduction2 {
           }
       }
 
-      // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
       matches match {
         // Case 1: No match. Can't reduce the type.
-        case Nil => tpe0
+        case None => tpe0
 
         // Case 2: One match. Use it.
-        case newTpe :: Nil =>
+        case Some(newTpe) =>
           progress.markProgress()
           newTpe
-
-        // Case 3: Multiple matches. Give back the original type.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => tpe0
       }
 
     case Type.JvmToType(tpe, loc) =>
