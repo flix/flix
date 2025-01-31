@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 //
-// This is a copy of the RecordConstraintSolver2. Because the shapes are slightly different, we cannot reuse the same solver.
+// This is a copy of the RecordConstraintSolver. Because the shapes are slightly different, we cannot reuse the same solver.
 //
-object SchemaConstraintSolver2 {
+object SchemaConstraintSolver {
 
   /**
     * Unifies the two given schema row types.

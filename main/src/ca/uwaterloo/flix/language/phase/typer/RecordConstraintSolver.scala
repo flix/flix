@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-object RecordConstraintSolver2 {
+object RecordConstraintSolver {
 
   /**
     * Unifies the two given record row types.
