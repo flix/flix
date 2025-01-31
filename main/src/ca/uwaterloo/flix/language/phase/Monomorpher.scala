@@ -541,10 +541,7 @@ object Monomorpher {
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // forcedly mark the region variable as IO inside the region
-//      val subst1 = subst.unbind(regionVar.sym) + (regionVar.sym -> Type.IO)
-      val subst1 = subst // MATT revisit
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
