@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 import scala.collection.immutable.SortedSet
-import ca.uwaterloo.flix.language.ast.Symbol.EffectSym
 
 /**
   * Represents a finite or co-finite set with an infinite universe of integers.
@@ -54,10 +55,10 @@ sealed trait CofiniteEffSet {
 object CofiniteEffSet {
 
   /** Represents a finite set of integers. */
-  case class Set(s: SortedSet[EffectSym]) extends CofiniteEffSet
+  case class Set(s: SortedSet[EffectOrRegion]) extends CofiniteEffSet
 
   /** Represents a co-finite set of integers. */
-  case class Compl(s: SortedSet[EffectSym]) extends CofiniteEffSet
+  case class Compl(s: SortedSet[EffectOrRegion]) extends CofiniteEffSet
 
   /** The empty set. */
   val empty: CofiniteEffSet = Set(SortedSet.empty)
@@ -66,10 +67,13 @@ object CofiniteEffSet {
   val universe: CofiniteEffSet = Compl(SortedSet.empty)
 
   /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[EffectSym]): CofiniteEffSet = Set(s)
+  def mkSet(s: SortedSet[Symbol.EffectSym]): CofiniteEffSet = Set(s.map(EffectOrRegion.Effect(_)))
 
   /** Returns the singleton set of `i`. */
-  def mkSet(i: EffectSym): CofiniteEffSet = Set(SortedSet(i))
+  def mkSet(i: Symbol.EffectSym): CofiniteEffSet = Set(SortedSet(EffectOrRegion.Effect(i)))
+
+  /** Returns the singleton set of `i`. */
+  def mkSet(i: Symbol.RegionSym): CofiniteEffSet = Set(SortedSet(EffectOrRegion.Region(i)))
 
   /** Returns the complement of `s` (`!s`). */
   def complement(s: CofiniteEffSet): CofiniteEffSet = s match {
@@ -109,7 +113,7 @@ object CofiniteEffSet {
   }
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
+  def union(s1: CofiniteEffSet, s2: SortedSet[Symbol.EffectSym]): CofiniteEffSet =
     union(s1, mkSet(s2))
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
@@ -134,7 +138,7 @@ object CofiniteEffSet {
   }
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
+  def intersection(s1: CofiniteEffSet, s2: SortedSet[Symbol.EffectSym]): CofiniteEffSet =
     intersection(s1, mkSet(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
@@ -142,11 +146,31 @@ object CofiniteEffSet {
     intersection(s1, complement(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteEffSet, s2: SortedSet[EffectSym]): CofiniteEffSet =
+  def difference(s1: CofiniteEffSet, s2: SortedSet[Symbol.EffectSym]): CofiniteEffSet =
     difference(s1, mkSet(s2))
 
   /** Returns the symmetric difference of `s1` and `s2`. */
   def xor(s1: CofiniteEffSet, s2: CofiniteEffSet): CofiniteEffSet =
     union(difference(s1, s2), difference(s2, s1))
 
+  sealed trait EffectOrRegion extends Ordered[EffectOrRegion] {
+    override def compare(that: EffectOrRegion): Int = (this, that) match {
+      case (EffectOrRegion.Effect(sym1), EffectOrRegion.Effect(sym2)) => sym1.compare(sym2)
+      case (EffectOrRegion.Region(sym1), EffectOrRegion.Region(sym2)) => sym1.compare(sym2)
+      case _ =>
+
+        def ordinal(e: EffectOrRegion): Int = e match {
+          case EffectOrRegion.Effect(_) => 0
+          case EffectOrRegion.Region(_) => 1
+        }
+
+        ordinal(this).compare(ordinal(that))
+    }
+  }
+
+  object EffectOrRegion {
+    case class Effect(sym: Symbol.EffectSym) extends EffectOrRegion
+
+    case class Region(sym: Symbol.RegionSym) extends EffectOrRegion
+  }
 }
