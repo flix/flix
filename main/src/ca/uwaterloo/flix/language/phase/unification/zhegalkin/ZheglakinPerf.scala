@@ -28,7 +28,8 @@ import scala.collection.mutable
 object ZheglakinPerf {
 
   private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
-  private val RQ2 = "RQ2: Performance Gain of the Simple Rewrite Rules"
+  private val RQ2 = "RQ2: Hit Rate of Simple Rewrite Rules"
+  private val RQ22 = "RQ2.2: Performance Gain of the Simple Rewrite Rules"
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
 
@@ -54,7 +55,8 @@ object ZheglakinPerf {
     }
 
     rq1(N)
-    //rq2(N)
+    rq2(N)
+    //RQ22(N)
     rq3(N)
     rq6(N)
   }
@@ -153,6 +155,24 @@ object ZheglakinPerf {
 
   private def rq2(n: Int): Unit = {
     println(RQ2)
+
+    SetUnification.EnableStats = true
+    val flix = new Flix()
+    addInputs(flix)
+    val (_, errors) = flix.check()
+    assert(errors.isEmpty)
+    SetUnification.EnableStats = false
+
+    val data = SetUnification.ElimPerRule.toList.sortBy(_._1)
+
+    println("-" * 80)
+    println(data.map(_._1).map(s => s.padTo(30, ' ')).mkString(" & ") + " \\\\")
+    println(data.map(_._2).map(s => f"$s%,30d").mkString(" & ") + " \\\\")
+    println("-" * 80)
+  }
+
+  private def rq2Throughput(n: Int): Unit = {
+    println(RQ22)
 
     val DefaultNoRewriteRules = Config(rewriteRules = false, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
 
