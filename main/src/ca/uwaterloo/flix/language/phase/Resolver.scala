@@ -3637,7 +3637,7 @@ object Resolver {
   sealed trait LowerType
 
   object LowerType {
-    case class Var(sym: Symbol.KindedTypeVarSym) extends LowerType
+    case class Var(sym: Symbol.UnkindedTypeVarSym) extends LowerType
 
     case class Region(sym: Symbol.RegionSym) extends LowerType
   }
