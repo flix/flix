@@ -9,8 +9,8 @@ import org.json4s.Formats
 object Serialization {
 
   type Library = String
-
   type NamedTypeScheme = (Symbol.DefnSym, Scheme)
+  type NamedTypeSchemes = Map[Symbol.DefnSym, Scheme]
 
   /**
     * Type hints for JSON library to (de)serialize ADTs.
@@ -27,8 +27,7 @@ object Serialization {
     write(fromType(tpe))
   }
 
-  // TODO: Use Map[Symbol.DefnSym, Scheme] instead of List[NamedTypeScheme]
-  def deserialize(json: String): Option[Map[Library, List[NamedTypeScheme]]] = {
+  def deserialize(json: String): Option[Map[Library, NamedTypeSchemes]] = {
     // Toggle error handling
     if (true) {
       val deser = read[Map[Library, List[SDef]]](json)
@@ -67,9 +66,9 @@ object Serialization {
     }
   }
 
-  private def toLibs(libs: Map[Library, List[SDef]]): Map[Library, List[NamedTypeScheme]] = {
+  private def toLibs(libs: Map[Library, List[SDef]]): Map[Library, NamedTypeSchemes] = {
     libs.map {
-      case (l, defs) => l -> defs.map(toNamedTypeScheme)
+      case (l, defs) => l -> defs.map(toNamedTypeScheme).toMap
     }
   }
 
@@ -84,7 +83,7 @@ object Serialization {
   private def toNamedTypeScheme(defn0: SDef): NamedTypeScheme = defn0 match {
     case SDef(namespace, text, scheme) =>
       val sym = Symbol.mkDefnSym(namespace.mkString("", ".", ".").appendedAll(text))
-      (sym, toScheme(scheme))
+      sym -> toScheme(scheme)
   }
 
   private def fromScheme(scheme: Scheme): SScheme = scheme match {
