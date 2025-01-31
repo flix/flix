@@ -42,8 +42,8 @@ object BoolUnification {
 
     // Check for Type.Error
     (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return (Substitution.empty, Nil)
-      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return (Substitution.empty, Nil)
+      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Some(Substitution.empty)
+      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Some(Substitution.empty)
       case _ => // fallthrough
     }
 
