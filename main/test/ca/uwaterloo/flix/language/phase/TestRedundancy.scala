@@ -1983,7 +1983,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.01") {
+  test("RedundantCheckedEffectCast.01") {
     val input =
       """
         |def f(): Unit =
@@ -1999,7 +1999,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.02") {
+  test("RedundantCheckedEffectCast.02") {
     val input =
       """
         |def f(): Unit =
@@ -2018,7 +2018,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.03") {
+  test("RedundantCheckedEffectCast.03") {
     val input =
       """
         |def f(): Unit =
@@ -2034,7 +2034,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.05") {
+  test("RedundantCheckedEffectCast.05") {
     val input =
       """
         |pub eff A

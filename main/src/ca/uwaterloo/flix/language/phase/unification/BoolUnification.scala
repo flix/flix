@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -34,28 +34,27 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Option[Substitution] = {
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
-      return Ok((Substitution.empty, List(BroadEqualityConstraint(tpe1, tpe2))))
+      return None
     }
 
     // Check for Type.Error
     (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Ok((Substitution.empty, Nil))
-      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Ok((Substitution.empty, Nil))
+      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Some(Substitution.empty)
+      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Some(Substitution.empty)
       case _ => // fallthrough
     }
 
-    val result = lookupOrSolve(tpe1, tpe2, renv0)
-    result.map(subst => (subst, Nil))
+    lookupOrSolve(tpe1, tpe2, renv0)
   }
 
 
   /**
     * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
-  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Result[Substitution, UnificationError] = {
+  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
     implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
 
     //
@@ -70,9 +69,8 @@ object BoolUnification {
     //
     // Run the expensive Boolean unification algorithm.
     //
-    SveAlgorithm.unify(f1, f2, renv) match {
-      case None => Err(UnificationError.MismatchedBools(tpe1, tpe2))
-      case Some(subst) => Ok(toTypeSubstitution(subst, env))
+    SveAlgorithm.unify(f1, f2, renv) map {
+      case subst => toTypeSubstitution(subst, env)
     }
   }
 

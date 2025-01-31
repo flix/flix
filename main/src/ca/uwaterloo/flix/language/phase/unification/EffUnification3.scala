@@ -93,53 +93,6 @@ object EffUnification3 {
     }
   }
 
-  /**
-    * Tries to unify the two effects: `eff1` and `eff2`.
-    *
-    *   - Returns [[Result.Err]] if the two effects are not unifiable (e.g. `Pure ~ IO`)
-    *   - Returns [[Result.Ok]] of [[None]] if the two effects are not simplified enough to solve
-    *     (e.g. `MyTrait.MyType[x] ~ Pure` where `x` is a flexible variable)
-    *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
-    *     The returned substitution is a most general unifier.
-    */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Option[Substitution], UnificationError] = {
-    // Add to implicit context.
-    implicit val scopeImplicit: Scope = scope
-    implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
-
-    // Choose a unique number for each atom.
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
-
-    // Convert the type equation into a formula equation.
-    val equation = try {
-      toEquation((eff1, eff2, eff1.loc), withSlack = true)
-    } catch {
-      // If `eff1` and `eff2` are not convertible then we cannot make progress.
-      case InvalidType => return Result.Ok(None)
-    }
-
-    SetUnification.solve(List(equation)) match {
-      case (Nil, subst) =>
-        // The equation was solved, return the substitution.
-        Result.Ok(Some(fromSetSubst(subst)(withSlack = true, m = bimap)))
-
-      case (eq :: _, _) =>
-        // The equation wasn't (completely) solved, return an error for the first unsolved equation.
-        val Equation(f1, f2, status, loc) = eq
-        status match {
-          case Status.Pending =>
-            // `SetUnification.solve` says it never returns pending equations.
-            throw InternalCompilerException(s"Unexpected pending formula $eq", eq.loc)
-          case Status.Unsolvable =>
-            Result.Err(UnificationError.MismatchedEffects(fromSetFormula(f1, loc), fromSetFormula(f2, loc)))
-          case Status.Timeout(msg) =>
-            Result.Err(UnificationError.TooComplex(msg, eq.loc))
-        }
-    }
-  }
-
   /** Returns a [[SortedBimap]] with each [[Atom]] having a unique number. */
   private def mkBidirectionalVarMap(atoms: SortedSet[Atom]): SortedBimap[Atom, Int] =
     SortedBimap.from(atoms.toList.zipWithIndex)
@@ -213,18 +166,18 @@ object EffUnification3 {
       SetFormula.mkCompl(toSetFormula(tpe1))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
-      SetFormula.mkUnion(toSetFormula(tpe1), toSetFormula(tpe2))
+      SetFormula.mkUnion2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
-      SetFormula.mkDifference(toSetFormula(tpe1), toSetFormula(tpe2))
+      SetFormula.mkDiff2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)
-      SetFormula.mkXorDirect(f1, f2)
+      SetFormula.mkXor2(f1, f2)
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 

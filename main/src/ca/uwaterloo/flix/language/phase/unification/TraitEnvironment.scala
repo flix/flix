@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Result, Validation}
 
@@ -31,21 +32,16 @@ object TraitEnvironment {
     * Returns success iff type constraints `tconstrs0` entail type constraint `tconstr`, under trait environment `instances`.
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
-  // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
-  def entail(tconstrs0: List[TraitConstraint], tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Unit, UnificationError] = {
+  def entail(tconstrs0: List[TraitConstraint], tconstr0: TraitConstraint, traitEnv: TraitEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
+    val tconstr = tconstr0 match {
+      case TraitConstraint(symUse, arg, loc) => TypeConstraint.Trait(symUse.sym, arg, loc)
+    }
 
-    val superTraits = tconstrs0.flatMap(bySuper(_, traitEnv))
+    val tenv = ConstraintSolverInterface.expandTraitEnv(traitEnv, tconstrs0)
 
-    // Case 1: tconstrs0 entail tconstr if tconstr is a super trait of any member of tconstrs0
-    if (superTraits.contains(tconstr)) {
-      Validation.Success(())
-    } else {
-      // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
-      Validation.flatMapN(byInst(tconstr, traitEnv, eqEnv)) {
-        case tconstrs =>
-          val tconstrErrors = Validation.sequence(tconstrs.map(entail(tconstrs0, _, traitEnv, eqEnv)))
-          Validation.mapN(tconstrErrors)(_ => ())
-      }
+    ConstraintSolver2.solveAll(List(tconstr), SubstitutionTree.empty)(scope, RigidityEnv.empty, tenv, eqEnv, flix) match {
+      case (Nil, _) => Result.Ok(())
+      case (errs@(_ :: _), _) => Result.Err(errs)
     }
   }
 
@@ -76,7 +72,7 @@ object TraitEnvironment {
     def loop(tconstrs0: List[TraitConstraint], acc: List[TraitConstraint]): List[TraitConstraint] = tconstrs0 match {
       // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv).toResult match {
+      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv) match {
         // Case 1: `head` is entailed by the other type constraints, skip it
         case Result.Ok(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list

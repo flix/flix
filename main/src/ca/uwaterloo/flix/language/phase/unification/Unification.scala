@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, BroadEqualityConstraint, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint}
 import ca.uwaterloo.flix.util.Result
@@ -27,16 +27,6 @@ import ca.uwaterloo.flix.util.collection.ListMap
   * A proxy for implementations of unification as we transition to the new solver.
   */
 object Unification {
-
-  /**
-    * Unifies the two given types `tpe1` and `tpe2`.
-    */
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[(Substitution, List[BroadEqualityConstraint], Boolean), UnificationError] = {
-    implicit val r: RigidityEnv = renv
-    implicit val e: ListMap[Symbol.AssocTypeSym, AssocTypeDef] = eqEnv
-    val (leftovers, subst) = ConstraintSolver2.solveAllTypes(List(TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, SourceLocation.Unknown))))
-    Result.Ok((subst, leftovers.map(ConstraintSolver2.unsafeTypeConstraintToBroadEqualityConstraint), true)) // MATT hack: assuming progress
-  }
 
   /**
     * Fully unifies the given types, returning None if there are unresolvable constraints.
@@ -49,34 +39,4 @@ object Unification {
       case (_ :: _, _) => None
     }
   }
-
-  /**
-    * Unifies the given types, but ignores any unresolved constraints from associated types.
-    */
-  def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
-    implicit val r: RigidityEnv = renv
-    implicit val e: ListMap[Symbol.AssocTypeSym, AssocTypeDef] = eqEnv
-    ConstraintSolver2.solveAllTypes(List(TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, SourceLocation.Unknown)))) match {
-      case (cs, subst) =>
-        if (cs.forall(isAssocConstraint)) {
-          Some(subst)
-        } else {
-          None
-        }
-    }
-  }
-
-  def isAssocConstraint(constr: TypeConstraint): Boolean = constr match {
-    case TypeConstraint.Equality(_: Type.AssocType, _, _) => true
-    case TypeConstraint.Equality(_, _: Type.AssocType, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
-    */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
-    fullyUnifyTypes(tpe1, tpe2, renv, eqEnv).isDefined
-  }
-
 }

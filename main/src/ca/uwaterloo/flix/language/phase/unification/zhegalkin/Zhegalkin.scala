@@ -72,7 +72,7 @@ object Zhegalkin {
       case ZhegalkinExpr(cst, terms) =>
         // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
         terms.foldLeft(visitCst(cst): SetFormula) {
-          case (acc, term) => SetFormula.mkXorDirect(acc, visitTerm(term))
+          case (acc, term) => SetFormula.mkXor2(acc, visitTerm(term))
         }
     }
   }

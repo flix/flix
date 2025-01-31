@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
@@ -143,9 +143,9 @@ object Monomorpher {
         // Remove the Alias and continue.
         apply(t)
 
-      case Type.AssocType(cst, arg0, _, _) =>
-        // Remove the associated type.
-        val reducedType = infallibleReduceAssocType(cst, apply(arg0), eqEnv)
+      case Type.AssocType(symUse, arg0, kind, loc) =>
+        val arg = apply(arg0)
+        val reducedType = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, eqEnv, isGround = true)
 
@@ -845,14 +845,6 @@ object Monomorpher {
     }
   }
 
-  /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(symUse: AssocTypeSymUse, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
-    EqualityEnvironment.reduceAssocType(symUse, arg, eqEnv) match {
-      case Ok(t) => t
-      case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
-    }
-  }
-
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
@@ -862,7 +854,10 @@ object Monomorpher {
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)
     case Type.Alias(_, _, tpe, _) => simplify(tpe, eqEnv, isGround)
-    case Type.AssocType(cst, arg0, _, _) => simplify(infallibleReduceAssocType(cst, simplify(arg0, eqEnv, isGround), eqEnv), eqEnv, isGround)
+    case Type.AssocType(symUse, arg0, kind, loc) =>
+      val arg = simplify(arg0, eqEnv, isGround)
+      val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+      simplify(t, eqEnv, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)

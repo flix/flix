@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
@@ -78,44 +77,6 @@ object ConstraintSolver2 {
       * Returns the constraints and substitution tree.
       */
     def get: (List[TypeConstraint], SubstitutionTree) = (constrs, tree)
-
-    /**
-      * Returns the constraints and the root substitution of the substitution tree.
-      */
-    def getShallow: (List[TypeConstraint], Substitution) = (constrs, tree.root)
-
-    /**
-      * Sorts the constraints using some heuristics.
-      */
-    def sort(): Soup = {
-      def rank(c: TypeConstraint): (Int, Int) = c match {
-        case TypeConstraint.Purification(_, _, _, _, _) => (0, 0)
-        case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0)
-        case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0)
-        case TypeConstraint.Equality(tpe1, tpe2, _) if tpe1.typeVars.isEmpty && tpe2.typeVars.isEmpty => (0, 0)
-        case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0)
-        case TypeConstraint.Equality(tvar1: Type.Var, tpe2, _) if !tpe2.typeVars.contains(tvar1) => (1, 0)
-        case TypeConstraint.Equality(tpe1, tvar2: Type.Var, _) if !tpe1.typeVars.contains(tvar2) => (1, 0)
-        case TypeConstraint.Equality(tpe1, tpe2, _) =>
-          // We want to resolve type variables to types before looking at effects.
-          // Hence, we punish effect variable by a factor 5.
-          val punishment = 5
-
-          val tvs1 = tpe1.typeVars.count(_.kind == Kind.Star)
-          val tvs2 = tpe2.typeVars.count(_.kind == Kind.Star)
-          val evs1 = tpe1.typeVars.count(_.kind == Kind.Eff)
-          val evs2 = tpe2.typeVars.count(_.kind == Kind.Eff)
-          (2, (tvs1 + tvs2) + punishment * (evs1 + evs2))
-        case TypeConstraint.Trait(_, _, _) => (3, 0)
-      }
-
-      // Performance: We want to avoid allocation if the soup is empty or has just one element.
-      constrs match {
-        case Nil => this
-        case _ :: Nil => this
-        case _ => new Soup(constrs.sortBy(rank), tree)
-      }
-    }
 
     /**
       * Performs the function `f` on the constraints until no progress is made.
@@ -382,8 +343,8 @@ object ConstraintSolver2 {
     case c@TypeConstraint.Equality(tpe1, tpe2, _) => (tpe1.kind, tpe2.kind) match {
       case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
         CaseSetUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
-          case Result.Ok(subst) => (Nil, SubstitutionTree.shallow(subst))
-          case Result.Err(err) => (List(c), SubstitutionTree.empty)
+          case Some(subst) => (Nil, SubstitutionTree.shallow(subst))
+          case None => (List(c), SubstitutionTree.empty)
         }
       case _ => (List(c), SubstitutionTree.empty)
     }
@@ -406,9 +367,8 @@ object ConstraintSolver2 {
       // Either we get a substitution and have nothing left over
       // Or we have leftovers but the substitution is empty.
       BoolUnification.unify(tpe1, tpe2, renv) match {
-        case Result.Ok((subst, Nil)) => (Nil, SubstitutionTree.shallow(subst))
-        case Result.Ok((_, _ :: _)) => (List(c), SubstitutionTree.empty)
-        case Result.Err(_) => (List(c), SubstitutionTree.empty)
+        case Some(subst) => (Nil, SubstitutionTree.shallow(subst))
+        case None => (List(c), SubstitutionTree.empty)
       }
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
@@ -483,7 +443,7 @@ object ConstraintSolver2 {
     */
   private def recordUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
-      RecordConstraintSolver2.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
+      RecordConstraintSolver.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
@@ -501,7 +461,7 @@ object ConstraintSolver2 {
     */
   private def schemaUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
-      SchemaConstraintSolver2.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
+      SchemaConstraintSolver.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
@@ -605,16 +565,6 @@ object ConstraintSolver2 {
     */
   def traitConstraintToTypeConstraint(constr: TraitConstraint): TypeConstraint = constr match {
     case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc)
-  }
-
-  /**
-    * Converts a type constraint to a broad equality constraint.
-    *
-    * The type constraint must be an equality constraint.
-    */
-  def unsafeTypeConstraintToBroadEqualityConstraint(constr: TypeConstraint): BroadEqualityConstraint = constr match {
-    case TypeConstraint.Equality(tpe1, tpe2, _) => BroadEqualityConstraint(tpe1, tpe2)
-    case c => throw InternalCompilerException("unexpected constraint: " + c, SourceLocation.Unknown)
   }
 
   /**

@@ -71,7 +71,7 @@ def main(): Unit =
         //
         // Load
         // ---------
-        Pt(p,b) :- Load(l,p,q), Pt(q,a), PtH(a,b), SU(l,a;t), if filter(t, b).
+        Pt(p,b) :- Load(l,p,q), Pt(q,a), PtH(a,b), SU(l,a;t), if (filter(t, b)).
         Pt(p,b) :- FILoad(p,q), Pt(q,a), PtH(a,b).
         //
         // CFlow
@@ -83,7 +83,7 @@ def main(): Unit =
         //su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
 
         SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), Multi(a).
-        SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), Kill(l2;k), if killNot(a, k).
+        SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), Kill(l2;k), if (killNot(a, k)).
         //SU(l2,a,t) :- CFG(l1, l2), SU(l1,a,t), Phi(l2).
         //
         // PtSu
