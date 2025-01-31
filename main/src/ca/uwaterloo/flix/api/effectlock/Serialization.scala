@@ -83,7 +83,7 @@ object Serialization {
 
   private def toNamedTypeScheme(defn0: SerializableFunction): NamedTypeScheme = defn0 match {
     case SerializableFunction(namespace, text, scheme) =>
-      val sym = Symbol.mkDefnSym(namespace.mkString(".").appendedAll(text))
+      val sym = Symbol.mkDefnSym(namespace.mkString("", ".", ".").appendedAll(text))
       (sym, toScheme(scheme))
   }
 
