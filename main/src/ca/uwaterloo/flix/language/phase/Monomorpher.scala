@@ -132,6 +132,10 @@ object Monomorpher {
           case Some(t) => t       // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
         }
 
+      // We map regions to IO
+      case Type.Cst(TypeConstructor.Region(_), _) =>
+        Type.IO
+
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
         cst
