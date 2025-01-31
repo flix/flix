@@ -607,16 +607,6 @@ object ConstraintSolver2 {
   }
 
   /**
-    * Converts a type constraint to a broad equality constraint.
-    *
-    * The type constraint must be an equality constraint.
-    */
-  def unsafeTypeConstraintToBroadEqualityConstraint(constr: TypeConstraint): BroadEqualityConstraint = constr match {
-    case TypeConstraint.Equality(tpe1, tpe2, _) => BroadEqualityConstraint(tpe1, tpe2)
-    case c => throw InternalCompilerException("unexpected constraint: " + c, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns true if the kind should be unified syntactically.
     */
   @tailrec

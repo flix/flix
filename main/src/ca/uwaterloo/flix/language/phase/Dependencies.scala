@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -572,12 +572,6 @@ object Dependencies {
     visitType(tc.arg)
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit sctx: SharedContext): Unit = {
-    visitType(ec.tpe1)
-    visitType(ec.tpe2)
-  }
-
-
-  private def visitBroadEqualityConstraint(ec: BroadEqualityConstraint)(implicit sctx: SharedContext): Unit = {
     visitType(ec.tpe1)
     visitType(ec.tpe2)
   }
