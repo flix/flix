@@ -49,9 +49,10 @@ object TypeReduction2 {
     case Type.Alias(_, _, tpe, _) => tpe
 
     case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
+      val t = reduce(tpe, scope, renv)
 
       // Get all the associated types from the context
-      val assocOpt = eqenv.getAssocDef(sym, tpe)
+      val assocOpt = eqenv.getAssocDef(sym, t)
 
       // Find the instance that matches
       val matches = assocOpt.flatMap {
@@ -61,7 +62,7 @@ object TypeReduction2 {
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val assocRenv = tpe.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
+          val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
 
 
           // Refresh the flexible variables in the instance
@@ -74,7 +75,7 @@ object TypeReduction2 {
           val ret = assocSubst(ret0)
 
           // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(tpe, assocTpe, scope, assocRenv).map {
+          ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
             case subst => subst(ret)
           }
       }
