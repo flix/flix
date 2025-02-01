@@ -115,6 +115,8 @@ object SyntaxTree {
 
     case object StructField extends TreeKind
 
+    case object TrailingDot extends TreeKind
+
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
