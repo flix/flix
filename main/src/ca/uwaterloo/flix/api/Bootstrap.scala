@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -848,7 +849,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println(s"Reading from file: ${path.getFileName.toString}")
     // TODO: Add error handling
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
-    Serialization.deserialize(json) match {
+    val deserde = Serialization.deserialize(json)
+    validateLibs(flix, out, deserde)
+  }
+
+  private def validateLibs(flix: Flix, out: PrintStream, deserde: Option[Map[Library, NamedTypeSchemes]]): Validation[Unit, BootstrapError] = {
+    deserde match {
       case Some(lockedSignatures) =>
         out.println("Lock file read. Checking upgrade safety")
         Validation.flatMapN(check(flix)) {
@@ -871,21 +877,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                           case None => Validation.Success(())
                           case Some((_, originalScheme)) =>
                             val newScheme = defn.spec.declaredScheme
+                            val isSafe = isSafeSignature(originalScheme, newScheme)
 
-                            // 1. Check that base types are equal
-                            val baseTypesMatch = originalScheme.base == newScheme.base
-
-                            // 2. Check that schemes match
-                            // 2.1 Check there are same number of quantifiers
-                            val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
-
-                            // 2.1 Check there are
-                            val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
-                              case (a, b) => // TODO: do not consider them ordered by zipping
-                                a.kind == b.kind && a.text == b.text
-                            }
-
-                            if (baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch) {
+                            if (isSafe) {
                               out.println("Upgrade is valid")
                               Validation.Success(())
                             } else {
@@ -904,5 +898,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Validation.Failure(error)
       // TODO: Add error handling (maybe return Validation or Result in Serialization.deserialize)
     }
+  }
+
+  // TODO: Temporary function, replace with new isSafe
+  private def isSafeSignature(originalScheme: Scheme, newScheme: Scheme): Boolean = {
+    // 1. Check that base types are equal
+    val baseTypesMatch = originalScheme.base == newScheme.base
+
+    // 2. Check that schemes match
+    // 2.1 Check there are same number of quantifiers
+    val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
+
+    // 2.1 Check there are
+    val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
+      case (a, b) => // TODO: do not consider them ordered by zipping
+        a.kind == b.kind && a.text == b.text
+    }
+
+    baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch
   }
 }
