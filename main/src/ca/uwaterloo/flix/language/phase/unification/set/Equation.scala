@@ -46,6 +46,9 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   /** Returns the variables (i.e. "flexible variables") in `this` equation. */
   final def varsOf: Set[Int] = f1.varsOf ++ f2.varsOf
 
+  /** Returns the elements (i.e. "concrete members") in `this` equation. */
+  final def elmsOf: Set[Int] = f1.elmsOf ++ f2.elmsOf
+
   /** Returns the sum of the sizes of the formulas in `this`. */
   final def size: Int = f1.size + f2.size
 

@@ -101,13 +101,13 @@ object SetUnification {
     val trivialPhaseName = "X. Trivial Equations"
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "1. Constant Assignment")
+      runWithState(state, runRule(constantAssignment), "1. ConstProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "2. Variable Aliases")
+      runWithState(state, runRule(variableAlias), "2. VarProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "3. Variable Assignment")
+      runWithState(state, runRule(variableAssignment), "3. VarAssign")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "4. Duplicates and Reflective")
+      runWithState(state, duplicatedAndReflective, "4. TrivDup")
       runWithState(state, runRule(trivial), trivialPhaseName)
       runWithState(state, assertSveEquationCount, "Assert Size")
     }

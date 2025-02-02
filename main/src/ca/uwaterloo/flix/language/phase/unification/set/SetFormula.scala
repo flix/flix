@@ -102,6 +102,23 @@ sealed trait SetFormula {
   }
 
   /**
+    * Returns the elements (i.e. "concrete members") in `this` set formula.
+    */
+  final def elmsOf: SortedSet[Int] = this match {
+    case SetFormula.Univ => SortedSet.empty
+    case SetFormula.Empty => SortedSet.empty
+    case Cst(_) => SortedSet.empty
+    case Var(_) => SortedSet.empty
+    case ElemSet(e) => e
+    case Compl(f) => f.cstsOf
+    case Inter(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
+    case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
+    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
+      case (acc, f) => acc ++ f.cstsOf
+    }
+  }
+
+  /**
     * Returns the number of connectives in `this` set formula.
     */
   final def size: Int = this match {
