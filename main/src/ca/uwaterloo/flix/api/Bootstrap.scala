@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
 import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
@@ -876,7 +877,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                         case None => Validation.Success(())
                         case Some((_, originalScheme)) =>
                           val newScheme = defn.spec.declaredScheme
-                          val isSafe = isSafeSignature(originalScheme, newScheme)
+                          val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
 
                           if (isSafe) {
                             out.println("Upgrade is valid")
@@ -896,24 +897,5 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val error = BootstrapError.FileError("malformed effect lock file")
       Validation.Failure(error)
     // TODO: Add error handling (maybe return Validation or Result in Serialization.deserialize)
-  }
-
-  private def isSafeSignature(originalScheme: Scheme, newScheme: Scheme): Boolean = {
-    // TODO: Temporary function, replace with new isSafe
-
-    // 1. Check that base types are equal
-    val baseTypesMatch = originalScheme.base == newScheme.base
-
-    // 2. Check that schemes match
-    // 2.1 Check there are same number of quantifiers
-    val sameNumberOfQuantifiers = originalScheme.quantifiers.length == newScheme.quantifiers.length
-
-    // 2.1 Check there are
-    val quantifiersMatch = originalScheme.quantifiers.zip(newScheme.quantifiers).forall {
-      case (a, b) => // TODO: do not consider them ordered by zipping
-        a.kind == b.kind && a.text == b.text
-    }
-
-    baseTypesMatch && sameNumberOfQuantifiers && quantifiersMatch
   }
 }
