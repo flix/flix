@@ -895,7 +895,7 @@ object Monomorpher {
 
       case (x, y) =>
         // Maintain and exploit reference equality for performance.
-        if ((x eq tpe1) && (y eq tpe2)) app else Type.Apply(x, y, loc)
+        app.renew(x, y, loc)
     }
   }
 

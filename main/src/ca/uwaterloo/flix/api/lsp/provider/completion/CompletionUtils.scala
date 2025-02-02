@@ -256,9 +256,9 @@ object CompletionUtils {
     *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
     */
   def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
-    val ident = if (qn.endsWithDot) "" else qn.ident.name
+    val ident = if (qn.trailingDot) "" else qn.ident.name
     val namespace = qn.namespace.idents.map(_.name) ++ {
-      if (qn.endsWithDot) List(qn.ident.name)
+      if (qn.trailingDot) List(qn.ident.name)
       else Nil
     }
     (namespace, ident)

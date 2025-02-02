@@ -1348,7 +1348,7 @@ mod String {
         else {
             // Find the last occurrence of non-whitespace followed by whitespace
             // This is the end of the first line
-            let endOpt = Regex.indexOfLastWithBounds({substr = regex"(?<!\\s)\\s"}, {start = 0}, {end = w}, s);
+            let endOpt = Regex.indexOfLastWithBounds(regex"(?<!\\s)\\s", {start = 0}, {end = w}, s);
             let end = match endOpt {
                 case Some(end) => end
                 case None => w

@@ -66,16 +66,13 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
         case Type.Cst(_, _) => t
 
-        case Type.Apply(t1, t2, loc) =>
+        case app@Type.Apply(t1, t2, loc) =>
           // Note: While we could perform simplifications here,
           // experimental results have shown that it is not worth it.
           val x = visit(t1)
           val y = visit(t2)
           // Performance: Reuse t, if possible.
-          if ((x eq t1) && (y eq t2))
-            t
-          else
-            Type.Apply(x, y, loc)
+          app.renew(x, y, loc)
 
         case Type.Alias(sym, args0, tpe0, loc) =>
           val args = args0.map(visit)

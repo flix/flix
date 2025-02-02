@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
 
+import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 object SetUnification {
@@ -38,19 +39,6 @@ object SetUnification {
     * Tracks the number of constraints eliminated by each rewrite rule.
     */
   val ElimPerRule: mutable.Map[String, Int] = mutable.Map.empty
-
-  /**
-    * The static parameters of set unification.
-    *
-    * @param sizeThreshold       if positive, [[solve]] will give up before SVE if there are more equations than this
-    * @param sveRecSizeThreshold if positive, [[sve]] will give up on formulas beyond this size
-    */
-  final case class Options(sizeThreshold: Int, sveRecSizeThreshold: Int)
-
-  final object Options {
-    /** The default [[Options]]. */
-    val default: Options = Options(100, 10_000)
-  }
 
   /** Represents the running mutable state of the solver. */
   final class State(initialEquations: List[Equation]) {
@@ -96,20 +84,19 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     */
-  def solve(l: List[Equation])(implicit listener: SolverListener, opts: Options): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
     val state = new State(l)
     val trivialPhaseName = "X. Trivial Equations"
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "1. Constant Assignment")
+      runWithState(state, runRule(constantAssignment), "1. ConstProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "2. Variable Aliases")
+      runWithState(state, runRule(variableAlias), "2. VarProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "3. Variable Assignment")
+      runWithState(state, runRule(variableAssignment), "3. VarAssign")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "4. Duplicates and Reflective")
+      runWithState(state, duplicatedAndReflective, "4. TrivDup")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, assertSveEquationCount, "Assert Size")
     }
 
     runWithState(state, runRule(sve), "5. SVE")
@@ -117,17 +104,8 @@ object SetUnification {
     (state.eqs, state.subst)
   }
 
-  /** Marks all equations as [[Equation.Status.Timeout]] if there are more than [[Options.sizeThreshold]]. */
-  private def assertSveEquationCount(eqs: List[Equation])(implicit opts: Options): Option[(List[Equation], SetSubstitution)] = {
-    if (opts.sizeThreshold > 0 && eqs.length > opts.sizeThreshold) {
-      val errMsg = s"Amount of leftover equations for SVE (${eqs.length}) is over the threshold (${opts.sizeThreshold})."
-      Some(eqs.map(_.toTimeout(errMsg)), SetSubstitution.empty)
-    } else None
-  }
-
   /**
-    * Runs the given equation system solver `phase` on `state`, printing debugging information
-    * according to [[Options]].
+    * Runs the given equation system solver `phase` on `state`.
     */
   private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
     listener.onEnterPhase(phaseName, state)
@@ -468,9 +446,9 @@ object SetUnification {
         SveAlgorithm.successiveVariableElimination(q, fvs)
       })
 
-      val m = subst.m.toList.map {
-        case (x, e) => x -> Zhegalkin.toSetFormula(e)
-      }.toMap
+      val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
+        case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
+      }
       Some(Nil, SetSubstitution(m))
     } catch {
       case _: BoolUnificationException =>
@@ -483,7 +461,7 @@ object SetUnification {
   //
 
   /** Returns a multiline string of the given [[Equation]]s and [[SetSubstitution]]. */
-  def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
+  private def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
     val sb = new StringBuilder()
     sb.append("Equations:\n")
     for (eq <- eqs) sb.append(s"  $eq\n")

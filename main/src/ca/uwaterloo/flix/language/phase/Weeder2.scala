@@ -911,13 +911,14 @@ object Weeder2 {
     private def visitQnameExpr(tree: Tree)(implicit sctx: SharedContext): Expr.Ambiguous = {
       expect(tree, TreeKind.QName)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
+      val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
       assert(idents.nonEmpty) // Require at least one ident
       val first = idents.head
       val ident = idents.last
       val nnameIdents = idents.dropRight(1)
       val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
       val nname = Name.NName(nnameIdents, loc)
-      val qname = Name.QName(nname, ident, loc)
+      val qname = Name.QName(nname, ident, loc, trailingDot)
       Expr.Ambiguous(qname, qname.loc)
     }
 
@@ -3076,13 +3077,14 @@ object Weeder2 {
   private def visitQName(tree: Tree)(implicit sctx: SharedContext): Name.QName = {
     expect(tree, TreeKind.QName)
     val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
+    val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
     val ident = idents.last
     val nnameIdents = idents.dropRight(1)
     val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
     val nname = Name.NName(nnameIdents, loc)
-    Name.QName(nname, ident, loc)
+    Name.QName(nname, ident, loc, trailingDot)
   }
 
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {

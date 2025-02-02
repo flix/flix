@@ -77,7 +77,6 @@ object ZheglakinPerf {
         }
       case _ => // nop
     }
-    addInputs(flix)
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
     val allEquationSystems = buffer.toList
@@ -104,11 +103,12 @@ object ZheglakinPerf {
         |
         |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
         |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="Elms", alpha=0.2)
         |plt.title("Flexible and Rigid Variables per Constraint System")
         |plt.ylabel("Constraints")
-        |plt.ylabel("Variables")
+        |plt.ylabel("Quantity")
         |plt.xlim(1, 60)
-        |plt.ylim(1, 120)
+        |plt.ylim(1, 60)
         |plt.grid(True)
         |
         |plt.savefig('numberOfVarsPerSystem.png')
@@ -118,16 +118,26 @@ object ZheglakinPerf {
     val table = allEquationSystems.map {
       system =>
         val numberOfConstraints = system.length
-        val numberOfFlexVariables = system.foldLeft(0) {
-          (acc, eqn) => acc + eqn.varsOf.size
+
+        val flexVars = system.foldLeft(Set.empty[Int]) {
+          (acc, eqn) => acc ++ eqn.varsOf
         }
-        val numberOfRigidVariables = system.foldLeft(0) {
-          (acc, eqn) => acc + eqn.cstsOf.size
+        val numberOfFlexVariables = flexVars.size
+
+        val rigidVars = system.foldLeft(Set.empty[Int]) {
+          (acc, eqn) => acc ++ eqn.cstsOf
         }
-        (numberOfConstraints, numberOfFlexVariables, numberOfRigidVariables)
+        val numberOfRigidVariables = rigidVars.size
+
+        val elements = system.foldLeft(Set.empty[Int]) {
+          (acc, eqn) => acc ++ eqn.elmsOf
+        }
+        val numberOfElements = elements.size
+
+        (numberOfConstraints, numberOfFlexVariables, numberOfRigidVariables, numberOfElements)
     }
 
-    val data = "Constraints,FlexVars,RigidVars" + "\n" + table.map(t => s"${t._1},${t._2},${t._3}").mkString("\n")
+    val data = "Constraints,FlexVars,RigidVars,Elms" + "\n" + table.map(t => s"${t._1},${t._2},${t._3},${t._4}").mkString("\n")
     FileOps.writeString(Paths.get("./data.txt"), data)
     FileOps.writeString(Paths.get("./plots.py"), py1)
 
@@ -149,6 +159,11 @@ object ZheglakinPerf {
     println(f"\\newcommand{\\RigidVarsMax}{${table.map(_._3).max}%,d}")
     println(f"\\newcommand{\\RigidVarsAvg}{${average(table.map(_._3))}%1.1f}")
     println(f"\\newcommand{\\RigidVarsMed}{${median(table.map(_._3))}%1.1f}")
+    // Elements
+    println(f"\\newcommand{\\ElmsMin}{${table.map(_._4).min}%,d}")
+    println(f"\\newcommand{\\ElmsMax}{${table.map(_._4).max}%,d}")
+    println(f"\\newcommand{\\ElmsAvg}{${average(table.map(_._4))}%1.1f}")
+    println(f"\\newcommand{\\ElmsMed}{${median(table.map(_._4))}%1.1f}")
     println("-" * 80)
     println()
   }
@@ -158,7 +173,6 @@ object ZheglakinPerf {
 
     SetUnification.EnableStats = true
     val flix = new Flix()
-    addInputs(flix)
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
@@ -166,8 +180,8 @@ object ZheglakinPerf {
     val data = SetUnification.ElimPerRule.toList.sortBy(_._1)
 
     println("-" * 80)
-    println(data.map(_._1).map(s => s.padTo(30, ' ')).mkString(" & ") + " \\\\")
-    println(data.map(_._2).map(s => f"$s%,30d").mkString(" & ") + " \\\\")
+    println(data.map(_._1).map(s => s.padTo(14, ' ')).mkString(" & ") + " \\\\")
+    println(data.map(_._2).map(s => f"$s%,14d").mkString(" & ") + " \\\\")
     println("-" * 80)
   }
 
@@ -274,7 +288,6 @@ object ZheglakinPerf {
 
       val flix = new Flix()
       flix.setOptions(c.opts)
-      addInputs(flix)
       runSingle(flix)
     }
   }
@@ -317,29 +330,6 @@ object ZheglakinPerf {
     * Returns the throughput per second.
     */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
-
-  /**
-    * Adds test code to the benchmarking suite.
-    */
-  private def addInputs(flix: Flix): Unit = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-//    flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-//    flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-//    flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-//    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
-//    flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
-//    flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
-//    flix.addSourceCode("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
-//    flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
-//    flix.addSourceCode("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
-//    flix.addSourceCode("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
-//    flix.addSourceCode("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
-//    flix.addSourceCode("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
-//    flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
-//    flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
-//    flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-//    flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
-  }
 
   case class Run(lines: Int, time: Long)
 
