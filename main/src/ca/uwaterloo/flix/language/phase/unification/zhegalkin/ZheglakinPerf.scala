@@ -180,8 +180,8 @@ object ZheglakinPerf {
     val data = SetUnification.ElimPerRule.toList.sortBy(_._1)
 
     println("-" * 80)
-    println(data.map(_._1).map(s => s.padTo(30, ' ')).mkString(" & ") + " \\\\")
-    println(data.map(_._2).map(s => f"$s%,30d").mkString(" & ") + " \\\\")
+    println(data.map(_._1).map(s => s.padTo(14, ' ')).mkString(" & ") + " \\\\")
+    println(data.map(_._2).map(s => f"$s%,14d").mkString(" & ") + " \\\\")
     println("-" * 80)
   }
 
