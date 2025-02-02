@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
 
+import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 object SetUnification {
@@ -445,9 +446,9 @@ object SetUnification {
         SveAlgorithm.successiveVariableElimination(q, fvs)
       })
 
-      val m = subst.m.toList.map {
-        case (x, e) => x -> Zhegalkin.toSetFormula(e)
-      }.toMap
+      val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
+        case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
+      }
       Some(Nil, SetSubstitution(m))
     } catch {
       case _: BoolUnificationException =>
