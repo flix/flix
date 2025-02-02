@@ -898,8 +898,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // TODO: Add error handling (maybe return Validation or Result in Serialization.deserialize)
   }
 
-  // TODO: Temporary function, replace with new isSafe
   private def isSafeSignature(originalScheme: Scheme, newScheme: Scheme): Boolean = {
+    // TODO: Temporary function, replace with new isSafe
+
     // 1. Check that base types are equal
     val baseTypesMatch = originalScheme.base == newScheme.base
 
