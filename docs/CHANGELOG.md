@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.57.0:
+- Compiler: Added new type inference implementation (thanks Matt!)
+- Compiler: Improved incremental compilation (thanks Chenhao!)
+- LSP: Improved dot autocompletion (thanks Chenhao!)
+
 Version 0.56.0:
 - Language: Added support for first-class handlers (thanks Jonathan!)
 - Library: Extended the `Process` effect (thanks Maxim!)
