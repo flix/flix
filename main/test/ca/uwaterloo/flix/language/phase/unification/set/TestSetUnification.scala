@@ -25,7 +25,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
-  implicit val opts: SetUnification.Options = SetUnification.Options.default
   implicit val listener: SolverListener = SolverListener.DoNothing
 
   def mkEq(f1: SetFormula, f2: SetFormula): Equation = Equation.mk(f1, f2, SourceLocation.Unknown)

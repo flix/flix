@@ -41,11 +41,7 @@ object EffUnification3 {
     * `subst` is a most general unifier of the equations that were solved. Equations in `eqs'` are
     * not always unsolvable, maybe they just need more resolution of associated types for example.
     */
-  def unifyAll(
-                eqs: List[(Type, Type, SourceLocation)],
-                scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options
-              )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
+  def unifyAll(eqs: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
 
     // Performance: Nothing to do if the equation list is empty
     if (eqs.isEmpty) {
@@ -55,7 +51,6 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.

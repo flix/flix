@@ -396,7 +396,7 @@ object ConstraintSolver2 {
     }
 
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv, SetUnification.Options.default) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv) match {
       // If we solved everything, then we can use the new substitution.
       case (Nil, subst) =>
         // We only mark progress if there was something to solve.
