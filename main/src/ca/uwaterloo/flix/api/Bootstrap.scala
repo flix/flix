@@ -851,19 +851,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
     val Some(deserde) = Serialization.deserialize(json) // TODO: Add error handling
     out.println("Lock file read. Checking upgrade safety")
-    validateLibs(deserde)(out, flix)
+    val compilationResult = check(flix) // TODO: Maybe call flix.check or pass compilation result to this function
+    Validation.mapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList))
   }
 
-  private def validateLibs(lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError] = {
-    val result = Validation.flatMapN(check(flix)) {
-      case root => Validation.traverse(root.defs) {
-        case (sym, defn) => validateFunction(sym, defn, lockedSignatures)
-      }
-    }
-    Validation.mapN(result)(_ => ())
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    Validation.mapN(Validation.traverse(upgradedProgram)(defn => validateDefn(defn.sym, defn, originalLibs)))(_ => ())
   }
 
-  private def validateFunction(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  private def validateDefn(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     sym.loc.sp1.source.input match {
       case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
       case Input.FileInPackage(path, _, _, _) =>
