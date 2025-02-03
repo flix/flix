@@ -858,23 +858,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {
     val errors = scala.collection.mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
-    for (defn <- upgradedProgram) {
-      val optLibName = extractLibName(defn)
-      optLibName match {
-        case None => ()
-        case Some(libName) =>
-          val originalLibSignatures = originalLibs.get(libName)
-          originalLibSignatures match {
-            case None => ()
-            case Some(originalSignatures) =>
-              val optError = validateDefn(originalSignatures, defn)
-              optError match {
-                case None => ()
-                case Some(error) => errors.addOne(error)
-              }
-          }
-      }
+
+    for (
+      defn <- upgradedProgram;
+      libName <- extractLibName(defn);
+      originalSignatures <- originalLibs.get(libName);
+      err <- validateDefn(originalSignatures, defn)
+    ) {
+      errors.addOne(err)
     }
+
     if (errors.isEmpty) {
       Validation.Success(())
     } else {
