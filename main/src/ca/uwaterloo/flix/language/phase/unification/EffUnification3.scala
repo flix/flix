@@ -147,6 +147,11 @@ object EffUnification3 {
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
+    case tpe@Type.Cst(TypeConstructor.Region(_), _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.mkElemSet(x)
+    }
+
     case tpe@Type.AssocType(_, _, _, _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound associated type: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.Cst(x)
@@ -260,6 +265,7 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
+      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
@@ -268,9 +274,10 @@ object EffUnification3 {
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Eff(_) => 2
-          case Atom.Assoc(_, _) => 3
-          case Atom.Error(_) => 4
+          case Atom.Region(_) => 2
+          case Atom.Eff(_) => 3
+          case Atom.Assoc(_, _) => 4
+          case Atom.Error(_) => 5
         }
 
         ordinal(this) - ordinal(that)
@@ -290,6 +297,9 @@ object EffUnification3 {
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
+    /** Represents a region.  */
+    case class Region(sym: Symbol.RegionSym) extends Atom
+
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
@@ -299,6 +309,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
@@ -331,6 +342,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
+      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
@@ -356,6 +368,7 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>

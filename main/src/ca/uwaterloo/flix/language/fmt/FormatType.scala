@@ -179,7 +179,8 @@ object FormatType {
       case SimpleType.False => true
       case SimpleType.Pure => true
       case SimpleType.Univ => true
-      case SimpleType.Region => true
+      case SimpleType.Region(_) => true
+      case SimpleType.RegionToStar => true
       case SimpleType.RegionWithoutRegion => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
@@ -258,7 +259,8 @@ object FormatType {
         case Mode.Purity => "{}"
       }
       case SimpleType.Univ => "Univ"
-      case SimpleType.Region => "Region"
+      case SimpleType.Region(name) => name
+      case SimpleType.RegionToStar => "Region"
       case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")

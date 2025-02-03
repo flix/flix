@@ -232,11 +232,10 @@ class TypeContext {
     * the region symbol is marked as rigid,
     * and we get a fresh empty set of constraints for the new scope.
     */
-  def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
+  def enterRegion(sym: Symbol.RegionSym): Unit = {
     val newScope = currentScopeConstraints.scope.enter(sym)
       // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
-    renv = renv.markRigid(sym)
     currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }
 

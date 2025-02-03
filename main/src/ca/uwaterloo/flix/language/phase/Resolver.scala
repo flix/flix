@@ -978,12 +978,12 @@ object Resolver {
     case NamedAst.Expr.Region(tpe, loc) =>
       Validation.Success(ResolvedAst.Expr.Region(tpe, loc))
 
-    case NamedAst.Expr.Scope(sym, regionVar, exp, loc) =>
-      val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regionVar)
+    case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
+      val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regSym)
       // Visit the body in the new scope
-      val eVal = resolveExp(exp, env)(scope.enter(regionVar.withKind(Kind.Eff)), ns0, taenv, sctx, root, flix)
+      val eVal = resolveExp(exp, env)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       mapN(eVal) {
-        e => ResolvedAst.Expr.Scope(sym, regionVar, e, loc)
+        e => ResolvedAst.Expr.Scope(sym, regSym, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
@@ -2327,8 +2327,9 @@ object Resolver {
   private def semiResolveType(tpe0: NamedAst.Type, kindOpt: Option[Kind], wildness: Wildness, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
-        lookupTypeVar(ident, wildness, env) match {
-          case Result.Ok(sym) => Validation.Success(UnkindedType.Var(sym, loc))
+        lookupLowerType(ident, wildness, env) match {
+          case Result.Ok(LowerType.Var(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
+          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
           case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
             sctx.errors.add(error)
@@ -2817,20 +2818,21 @@ object Resolver {
   }
 
   /**
-    * Looks up the type variable with the given name.
+    * Looks up the type with the given lowercase name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError] = {
+  private def lookupLowerType(ident: Name.Ident, wildness: Wildness, env: LocalScope)(implicit scope: Scope, flix: Flix): Result[LowerType, ResolutionError] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
           // We use Top scope because these lookups only occur at top level
-          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc))
+          Result.Ok(LowerType.Var(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc)))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
       val typeVarOpt = env(ident.name).collectFirst {
-        case Resolution.TypeVar(sym) => sym
+        case Resolution.TypeVar(sym) => LowerType.Var(sym)
+        case Resolution.Region(sym) => LowerType.Region(sym)
       }
       typeVarOpt match {
         case Some(sym) => Result.Ok(sym)
@@ -3330,6 +3332,7 @@ object Resolver {
     case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
+    case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
@@ -3457,12 +3460,7 @@ object Resolver {
   /**
     * Creates an environment from the given type variable symbol.
     */
-  private def mkTypeVarEnv(sym: Symbol.UnkindedTypeVarSym): LocalScope = {
-    sym.text match {
-      case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
-      case VarText.SourceText(s) => LocalScope.singleton(s, Resolution.TypeVar(sym))
-    }
-  }
+  private def mkTypeVarEnv(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
 
   /**
     * Converts the class into a Flix type.
@@ -3632,5 +3630,16 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
+
+  /**
+    * A type represented by a lowercase name.
+    */
+  sealed trait LowerType
+
+  object LowerType {
+    case class Var(sym: Symbol.UnkindedTypeVarSym) extends LowerType
+
+    case class Region(sym: Symbol.RegionSym) extends LowerType
+  }
 
 }

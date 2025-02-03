@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * @param root     the substitutions at the top level
   * @param branches a map from region variables to the substitutions for those regions
   */
-class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.KindedTypeVarSym, SubstitutionTree]) {
+class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.RegionSym, SubstitutionTree]) {
 
   def isEmpty: Boolean = root.isEmpty && branches.forall { case (_, tree) => tree.isEmpty }
 
@@ -99,14 +99,14 @@ object SubstitutionTree {
   /**
     * Destructs the tree for pattern matching.
     */
-  def unapply(tree: SubstitutionTree): Option[(Substitution, Map[Symbol.KindedTypeVarSym, SubstitutionTree])] = Some(tree.root, tree.branches)
+  def unapply(tree: SubstitutionTree): Option[(Substitution, Map[Symbol.RegionSym, SubstitutionTree])] = Some(tree.root, tree.branches)
 
   /**
     * Creates a new substitution tree from the given root and branches.
     *
     * Ensures the invariant holds: All substitutions in the root are present and applied in the branches.
     */
-  def mk(root: Substitution, branches: Map[Symbol.KindedTypeVarSym, SubstitutionTree]): SubstitutionTree = {
+  def mk(root: Substitution, branches: Map[Symbol.RegionSym, SubstitutionTree]): SubstitutionTree = {
     propogate(Substitution.empty, root, branches)
   }
 
@@ -115,7 +115,7 @@ object SubstitutionTree {
     *
     * Ensures the invariant holds: All substitutions in the root are present and applied in the branches.
     */
-  private def propogate(subst: Substitution, root: Substitution, branches: Map[Symbol.KindedTypeVarSym, SubstitutionTree]): SubstitutionTree = {
+  private def propogate(subst: Substitution, root: Substitution, branches: Map[Symbol.RegionSym, SubstitutionTree]): SubstitutionTree = {
     val newRoot = subst @@ root
     val newBranches = MapOps.mapValues(branches) {
       case SubstitutionTree(subRoot, subBranches) => propogate(newRoot, subRoot, subBranches)
@@ -136,7 +136,7 @@ object SubstitutionTree {
   /**
     * Returns a substitution tree containing one branch.
     */
-  def oneBranch(sym: Symbol.KindedTypeVarSym, tree: SubstitutionTree): SubstitutionTree = {
+  def oneBranch(sym: Symbol.RegionSym, tree: SubstitutionTree): SubstitutionTree = {
     new SubstitutionTree(Substitution.empty, Map(sym -> tree))
   }
 

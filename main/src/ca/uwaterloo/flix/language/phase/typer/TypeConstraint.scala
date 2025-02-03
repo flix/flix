@@ -90,7 +90,7 @@ object TypeConstraint {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+  case class Purification(sym: Symbol.RegionSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
