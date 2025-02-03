@@ -175,12 +175,19 @@ object ZheglakinPerf {
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
 
-    val data = SetUnification.ElimPerRule.toList.sortBy(_._1)
+    val m: Map[String, Int] = SetUnification.ElimPerRule.toMap
+
+    val constProp = m("ConstProp")
+    val varProp = m("VarProp")
+    val varAssign = m("VarAssign")
+    val trivDup = m("TrivDup")
+    val sve = m("SVE")
+    val trivial = m("Trivial")
 
     println("-" * 80)
-    println("1. ConstProp   & 2. VarProp     & 3. VarAssign   & 4. TrivDup     & 5. SVE         & X. Trivial Equations ")
+    println("  ConstProp   | 2. VarProp     | 3. VarAssign   | 4. TrivDup     | 5. SVE         | X. Trivial Equations ")
     println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(data.map(_._2).map(s => f"$s%,14d").mkString(" & ") + " \\\\")
+    println(f"$constProp%,14d & $varProp%,14d & $varAssign%,14d & $trivDup%,14d & $sve%,14d & $trivial%,14d &")
     println("-" * 80)
     println()
     println()
@@ -217,8 +224,8 @@ object ZheglakinPerf {
     val m7 = runConfig(DefaultNoCaches.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
-    println("  Baseline |  c1 ∩ z2 |  z1 ∪ z2 |  z1 ∩ z2 |  z1 ⨁ z |  SVE(z1, z2) |    All")
-    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    println("  Baseline |  c1 ∩ z2 |  z1 ∪ z2 |  z1 ∩ z2 |  z1 ⨁ z2 |  SVE(z1, z2) |     All")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     println(f"$m1%,10d & $m2%,8d & $m3%,8d & $m4%,8d & $m5%,8d & $m6%,12d & $m7%,7d \\\\")
     println("-" * 80)
     println()

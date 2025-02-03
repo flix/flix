@@ -86,20 +86,20 @@ object SetUnification {
     */
   def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
     val state = new State(l)
-    val trivialPhaseName = "X. Trivial Equations"
+    val trivialPhaseName = "Trivial"
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "1. ConstProp")
+      runWithState(state, runRule(constantAssignment), "ConstProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "2. VarProp")
+      runWithState(state, runRule(variableAlias), "VarProp")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "3. VarAssign")
+      runWithState(state, runRule(variableAssignment), "VarAssign")
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "4. TrivDup")
+      runWithState(state, duplicatedAndReflective, "TrivDup")
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), "5. SVE")
+    runWithState(state, runRule(sve), "SVE")
 
     (state.eqs, state.subst)
   }
