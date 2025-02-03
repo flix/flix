@@ -139,6 +139,8 @@ object ZheglakinPerf {
 
 
     println("-" * 80)
+    // Constraint Systems
+    println(f"\\newcommand{\\ConstraintSystems}{${table.length}%,d}")
     // Constraints
     println(f"\\newcommand{\\ConstraintsTot}{${table.map(_._1).sum}%,d}")
     println(f"\\newcommand{\\ConstraintsMin}{${table.map(_._1).min}%,d}")
@@ -176,9 +178,12 @@ object ZheglakinPerf {
     val data = SetUnification.ElimPerRule.toList.sortBy(_._1)
 
     println("-" * 80)
-    println(data.map(_._1).map(s => s.padTo(14, ' ')).mkString(" & ") + " \\\\")
+    println("1. ConstProp   & 2. VarProp     & 3. VarAssign   & 4. TrivDup     & 5. SVE         & X. Trivial Equations ")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     println(data.map(_._2).map(s => f"$s%,14d").mkString(" & ") + " \\\\")
     println("-" * 80)
+    println()
+    println()
   }
 
   private def rq2Throughput(n: Int): Unit = {
@@ -194,6 +199,7 @@ object ZheglakinPerf {
     println("\\midrule")
     println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d \\\\")
     println("-" * 80)
+    println()
     println()
   }
 
@@ -211,13 +217,13 @@ object ZheglakinPerf {
     val m7 = runConfig(DefaultNoCaches.copy(cacheInterCst = true, cacheUnion = true, cacheInter = true, cacheXor = true, cacheSVE = true), n).mdn
 
     println("-" * 80)
-    println("\\textbf{Cached Operation} & \\textsf{Baseline} & $c_1 \\cap z_2$ & $z_1 \\cup z_2$ & $z_1 \\cap z_2$ & $z_1 \\xor z_2$ & $\\textsf{SVE}(z_1, z_2)$ & \\textsf{All} \\\\")
-    println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d & $m3%,7d & $m4%,7d & $m5%,7d & $m6%,7d & $m7%,7d \\\\")
+    println("  Baseline |  c1 ∩ z2 |  z1 ∪ z2 |  z1 ∩ z2 |  z1 ⨁ z |  SVE(z1, z2) |    All")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    println(f"$m1%,10d & $m2%,8d & $m3%,8d & $m4%,8d & $m5%,8d & $m6%,12d & $m7%,7d \\\\")
     println("-" * 80)
     println()
+    println()
   }
-
 
   private def rq6(n: Int): Unit = {
     println(RQ6)
@@ -229,10 +235,11 @@ object ZheglakinPerf {
     val optimal = runConfig(DefaultNoSubeffecting, n).mdn
 
     println("-" * 80)
-    println("\\textbf{Variant} & \\textbf{Baseline} & \\textbf{Solve-and-Retry} & \\textbf{Optimal} \\\\")
-    println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $baseline%,7d & $solveAndRetry%,7d & $optimal%,7d \\\\")
+    println("  Baseline |  Solve-and-Retry |  Optimal")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    println(f"$baseline%,10d & $solveAndRetry%,16d & $optimal%,8d \\\\")
     println("-" * 80)
+    println()
     println()
   }
 
