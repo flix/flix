@@ -48,6 +48,18 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
+  test("IsSafe.04") {
+    val input =
+      """
+        |pub def f(): Bool -> Unit = ???
+        |
+        |pub def g(): Bool -> Unit \ IO = ???
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
   test("Reachable.01") {
     val input =
       """
