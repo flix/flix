@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{Scheme, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object EffectLock {
 
@@ -9,7 +10,7 @@ object EffectLock {
   }
 
   private def isSafe(tpe1: Type, tpe2: Type): Boolean = (tpe1, tpe2) match {
-    case (Type.Var(sym1, loc1), Type.Var(sym2, loc2)) => ???
+    case (Type.Var(sym1, loc1), Type.Var(sym2, loc2)) => throw InternalCompilerException("not impl var", loc1)
 
     case (Type.Cst(tc1, loc1), Type.Cst(tc2, loc2)) =>
       tc1 == tc2
@@ -17,9 +18,11 @@ object EffectLock {
     case (Type.Apply(tpe11, tpe12, loc1), Type.Apply(tpe21, tpe22, loc2)) =>
       isSafe(tpe11, tpe21) && isSafe(tpe12, tpe22)
 
-    case (Type.Alias(symUse1, args1, tpe1, loc1), Type.Alias(symUse2, args2, tpe2, loc2)) => ???
+    case (Type.Alias(symUse1, args1, tpe1, loc1), Type.Alias(symUse2, args2, tpe2, loc2)) =>
+      throw InternalCompilerException("not impl alias", loc1)
 
-    case (Type.AssocType(symUse1, arg1, kind1, loc1), Type.AssocType(symUse2, arg2, kind2, loc2)) => ???
+    case (Type.AssocType(symUse1, arg1, kind1, loc1), Type.AssocType(symUse2, arg2, kind2, loc2)) =>
+      throw InternalCompilerException("not impl assoc type", loc1)
 
     case _ => false
   }
