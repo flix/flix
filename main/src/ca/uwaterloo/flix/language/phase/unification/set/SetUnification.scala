@@ -38,7 +38,21 @@ object SetUnification {
   /**
     * Tracks the number of constraints eliminated by each rewrite rule.
     */
-  val ElimPerRule: mutable.Map[String, Int] = mutable.Map.empty
+  val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
+
+  /**
+   * Represents the name of phase.
+   */
+  sealed trait Phase
+
+  object Phase {
+    final case object ConstantPropagation extends Phase
+    final case object VariablePropagation extends Phase
+    final case object VariableAssignment extends Phase
+    final case object TrivialAndDuplicate extends Phase
+    final case object SuccessiveVariableElimination extends Phase
+    final case object Trivial extends Phase
+  }
 
   /** Represents the running mutable state of the solver. */
   final class State(initialEquations: List[Equation]) {
@@ -86,20 +100,20 @@ object SetUnification {
     */
   def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
     val state = new State(l)
-    val trivialPhaseName = "X. Trivial Equations"
+    val trivialPhaseName = Phase.Trivial
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "1. ConstProp")
+      runWithState(state, runRule(constantAssignment), Phase.ConstantPropagation)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "2. VarProp")
+      runWithState(state, runRule(variableAlias), Phase.VariablePropagation)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "3. VarAssign")
+      runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "4. TrivDup")
+      runWithState(state, duplicatedAndReflective, Phase.TrivialAndDuplicate)
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), "5. SVE")
+    runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
 
     (state.eqs, state.subst)
   }
@@ -107,17 +121,17 @@ object SetUnification {
   /**
     * Runs the given equation system solver `phase` on `state`.
     */
-  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
-    listener.onEnterPhase(phaseName, state)
+  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase)(implicit listener: SolverListener): Unit = {
+    listener.onEnterPhase(phase.toString, state)
 
-    phase(state.eqs) match {
+    f(state.eqs) match {
       case Some((eqs, subst)) =>
 
         if (EnableStats) {
           synchronized {
-            val count = ElimPerRule.getOrElse(phaseName, 0)
+            val count = ElimPerRule.getOrElse(phase, 0)
             val delta = state.eqs.length - eqs.length
-            ElimPerRule.put(phaseName, count + delta)
+            ElimPerRule.put(phase, count + delta)
           }
         }
 
@@ -151,7 +165,7 @@ object SetUnification {
       }
     }
 
-    if (changed) Some(result.reverse, SetSubstitution.empty) else None
+    if (changed) Some((result.reverse, SetSubstitution.empty)) else None
   }
 
   /** Run a unification rule on an equation system in a fixpoint. */
@@ -202,7 +216,7 @@ object SetUnification {
     if (overallProgress) {
       // We apply `overallSubst` lazily, not all equations have seen all substitution information.
       val resultEqs = iterationWorkList.map(overallSubst.apply)
-      Some(resultEqs, overallSubst)
+      Some((resultEqs, overallSubst))
     } else {
       None
     }
@@ -227,11 +241,11 @@ object SetUnification {
     val Equation(f1, f2, _, _) = eq
 
     def error(): Option[(List[Equation], SetSubstitution)] = {
-      Some(List(eq.toUnsolvable), SetSubstitution.empty)
+      Some((List(eq.toUnsolvable), SetSubstitution.empty))
     }
 
     def success(): Option[(List[Equation], SetSubstitution)] = {
-      Some(Nil, SetSubstitution.empty)
+      Some((Nil, SetSubstitution.empty))
     }
 
     (f1, f2) match {
@@ -283,22 +297,22 @@ object SetUnification {
       // {},
       // [x -> f]
       case (Var(x), f) if f.isGround =>
-        Some(Nil, SetSubstitution.singleton(x, f))
+        Some((Nil, SetSubstitution.singleton(x, f)))
 
       // Symmetric case.
       case (f, Var(x)) if f.isGround =>
-        Some(Nil, SetSubstitution.singleton(x, f))
+        Some((Nil, SetSubstitution.singleton(x, f)))
 
       // !x ~ f, where f is ground
       // ---
       // {},
       // [x -> !f]
       case (Compl(Var(x)), f) if f.isGround =>
-        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
 
       // Symmetric case.
       case (f, Compl(Var(x))) if f.isGround =>
-        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
 
       // f1 ∩ f2 ∩ .. ~ univ
       // ---
@@ -306,12 +320,12 @@ object SetUnification {
       // []
       case (Inter(l), Univ) =>
         val eqs = l.toList.map(Equation.mk(_, Univ, loc))
-        Some(eqs, SetSubstitution.empty)
+        Some((eqs, SetSubstitution.empty))
 
       // Symmetric case.
       case (Univ, Inter(l)) =>
         val eqs = l.toList.map(Equation.mk(_, Univ, loc))
-        Some(eqs, SetSubstitution.empty)
+        Some((eqs, SetSubstitution.empty))
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
@@ -319,12 +333,12 @@ object SetUnification {
       // []
       case (Union(l), Empty) =>
         val eqs = l.toList.map(Equation.mk(_, Empty, loc))
-        Some(eqs, SetSubstitution.empty)
+        Some((eqs, SetSubstitution.empty))
 
       // Symmetric Case.
       case (Empty, Union(l)) =>
         val eqs = l.toList.map(Equation.mk(_, Empty, loc))
-        Some(eqs, SetSubstitution.empty)
+        Some((eqs, SetSubstitution.empty))
 
       case _ =>
         // Cannot do anything.
@@ -353,7 +367,7 @@ object SetUnification {
       // {},
       // []
       case (Var(x), Var(y)) if x == y =>
-        Some(Nil, SetSubstitution.empty)
+        Some((Nil, SetSubstitution.empty))
 
       // x1 ~ x2
       // ---
@@ -361,14 +375,14 @@ object SetUnification {
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
         val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
-        Some(Nil, SetSubstitution.singleton(x.x, y))
+        Some((Nil, SetSubstitution.singleton(x.x, y)))
 
       // !x1 ~ !x1
       // ---
       // {},
       // []
       case (Compl(Var(x)), Compl(Var(y))) if x == y =>
-        Some(Nil, SetSubstitution.empty)
+        Some((Nil, SetSubstitution.empty))
 
       // !x1 ~ !x2
       // ---
@@ -377,7 +391,7 @@ object SetUnification {
       case (Compl(x0@Var(_)), Compl(y0@Var(_))) =>
         // Make this rule stable on symmetric equations.
         val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
-        Some(Nil, SetSubstitution.singleton(x.x, y))
+        Some((Nil, SetSubstitution.singleton(x.x, y)))
 
       case _ =>
         // Cannot do anything.
@@ -403,22 +417,22 @@ object SetUnification {
       // {},
       // [x -> f]
       case (v@Var(x), f) if !f.contains(v) =>
-        Some(Nil, SetSubstitution.singleton(x, f))
+        Some((Nil, SetSubstitution.singleton(x, f)))
 
       // Symmetric case.
       case (f, v@Var(x)) if !f.contains(v) =>
-        Some(Nil, SetSubstitution.singleton(x, f))
+        Some((Nil, SetSubstitution.singleton(x, f)))
 
       // !x ~ f, where f does not contain x
       // ---
       // {},
       // [x -> !f]
       case (Compl(v@Var(x)), f) if !f.contains(v) =>
-        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
 
       // Symmetric case.
       case (f, Compl(v@Var(x))) if !f.contains(v) =>
-        Some(Nil, SetSubstitution.singleton(x, mkCompl(f)))
+        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
 
       case _ =>
         // Cannot do anything.
@@ -449,10 +463,10 @@ object SetUnification {
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
         case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
       }
-      Some(Nil, SetSubstitution(m))
+      Some((Nil, SetSubstitution(m)))
     } catch {
       case _: BoolUnificationException =>
-        Some(List(eq.toUnsolvable), SetSubstitution.empty)
+        Some((List(eq.toUnsolvable), SetSubstitution.empty))
     }
   }
 
