@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -855,37 +856,61 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList))
   }
 
-  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
-    Validation.mapN(Validation.traverse(upgradedProgram)(validateDefn(originalLibs, _)))(_ => ())
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit out: PrintStream): Validation[Unit, BootstrapError.EffectUpgradeError] = {
+    val errors = scala.collection.mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
+    for (defn <- upgradedProgram) {
+      val optLibName = extractLibName(defn)
+      optLibName match {
+        case None => ()
+        case Some(libName) =>
+          val originalLibSignatures = originalLibs.get(libName)
+          originalLibSignatures match {
+            case None => ()
+            case Some(originalSignatures) =>
+              val optError = validateDefn(originalSignatures, defn)
+              optError match {
+                case None => ()
+                case Some(error) => errors.addOne(error)
+              }
+          }
+      }
+    }
+    if (errors.isEmpty) {
+      Validation.Success(())
+    } else {
+      Validation.Failure(Chain.from(errors))
+    }
   }
 
-  private def validateDefn(originalLibs: Map[Library, NamedTypeSchemes], defn: TypedAst.Def)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
-    defn.sym.loc.sp1.source.input match {
-      case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
-      case Input.FileInPackage(path, _, _, _) =>
-        val name = path.getFileName.toString
-        originalLibs.get(name) match {
-          case None => Validation.Success(())
-          case Some(signatures) =>
-            val matchingSigs = signatures.find {
-              case (sym, _) =>
-                out.println(s"debug from json: $sym")
-                defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
-            }
-            matchingSigs match {
-              case None => Validation.Success(())
-              case Some((_, originalScheme)) =>
-                val newScheme = defn.spec.declaredScheme
-                val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
+  private def extractLibName(defn: TypedAst.Def): Option[String] = defn.sym.loc.sp1.source.input match {
+    // TODO: Remove the extension name and version number to obtain lib name
+    case Input.FileInPackage(packagePath, _, _, _) =>
+      Some(packagePath.getFileName.toString)
 
-                if (isSafe) {
-                  out.println("Upgrade is valid")
-                  Validation.Success(())
-                } else {
-                  out.println(s"${defn.sym} is a bad upgrade")
-                  Validation.Failure(BootstrapError.EffectUpgradeError(defn.sym, originalScheme, newScheme))
-                }
-            }
+    case Input.Unknown |
+         Input.PkgFile(_, _) |
+         Input.Text(_, _, _) |
+         Input.TxtFile(_, _) => None
+  }
+
+  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def)(implicit out: PrintStream): Option[BootstrapError.EffectUpgradeError] = {
+    val matchingSigs = originalSignatures.find {
+      case (sym, _) =>
+        out.println(s"debug from json: $sym")
+        defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
+    }
+    matchingSigs match {
+      case None => None
+      case Some((_, originalScheme)) =>
+        val newScheme = defn.spec.declaredScheme
+        val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
+
+        if (isSafe) {
+          out.println("Upgrade is valid")
+          None
+        } else {
+          out.println(s"${defn.sym} is a bad upgrade")
+          Some(BootstrapError.EffectUpgradeError(defn.sym, originalScheme, newScheme))
         }
     }
   }
