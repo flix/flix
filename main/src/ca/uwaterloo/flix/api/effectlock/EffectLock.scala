@@ -16,7 +16,9 @@ object EffectLock {
       isSafe(tc1, tc2)
 
     case (Type.Apply(tpe11, tpe12, loc1), Type.Apply(tpe21, tpe22, loc2)) =>
-      isSafe(tpe11, tpe21) && isSafe(tpe12, tpe22)
+      tpe22.effects.subsetOf(tpe12.effects) &&
+        isSafe(tpe11, tpe21) &&
+        isSafe(tpe12, tpe22)
 
     case (Type.Alias(symUse1, args1, tpe1, loc1), Type.Alias(symUse2, args2, tpe2, loc2)) =>
       throw InternalCompilerException("not impl alias", loc1)
@@ -62,7 +64,7 @@ object EffectLock {
       case (TypeConstructor.Array, TypeConstructor.Array) => true
       case (TypeConstructor.ArrayWithoutRegion, TypeConstructor.ArrayWithoutRegion) => true
       case (TypeConstructor.Vector, TypeConstructor.Vector) => true
-      case (TypeConstructor.Tuple(l1), TypeConstructor.Tuple(l2)) => true
+      case (TypeConstructor.Tuple(l1), TypeConstructor.Tuple(l2)) => l1 == l2
       case (TypeConstructor.Relation, TypeConstructor.Relation) => true
       case (TypeConstructor.Lattice, TypeConstructor.Lattice) => true
       case (TypeConstructor.True, TypeConstructor.True) => true
@@ -77,7 +79,7 @@ object EffectLock {
       case (TypeConstructor.Intersection, TypeConstructor.Intersection) => true
       case (TypeConstructor.Difference, TypeConstructor.Difference) => true
       case (TypeConstructor.SymmetricDiff, TypeConstructor.SymmetricDiff) => true
-      case (TypeConstructor.Effect(sym1), TypeConstructor.Effect(sym2)) => true
+      case (TypeConstructor.Effect(sym1), TypeConstructor.Effect(sym2)) => sym1 == sym2
       case (TypeConstructor.CaseComplement(sym1), TypeConstructor.CaseComplement(sym2)) => true
       case (TypeConstructor.CaseUnion(sym1), TypeConstructor.CaseUnion(sym2)) => true
       case (TypeConstructor.CaseIntersection(sym1), TypeConstructor.CaseIntersection(sym2)) => true
