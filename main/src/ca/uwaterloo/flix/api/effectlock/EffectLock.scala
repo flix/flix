@@ -20,8 +20,8 @@ object EffectLock {
       isSafe(tc1, tc2)
 
     case (Type.Apply(tpe11, tpe12, loc1), Type.Apply(tpe21, tpe22, loc2)) =>
-      print(s"apply: $tpe11      to      $tpe12")
-      print(s"apply: $tpe21      to      $tpe22")
+      println(s"apply: $tpe11      to      $tpe12")
+      println(s"apply: $tpe21      to      $tpe22")
       tpe22.effects.subsetOf(tpe12.effects) &&
         isSafe(tpe11, tpe21) &&
         isSafe(tpe12, tpe22)
