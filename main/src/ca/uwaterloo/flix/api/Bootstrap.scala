@@ -857,7 +857,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {
-    val errors = scala.collection.mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
+    val errors = mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
 
     for (
       defn <- upgradedProgram;
@@ -887,13 +887,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def): Option[BootstrapError.EffectUpgradeError] = {
-    val matchingSigs = originalSignatures.find {
-      case (sym, _) => defn.sym.namespace == sym.namespace &&
-        defn.sym.text == sym.text
-    }
-    matchingSigs match {
-      case None => None
-      case Some((_, originalScheme)) =>
+    originalSignatures.find {
+      case (sym, _) => defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
+    }.flatMap {
+      case (_, originalScheme) =>
         val newScheme = defn.spec.declaredScheme
         val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
         if (isSafe) {
