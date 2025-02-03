@@ -856,7 +856,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList))
   }
 
-  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit out: PrintStream): Validation[Unit, BootstrapError.EffectUpgradeError] = {
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {
     val errors = scala.collection.mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
     for (defn <- upgradedProgram) {
       val optLibName = extractLibName(defn)
