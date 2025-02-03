@@ -3460,7 +3460,7 @@ object Resolver {
   /**
     * Creates an environment from the given type variable symbol.
     */
-  private def mkTypeVarEnv(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.name, Resolution.Region(sym))
+  private def mkTypeVarEnv(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
 
   /**
     * Converts the class into a Flix type.
