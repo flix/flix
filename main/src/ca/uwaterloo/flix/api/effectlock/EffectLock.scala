@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object EffectLock {
 
   def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
+    println(sc1)
+    println(sc2)
     isSafe(sc1.base, sc2.base)
   }
 
@@ -13,9 +15,13 @@ object EffectLock {
     case (Type.Var(sym1, loc1), Type.Var(sym2, loc2)) => throw InternalCompilerException("not impl var", loc1)
 
     case (Type.Cst(tc1, loc1), Type.Cst(tc2, loc2)) =>
+      println(tc1)
+      println(tc2)
       isSafe(tc1, tc2)
 
     case (Type.Apply(tpe11, tpe12, loc1), Type.Apply(tpe21, tpe22, loc2)) =>
+      print(s"apply: $tpe11      to      $tpe12")
+      print(s"apply: $tpe21      to      $tpe22")
       tpe22.effects.subsetOf(tpe12.effects) &&
         isSafe(tpe11, tpe21) &&
         isSafe(tpe12, tpe22)
