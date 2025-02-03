@@ -893,23 +893,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          Input.TxtFile(_, _) => None
   }
 
-  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def)(implicit out: PrintStream): Option[BootstrapError.EffectUpgradeError] = {
+  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def): Option[BootstrapError.EffectUpgradeError] = {
     val matchingSigs = originalSignatures.find {
-      case (sym, _) =>
-        out.println(s"debug from json: $sym")
-        defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
+      case (sym, _) => defn.sym.namespace == sym.namespace &&
+        defn.sym.text == sym.text
     }
     matchingSigs match {
       case None => None
       case Some((_, originalScheme)) =>
         val newScheme = defn.spec.declaredScheme
         val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
-
         if (isSafe) {
-          out.println("Upgrade is valid")
           None
         } else {
-          out.println(s"${defn.sym} is a bad upgrade")
           Some(BootstrapError.EffectUpgradeError(defn.sym, originalScheme, newScheme))
         }
     }
