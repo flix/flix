@@ -857,13 +857,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def validateLibs(lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError] = {
     val result = Validation.flatMapN(check(flix)) {
       case root => Validation.traverse(root.defs) {
-        case (sym, defn) => validateFunction(sym, defn, lockedSignatures, out)
+        case (sym, defn) => validateFunction(sym, defn, lockedSignatures)
       }
     }
     Validation.mapN(result)(_ => ())
   }
 
-  private def validateFunction(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes], out: PrintStream): Validation[Unit, BootstrapError] = {
+  private def validateFunction(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     sym.loc.sp1.source.input match {
       case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
       case Input.FileInPackage(path, _, _, _) =>
