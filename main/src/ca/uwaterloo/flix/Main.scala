@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZheglakinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -344,6 +345,8 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
+        case Command.Zhegalkin =>
+          ZheglakinPerf.run(options.XPerfN)
       }
     }
 
@@ -432,6 +435,9 @@ object Main {
     case object EffectLock extends Command
 
     case object EffectUpgrade extends Command
+
+    case object Zhegalkin extends Command
+
   }
 
   /**
@@ -512,6 +518,12 @@ object Main {
       cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock))
 
       cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade))
+
+      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
 
       note("")
 
