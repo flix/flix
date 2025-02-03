@@ -16,7 +16,10 @@ object EffectLock {
 
   private def unifiableSchemes(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
     val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, RigidityEnv.empty, EqualityEnv.empty)(Scope.Top, flix)
-    unification.isDefined
+    unification match {
+      case Some(subst) => subst(sc2) == sc2
+      case None => false
+    }
   }
 
   private def monomorphicDowngrade(sc1: Scheme, sc2: Scheme): Boolean = {
