@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile,
 import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -851,45 +851,48 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // TODO: Add error handling
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
     val Some(deserde) = Serialization.deserialize(json)
+    out.println("Lock file read. Checking upgrade safety")
     validateLibs(flix, out, deserde)
   }
 
   private def validateLibs(flix: Flix, out: PrintStream, lockedSignatures: Map[Library, NamedTypeSchemes]): Validation[Unit, BootstrapError] = {
-    out.println("Lock file read. Checking upgrade safety")
     Validation.flatMapN(check(flix)) {
       case root =>
         val result = Validation.traverse(root.defs) {
-          case (sym, defn) =>
-            sym.loc.sp1.source.input match {
-              case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
-              case Input.FileInPackage(path, _, _, _) =>
-                val name = path.getFileName.toString
-                lockedSignatures.get(name) match {
-                  case None => Validation.Success(())
-                  case Some(signatures) =>
-                    val matchingSigs = signatures.find {
-                      case (sym1, _) =>
-                        out.println(s"debug from json: $sym1")
-                        sym.namespace == sym1.namespace && sym.text == sym1.text
-                    }
-                    matchingSigs match {
-                      case None => Validation.Success(())
-                      case Some((_, originalScheme)) =>
-                        val newScheme = defn.spec.declaredScheme
-                        val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
+          case (sym, defn) => validateLib(sym, defn, lockedSignatures, out)
+        }
+        Validation.mapN(result)(_ => ())
+    }
+  }
 
-                        if (isSafe) {
-                          out.println("Upgrade is valid")
-                          Validation.Success(())
-                        } else {
-                          out.println(s"$sym is a bad upgrade")
-                          Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
-                        }
-                    }
+  private def validateLib(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes], out: PrintStream): Validation[Unit, BootstrapError] = {
+    sym.loc.sp1.source.input match {
+      case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
+      case Input.FileInPackage(path, _, _, _) =>
+        val name = path.getFileName.toString
+        lockedSignatures.get(name) match {
+          case None => Validation.Success(())
+          case Some(signatures) =>
+            val matchingSigs = signatures.find {
+              case (sym1, _) =>
+                out.println(s"debug from json: $sym1")
+                sym.namespace == sym1.namespace && sym.text == sym1.text
+            }
+            matchingSigs match {
+              case None => Validation.Success(())
+              case Some((_, originalScheme)) =>
+                val newScheme = defn.spec.declaredScheme
+                val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
+
+                if (isSafe) {
+                  out.println("Upgrade is valid")
+                  Validation.Success(())
+                } else {
+                  out.println(s"$sym is a bad upgrade")
+                  Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
                 }
             }
         }
-        Validation.mapN(result)(_ => ())
     }
   }
 }
