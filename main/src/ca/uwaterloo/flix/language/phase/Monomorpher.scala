@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -869,7 +869,7 @@ object Monomorpher {
     val renv = RigidityEnv.empty
     val progress = Progress()
 
-    val res = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
+    val res = TypeReduction.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
 
     if (progress.query()) res
     else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
