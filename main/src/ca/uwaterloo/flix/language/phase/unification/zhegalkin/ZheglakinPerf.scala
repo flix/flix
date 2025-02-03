@@ -185,9 +185,9 @@ object ZheglakinPerf {
     val trivial = m("Trivial")
 
     println("-" * 80)
-    println("  ConstProp |  VarProp |  VarAssign |  TrivDup |  SVE |  Trivial")
-    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$constProp%,11d & $varProp%,8d & $varAssign%,9d & $trivDup%,9d & $sve%,5d & $trivial%,9d \\\\")
+    println("  ConstProp |  VarProp |  VarAssign |  TrivDup |    SVE |  Trivial")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    println(f"$constProp%,11d & $varProp%,8d & $varAssign%,10d & $trivDup%,8d & $sve%,6d & $trivial%,8d \\\\")
     println("-" * 80)
     println()
     println()
