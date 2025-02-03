@@ -294,7 +294,7 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, text: VarText) extends SimpleType
 
   /**
     * A tuple.
@@ -349,7 +349,7 @@ object SimpleType {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>

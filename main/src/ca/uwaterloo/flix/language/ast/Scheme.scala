@@ -55,7 +55,7 @@ object Scheme {
     val substMap = sc.quantifiers.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        macc + (tvar -> Type.freshVar(tvar.kind, loc, tvar.isRegion, VarText.Absent))
+        macc + (tvar -> Type.freshVar(tvar.kind, loc, VarText.Absent))
     }
     val freshVars = substMap.map { case (k, v) => k.id -> v }
 

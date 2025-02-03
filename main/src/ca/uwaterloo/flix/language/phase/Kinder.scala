@@ -105,7 +105,7 @@ object Kinder {
       // the parser will have already notified the user of this error
       // The recovery step here is to simply add a single type param that is never used
       val tparams1 = if (tparams0.isEmpty) {
-        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, isRegion = false, loc)(Scope.Top, flix), loc)
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, loc)(Scope.Top, flix), loc)
         List(regionTparam)
       } else {
         tparams0

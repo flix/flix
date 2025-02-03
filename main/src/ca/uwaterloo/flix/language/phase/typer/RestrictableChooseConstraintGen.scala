@@ -314,7 +314,7 @@ object RestrictableChooseConstraintGen {
     // This will unify with the enum type to extract the index
 
     def instantiate(tp: KindedAst.TypeParam): Type.Var = tp match {
-      case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc, sym.isRegion)
+      case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc)
     }
 
     val indexVar = instantiate(decl.index)

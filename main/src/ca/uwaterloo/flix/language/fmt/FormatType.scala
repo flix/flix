@@ -51,7 +51,7 @@ object FormatType {
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.isSlack, sym.scope, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isSlack, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 
@@ -199,7 +199,7 @@ object FormatType {
       case SimpleType.TagConstructor(_) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
-      case SimpleType.Var(_, _, _, _) => true
+      case SimpleType.Var(_, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.JvmToType(_) => true
       case SimpleType.JvmToEff(_) => true
@@ -343,8 +343,8 @@ object FormatType {
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id, kind, isRegion, text) =>
-        val prefix: String = kind match {
+      case SimpleType.Var(id, kind, text) =>
+        val string: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
@@ -358,12 +358,6 @@ object FormatType {
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
         }
-        val suffix = if (isRegion) {
-          "!"
-        } else {
-          ""
-        }
-        val string = prefix + suffix
         fmt.varNames match {
           case FormatOptions.VarName.IdBased => string
           case FormatOptions.VarName.NameBased => text match {
